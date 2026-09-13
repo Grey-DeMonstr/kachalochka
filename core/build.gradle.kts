@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 private fun localOrEnv(name: String): String {
@@ -93,11 +94,20 @@ kotlin {
             kotlin.srcDir(generateSupabaseConfig)
             dependencies {
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(project.dependencies.platform(libs.supabase.bom))
+                implementation(libs.supabase.auth)
+                implementation(libs.supabase.postgrest)
+                implementation(libs.supabase.storage)
+                implementation(libs.supabase.realtime)
+                implementation(libs.koin.core)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.datetime)
             }
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.koin.test)
         }
         val sqlMain by getting {
             dependencies {
@@ -107,9 +117,14 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.sqldelight.driver.android)
+            implementation(libs.ktor.client.okhttp)
         }
         jvmMain.dependencies {
             implementation(libs.sqldelight.driver.jvm)
+            implementation(libs.ktor.client.okhttp)
+        }
+        wasmJsMain.dependencies {
+            implementation(libs.ktor.client.js)
         }
     }
 }
