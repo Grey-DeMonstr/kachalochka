@@ -21,8 +21,4 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - run: ./gradlew check
-
-      - run: ./gradlew :androidApp:assembleDebug
-
-      - run: ./gradlew :app:wasmJsBrowserDistribution
+      - run: ./gradlew check :androidApp:assembleDebug :app:wasmJsBrowserDistribution
