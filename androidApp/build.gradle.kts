@@ -12,6 +12,16 @@ kotlin { jvmToolchain(21) }
 fun requireSigningEnv(name: String): String =
     System.getenv(name) ?: error("KEYSTORE_PATH is set but $name is missing from the environment.")
 
+// Rebuilding a tag must produce the number that tag already shipped, so the code is derived from
+// the version rather than counted.
+fun versionCodeOf(version: String): Int {
+    val (major, minor, patch) = version.split(".").map(String::toInt)
+    return major * 10000 + minor * 100 + patch
+}
+
+// Only a release names its version; every local build is the same development build.
+val releaseVersion = project.findProperty("versionName") as String?
+
 android {
     namespace = "monster.greyde.kachalochka"
     compileSdk =
@@ -29,8 +39,8 @@ android {
             libs.versions.androidCompileSdk
                 .get()
                 .toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = releaseVersion?.let(::versionCodeOf) ?: 1
+        versionName = releaseVersion ?: "0.1.0"
     }
 
     signingConfigs {
