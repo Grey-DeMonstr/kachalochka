@@ -52,6 +52,8 @@ jobs:
             exit 1
           fi
 
+      - run: ./gradlew check
+
       - name: Build the signed APK
         env:
           KEYSTORE_PATH: ${{ runner.temp }}/release.jks
