@@ -1,10 +1,12 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.File
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.sqldelight)
     alias(libs.plugins.ktlint)
 }
 
@@ -97,6 +99,18 @@ kotlin {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
         }
+        val sqlMain by getting {
+            dependencies {
+                implementation(libs.sqldelight.runtime)
+                implementation(libs.sqldelight.coroutines)
+            }
+        }
+        androidMain.dependencies {
+            implementation(libs.sqldelight.driver.android)
+        }
+        jvmMain.dependencies {
+            implementation(libs.sqldelight.driver.jvm)
+        }
     }
 }
 
@@ -111,5 +125,27 @@ android {
             libs.versions.androidMinSdk
                 .get()
                 .toInt()
+    }
+}
+
+sqldelight {
+    databases {
+        create("KachalochkaDatabase") {
+            packageName.set("monster.greyde.kachalochka.core.data.db")
+            srcDirs.setFrom("src/sqlMain/sqldelight")
+        }
+    }
+}
+
+// SQLDelight attaches its output to commonMain, which the Wasm target cannot compile.
+// The plugin wires this up in its own afterEvaluate, so ours must run after that one.
+afterEvaluate {
+    kotlin.sourceSets.named("commonMain") {
+        kotlin.setSrcDirs(
+            kotlin.srcDirs.filterNot { it.path.contains("generated${File.separator}sqldelight") },
+        )
+    }
+    kotlin.sourceSets.named("sqlMain") {
+        kotlin.srcDir(tasks.named("generateCommonMainKachalochkaDatabaseInterface"))
     }
 }

@@ -1,0 +1,28 @@
+CREATE TABLE outbox (
+    tableName  TEXT    NOT NULL,
+    rowId      TEXT    NOT NULL,
+    enqueuedAt INTEGER NOT NULL,
+    PRIMARY KEY (tableName, rowId)
+);
+
+CREATE TABLE syncState (
+    id         INTEGER NOT NULL PRIMARY KEY,
+    lastPullAt INTEGER
+);
+
+INSERT INTO syncState(id, lastPullAt) VALUES (0, NULL);
+
+enqueue:
+INSERT OR REPLACE INTO outbox(tableName, rowId, enqueuedAt) VALUES (?, ?, ?);
+
+pending:
+SELECT tableName, rowId, enqueuedAt FROM outbox ORDER BY enqueuedAt, rowId;
+
+remove:
+DELETE FROM outbox WHERE tableName = ? AND rowId = ?;
+
+lastPullAt:
+SELECT lastPullAt FROM syncState WHERE id = 0;
+
+setLastPullAt:
+UPDATE syncState SET lastPullAt = ? WHERE id = 0;
