@@ -21,9 +21,9 @@ cuts a release with a signed APK. See `docs/technical_spec.md` §8.
 
 ## Commits and releases
 
-Commit titles are used by GitHub to generate release notes, so make them **product-oriented**:
-a user should generally understand what changed. No `feat:`/`fix:` prefixes, no issue keys.
-The body explains why, when the title cannot.
+Commit titles are read by whoever scans `git log`, so make them **product-oriented**: a reader
+should generally understand what changed. No `feat:`/`fix:` prefixes, no issue keys. The body
+explains why, when the title cannot.
 
 `changelog.txt` in the repo root is the user-facing history, newest version at the top. It is
 written in a user's language, not from commit subjects, and `release.yml` publishes a version's
