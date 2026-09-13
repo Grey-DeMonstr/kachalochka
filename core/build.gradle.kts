@@ -58,17 +58,6 @@ val generateSupabaseConfig =
         }
     }
 
-ktlint {
-    filter {
-        val generatedDir =
-            layout.buildDirectory
-                .dir("generated")
-                .get()
-                .asFile
-        exclude { entry -> entry.file.startsWith(generatedDir) }
-    }
-}
-
 kotlin {
     jvmToolchain(21)
 
@@ -136,9 +125,6 @@ kotlin {
         }
     }
 }
-
-// check must pass on a machine with no browser, so the wasmJs suite stays out of it.
-tasks.named("wasmJsBrowserTest") { enabled = false }
 
 sqldelight {
     databases {

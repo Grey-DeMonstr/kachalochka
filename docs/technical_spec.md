@@ -249,6 +249,9 @@ built app because RLS, not the key, is the access boundary.
   fake repositories. No test touches the network or a real database.
 - `./gradlew check` is the quality gate: ktlint, `:core:jvmTest`, `:app:jvmTest`. It must pass
   before any task is considered complete.
+- The gate depends on those suites directly, not on the `allTests` report, so no part of it
+  schedules Node, npm or a Wasm test compilation. ktlint still covers the wasmJs sources. The
+  root build script makes that cut, and holds the one ktlint filter both library modules use.
 
 Any UI test that mounts a `NavHost` runs through `runNavigationUiTest` in `app/src/jvmTest`. The
 Compose test host already provides a resumed `LifecycleOwner`; what it does not provide is a main
