@@ -5,7 +5,6 @@ import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
-import kotlin.time.Instant
 
 class LocalProfileRepository(
     database: KachalochkaDatabase,
@@ -21,8 +20,8 @@ class LocalProfileRepository(
                 profile.id,
                 profile.userId,
                 profile.displayName,
-                profile.updatedAt.epochSeconds,
-                if (profile.deleted) 1L else 0L,
+                profile.updatedAt,
+                profile.deleted,
             )
             // An owner is what a row-level-security policy matches on, so an unowned row waits
             // for the login that stamps it (technical spec §4.3).
@@ -39,8 +38,8 @@ class LocalProfileRepository(
                     id = rowId,
                     userId = userId,
                     displayName = displayName,
-                    updatedAt = Instant.fromEpochSeconds(updatedAt),
-                    deleted = deleted != 0L,
+                    updatedAt = updatedAt,
+                    deleted = deleted,
                 )
             }.executeAsOneOrNull()
 }

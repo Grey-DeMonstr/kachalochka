@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.data.sync
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
+import monster.greyde.kachalochka.core.data.db.kachalochkaDatabase
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,7 +13,7 @@ class OutboxDaoTest {
     private fun dao(): OutboxDao {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         KachalochkaDatabase.Schema.create(driver)
-        return OutboxDao(KachalochkaDatabase(driver))
+        return OutboxDao(kachalochkaDatabase(driver))
     }
 
     private fun entry(
@@ -46,6 +47,16 @@ class OutboxDaoTest {
         dao.enqueue(entry("row-early", 100))
 
         assertEquals(listOf("row-early", "row-late"), dao.pending().map { it.rowId })
+    }
+
+    @Test
+    fun a_sub_second_enqueue_time_survives_the_round_trip() {
+        val dao = dao()
+        val entry = OutboxEntry("visit", "row-1", Instant.fromEpochMilliseconds(1_700_000_000_123))
+
+        dao.enqueue(entry)
+
+        assertEquals(listOf(entry), dao.pending())
     }
 
     @Test

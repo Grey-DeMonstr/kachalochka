@@ -2,7 +2,6 @@ package monster.greyde.kachalochka.core.data.sync
 
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
-import kotlin.time.Instant
 
 class OutboxDao(
     database: KachalochkaDatabase,
@@ -10,13 +9,13 @@ class OutboxDao(
     private val queries = database.syncQueries
 
     fun enqueue(entry: OutboxEntry) {
-        queries.enqueue(entry.tableName, entry.rowId, entry.enqueuedAt.epochSeconds)
+        queries.enqueue(entry.tableName, entry.rowId, entry.enqueuedAt)
     }
 
     fun pending(): List<OutboxEntry> =
         queries
             .pending { tableName, rowId, enqueuedAt ->
-                OutboxEntry(tableName, rowId, Instant.fromEpochSeconds(enqueuedAt))
+                OutboxEntry(tableName, rowId, enqueuedAt)
             }.executeAsList()
 
     fun remove(

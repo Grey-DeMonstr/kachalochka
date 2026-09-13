@@ -21,7 +21,7 @@ class LocalProfileRepositoryTest {
             id = "9b1f0c3e-0000-4000-8000-000000000001",
             userId = "9b1f0c3e-0000-4000-8000-000000000002",
             displayName = "Sergei",
-            updatedAt = Instant.fromEpochSeconds(1_700_000_000),
+            updatedAt = Instant.fromEpochMilliseconds(1_700_000_000_123),
             deleted = false,
         )
 
@@ -52,6 +52,16 @@ class LocalProfileRepositoryTest {
             val pending = koin.get<OutboxDao>().pending()
 
             assertEquals(listOf("profile" to profile.id), pending.map { it.tableName to it.rowId })
+        }
+
+    @Test
+    fun a_sub_second_timestamp_survives_the_round_trip() =
+        runTest {
+            val repository = koin.get<ProfileRepository>()
+
+            repository.upsert(profile)
+
+            assertEquals(profile.updatedAt, repository.byId(profile.id)?.updatedAt)
         }
 
     @Test

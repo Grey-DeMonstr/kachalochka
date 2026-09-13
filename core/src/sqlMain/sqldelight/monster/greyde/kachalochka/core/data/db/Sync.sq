@@ -1,13 +1,15 @@
+import kotlin.time.Instant;
+
 CREATE TABLE outbox (
     tableName  TEXT    NOT NULL,
     rowId      TEXT    NOT NULL,
-    enqueuedAt INTEGER NOT NULL,
+    enqueuedAt INTEGER AS Instant NOT NULL,
     PRIMARY KEY (tableName, rowId)
 );
 
 CREATE TABLE syncState (
     id         INTEGER NOT NULL PRIMARY KEY,
-    lastPullAt INTEGER
+    lastPullAt INTEGER AS Instant
 );
 
 INSERT INTO syncState(id, lastPullAt) VALUES (0, NULL);
