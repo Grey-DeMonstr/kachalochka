@@ -1,11 +1,11 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import java.io.File
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.kotlinSerialization)
@@ -25,37 +25,38 @@ private fun escapeKotlinString(value: String): String =
         .replace("\"", "\\\"")
         .replace("$", "\\$")
 
-val generateSupabaseConfig by tasks.registering {
-    val url = localOrEnv("SUPABASE_URL")
-    val anonKey = localOrEnv("SUPABASE_ANON_KEY")
-    val escapedUrl = escapeKotlinString(url)
-    val escapedAnonKey = escapeKotlinString(anonKey)
-    val outputDir = layout.buildDirectory.dir("generated/supabase")
+val generateSupabaseConfig =
+    tasks.register("generateSupabaseConfig") {
+        val url = localOrEnv("SUPABASE_URL")
+        val anonKey = localOrEnv("SUPABASE_ANON_KEY")
+        val escapedUrl = escapeKotlinString(url)
+        val escapedAnonKey = escapeKotlinString(anonKey)
+        val outputDir = layout.buildDirectory.dir("generated/supabase")
 
-    inputs.property("url", url)
-    inputs.property("anonKey", anonKey)
-    outputs.dir(outputDir)
+        inputs.property("url", url)
+        inputs.property("anonKey", anonKey)
+        outputs.dir(outputDir)
 
-    doLast {
-        val packageDir =
-            outputDir
-                .get()
-                .asFile
-                .resolve("monster/greyde/kachalochka/core/data/supabase")
-        packageDir.mkdirs()
-        packageDir.resolve("SupabaseConfig.kt").writeText(
-            """
-            package monster.greyde.kachalochka.core.data.supabase
+        doLast {
+            val packageDir =
+                outputDir
+                    .get()
+                    .asFile
+                    .resolve("monster/greyde/kachalochka/core/data/supabase")
+            packageDir.mkdirs()
+            packageDir.resolve("SupabaseConfig.kt").writeText(
+                """
+                package monster.greyde.kachalochka.core.data.supabase
 
-            internal object SupabaseConfig {
-                const val URL: String = "$escapedUrl"
-                const val ANON_KEY: String = "$escapedAnonKey"
-            }
+                internal object SupabaseConfig {
+                    const val URL: String = "$escapedUrl"
+                    const val ANON_KEY: String = "$escapedAnonKey"
+                }
 
-            """.trimIndent(),
-        )
+                """.trimIndent(),
+            )
+        }
     }
-}
 
 ktlint {
     filter {
@@ -74,14 +75,24 @@ kotlin {
     applyDefaultHierarchyTemplate {
         common {
             group("sql") {
-                withAndroidTarget()
+                // The Android target of the KMP library plugin is not a KotlinAndroidTarget, so
+                // withAndroidTarget() matches nothing (KT-80409).
+                withCompilations { it.target.platformType == KotlinPlatformType.androidJvm }
                 withJvm()
             }
         }
     }
 
-    androidTarget {
-        compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
+    android {
+        namespace = "monster.greyde.kachalochka.core"
+        compileSdk =
+            libs.versions.androidCompileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.androidMinSdk
+                .get()
+                .toInt()
     }
     jvm()
 
@@ -108,7 +119,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.koin.test)
         }
-        val sqlMain by getting {
+        named("sqlMain") {
             dependencies {
                 implementation(libs.sqldelight.runtime)
                 implementation(libs.sqldelight.coroutines)
@@ -131,20 +142,6 @@ kotlin {
 
 // check must pass on a machine with no browser, so the wasmJs suite stays out of it.
 tasks.named("wasmJsBrowserTest") { enabled = false }
-
-android {
-    namespace = "monster.greyde.kachalochka.core"
-    compileSdk =
-        libs.versions.androidCompileSdk
-            .get()
-            .toInt()
-    defaultConfig {
-        minSdk =
-            libs.versions.androidMinSdk
-                .get()
-                .toInt()
-    }
-}
 
 sqldelight {
     databases {

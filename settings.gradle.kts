@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "kachalochka"
 
-include(":core", ":app")
+include(":core", ":app", ":androidApp")

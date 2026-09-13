@@ -1,10 +1,9 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
@@ -25,8 +24,16 @@ ktlint {
 kotlin {
     jvmToolchain(21)
 
-    androidTarget {
-        compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
+    android {
+        namespace = "monster.greyde.kachalochka.app"
+        compileSdk =
+            libs.versions.androidCompileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.androidMinSdk
+                .get()
+                .toInt()
     }
     jvm()
 
@@ -74,54 +81,6 @@ kotlin {
 
 // check must pass on a machine with no browser, so the wasmJs suite stays out of it.
 tasks.named("wasmJsBrowserTest") { enabled = false }
-
-// KEYSTORE_PATH being set means a release build is expected to be signed, so a missing
-// sibling variable must name itself rather than surface as an opaque AGP signing failure.
-fun requireSigningEnv(name: String): String =
-    System.getenv(name) ?: error("KEYSTORE_PATH is set but $name is missing from the environment.")
-
-android {
-    namespace = "monster.greyde.kachalochka"
-    compileSdk =
-        libs.versions.androidCompileSdk
-            .get()
-            .toInt()
-
-    defaultConfig {
-        applicationId = "monster.greyde.kachalochka"
-        minSdk =
-            libs.versions.androidMinSdk
-                .get()
-                .toInt()
-        targetSdk =
-            libs.versions.androidCompileSdk
-                .get()
-                .toInt()
-        versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = (project.findProperty("versionName") as String?) ?: "0.1.0"
-    }
-
-    signingConfigs {
-        create("release") {
-            val keystore = System.getenv("KEYSTORE_PATH")
-            if (keystore != null) {
-                storeFile = file(keystore)
-                storePassword = requireSigningEnv("KEYSTORE_PASSWORD")
-                keyAlias = requireSigningEnv("KEY_ALIAS")
-                keyPassword = requireSigningEnv("KEY_PASSWORD")
-            }
-        }
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            if (System.getenv("KEYSTORE_PATH") != null) {
-                signingConfig = signingConfigs.getByName("release")
-            }
-        }
-    }
-}
 
 compose.desktop {
     application {
