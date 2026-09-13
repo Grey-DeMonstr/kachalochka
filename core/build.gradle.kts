@@ -118,6 +118,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.sqldelight.driver.android)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.koin.android)
         }
         jvmMain.dependencies {
             implementation(libs.sqldelight.driver.jvm)

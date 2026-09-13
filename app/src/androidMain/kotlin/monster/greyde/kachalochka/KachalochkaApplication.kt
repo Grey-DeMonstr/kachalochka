@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka
 
 import android.app.Application
+import monster.greyde.kachalochka.core.di.corePlatformModule
 import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
 import org.koin.android.ext.koin.androidContext
@@ -11,7 +12,7 @@ class KachalochkaApplication : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@KachalochkaApplication)
-            modules(appModule, platformModule())
+            modules(appModule, corePlatformModule(), platformModule())
         }
     }
 }
