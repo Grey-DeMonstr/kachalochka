@@ -86,7 +86,7 @@ Three rules:
 
 1. **`domain/` depends on nothing outside the Kotlin standard libraries.** Interfaces are declared
    there, implementations live in `data/`, and `app` wires them through Koin. A `domain/` file
-   importing `data/`, Supabase or SQLDelight is a defect.
+   importing `data/`, Supabase, SQLDelight or Koin fails `:core:jvmTest`.
 2. **`core` never imports Compose.** It must stay compilable and testable as a plain library.
 3. **Logic that can be a pure function must be one.** Weight totals, per-limb doubling, negative
    machines, suggested next set, period statistics — all are functions in `domain/` with their own
@@ -228,10 +228,10 @@ built app because RLS, not the key, is the access boundary.
 - `./gradlew check` is the quality gate: ktlint, `:core:jvmTest`, `:app:jvmTest`. It must pass
   before any task is considered complete.
 
-Any UI test that mounts a `NavHost` goes through `UiTestHost` in `app/src/jvmTest`. Navigation's
-back-stack entries need a `LifecycleOwner`, which `runComposeUiTest` does not provide, and
-`androidx.lifecycle` asserts it is on the main thread, which the test thread is not. `UiTestHost`
-supplies both: a `LifecycleRegistry` driven to `RESUMED`, and `Dispatchers.setMain`.
+Any UI test that mounts a `NavHost` runs through `runNavigationUiTest` in `app/src/jvmTest`.
+Navigation's back-stack entries need a `LifecycleOwner`, which `runComposeUiTest` does not
+provide, and `androidx.lifecycle` asserts it is on the main thread, which the test thread is not.
+`runNavigationUiTest` runs the test and supplies both, so neither can be omitted.
 
 ---
 
