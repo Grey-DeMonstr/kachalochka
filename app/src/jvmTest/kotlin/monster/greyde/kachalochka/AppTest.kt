@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import org.koin.compose.KoinApplication
+import org.koin.dsl.koinConfiguration
 import org.koin.dsl.module
 import kotlin.test.Test
 
@@ -24,7 +25,9 @@ class AppTest {
 
     @Composable
     private fun TestApp() {
-        KoinApplication(application = { modules(appModule, testModule) }) { App() }
+        KoinApplication(configuration = koinConfiguration { modules(appModule, testModule) }) {
+            App()
+        }
     }
 
     @Test

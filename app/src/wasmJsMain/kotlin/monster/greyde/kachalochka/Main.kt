@@ -7,12 +7,14 @@ import monster.greyde.kachalochka.core.di.corePlatformModule
 import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
 import org.koin.compose.KoinApplication
+import org.koin.dsl.koinConfiguration
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     ComposeViewport(document.body!!) {
         KoinApplication(
-            application = { modules(appModule, corePlatformModule(), platformModule()) },
+            configuration =
+                koinConfiguration { modules(appModule, corePlatformModule(), platformModule()) },
         ) { App() }
     }
 }
