@@ -111,18 +111,15 @@ kotlin {
                 implementation(libs.supabase.realtime)
                 implementation(libs.koin.core)
                 implementation(libs.kotlinx.serialization.json)
-                implementation(libs.kotlinx.datetime)
             }
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
-            implementation(libs.koin.test)
         }
         named("sqlMain") {
             dependencies {
                 implementation(libs.sqldelight.runtime)
-                implementation(libs.sqldelight.coroutines)
             }
         }
         androidMain.dependencies {

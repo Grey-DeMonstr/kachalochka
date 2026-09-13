@@ -41,7 +41,7 @@ backend requirement in the functional spec.
 | Backend client | supabase-kt (auth, postgrest, storage, realtime) | Supports Android and Wasm |
 | HTTP engine | Ktor: OkHttp on Android, JS engine on Wasm | Required by supabase-kt |
 | Serialization | kotlinx.serialization | Required by supabase-kt |
-| Time | kotlinx-datetime | |
+| Time | `kotlin.time` from the standard library | |
 | Async | kotlinx.coroutines + Flow | |
 | Images | Coil 3 | Multiplatform, loads Supabase Storage URLs |
 | Charts | Vico | Compose Multiplatform support |

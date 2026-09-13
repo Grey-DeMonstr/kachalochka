@@ -75,7 +75,7 @@ gradle/libs.versions.toml   the only place library versions are declared
 | Backend | Supabase via `supabase-kt`: auth, postgrest, storage, realtime |
 | HTTP | Ktor client — OkHttp engine on Android, JS engine on Wasm |
 | Serialization | kotlinx.serialization |
-| Time | kotlinx-datetime |
+| Time | `kotlin.time` from the standard library |
 | Images | Coil 3 |
 | Charts | Vico |
 | Lint / format | ktlint Gradle plugin |
