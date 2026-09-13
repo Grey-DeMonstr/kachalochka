@@ -1,0 +1,17 @@
+package monster.greyde.kachalochka
+
+import android.app.Application
+import monster.greyde.kachalochka.di.appModule
+import monster.greyde.kachalochka.di.platformModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
+
+class KachalochkaApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@KachalochkaApplication)
+            modules(appModule, platformModule())
+        }
+    }
+}
