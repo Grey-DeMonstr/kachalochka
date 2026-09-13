@@ -8,8 +8,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.di.appModule
-import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
-import monster.greyde.kachalochka.ui.theme.ThemePreference
+import monster.greyde.kachalochka.di.platformModule
 import org.koin.compose.KoinApplication
 import org.koin.dsl.koinConfiguration
 import org.koin.dsl.module
@@ -17,17 +16,22 @@ import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
 class AppTest {
-    private val testModule =
+    // `core` reads whatever credentials the build generated, and a checkout has none, so the
+    // backend state the home screen shows is only worth asserting against a configured pair.
+    private val configuredBackend =
         module {
-            single<ThemePreference> { InMemoryThemePreference() }
             single { SupabaseCredentials("https://project.supabase.test", "anon-key") }
         }
 
     @Composable
     private fun TestApp() {
-        KoinApplication(configuration = koinConfiguration { modules(appModule, testModule) }) {
-            App()
-        }
+        KoinApplication(
+            configuration =
+                koinConfiguration {
+                    allowOverride(true)
+                    modules(appModule, platformModule(), configuredBackend)
+                },
+        ) { App() }
     }
 
     @Test
