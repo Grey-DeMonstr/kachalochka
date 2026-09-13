@@ -2,7 +2,9 @@ package monster.greyde.kachalochka.core.data.profile
 
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
 
@@ -17,8 +19,8 @@ class LocalProfileRepository(
     override suspend fun upsert(profile: Profile) {
         queries.transaction {
             queries.upsert(
-                profile.id,
-                profile.userId,
+                profile.id.value,
+                profile.userId?.value,
                 profile.displayName,
                 profile.updatedAt,
                 profile.deleted,
@@ -26,17 +28,17 @@ class LocalProfileRepository(
             // An owner is what a row-level-security policy matches on, so an unowned row waits
             // for the login that stamps it (technical spec §4.3).
             if (profile.userId != null) {
-                outbox.enqueue(OutboxEntry(PROFILE_TABLE, profile.id, profile.updatedAt))
+                outbox.enqueue(OutboxEntry(PROFILE_TABLE, profile.id.value, profile.updatedAt))
             }
         }
     }
 
-    override suspend fun byId(id: String): Profile? =
+    override suspend fun byId(id: ProfileId): Profile? =
         queries
-            .byId(id) { rowId, userId, displayName, updatedAt, deleted ->
+            .byId(id.value) { rowId, userId, displayName, updatedAt, deleted ->
                 Profile(
-                    id = rowId,
-                    userId = userId,
+                    id = ProfileId(rowId),
+                    userId = userId?.let(::UserId),
                     displayName = displayName,
                     updatedAt = updatedAt,
                     deleted = deleted,

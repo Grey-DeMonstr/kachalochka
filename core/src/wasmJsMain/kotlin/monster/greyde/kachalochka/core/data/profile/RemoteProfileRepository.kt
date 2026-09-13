@@ -4,7 +4,9 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import kotlin.time.Instant
 
@@ -15,10 +17,10 @@ class RemoteProfileRepository(
         client.postgrest.from(PROFILE_TABLE).upsert(ProfileRow.of(profile))
     }
 
-    override suspend fun byId(id: String): Profile? =
+    override suspend fun byId(id: ProfileId): Profile? =
         client.postgrest
             .from(PROFILE_TABLE)
-            .select { filter { eq("id", id) } }
+            .select { filter { eq("id", id.value) } }
             .decodeSingleOrNull<ProfileRow>()
             ?.toProfile()
 }
@@ -35,8 +37,8 @@ private data class ProfileRow(
 ) {
     fun toProfile(): Profile =
         Profile(
-            id = id,
-            userId = userId,
+            id = ProfileId(id),
+            userId = userId?.let(::UserId),
             displayName = displayName,
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
@@ -45,8 +47,8 @@ private data class ProfileRow(
     companion object {
         fun of(profile: Profile): ProfileRow =
             ProfileRow(
-                id = profile.id,
-                userId = profile.userId,
+                id = profile.id.value,
+                userId = profile.userId?.value,
                 displayName = profile.displayName,
                 updatedAt = profile.updatedAt.toString(),
                 deleted = profile.deleted,

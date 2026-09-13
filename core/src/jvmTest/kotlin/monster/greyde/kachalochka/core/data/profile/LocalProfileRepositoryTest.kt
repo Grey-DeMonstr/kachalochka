@@ -4,7 +4,9 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.di.corePlatformModule
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -18,8 +20,8 @@ class LocalProfileRepositoryTest {
 
     private val profile =
         Profile(
-            id = "9b1f0c3e-0000-4000-8000-000000000001",
-            userId = "9b1f0c3e-0000-4000-8000-000000000002",
+            id = ProfileId("9b1f0c3e-0000-4000-8000-000000000001"),
+            userId = UserId("9b1f0c3e-0000-4000-8000-000000000002"),
             displayName = "Sergei",
             updatedAt = Instant.fromEpochMilliseconds(1_700_000_000_123),
             deleted = false,
@@ -41,7 +43,9 @@ class LocalProfileRepositoryTest {
     @Test
     fun an_unknown_id_reads_back_as_null() =
         runTest {
-            assertEquals(null, koin.get<ProfileRepository>().byId("no-such-profile"))
+            val absent = ProfileId("9b1f0c3e-0000-4000-8000-00000000000f")
+
+            assertEquals(null, koin.get<ProfileRepository>().byId(absent))
         }
 
     @Test
@@ -51,7 +55,10 @@ class LocalProfileRepositoryTest {
 
             val pending = koin.get<OutboxDao>().pending()
 
-            assertEquals(listOf("profile" to profile.id), pending.map { it.tableName to it.rowId })
+            assertEquals(
+                listOf("profile" to profile.id.value),
+                pending.map { it.tableName to it.rowId },
+            )
         }
 
     @Test

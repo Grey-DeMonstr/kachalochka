@@ -148,6 +148,12 @@ Every synced row carries:
 | `updated_at` | UTC instant, set by the writer on every change |
 | `deleted` | Soft-delete flag. Rows are never physically deleted by clients |
 
+Ids are value classes in `domain/` — `ProfileId`, `UserId` — and each rejects anything but a
+lower-case UUID v4 at construction. Postgres declares the columns `uuid` and folds the text form
+to lower case, so a free string would let the two implementations disagree: an id the local
+SQLite happily reports as missing is a type error the server raises instead. Validating at the
+boundary of `domain/` gives both the same answer, on the same exception, before a query runs.
+
 The null `user_id` is a local state only: a row is stamped with its owner before it can enter the
 outbox, so Postgres declares the column `not null`. A nullable server column would admit rows that
 match no row-level-security policy — invisible to every client, including whatever would have to
