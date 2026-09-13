@@ -42,7 +42,15 @@ jobs:
           fi
 
       - name: Restore the signing keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+          # An unset or malformed secret decodes to an empty file, which AGP only rejects much
+          # later and much less clearly.
+          if [ ! -s "$RUNNER_TEMP/release.jks" ]; then
+            echo "::error::KEYSTORE_BASE64 is missing or is not valid base64."
+            exit 1
+          fi
 
       - name: Build the signed APK
         env:
