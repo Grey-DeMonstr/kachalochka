@@ -293,7 +293,10 @@ themes correct by construction instead of by review.
 The effective theme comes from a `ThemeMode` of `System`, `Light` or `Dark`, resolved against
 `isSystemInDarkTheme()`. The mode is a device setting, not user data: it is stored per platform
 behind one interface in `app`, backed by DataStore on Android and `localStorage` on web, and it
-stays out of the sync model and out of `core`.
+stays out of the sync model and out of `core`. The interface exposes the mode as a `StateFlow`
+whose value is already the stored one when the graph is built, so the first frame is painted in
+the chosen scheme. A store that cannot be read or written falls back to `System` instead of
+failing the launch.
 
 Vico charts and any Compose `Canvas` drawing take their colours from the same scheme, so the
 chart surfaces follow the theme along with everything else.

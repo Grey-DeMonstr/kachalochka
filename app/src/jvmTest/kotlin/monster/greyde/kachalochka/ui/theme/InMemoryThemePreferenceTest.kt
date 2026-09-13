@@ -7,6 +7,11 @@ import kotlin.test.assertEquals
 
 class InMemoryThemePreferenceTest {
     @Test
+    fun the_stored_mode_is_readable_before_anyone_collects() {
+        assertEquals(ThemeMode.Dark, InMemoryThemePreference(ThemeMode.Dark).mode.value)
+    }
+
+    @Test
     fun the_default_mode_is_system() =
         runTest {
             InMemoryThemePreference().mode.test {

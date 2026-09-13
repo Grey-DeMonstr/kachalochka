@@ -13,14 +13,13 @@ import monster.greyde.kachalochka.navigation.SettingsRoute
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
-import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import org.koin.compose.koinInject
 
 @Composable
 fun App() {
     val preference: ThemePreference = koinInject()
-    val mode by preference.mode.collectAsState(ThemeMode.System)
+    val mode by preference.mode.collectAsState()
     val scope = rememberCoroutineScope()
 
     KachalochkaTheme(mode) {

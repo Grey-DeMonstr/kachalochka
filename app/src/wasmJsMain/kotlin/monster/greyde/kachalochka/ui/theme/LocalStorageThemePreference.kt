@@ -1,14 +1,14 @@
 package monster.greyde.kachalochka.ui.theme
 
 import kotlinx.browser.localStorage
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class LocalStorageThemePreference : ThemePreference {
     private val key = "theme_mode"
     private val state = MutableStateFlow(read())
 
-    override val mode: Flow<ThemeMode> = state
+    override val mode: StateFlow<ThemeMode> = state
 
     override suspend fun set(mode: ThemeMode) {
         runCatching { localStorage.setItem(key, mode.name) }
