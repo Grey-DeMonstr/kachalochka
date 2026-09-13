@@ -8,3 +8,12 @@ docs/superpowers/plans/
 
 # Machine-specific paths and Supabase credentials
 local.properties
+
+# Subagent-driven development workspace
+.superpowers/
+
+# Gradle and build output
+.gradle/
+build/
+.kotlin/
+**/build/
