@@ -72,6 +72,9 @@ kotlin {
     }
 }
 
+// check must pass on a machine with no browser, so the wasmJs suite stays out of it.
+tasks.named("wasmJsBrowserTest") { enabled = false }
+
 // KEYSTORE_PATH being set means a release build is expected to be signed, so a missing
 // sibling variable must name itself rather than surface as an opaque AGP signing failure.
 fun requireSigningEnv(name: String): String =
