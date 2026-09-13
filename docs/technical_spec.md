@@ -48,7 +48,19 @@ backend requirement in the functional spec.
 | Lint/format | ktlint via Gradle plugin | Runs inside `gradle check` |
 | Tests | kotlin.test, kotlinx-coroutines-test, Turbine | Host JVM only |
 
-Versions live in `gradle/libs.versions.toml`, the single place they are declared.
+Versions live in `gradle/libs.versions.toml`, the single place they are declared. Four of them are
+held down by constraints a routine bump walks straight into:
+
+- **AGP 8.13.2 with Gradle 8.14.5.** AGP 9 rejects `com.android.application` and
+  `com.android.library` applied beside `org.jetbrains.kotlin.multiplatform` in one module — the
+  layout §2 mandates — and its escape-hatch properties disappear again in AGP 10. Its own remedy
+  is splitting the Android application into a subproject, so AGP 8 is what keeps the two-module
+  layout debt-free; AGP 8.13.2 in turn cannot run on Gradle 9.6+.
+- **Compose Multiplatform 1.11.1.** The Android artifacts of 1.12.0 require `compileSdk` 37.
+- **`lifecycle` 2.9.6**, the version `navigation-compose` 2.9.2 itself resolves. 2.11.0 requires
+  `compileSdk` 37 and AGP 9.1, and breaks the Compose desktop UI tests.
+- **`kotlinx-browser` is a wasmJs-only dependency**, since `kotlinx.browser.localStorage` lives
+  outside the wasmJs standard library and §10 keeps the theme mode there.
 
 ---
 
@@ -88,8 +100,18 @@ Every repository interface in `domain/` has exactly two implementations:
 
 | Implementation | Source set | Backing |
 |---|---|---|
-| `Local*Repository` | `androidMain` | SQLDelight, plus the sync engine pushing changes out |
+| `Local*Repository` | `sqlMain` (android + jvm) | SQLDelight, plus the sync engine pushing changes |
 | `Remote*Repository` | `wasmJsMain` | Supabase PostgREST directly |
+
+`sqlMain` is an intermediate source set, declared through `applyDefaultHierarchyTemplate`, shared
+by the Android target and the test-only JVM target: §7 requires the DAOs and the whole sync
+algorithm to be covered by host tests, which a source set visible only to the Android target
+cannot be. SQLDelight stays out of `commonMain` because the Wasm target has no local database.
+
+The SQLDelight Gradle plugin attaches its generated sources to `commonMain`, which the Wasm target
+cannot compile, so `core/build.gradle.kts` moves them onto `sqlMain` in an `afterEvaluate` block.
+That block must stay registered after the `sqldelight { }` block: the plugin wires the sources up
+in an `afterEvaluate` of its own, and the later registration runs last.
 
 `app` sees only the interface. This is the seam that lets Android be offline-first and the web be
 online-only with identical UI code. It is also why domain types must be serialization-neutral:
@@ -109,6 +131,11 @@ Every synced row carries:
 | `user_id` | Owner. Null while the Android user is not logged in (§4.3) |
 | `updated_at` | UTC instant, set by the writer on every change |
 | `deleted` | Soft-delete flag. Rows are never physically deleted by clients |
+
+The null `user_id` is a local state only: a row is stamped with its owner before it can enter the
+outbox, so Postgres declares the column `not null`. A nullable server column would admit rows that
+match no row-level-security policy — invisible to every client, including whatever would have to
+clean them up.
 
 Client-generated ids are what make offline creation possible: a visit and its sets are linked
 before the server has ever seen them. Soft deletes are what make sync convergent: a delete is
@@ -180,6 +207,9 @@ built app because RLS, not the key, is the access boundary.
 
 - `applicationId` and `namespace`: `monster.greyde.kachalochka`.
 - `minSdk` 29. Scoped storage is mandatory above it, so photo handling has one code path.
+  `compileSdk` 36, the highest AGP 8.13.2 accepts.
+- Koin starts once, in an `Application` subclass. A graph built per Activity constructs a second
+  DataStore over the same file on configuration change, and DataStore rejects that.
 - Camera capture uses the platform take-picture activity contract; no camera library.
 - The sync pass is a WorkManager job so it survives the app being backgrounded.
 
@@ -195,6 +225,11 @@ built app because RLS, not the key, is the access boundary.
 - `./gradlew check` is the quality gate: ktlint, `:core:jvmTest`, `:app:jvmTest`. It must pass
   before any task is considered complete.
 
+Any UI test that mounts a `NavHost` goes through `UiTestHost` in `app/src/jvmTest`. Navigation's
+back-stack entries need a `LifecycleOwner`, which `runComposeUiTest` does not provide, and
+`androidx.lifecycle` asserts it is on the main thread, which the test thread is not. `UiTestHost`
+supplies both: a `LifecycleRegistry` driven to `RESUMED`, and `Dispatchers.setMain`.
+
 ---
 
 ## 8. Build, CI and release
@@ -203,7 +238,8 @@ built app because RLS, not the key, is the access boundary.
 - **`ci.yml`**: JDK 21, `./gradlew check`, `:app:assembleDebug`, `:app:wasmJsBrowserDistribution`.
 - **`pages.yml`**: on push to `master`, publishes the Wasm distribution to GitHub Pages.
 - **`release.yml`**: on a `v*` tag, builds a signed release APK from secrets and creates a GitHub
-  Release with the APK attached. Version comes from the tag; the release notes are that version's
+  Release with the APK attached. `versionName` comes from the tag and `versionCode` from the CI
+  run number, the only counter that rises monotonically; the release notes are that version's
   section of `changelog.txt`, and a tag whose version has no section fails before the build.
 - `changelog.txt` in the repo root is the user-facing history, newest version at the top, plain
   ASCII. One release is one commit adding a section, one annotated `vX.Y.Z` tag, and a push —
