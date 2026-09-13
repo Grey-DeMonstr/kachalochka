@@ -72,6 +72,11 @@ kotlin {
     }
 }
 
+// KEYSTORE_PATH being set means a release build is expected to be signed, so a missing
+// sibling variable must name itself rather than surface as an opaque AGP signing failure.
+fun requireSigningEnv(name: String): String =
+    System.getenv(name) ?: error("KEYSTORE_PATH is set but $name is missing from the environment.")
+
 android {
     namespace = "monster.greyde.kachalochka"
     compileSdk =
@@ -98,9 +103,9 @@ android {
             val keystore = System.getenv("KEYSTORE_PATH")
             if (keystore != null) {
                 storeFile = file(keystore)
-                storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
+                storePassword = requireSigningEnv("KEYSTORE_PASSWORD")
+                keyAlias = requireSigningEnv("KEY_ALIAS")
+                keyPassword = requireSigningEnv("KEY_PASSWORD")
             }
         }
     }
