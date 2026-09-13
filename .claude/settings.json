@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk *)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(grep *)",
+      "Bash(ls *)",
+      "Bash(sed *)",
+      "Bash(wc *)",
+      "Bash(git *)",
+      "PowerShell(git *)",
+      "PowerShell(.\gradlew *)",
+      "PowerShell(adb *)",
+      "PowerShell(supabase *)",
+      "Skill(superpowers:*)",
+      "WebFetch(domain:central.sonatype.com)",
+      "WebFetch(domain:supabase.com)"
+    ]
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
+  }
+}

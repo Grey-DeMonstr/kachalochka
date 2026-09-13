@@ -19,6 +19,17 @@ All development happens directly on `master` — no feature branches, no PRs.
 Actions verifies every push, publishes the web build to GitHub Pages, and pushing a `vX.Y.Z` tag
 cuts a release with a signed APK. See `docs/technical_spec.md` §8.
 
+## Commits and releases
+
+Commit titles are used by GitHub to generate release notes, so make them **product-oriented**:
+a user should generally understand what changed. No `feat:`/`fix:` prefixes, no issue keys.
+The body explains why, when the title cannot.
+
+`changelog.txt` in the repo root is the user-facing history, newest version at the top. It is
+written in a user's language, not from commit subjects, and `release.yml` publishes a version's
+section as its release notes. It is only ever touched while cutting a release — use the `release`
+skill, never bump a version or write an entry by hand.
+
 ## Commands
 
 ```powershell

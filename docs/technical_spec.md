@@ -203,7 +203,11 @@ built app because RLS, not the key, is the access boundary.
 - **`ci.yml`**: JDK 21, `./gradlew check`, `:app:assembleDebug`, `:app:wasmJsBrowserDistribution`.
 - **`pages.yml`**: on push to `master`, publishes the Wasm distribution to GitHub Pages.
 - **`release.yml`**: on a `v*` tag, builds a signed release APK from secrets and creates a GitHub
-  Release with the APK attached. Version comes from the tag.
+  Release with the APK attached. Version comes from the tag; the release notes are that version's
+  section of `changelog.txt`, and a tag whose version has no section fails before the build.
+- `changelog.txt` in the repo root is the user-facing history, newest version at the top, plain
+  ASCII. One release is one commit adding a section, one annotated `vX.Y.Z` tag, and a push —
+  `master` first, then the tag.
 - Gradle runs with the configuration cache and the wrapper checked in; CI uses the same wrapper.
 
 ---

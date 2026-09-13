@@ -5,3 +5,6 @@ CLAUDE.local.md
 
 # Superpowers plans are local-only
 docs/superpowers/plans/
+
+# Machine-specific paths and Supabase credentials
+local.properties
