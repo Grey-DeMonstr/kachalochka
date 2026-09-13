@@ -265,11 +265,14 @@ main-thread violation in the code under test.
 ## 8. Build, CI and release
 
 - `master` is the only long-lived branch and every push to it runs CI.
-- **`ci.yml`**: JDK 21, `./gradlew check`, `:androidApp:assembleDebug`,
-  `:app:wasmJsBrowserDistribution`.
-- **`pages.yml`**: on push to `master`, publishes the Wasm distribution to GitHub Pages.
-- **`release.yml`**: on a `v*` tag, builds a signed release APK from secrets and creates a GitHub
-  Release with the APK attached. `versionName` comes from the tag and `versionCode` is derived
+- **`ci.yml`** is the only workflow on a push or a pull request, and it has two jobs. `check`
+  runs JDK 21 and one Gradle invocation — `check :androidApp:assembleDebug
+  :app:wasmJsBrowserDistribution` — then uploads the web distribution as the Pages artifact.
+  `deploy` needs `check` and publishes that same artifact to GitHub Pages on a push to `master`,
+  so nothing reaches Pages that the gate has not passed.
+- **`release.yml`**: on a `v*` tag, runs `check`, then builds a signed release APK from secrets
+  and creates a GitHub Release with the APK attached. No tag ships without the gate passing.
+  `versionName` comes from the tag and `versionCode` is derived
   from it as `major * 10000 + minor * 100 + patch`, so rebuilding a tag reproduces the number it
   shipped; the release notes are that version's section of `changelog.txt`, and a tag whose
   version has no section fails before the build.

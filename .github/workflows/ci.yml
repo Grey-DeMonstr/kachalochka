@@ -5,6 +5,11 @@ on:
     branches: [master]
   pull_request:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -22,3 +27,23 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - run: ./gradlew check :androidApp:assembleDebug :app:wasmJsBrowserDistribution
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: app/build/dist/wasmJs/productionExecutable
+
+  deploy:
+    needs: check
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v6
+
+      - id: deployment
+        uses: actions/deploy-pages@v5
