@@ -1,4 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
@@ -81,10 +80,3 @@ kotlin {
 
 // check must pass on a machine with no browser, so the wasmJs suite stays out of it.
 tasks.named("wasmJsBrowserTest") { enabled = false }
-
-compose.desktop {
-    application {
-        mainClass = "monster.greyde.kachalochka.MainKt"
-        nativeDistributions { targetFormats(TargetFormat.Exe) }
-    }
-}
