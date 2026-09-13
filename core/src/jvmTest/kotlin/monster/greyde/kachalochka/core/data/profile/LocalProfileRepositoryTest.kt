@@ -53,4 +53,15 @@ class LocalProfileRepositoryTest {
 
             assertEquals(listOf("profile" to profile.id), pending.map { it.tableName to it.rowId })
         }
+
+    @Test
+    fun writing_a_profile_with_no_owner_leaves_it_out_of_the_outbox() =
+        runTest {
+            val unowned = profile.copy(userId = null)
+
+            koin.get<ProfileRepository>().upsert(unowned)
+
+            assertEquals(unowned, koin.get<ProfileRepository>().byId(unowned.id))
+            assertEquals(emptyList(), koin.get<OutboxDao>().pending())
+        }
 }

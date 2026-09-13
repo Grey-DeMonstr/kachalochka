@@ -24,7 +24,11 @@ class LocalProfileRepository(
                 profile.updatedAt.epochSeconds,
                 if (profile.deleted) 1L else 0L,
             )
-            outbox.enqueue(OutboxEntry(PROFILE_TABLE, profile.id, profile.updatedAt))
+            // An owner is what a row-level-security policy matches on, so an unowned row waits
+            // for the login that stamps it (technical spec §4.3).
+            if (profile.userId != null) {
+                outbox.enqueue(OutboxEntry(PROFILE_TABLE, profile.id, profile.updatedAt))
+            }
         }
     }
 
