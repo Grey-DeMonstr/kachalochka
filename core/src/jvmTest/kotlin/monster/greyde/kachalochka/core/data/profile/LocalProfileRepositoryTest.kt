@@ -1,6 +1,11 @@
 package monster.greyde.kachalochka.core.data.profile
 
+import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
+import monster.greyde.kachalochka.core.data.db.kachalochkaDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.di.corePlatformModule
@@ -10,9 +15,11 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import kotlin.coroutines.CoroutineContext
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class LocalProfileRepositoryTest {
@@ -81,4 +88,38 @@ class LocalProfileRepositoryTest {
             assertEquals(unowned, koin.get<ProfileRepository>().byId(unowned.id))
             assertEquals(emptyList(), koin.get<OutboxDao>().pending())
         }
+
+    @Test
+    fun queries_run_on_the_injected_dispatcher_rather_than_the_caller() =
+        runTest {
+            val dispatcher = RecordingDispatcher(StandardTestDispatcher(testScheduler))
+            val database = inMemoryDatabase()
+            val repository = LocalProfileRepository(database, OutboxDao(database), dispatcher)
+
+            repository.upsert(profile)
+            repository.byId(profile.id)
+
+            assertTrue(dispatcher.dispatches > 0, "the repository never left the caller")
+        }
+
+    private fun inMemoryDatabase(): KachalochkaDatabase {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        KachalochkaDatabase.Schema.create(driver)
+        return kachalochkaDatabase(driver)
+    }
+}
+
+private class RecordingDispatcher(
+    private val delegate: CoroutineDispatcher,
+) : CoroutineDispatcher() {
+    var dispatches = 0
+        private set
+
+    override fun dispatch(
+        context: CoroutineContext,
+        block: Runnable,
+    ) {
+        dispatches++
+        delegate.dispatch(context, block)
+    }
 }

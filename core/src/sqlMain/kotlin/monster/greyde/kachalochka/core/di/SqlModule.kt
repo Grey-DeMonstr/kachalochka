@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.core.di
 
+import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.db.kachalochkaDatabase
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
@@ -12,5 +13,5 @@ internal fun sqlModule(): Module =
     module {
         single { kachalochkaDatabase(get()) }
         single { OutboxDao(get()) }
-        single<ProfileRepository> { LocalProfileRepository(get(), get()) }
+        single<ProfileRepository> { LocalProfileRepository(get(), get(), Dispatchers.IO) }
     }
