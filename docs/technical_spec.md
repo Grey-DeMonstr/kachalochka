@@ -250,10 +250,12 @@ built app because RLS, not the key, is the access boundary.
 - `./gradlew check` is the quality gate: ktlint, `:core:jvmTest`, `:app:jvmTest`. It must pass
   before any task is considered complete.
 
-Any UI test that mounts a `NavHost` runs through `runNavigationUiTest` in `app/src/jvmTest`.
-Navigation's back-stack entries need a `LifecycleOwner`, which `runComposeUiTest` does not
-provide, and `androidx.lifecycle` asserts it is on the main thread, which the test thread is not.
-`runNavigationUiTest` runs the test and supplies both, so neither can be omitted.
+Any UI test that mounts a `NavHost` runs through `runNavigationUiTest` in `app/src/jvmTest`. The
+Compose test host already provides a resumed `LifecycleOwner`; what it does not provide is a main
+dispatcher, and `androidx.lifecycle` resolves "the main thread" from `Dispatchers.Main` when it
+moves back-stack entries. `runNavigationUiTest` sets an unconfined one for the duration of the
+test, which is all such a test needs. The cost is the guard: lifecycle can no longer reject a
+main-thread violation in the code under test.
 
 ---
 
