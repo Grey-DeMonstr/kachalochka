@@ -1,0 +1,106 @@
+[versions]
+kotlin = "2.4.20"
+agp = "9.4.0"
+composeMultiplatform = "1.11.1"
+androidCompileSdk = "36"
+androidMinSdk = "29"
+coroutines = "1.11.0"
+serialization = "1.11.0"
+datetime = "0.8.0"
+koin = "4.2.2"
+sqldelight = "2.3.2"
+supabase = "3.8.0"
+ktor = "3.5.2"
+navigation = "2.9.2"
+lifecycle = "2.11.0"
+coil = "3.6.2"
+vico = "2.5.2"
+turbine = "1.2.1"
+datastore = "1.2.1"
+activityCompose = "1.13.0"
+work = "2.11.2"
+ktlintPlugin = "14.2.0"
+
+[libraries]
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+
+sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+
+supabase-bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "supabase" }
+supabase-auth = { module = "io.github.jan-tennert.supabase:auth-kt" }
+supabase-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt" }
+supabase-storage = { module = "io.github.jan-tennert.supabase:storage-kt" }
+supabase-realtime = { module = "io.github.jan-tennert.supabase:realtime-kt" }
+
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
+
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+vico-multiplatform = { module = "com.patrykandpatrick.vico:multiplatform", version.ref = "vico" }
+
+androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+
+[libraries.kotlinx-coroutines-core]
+module = "org.jetbrains.kotlinx:kotlinx-coroutines-core"
+version.ref = "coroutines"
+
+[libraries.kotlinx-coroutines-test]
+module = "org.jetbrains.kotlinx:kotlinx-coroutines-test"
+version.ref = "coroutines"
+
+[libraries.kotlinx-coroutines-swing]
+module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing"
+version.ref = "coroutines"
+
+[libraries.kotlinx-serialization-json]
+module = "org.jetbrains.kotlinx:kotlinx-serialization-json"
+version.ref = "serialization"
+
+[libraries.koin-compose-viewmodel]
+module = "io.insert-koin:koin-compose-viewmodel"
+version.ref = "koin"
+
+[libraries.sqldelight-coroutines]
+module = "app.cash.sqldelight:coroutines-extensions"
+version.ref = "sqldelight"
+
+[libraries.sqldelight-driver-android]
+module = "app.cash.sqldelight:android-driver"
+version.ref = "sqldelight"
+
+[libraries.sqldelight-driver-jvm]
+module = "app.cash.sqldelight:sqlite-driver"
+version.ref = "sqldelight"
+
+[libraries.navigation-compose]
+module = "org.jetbrains.androidx.navigation:navigation-compose"
+version.ref = "navigation"
+
+[libraries.lifecycle-viewmodel-compose]
+module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose"
+version.ref = "lifecycle"
+
+[libraries.androidx-activity-compose]
+module = "androidx.activity:activity-compose"
+version.ref = "activityCompose"
+
+[libraries.androidx-datastore-preferences-core]
+module = "androidx.datastore:datastore-preferences-core"
+version.ref = "datastore"
+
+[plugins]
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
