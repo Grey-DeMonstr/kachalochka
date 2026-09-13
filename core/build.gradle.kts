@@ -152,16 +152,13 @@ sqldelight {
     }
 }
 
-// SQLDelight attaches its output to commonMain, which the Wasm target cannot compile.
-// The plugin wires this up in its own afterEvaluate, so ours must run after that one.
+// SQLDelight attaches its output to commonMain; it belongs to sqlMain, and the compiler rejects
+// a file claimed by both. The plugin wires its end up in its own afterEvaluate, so ours must run
+// after that one. Excluding by pattern rather than reassigning srcDirs keeps the task
+// dependencies that every generated source directory carries.
 afterEvaluate {
     kotlin.sourceSets.named("commonMain") {
-        kotlin.setSrcDirs(
-            kotlin.srcDirs.filterNot { it.path.contains("generated${File.separator}sqldelight") },
-        )
-        // srcDirs flattens providers to plain files, so the generator is re-declared as a task
-        // provider to keep the dependency that makes it run before compilation.
-        kotlin.srcDir(generateSupabaseConfig)
+        kotlin.exclude { it.file.path.contains("generated${File.separator}sqldelight") }
     }
     kotlin.sourceSets.named("sqlMain") {
         kotlin.srcDir(tasks.named("generateCommonMainKachalochkaDatabaseInterface"))

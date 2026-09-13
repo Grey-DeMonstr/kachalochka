@@ -100,7 +100,7 @@ Every repository interface in `domain/` has exactly two implementations:
 
 | Implementation | Source set | Backing |
 |---|---|---|
-| `Local*Repository` | `sqlMain` (android + jvm) | SQLDelight, plus the sync engine pushing changes |
+| `Local*Repository` | `sqlMain` (android + jvm) | SQLDelight plus the outbox sync engine |
 | `Remote*Repository` | `wasmJsMain` | Supabase PostgREST directly |
 
 `sqlMain` is an intermediate source set, declared through `applyDefaultHierarchyTemplate`, shared
@@ -108,10 +108,13 @@ by the Android target and the test-only JVM target: §7 requires the DAOs and th
 algorithm to be covered by host tests, which a source set visible only to the Android target
 cannot be. SQLDelight stays out of `commonMain` because the Wasm target has no local database.
 
-The SQLDelight Gradle plugin attaches its generated sources to `commonMain`, which the Wasm target
-cannot compile, so `core/build.gradle.kts` moves them onto `sqlMain` in an `afterEvaluate` block.
-That block must stay registered after the `sqldelight { }` block: the plugin wires the sources up
-in an `afterEvaluate` of its own, and the later registration runs last.
+The SQLDelight Gradle plugin attaches its generated sources to `commonMain`, so
+`core/build.gradle.kts` excludes them there and declares them on `sqlMain` in an `afterEvaluate`
+block; the compiler rejects a file claimed by two source sets. That block must stay registered
+after the `sqldelight { }` block, because the plugin wires its own end up in an `afterEvaluate` of
+its own. It excludes by pattern rather than reassigning `srcDirs`: reassigning resolves the
+directory set to plain files and discards the task dependency every generated source dir carries,
+which leaves the generator unrun on a cold build.
 
 `app` sees only the interface. This is the seam that lets Android be offline-first and the web be
 online-only with identical UI code. It is also why domain types must be serialization-neutral:
