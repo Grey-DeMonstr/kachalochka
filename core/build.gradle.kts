@@ -159,6 +159,9 @@ afterEvaluate {
         kotlin.setSrcDirs(
             kotlin.srcDirs.filterNot { it.path.contains("generated${File.separator}sqldelight") },
         )
+        // srcDirs flattens providers to plain files, so the generator is re-declared as a task
+        // provider to keep the dependency that makes it run before compilation.
+        kotlin.srcDir(generateSupabaseConfig)
     }
     kotlin.sourceSets.named("sqlMain") {
         kotlin.srcDir(tasks.named("generateCommonMainKachalochkaDatabaseInterface"))
