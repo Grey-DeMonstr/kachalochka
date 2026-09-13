@@ -3,8 +3,10 @@ package monster.greyde.kachalochka
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
@@ -17,6 +19,7 @@ class AppTest {
     private val testModule =
         module {
             single<ThemePreference> { InMemoryThemePreference() }
+            single { SupabaseCredentials("https://project.supabase.test", "anon-key") }
         }
 
     @Composable
@@ -28,6 +31,12 @@ class AppTest {
     fun the_app_opens_on_the_home_screen() =
         runNavigationUiTest(content = { TestApp() }) {
             onNodeWithTag("home-title").assertIsDisplayed()
+        }
+
+    @Test
+    fun home_shows_the_backend_state_its_view_model_read_from_core() =
+        runNavigationUiTest(content = { TestApp() }) {
+            onNodeWithTag("backend-state").assertTextEquals("Backend configured")
         }
 
     @Test
