@@ -15,8 +15,5 @@ class LocalStorageThemePreference : ThemePreference {
         state.value = mode
     }
 
-    private fun read(): ThemeMode {
-        val stored = localStorage.getItem(key) ?: return ThemeMode.System
-        return ThemeMode.entries.firstOrNull { it.name == stored } ?: ThemeMode.System
-    }
+    private fun read(): ThemeMode = themeModeOrSystem(localStorage.getItem(key))
 }

@@ -13,14 +13,9 @@ class DataStoreThemePreference(
     private val key = stringPreferencesKey("theme_mode")
 
     override val mode: Flow<ThemeMode> =
-        dataStore.data.map { preferences ->
-            preferences[key]?.let(::themeModeOrSystem) ?: ThemeMode.System
-        }
+        dataStore.data.map { themeModeOrSystem(it[key]) }
 
     override suspend fun set(mode: ThemeMode) {
         dataStore.edit { it[key] = mode.name }
     }
 }
-
-internal fun themeModeOrSystem(name: String): ThemeMode =
-    ThemeMode.entries.firstOrNull { it.name == name } ?: ThemeMode.System
