@@ -5,14 +5,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** Guards technical spec §2 rule 1, which no compiler setting expresses. */
+/** Guards technical spec §2 rule 1. */
 class DomainPurityTest {
-    private val banned =
+    private val allowed =
         listOf(
-            "monster.greyde.kachalochka.core.data",
-            "io.github.jan.supabase",
-            "app.cash.sqldelight",
-            "org.koin",
+            "kotlin.",
+            "monster.greyde.kachalochka.core.domain.",
         )
 
     @Test
@@ -27,10 +25,14 @@ class DomainPurityTest {
             sources.flatMap { source ->
                 source
                     .readLines()
-                    .filter { line -> line.startsWith("import ") && banned.any(line::contains) }
-                    .map { line -> "${source.name}: $line" }
+                    .mapNotNull { line -> line.removePrefixOrNull("import ") }
+                    .filterNot { imported -> allowed.any(imported::startsWith) }
+                    .map { imported -> "${source.name}: $imported" }
             }
 
         assertEquals(emptyList(), offenders)
     }
 }
+
+private fun String.removePrefixOrNull(prefix: String): String? =
+    if (startsWith(prefix)) removePrefix(prefix) else null
