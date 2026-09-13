@@ -21,7 +21,8 @@ import kotlinx.coroutines.test.setMain
  * Navigation raises a back stack entry only as far as the host lifecycle allows, so the host must
  * be RESUMED for entries to reach a state the closing scene can destroy them from. Lifecycle
  * resolves "the main thread" from `Dispatchers.Main`; an unconfined one lets its registries be
- * driven from whichever thread the test harness uses.
+ * driven from whichever thread the test harness uses. That costs the guard: lifecycle no longer
+ * rejects a main-thread violation in the code under test, so these tests cannot catch one.
  */
 @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 fun runNavigationUiTest(
