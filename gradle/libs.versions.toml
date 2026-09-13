@@ -17,6 +17,7 @@ coil = "3.6.2"
 vico = "2.5.2"
 turbine = "1.2.1"
 datastore = "1.2.1"
+kotlinxBrowser = "0.5.0"
 activityCompose = "1.13.0"
 work = "2.11.2"
 ktlintPlugin = "14.2.0"
@@ -94,6 +95,10 @@ version.ref = "activityCompose"
 [libraries.androidx-datastore-preferences-core]
 module = "androidx.datastore:datastore-preferences-core"
 version.ref = "datastore"
+
+[libraries.kotlinx-browser]
+module = "org.jetbrains.kotlinx:kotlinx-browser"
+version.ref = "kotlinxBrowser"
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

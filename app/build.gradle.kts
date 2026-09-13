@@ -42,19 +42,28 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.components.resources)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
             @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
             implementation(compose.uiTest)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.turbine)
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            implementation(libs.koin.android)
+            implementation(libs.androidx.datastore.preferences.core)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
+        }
+        wasmJsMain.dependencies {
+            implementation(libs.kotlinx.browser)
         }
     }
 }
