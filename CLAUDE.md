@@ -1,24 +1,97 @@
 # Kachalochka
 
-An Android / Web app to save sport results, share them with friends and collect statistics. The
-functional spec lives in `docs/functional_spec.md`.
+Kotlin Multiplatform app to record gym results, share them with friends and view statistics.
+Two targets from one codebase: **Android** (local-first, synced) and **Web** (Kotlin/Wasm,
+online-only). Backend is Supabase; there is no custom server code.
 
-## Agent skills
+## Environment
 
-### Issue tracker
+**Development is Windows-native.** Use `PowerShell` for all shell commands — not `Bash`.
 
-Issues and specs live as local markdown files under `.scratch/<feature-slug>/`.
-See `docs/agents/issue-tracker.md`.
+The `Bash` tool runs inside WSL, where no JDK or Android SDK is installed and the repository sits
+on a slow NTFS mount. `gradlew`, `adb` and the emulator all live on Windows, so call them through
+`PowerShell`. CI runs the same Gradle tasks on Ubuntu.
 
-### Triage labels
+# Repository
 
-The five canonical triage roles, each label string equal to its name (`needs-triage`, `needs-info`,
-`ready-for-agent`, `ready-for-human`, `wontfix`), recorded as a `Status:` line in each issue file.
-See `docs/agents/triage-labels.md`.
+All development happens directly on `master` — no feature branches, no PRs.
+`origin` is `git@github.com:Grey-DeMonstr/kachalochka.git` and `master` is pushed to it: GitHub
+Actions verifies every push, publishes the web build to GitHub Pages, and pushing a `vX.Y.Z` tag
+cuts a release with a signed APK. See `docs/technical_spec.md` §8.
 
-### Domain docs
+## Commands
 
-Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+```powershell
+.\gradlew check                          # canonical quality gate: ktlint + host tests
+.\gradlew ktlintFormat                   # format all Kotlin files
+.\gradlew :core:jvmTest :app:jvmTest     # host tests, no device needed
+.\gradlew :app:assembleDebug             # debug APK
+.\gradlew :app:installDebug              # install on the connected device / emulator
+.\gradlew :app:wasmJsBrowserDevelopmentRun   # web app with hot reload in the browser
+.\gradlew :app:wasmJsBrowserDistribution     # production web bundle
+supabase db push                         # apply supabase/migrations to the linked project
+```
+
+## Architecture
+
+```
+core/                 Kotlin Multiplatform library (android, jvm, wasmJs)
+  src/commonMain/
+    domain/           entities, value objects, repository interfaces, pure functions
+    data/             SQLDelight schema + DAOs, Supabase gateways, sync engine
+  src/androidMain/    Local*Repository: SQLite + outbox sync
+  src/wasmJsMain/     Remote*Repository: Supabase PostgREST directly
+  src/jvmTest/        all core tests (SQLDelight JVM driver, fake Supabase gateways)
+app/                  Compose Multiplatform application (android, jvm, wasmJs)
+  src/commonMain/     screens, view models, Koin modules, navigation graph
+  src/androidMain/    Android entry point, camera contract, WorkManager sync job
+  src/wasmJsMain/     browser entry point
+  src/jvmTest/        Compose desktop UI tests with fake repositories
+supabase/migrations/  Postgres schema, RLS policies, newsfeed view
+gradle/libs.versions.toml   the only place library versions are declared
+```
+
+## Tech Stack (decided — do not substitute)
+
+| Concern | Choice |
+|---------|--------|
+| Language | Kotlin 2.x on JDK 21 |
+| UI | Compose Multiplatform |
+| Navigation | Jetpack Navigation Compose (multiplatform) |
+| DI | Koin — no codegen |
+| Local DB | SQLDelight (Android only; web has no local DB) |
+| Backend | Supabase via `supabase-kt`: auth, postgrest, storage, realtime |
+| HTTP | Ktor client — OkHttp engine on Android, JS engine on Wasm |
+| Serialization | kotlinx.serialization |
+| Time | kotlinx-datetime |
+| Images | Coil 3 |
+| Charts | Vico |
+| Lint / format | ktlint Gradle plugin |
+| Tests | kotlin.test, kotlinx-coroutines-test, Turbine |
+
+## Key Constraints
+
+- **TDD is mandatory.** Write the failing test first, then implement.
+- **Host tests only.** `.\gradlew check` runs everything; no emulator, device or browser is needed
+  to pass it.
+- **`core` never imports Compose; `domain/` imports nothing outside the Kotlin standard
+  libraries.** Both must stay testable as plain libraries.
+- **`.\gradlew check` must pass** before any task is considered complete.
+- **Every synced table exists twice**: in SQLDelight (`core`) and in `supabase/migrations/`. A
+  column is added to both in the same commit.
+- **Supabase URL and anon key are never committed.** They come from `local.properties` locally
+  and from repository secrets on CI.
+- **Android minSdk >= 29.** `applicationId` / `namespace`: `monster.greyde.kachalochka`.
+
+## Project spec
+
+Two documents, both describing the app as built:
+
+- `docs/functional_spec.md` — what the app does. No code.
+- `docs/technical_spec.md` — how it is built and the decisions new work must respect.
+
+Feature designs produced while brainstorming go to `docs/superpowers/specs/`. All noticeable
+features are added to the two specs before implementation to keep them consistent.
 
 # Generic code conventions
 
