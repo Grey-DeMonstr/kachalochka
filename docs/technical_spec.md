@@ -213,3 +213,20 @@ built app because RLS, not the key, is the access boundary.
 The interchange format is a single JSON document produced by kotlinx.serialization from the domain
 entities, with photos referenced by id and packed alongside the document in a zip. Reading it back
 goes through the same repositories as any other write, so imported rows sync like local ones.
+
+---
+
+## 10. Theming
+
+Light and dark are both first-class (see the functional spec). One `MaterialTheme` wrapper in
+`app/src/commonMain` owns both `ColorScheme` values and is the only place colours are declared:
+screens read `MaterialTheme.colorScheme`, never a literal `Color`. That rule is what makes both
+themes correct by construction instead of by review.
+
+The effective theme comes from a `ThemeMode` of `System`, `Light` or `Dark`, resolved against
+`isSystemInDarkTheme()`. The mode is a device setting, not user data: it is stored per platform
+behind one interface in `app`, backed by DataStore on Android and `localStorage` on web, and it
+stays out of the sync model and out of `core`.
+
+Vico charts and any Compose `Canvas` drawing take their colours from the same scheme, so the
+chart surfaces follow the theme along with everything else.

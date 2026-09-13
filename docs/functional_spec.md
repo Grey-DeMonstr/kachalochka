@@ -8,6 +8,10 @@ Online data storage (for web app to be synced with android one), login using Goo
 Android app should be local-first (can work offline and without login), but sync all the data
 online whenever possible.
 
+Both apps must support a dark and a light theme. By default the theme follows the system setting;
+the user can override it and pick light or dark explicitly. The choice is remembered between
+launches.
+
 # Use cases
 
 ## Regular gym visit
