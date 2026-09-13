@@ -12,7 +12,12 @@ plugins {
 
 ktlint {
     filter {
-        exclude { entry -> entry.file.path.contains("generated") }
+        val generatedDir =
+            layout.buildDirectory
+                .dir("generated")
+                .get()
+                .asFile
+        exclude { entry -> entry.file.startsWith(generatedDir) }
     }
 }
 
