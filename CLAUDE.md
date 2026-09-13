@@ -36,8 +36,8 @@ skill, never bump a version or write an entry by hand.
 .\gradlew check                          # canonical quality gate: ktlint + host tests
 .\gradlew ktlintFormat                   # format all Kotlin files
 .\gradlew :core:jvmTest :app:jvmTest     # host tests, no device needed
-.\gradlew :app:assembleDebug             # debug APK
-.\gradlew :app:installDebug              # install on the connected device / emulator
+.\gradlew :androidApp:assembleDebug      # debug APK
+.\gradlew :androidApp:installDebug       # install on the connected device / emulator
 .\gradlew :app:wasmJsBrowserDevelopmentRun   # web app with hot reload in the browser
 .\gradlew :app:wasmJsBrowserDistribution     # production web bundle
 supabase db push                         # apply supabase/migrations to the linked project
@@ -53,11 +53,12 @@ core/                 Kotlin Multiplatform library (android, jvm, wasmJs)
   src/androidMain/    Local*Repository: SQLite + outbox sync
   src/wasmJsMain/     Remote*Repository: Supabase PostgREST directly
   src/jvmTest/        all core tests (SQLDelight JVM driver, fake Supabase gateways)
-app/                  Compose Multiplatform application (android, jvm, wasmJs)
+app/                  Compose Multiplatform library (android, jvm, wasmJs)
   src/commonMain/     screens, view models, Koin modules, navigation graph
-  src/androidMain/    Android entry point, camera contract, WorkManager sync job
+  src/androidMain/    Android platform bindings, camera contract, WorkManager sync job
   src/wasmJsMain/     browser entry point
   src/jvmTest/        Compose desktop UI tests with fake repositories
+androidApp/           Android application: manifest, MainActivity, signing, versioning
 supabase/migrations/  Postgres schema, RLS policies, newsfeed view
 gradle/libs.versions.toml   the only place library versions are declared
 ```

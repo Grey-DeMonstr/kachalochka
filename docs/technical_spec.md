@@ -51,29 +51,42 @@ backend requirement in the functional spec.
 Versions live in `gradle/libs.versions.toml`, the single place they are declared. Four of them are
 held down by constraints a routine bump walks straight into:
 
-- **AGP 8.13.2 with Gradle 8.14.5.** AGP 9 rejects `com.android.application` and
-  `com.android.library` applied beside `org.jetbrains.kotlin.multiplatform` in one module — the
-  layout §2 mandates — and its escape-hatch properties disappear again in AGP 10. Its own remedy
-  is splitting the Android application into a subproject, so AGP 8 is what keeps the two-module
-  layout debt-free; AGP 8.13.2 in turn cannot run on Gradle 9.6+.
-- **Compose Multiplatform 1.11.1.** The Android artifacts of 1.12.0 require `compileSdk` 37.
-- **`lifecycle` 2.9.6**, the version `navigation-compose` 2.9.2 itself resolves. 2.11.0 requires
-  `compileSdk` 37 and AGP 9.1, and breaks the Compose desktop UI tests.
+- **Gradle 9.7.0 and AGP 9.3.1** are the top of the window Kotlin 2.4.20 documents. AGP is also a
+  floor: 9.0 removed `com.android.library` beside `org.jetbrains.kotlin.multiplatform`, which is
+  why §2 has three modules.
+- **`navigation` 2.9.2**, while 2.10 is in beta.
+- **`compileSdk` 37 is a floor, not a ceiling.** Compose Multiplatform 1.12.0 and `lifecycle`
+  2.11.0 both require it, and only AGP 9 accepts it.
 - **`kotlinx-browser` is a wasmJs-only dependency**, since `kotlinx.browser.localStorage` lives
   outside the wasmJs standard library and §10 keeps the theme mode there.
+
+Gradle's Kotlin DSL rejects a build script that uses a deprecated Gradle API, so the `by
+registering` and `by getting` delegates are out: build scripts name their tasks and source sets
+through `register` and `named`.
 
 ---
 
 ## 2. Modules and layering
 
 ```
-core/   Kotlin Multiplatform library: domain, data, sync. Targets android, jvm, wasmJs.
-app/    Compose Multiplatform application. Targets android, jvm, wasmJs. Depends on core.
+core/        Kotlin Multiplatform library: domain, data, sync. Targets android, jvm, wasmJs.
+app/         Compose Multiplatform library: screens, view models, DI. Targets android, jvm, wasmJs.
+androidApp/  Android application. Depends on app. Produces the APK.
 ```
 
-Both modules have a `jvm` target for one reason: tests. `core` tests run on the host JVM with the
-SQLDelight JVM driver; `app` tests run as Compose desktop UI tests. Neither needs an emulator or a
-browser, and the `jvm` target of `app` is never shipped.
+`core` and `app` are both Kotlin Multiplatform libraries, and `androidApp` exists because an APK
+cannot be one: AGP 9 will not apply `com.android.application` to a multiplatform module. It holds
+only what an APK has and a library does not — the launcher manifest, `MainActivity`, the
+`Application` subclass, the signing config and the version numbers. Android code that is not
+application code, such as the DataStore theme preference, stays in `app/src/androidMain`.
+
+`core` and `app` have a `jvm` target for one reason: tests. `core` tests run on the host JVM with
+the SQLDelight JVM driver; `app` tests run as Compose desktop UI tests. Neither needs an emulator
+or a browser, and the `jvm` target of `app` is never shipped.
+
+The `sql` group in `core` selects its Android half by platform type. `withAndroidTarget()` matches
+only the old plugin's target type, so under the multiplatform library plugin it silently matches
+nothing and `sqlMain` loses the Android compilation it exists to serve (KT-80409).
 
 Inside `core`:
 
@@ -208,9 +221,12 @@ built app because RLS, not the key, is the access boundary.
 
 ## 6. Android specifics
 
-- `applicationId` and `namespace`: `monster.greyde.kachalochka`.
+- `applicationId` and the `androidApp` namespace: `monster.greyde.kachalochka`. The `app` and
+  `core` libraries take namespaces below it, since two Android modules cannot share one.
 - `minSdk` 29. Scoped storage is mandatory above it, so photo handling has one code path.
-  `compileSdk` 36, the highest AGP 8.13.2 accepts.
+  `compileSdk` 37.
+- Signing, `versionCode` and `versionName` live in `androidApp`: the multiplatform library plugin
+  has no build types, so there is nowhere else for a signing config to go.
 - Koin starts once, in an `Application` subclass. A graph built per Activity constructs a second
   DataStore over the same file on configuration change, and DataStore rejects that.
 - Camera capture uses the platform take-picture activity contract; no camera library.
@@ -238,12 +254,14 @@ provide, and `androidx.lifecycle` asserts it is on the main thread, which the te
 ## 8. Build, CI and release
 
 - `master` is the only long-lived branch and every push to it runs CI.
-- **`ci.yml`**: JDK 21, `./gradlew check`, `:app:assembleDebug`, `:app:wasmJsBrowserDistribution`.
+- **`ci.yml`**: JDK 21, `./gradlew check`, `:androidApp:assembleDebug`,
+  `:app:wasmJsBrowserDistribution`.
 - **`pages.yml`**: on push to `master`, publishes the Wasm distribution to GitHub Pages.
 - **`release.yml`**: on a `v*` tag, builds a signed release APK from secrets and creates a GitHub
-  Release with the APK attached. `versionName` comes from the tag and `versionCode` from the CI
-  run number, the only counter that rises monotonically; the release notes are that version's
-  section of `changelog.txt`, and a tag whose version has no section fails before the build.
+  Release with the APK attached. `versionName` comes from the tag and `versionCode` is derived
+  from it as `major * 10000 + minor * 100 + patch`, so rebuilding a tag reproduces the number it
+  shipped; the release notes are that version's section of `changelog.txt`, and a tag whose
+  version has no section fails before the build.
 - `changelog.txt` in the repo root is the user-facing history, newest version at the top, plain
   ASCII. One release is one commit adding a section, one annotated `vX.Y.Z` tag, and a push —
   `master` first, then the tag.

@@ -23,6 +23,6 @@ jobs:
 
       - run: ./gradlew check
 
-      - run: ./gradlew :app:assembleDebug
+      - run: ./gradlew :androidApp:assembleDebug
 
       - run: ./gradlew :app:wasmJsBrowserDistribution

@@ -58,9 +58,9 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew :app:assembleRelease -PversionName="${GITHUB_REF_NAME#v}"
+        run: ./gradlew :androidApp:assembleRelease -PversionName="${GITHUB_REF_NAME#v}"
 
       - uses: softprops/action-gh-release@v3
         with:
           body_path: ${{ runner.temp }}/release-notes.txt
-          files: app/build/outputs/apk/release/app-release.apk
+          files: androidApp/build/outputs/apk/release/androidApp-release.apk
