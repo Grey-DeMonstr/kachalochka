@@ -50,7 +50,7 @@ core/                 Kotlin Multiplatform library (android, jvm, wasmJs)
   src/commonMain/
     domain/           entities, value objects, repository interfaces, pure functions
     data/             SQLDelight schema + DAOs, Supabase gateways, sync engine
-  src/androidMain/    Local*Repository: SQLite + outbox sync
+  src/sqlMain/        Local*Repository: SQLite + outbox sync (android and the test JVM)
   src/wasmJsMain/     Remote*Repository: Supabase PostgREST directly
   src/jvmTest/        all core tests (SQLDelight JVM driver, fake Supabase gateways)
 app/                  Compose Multiplatform library (android, jvm, wasmJs)

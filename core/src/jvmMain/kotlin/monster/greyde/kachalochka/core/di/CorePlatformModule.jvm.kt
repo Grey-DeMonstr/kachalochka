@@ -6,7 +6,7 @@ import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-/** The JVM target ships nothing; its driver is in memory because only host tests reach it. */
+/** Only host tests reach the JVM target, so its driver lives in memory. */
 actual fun corePlatformModule(): Module =
     module {
         includes(sqlModule())

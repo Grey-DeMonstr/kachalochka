@@ -1,7 +1,3 @@
--- Every synced table carries the same four identity columns: a client-generated id, an owner,
--- a writer-set timestamp and a soft-delete flag. Clients never delete rows physically, because
--- a delete has to travel the same path as any other update for sync to converge.
-
 create table public.profile (
     id           uuid        primary key,
     user_id      uuid        not null references auth.users (id) on delete cascade,
