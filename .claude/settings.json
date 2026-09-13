@@ -10,7 +10,7 @@
       "Bash(wc *)",
       "Bash(git *)",
       "PowerShell(git *)",
-      "PowerShell(.\gradlew *)",
+      "PowerShell(.\\gradlew *)",
       "PowerShell(adb *)",
       "PowerShell(supabase *)",
       "Skill(superpowers:*)",
