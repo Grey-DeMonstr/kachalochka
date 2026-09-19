@@ -19,7 +19,6 @@ import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.timer.Ticker
 import org.koin.compose.KoinApplication
-import org.koin.core.context.stopKoin
 import org.koin.dsl.koinConfiguration
 import org.koin.dsl.module
 import kotlin.time.Clock
@@ -53,30 +52,22 @@ fun TestKoin(
 @Serializable
 object ScreenUnderTest
 
-/**
- * Hosts one screen in a single-destination NavHost, which gives it a ViewModelStoreOwner.
- *
- * `KoinApplication` starts Koin's process-wide [org.koin.core.context.GlobalContext]; a previous
- * test's instance may still be closing when this one starts, so it is stopped defensively first.
- */
+/** Hosts one screen in a single-destination NavHost, which gives it a ViewModelStoreOwner. */
 @OptIn(ExperimentalTestApi::class)
 fun runScreenTest(
     gym: FakeGym,
     screen: @Composable () -> Unit,
     assertions: ComposeUiTest.() -> Unit,
-) {
-    runCatching { stopKoin() }
-    return runNavigationUiTest(
-        content = {
-            TestKoin(gym) {
-                KachalochkaTheme(ThemeMode.Dark) {
-                    val navController = rememberNavController()
-                    NavHost(navController, startDestination = ScreenUnderTest) {
-                        composable<ScreenUnderTest> { screen() }
-                    }
+) = runNavigationUiTest(
+    content = {
+        TestKoin(gym) {
+            KachalochkaTheme(ThemeMode.Dark) {
+                val navController = rememberNavController()
+                NavHost(navController, startDestination = ScreenUnderTest) {
+                    composable<ScreenUnderTest> { screen() }
                 }
             }
-        },
-        assertions = assertions,
-    )
-}
+        }
+    },
+    assertions = assertions,
+)
