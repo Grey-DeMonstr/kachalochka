@@ -4,9 +4,11 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.fakes.FakeGym
@@ -73,4 +75,25 @@ class AppTest {
             ).assertTextEquals("Жим ногами")
         }
     }
+
+    @Test
+    fun a_machine_created_from_the_picker_lands_in_the_visit_sheet() =
+        runApp {
+            onNodeWithTag("start-visit").performClick()
+            waitForIdle()
+            onNodeWithTag("pick-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-search").performTextInput("Гакк")
+            waitForIdle()
+            onNodeWithTag("create-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-name").assertTextContains("Гакк")
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+
+            onNodeWithTag(
+                "sheet-machine-name",
+                useUnmergedTree = true,
+            ).assertTextEquals("Гакк")
+        }
 }

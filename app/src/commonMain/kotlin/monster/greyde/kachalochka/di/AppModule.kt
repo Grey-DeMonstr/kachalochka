@@ -6,6 +6,8 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.home.HomeViewModel
+import monster.greyde.kachalochka.ui.machine.MachineFormArgs
+import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
@@ -29,5 +31,8 @@ val appModule =
         }
         viewModel { (visitId: VisitId) ->
             MachinePickerViewModel(visitId, get(), get(), get(), get())
+        }
+        viewModel { (args: MachineFormArgs) ->
+            MachineFormViewModel(args, get(), get(), get())
         }
     }

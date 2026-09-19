@@ -13,10 +13,13 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.navigation.HomeRoute
+import monster.greyde.kachalochka.navigation.MachineFormRoute
 import monster.greyde.kachalochka.navigation.MachinePickerRoute
 import monster.greyde.kachalochka.navigation.SettingsRoute
 import monster.greyde.kachalochka.navigation.VisitRoute
 import monster.greyde.kachalochka.ui.home.HomeScreen
+import monster.greyde.kachalochka.ui.machine.MachineFormArgs
+import monster.greyde.kachalochka.ui.machine.MachineFormScreen
 import monster.greyde.kachalochka.ui.machine.MachinePickerScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
@@ -67,7 +70,11 @@ fun App() {
                     onPickMachine = {
                         navController.navigate(MachinePickerRoute(route.visitId, it?.value))
                     },
-                    onOpenMachineSettings = {},
+                    onOpenMachineSettings = {
+                        navController.navigate(
+                            MachineFormRoute(route.visitId, machineId = it.value),
+                        )
+                    },
                     onVisitEnded = { navController.popBackStack(HomeRoute, inclusive = false) },
                 )
             }
@@ -79,8 +86,28 @@ fun App() {
                     onBack = { navController.popBackStack() },
                     onOpenSettings = { navController.navigate(SettingsRoute) },
                     onPicked = { navController.returnMachineToVisit(it) },
-                    onCreate = {},
-                    onCopy = { _, _ -> },
+                    onCreate = {
+                        navController.navigate(MachineFormRoute(route.visitId, name = it))
+                    },
+                    onCopy = { source, name ->
+                        navController.navigate(
+                            MachineFormRoute(route.visitId, copyOfId = source.value, name = name),
+                        )
+                    },
+                )
+            }
+            composable<MachineFormRoute> { entry ->
+                val route = entry.toRoute<MachineFormRoute>()
+                MachineFormScreen(
+                    args =
+                        MachineFormArgs(
+                            machineId = route.machineId?.let(::MachineId),
+                            copyOf = route.copyOfId?.let(::MachineId),
+                            name = route.name,
+                        ),
+                    onBack = { navController.popBackStack() },
+                    onOpenSettings = { navController.navigate(SettingsRoute) },
+                    onSaved = { navController.returnMachineToVisit(it) },
                 )
             }
         }
