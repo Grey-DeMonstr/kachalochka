@@ -25,6 +25,7 @@ import monster.greyde.kachalochka.core.domain.gym.stepReps
 import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.clockLabel
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
@@ -88,6 +89,7 @@ class VisitViewModel(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
+    private val writes = WriteGuard(viewModelScope)
 
     private var visit: Visit? = null
     private var machinesById: Map<MachineId, Machine> = emptyMap()
@@ -128,7 +130,7 @@ class VisitViewModel(
 
     fun save() {
         val machine = selectedMachine() ?: return
-        viewModelScope.launch {
+        writes.launch {
             val now = clock.now()
             val edited = editing
             if (edited == null) {
@@ -173,7 +175,7 @@ class VisitViewModel(
 
     fun deleteEditedSet() {
         val edited = editing ?: return
-        viewModelScope.launch {
+        writes.launch {
             sets.upsert(edited.copy(deleted = true, updatedAt = clock.now()))
             editing = null
             reload(reseed = true)
@@ -182,7 +184,7 @@ class VisitViewModel(
 
     fun endVisit(onEnded: () -> Unit) {
         val current = visit ?: return
-        viewModelScope.launch {
+        writes.launch {
             val now = clock.now()
             visits.upsert(current.copy(endedAt = now, updatedAt = now))
             onEnded()

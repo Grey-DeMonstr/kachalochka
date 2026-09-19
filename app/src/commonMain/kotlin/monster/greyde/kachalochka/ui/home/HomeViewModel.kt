@@ -12,6 +12,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.summarize
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
@@ -38,6 +39,7 @@ class HomeViewModel(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<HomeUiState?>(null)
     val state: StateFlow<HomeUiState?> = mutableState
+    private val writes = WriteGuard(viewModelScope)
 
     fun refresh() {
         viewModelScope.launch {
@@ -46,7 +48,7 @@ class HomeViewModel(
     }
 
     fun startVisit(onStarted: (VisitId) -> Unit) {
-        viewModelScope.launch {
+        writes.launch {
             val now = clock.now()
             val visit = Visit(VisitId.random(), currentUser.id(), now, null, now, false)
             visits.upsert(visit)

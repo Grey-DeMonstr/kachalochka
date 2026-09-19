@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.visit
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -151,6 +152,19 @@ class VisitViewModelTest {
                 listOf("Жим ногами (+20 кг)" to "67,5 кг"),
                 state.groups.map { it.title to it.summary },
             )
+        }
+
+    @Test
+    fun a_second_tap_while_saving_records_one_set() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            val gate = CompletableDeferred<Unit>().also { gym.sets.gate = it }
+
+            vm.save()
+            vm.save()
+            gate.complete(Unit)
+
+            assertEquals(1, gym.sets.forVisit(visit.id).size)
         }
 
     @Test

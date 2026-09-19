@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.fakes
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -64,7 +65,11 @@ class InMemoryVisitRepository : VisitRepository {
 class InMemoryWorkoutSetRepository : WorkoutSetRepository {
     val rows = linkedMapOf<WorkoutSetId, WorkoutSet>()
 
+    /** While set, writes wait for it, which keeps a write in flight for as long as a test needs. */
+    var gate: CompletableDeferred<Unit>? = null
+
     override suspend fun upsert(set: WorkoutSet) {
+        gate?.await()
         rows[set.id] = set
     }
 

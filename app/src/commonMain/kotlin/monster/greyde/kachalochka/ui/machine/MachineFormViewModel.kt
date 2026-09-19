@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.formatNumber
 import kotlin.time.Clock
 
@@ -67,6 +68,7 @@ class MachineFormViewModel(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineFormState(name = args.name))
     val state: StateFlow<MachineFormState> = mutableState
+    private val writes = WriteGuard(viewModelScope)
 
     private var existing: Machine? = null
     private var loaded = false
@@ -96,7 +98,7 @@ class MachineFormViewModel(
         val form = mutableState.value
         val platformWeight = form.platformWeightValue ?: return
         if (!form.canSave) return
-        viewModelScope.launch {
+        writes.launch {
             val now = clock.now()
             val base = existing ?: Machine.new(form.name.trim(), currentUser.id(), now)
             val machine =
