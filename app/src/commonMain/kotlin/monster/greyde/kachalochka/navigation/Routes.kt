@@ -21,7 +21,6 @@ data class MachinePickerRoute(
 
 @Serializable
 data class MachineFormRoute(
-    val visitId: String,
     val machineId: String? = null,
     val copyOfId: String? = null,
     val name: String = "",

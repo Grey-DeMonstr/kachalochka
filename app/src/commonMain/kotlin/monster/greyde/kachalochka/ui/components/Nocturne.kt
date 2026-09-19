@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
-/** Nocturne's disabled controls drop to this opacity. */
 const val DISABLED_ALPHA = 0.45f
 
 internal val ControlShape = RoundedCornerShape(8.dp)

@@ -1,5 +1,7 @@
 package monster.greyde.kachalochka.ui.settings
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -18,22 +20,23 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     Screen("Настройки", onBack = onBack, onOpenSettings = null) {
-        Text(
-            text = "Тема",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(16.dp).testTag("settings-title"),
-        )
-        ThemeMode.entries.forEach { option ->
-            FilterChip(
-                selected = option == mode,
-                onClick = { onModeChange(option) },
-                label = { Text(themeModeLabel(option)) },
-                modifier =
-                    Modifier
-                        .padding(
-                            horizontal = 16.dp,
-                        ).testTag("theme-${option.name.lowercase()}"),
+        Column(
+            Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Тема",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.testTag("settings-title"),
             )
+            ThemeMode.entries.forEach { option ->
+                FilterChip(
+                    selected = option == mode,
+                    onClick = { onModeChange(option) },
+                    label = { Text(themeModeLabel(option)) },
+                    modifier = Modifier.testTag("theme-${option.name.lowercase()}"),
+                )
+            }
         }
     }
 }

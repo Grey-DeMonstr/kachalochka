@@ -72,7 +72,7 @@ fun App() {
                     },
                     onOpenMachineSettings = {
                         navController.navigate(
-                            MachineFormRoute(route.visitId, machineId = it.value),
+                            MachineFormRoute(machineId = it.value),
                         )
                     },
                     onVisitEnded = { navController.popBackStack(HomeRoute, inclusive = false) },
@@ -87,11 +87,11 @@ fun App() {
                     onOpenSettings = { navController.navigate(SettingsRoute) },
                     onPicked = { navController.returnMachineToVisit(it) },
                     onCreate = {
-                        navController.navigate(MachineFormRoute(route.visitId, name = it))
+                        navController.navigate(MachineFormRoute(name = it))
                     },
                     onCopy = { source, name ->
                         navController.navigate(
-                            MachineFormRoute(route.visitId, copyOfId = source.value, name = name),
+                            MachineFormRoute(copyOfId = source.value, name = name),
                         )
                     },
                 )
