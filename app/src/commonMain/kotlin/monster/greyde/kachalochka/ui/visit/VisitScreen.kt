@@ -73,12 +73,16 @@ fun VisitScreen(
     val current = state
     val elapsed = current?.let { formatElapsed(now - it.startedAt) }
     val title = if (elapsed == null) "Визит" else "Визит · $elapsed"
-    Screen(title, onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(
+        title,
+        onBack = { if (!viewModel.leaveEdit()) onBack() },
+        onOpenSettings = onOpenSettings,
+    ) {
         if (current == null) return@Screen
         VisitList(
             state = current,
             onToggle = viewModel::toggleGroup,
-            onEdit = {},
+            onEdit = viewModel::editSet,
             onEnd = { viewModel.endVisit(onVisitEnded) },
             modifier = Modifier.weight(1f),
         )
@@ -89,7 +93,7 @@ fun VisitScreen(
             onReps = viewModel::changeReps,
             onSave = viewModel::save,
             onOpenMachineSettings = onOpenMachineSettings,
-            onDelete = {},
+            onDelete = viewModel::deleteEditedSet,
         )
     }
 }

@@ -172,4 +172,87 @@ class VisitViewModelTest {
             assertEquals(t0, gym.visits.byId(visit.id)?.endedAt)
             assertEquals(true, ended)
         }
+
+    @Test
+    fun editing_a_set_shows_what_was_recorded_and_when() =
+        runTest {
+            val first = set(visit.id, press, 60.0, 10, 0)
+            val second = set(visit.id, press, 70.0, 10, 1)
+            gym.sets.upsert(first)
+            gym.sets.upsert(second)
+            val vm = viewModel().also { it.refresh() }
+
+            vm.editSet(second.id)
+
+            val state = assertNotNull(vm.state.value)
+            val sheet = assertNotNull(state.sheet)
+            assertEquals(true, sheet.editing)
+            assertEquals("подход 2", sheet.setNumberLabel)
+            assertEquals("Правка · записано 22:14, было 70 кг × 10", sheet.caption)
+            assertNull(sheet.previous)
+            assertEquals("70", sheet.weight)
+            assertEquals(
+                listOf(false, true),
+                state.groups
+                    .single()
+                    .sets
+                    .map { it.selected },
+            )
+        }
+
+    @Test
+    fun saving_an_edit_rewrites_the_set_without_restarting_the_rest() =
+        runTest {
+            val recorded = set(visit.id, press, 70.0, 10, 0)
+            gym.sets.upsert(recorded)
+            val vm = viewModel().also { it.refresh() }
+            vm.editSet(recorded.id)
+
+            vm.changeWeight(+1)
+            vm.save()
+
+            val saved = gym.sets.forVisit(visit.id).single()
+            assertEquals(recorded.id, saved.id)
+            assertEquals(72.5, saved.weight)
+            assertNull(timer.startedAt.value)
+            assertEquals(
+                false,
+                vm.state.value
+                    ?.sheet
+                    ?.editing,
+            )
+        }
+
+    @Test
+    fun deleting_the_edited_set_removes_it_from_the_visit() =
+        runTest {
+            val recorded = set(visit.id, press, 70.0, 10, 0)
+            gym.sets.upsert(recorded)
+            val vm = viewModel().also { it.refresh() }
+            vm.editSet(recorded.id)
+
+            vm.deleteEditedSet()
+
+            assertEquals(emptyList(), gym.sets.forVisit(visit.id))
+            assertEquals(true, gym.sets.rows[recorded.id]?.deleted)
+            assertEquals("0 подходов", vm.state.value?.setCountLabel)
+        }
+
+    @Test
+    fun leaving_edit_mode_returns_to_adding_on_the_same_machine() =
+        runTest {
+            val recorded = set(visit.id, press, 70.0, 10, 0)
+            gym.sets.upsert(recorded)
+            val vm = viewModel().also { it.refresh() }
+            vm.editSet(recorded.id)
+
+            assertEquals(true, vm.leaveEdit())
+            assertEquals(false, vm.leaveEdit())
+            assertEquals(
+                "подход 2",
+                vm.state.value
+                    ?.sheet
+                    ?.setNumberLabel,
+            )
+        }
 }

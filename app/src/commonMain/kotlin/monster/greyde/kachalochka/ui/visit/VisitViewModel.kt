@@ -156,6 +156,30 @@ class VisitViewModel(
         }
     }
 
+    fun editSet(id: WorkoutSetId) {
+        val set = visitSets.firstOrNull { it.id == id } ?: return
+        editing = set
+        selected = set.machineId
+        values = SetValues(set.weight, set.reps)
+        refresh()
+    }
+
+    fun leaveEdit(): Boolean {
+        if (editing == null) return false
+        editing = null
+        refresh()
+        return true
+    }
+
+    fun deleteEditedSet() {
+        val edited = editing ?: return
+        viewModelScope.launch {
+            sets.upsert(edited.copy(deleted = true, updatedAt = clock.now()))
+            editing = null
+            reload(reseed = true)
+        }
+    }
+
     fun endVisit(onEnded: () -> Unit) {
         val current = visit ?: return
         viewModelScope.launch {
