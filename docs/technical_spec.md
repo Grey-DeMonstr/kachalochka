@@ -233,6 +233,11 @@ Because visibility is enforced in Postgres, no client code path can leak data by
 Foreign-key checks bypass row-level security, so a row may reference another user's id. That is
 harmless: every read is scoped by row-level security.
 
+Policies only filter rows a role may already touch: the Data API reaches a table through the
+privileges granted to its roles, and the project grants none by default. Every synced table
+grants `select`, `insert` and `update` to `authenticated` in the migration that creates it —
+never `delete`, since clients soft-delete, and nothing to `anon`, which no policy matches.
+
 ### 5.3 Group newsfeed
 
 The feed is a Postgres view over ended visits joined with group memberships, ordered by visit
