@@ -1,6 +1,6 @@
 # Kachalochka — Technical Specification
 
-**Last reviewed:** 2026-09-13
+**Last reviewed:** 2026-09-19
 
 The architectural decisions and invariants new work must respect. It is not a description of the
 current code — read the code for that. What is written here is what the code cannot tell you: why
@@ -189,6 +189,24 @@ and records a `photo` row pointing at it; the sync pass uploads the file to the 
 bucket at `<user_id>/<photo_id>` before pushing the row. Web uploads directly. Coil loads
 displayed photos from the local file on Android and from a signed Storage URL on web.
 
+### 4.5 Gym data
+
+Three synced tables: `machine`, `visit` and `workout_set`. The last is not called `set` — a
+keyword in both SQLDelight's dialect and Postgres. Weights are `Double`; every step (±1, ±2.5,
+±5 or ±10) is rounded to three decimals so a running total never drifts. The weight-counting
+mode and the unit are enums, mapped to the wire names `total` / `per_side` / `counterweight` and
+`kg` / `lb` by one shared mapping in `core/data/gym`, used by both implementations.
+
+A visit is active while it has no end; the active visit is the newest one with no `ended_at`.
+
+Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
+so has no `Flow` to expose. A view model that writes through a repository reloads afterward
+instead of observing it.
+
+`CurrentUser` supplies the owner stamped on a new row (§4.1): null on Android until sign-in
+exists (§4.3), the Supabase session user on the web — where a write with no owner is rejected by
+row-level security (§5.2).
+
 ---
 
 ## 5. Backend
@@ -260,6 +278,10 @@ moves back-stack entries. `runNavigationUiTest` sets an unconfined one for the d
 test, which is all such a test needs. The cost is the guard: lifecycle can no longer reject a
 main-thread violation in the code under test.
 
+App UI tests that host a single screen instead use `runScreenTest`: a single-destination
+`NavHost`, so the screen under test still gets a `ViewModelStoreOwner`. It wires in fake
+repositories, a fixed clock and a ticker that only advances when the test tells it to.
+
 ---
 
 ## 8. Build, CI and release
@@ -308,3 +330,14 @@ failing the launch.
 
 Vico charts and any Compose `Canvas` drawing take their colours from the same scheme, so the
 chart surfaces follow the theme along with everything else.
+
+The colour schemes themselves are the Nocturne design system's ramps: dark is drawn by the
+design, light is derived from the same tonal ramps. Icons are Phosphor Regular, vendored as
+`ImageVector`s under `app/.../ui/icons` with the MIT licence kept beside them — the multiplatform
+Phosphor library ships every weight of every icon, about 27 MB per platform artifact.
+
+### 10.1 Local time
+
+`kotlin.time` has no time zones. `app` reads the UTC offset from the platform —
+`java.util.TimeZone` on Android and the JVM, `Date.getTimezoneOffset` on Wasm — and passes it
+into the pure day and clock-time functions in `domain/`.
