@@ -1,0 +1,38 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run web",
+            "detail": "Serve the Wasm app, rebuild and reload the page on every save",
+            "type": "process",
+            "command": "./gradlew",
+            "windows": { "command": "${workspaceFolder}\\gradlew.bat" },
+            "args": ["--continuous", ":app:wasmJsBrowserDevelopmentRun"],
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Android",
+            "detail": "Install the debug APK and start it on the connected device / emulator",
+            "dependsOrder": "sequence",
+            "dependsOn": ["Install Android debug", "Launch Android app"],
+            "problemMatcher": []
+        },
+        {
+            "label": "Install Android debug",
+            "hide": true,
+            "type": "process",
+            "command": "./gradlew",
+            "windows": { "command": "${workspaceFolder}\\gradlew.bat" },
+            "args": [":androidApp:installDebug"],
+            "problemMatcher": []
+        },
+        {
+            "label": "Launch Android app",
+            "hide": true,
+            "type": "process",
+            "command": "${env:ANDROID_HOME}/platform-tools/adb",
+            "args": ["shell", "am", "start", "-n", "monster.greyde.kachalochka/.MainActivity"],
+            "problemMatcher": []
+        }
+    ]
+}

@@ -38,7 +38,7 @@ skill, never bump a version or write an entry by hand.
 .\gradlew :core:jvmTest :app:jvmTest     # host tests, no device needed
 .\gradlew :androidApp:assembleDebug      # debug APK
 .\gradlew :androidApp:installDebug       # install on the connected device / emulator
-.\gradlew :app:wasmJsBrowserDevelopmentRun   # web app with hot reload in the browser
+.\gradlew :app:wasmJsBrowserDevelopmentRun   # web app in the browser
 .\gradlew :app:wasmJsBrowserDistribution     # production web bundle
 supabase db push                         # apply supabase/migrations to the linked project
 ```
