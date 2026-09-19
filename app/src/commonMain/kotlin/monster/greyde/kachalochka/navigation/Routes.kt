@@ -7,3 +7,8 @@ object HomeRoute
 
 @Serializable
 object SettingsRoute
+
+@Serializable
+data class VisitRoute(
+    val visitId: String,
+)

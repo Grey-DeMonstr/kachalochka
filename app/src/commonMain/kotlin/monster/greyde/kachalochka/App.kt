@@ -7,14 +7,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.navigation.HomeRoute
 import monster.greyde.kachalochka.navigation.SettingsRoute
+import monster.greyde.kachalochka.navigation.VisitRoute
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.ThemePreference
+import monster.greyde.kachalochka.ui.visit.VisitScreen
 import org.koin.compose.koinInject
+
+const val PICKED_MACHINE = "pickedMachine"
 
 @Composable
 fun App() {
@@ -32,6 +39,22 @@ fun App() {
                 SettingsScreen(
                     mode = mode,
                     onModeChange = { scope.launch { preference.set(it) } },
+                )
+            }
+            composable<VisitRoute> { entry ->
+                val route = entry.toRoute<VisitRoute>()
+                val picked by entry.savedStateHandle
+                    .getStateFlow<String?>(PICKED_MACHINE, null)
+                    .collectAsState()
+                VisitScreen(
+                    visitId = VisitId(route.visitId),
+                    pickedMachineId = picked?.let(::MachineId),
+                    onPickedMachineConsumed = { entry.savedStateHandle[PICKED_MACHINE] = null },
+                    onBack = { navController.popBackStack() },
+                    onOpenSettings = { navController.navigate(SettingsRoute) },
+                    onPickMachine = {},
+                    onOpenMachineSettings = {},
+                    onVisitEnded = { navController.popBackStack(HomeRoute, inclusive = false) },
                 )
             }
         }
