@@ -32,6 +32,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -71,6 +74,11 @@ fun VisitScreen(
     }
     val now = rememberNow()
     val current = state
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = current?.sheet?.editing == true,
+        onBackCompleted = { viewModel.leaveEdit() },
+    )
     val elapsed = current?.let { formatElapsed(now - it.startedAt) }
     val title = if (elapsed == null) "Визит" else "Визит · $elapsed"
     Screen(

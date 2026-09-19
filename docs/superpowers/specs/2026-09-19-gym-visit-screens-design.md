@@ -113,7 +113,8 @@ picker; with no machine chosen yet the sheet shows only "Выбрать трен
 
 In edit mode (2c): "подход N" in the accent, "Правка · записано 19:52, было 70 кг × 10",
 the steppers seeded from the set, "Сохранить", "Комментарий" (disabled) and "Удалить подход".
-The top bar's back arrow leaves edit mode before it leaves the screen.
+The top bar's back arrow and the system back gesture leave edit mode before they leave the
+screen.
 
 **Тренажёр — picker.** A search field; "Создать «…»" opens the form with that name; "Похожие"
 lists the ranked machines with "N подходов сегодня" or "Было 80 кг × 8 · 4 дня назад";

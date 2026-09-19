@@ -1,12 +1,17 @@
 package monster.greyde.kachalochka.ui.visit
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -107,6 +112,35 @@ class VisitScreenTest {
             onNodeWithTag("delete-set").assertIsDisplayed()
 
             onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-settings").assertIsDisplayed()
+            assertEquals(0, backs)
+        }
+    }
+
+    @Test
+    fun system_back_while_editing_a_set_leaves_edit_mode() {
+        var backs = 0
+        val dispatcher = NavigationEventDispatcher()
+        val systemBack = DirectNavigationEventInput().also(dispatcher::addInput)
+        val owner =
+            object : NavigationEventDispatcherOwner {
+                override val navigationEventDispatcher = dispatcher
+            }
+        runScreenTest(
+            gym,
+            screen = {
+                CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) {
+                    visitScreen(onBack = { backs++ })
+                }
+            },
+        ) {
+            onNodeWithTag("group-${press.id.value}").performClick()
+            onNodeWithTag("set-row-${recorded.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("delete-set").assertIsDisplayed()
+
+            runOnIdle { systemBack.backCompleted() }
             waitForIdle()
             onNodeWithTag("machine-settings").assertIsDisplayed()
             assertEquals(0, backs)

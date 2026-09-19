@@ -11,6 +11,7 @@ sqldelight = "2.3.2"
 supabase = "3.8.0"
 ktor = "3.5.2"
 navigation = "2.9.2"
+navigationEvent = "1.1.0"
 lifecycle = "2.11.0"
 turbine = "1.2.1"
 datastore = "1.2.1"
@@ -67,6 +68,10 @@ version.ref = "sqldelight"
 [libraries.navigation-compose]
 module = "org.jetbrains.androidx.navigation:navigation-compose"
 version.ref = "navigation"
+
+[libraries.navigationevent-compose]
+module = "org.jetbrains.androidx.navigationevent:navigationevent-compose"
+version.ref = "navigationEvent"
 
 [libraries.lifecycle-viewmodel-compose]
 module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose"
