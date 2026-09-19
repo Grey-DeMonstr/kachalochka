@@ -7,6 +7,8 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.fakes.FakeGym
 import kotlin.test.Test
 
@@ -53,4 +55,22 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("start-visit").assertIsDisplayed()
         }
+
+    @Test
+    fun picking_a_machine_from_the_visit_fills_the_sheet() {
+        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        runBlocking { gym.machines.upsert(press) }
+        runApp {
+            onNodeWithTag("start-visit").performClick()
+            waitForIdle()
+            onNodeWithTag("pick-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-row-${press.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag(
+                "sheet-machine-name",
+                useUnmergedTree = true,
+            ).assertTextEquals("Жим ногами")
+        }
+    }
 }
