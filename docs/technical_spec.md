@@ -167,6 +167,8 @@ just another update that travels the same path.
 
 - **Push.** Every local write appends the row's id and table to an `outbox`. A sync pass upserts
   each outbox entry to Supabase and removes it on success. Failure leaves it for the next pass.
+  A pass pushes `machine` and `visit` entries before `workout_set` entries, because the server
+  enforces foreign keys the local SQLite does not.
 - **Pull.** The sync pass then fetches every row with `updated_at` later than the last pull
   watermark and upserts it locally, skipping rows that have a pending outbox entry.
 - **Conflicts** resolve by last-write-wins on `updated_at`. The data is single-user per row and
@@ -227,6 +229,9 @@ Row-level security enforces every visibility rule from the functional spec:
 - Group membership itself is readable by members and writable by the group owner.
 
 Because visibility is enforced in Postgres, no client code path can leak data by omission.
+
+Foreign-key checks bypass row-level security, so a row may reference another user's id. That is
+harmless: every read is scoped by row-level security.
 
 ### 5.3 Group newsfeed
 
