@@ -1,10 +1,73 @@
 package monster.greyde.kachalochka.ui.home
 
 import androidx.lifecycle.ViewModel
-import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.Visit
+import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.VisitRepository
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.summarize
+import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.ui.format.machineCount
+import monster.greyde.kachalochka.ui.format.setCount
+import monster.greyde.kachalochka.ui.format.setValue
+import kotlin.time.Clock
+import kotlin.time.Instant
+
+data class HomeUiState(
+    val activeVisit: ActiveVisitUi?,
+)
+
+data class ActiveVisitUi(
+    val id: VisitId,
+    val startedAt: Instant,
+    val counts: String,
+    val lastSet: String?,
+)
 
 class HomeViewModel(
-    credentials: SupabaseCredentials,
+    private val visits: VisitRepository,
+    private val sets: WorkoutSetRepository,
+    private val machines: MachineRepository,
+    private val currentUser: CurrentUser,
+    private val clock: Clock,
 ) : ViewModel() {
-    val backendConfigured: Boolean = credentials.isConfigured
+    private val mutableState = MutableStateFlow<HomeUiState?>(null)
+    val state: StateFlow<HomeUiState?> = mutableState
+
+    fun refresh() {
+        viewModelScope.launch {
+            mutableState.value = HomeUiState(visits.active()?.let { activeVisitUi(it) })
+        }
+    }
+
+    fun startVisit(onStarted: (VisitId) -> Unit) {
+        viewModelScope.launch {
+            val now = clock.now()
+            val visit = Visit(VisitId.random(), currentUser.id(), now, null, now, false)
+            visits.upsert(visit)
+            onStarted(visit.id)
+        }
+    }
+
+    private suspend fun activeVisitUi(visit: Visit): ActiveVisitUi {
+        val summary = summarize(sets.forVisit(visit.id))
+        val lastSet =
+            summary.lastSet?.let { set ->
+                machines
+                    .byId(
+                        set.machineId,
+                    )?.let { "${it.name} ${setValue(set.weight, set.reps, it.unit)}" }
+            }
+        return ActiveVisitUi(
+            id = visit.id,
+            startedAt = visit.startedAt,
+            counts = "${machineCount(summary.machineCount)} · ${setCount(summary.setCount)}",
+            lastSet = lastSet,
+        )
+    }
 }

@@ -33,12 +33,16 @@ fun App() {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = HomeRoute) {
             composable<HomeRoute> {
-                HomeScreen(onOpenSettings = { navController.navigate(SettingsRoute) })
+                HomeScreen(
+                    onOpenVisit = { navController.navigate(VisitRoute(it.value)) },
+                    onOpenSettings = { navController.navigate(SettingsRoute) },
+                )
             }
             composable<SettingsRoute> {
                 SettingsScreen(
                     mode = mode,
                     onModeChange = { scope.launch { preference.set(it) } },
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable<VisitRoute> { entry ->

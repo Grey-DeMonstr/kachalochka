@@ -1,48 +1,160 @@
 package monster.greyde.kachalochka.ui.home
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import monster.greyde.kachalochka.core.APP_NAME
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.ui.components.AccentButton
+import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
+import monster.greyde.kachalochka.ui.components.Rule
+import monster.greyde.kachalochka.ui.components.Screen
+import monster.greyde.kachalochka.ui.components.rememberNow
+import monster.greyde.kachalochka.ui.format.formatElapsed
+import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import org.koin.compose.viewmodel.koinViewModel
 
-private const val BACKEND_CONFIGURED = "Backend configured"
-private const val BACKEND_ABSENT = "Backend not configured"
-
 @Composable
-fun HomeScreen(onOpenSettings: () -> Unit) {
+fun HomeScreen(
+    onOpenVisit: (VisitId) -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     val viewModel: HomeViewModel = koinViewModel()
-
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = APP_NAME,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.testTag("home-title"),
-            )
-            Text(
-                text = if (viewModel.backendConfigured) BACKEND_CONFIGURED else BACKEND_ABSENT,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag("backend-state"),
-            )
-            Button(onClick = onOpenSettings, modifier = Modifier.testTag("open-settings")) {
-                Text("Settings")
+    val state by viewModel.state.collectAsState()
+    LaunchedEffect(Unit) { viewModel.refresh() }
+    Screen("Качалочка", onBack = null, onOpenSettings = onOpenSettings) {
+        val current = state ?: return@Screen
+        Box(Modifier.padding(16.dp)) {
+            val visit = current.activeVisit
+            if (visit == null) {
+                AccentButton(
+                    "Начать визит",
+                    PhosphorIcons.Plus,
+                    { viewModel.startVisit(onOpenVisit) },
+                    Modifier.testTag("start-visit"),
+                )
+            } else {
+                VisitCard(visit, onContinue = { onOpenVisit(visit.id) })
             }
         }
+        SectionRow(PhosphorIcons.ListChecks, "Планы", "section-plans")
+        SectionRow(PhosphorIcons.ChartLineUp, "Статистика", "section-stats")
+        SectionRow(PhosphorIcons.UsersThree, "Друзья", "section-friends")
+        Rule()
+    }
+}
+
+@Composable
+private fun VisitCard(
+    visit: ActiveVisitUi,
+    onContinue: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(12.dp)
+    val now = rememberNow()
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .border(1.dp, colors.primary, shape)
+            .background(colors.primary.copy(alpha = 0.12f))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Column {
+                Text(
+                    "ВИЗИТ ИДЁТ",
+                    fontSize = 11.sp,
+                    letterSpacing = 0.09.em,
+                    color = colors.secondary,
+                )
+                Text(
+                    formatElapsed(now - visit.startedAt),
+                    modifier = Modifier.testTag("visit-elapsed"),
+                    fontSize = 40.sp,
+                    lineHeight = 44.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = colors.onPrimaryContainer,
+                )
+                Text(
+                    visit.counts,
+                    modifier = Modifier.testTag("visit-counts"),
+                    fontSize = 14.sp,
+                    color = colors.tertiary,
+                )
+            }
+            visit.lastSet?.let {
+                Text(
+                    "Последний подход\n$it",
+                    modifier = Modifier.testTag("visit-last-set"),
+                    fontSize = 13.sp,
+                    lineHeight = 20.sp,
+                    textAlign = TextAlign.End,
+                    color = colors.onBackground.copy(alpha = 0.6f),
+                )
+            }
+        }
+        AccentButton(
+            "Продолжить",
+            PhosphorIcons.ArrowRight,
+            onContinue,
+            Modifier.testTag("continue-visit"),
+        )
+    }
+}
+
+/** Sections without screens yet: drawn as in the design, disabled until they exist. */
+@Composable
+private fun SectionRow(
+    icon: ImageVector,
+    label: String,
+    tag: String,
+) {
+    val colors = MaterialTheme.colorScheme
+    Rule()
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .alpha(DISABLED_ALPHA)
+            .clickable(enabled = false) {}
+            .padding(horizontal = 16.dp, vertical = 20.dp)
+            .testTag(tag),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = colors.secondary, modifier = Modifier.size(26.dp))
+        Text(label, modifier = Modifier.weight(1f), fontSize = 19.sp, color = colors.onBackground)
+        Icon(
+            PhosphorIcons.CaretRight,
+            null,
+            tint = colors.onBackground.copy(alpha = 0.4f),
+            modifier = Modifier.size(22.dp),
+        )
     }
 }
