@@ -44,6 +44,16 @@ class MachineFormViewModelTest {
     }
 
     @Test
+    fun loading_again_keeps_the_unsaved_edits() {
+        val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+        vm.update { it.copy(setupNote = "Упоры на 3") }
+
+        vm.load()
+
+        assertEquals("Упоры на 3", vm.state.value.setupNote)
+    }
+
+    @Test
     fun a_blank_name_or_a_bad_platform_weight_cannot_be_saved() {
         assertEquals(false, MachineFormState(name = " ").canSave)
         assertEquals(false, MachineFormState(name = "Гакк", platformWeight = "-5").canSave)

@@ -101,13 +101,13 @@ class VisitViewModel(
     val selectedMachineId: MachineId? get() = selected
 
     fun refresh() {
-        viewModelScope.launch { reload(reseed = editing == null) }
+        viewModelScope.launch { reload(reseed = false) }
     }
 
     fun selectMachine(id: MachineId) {
         selected = id
         editing = null
-        refresh()
+        viewModelScope.launch { reload(reseed = true) }
     }
 
     fun changeWeight(direction: Int) {
@@ -167,7 +167,7 @@ class VisitViewModel(
     fun leaveEdit(): Boolean {
         if (editing == null) return false
         editing = null
-        refresh()
+        viewModelScope.launch { reload(reseed = true) }
         return true
     }
 

@@ -120,6 +120,19 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun a_refresh_keeps_the_stepper_values() {
+        val vm = viewModel().also { it.selectMachine(press.id) }
+        vm.changeWeight(+1)
+        vm.changeReps(-1)
+
+        vm.refresh()
+
+        val sheet = assertNotNull(vm.state.value?.sheet)
+        assertEquals("72,5", sheet.weight)
+        assertEquals("9", sheet.reps)
+    }
+
+    @Test
     fun saving_records_the_set_starts_the_rest_and_moves_to_the_next_set() =
         runTest {
             val vm = viewModel().also { it.selectMachine(press.id) }

@@ -69,8 +69,12 @@ class MachineFormViewModel(
     val state: StateFlow<MachineFormState> = mutableState
 
     private var existing: Machine? = null
+    private var loaded = false
 
+    // The screen asks again whenever it re-enters composition; the form keeps its edits then.
     fun load() {
+        if (loaded) return
+        loaded = true
         viewModelScope.launch {
             val current = args.machineId?.let { machines.byId(it) }
             existing = current
