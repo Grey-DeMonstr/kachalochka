@@ -18,7 +18,7 @@ fun formatNumber(value: Double): String {
 fun unitLabel(unit: WeightUnit): String =
     when (unit) {
         WeightUnit.Kg -> "кг"
-        WeightUnit.Lb -> "фунт."
+        WeightUnit.Lb -> "lb"
     }
 
 private fun modeLabel(mode: WeightMode): String =

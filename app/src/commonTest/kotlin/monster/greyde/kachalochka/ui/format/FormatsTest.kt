@@ -42,7 +42,7 @@ class FormatsTest {
     fun the_weight_caption_names_unit_mode_and_step() {
         assertEquals("кг всего · ±2,5", weightCaption(press))
         assertEquals(
-            "фунт. на сторону · ±5",
+            "lb на сторону · ±5",
             weightCaption(
                 press.copy(
                     unit = WeightUnit.Lb,

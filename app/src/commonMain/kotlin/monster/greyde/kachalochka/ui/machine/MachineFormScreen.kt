@@ -327,7 +327,7 @@ private fun UnitRow(
         choices =
             listOf(
                 Choice("кг", "unit-kg"),
-                Choice("фунты", "unit-lb"),
+                Choice("lb", "unit-lb"),
                 Choice("Своя единица", "unit-custom", enabled = false, weight = 2f),
             ),
         selected = if (unit == WeightUnit.Lb) 1 else 0,
