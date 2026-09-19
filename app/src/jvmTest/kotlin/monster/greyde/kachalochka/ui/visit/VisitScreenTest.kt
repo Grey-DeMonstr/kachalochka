@@ -53,7 +53,10 @@ class VisitScreenTest {
             screen = { visitScreen(picked = press.id, onConsumed = { consumed++ }) },
         ) {
             waitForIdle()
-            onNodeWithTag("sheet-machine-name").assertTextEquals("Жим ногами")
+            onNodeWithTag(
+                "sheet-machine-name",
+                useUnmergedTree = true,
+            ).assertTextEquals("Жим ногами")
             onNodeWithTag("weight-value").assertTextEquals("0")
             onNodeWithTag("set-comment").assertIsNotEnabled()
             onNodeWithTag("weight-plus").performClick()
@@ -61,7 +64,7 @@ class VisitScreenTest {
             waitForIdle()
 
             onNodeWithTag("visit-set-count").assertTextEquals("1 ПОДХОД")
-            onNodeWithTag("sheet-set-number").assertTextEquals("подход 2")
+            onNodeWithTag("sheet-set-number", useUnmergedTree = true).assertTextEquals("подход 2")
             onNodeWithTag("rest-timer").assertTextEquals("1:30")
             assertEquals(1, consumed)
         }

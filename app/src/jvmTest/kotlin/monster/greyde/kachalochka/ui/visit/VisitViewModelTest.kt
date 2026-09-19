@@ -114,18 +114,9 @@ class VisitViewModelTest {
         vm.changeWeight(+1)
         vm.changeReps(-1)
 
-        assertEquals(
-            "72,5",
-            vm.state.value
-                ?.sheet
-                ?.weight,
-        )
-        assertEquals(
-            "9",
-            vm.state.value
-                ?.sheet
-                ?.reps,
-        )
+        val sheet = assertNotNull(vm.state.value?.sheet)
+        assertEquals("72,5", sheet.weight)
+        assertEquals("9", sheet.reps)
     }
 
     @Test
@@ -145,10 +136,7 @@ class VisitViewModelTest {
             assertEquals("70", state.sheet?.weight)
             assertEquals(
                 listOf("Жим ногами (+20 кг)" to "67,5 кг"),
-                state.groups.map {
-                    it.title to
-                        it.summary
-                },
+                state.groups.map { it.title to it.summary },
             )
         }
 

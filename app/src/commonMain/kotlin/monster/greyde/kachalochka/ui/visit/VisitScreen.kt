@@ -235,59 +235,54 @@ private fun SetSheet(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Thumbnail(PhosphorIcons.Barbell)
-            // A clickable Column would merge its children's test tags into its own, so the
-            // click target is a transparent overlay instead of the container itself.
-            Box(Modifier.weight(1f)) {
-                Box(
-                    Modifier
-                        .matchParentSize()
-                        .clickable(enabled = !sheet.editing, onClick = onPickMachine)
-                        .testTag("sheet-machine"),
-                )
-                Column {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom,
-                    ) {
-                        Text(
-                            buildAnnotatedString {
-                                append(sheet.name)
-                                sheet.platformSuffix?.let {
-                                    withStyle(
-                                        SpanStyle(
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.Normal,
-                                            color = muted,
-                                        ),
-                                    ) {
-                                        append(" $it")
-                                    }
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clickable(enabled = !sheet.editing, onClick = onPickMachine)
+                    .testTag("sheet-machine"),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    Text(
+                        buildAnnotatedString {
+                            append(sheet.name)
+                            sheet.platformSuffix?.let {
+                                withStyle(
+                                    SpanStyle(
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        color = muted,
+                                    ),
+                                ) {
+                                    append(" $it")
                                 }
-                            },
-                            modifier = Modifier.weight(1f).testTag("sheet-machine-name"),
-                            fontSize = 21.sp,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = colors.onBackground,
-                        )
-                        Text(
-                            sheet.setNumberLabel,
-                            modifier = Modifier.testTag("sheet-set-number"),
-                            fontSize = 13.sp,
-                            color = if (sheet.editing) colors.secondary else muted,
-                        )
-                    }
-                    sheet.caption?.let {
-                        Text(
-                            it,
-                            modifier = Modifier.testTag("sheet-caption"),
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp,
-                            color = colors.onBackground.copy(alpha = 0.58f),
-                        )
-                    }
+                            }
+                        },
+                        modifier = Modifier.weight(1f).testTag("sheet-machine-name"),
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = colors.onBackground,
+                    )
+                    Text(
+                        sheet.setNumberLabel,
+                        modifier = Modifier.testTag("sheet-set-number"),
+                        fontSize = 13.sp,
+                        color = if (sheet.editing) colors.secondary else muted,
+                    )
+                }
+                sheet.caption?.let {
+                    Text(
+                        it,
+                        modifier = Modifier.testTag("sheet-caption"),
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp,
+                        color = colors.onBackground.copy(alpha = 0.58f),
+                    )
                 }
             }
         }

@@ -167,6 +167,16 @@ class VisitViewModel(
 
     private fun selectedMachine(): Machine? = selected?.let(machinesById::get)
 
+    private fun setNumber(
+        edited: WorkoutSet?,
+        onMachine: List<WorkoutSet>,
+    ): Int =
+        if (edited == null) {
+            onMachine.size + 1
+        } else {
+            onMachine.indexOfFirst { it.id == edited.id } + 1
+        }
+
     private suspend fun reload(reseed: Boolean) {
         visit = visits.byId(visitId)
         machinesById = machines.all().associateBy { it.id }
@@ -225,14 +235,7 @@ class VisitViewModel(
         val machine = selectedMachine() ?: return null
         val onMachine = visitSets.filter { it.machineId == machine.id }
         val edited = editing
-        val number =
-            if (edited ==
-                null
-            ) {
-                onMachine.size + 1
-            } else {
-                onMachine.indexOfFirst { it.id == edited.id } + 1
-            }
+        val number = setNumber(edited, onMachine)
         val caption =
             if (edited == null) {
                 machine.setupNote.ifBlank { null }
