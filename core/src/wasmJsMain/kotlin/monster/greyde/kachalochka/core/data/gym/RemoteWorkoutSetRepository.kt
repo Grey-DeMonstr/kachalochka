@@ -40,6 +40,7 @@ class RemoteWorkoutSetRepository(
                     match()
                 }
                 order("recorded_at", Order.ASCENDING)
+                order("id", Order.ASCENDING)
             }.decodeList<WorkoutSetRow>()
             .map { it.toWorkoutSet() }
 }
