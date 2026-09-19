@@ -1,5 +1,7 @@
 package monster.greyde.kachalochka.core.domain.identity
 
+import kotlin.uuid.Uuid
+
 // Postgres declares every id column `uuid` and folds the text form to lower case, so two ids that
 // differ only in case are one row there and two rows in SQLite. Lower case is the only spelling.
 private val UUID_V4 =
@@ -12,3 +14,5 @@ internal fun requireUuidV4(
     require(UUID_V4.matches(value)) { "$label must be a lower-case UUID v4, was \"$value\"" }
     return value
 }
+
+internal fun newUuidV4(): String = Uuid.random().toString()
