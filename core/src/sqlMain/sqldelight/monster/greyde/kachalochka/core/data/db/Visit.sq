@@ -1,0 +1,23 @@
+import kotlin.Boolean;
+import kotlin.time.Instant;
+
+CREATE TABLE visit (
+    id         TEXT    NOT NULL PRIMARY KEY,
+    user_id    TEXT,
+    started_at INTEGER AS Instant NOT NULL,
+    ended_at   INTEGER AS Instant,
+    updated_at INTEGER AS Instant NOT NULL,
+    deleted    INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+CREATE INDEX visit_updated_at_idx ON visit (updated_at);
+
+upsert:
+INSERT OR REPLACE INTO visit(id, user_id, started_at, ended_at, updated_at, deleted)
+VALUES (?, ?, ?, ?, ?, ?);
+
+byId:
+SELECT * FROM visit WHERE id = ?;
+
+active:
+SELECT * FROM visit WHERE ended_at IS NULL AND deleted = 0 ORDER BY started_at DESC LIMIT 1;

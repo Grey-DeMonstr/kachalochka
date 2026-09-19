@@ -1,0 +1,36 @@
+import kotlin.Boolean;
+import kotlin.time.Instant;
+
+CREATE TABLE workout_set (
+    id          TEXT    NOT NULL PRIMARY KEY,
+    user_id     TEXT,
+    visit_id    TEXT    NOT NULL,
+    machine_id  TEXT    NOT NULL,
+    weight      REAL    NOT NULL,
+    reps        INTEGER NOT NULL,
+    recorded_at INTEGER AS Instant NOT NULL,
+    updated_at  INTEGER AS Instant NOT NULL,
+    deleted     INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+CREATE INDEX workout_set_visit_idx ON workout_set (visit_id);
+CREATE INDEX workout_set_machine_idx ON workout_set (machine_id);
+CREATE INDEX workout_set_updated_at_idx ON workout_set (updated_at);
+
+upsert:
+INSERT OR REPLACE INTO workout_set(id, user_id, visit_id, machine_id, weight, reps, recorded_at,
+    updated_at, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+forVisit:
+SELECT * FROM workout_set WHERE visit_id = ? AND deleted = 0 ORDER BY recorded_at, id;
+
+forMachine:
+SELECT * FROM workout_set WHERE machine_id = ? AND deleted = 0 ORDER BY recorded_at, id;
+
+latestPerMachine:
+SELECT * FROM workout_set s
+WHERE s.deleted = 0 AND s.recorded_at = (
+    SELECT MAX(recorded_at) FROM workout_set
+    WHERE machine_id = s.machine_id AND deleted = 0
+);

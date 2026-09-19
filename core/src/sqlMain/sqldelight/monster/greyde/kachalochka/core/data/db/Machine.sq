@@ -1,0 +1,29 @@
+import kotlin.Boolean;
+import kotlin.time.Instant;
+
+CREATE TABLE machine (
+    id                TEXT    NOT NULL PRIMARY KEY,
+    user_id           TEXT,
+    name              TEXT    NOT NULL,
+    setup_note        TEXT    NOT NULL DEFAULT '',
+    weight_mode       TEXT    NOT NULL,
+    platform_weight   REAL    NOT NULL DEFAULT 0,
+    platform_included INTEGER AS Boolean NOT NULL DEFAULT 0,
+    unit              TEXT    NOT NULL,
+    weight_step       REAL    NOT NULL,
+    updated_at        INTEGER AS Instant NOT NULL,
+    deleted           INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+CREATE INDEX machine_updated_at_idx ON machine (updated_at);
+
+upsert:
+INSERT OR REPLACE INTO machine(id, user_id, name, setup_note, weight_mode, platform_weight,
+    platform_included, unit, weight_step, updated_at, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+byId:
+SELECT * FROM machine WHERE id = ?;
+
+live:
+SELECT * FROM machine WHERE deleted = 0;
