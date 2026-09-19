@@ -49,10 +49,10 @@ Adding or editing a set uses the same sheet. It shows the machine, the set numbe
 setup note, the previous visit's sets on that machine, and weight and reps steppers seeded from
 the previous visit's set. Saving records the set.
 
-The machine picker lets the user search machines by name; "Создать «…»" creates a new machine
-from the typed name. When a machine is already chosen for the visit, "Скопировать тренажёр"
-starts a new machine pre-filled from it. Recently used machines are listed with their last
-result.
+The machine picker lets the user search machines by name; "Создать «…»" opens the machine form
+pre-filled with the typed name. When a machine is already chosen for the visit, "Скопировать
+тренажёр" opens the form pre-filled from that machine, with the typed name instead of its own.
+Recently used machines are listed with their last result.
 
 The machine form collects a name, a setup note, how the weight is counted (total, per side or
 counterweight), the platform weight and whether it is added to the recorded weight, the unit

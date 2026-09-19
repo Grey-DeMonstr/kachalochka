@@ -336,7 +336,9 @@ design, light is derived from the same tonal ramps. Icons are Phosphor Regular, 
 `ImageVector`s under `app/.../ui/icons` with the MIT licence kept beside them — the multiplatform
 Phosphor library ships every weight of every icon, about 27 MB per platform artifact.
 
-### 10.1 Local time
+---
+
+## 11. Local time
 
 `kotlin.time` has no time zones. `app` reads the UTC offset from the platform —
 `java.util.TimeZone` on Android and the JVM, `Date.getTimezoneOffset` on Wasm — and passes it
