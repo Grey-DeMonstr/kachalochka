@@ -69,6 +69,8 @@ kotlin {
         }
         wasmJsMain.dependencies {
             implementation(libs.kotlinx.browser)
+            implementation(project.dependencies.platform(libs.supabase.bom))
+            implementation(libs.supabase.auth)
         }
     }
 }
