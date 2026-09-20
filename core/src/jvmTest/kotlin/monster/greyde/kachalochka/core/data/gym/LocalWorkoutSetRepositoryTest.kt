@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.minutes
@@ -29,9 +30,10 @@ class LocalWorkoutSetRepositoryTest {
         minute: Int,
         weight: Double = 70.0,
         deleted: Boolean = false,
+        userId: UserId? = null,
     ) = WorkoutSet(
         WorkoutSetId.random(),
-        null,
+        userId,
         visit,
         machine,
         weight,
@@ -77,5 +79,31 @@ class LocalWorkoutSetRepositoryTest {
                 setOf(pressNew, rowOnly),
                 repository.latestPerMachine(null).toSet(),
             )
+        }
+
+    @Test
+    fun latest_per_machine_is_scoped_to_each_owner_on_different_machines() =
+        runTest {
+            val ivan = UserId("11111111-1111-4111-8111-111111111111")
+            val misha = UserId("22222222-2222-4222-8222-222222222222")
+            val ivanSet = set(visitA, press, 1, userId = ivan)
+            val mishaSet = set(visitA, row, 2, userId = misha)
+            listOf(ivanSet, mishaSet).forEach { repository.upsert(it) }
+
+            assertEquals(listOf(ivanSet), repository.latestPerMachine(ivan))
+            assertEquals(listOf(mishaSet), repository.latestPerMachine(misha))
+        }
+
+    @Test
+    fun latest_per_machine_on_a_shared_machine_is_each_owners_own_newest() =
+        runTest {
+            val ivan = UserId("11111111-1111-4111-8111-111111111111")
+            val misha = UserId("22222222-2222-4222-8222-222222222222")
+            val ivanOld = set(visitA, press, 1, userId = ivan)
+            val mishaNew = set(visitB, press, 50, userId = misha)
+            listOf(ivanOld, mishaNew).forEach { repository.upsert(it) }
+
+            assertEquals(listOf(ivanOld), repository.latestPerMachine(ivan))
+            assertEquals(listOf(mishaNew), repository.latestPerMachine(misha))
         }
 }
