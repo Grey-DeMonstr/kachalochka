@@ -47,7 +47,7 @@ class AppTest {
         runApp {
             onNodeWithTag("start-visit").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 0:00")
+            onNodeWithTag("top-bar-title").assertTextEquals("Визит")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
             onNodeWithTag("visit-counts").assertTextEquals("0 тренажёров · 0 подходов")

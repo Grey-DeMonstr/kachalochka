@@ -17,7 +17,6 @@ import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import kotlin.time.Clock
-import kotlin.time.Instant
 
 data class HomeUiState(
     val activeVisit: ActiveVisitUi?,
@@ -25,7 +24,6 @@ data class HomeUiState(
 
 data class ActiveVisitUi(
     val id: VisitId,
-    val startedAt: Instant,
     val counts: String,
     val lastSet: String?,
 )
@@ -68,7 +66,6 @@ class HomeViewModel(
             }
         return ActiveVisitUi(
             id = visit.id,
-            startedAt = visit.startedAt,
             counts = "${machineCount(summary.machineCount)} · ${setCount(summary.setCount)}",
             lastSet = lastSet,
         )

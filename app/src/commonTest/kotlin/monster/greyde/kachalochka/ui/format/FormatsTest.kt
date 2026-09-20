@@ -9,8 +9,6 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -108,9 +106,6 @@ class FormatsTest {
     fun times_are_formatted_like_the_design() {
         assertEquals("19:52", clockLabel(19 * 60 + 52))
         assertEquals("07:05", clockLabel(7 * 60 + 5))
-        assertEquals("42:10", formatElapsed(42.minutes + 10.seconds))
-        assertEquals("0:00", formatElapsed((-3).seconds))
-        assertEquals("1:02:10", formatElapsed(1.hours + 2.minutes + 10.seconds))
         assertEquals("1:30", formatRest(90.seconds))
         assertEquals("0:05", formatRest(4.2.seconds))
     }

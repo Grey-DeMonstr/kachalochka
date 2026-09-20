@@ -24,7 +24,7 @@ class LocalVisitRepository(
                 queries.upsert(
                     visit.id.value,
                     visit.userId?.value,
-                    visit.startedAt,
+                    visit.recordedAt,
                     visit.endedAt,
                     visit.updatedAt,
                     visit.deleted,
@@ -47,8 +47,8 @@ class LocalVisitRepository(
 private fun visitOf(
     id: String,
     userId: String?,
-    startedAt: Instant,
+    recordedAt: Instant,
     endedAt: Instant?,
     updatedAt: Instant,
     deleted: Boolean,
-) = Visit(VisitId(id), userId?.let(::UserId), startedAt, endedAt, updatedAt, deleted)
+) = Visit(VisitId(id), userId?.let(::UserId), recordedAt, endedAt, updatedAt, deleted)

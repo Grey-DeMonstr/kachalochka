@@ -24,7 +24,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -34,8 +33,6 @@ import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
-import monster.greyde.kachalochka.ui.components.rememberNow
-import monster.greyde.kachalochka.ui.format.formatElapsed
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -76,7 +73,6 @@ private fun VisitCard(
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(12.dp)
-    val now = rememberNow()
     Column(
         Modifier
             .fillMaxWidth()
@@ -93,14 +89,6 @@ private fun VisitCard(
                     fontSize = 11.sp,
                     letterSpacing = 0.09.em,
                     color = colors.secondary,
-                )
-                Text(
-                    formatElapsed(now - visit.startedAt),
-                    modifier = Modifier.testTag("visit-elapsed"),
-                    fontSize = 40.sp,
-                    lineHeight = 44.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = colors.onPrimaryContainer,
                 )
                 Text(
                     visit.counts,

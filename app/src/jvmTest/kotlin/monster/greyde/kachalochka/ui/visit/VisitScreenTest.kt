@@ -23,8 +23,6 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalTestApi::class)
 class VisitScreenTest {
@@ -51,14 +49,13 @@ class VisitScreenTest {
             gym.machines.upsert(press)
             gym.sets.upsert(recorded)
         }
-        gym.clock.current += 42.minutes + 10.seconds
     }
 
     @Test
-    fun a_fresh_visit_shows_its_time_and_asks_for_a_machine() {
+    fun a_fresh_visit_asks_for_a_machine() {
         var picks = 0
         runScreenTest(gym, screen = { visitScreen(onPickMachine = { picks++ }) }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 42:10")
+            onNodeWithTag("top-bar-title").assertTextEquals("Визит")
             onNodeWithTag("visit-set-count").assertTextEquals("1 ПОДХОД")
             onNodeWithTag("pick-machine").performClick()
             waitForIdle()

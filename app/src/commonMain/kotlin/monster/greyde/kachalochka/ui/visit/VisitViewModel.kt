@@ -40,10 +40,8 @@ import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Clock
 import kotlin.time.Duration
-import kotlin.time.Instant
 
 data class VisitUiState(
-    val startedAt: Instant,
     val setCountLabel: String,
     val groups: List<SetGroupUi>,
     val sheet: SheetUi?,
@@ -222,11 +220,10 @@ class VisitViewModel(
     }
 
     private fun publish() {
-        val current = visit ?: return
+        visit ?: return
         val offset = utcOffset.at(clock.now())
         mutableState.value =
             VisitUiState(
-                startedAt = current.startedAt,
                 setCountLabel = setCount(visitSets.size),
                 groups = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) },
                 sheet = sheetUi(offset),

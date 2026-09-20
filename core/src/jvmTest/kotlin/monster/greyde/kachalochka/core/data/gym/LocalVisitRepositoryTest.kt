@@ -20,11 +20,11 @@ class LocalVisitRepositoryTest {
     private val t0 = Instant.fromEpochMilliseconds(1_700_000_000_123)
 
     private fun visit(
-        startedAt: Instant = t0,
+        recordedAt: Instant = t0,
         endedAt: Instant? = null,
         deleted: Boolean = false,
         userId: UserId? = null,
-    ) = Visit(VisitId.random(), userId, startedAt, endedAt, startedAt, deleted)
+    ) = Visit(VisitId.random(), userId, recordedAt, endedAt, recordedAt, deleted)
 
     @Test
     fun a_visit_reads_back_with_its_end() =

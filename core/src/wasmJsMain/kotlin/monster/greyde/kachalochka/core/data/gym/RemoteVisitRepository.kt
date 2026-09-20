@@ -35,7 +35,7 @@ class RemoteVisitRepository(
                     eq("deleted", false)
                     owned(owner)
                 }
-                order("started_at", Order.DESCENDING)
+                order("recorded_at", Order.DESCENDING)
                 limit(1)
             }.decodeList<VisitRow>()
             .firstOrNull()
@@ -54,7 +54,7 @@ private fun PostgrestFilterBuilder.owned(owner: UserId?) {
 private data class VisitRow(
     val id: String,
     @SerialName("user_id") val userId: String?,
-    @SerialName("started_at") val startedAt: String,
+    @SerialName("recorded_at") val recordedAt: String,
     @SerialName("ended_at") val endedAt: String?,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
@@ -63,7 +63,7 @@ private data class VisitRow(
         Visit(
             id = VisitId(id),
             userId = userId?.let(::UserId),
-            startedAt = Instant.parse(startedAt),
+            recordedAt = Instant.parse(recordedAt),
             endedAt = endedAt?.let(Instant::parse),
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
@@ -74,7 +74,7 @@ private data class VisitRow(
             VisitRow(
                 id = visit.id.value,
                 userId = visit.userId?.value,
-                startedAt = visit.startedAt.toString(),
+                recordedAt = visit.recordedAt.toString(),
                 endedAt = visit.endedAt?.toString(),
                 updatedAt = visit.updatedAt.toString(),
                 deleted = visit.deleted,

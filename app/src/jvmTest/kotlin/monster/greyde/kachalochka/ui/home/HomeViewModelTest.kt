@@ -65,7 +65,7 @@ class HomeViewModelTest {
             val vm = viewModel().also { it.refresh() }
 
             assertEquals(
-                ActiveVisitUi(visit.id, t0, "2 тренажёра · 3 подхода", "Жим ногами 70 кг × 10"),
+                ActiveVisitUi(visit.id, "2 тренажёра · 3 подхода", "Жим ногами 70 кг × 10"),
                 vm.state.value?.activeVisit,
             )
         }
@@ -79,6 +79,6 @@ class HomeViewModelTest {
 
             val active = assertNotNull(gym.visits.active(null))
             assertEquals(active.id, started)
-            assertEquals(t0, active.startedAt)
+            assertEquals(t0, active.recordedAt)
         }
 }

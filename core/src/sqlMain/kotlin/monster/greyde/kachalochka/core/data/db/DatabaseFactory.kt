@@ -11,7 +11,7 @@ internal fun kachalochkaDatabase(driver: SqlDriver): KachalochkaDatabase =
         syncStateAdapter = SyncState.Adapter(lastPullAtAdapter = InstantColumnAdapter),
         visitAdapter =
             Visit.Adapter(
-                started_atAdapter = InstantColumnAdapter,
+                recorded_atAdapter = InstantColumnAdapter,
                 ended_atAdapter = InstantColumnAdapter,
                 updated_atAdapter = InstantColumnAdapter,
             ),

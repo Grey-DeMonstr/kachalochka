@@ -46,8 +46,6 @@ import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.Stepper
 import monster.greyde.kachalochka.ui.components.Thumbnail
-import monster.greyde.kachalochka.ui.components.rememberNow
-import monster.greyde.kachalochka.ui.format.formatElapsed
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -72,17 +70,14 @@ fun VisitScreen(
             onPickedMachineConsumed()
         }
     }
-    val now = rememberNow()
     val current = state
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
         isBackEnabled = current?.sheet?.editing == true,
         onBackCompleted = { viewModel.leaveEdit() },
     )
-    val elapsed = current?.let { formatElapsed(now - it.startedAt) }
-    val title = if (elapsed == null) "Визит" else "Визит · $elapsed"
     Screen(
-        title,
+        "Визит",
         onBack = { if (!viewModel.leaveEdit()) onBack() },
         onOpenSettings = onOpenSettings,
     ) {

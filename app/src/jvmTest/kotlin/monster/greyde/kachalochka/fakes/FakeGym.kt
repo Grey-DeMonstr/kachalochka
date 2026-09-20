@@ -69,7 +69,7 @@ class InMemoryVisitRepository : VisitRepository {
     override suspend fun active(owner: UserId?): Visit? =
         rows.values
             .filter { it.endedAt == null && !it.deleted && it.userId == owner }
-            .maxByOrNull { it.startedAt }
+            .maxByOrNull { it.recordedAt }
 }
 
 class InMemoryWorkoutSetRepository : WorkoutSetRepository {
