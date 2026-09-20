@@ -115,6 +115,7 @@ kotlin {
             implementation(libs.sqldelight.driver.android)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.koin.android)
+            implementation(libs.androidx.datastore.preferences.core)
         }
         jvmMain.dependencies {
             implementation(libs.sqldelight.driver.jvm)
@@ -122,6 +123,7 @@ kotlin {
         }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)
+            implementation(libs.kotlinx.browser)
         }
     }
 }

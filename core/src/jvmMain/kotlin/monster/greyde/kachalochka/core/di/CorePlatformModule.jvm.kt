@@ -3,6 +3,8 @@ package monster.greyde.kachalochka.core.di
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
+import monster.greyde.kachalochka.core.data.identity.AccountStorage
+import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -13,4 +15,5 @@ actual fun corePlatformModule(): Module =
         single<SqlDriver> {
             JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY).also(KachalochkaDatabase.Schema::create)
         }
+        single<AccountStorage> { InMemoryAccountStorage() }
     }

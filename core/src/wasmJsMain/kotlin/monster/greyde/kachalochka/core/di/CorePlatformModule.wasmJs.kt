@@ -3,6 +3,8 @@ package monster.greyde.kachalochka.core.di
 import monster.greyde.kachalochka.core.data.gym.RemoteMachineRepository
 import monster.greyde.kachalochka.core.data.gym.RemoteVisitRepository
 import monster.greyde.kachalochka.core.data.gym.RemoteWorkoutSetRepository
+import monster.greyde.kachalochka.core.data.identity.AccountStorage
+import monster.greyde.kachalochka.core.data.identity.LocalStorageAccountStorage
 import monster.greyde.kachalochka.core.data.identity.SupabaseCurrentUser
 import monster.greyde.kachalochka.core.data.profile.RemoteProfileRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -20,4 +22,5 @@ actual fun corePlatformModule(): Module =
         single<VisitRepository> { RemoteVisitRepository(get()) }
         single<WorkoutSetRepository> { RemoteWorkoutSetRepository(get()) }
         single<CurrentUser> { SupabaseCurrentUser(get()) }
+        single<AccountStorage> { LocalStorageAccountStorage() }
     }
