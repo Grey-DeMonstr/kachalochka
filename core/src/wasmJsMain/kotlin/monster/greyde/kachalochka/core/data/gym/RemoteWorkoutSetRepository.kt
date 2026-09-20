@@ -28,8 +28,8 @@ class RemoteWorkoutSetRepository(
         live { eq("machine_id", machineId.value) }
 
     // PostgREST has no per-group maximum, so the newest set of each machine is picked here.
-    override suspend fun latestPerMachine(): List<WorkoutSet> =
-        live { }.sortedByDescending { it.recordedAt }.distinctBy { it.machineId }
+    override suspend fun latestPerMachine(owner: UserId?): List<WorkoutSet> =
+        live { owned(owner) }.sortedByDescending { it.recordedAt }.distinctBy { it.machineId }
 
     private suspend fun live(match: PostgrestFilterBuilder.() -> Unit): List<WorkoutSet> =
         client.postgrest
@@ -43,6 +43,14 @@ class RemoteWorkoutSetRepository(
                 order("id", Order.ASCENDING)
             }.decodeList<WorkoutSetRow>()
             .map { it.toWorkoutSet() }
+}
+
+private fun PostgrestFilterBuilder.owned(owner: UserId?) {
+    if (owner != null) {
+        eq("user_id", owner.value)
+    } else {
+        exact("user_id", null)
+    }
 }
 
 @Serializable

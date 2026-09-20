@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.data.gym
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -25,19 +26,28 @@ class RemoteVisitRepository(
             .decodeSingleOrNull<VisitRow>()
             ?.toVisit()
 
-    override suspend fun active(): Visit? =
+    override suspend fun active(owner: UserId?): Visit? =
         client.postgrest
             .from(VISIT_TABLE)
             .select {
                 filter {
                     exact("ended_at", null)
                     eq("deleted", false)
+                    owned(owner)
                 }
                 order("started_at", Order.DESCENDING)
                 limit(1)
             }.decodeList<VisitRow>()
             .firstOrNull()
             ?.toVisit()
+}
+
+private fun PostgrestFilterBuilder.owned(owner: UserId?) {
+    if (owner != null) {
+        eq("user_id", owner.value)
+    } else {
+        exact("user_id", null)
+    }
 }
 
 @Serializable

@@ -44,9 +44,20 @@ class LocalMachineRepository(
         withContext(dispatcher) { queries.byId(id.value, ::machineOf).executeAsOneOrNull() }
 
     // SQLite folds case for ASCII only, so Cyrillic names are ordered here.
-    override suspend fun all(): List<Machine> =
+    override suspend fun all(owner: UserId?): List<Machine> =
         withContext(dispatcher) {
-            queries.live(::machineOf).executeAsList().sortedBy { it.name.lowercase() }
+            queries
+                .live(owner?.value, ::machineOf)
+                .executeAsList()
+                .sortedBy { it.name.lowercase() }
+        }
+
+    override suspend fun named(
+        owner: UserId?,
+        name: String,
+    ): Machine? =
+        withContext(dispatcher) {
+            queries.named(name, owner?.value, ::machineOf).executeAsOneOrNull()
         }
 }
 

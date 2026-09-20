@@ -144,6 +144,6 @@ class MachineFormViewModelTest {
             val saved = assertNotNull(gym.machines.byId(source.id))
             assertEquals(10.0, saved.weightStep)
             assertEquals(gym.clock.current, saved.updatedAt)
-            assertEquals(1, gym.machines.all().size)
+            assertEquals(1, gym.machines.all(null).size)
         }
 }

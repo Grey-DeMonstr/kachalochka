@@ -45,8 +45,16 @@ class InMemoryMachineRepository : MachineRepository {
 
     override suspend fun byId(id: MachineId): Machine? = rows[id]
 
-    override suspend fun all(): List<Machine> =
-        rows.values.filterNot { it.deleted }.sortedBy { it.name.lowercase() }
+    override suspend fun all(owner: UserId?): List<Machine> =
+        rows.values
+            .filterNot { it.deleted }
+            .filter { it.userId == owner }
+            .sortedBy { it.name.lowercase() }
+
+    override suspend fun named(
+        owner: UserId?,
+        name: String,
+    ): Machine? = all(owner).firstOrNull { it.name == name }
 }
 
 class InMemoryVisitRepository : VisitRepository {
@@ -58,8 +66,10 @@ class InMemoryVisitRepository : VisitRepository {
 
     override suspend fun byId(id: VisitId): Visit? = rows[id]
 
-    override suspend fun active(): Visit? =
-        rows.values.filter { it.endedAt == null && !it.deleted }.maxByOrNull { it.startedAt }
+    override suspend fun active(owner: UserId?): Visit? =
+        rows.values
+            .filter { it.endedAt == null && !it.deleted && it.userId == owner }
+            .maxByOrNull { it.startedAt }
 }
 
 class InMemoryWorkoutSetRepository : WorkoutSetRepository {
@@ -80,8 +90,12 @@ class InMemoryWorkoutSetRepository : WorkoutSetRepository {
     override suspend fun forMachine(machineId: MachineId) =
         live().filter { it.machineId == machineId }
 
-    override suspend fun latestPerMachine() =
-        live().groupBy { it.machineId }.values.map { it.last() }
+    override suspend fun latestPerMachine(owner: UserId?) =
+        live()
+            .filter { it.userId == owner }
+            .groupBy { it.machineId }
+            .values
+            .map { it.last() }
 }
 
 class FakeGym(

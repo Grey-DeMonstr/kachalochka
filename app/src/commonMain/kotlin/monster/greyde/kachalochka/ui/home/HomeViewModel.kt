@@ -43,7 +43,8 @@ class HomeViewModel(
 
     fun refresh() {
         viewModelScope.launch {
-            mutableState.value = HomeUiState(visits.active()?.let { activeVisitUi(it) })
+            val active = visits.active(currentUser.id())
+            mutableState.value = HomeUiState(active?.let { activeVisitUi(it) })
         }
     }
 

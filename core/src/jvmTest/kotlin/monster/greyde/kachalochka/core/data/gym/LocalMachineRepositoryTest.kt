@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.time.Instant
 
 class LocalMachineRepositoryTest {
@@ -43,7 +44,7 @@ class LocalMachineRepositoryTest {
             val gone = Machine.new("Бицепс", null, now).copy(deleted = true)
             listOf(sled, gone, abs).forEach { repository.upsert(it) }
 
-            assertEquals(listOf("аб", "Жим ногами"), repository.all().map { it.name })
+            assertEquals(listOf("аб", "Жим ногами"), repository.all(null).map { it.name })
         }
 
     @Test
@@ -58,5 +59,29 @@ class LocalMachineRepositoryTest {
                 listOf(MACHINE_TABLE to owned.id.value),
                 outbox.pending().map { it.tableName to it.rowId },
             )
+        }
+
+    @Test
+    fun machines_are_listed_for_their_owner_only() =
+        runTest {
+            val ivan = UserId("11111111-1111-4111-8111-111111111111")
+            val misha = UserId("22222222-2222-4222-8222-222222222222")
+            repository.upsert(Machine.new("Жим ногами", ivan, now))
+            repository.upsert(Machine.new("Тяга", misha, now))
+
+            assertEquals(listOf("Жим ногами"), repository.all(ivan).map { it.name })
+            assertEquals(listOf("Тяга"), repository.all(misha).map { it.name })
+        }
+
+    @Test
+    fun a_machine_is_found_by_owner_and_name() =
+        runTest {
+            val ivan = UserId("11111111-1111-4111-8111-111111111111")
+            val misha = UserId("22222222-2222-4222-8222-222222222222")
+            val ivanPress = Machine.new("Жим ногами", ivan, now)
+            repository.upsert(ivanPress)
+
+            assertEquals(ivanPress.id, repository.named(ivan, "Жим ногами")?.id)
+            assertNull(repository.named(misha, "Жим ногами"))
         }
 }

@@ -38,8 +38,10 @@ class LocalVisitRepository(
     override suspend fun byId(id: VisitId): Visit? =
         withContext(dispatcher) { queries.byId(id.value, ::visitOf).executeAsOneOrNull() }
 
-    override suspend fun active(): Visit? =
-        withContext(dispatcher) { queries.active(::visitOf).executeAsOneOrNull() }
+    override suspend fun active(owner: UserId?): Visit? =
+        withContext(dispatcher) {
+            queries.active(owner?.value, ::visitOf).executeAsOneOrNull()
+        }
 }
 
 private fun visitOf(

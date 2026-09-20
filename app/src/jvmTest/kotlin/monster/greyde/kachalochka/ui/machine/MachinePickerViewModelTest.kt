@@ -49,7 +49,14 @@ class MachinePickerViewModelTest {
     )
 
     private fun viewModel() =
-        MachinePickerViewModel(visit.id, gym.machines, gym.sets, gym.clock, gym.utcOffset)
+        MachinePickerViewModel(
+            visit.id,
+            gym.machines,
+            gym.sets,
+            gym.currentUser,
+            gym.clock,
+            gym.utcOffset,
+        )
 
     @BeforeTest
     fun setUp() =

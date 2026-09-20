@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.data.gym
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -24,13 +25,41 @@ class RemoteMachineRepository(
             .decodeSingleOrNull<MachineRow>()
             ?.toMachine()
 
-    override suspend fun all(): List<Machine> =
+    override suspend fun all(owner: UserId?): List<Machine> =
         client.postgrest
             .from(MACHINE_TABLE)
-            .select { filter { eq("deleted", false) } }
-            .decodeList<MachineRow>()
+            .select {
+                filter {
+                    eq("deleted", false)
+                    owned(owner)
+                }
+            }.decodeList<MachineRow>()
             .map { it.toMachine() }
             .sortedBy { it.name.lowercase() }
+
+    override suspend fun named(
+        owner: UserId?,
+        name: String,
+    ): Machine? =
+        client.postgrest
+            .from(MACHINE_TABLE)
+            .select {
+                filter {
+                    eq("deleted", false)
+                    eq("name", name)
+                    owned(owner)
+                }
+            }.decodeList<MachineRow>()
+            .firstOrNull()
+            ?.toMachine()
+}
+
+private fun PostgrestFilterBuilder.owned(owner: UserId?) {
+    if (owner != null) {
+        eq("user_id", owner.value)
+    } else {
+        exact("user_id", null)
+    }
 }
 
 @Serializable

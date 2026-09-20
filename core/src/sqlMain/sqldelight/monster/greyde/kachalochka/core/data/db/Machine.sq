@@ -26,4 +26,11 @@ byId:
 SELECT * FROM machine WHERE id = ?;
 
 live:
-SELECT * FROM machine WHERE deleted = 0;
+SELECT * FROM machine
+WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
+
+named:
+SELECT * FROM machine
+WHERE deleted = 0 AND name = :name
+  AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
+LIMIT 1;

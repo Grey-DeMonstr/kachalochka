@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
+import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.setCount
@@ -37,6 +38,7 @@ class MachinePickerViewModel(
     private val visitId: VisitId,
     private val machines: MachineRepository,
     private val sets: WorkoutSetRepository,
+    private val currentUser: CurrentUser,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
 ) : ViewModel() {
@@ -49,8 +51,9 @@ class MachinePickerViewModel(
 
     fun load() {
         viewModelScope.launch {
-            all = machines.all()
-            latest = sets.latestPerMachine().associateBy { it.machineId }
+            val owner = currentUser.id()
+            all = machines.all(owner)
+            latest = sets.latestPerMachine(owner).associateBy { it.machineId }
             today = sets.forVisit(visitId).groupingBy { it.machineId }.eachCount()
             publish(mutableState.value.query)
         }

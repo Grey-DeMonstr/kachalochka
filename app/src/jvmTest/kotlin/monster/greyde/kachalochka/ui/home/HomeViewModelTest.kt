@@ -77,7 +77,7 @@ class HomeViewModelTest {
 
             viewModel().startVisit { started = it }
 
-            val active = assertNotNull(gym.visits.active())
+            val active = assertNotNull(gym.visits.active(null))
             assertEquals(active.id, started)
             assertEquals(t0, active.startedAt)
         }

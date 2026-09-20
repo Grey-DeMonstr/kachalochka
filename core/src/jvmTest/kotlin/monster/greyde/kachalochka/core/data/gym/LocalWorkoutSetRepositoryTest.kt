@@ -75,7 +75,7 @@ class LocalWorkoutSetRepositoryTest {
 
             assertEquals(
                 setOf(pressNew, rowOnly),
-                repository.latestPerMachine().toSet(),
+                repository.latestPerMachine(null).toSet(),
             )
         }
 }

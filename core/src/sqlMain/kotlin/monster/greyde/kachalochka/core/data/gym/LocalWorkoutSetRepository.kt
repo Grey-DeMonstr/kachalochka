@@ -48,8 +48,10 @@ class LocalWorkoutSetRepository(
             queries.forMachine(machineId.value, ::workoutSetOf).executeAsList()
         }
 
-    override suspend fun latestPerMachine(): List<WorkoutSet> =
-        withContext(dispatcher) { queries.latestPerMachine(::workoutSetOf).executeAsList() }
+    override suspend fun latestPerMachine(owner: UserId?): List<WorkoutSet> =
+        withContext(dispatcher) {
+            queries.latestPerMachine(owner?.value, ::workoutSetOf).executeAsList()
+        }
 }
 
 private fun workoutSetOf(

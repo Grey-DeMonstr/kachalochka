@@ -205,7 +205,7 @@ class VisitViewModel(
 
     private suspend fun reload(reseed: Boolean) {
         visit = visits.byId(visitId)
-        machinesById = machines.all().associateBy { it.id }
+        machinesById = machines.all(currentUser.id()).associateBy { it.id }
         visitSets = sets.forVisit(visitId)
         val machine = selectedMachine()
         previousSets =
