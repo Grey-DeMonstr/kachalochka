@@ -34,3 +34,9 @@ SELECT * FROM machine
 WHERE deleted = 0 AND name = :name
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 LIMIT 1;
+
+ownerlessIds:
+SELECT id FROM machine WHERE user_id IS NULL;
+
+claimOwnerless:
+UPDATE machine SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;

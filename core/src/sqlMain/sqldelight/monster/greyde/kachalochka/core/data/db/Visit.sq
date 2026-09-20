@@ -24,3 +24,9 @@ SELECT * FROM visit
 WHERE ended_at IS NULL AND deleted = 0
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 ORDER BY recorded_at DESC LIMIT 1;
+
+ownerlessIds:
+SELECT id FROM visit WHERE user_id IS NULL;
+
+claimOwnerless:
+UPDATE visit SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;

@@ -37,3 +37,9 @@ WHERE s.deleted = 0
     WHERE machine_id = s.machine_id AND deleted = 0
       AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 );
+
+ownerlessIds:
+SELECT id FROM workout_set WHERE user_id IS NULL;
+
+claimOwnerless:
+UPDATE workout_set SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;
