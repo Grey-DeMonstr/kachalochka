@@ -7,6 +7,10 @@ import androidx.datastore.preferences.core.Preferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
+import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import monster.greyde.kachalochka.ui.account.ActivityHolder
+import monster.greyde.kachalochka.ui.account.CredentialManagerGoogleSignIn
 import monster.greyde.kachalochka.ui.theme.DataStoreThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import okio.Path.Companion.toPath
@@ -30,5 +34,14 @@ actual fun platformModule(): Module =
         // Built while Koin starts, so the stored mode is in hand before the first Activity.
         single<ThemePreference>(createdAtStart = true) {
             DataStoreThemePreference(get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        }
+        single { ActivityHolder() }
+        single<GoogleSignIn> {
+            val activities: ActivityHolder = get()
+            CredentialManagerGoogleSignIn(
+                get(),
+                { activities.current },
+                get<SupabaseCredentials>().googleWebClientId,
+            )
         }
     }

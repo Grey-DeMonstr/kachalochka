@@ -1,7 +1,9 @@
 package monster.greyde.kachalochka.core.data.supabase
 
+import io.github.jan.supabase.auth.auth
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -20,5 +22,13 @@ class SupabaseClientFactoryTest {
 
         assertTrue("SUPABASE_URL" in failure.message.orEmpty(), failure.message.orEmpty())
         assertTrue("SUPABASE_ANON_KEY" in failure.message.orEmpty(), failure.message.orEmpty())
+    }
+
+    @Test
+    fun the_client_keeps_its_own_session_storage_out_of_the_way() {
+        val client = supabaseClient(SupabaseCredentials("https://example.supabase.co", "anon-key"))
+
+        assertFalse(client.auth.config.autoLoadFromStorage)
+        assertFalse(client.auth.config.autoSaveToStorage)
     }
 }

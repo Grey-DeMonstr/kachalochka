@@ -57,6 +57,11 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
             implementation(libs.androidx.datastore.preferences.core)
+            implementation(libs.androidx.credentials)
+            implementation(libs.androidx.credentials.play.services.auth)
+            implementation(libs.google.id)
+            implementation(project.dependencies.platform(libs.supabase.bom))
+            implementation(libs.supabase.auth)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)

@@ -15,7 +15,12 @@ fun supabaseClient(credentials: SupabaseCredentials): SupabaseClient {
             "or in the environment."
     }
     return createSupabaseClient(credentials.url, credentials.anonKey) {
-        install(Auth)
+        // The account store holds every signed-in session; supabase-kt's own storage keeps one and
+        // would contend for the same slot.
+        install(Auth) {
+            autoLoadFromStorage = false
+            autoSaveToStorage = false
+        }
         install(Postgrest)
         install(Storage)
         install(Realtime)
