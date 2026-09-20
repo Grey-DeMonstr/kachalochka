@@ -12,8 +12,8 @@ import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.di.corePlatformModule
 import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
-import monster.greyde.kachalochka.ui.account.completeSignIn
-import monster.greyde.kachalochka.ui.account.resumeActiveAccount
+import monster.greyde.kachalochka.ui.account.disownActiveAccount
+import monster.greyde.kachalochka.ui.account.restoreSession
 import monster.greyde.kachalochka.ui.account.sessionFromRedirect
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
@@ -29,15 +29,25 @@ private val SESSION_RESTORE_LIMIT = 10.seconds
 fun main() {
     val koin = startKoin { modules(appModule, corePlatformModule(), platformModule()) }.koin
     MainScope().launch {
-        // A Supabase that answers with an error, or not at all, still leaves a page worth showing.
-        runCatching { withTimeoutOrNull(SESSION_RESTORE_LIMIT) { koin.restoreSession() } }
+        koin.restoreSession()
         ComposeViewport(document.body!!) { App() }
     }
 }
 
+// The bound is what stops a Supabase that never answers from costing the user the page.
 private suspend fun Koin.restoreSession() {
     val store = get<AccountStore>()
     val sessions = get<SessionActivation>()
-    val returned = get<SupabaseClient>().sessionFromRedirect()
-    if (!completeSignIn(returned, store, sessions)) resumeActiveAccount(store, sessions)
+    val client = get<SupabaseClient>()
+    val restored =
+        withTimeoutOrNull(SESSION_RESTORE_LIMIT) {
+            restoreSession(store, sessions, ::report) { client.sessionFromRedirect() }
+        }
+    if (restored == null) {
+        report("Supabase did not answer within $SESSION_RESTORE_LIMIT.")
+        disownActiveAccount(store, sessions)
+    }
 }
+
+// The browser console is where anyone debugging a page that will not load looks first.
+private fun report(message: String): Unit = js("console.error(message)")

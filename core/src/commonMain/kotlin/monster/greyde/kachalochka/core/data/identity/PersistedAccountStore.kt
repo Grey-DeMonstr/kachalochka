@@ -66,6 +66,11 @@ class PersistedAccountStore(
         publish()
     }
 
+    override suspend fun deactivate() {
+        activeState.value = null
+        publish()
+    }
+
     override suspend fun sessionOf(id: UserId): AccountSession? =
         sessions.firstOrNull { it.account.userId == id }
 

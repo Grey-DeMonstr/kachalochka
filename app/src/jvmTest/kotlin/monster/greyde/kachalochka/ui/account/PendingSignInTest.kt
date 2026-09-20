@@ -10,17 +10,21 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 private class RecordingActivation : SessionActivation {
     val activated = mutableListOf<UserId>()
+    var cleared = false
 
     override suspend fun activate(session: AccountSession) {
         activated += session.account.userId
     }
 
-    override suspend fun clear() = Unit
+    override suspend fun clear() {
+        cleared = true
+    }
 }
 
 private fun session(expiresAt: Instant) =
@@ -33,6 +37,7 @@ private fun session(expiresAt: Instant) =
 
 class PendingSignInTest {
     private val ivan = session(Instant.fromEpochSeconds(1_700_000_000))
+    private val reported = mutableListOf<String>()
 
     @Test
     fun a_session_brought_back_from_google_becomes_the_active_account() =
@@ -88,5 +93,76 @@ class PendingSignInTest {
 
             assertTrue(resumeActiveAccount(PersistedAccountStore(storage), activation))
             assertEquals(listOf(expired.account.userId), activation.activated)
+        }
+
+    @Test
+    fun a_restore_that_failed_leaves_nobody_claiming_to_be_signed_in() =
+        runTest {
+            val storage = InMemoryAccountStorage()
+            PersistedAccountStore(storage).add(ivan)
+            val reloaded = PersistedAccountStore(storage)
+            val activation = RecordingActivation()
+
+            val live =
+                restoreSession(reloaded, activation, reported::add) {
+                    error("Supabase returned a user without an e-mail")
+                }
+
+            assertFalse(live)
+            assertNull(reloaded.activeId.value)
+            assertTrue(activation.cleared)
+            assertEquals(1, reported.size)
+        }
+
+    @Test
+    fun an_account_that_could_not_be_restored_stays_available_to_sign_in_again() =
+        runTest {
+            val storage = InMemoryAccountStorage()
+            PersistedAccountStore(storage).add(ivan)
+            val reloaded = PersistedAccountStore(storage)
+
+            restoreSession(reloaded, RecordingActivation(), reported::add) { error("no network") }
+
+            assertEquals(listOf(ivan.account), reloaded.accounts.value)
+        }
+
+    @Test
+    fun a_restore_that_worked_says_nothing_and_leaves_the_account_active() =
+        runTest {
+            val storage = InMemoryAccountStorage()
+            PersistedAccountStore(storage).add(ivan)
+            val reloaded = PersistedAccountStore(storage)
+            val activation = RecordingActivation()
+
+            assertTrue(restoreSession(reloaded, activation, reported::add) { null })
+            assertEquals(ivan.account.userId, reloaded.activeId.value)
+            assertFalse(activation.cleared)
+            assertEquals(emptyList(), reported)
+        }
+
+    @Test
+    fun a_first_visit_ends_signed_out_without_complaining() =
+        runTest {
+            val store = PersistedAccountStore(InMemoryAccountStorage())
+            val activation = RecordingActivation()
+
+            assertFalse(restoreSession(store, activation, reported::add) { null })
+            assertNull(store.activeId.value)
+            assertEquals(emptyList(), reported)
+        }
+
+    @Test
+    fun a_start_up_that_never_answered_leaves_nobody_claiming_to_be_signed_in() =
+        runTest {
+            val storage = InMemoryAccountStorage()
+            PersistedAccountStore(storage).add(ivan)
+            val reloaded = PersistedAccountStore(storage)
+            val activation = RecordingActivation()
+
+            disownActiveAccount(reloaded, activation)
+
+            assertNull(reloaded.activeId.value)
+            assertTrue(activation.cleared)
+            assertEquals(listOf(ivan.account), reloaded.accounts.value)
         }
 }

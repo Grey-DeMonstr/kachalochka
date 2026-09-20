@@ -14,5 +14,8 @@ interface AccountStore {
 
     suspend fun remove(id: UserId)
 
+    /** Leaves the accounts in place and nobody signed in. */
+    suspend fun deactivate()
+
     suspend fun sessionOf(id: UserId): AccountSession?
 }

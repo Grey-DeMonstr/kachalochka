@@ -94,6 +94,29 @@ class PersistedAccountStoreTest {
         }
 
     @Test
+    fun deactivating_keeps_the_accounts_and_leaves_nobody_active() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            store.add(misha)
+            store.deactivate()
+            assertEquals(listOf(ivan.account, misha.account), store.accounts.value)
+            assertNull(store.activeId.value)
+            assertEquals(misha, store.sessionOf(misha.account.userId))
+        }
+
+    @Test
+    fun a_deactivated_store_reopens_with_nobody_active() =
+        runTest {
+            val storage = FakeStorage()
+            PersistedAccountStore(storage).run {
+                add(ivan)
+                deactivate()
+            }
+            assertNull(PersistedAccountStore(storage).activeId.value)
+        }
+
+    @Test
     fun accounts_and_the_active_id_survive_a_new_store_over_the_same_storage() =
         runTest {
             val storage = FakeStorage()
