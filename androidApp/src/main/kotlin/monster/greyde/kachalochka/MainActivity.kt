@@ -16,7 +16,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        // A configuration change creates the next Activity before destroying this one.
+        // Clear only our own registration: a newer Activity may already own the slot.
         if (activities.current === this) activities.current = null
         super.onDestroy()
     }

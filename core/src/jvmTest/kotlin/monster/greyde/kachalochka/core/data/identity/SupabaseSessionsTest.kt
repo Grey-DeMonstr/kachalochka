@@ -2,6 +2,8 @@ package monster.greyde.kachalochka.core.data.identity
 
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -12,7 +14,7 @@ import kotlin.time.Instant
 
 private val NOW = Instant.fromEpochSeconds(1_700_000_000)
 
-private fun userSession(metadata: Map<String, String>) =
+private fun userSession(metadata: Map<String, JsonElement>) =
     UserSession(
         accessToken = "access",
         refreshToken = "refresh",
@@ -23,7 +25,7 @@ private fun userSession(metadata: Map<String, String>) =
                 id = "11111111-1111-4111-8111-111111111111",
                 aud = "authenticated",
                 email = "ivan.petrov@example.test",
-                userMetadata = JsonObject(metadata.mapValues { JsonPrimitive(it.value) }),
+                userMetadata = JsonObject(metadata),
             ),
         expiresAt = NOW + 1.hours,
     )
@@ -58,15 +60,34 @@ class SupabaseSessionsTest {
 
     @Test
     fun the_name_google_sent_becomes_the_display_name() {
-        val account = userSession(mapOf("full_name" to "Иван Петров")).toAccountSession().account
+        val metadata = mapOf("full_name" to JsonPrimitive("Иван Петров"))
 
-        assertEquals("Иван Петров", account.displayName)
+        assertEquals("Иван Петров", userSession(metadata).toAccountSession().account.displayName)
     }
 
     @Test
     fun an_account_with_no_name_falls_back_to_the_e_mail_local_part() {
-        val account = userSession(emptyMap()).toAccountSession().account
+        assertEquals(
+            "ivan.petrov",
+            userSession(emptyMap()).toAccountSession().account.displayName,
+        )
+    }
 
-        assertEquals("ivan.petrov", account.displayName)
+    @Test
+    fun a_name_claim_sent_as_null_falls_back_to_the_e_mail_local_part() {
+        val metadata = mapOf("full_name" to JsonNull)
+
+        assertEquals("ivan.petrov", userSession(metadata).toAccountSession().account.displayName)
+    }
+
+    @Test
+    fun a_blank_name_claim_gives_way_to_the_next_one() {
+        val metadata =
+            mapOf(
+                "full_name" to JsonPrimitive("  "),
+                "name" to JsonPrimitive("Иван"),
+            )
+
+        assertEquals("Иван", userSession(metadata).toAccountSession().account.displayName)
     }
 }

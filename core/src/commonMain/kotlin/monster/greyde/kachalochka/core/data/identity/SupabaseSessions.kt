@@ -60,7 +60,13 @@ fun UserSession.toAccountSession(): AccountSession {
 }
 
 private fun UserInfo.displayName(email: String): String =
-    NAME_CLAIMS
-        .firstNotNullOfOrNull { (userMetadata?.get(it) as? JsonPrimitive)?.content }
-        ?.takeIf { it.isNotBlank() }
+    NAME_CLAIMS.firstNotNullOfOrNull { nameClaim(it) }
         ?: email.substringBefore('@').ifBlank { email }
+
+// JsonNull is a JsonPrimitive whose content is the word "null", so a claim the provider sent
+// empty has to be turned away before it reaches anybody's screen.
+private fun UserInfo.nameClaim(claim: String): String? =
+    (userMetadata?.get(claim) as? JsonPrimitive)
+        ?.takeIf { it.isString }
+        ?.content
+        ?.takeIf { it.isNotBlank() }
