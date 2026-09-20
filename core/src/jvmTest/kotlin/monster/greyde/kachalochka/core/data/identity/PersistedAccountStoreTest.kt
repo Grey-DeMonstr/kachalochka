@@ -62,6 +62,17 @@ class PersistedAccountStoreTest {
         }
 
     @Test
+    fun switching_to_an_unknown_id_is_ignored() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            val unknownId = UserId("33333333-3333-4333-8333-333333333333")
+            store.switch(unknownId)
+            assertEquals(ivan.account.userId, store.activeId.value)
+            assertEquals(listOf(ivan.account), store.accounts.value)
+        }
+
+    @Test
     fun removing_the_active_account_falls_back_to_the_first_remaining_one() =
         runTest {
             val store = PersistedAccountStore(FakeStorage())
