@@ -1,6 +1,5 @@
 package monster.greyde.kachalochka.ui.account
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -18,10 +17,8 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 private class GetCredentialCancellationException : Exception("the user backed out")
 
@@ -47,21 +44,6 @@ class AccountsViewModelTest {
 
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
-    @Test
-    fun backing_out_of_the_google_picker_reads_as_a_change_of_mind() {
-        assertTrue(isUserCancellation(GetCredentialCancellationException()))
-    }
-
-    @Test
-    fun a_missing_client_id_is_not_mistaken_for_a_change_of_mind() {
-        assertFalse(isUserCancellation(IllegalStateException("Sign-in needs a visible screen")))
-    }
-
-    @Test
-    fun kotlin_s_own_cancellation_is_not_mistaken_for_a_change_of_mind() {
-        assertFalse(isUserCancellation(CancellationException("stopped")))
-    }
-
     private fun viewModel(signIn: GoogleSignIn) =
         AccountsViewModel(
             Accounts(
@@ -73,24 +55,28 @@ class AccountsViewModelTest {
         )
 
     /**
-     * `addAccount()` fires and forgets on `viewModelScope`, so a real failure escapes as an
-     * uncaught exception on `Dispatchers.Main` rather than a thrown one; `runTest` is what
-     * surfaces that as this test's own failure (or lets it pass quietly), which is the only way
-     * to see whether the catch block is actually wired up rather than just its predicate.
+     * `addAccount()` fires and forgets on `viewModelScope`, so a failure escapes as an uncaught
+     * exception on `Dispatchers.Main` rather than a thrown one; `runTest` is what surfaces that
+     * as this test's own failure instead of letting it pass quietly.
      */
     @Test
-    fun backing_out_of_the_picker_leaves_no_trace_of_an_error() =
+    fun a_failed_sign_in_says_so_instead_of_crashing_the_app() =
         runTest {
-            viewModel(FailingSignIn(GetCredentialCancellationException())).addAccount()
+            val viewModel =
+                viewModel(FailingSignIn(IllegalStateException("Sign-in needs a visible screen")))
+
+            viewModel.addAccount()
+
+            assertNotNull(viewModel.state.value.failure)
         }
 
     @Test
-    fun a_real_sign_in_failure_is_not_swallowed() {
-        val error = IllegalStateException("Sign-in needs a visible screen")
-        val propagated =
-            assertFailsWith<IllegalStateException> {
-                runTest { viewModel(FailingSignIn(error)).addAccount() }
-            }
-        assertEquals(error.message, propagated.message)
-    }
+    fun backing_out_of_the_picker_leaves_no_trace_of_an_error() =
+        runTest {
+            val viewModel = viewModel(FailingSignIn(GetCredentialCancellationException()))
+
+            viewModel.addAccount()
+
+            assertNull(viewModel.state.value.failure)
+        }
 }

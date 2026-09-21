@@ -23,7 +23,10 @@ import org.koin.compose.koinInject
 
 /** The web's frame 5e: no route is reachable until this hands off through [onSignIn]. */
 @Composable
-fun SignInScreen(onSignIn: () -> Unit) {
+fun SignInScreen(
+    onSignIn: () -> Unit,
+    failure: String? = null,
+) {
     val colors = MaterialTheme.colorScheme
     val available: SignInAvailable = koinInject()
     Surface(Modifier.fillMaxSize(), color = colors.background) {
@@ -55,7 +58,23 @@ fun SignInScreen(onSignIn: () -> Unit) {
                         color = colors.onBackground.copy(alpha = 0.6f),
                     )
                 }
+                failure?.let { SignInFailure(it) }
             }
         }
     }
+}
+
+/** Shown wherever a sign-in can be started, since the design draws no screen of its own for it. */
+@Composable
+internal fun SignInFailure(
+    message: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        message,
+        modifier = modifier.testTag("sign-in-failure"),
+        fontSize = 13.sp,
+        textAlign = TextAlign.Center,
+        color = MaterialTheme.colorScheme.error,
+    )
 }

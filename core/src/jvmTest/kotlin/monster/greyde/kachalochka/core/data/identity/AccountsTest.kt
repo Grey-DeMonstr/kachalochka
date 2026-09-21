@@ -1,9 +1,13 @@
 package monster.greyde.kachalochka.core.data.identity
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
@@ -13,6 +17,15 @@ private class QueuedSignIn(
 ) : GoogleSignIn {
     override suspend fun signIn(): AccountSession = queue.removeFirst()
 }
+
+private class FailingSignIn(
+    private val error: Throwable,
+) : GoogleSignIn {
+    override suspend fun signIn(): AccountSession = throw error
+}
+
+/** Stands in for androidx.credentials' own type, which commonMain cannot see. */
+private class GetCredentialCancellationException : Exception("the user backed out")
 
 private class RecordingActivation : SessionActivation {
     val activated = mutableListOf<UserId>()
@@ -59,6 +72,14 @@ class AccountsTest {
         activation,
         ownerless,
     )
+
+    private fun refusing(error: Throwable) =
+        Accounts(
+            PersistedAccountStore(InMemoryAccountStorage()),
+            FailingSignIn(error),
+            RecordingActivation(),
+            RecordingOwnerless(),
+        )
 
     @Test
     fun the_first_account_claims_the_ownerless_rows() =
@@ -127,4 +148,48 @@ class AccountsTest {
             assertEquals(ivan.account.userId, service.activeId.value)
             assertEquals(ivan.account.userId, activation.activated.last())
         }
+
+    @Test
+    fun a_refused_sign_in_is_reported_rather_than_thrown() =
+        runTest {
+            val service = refusing(IllegalStateException("Sign-in needs a visible screen"))
+
+            service.addAccount()
+
+            assertNotNull(service.lastFailure.value)
+            assertTrue(service.accounts.value.isEmpty())
+        }
+
+    @Test
+    fun backing_out_of_the_google_picker_reports_nothing() =
+        runTest {
+            val service = refusing(GetCredentialCancellationException())
+
+            service.addAccount()
+
+            assertNull(service.lastFailure.value)
+        }
+
+    @Test
+    fun a_cancelled_sign_in_still_cancels() =
+        runTest {
+            assertFailsWith<CancellationException> {
+                refusing(CancellationException("stopped")).addAccount()
+            }
+        }
+
+    @Test
+    fun a_sign_in_that_works_leaves_no_failure_behind() =
+        runTest {
+            val service = accounts(mutableListOf(ivan))
+            service.addAccount()
+            assertNull(service.lastFailure.value)
+        }
+
+    @Test
+    fun only_the_picker_s_own_cancellation_reads_as_a_change_of_mind() {
+        assertTrue(isUserCancellation(GetCredentialCancellationException()))
+        assertFalse(isUserCancellation(IllegalStateException("Sign-in needs a visible screen")))
+        assertFalse(isUserCancellation(CancellationException("stopped")))
+    }
 }

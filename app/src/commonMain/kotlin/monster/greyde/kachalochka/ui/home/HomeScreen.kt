@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInAvailable
+import monster.greyde.kachalochka.ui.account.SignInFailure
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.Rule
@@ -80,6 +81,7 @@ fun HomeScreen(
                 )
             }
         }
+        accounts.failure?.let { SignInFailure(it, Modifier.padding(horizontal = 16.dp)) }
     }
 }
 

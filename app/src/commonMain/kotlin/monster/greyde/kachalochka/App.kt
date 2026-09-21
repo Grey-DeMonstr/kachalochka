@@ -49,7 +49,10 @@ fun App() {
 
     KachalochkaTheme(mode) {
         if (signInRequired.value && accounts.activeId == null) {
-            SignInScreen(onSignIn = accountsViewModel::addAccount)
+            SignInScreen(
+                onSignIn = accountsViewModel::addAccount,
+                failure = accounts.failure,
+            )
         } else {
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = HomeRoute) {

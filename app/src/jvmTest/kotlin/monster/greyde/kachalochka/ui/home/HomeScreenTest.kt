@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.home
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
@@ -46,6 +47,18 @@ class HomeScreenTest {
             onNodeWithTag("home-sign-in").assertDoesNotExist()
         }
     }
+
+    /** The fake sign-in has nothing queued to hand back, which is a refusal like any other. */
+    @Test
+    fun a_refused_sign_in_says_so_under_the_button() =
+        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}) }) {
+            onNodeWithTag("sign-in-failure").assertDoesNotExist()
+
+            onNodeWithTag("home-sign-in").performClick()
+            waitForIdle()
+
+            onNodeWithTag("sign-in-failure").assertExists()
+        }
 
     /** Credential Manager throws without the client id, so the button must not be offered. */
     @Test

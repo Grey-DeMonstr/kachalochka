@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.ui.format.monogram
 data class AccountsUi(
     val accounts: List<AccountUi>,
     val activeId: UserId?,
+    val failure: String? = null,
 )
 
 data class AccountUi(
@@ -48,18 +49,16 @@ class AccountsViewModel(
     private val accounts: Accounts,
 ) : ViewModel() {
     val state: StateFlow<AccountsUi> =
-        combine(accounts.accounts, accounts.activeId) { list, activeId ->
-            AccountsUi(accountsUi(list, activeId), activeId)
+        combine(
+            accounts.accounts,
+            accounts.activeId,
+            accounts.lastFailure,
+        ) { list, activeId, failure ->
+            AccountsUi(accountsUi(list, activeId), activeId, failure?.let { SIGN_IN_FAILED })
         }.stateIn(viewModelScope, SharingStarted.Eagerly, AccountsUi(emptyList(), null))
 
     fun addAccount() {
-        viewModelScope.launch {
-            try {
-                accounts.addAccount()
-            } catch (error: Exception) {
-                if (!isUserCancellation(error)) throw error
-            }
-        }
+        viewModelScope.launch { accounts.addAccount() }
     }
 
     fun switchTo(id: UserId) {
@@ -73,10 +72,5 @@ class AccountsViewModel(
     }
 }
 
-/**
- * Android's picker throws `GetCredentialCancellationException` when the user backs out; that
- * type lives in androidx.credentials, invisible from commonMain, so its class name is the only
- * cross-platform way to tell a change of mind from a broken sign-in.
- */
-internal fun isUserCancellation(error: Throwable): Boolean =
-    error::class.simpleName == "GetCredentialCancellationException"
+/** The design draws no error screen, and a sign-in that failed still has to say that it did. */
+private const val SIGN_IN_FAILED = "Не удалось войти. Попробуйте ещё раз"
