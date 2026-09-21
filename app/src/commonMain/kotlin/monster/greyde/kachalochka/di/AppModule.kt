@@ -32,9 +32,9 @@ val appModule =
             VisitViewModel(visitId, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (visitId: VisitId) ->
-            MachinePickerViewModel(visitId, get(), get(), get(), get(), get())
+            MachinePickerViewModel(visitId, get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (args: MachineFormArgs) ->
-            MachineFormViewModel(args, get(), get(), get())
+            MachineFormViewModel(args, get(), get(), get(), get())
         }
     }

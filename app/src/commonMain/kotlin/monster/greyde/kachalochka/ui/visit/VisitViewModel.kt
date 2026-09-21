@@ -42,6 +42,7 @@ import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.shortSet
 import monster.greyde.kachalochka.ui.format.weightCaption
+import monster.greyde.kachalochka.ui.ownVisit
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -223,12 +224,8 @@ class VisitViewModel(
         }
     }
 
-    /** What the list shows and what a save lands in are the same row, resolved here. */
-    private suspend fun visitOf(owner: UserId?): Visit? =
-        visits.byId(visitId)?.takeIf { it.userId == owner } ?: visits.active(owner)
-
     private suspend fun startedVisitOf(owner: UserId?): Visit {
-        visitOf(owner)?.let { return it }
+        visits.ownVisit(visitId, owner)?.let { return it }
         val now = clock.now()
         return Visit(VisitId.random(), owner, now, null, now, false).also { visits.upsert(it) }
     }
@@ -267,7 +264,7 @@ class VisitViewModel(
 
     private suspend fun reload(reseed: Boolean) {
         val owner = currentUser.id()
-        val shown = visitOf(owner)
+        val shown = visits.ownVisit(visitId, owner)
         visit = shown
         machinesById = machines.all(owner).associateBy { it.id }
         visitSets = shown?.let { sets.forVisit(it.id) }.orEmpty()

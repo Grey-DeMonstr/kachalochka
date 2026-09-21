@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -64,6 +65,7 @@ class MachineFormViewModel(
     private val args: MachineFormArgs,
     private val machines: MachineRepository,
     private val currentUser: CurrentUser,
+    private val accounts: Accounts,
     private val clock: Clock,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineFormState(name = args.name))
@@ -72,6 +74,15 @@ class MachineFormViewModel(
 
     private var existing: Machine? = null
     private var loaded = false
+
+    /** The edits are the user's and stay; the row behind them belongs to whoever was active. */
+    init {
+        viewModelScope.launch {
+            accounts.activeId.collect { active ->
+                existing = existing?.takeIf { it.userId == active }
+            }
+        }
+    }
 
     // The screen asks again whenever it re-enters composition; the form keeps its edits then.
     fun load() {
@@ -100,7 +111,10 @@ class MachineFormViewModel(
         if (!form.canSave) return
         writes.launch {
             val now = clock.now()
-            val base = existing ?: Machine.new(form.name.trim(), currentUser.id(), now)
+            val owner = currentUser.id()
+            val base =
+                existing?.takeIf { it.userId == owner }
+                    ?: Machine.new(form.name.trim(), owner, now)
             val machine =
                 base.copy(
                     name = form.name.trim(),

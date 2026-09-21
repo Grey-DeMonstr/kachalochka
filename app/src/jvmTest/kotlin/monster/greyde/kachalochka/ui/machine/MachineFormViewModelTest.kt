@@ -6,10 +6,13 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -23,9 +26,16 @@ import kotlin.time.Duration.Companion.minutes
 class MachineFormViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
+    private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+
+    private fun session(
+        id: String,
+        name: String,
+    ) = AccountSession(Account(UserId(id), "$name@example.test", name), "access", "refresh", t0)
 
     private fun viewModel(args: MachineFormArgs) =
-        MachineFormViewModel(args, gym.machines, gym.currentUser, gym.clock)
+        MachineFormViewModel(args, gym.machines, gym.currentUser, gym.accounts, gym.clock)
 
     @BeforeTest
     fun setUp() {
@@ -145,5 +155,27 @@ class MachineFormViewModelTest {
             assertEquals(10.0, saved.weightStep)
             assertEquals(gym.clock.current, saved.updatedAt)
             assertEquals(1, gym.machines.all(null).size)
+        }
+
+    @Test
+    fun a_switch_while_editing_saves_a_copy_for_the_account_that_became_active() =
+        runTest {
+            gym.withAccounts(misha, ivan, active = misha)
+            val hers = Machine.new("Жим ногами", misha.account.userId, t0)
+            gym.machines.upsert(hers)
+            val vm = viewModel(MachineFormArgs(hers.id, null, "")).also { it.load() }
+
+            gym.accounts.switchTo(ivan.account.userId)
+            vm.update { it.copy(weightStep = 10.0, setupNote = "Упоры на 3") }
+            var saved: MachineId? = null
+            vm.save { saved = it }
+
+            val untouched = assertNotNull(gym.machines.byId(hers.id))
+            assertEquals(2.5, untouched.weightStep)
+            assertEquals("", untouched.setupNote)
+            val mirrored = assertNotNull(gym.machines.byId(assertNotNull(saved)))
+            assertNotEquals(hers.id, mirrored.id)
+            assertEquals(ivan.account.userId, mirrored.userId)
+            assertEquals(10.0, mirrored.weightStep)
         }
 }
