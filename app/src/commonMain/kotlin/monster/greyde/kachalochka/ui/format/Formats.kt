@@ -105,3 +105,11 @@ fun formatRest(remaining: Duration): String {
     val total = ceil(remaining.inWholeMilliseconds / 1000.0).toLong().coerceAtLeast(0)
     return "${total / 60}:${(total % 60).toString().padStart(2, '0')}"
 }
+
+/** The avatar draws a letter, never a photo. */
+fun monogram(name: String): String =
+    name
+        .trim()
+        .take(1)
+        .uppercase()
+        .ifBlank { "?" }

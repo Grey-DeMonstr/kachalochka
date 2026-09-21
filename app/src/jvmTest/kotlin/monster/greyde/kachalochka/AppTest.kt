@@ -34,7 +34,8 @@ class AppTest {
     @Test
     fun home_navigates_to_settings_and_back() =
         runApp {
-            onNodeWithTag("open-settings").performClick()
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-settings").performClick()
             waitForIdle()
             onNodeWithTag("settings-title").assertIsDisplayed()
             onNodeWithTag("top-bar-back").performClick()

@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.restRemaining
+import monster.greyde.kachalochka.ui.account.AccountMenu
 import monster.greyde.kachalochka.ui.format.formatRest
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.timer.RestTimer
@@ -84,14 +85,7 @@ fun Screen(
                     color = colors.onBackground,
                 )
                 RestTimerChip(Modifier.testTag("rest-timer"))
-                if (onOpenSettings != null) {
-                    SquareIconButton(
-                        PhosphorIcons.Gear,
-                        "Настройки",
-                        onOpenSettings,
-                        Modifier.testTag("open-settings"),
-                    )
-                }
+                AccountMenu(onOpenSettings, Modifier.testTag("account-avatar"))
             }
             Rule()
             content()

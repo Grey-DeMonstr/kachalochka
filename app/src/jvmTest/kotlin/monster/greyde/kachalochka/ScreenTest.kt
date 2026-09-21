@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
+import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
@@ -14,11 +15,13 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.timer.Ticker
 import org.koin.compose.KoinApplication
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.koinConfiguration
 import org.koin.dsl.module
 import kotlin.time.Clock
@@ -32,6 +35,8 @@ fun fakeGymModule(gym: FakeGym) =
         single<VisitRepository> { gym.visits }
         single<WorkoutSetRepository> { gym.sets }
         single<CurrentUser> { gym.currentUser }
+        single<Accounts> { gym.accounts }
+        viewModelOf(::AccountsViewModel)
     }
 
 @Composable

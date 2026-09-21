@@ -109,4 +109,11 @@ class FormatsTest {
         assertEquals("1:30", formatRest(90.seconds))
         assertEquals("0:05", formatRest(4.2.seconds))
     }
+
+    @Test
+    fun a_monogram_is_the_first_letter_uppercased() {
+        assertEquals("I", monogram("Ivan"))
+        assertEquals("М", monogram("миша"))
+        assertEquals("?", monogram("  "))
+    }
 }

@@ -2,6 +2,14 @@ package monster.greyde.kachalochka.fakes
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
+import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
+import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
+import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
+import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -98,6 +106,22 @@ class InMemoryWorkoutSetRepository : WorkoutSetRepository {
             .map { it.last() }
 }
 
+private class QueuedGoogleSignIn : GoogleSignIn {
+    val queue = ArrayDeque<AccountSession>()
+
+    override suspend fun signIn(): AccountSession = queue.removeFirst()
+}
+
+private class NoOpSessionActivation : SessionActivation {
+    override suspend fun activate(session: AccountSession) = Unit
+
+    override suspend fun clear() = Unit
+}
+
+private class NoOpOwnerlessRows : OwnerlessRows {
+    override suspend fun claim(owner: UserId) = Unit
+}
+
 class FakeGym(
     now: Instant = Instant.fromEpochSeconds(1_700_000_000),
 ) {
@@ -106,9 +130,31 @@ class FakeGym(
     val machines = InMemoryMachineRepository()
     val visits = InMemoryVisitRepository()
     val sets = InMemoryWorkoutSetRepository()
+    private val signIn = QueuedGoogleSignIn()
+    val accounts =
+        Accounts(
+            PersistedAccountStore(InMemoryAccountStorage()),
+            signIn,
+            NoOpSessionActivation(),
+            NoOpOwnerlessRows(),
+        )
     val currentUser =
         object : CurrentUser {
-            override suspend fun id(): UserId? = null
+            override suspend fun id(): UserId? = accounts.activeId.value
         }
     val utcOffset = UtcOffset { Duration.ZERO }
+
+    /** Signs [sessions] in through [accounts] in order, then makes [active] the live one. */
+    fun withAccounts(
+        vararg sessions: AccountSession,
+        active: AccountSession,
+    ): FakeGym =
+        runBlocking {
+            sessions.forEach {
+                signIn.queue.addLast(it)
+                accounts.addAccount()
+            }
+            accounts.switchTo(active.account.userId)
+            this@FakeGym
+        }
 }

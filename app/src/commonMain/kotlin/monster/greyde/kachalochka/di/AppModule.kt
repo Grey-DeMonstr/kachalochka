@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.di
 import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.home.HomeViewModel
@@ -26,6 +27,7 @@ val appModule =
         single<UtcOffset> { UtcOffset(::platformUtcOffset) }
         single { RestTimer(get()) }
         viewModelOf(::HomeViewModel)
+        viewModelOf(::AccountsViewModel)
         viewModel { (visitId: VisitId) ->
             VisitViewModel(visitId, get(), get(), get(), get(), get(), get(), get())
         }
