@@ -24,6 +24,11 @@ data class AccountUi(
     val active: Boolean,
 )
 
+/**
+ * Resolved at more than one `ViewModelStoreOwner` (the app-level sign-in gate and each screen),
+ * so distinct instances coexist. They only agree because [state] derives entirely from [accounts];
+ * any local mutable state added here would let those instances drift apart.
+ */
 class AccountsViewModel(
     private val accounts: Accounts,
 ) : ViewModel() {
