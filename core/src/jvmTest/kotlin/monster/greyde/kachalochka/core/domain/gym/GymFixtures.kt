@@ -1,6 +1,5 @@
 package monster.greyde.kachalochka.core.domain.gym
 
-import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Instant
 
 internal val T0: Instant = Instant.fromEpochSeconds(1_700_000_000)
@@ -15,8 +14,7 @@ internal fun machine(
     name: String = "Жим ногами",
     platformWeight: Double = 0.0,
     platformIncluded: Boolean = false,
-    userId: UserId? = null,
-) = Machine.new(name, userId, T0).copy(
+) = Machine.new(name, null, T0).copy(
     id = id,
     platformWeight = platformWeight,
     platformIncluded = platformIncluded,
@@ -29,10 +27,9 @@ internal fun set(
     atSeconds: Long,
     machine: MachineId = PRESS,
     deleted: Boolean = false,
-    userId: UserId? = null,
 ) = WorkoutSet(
     id = WorkoutSetId.random(),
-    userId = userId,
+    userId = null,
     visitId = visit,
     machineId = machine,
     weight = weight,

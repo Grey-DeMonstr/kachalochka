@@ -75,11 +75,10 @@ object ScreenUnderTest
 fun runScreenTest(
     gym: FakeGym,
     screen: @Composable () -> Unit,
-    signInRequired: Boolean = false,
     assertions: ComposeUiTest.() -> Unit,
 ) = runNavigationUiTest(
     content = {
-        TestKoin(gym, signInRequired) {
+        TestKoin(gym) {
             KachalochkaTheme(ThemeMode.Dark) {
                 val navController = rememberNavController()
                 NavHost(navController, startDestination = ScreenUnderTest) {
