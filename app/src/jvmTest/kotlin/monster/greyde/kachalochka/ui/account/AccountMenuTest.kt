@@ -16,6 +16,8 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.ui.home.HomeScreen
+import monster.greyde.kachalochka.ui.settings.SettingsScreen
+import monster.greyde.kachalochka.ui.theme.ThemeMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -75,6 +77,19 @@ class AccountMenuTest {
     fun the_avatar_is_an_outline_while_nobody_is_signed_in() {
         runScreenTest(FakeGym(), screen = { HomeScreen(onOpenVisit = {}, onOpenSettings = {}) }) {
             onNodeWithTag("account-avatar-empty").assertExists()
+        }
+    }
+
+    @Test
+    fun settings_shows_the_avatar_but_no_settings_row_of_its_own() {
+        val gym = FakeGym().withAccounts(ivan, active = ivan)
+        runScreenTest(
+            gym,
+            screen = { SettingsScreen(mode = ThemeMode.Dark, onModeChange = {}, onBack = {}) },
+        ) {
+            onNodeWithTag("account-avatar").assertExists()
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-settings").assertDoesNotExist()
         }
     }
 
