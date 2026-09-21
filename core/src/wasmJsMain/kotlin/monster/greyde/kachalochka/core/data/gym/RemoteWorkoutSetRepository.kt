@@ -45,14 +45,6 @@ class RemoteWorkoutSetRepository(
             .map { it.toWorkoutSet() }
 }
 
-private fun PostgrestFilterBuilder.owned(owner: UserId?) {
-    if (owner != null) {
-        eq("user_id", owner.value)
-    } else {
-        exact("user_id", null)
-    }
-}
-
 @Serializable
 private data class WorkoutSetRow(
     val id: String,

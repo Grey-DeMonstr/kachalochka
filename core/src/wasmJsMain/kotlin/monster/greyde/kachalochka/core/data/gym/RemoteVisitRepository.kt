@@ -3,7 +3,6 @@ package monster.greyde.kachalochka.core.data.gym
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
-import io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -40,14 +39,6 @@ class RemoteVisitRepository(
             }.decodeList<VisitRow>()
             .firstOrNull()
             ?.toVisit()
-}
-
-private fun PostgrestFilterBuilder.owned(owner: UserId?) {
-    if (owner != null) {
-        eq("user_id", owner.value)
-    } else {
-        exact("user_id", null)
-    }
 }
 
 @Serializable
