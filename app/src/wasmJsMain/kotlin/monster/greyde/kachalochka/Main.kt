@@ -29,7 +29,13 @@ private val SESSION_RESTORE_LIMIT = 10.seconds
 fun main() {
     val koin = startKoin { modules(appModule, corePlatformModule(), platformModule()) }.koin
     MainScope().launch {
-        koin.restoreSession()
+        // The net under the reporting in restoreSession, not a substitute for it: a start-up
+        // that goes wrong in a way nobody foresaw still owes the user a page to look at.
+        try {
+            koin.restoreSession()
+        } catch (failure: Throwable) {
+            report("Start-up could not finish: $failure")
+        }
         ComposeViewport(document.body!!) { App() }
     }
 }
