@@ -6,7 +6,12 @@ An Android / Web app to save sport results, share them with friends and collect 
 
 Online data storage (for web app to be synced with android one), login using Google OAuth.
 Android app should be local-first (can work offline and without login), but sync all the data
-online whenever possible.
+online whenever possible, for every account signed in on the device. The web app cannot work
+without an account.
+
+Several accounts can be signed in on one device at once, with one of them active. Everything is
+recorded into the active account, and each account keeps its own visits, machines and history.
+Switching between them is easy and works from inside a running visit.
 
 Both apps must support a dark and a light theme. By default the theme follows the system setting;
 the user can override it and pick light or dark explicitly. The choice is remembered between
@@ -33,21 +38,26 @@ Comments to exercise AND to the whole day / visit should be allowed.
 ### Screens
 
 Every screen shares a top bar: a back arrow (except on the home screen), the screen title, a
-rest timer chip and a settings gear (except on the settings screen). The timer counts down from
-1:30; tapping the chip, or saving a set, restarts it, and it shows the full 1:30 when idle.
+rest timer chip and the avatar of the active account. The timer counts down from 1:30; tapping
+the chip, or saving a set, restarts it, and it shows the full 1:30 when idle. Tapping the avatar
+opens the account menu: the signed-in accounts with the active one marked, then adding another
+account, the settings and signing out. With nobody signed in the avatar is an empty outline.
 
-The home screen shows a visit card. While a visit is running, the card shows "Визит идёт", the
-elapsed time, how many machines and sets so far, the last recorded set and a "Продолжить"
-button. With no visit running, the card offers "Начать визит", which starts one. Below the card
-are rows for plans, statistics and friends; they are shown but not yet available.
+The home screen shows a visit card. While a visit is running, the card shows "Визит идёт", how
+many machines and sets so far, the last recorded set and a "Продолжить" button. With no visit
+running, the card offers "Начать визит", which starts one. Below the card are rows for plans,
+statistics and friends; they are shown but not yet available. On Android with nobody signed in,
+"Войти через Google" sits at the bottom of the screen.
 
 The visit screen lists the visit's sets grouped by machine. Tapping a machine's row expands it
 to show its sets; tapping a set opens it for editing or deletion. "Завершить визит" ends the
 visit and returns to the home screen.
 
-Adding or editing a set uses the same sheet. It shows the machine, the set number, the machine's
-setup note, the previous visit's sets on that machine, and weight and reps steppers seeded from
-the previous visit's set. Saving records the set.
+Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
+the machine, the set number, the machine's setup note, the previous visit's sets on that machine,
+and weight and reps steppers seeded from the previous visit's set. Saving records the set.
+Tapping another account's chip switches to it: the shown history and the save button follow that
+person, and the set is recorded into their own visit.
 
 The machine picker lets the user search machines by name; "Создать «…»" opens the machine form
 pre-filled with the typed name. When a machine is already chosen for the visit, "Скопировать
@@ -60,6 +70,20 @@ counterweight), the platform weight and whether it is added to the recorded weig
 
 Photos, comments on a set, a custom unit and counting left and right separately are shown on
 these screens but not yet available.
+
+## Sign-in and accounts
+
+Google is the only way in. On Android the app works without an account: everything recorded stays
+on the device, and the first account to sign in takes ownership of it. Accounts added later start
+empty. The web app shows nothing but the sign-in screen until an account is chosen.
+
+Adding an account asks Google. Switching between accounts afterwards does not, and works with no
+network — either from the avatar menu or, while recording, from the chips in the set sheet, so a
+parent can record their own sets and their child's between one machine and the next.
+
+Signing out of an account removes it from the device but keeps what it recorded, and signing back
+in finds it again. On Android, signing out of the last account returns the app to working without
+one. Friends stay locked until an account is signed in.
 
 ## Custom exercsies
 

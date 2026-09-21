@@ -1,6 +1,6 @@
 # Kachalochka — Technical Specification
 
-**Last reviewed:** 2026-09-19
+**Last reviewed:** 2026-09-20
 
 The architectural decisions and invariants new work must respect. It is not a description of the
 current code — read the code for that. What is written here is what the code cannot tell you: why
@@ -39,6 +39,7 @@ backend requirement in the functional spec.
 | DI | Koin | No codegen, works on Wasm |
 | Local DB | SQLDelight | SQL-first, generated type-safe queries, JVM driver for host tests |
 | Backend client | supabase-kt (auth, postgrest, storage, realtime) | Supports Android and Wasm |
+| Sign-in | Credential Manager (Android), OAuth redirect (web) | Both yield a Supabase session |
 | HTTP engine | Ktor: OkHttp on Android, JS engine on Wasm | Required by supabase-kt |
 | Serialization | kotlinx.serialization | Required by supabase-kt |
 | Time | `kotlin.time` from the standard library | |
@@ -133,6 +134,11 @@ which leaves the generator unrun on a cold build.
 online-only with identical UI code. It is also why domain types must be serialization-neutral:
 the same entity is written to SQLite by one implementation and posted as JSON by the other.
 
+Reads take their owner as an argument. One Android database holds the rows of every account
+signed in on the device (§4.3), so a repository that resolved the owner from ambient state would
+scope twice on the web, where row-level security already filters, and would turn a test that
+forgot to set the active account into an empty list instead of a failure.
+
 ---
 
 ## 4. Data model and sync
@@ -174,15 +180,48 @@ just another update that travels the same path.
 - **Conflicts** resolve by last-write-wins on `updated_at`. The data is single-user per row and
   edits are rare, so a merge strategy would be cost without benefit.
 - **Triggers.** A pass runs on app start, on connectivity gain, and after the user ends a visit.
+  It is a WorkManager job with a network constraint, so connectivity gain is that constraint
+  firing rather than a listener the app maintains.
+- **Every account.** A pass covers every account signed in on the device, not only the active
+  one, and `syncState` is keyed by `user_id` so each has its own pull watermark. Pushing only the
+  active account would leave a guest's sets enqueued until somebody happened to switch back to
+  them.
+
+Sync runs on a second `SupabaseClient` that installs no `Auth`; its `accessToken` resolver
+returns the token of the account the pass is currently on, refreshed when stale through
+`refreshSession`, which returns a session without making it current. The UI's client and its
+active session are never touched. Importing each account's session in turn on the one client
+would race every write the UI makes meanwhile.
 
 Sync is a `data/` concern. Nothing in `domain/` or `app` knows whether a row has been pushed.
 
-### 4.3 Anonymous use and first login
+### 4.3 Anonymous use and several accounts
 
-Android works without an account: rows are created with a null `user_id` and never pushed. On
-first successful login, every row with null `user_id` is stamped with the user's id and enqueued
-in the outbox. Logging out keeps the local data; logging in as a different user is refused while
-rows belonging to another user exist.
+Android works without an account: rows are created with a null `user_id` and never pushed. On the
+first successful sign-in, every row with null `user_id` is stamped with that user's id and
+enqueued in the outbox. Accounts added afterwards claim nothing and start empty.
+
+Several accounts are signed in at once and one of them is active; the active one owns whatever is
+recorded now. Their rows share one local database, which is why reads are scoped by owner (§3)
+and why a pull watermark is per account (§4.2). Signing out drops the session and keeps the rows,
+so signing back in finds them again.
+
+The avatar sits in every screen's top bar, so the active account can change under any screen. No
+screen-scoped view model carries a row across that change: each observes the store's active id and
+re-resolves what it holds for the account that became active, and a write that records something
+new re-checks that this account owns the row it reaches for, mirroring it (§4.5) rather than
+writing across the boundary. Correcting a row already recorded keeps that row's own owner and
+visit, because the correction belongs to what is being corrected. A form keeps the edits the user
+typed — only the row underneath them is replaced.
+
+Sessions are held by an account store in `core/data/identity`, not in `domain/`, which may not
+import kotlinx.coroutines and so cannot expose the `StateFlow` the UI observes. It is persisted
+per platform behind one interface, as the theme mode is (§10): DataStore on Android,
+`localStorage` on web, in memory for tests. A switch calls `importSession` on the UI client, so
+one session is live at a time even though several are stored, and supabase-kt's own session
+storage is turned off — it holds a single session and would contend for the same slot.
+
+`CurrentUser` is one `commonMain` implementation reading that store's active id, on both targets.
 
 ### 4.4 Photos
 
@@ -199,15 +238,19 @@ keyword in both SQLDelight's dialect and Postgres. Weights are `Double`; every s
 mode and the unit are enums, mapped to the wire names `total` / `per_side` / `counterweight` and
 `kg` / `lb` by one shared mapping in `core/data/gym`, used by both implementations.
 
-A visit is active while it has no end; the active visit is the newest one with no `ended_at`.
+A visit is active while it has no end; an account's active visit is the newest of its own rows
+with no `ended_at`, so each account has at most one. A visit carries `recorded_at` to order and
+group it, never a start time or a duration — the functional spec asks for neither, and nothing
+computes elapsed time.
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward
 instead of observing it.
 
-`CurrentUser` supplies the owner stamped on a new row (§4.1): null on Android until sign-in
-exists (§4.3), the Supabase session user on the web — where a write with no owner is rejected by
-row-level security (§5.2).
+`CurrentUser` supplies the owner stamped on a new row (§4.1): the active account, or null on
+Android while nobody has signed in (§4.3). On the web a write with no owner is rejected by
+row-level security (§5.2), which is why the web build requires an account before any route is
+reachable.
 
 ---
 
@@ -219,6 +262,11 @@ The Postgres schema is source-controlled as SQL migrations under `supabase/migra
 with the Supabase CLI. The dashboard is never used to alter schema. The SQLDelight schema in
 `core` mirrors the synced tables column for column; a column added to one is added to the other
 in the same commit.
+
+The local SQLite database is recreated rather than migrated until the first release: a change
+`core`'s schema makes unreadable is taken by clearing the app's data, and the migration written
+is the Postgres one. From the first `vX.Y.Z` tag on, such a change ships a SQLDelight `.sqm`
+beside it and moves `Schema.version`, because by then the rows belong to somebody.
 
 ### 5.2 Access rules
 
@@ -249,7 +297,13 @@ Realtime subscription on the `visit` table filtered by the viewer's groups.
 
 The Supabase project URL and anon key are read from `local.properties` on developer machines and
 from repository secrets on CI. They are never committed. The anon key is safe to ship inside the
-built app because RLS, not the key, is the access boundary.
+built app because RLS, not the key, is the access boundary. The Google OAuth client id that
+Credential Manager needs travels the same way and is safe to ship for the same reason.
+
+A build without any of them is normal: nothing resolves the Supabase client until a sign-in or a
+sync asks for one, so a fresh clone still launches and runs anonymously on Android. Sign-in is
+unavailable rather than merely hidden — the screens that offer it read `SignInAvailable`, and an
+attempt made anyway fails and is reported instead of resolving a client that cannot exist.
 
 ---
 
@@ -264,6 +318,8 @@ built app because RLS, not the key, is the access boundary.
 - Koin starts once, in an `Application` subclass. A graph built per Activity constructs a second
   DataStore over the same file on configuration change, and DataStore rejects that.
 - Camera capture uses the platform take-picture activity contract; no camera library.
+- Google sign-in goes through Credential Manager, whose sheet needs an `Activity` rather than the
+  `Application`, so the implementation takes a context supplier the Activity installs.
 - The sync pass is a WorkManager job so it survives the app being backgrounded.
 
 ---
