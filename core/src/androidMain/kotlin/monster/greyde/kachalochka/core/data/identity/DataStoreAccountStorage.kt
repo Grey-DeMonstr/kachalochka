@@ -15,7 +15,7 @@ class DataStoreAccountStorage(
 ) : AccountStorage {
     private val key = stringPreferencesKey("accounts")
 
-    // Blocking, so the store that calls it is built while Koin starts rather than on a frame.
+    // Blocking; the store that calls it is built while Koin starts, not during the first frame.
     override fun read(): String? =
         runBlocking {
             dataStore.data

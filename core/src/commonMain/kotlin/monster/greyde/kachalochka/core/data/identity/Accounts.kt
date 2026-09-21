@@ -16,7 +16,7 @@ class Accounts(
     val accounts: StateFlow<List<Account>> get() = store.accounts
     val activeId: StateFlow<UserId?> get() = store.activeId
 
-    /** Why the last attempt to add an account came to nothing, or null while none has. */
+    /** Why the last attempt to add an account failed; null while none has. */
     val lastFailure: StateFlow<String?> = failure
 
     /**

@@ -64,7 +64,7 @@ fun SignInScreen(
     }
 }
 
-/** Shown wherever a sign-in can be started, since the design draws no screen of its own for it. */
+/** One line under whichever button offered the sign-in; the design draws no error screen. */
 @Composable
 internal fun SignInFailure(
     message: String,

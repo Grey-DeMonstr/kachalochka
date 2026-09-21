@@ -75,7 +75,7 @@ class MachineFormViewModel(
     private var existing: Machine? = null
     private var loaded = false
 
-    /** The edits are the user's and stay; the row behind them belongs to whoever was active. */
+    /** A switch keeps the typed edits and drops the row under them, which it no longer owns. */
     init {
         viewModelScope.launch {
             accounts.activeId.collect { active ->
