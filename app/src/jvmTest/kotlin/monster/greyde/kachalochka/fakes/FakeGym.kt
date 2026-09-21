@@ -125,7 +125,8 @@ private class NoOpOwnerlessRows : OwnerlessRows {
 
 class FakeGym(
     now: Instant = Instant.fromEpochSeconds(1_700_000_000),
-    val credentials: SupabaseCredentials = SupabaseCredentials("https://example.test", "anon-key"),
+    val credentials: SupabaseCredentials =
+        SupabaseCredentials("https://example.test", "anon-key", "google-client-id"),
 ) {
     val clock = MutableClock(now)
     val ticker = ManualTicker()

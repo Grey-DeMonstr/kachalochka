@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import org.koin.compose.koinInject
@@ -26,7 +25,7 @@ import org.koin.compose.koinInject
 @Composable
 fun SignInScreen(onSignIn: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val credentials: SupabaseCredentials = koinInject()
+    val available: SignInAvailable = koinInject()
     Surface(Modifier.fillMaxSize(), color = colors.background) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Column(
@@ -45,11 +44,11 @@ fun SignInScreen(onSignIn: () -> Unit) {
                     PhosphorIcons.ArrowRight,
                     onSignIn,
                     Modifier.testTag("sign-in-google"),
-                    enabled = credentials.isConfigured,
+                    enabled = available.value,
                 )
-                if (!credentials.isConfigured) {
+                if (!available.value) {
                     Text(
-                        "Supabase не настроен — вход недоступен",
+                        "Вход недоступен — сборка не настроена",
                         modifier = Modifier.testTag("sign-in-unconfigured"),
                         fontSize = 13.sp,
                         textAlign = TextAlign.Center,

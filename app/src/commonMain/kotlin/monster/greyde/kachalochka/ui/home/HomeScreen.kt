@@ -28,9 +28,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
+import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.Rule
@@ -48,7 +48,7 @@ fun HomeScreen(
     val state by viewModel.state.collectAsState()
     val accountsViewModel: AccountsViewModel = koinViewModel()
     val accounts by accountsViewModel.state.collectAsState()
-    val credentials: SupabaseCredentials = koinInject()
+    val signInAvailable: SignInAvailable = koinInject()
     val signedIn = accounts.activeId != null
     LaunchedEffect(Unit) { viewModel.refresh() }
     Screen("Качалочка", onBack = null, onOpenSettings = onOpenSettings) {
@@ -70,7 +70,7 @@ fun HomeScreen(
         SectionRow(PhosphorIcons.ChartLineUp, "Статистика", "section-stats")
         SectionRow(PhosphorIcons.UsersThree, "Друзья", "section-friends", locked = !signedIn)
         Rule()
-        if (!signedIn && credentials.isConfigured) {
+        if (!signedIn && signInAvailable.value) {
             Box(Modifier.padding(16.dp)) {
                 AccentButton(
                     "Войти через Google",

@@ -1,7 +1,9 @@
 package monster.greyde.kachalochka.di
 
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
+import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.ui.account.RedirectGoogleSignIn
+import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.theme.LocalStorageThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
@@ -13,4 +15,5 @@ actual fun platformModule(): Module =
         single<ThemePreference> { LocalStorageThemePreference() }
         single<GoogleSignIn> { RedirectGoogleSignIn(get()) }
         single { SignInRequired(true) }
+        single { SignInAvailable(get<SupabaseCredentials>().isConfigured) }
     }

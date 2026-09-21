@@ -9,6 +9,9 @@ data class SupabaseCredentials(
 ) {
     val isConfigured: Boolean = url.isNotBlank() && anonKey.isNotBlank()
 
+    /** Credential Manager names this client id in its request; the web redirect never sees it. */
+    val canSignInWithGoogleId: Boolean = isConfigured && googleWebClientId.isNotBlank()
+
     companion object {
         fun fromBuild(): SupabaseCredentials =
             SupabaseCredentials(

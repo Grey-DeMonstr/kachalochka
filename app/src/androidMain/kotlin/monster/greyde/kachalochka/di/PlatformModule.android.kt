@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.ui.account.ActivityHolder
 import monster.greyde.kachalochka.ui.account.CredentialManagerGoogleSignIn
+import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.theme.DataStoreThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
@@ -38,6 +39,7 @@ actual fun platformModule(): Module =
         }
         single { ActivityHolder() }
         single { SignInRequired(false) }
+        single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
         single<GoogleSignIn> {
             val activities: ActivityHolder = get()
             CredentialManagerGoogleSignIn(

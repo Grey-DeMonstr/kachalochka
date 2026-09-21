@@ -46,4 +46,13 @@ class HomeScreenTest {
             onNodeWithTag("home-sign-in").assertDoesNotExist()
         }
     }
+
+    /** Credential Manager throws without the client id, so the button must not be offered. */
+    @Test
+    fun the_sign_in_button_stays_hidden_without_a_google_web_client_id() {
+        val gym = FakeGym(credentials = SupabaseCredentials("https://example.test", "anon-key"))
+        runScreenTest(gym, screen = { HomeScreen({}, {}) }) {
+            onNodeWithTag("home-sign-in").assertDoesNotExist()
+        }
+    }
 }

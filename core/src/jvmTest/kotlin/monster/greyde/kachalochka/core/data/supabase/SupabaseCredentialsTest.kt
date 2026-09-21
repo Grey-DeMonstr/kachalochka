@@ -25,4 +25,16 @@ class SupabaseCredentialsTest {
     fun blank_values_are_not_configured() {
         assertFalse(SupabaseCredentials("   ", "  ").isConfigured)
     }
+
+    @Test
+    fun a_google_id_token_sign_in_needs_the_web_client_id_too() {
+        val configured = SupabaseCredentials("https://example.supabase.co", "anon-key")
+        assertFalse(configured.canSignInWithGoogleId)
+        assertTrue(configured.copy(googleWebClientId = "client-id").canSignInWithGoogleId)
+    }
+
+    @Test
+    fun a_web_client_id_alone_signs_nobody_in() {
+        assertFalse(SupabaseCredentials("", "", "client-id").canSignInWithGoogleId)
+    }
 }
