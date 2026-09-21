@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -47,7 +48,9 @@ class VisitViewModelTest {
     private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
     private val ivanVisit = Visit(VisitId.random(), ivan.account.userId, t0, null, t0, false)
     private val ivanPress =
-        Machine.new("Жим ногами", ivan.account.userId, t0).copy(weightStep = 5.0)
+        Machine
+            .new("Жим ногами", ivan.account.userId, t0)
+            .copy(weightStep = 5.0, setupNote = "Сиденье на 4")
 
     private fun session(
         id: String,
@@ -430,6 +433,22 @@ class VisitViewModelTest {
                 two.machines.rows.values
                     .count { it.userId == misha.account.userId },
             )
+        }
+
+    @Test
+    fun opening_machine_settings_after_a_switch_mirrors_the_machine_first() =
+        runTest {
+            val two = twoAccountGym()
+            val vm = viewModel(two, ivanVisit.id).also { it.selectMachine(ivanPress.id) }
+            vm.switchTo(misha.account.userId)
+            var opened: MachineId? = null
+
+            vm.openMachineSettings { opened = it }
+
+            val mishaPress = assertNotNull(two.machines.named(misha.account.userId, "Жим ногами"))
+            assertEquals(mishaPress.id, opened)
+            assertNotEquals(ivanPress.id, opened)
+            assertEquals(ivanPress.setupNote, mishaPress.setupNote)
         }
 
     @Test

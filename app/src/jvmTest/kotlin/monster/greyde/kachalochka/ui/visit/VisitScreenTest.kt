@@ -26,6 +26,7 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 @OptIn(ExperimentalTestApi::class)
 class VisitScreenTest {
@@ -46,11 +47,27 @@ class VisitScreenTest {
             false,
         )
 
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
+    private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+    private val shared = FakeGym().withAccounts(ivan, misha, active = ivan)
+    private val sharedVisit =
+        Visit(
+            VisitId.random(),
+            ivan.account.userId,
+            shared.clock.current,
+            null,
+            shared.clock.current,
+            false,
+        )
+    private val sharedPress = Machine.new("Жим ногами", ivan.account.userId, shared.clock.current)
+
     init {
         runBlocking {
             gym.visits.upsert(visit)
             gym.machines.upsert(press)
             gym.sets.upsert(recorded)
+            shared.visits.upsert(sharedVisit)
+            shared.machines.upsert(sharedPress)
         }
     }
 
@@ -158,19 +175,9 @@ class VisitScreenTest {
 
     @Test
     fun a_person_chip_switches_who_the_save_button_records_as() {
-        val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
-        val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
-        val shared = FakeGym().withAccounts(ivan, misha, active = ivan)
-        val now = shared.clock.current
-        val ivanVisit = Visit(VisitId.random(), ivan.account.userId, now, null, now, false)
-        val ivanPress = Machine.new("Жим ногами", ivan.account.userId, now)
-        runBlocking {
-            shared.visits.upsert(ivanVisit)
-            shared.machines.upsert(ivanPress)
-        }
         runScreenTest(
             shared,
-            screen = { visitScreen(visitId = ivanVisit.id, picked = ivanPress.id) },
+            screen = { visitScreen(visitId = sharedVisit.id, picked = sharedPress.id) },
         ) {
             waitForIdle()
             onNodeWithTag("person-add").assertExists()
@@ -191,6 +198,29 @@ class VisitScreenTest {
         }
     }
 
+    @Test
+    fun machine_settings_never_open_another_account_s_machine() {
+        var opened: MachineId? = null
+        runScreenTest(
+            shared,
+            screen = {
+                visitScreen(
+                    visitId = sharedVisit.id,
+                    picked = sharedPress.id,
+                    onOpenMachineSettings = { opened = it },
+                )
+            },
+        ) {
+            onNodeWithTag("person-${misha.account.userId.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-settings").performClick()
+            waitForIdle()
+        }
+        val mishaPress = shared.machines.rows.getValue(assertNotNull(opened))
+        assertEquals(misha.account.userId, mishaPress.userId)
+        assertEquals("Жим ногами", mishaPress.name)
+    }
+
     private fun session(
         id: String,
         name: String,
@@ -207,6 +237,7 @@ class VisitScreenTest {
         picked: MachineId? = null,
         onConsumed: () -> Unit = {},
         onPickMachine: (MachineId?) -> Unit = {},
+        onOpenMachineSettings: (MachineId) -> Unit = {},
         onEnded: () -> Unit = {},
         onBack: () -> Unit = {},
     ) = VisitScreen(
@@ -216,7 +247,7 @@ class VisitScreenTest {
         onBack = onBack,
         onOpenSettings = {},
         onPickMachine = onPickMachine,
-        onOpenMachineSettings = {},
+        onOpenMachineSettings = onOpenMachineSettings,
         onVisitEnded = onEnded,
     )
 }

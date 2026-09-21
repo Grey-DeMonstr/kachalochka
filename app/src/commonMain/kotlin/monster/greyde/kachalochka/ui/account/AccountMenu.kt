@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.ui.components.SectionLabel
@@ -168,23 +169,37 @@ private fun AccountRow(
     )
 }
 
+/** The letter circle, drawn in the menu's rows and in the set sheet's person chips. */
 @Composable
-private fun MonogramBadge(monogram: String) {
+internal fun MonogramBadge(
+    monogram: String,
+    size: Dp = 32.dp,
+    accent: Boolean = true,
+) {
     val colors = MaterialTheme.colorScheme
     val shape = CircleShape
     Box(
         Modifier
-            .size(32.dp)
+            .size(size)
             .clip(shape)
-            .background(colors.primary.copy(alpha = 0.16f))
-            .border(1.dp, colors.primary, shape),
+            .then(
+                if (accent) Modifier.background(colors.primary.copy(alpha = 0.16f)) else Modifier,
+            ).border(
+                1.dp,
+                if (accent) colors.primary else colors.onBackground.copy(alpha = 0.22f),
+                shape,
+            ),
         contentAlignment = Alignment.Center,
     ) {
-        Text(monogram, fontSize = 13.sp, color = colors.onPrimaryContainer)
+        Text(
+            monogram,
+            fontSize = if (size > 32.dp) 15.sp else 13.sp,
+            color = if (accent) colors.onPrimaryContainer else colors.onBackground,
+        )
     }
 }
 
-private fun Modifier.dashedCircle(color: Color): Modifier =
+internal fun Modifier.dashedCircle(color: Color): Modifier =
     drawBehind {
         val stroke =
             Stroke(

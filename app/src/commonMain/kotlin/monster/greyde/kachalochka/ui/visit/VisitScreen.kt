@@ -8,11 +8,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,9 +45,9 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountUi
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
+import monster.greyde.kachalochka.ui.account.MonogramBadge
+import monster.greyde.kachalochka.ui.account.dashedCircle
 import monster.greyde.kachalochka.ui.components.AccentButton
-import monster.greyde.kachalochka.ui.components.Choice
-import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.RestTimerChip
@@ -101,7 +105,7 @@ fun VisitScreen(
             onWeight = viewModel::changeWeight,
             onReps = viewModel::changeReps,
             onSave = viewModel::save,
-            onOpenMachineSettings = onOpenMachineSettings,
+            onOpenMachineSettings = { viewModel.openMachineSettings(onOpenMachineSettings) },
             onDelete = viewModel::deleteEditedSet,
             onSwitchTo = viewModel::switchTo,
             onAddAccount = accountsViewModel::addAccount,
@@ -209,6 +213,8 @@ private fun SetRow(
     }
 }
 
+private val ChipHeight = 52.dp
+
 /** Frame 5g: one tap moves the sheet between the people signed in, the last chip adds one. */
 @Composable
 private fun PersonChips(
@@ -216,16 +222,66 @@ private fun PersonChips(
     onSwitchTo: (UserId) -> Unit,
     onAddAccount: () -> Unit,
 ) {
-    ChoiceRow(
-        choices =
-            people.map { Choice(it.displayName, "person-${it.id.value}") } +
-                Choice("+", "person-add", weight = 0.4f),
-        selected = people.indexOfFirst { it.active },
-        onSelect = { index ->
-            val person = people.getOrNull(index)
-            if (person == null) onAddAccount() else onSwitchTo(person.id)
-        },
-    )
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        people.forEach { person -> PersonChip(person) { onSwitchTo(person.id) } }
+        Box(
+            Modifier
+                .size(ChipHeight)
+                .clip(CircleShape)
+                .clickable(onClick = onAddAccount)
+                .dashedCircle(colors.onBackground.copy(alpha = 0.35f))
+                .testTag("person-add"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                PhosphorIcons.Plus,
+                "Добавить аккаунт",
+                tint = colors.onBackground.copy(alpha = 0.55f),
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PersonChip(
+    person: AccountUi,
+    onClick: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = CircleShape
+    Row(
+        Modifier
+            .height(ChipHeight)
+            .clip(shape)
+            .then(
+                if (person.active) {
+                    Modifier.background(colors.primary.copy(alpha = 0.14f))
+                } else {
+                    Modifier
+                },
+            ).border(
+                1.dp,
+                if (person.active) colors.primary else colors.onBackground.copy(alpha = 0.16f),
+                shape,
+            ).selectable(selected = person.active, onClick = onClick)
+            .padding(start = 6.dp, end = 16.dp)
+            .testTag("person-${person.id.value}"),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        MonogramBadge(person.monogram, size = 40.dp, accent = person.active)
+        Text(
+            person.displayName,
+            fontSize = 15.sp,
+            color = if (person.active) colors.onPrimaryContainer else colors.onBackground,
+        )
+    }
 }
 
 @Composable
@@ -235,7 +291,7 @@ private fun SetSheet(
     onWeight: (Int) -> Unit,
     onReps: (Int) -> Unit,
     onSave: () -> Unit,
-    onOpenMachineSettings: (MachineId) -> Unit,
+    onOpenMachineSettings: () -> Unit,
     onDelete: () -> Unit,
     onSwitchTo: (UserId) -> Unit,
     onAddAccount: () -> Unit,
@@ -375,7 +431,7 @@ private fun SetSheet(
                 OutlineButton(
                     "Настройки",
                     PhosphorIcons.SlidersHorizontal,
-                    { onOpenMachineSettings(sheet.machineId) },
+                    onOpenMachineSettings,
                     Modifier.weight(1f).testTag("machine-settings"),
                 )
             }

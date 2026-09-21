@@ -68,7 +68,6 @@ data class SetRowUi(
 )
 
 data class SheetUi(
-    val machineId: MachineId,
     val name: String,
     val platformSuffix: String?,
     val setNumberLabel: String,
@@ -174,6 +173,16 @@ class VisitViewModel(
                 editing = null
             }
             reload(reseed = true)
+        }
+    }
+
+    /** Configuring a machine is deliberate, so it may make the active account's copy of it. */
+    fun openMachineSettings(onOpen: (MachineId) -> Unit) {
+        val machine = open ?: return
+        writes.launch {
+            val own = ownMachine(currentUser.id(), machine)
+            reload(reseed = false)
+            onOpen(own.id)
         }
     }
 
@@ -335,7 +344,6 @@ class VisitViewModel(
                 (listOf(day) + previous.map { shortSet(it.weight, it.reps) }).joinToString(" · ")
             }
         return SheetUi(
-            machineId = machine.id,
             name = machine.name,
             platformSuffix = platformSuffix(machine),
             setNumberLabel = "подход $number",
