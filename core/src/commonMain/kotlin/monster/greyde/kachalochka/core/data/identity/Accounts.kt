@@ -16,39 +16,49 @@ class Accounts(
     val accounts: StateFlow<List<Account>> get() = store.accounts
     val activeId: StateFlow<UserId?> get() = store.activeId
 
-    /** Why the last attempt to add an account failed; null while none has. */
+    /** Why the last attempt failed; null while none has. */
     val lastFailure: StateFlow<String?> = failure
 
-    /**
-     * Google, the network and Supabase can each refuse, and the caller is a fire-and-forget
-     * `launch`, where a throw lands on the main thread as an uncaught exception. A refusal is
-     * recorded for the surface that offered the sign-in instead.
-     */
     suspend fun addAccount() {
         failure.value = null
-        try {
+        reporting {
             val first = store.accounts.value.isEmpty()
             val session = signIn.signIn()
             store.add(session)
             sessions.activate(session)
             if (first) ownerless.claim(session.account.userId)
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (refused: Exception) {
-            if (!isUserCancellation(refused)) failure.value = refused.toString()
         }
     }
 
+    // The store moves only once the session is live, so the avatar can never name an account the
+    // app is not talking to the server as.
     suspend fun switchTo(id: UserId) {
         val session = store.sessionOf(id) ?: return
-        store.switch(id)
-        sessions.activate(session)
+        reporting {
+            sessions.activate(session)
+            store.switch(id)
+        }
     }
 
     suspend fun signOut(id: UserId) {
         store.remove(id)
         val next = store.activeId.value?.let { store.sessionOf(it) }
-        if (next == null) sessions.clear() else sessions.activate(next)
+        reporting { if (next == null) sessions.clear() else sessions.activate(next) }
+    }
+
+    /**
+     * Google, the network and Supabase can each refuse, and every caller is a fire-and-forget
+     * `launch`, where a throw lands on the main thread as an uncaught exception. A refusal is
+     * recorded for the surface that offered the action instead.
+     */
+    private suspend fun reporting(work: suspend () -> Unit) {
+        try {
+            work()
+        } catch (stopped: CancellationException) {
+            throw stopped
+        } catch (refused: Exception) {
+            if (!isUserCancellation(refused)) failure.value = refused.toString()
+        }
     }
 }
 

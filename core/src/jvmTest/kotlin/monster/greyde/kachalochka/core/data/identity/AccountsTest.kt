@@ -31,11 +31,16 @@ private class RecordingActivation : SessionActivation {
     val activated = mutableListOf<UserId>()
     var cleared = false
 
+    /** Set once accounts are in place, so a refusal hits the switch rather than the sign-in. */
+    var refusal: Throwable? = null
+
     override suspend fun activate(session: AccountSession) {
+        refusal?.let { throw it }
         activated += session.account.userId
     }
 
     override suspend fun clear() {
+        refusal?.let { throw it }
         cleared = true
     }
 }
@@ -184,6 +189,70 @@ class AccountsTest {
             val service = accounts(mutableListOf(ivan))
             service.addAccount()
             assertNull(service.lastFailure.value)
+        }
+
+    @Test
+    fun a_switch_supabase_refuses_is_reported_rather_than_thrown() =
+        runTest {
+            val activation = RecordingActivation()
+            val service = accounts(mutableListOf(ivan, misha), activation = activation)
+            service.addAccount()
+            service.addAccount()
+            activation.refusal = IllegalStateException("no connectivity")
+
+            service.switchTo(ivan.account.userId)
+
+            assertNotNull(service.lastFailure.value)
+        }
+
+    @Test
+    fun a_switch_that_did_not_take_leaves_the_old_account_active() =
+        runTest {
+            val activation = RecordingActivation()
+            val service = accounts(mutableListOf(ivan, misha), activation = activation)
+            service.addAccount()
+            service.addAccount()
+            activation.refusal = IllegalStateException("no connectivity")
+
+            service.switchTo(ivan.account.userId)
+
+            assertEquals(misha.account.userId, service.activeId.value)
+        }
+
+    @Test
+    fun a_cancelled_switch_still_cancels() =
+        runTest {
+            val activation = RecordingActivation()
+            val service = accounts(mutableListOf(ivan, misha), activation = activation)
+            service.addAccount()
+            service.addAccount()
+            activation.refusal = CancellationException("stopped")
+
+            assertFailsWith<CancellationException> { service.switchTo(ivan.account.userId) }
+        }
+
+    @Test
+    fun a_sign_out_supabase_refuses_is_reported_rather_than_thrown() =
+        runTest {
+            val activation = RecordingActivation()
+            val service = accounts(mutableListOf(ivan), activation = activation)
+            service.addAccount()
+            activation.refusal = IllegalStateException("no connectivity")
+
+            service.signOut(ivan.account.userId)
+
+            assertNotNull(service.lastFailure.value)
+        }
+
+    @Test
+    fun a_cancelled_sign_out_still_cancels() =
+        runTest {
+            val activation = RecordingActivation()
+            val service = accounts(mutableListOf(ivan), activation = activation)
+            service.addAccount()
+            activation.refusal = CancellationException("stopped")
+
+            assertFailsWith<CancellationException> { service.signOut(ivan.account.userId) }
         }
 
     @Test
