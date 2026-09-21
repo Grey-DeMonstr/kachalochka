@@ -28,12 +28,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -43,6 +46,10 @@ fun HomeScreen(
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
+    val accountsViewModel: AccountsViewModel = koinViewModel()
+    val accounts by accountsViewModel.state.collectAsState()
+    val credentials: SupabaseCredentials = koinInject()
+    val signedIn = accounts.activeId != null
     LaunchedEffect(Unit) { viewModel.refresh() }
     Screen("Качалочка", onBack = null, onOpenSettings = onOpenSettings) {
         val current = state ?: return@Screen
@@ -61,8 +68,18 @@ fun HomeScreen(
         }
         SectionRow(PhosphorIcons.ListChecks, "Планы", "section-plans")
         SectionRow(PhosphorIcons.ChartLineUp, "Статистика", "section-stats")
-        SectionRow(PhosphorIcons.UsersThree, "Друзья", "section-friends")
+        SectionRow(PhosphorIcons.UsersThree, "Друзья", "section-friends", locked = !signedIn)
         Rule()
+        if (!signedIn && credentials.isConfigured) {
+            Box(Modifier.padding(16.dp)) {
+                AccentButton(
+                    "Войти через Google",
+                    PhosphorIcons.ArrowRight,
+                    accountsViewModel::addAccount,
+                    Modifier.testTag("home-sign-in"),
+                )
+            }
+        }
     }
 }
 
@@ -117,12 +134,16 @@ private fun VisitCard(
     }
 }
 
-/** Sections without screens yet: drawn as in the design, disabled until they exist. */
+/**
+ * Sections without screens yet: drawn as in the design, disabled until they exist. [locked]
+ * marks a section that additionally needs a signed-in account, with its own trailing icon.
+ */
 @Composable
 private fun SectionRow(
     icon: ImageVector,
     label: String,
     tag: String,
+    locked: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     Rule()
@@ -138,11 +159,20 @@ private fun SectionRow(
     ) {
         Icon(icon, null, tint = colors.secondary, modifier = Modifier.size(26.dp))
         Text(label, modifier = Modifier.weight(1f), fontSize = 19.sp, color = colors.onBackground)
-        Icon(
-            PhosphorIcons.CaretRight,
-            null,
-            tint = colors.onBackground.copy(alpha = 0.4f),
-            modifier = Modifier.size(22.dp),
-        )
+        if (locked) {
+            Icon(
+                PhosphorIcons.LockSimple,
+                "Заблокировано",
+                tint = colors.onBackground.copy(alpha = 0.4f),
+                modifier = Modifier.size(20.dp).testTag("$tag-lock"),
+            )
+        } else {
+            Icon(
+                PhosphorIcons.CaretRight,
+                null,
+                tint = colors.onBackground.copy(alpha = 0.4f),
+                modifier = Modifier.size(22.dp),
+            )
+        }
     }
 }

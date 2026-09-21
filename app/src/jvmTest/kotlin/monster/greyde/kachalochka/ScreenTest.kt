@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
@@ -16,6 +17,7 @@ import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
+import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.ThemeMode
@@ -36,19 +38,26 @@ fun fakeGymModule(gym: FakeGym) =
         single<WorkoutSetRepository> { gym.sets }
         single<CurrentUser> { gym.currentUser }
         single<Accounts> { gym.accounts }
+        single<SupabaseCredentials> { gym.credentials }
         viewModelOf(::AccountsViewModel)
     }
 
 @Composable
 fun TestKoin(
     gym: FakeGym,
+    signInRequired: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     KoinApplication(
         configuration =
             koinConfiguration {
                 allowOverride(true)
-                modules(appModule, platformModule(), fakeGymModule(gym))
+                modules(
+                    appModule,
+                    platformModule(),
+                    fakeGymModule(gym),
+                    module { single { SignInRequired(signInRequired) } },
+                )
             },
         content = content,
     )
@@ -62,10 +71,11 @@ object ScreenUnderTest
 fun runScreenTest(
     gym: FakeGym,
     screen: @Composable () -> Unit,
+    signInRequired: Boolean = false,
     assertions: ComposeUiTest.() -> Unit,
 ) = runNavigationUiTest(
     content = {
-        TestKoin(gym) {
+        TestKoin(gym, signInRequired) {
             KachalochkaTheme(ThemeMode.Dark) {
                 val navController = rememberNavController()
                 NavHost(navController, startDestination = ScreenUnderTest) {

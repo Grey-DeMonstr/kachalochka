@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.ui.account.ActivityHolder
 import monster.greyde.kachalochka.ui.account.CredentialManagerGoogleSignIn
+import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.theme.DataStoreThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import okio.Path.Companion.toPath
@@ -36,6 +37,7 @@ actual fun platformModule(): Module =
             DataStoreThemePreference(get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }
         single { ActivityHolder() }
+        single { SignInRequired(false) }
         single<GoogleSignIn> {
             val activities: ActivityHolder = get()
             CredentialManagerGoogleSignIn(

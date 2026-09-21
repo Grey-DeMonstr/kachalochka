@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
+import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -124,6 +125,7 @@ private class NoOpOwnerlessRows : OwnerlessRows {
 
 class FakeGym(
     now: Instant = Instant.fromEpochSeconds(1_700_000_000),
+    val credentials: SupabaseCredentials = SupabaseCredentials("https://example.test", "anon-key"),
 ) {
     val clock = MutableClock(now)
     val ticker = ManualTicker()

@@ -17,6 +17,9 @@ import monster.greyde.kachalochka.navigation.MachineFormRoute
 import monster.greyde.kachalochka.navigation.MachinePickerRoute
 import monster.greyde.kachalochka.navigation.SettingsRoute
 import monster.greyde.kachalochka.navigation.VisitRoute
+import monster.greyde.kachalochka.ui.account.AccountsViewModel
+import monster.greyde.kachalochka.ui.account.SignInRequired
+import monster.greyde.kachalochka.ui.account.SignInScreen
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
@@ -26,6 +29,7 @@ import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import monster.greyde.kachalochka.ui.visit.VisitScreen
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 const val PICKED_MACHINE = "pickedMachine"
 
@@ -39,76 +43,87 @@ fun App() {
     val preference: ThemePreference = koinInject()
     val mode by preference.mode.collectAsState()
     val scope = rememberCoroutineScope()
+    val signInRequired: SignInRequired = koinInject()
+    val accountsViewModel: AccountsViewModel = koinViewModel()
+    val accounts by accountsViewModel.state.collectAsState()
 
     KachalochkaTheme(mode) {
-        val navController = rememberNavController()
-        NavHost(navController = navController, startDestination = HomeRoute) {
-            composable<HomeRoute> {
-                HomeScreen(
-                    onOpenVisit = { navController.navigate(VisitRoute(it.value)) },
-                    onOpenSettings = { navController.navigate(SettingsRoute) },
-                )
-            }
-            composable<SettingsRoute> {
-                SettingsScreen(
-                    mode = mode,
-                    onModeChange = { scope.launch { preference.set(it) } },
-                    onBack = { navController.popBackStack() },
-                )
-            }
-            composable<VisitRoute> { entry ->
-                val route = entry.toRoute<VisitRoute>()
-                val picked by entry.savedStateHandle
-                    .getStateFlow<String?>(PICKED_MACHINE, null)
-                    .collectAsState()
-                VisitScreen(
-                    visitId = VisitId(route.visitId),
-                    pickedMachineId = picked?.let(::MachineId),
-                    onPickedMachineConsumed = { entry.savedStateHandle[PICKED_MACHINE] = null },
-                    onBack = { navController.popBackStack() },
-                    onOpenSettings = { navController.navigate(SettingsRoute) },
-                    onPickMachine = {
-                        navController.navigate(MachinePickerRoute(route.visitId, it?.value))
-                    },
-                    onOpenMachineSettings = {
-                        navController.navigate(
-                            MachineFormRoute(machineId = it.value),
-                        )
-                    },
-                    onVisitEnded = { navController.popBackStack(HomeRoute, inclusive = false) },
-                )
-            }
-            composable<MachinePickerRoute> { entry ->
-                val route = entry.toRoute<MachinePickerRoute>()
-                MachinePickerScreen(
-                    visitId = VisitId(route.visitId),
-                    selectedMachineId = route.selectedMachineId?.let(::MachineId),
-                    onBack = { navController.popBackStack() },
-                    onOpenSettings = { navController.navigate(SettingsRoute) },
-                    onPicked = { navController.returnMachineToVisit(it) },
-                    onCreate = {
-                        navController.navigate(MachineFormRoute(name = it))
-                    },
-                    onCopy = { source, name ->
-                        navController.navigate(
-                            MachineFormRoute(copyOfId = source.value, name = name),
-                        )
-                    },
-                )
-            }
-            composable<MachineFormRoute> { entry ->
-                val route = entry.toRoute<MachineFormRoute>()
-                MachineFormScreen(
-                    args =
-                        MachineFormArgs(
-                            machineId = route.machineId?.let(::MachineId),
-                            copyOf = route.copyOfId?.let(::MachineId),
-                            name = route.name,
-                        ),
-                    onBack = { navController.popBackStack() },
-                    onOpenSettings = { navController.navigate(SettingsRoute) },
-                    onSaved = { navController.returnMachineToVisit(it) },
-                )
+        if (signInRequired.value && accounts.activeId == null) {
+            SignInScreen(onSignIn = accountsViewModel::addAccount)
+        } else {
+            val navController = rememberNavController()
+            NavHost(navController = navController, startDestination = HomeRoute) {
+                composable<HomeRoute> {
+                    HomeScreen(
+                        onOpenVisit = { navController.navigate(VisitRoute(it.value)) },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                    )
+                }
+                composable<SettingsRoute> {
+                    SettingsScreen(
+                        mode = mode,
+                        onModeChange = { scope.launch { preference.set(it) } },
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                composable<VisitRoute> { entry ->
+                    val route = entry.toRoute<VisitRoute>()
+                    val picked by entry.savedStateHandle
+                        .getStateFlow<String?>(PICKED_MACHINE, null)
+                        .collectAsState()
+                    VisitScreen(
+                        visitId = VisitId(route.visitId),
+                        pickedMachineId = picked?.let(::MachineId),
+                        onPickedMachineConsumed = {
+                            entry.savedStateHandle[PICKED_MACHINE] = null
+                        },
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onPickMachine = {
+                            navController.navigate(MachinePickerRoute(route.visitId, it?.value))
+                        },
+                        onOpenMachineSettings = {
+                            navController.navigate(
+                                MachineFormRoute(machineId = it.value),
+                            )
+                        },
+                        onVisitEnded = {
+                            navController.popBackStack(HomeRoute, inclusive = false)
+                        },
+                    )
+                }
+                composable<MachinePickerRoute> { entry ->
+                    val route = entry.toRoute<MachinePickerRoute>()
+                    MachinePickerScreen(
+                        visitId = VisitId(route.visitId),
+                        selectedMachineId = route.selectedMachineId?.let(::MachineId),
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onPicked = { navController.returnMachineToVisit(it) },
+                        onCreate = {
+                            navController.navigate(MachineFormRoute(name = it))
+                        },
+                        onCopy = { source, name ->
+                            navController.navigate(
+                                MachineFormRoute(copyOfId = source.value, name = name),
+                            )
+                        },
+                    )
+                }
+                composable<MachineFormRoute> { entry ->
+                    val route = entry.toRoute<MachineFormRoute>()
+                    MachineFormScreen(
+                        args =
+                            MachineFormArgs(
+                                machineId = route.machineId?.let(::MachineId),
+                                copyOf = route.copyOfId?.let(::MachineId),
+                                name = route.name,
+                            ),
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onSaved = { navController.returnMachineToVisit(it) },
+                    )
+                }
             }
         }
     }
