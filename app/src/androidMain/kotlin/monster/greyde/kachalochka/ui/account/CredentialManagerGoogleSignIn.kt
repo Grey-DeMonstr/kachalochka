@@ -20,8 +20,9 @@ private val GOOGLE_ID_TOKEN_TYPES =
         GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_SIWG_CREDENTIAL,
     )
 
+/** The client is resolved on the first sign-in, so a build without credentials still runs. */
 class CredentialManagerGoogleSignIn(
-    private val client: SupabaseClient,
+    private val client: Lazy<SupabaseClient>,
     private val activity: () -> Activity?,
     private val webClientId: String,
 ) : GoogleSignIn {
@@ -32,12 +33,12 @@ class CredentialManagerGoogleSignIn(
         }
         val screen = activity() ?: error("Sign-in needs a visible screen")
         val token = googleIdToken(screen)
-        client.auth.signInWith(IDToken) {
+        val auth = client.value.auth
+        auth.signInWith(IDToken) {
             idToken = token
             provider = Google
         }
-        val session =
-            client.auth.currentSessionOrNull() ?: error("Google sign-in returned no session")
+        val session = auth.currentSessionOrNull() ?: error("Google sign-in returned no session")
         return session.toAccountSession()
     }
 

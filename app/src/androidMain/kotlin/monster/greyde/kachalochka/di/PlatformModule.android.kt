@@ -43,7 +43,7 @@ actual fun platformModule(): Module =
         single<GoogleSignIn> {
             val activities: ActivityHolder = get()
             CredentialManagerGoogleSignIn(
-                get(),
+                inject(),
                 { activities.current },
                 get<SupabaseCredentials>().googleWebClientId,
             )

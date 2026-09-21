@@ -17,16 +17,17 @@ private const val FULL_NAME_CLAIM = "full_name"
 // the provider sent.
 private val NAME_CLAIMS = listOf(FULL_NAME_CLAIM, "name")
 
+/** The client is resolved on the first session change: a build without credentials still runs. */
 class SupabaseSessions(
-    private val client: SupabaseClient,
+    private val client: Lazy<SupabaseClient>,
     private val clock: Clock = Clock.System,
 ) : SessionActivation {
     override suspend fun activate(session: AccountSession) {
-        client.auth.importSession(session.toUserSession(clock.now()))
+        client.value.auth.importSession(session.toUserSession(clock.now()))
     }
 
     override suspend fun clear() {
-        client.auth.clearSession()
+        client.value.auth.clearSession()
     }
 }
 
