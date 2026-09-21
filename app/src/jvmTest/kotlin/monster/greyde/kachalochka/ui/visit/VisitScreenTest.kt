@@ -13,12 +13,15 @@ import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import kotlin.test.Test
@@ -144,15 +147,70 @@ class VisitScreenTest {
         }
     }
 
+    @Test
+    fun without_a_second_account_the_sheet_shows_no_person_chips() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("person-add").assertDoesNotExist()
+            onNodeWithTag("save-set").assertTextEquals("Сохранить подход")
+        }
+    }
+
+    @Test
+    fun a_person_chip_switches_who_the_save_button_records_as() {
+        val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
+        val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+        val shared = FakeGym().withAccounts(ivan, misha, active = ivan)
+        val now = shared.clock.current
+        val ivanVisit = Visit(VisitId.random(), ivan.account.userId, now, null, now, false)
+        val ivanPress = Machine.new("Жим ногами", ivan.account.userId, now)
+        runBlocking {
+            shared.visits.upsert(ivanVisit)
+            shared.machines.upsert(ivanPress)
+        }
+        runScreenTest(
+            shared,
+            screen = { visitScreen(visitId = ivanVisit.id, picked = ivanPress.id) },
+        ) {
+            waitForIdle()
+            onNodeWithTag("person-add").assertExists()
+            onNodeWithTag("save-set").assertTextEquals("Сохранить · Иван")
+
+            onNodeWithTag("person-${misha.account.userId.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("save-set").assertTextEquals("Сохранить · Миша")
+            onNodeWithTag("save-set").performClick()
+            waitForIdle()
+            assertEquals(
+                misha.account.userId,
+                shared.sets.rows.values
+                    .single()
+                    .userId,
+            )
+        }
+    }
+
+    private fun session(
+        id: String,
+        name: String,
+    ) = AccountSession(
+        Account(UserId(id), "$name@example.test", name),
+        "access",
+        "refresh",
+        gym.clock.current,
+    )
+
     @Composable
     private fun visitScreen(
+        visitId: VisitId = visit.id,
         picked: MachineId? = null,
         onConsumed: () -> Unit = {},
         onPickMachine: (MachineId?) -> Unit = {},
         onEnded: () -> Unit = {},
         onBack: () -> Unit = {},
     ) = VisitScreen(
-        visitId = visit.id,
+        visitId = visitId,
         pickedMachineId = picked,
         onPickedMachineConsumed = onConsumed,
         onBack = onBack,

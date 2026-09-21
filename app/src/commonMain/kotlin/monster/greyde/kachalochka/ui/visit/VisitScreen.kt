@@ -38,7 +38,12 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.account.AccountUi
+import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.components.AccentButton
+import monster.greyde.kachalochka.ui.components.Choice
+import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.RestTimerChip
@@ -62,6 +67,7 @@ fun VisitScreen(
     onVisitEnded: () -> Unit,
 ) {
     val viewModel: VisitViewModel = koinViewModel { parametersOf(visitId) }
+    val accountsViewModel: AccountsViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.refresh() }
     LaunchedEffect(pickedMachineId) {
@@ -97,6 +103,8 @@ fun VisitScreen(
             onSave = viewModel::save,
             onOpenMachineSettings = onOpenMachineSettings,
             onDelete = viewModel::deleteEditedSet,
+            onSwitchTo = viewModel::switchTo,
+            onAddAccount = accountsViewModel::addAccount,
         )
     }
 }
@@ -201,6 +209,25 @@ private fun SetRow(
     }
 }
 
+/** Frame 5g: one tap moves the sheet between the people signed in, the last chip adds one. */
+@Composable
+private fun PersonChips(
+    people: List<AccountUi>,
+    onSwitchTo: (UserId) -> Unit,
+    onAddAccount: () -> Unit,
+) {
+    ChoiceRow(
+        choices =
+            people.map { Choice(it.displayName, "person-${it.id.value}") } +
+                Choice("+", "person-add", weight = 0.4f),
+        selected = people.indexOfFirst { it.active },
+        onSelect = { index ->
+            val person = people.getOrNull(index)
+            if (person == null) onAddAccount() else onSwitchTo(person.id)
+        },
+    )
+}
+
 @Composable
 private fun SetSheet(
     sheet: SheetUi?,
@@ -210,6 +237,8 @@ private fun SetSheet(
     onSave: () -> Unit,
     onOpenMachineSettings: (MachineId) -> Unit,
     onDelete: () -> Unit,
+    onSwitchTo: (UserId) -> Unit,
+    onAddAccount: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
@@ -239,6 +268,9 @@ private fun SetSheet(
                 Modifier.testTag("pick-machine"),
             )
             return@Column
+        }
+        if (sheet.people.size > 1 && !sheet.editing) {
+            PersonChips(sheet.people, onSwitchTo, onAddAccount)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Thumbnail(PhosphorIcons.Barbell)
@@ -318,7 +350,7 @@ private fun SetSheet(
         )
         Stepper(sheet.reps, "повторы", { onReps(-1) }, { onReps(+1) }, "reps")
         AccentButton(
-            if (sheet.editing) "Сохранить" else "Сохранить подход",
+            sheet.saveLabel,
             PhosphorIcons.Check,
             onSave,
             Modifier.testTag("save-set"),

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.gym.DEFAULT_REPS
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -25,7 +26,10 @@ import monster.greyde.kachalochka.core.domain.gym.stepReps
 import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.account.AccountUi
+import monster.greyde.kachalochka.ui.account.accountsUi
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.clockLabel
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
@@ -33,6 +37,7 @@ import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.groupSummary
 import monster.greyde.kachalochka.ui.format.machineTitle
 import monster.greyde.kachalochka.ui.format.platformSuffix
+import monster.greyde.kachalochka.ui.format.saveLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.shortSet
@@ -73,6 +78,8 @@ data class SheetUi(
     val weightCaption: String,
     val reps: String,
     val editing: Boolean,
+    val people: List<AccountUi>,
+    val saveLabel: String,
 )
 
 class VisitViewModel(
@@ -81,6 +88,7 @@ class VisitViewModel(
     private val machines: MachineRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
+    private val accounts: Accounts,
     private val restTimer: RestTimer,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
@@ -94,9 +102,17 @@ class VisitViewModel(
     private var visitSets: List<WorkoutSet> = emptyList()
     private var previousSets: List<WorkoutSet> = emptyList()
     private var selected: MachineId? = null
+    private var open: Machine? = null
     private var editing: WorkoutSet? = null
     private var expanded: Set<MachineId> = emptySet()
     private var values = SetValues(0.0, DEFAULT_REPS)
+
+    /** The screen follows whoever is active, wherever the switch came from. */
+    init {
+        viewModelScope.launch {
+            accounts.activeId.collect { reload(reseed = true) }
+        }
+    }
 
     val selectedMachineId: MachineId? get() = selected
 
@@ -111,7 +127,7 @@ class VisitViewModel(
     }
 
     fun changeWeight(direction: Int) {
-        val machine = selectedMachine() ?: return
+        val machine = open ?: return
         values = values.copy(weight = stepWeight(values.weight, machine.weightStep, direction))
         publish()
     }
@@ -121,23 +137,28 @@ class VisitViewModel(
         publish()
     }
 
+    fun switchTo(id: UserId) {
+        viewModelScope.launch { accounts.switchTo(id) }
+    }
+
     fun toggleGroup(id: MachineId) {
         expanded = if (id in expanded) expanded - id else expanded + id
         publish()
     }
 
     fun save() {
-        val machine = selectedMachine() ?: return
+        val machine = open ?: return
         writes.launch {
             val now = clock.now()
             val edited = editing
             if (edited == null) {
+                val owner = currentUser.id()
                 sets.upsert(
                     WorkoutSet(
                         WorkoutSetId.random(),
-                        currentUser.id(),
-                        visitId,
-                        machine.id,
+                        owner,
+                        startedVisitOf(owner).id,
+                        ownMachine(owner, machine).id,
                         values.weight,
                         values.reps,
                         now,
@@ -181,7 +202,11 @@ class VisitViewModel(
     }
 
     fun endVisit(onEnded: () -> Unit) {
-        val current = visit ?: return
+        val current = visit
+        if (current == null) {
+            onEnded()
+            return
+        }
         writes.launch {
             val now = clock.now()
             visits.upsert(current.copy(endedAt = now, updatedAt = now))
@@ -189,7 +214,37 @@ class VisitViewModel(
         }
     }
 
-    private fun selectedMachine(): Machine? = selected?.let(machinesById::get)
+    /** What the list shows and what a save lands in are the same row, resolved here. */
+    private suspend fun visitOf(owner: UserId?): Visit? =
+        visits.byId(visitId)?.takeIf { it.userId == owner } ?: visits.active(owner)
+
+    private suspend fun startedVisitOf(owner: UserId?): Visit {
+        visitOf(owner)?.let { return it }
+        val now = clock.now()
+        return Visit(VisitId.random(), owner, now, null, now, false).also { visits.upsert(it) }
+    }
+
+    /**
+     * After a switch the sheet still shows the machine the previous account was on; the active
+     * account's own row of that name stands in for it, until a save mirrors it (spec §4.1).
+     */
+    private suspend fun machineOf(owner: UserId?): Machine? {
+        val requested = selected ?: return null
+        machinesById[requested]?.let { return it }
+        val shown = open ?: return null
+        return machines.named(owner, shown.name) ?: shown
+    }
+
+    private suspend fun ownMachine(
+        owner: UserId?,
+        shown: Machine,
+    ): Machine {
+        if (shown.userId == owner) return shown
+        machines.named(owner, shown.name)?.let { return it }
+        val mirrored = shown.copy(id = MachineId.random(), userId = owner, updatedAt = clock.now())
+        machines.upsert(mirrored)
+        return mirrored
+    }
 
     private fun setNumber(
         edited: WorkoutSet?,
@@ -202,13 +257,20 @@ class VisitViewModel(
         }
 
     private suspend fun reload(reseed: Boolean) {
-        visit = visits.byId(visitId)
-        machinesById = machines.all(currentUser.id()).associateBy { it.id }
-        visitSets = sets.forVisit(visitId)
-        val machine = selectedMachine()
+        val owner = currentUser.id()
+        val shown = visitOf(owner)
+        visit = shown
+        machinesById = machines.all(owner).associateBy { it.id }
+        visitSets = shown?.let { sets.forVisit(it.id) }.orEmpty()
+        val machine = machineOf(owner)
+        open = machine
+        selected = machine?.id ?: selected
         previousSets =
-            machine?.let { previousVisitSets(sets.forMachine(it.id), visitId) }.orEmpty()
-        if (reseed && machine != null) {
+            machine
+                ?.takeIf { it.userId == owner }
+                ?.let { previousVisitSets(sets.forMachine(it.id), shown?.id ?: visitId) }
+                .orEmpty()
+        if (reseed && editing == null && machine != null) {
             values =
                 suggestNextSet(
                     machine,
@@ -220,7 +282,6 @@ class VisitViewModel(
     }
 
     private fun publish() {
-        visit ?: return
         val offset = utcOffset.at(clock.now())
         mutableState.value =
             VisitUiState(
@@ -255,7 +316,8 @@ class VisitViewModel(
     }
 
     private fun sheetUi(offset: Duration): SheetUi? {
-        val machine = selectedMachine() ?: return null
+        val machine = open ?: return null
+        val people = accountsUi(accounts.accounts.value, accounts.activeId.value)
         val onMachine = visitSets.filter { it.machineId == machine.id }
         val edited = editing
         val number = setNumber(edited, onMachine)
@@ -283,6 +345,12 @@ class VisitViewModel(
             weightCaption = weightCaption(machine),
             reps = values.reps.toString(),
             editing = edited != null,
+            people = people,
+            saveLabel =
+                saveLabel(
+                    people.takeIf { it.size > 1 }?.firstOrNull { it.active }?.displayName,
+                    edited != null,
+                ),
         )
     }
 }

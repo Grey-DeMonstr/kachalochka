@@ -106,6 +106,17 @@ fun formatRest(remaining: Duration): String {
     return "${total / 60}:${(total % 60).toString().padStart(2, '0')}"
 }
 
+/** [person] is the name of the account a set would be recorded as, when there is a choice. */
+fun saveLabel(
+    person: String?,
+    editing: Boolean,
+): String =
+    when {
+        editing -> "Сохранить"
+        person == null -> "Сохранить подход"
+        else -> "Сохранить · $person"
+    }
+
 /** The avatar draws a letter, never a photo. */
 fun monogram(name: String): String =
     name

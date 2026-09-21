@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.format.monogram
@@ -24,6 +25,20 @@ data class AccountUi(
     val active: Boolean,
 )
 
+fun accountsUi(
+    accounts: List<Account>,
+    activeId: UserId?,
+): List<AccountUi> =
+    accounts.map {
+        AccountUi(
+            it.userId,
+            it.displayName,
+            it.email,
+            monogram(it.displayName),
+            it.userId == activeId,
+        )
+    }
+
 /**
  * Resolved at more than one `ViewModelStoreOwner` (the app-level sign-in gate and each screen),
  * so distinct instances coexist. They only agree because [state] derives entirely from [accounts];
@@ -34,18 +49,7 @@ class AccountsViewModel(
 ) : ViewModel() {
     val state: StateFlow<AccountsUi> =
         combine(accounts.accounts, accounts.activeId) { list, activeId ->
-            AccountsUi(
-                list.map {
-                    AccountUi(
-                        it.userId,
-                        it.displayName,
-                        it.email,
-                        monogram(it.displayName),
-                        it.userId == activeId,
-                    )
-                },
-                activeId,
-            )
+            AccountsUi(accountsUi(list, activeId), activeId)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, AccountsUi(emptyList(), null))
 
     fun addAccount() {

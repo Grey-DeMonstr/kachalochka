@@ -29,7 +29,7 @@ val appModule =
         viewModelOf(::HomeViewModel)
         viewModelOf(::AccountsViewModel)
         viewModel { (visitId: VisitId) ->
-            VisitViewModel(visitId, get(), get(), get(), get(), get(), get(), get())
+            VisitViewModel(visitId, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (visitId: VisitId) ->
             MachinePickerViewModel(visitId, get(), get(), get(), get(), get())
