@@ -16,7 +16,8 @@ val coreModule =
     module {
         single { SupabaseCredentials.fromBuild() }
         single<SupabaseClient> { supabaseClient(get()) }
-        single<AccountStore> { PersistedAccountStore(get()) }
+        // Built while Koin starts, so the stored accounts are in hand before the first frame.
+        single<AccountStore>(createdAtStart = true) { PersistedAccountStore(get()) }
         single<SessionActivation> { SupabaseSessions(get()) }
         single<CurrentUser> { ActiveAccountUser(get()) }
         single { Accounts(get(), get(), get(), get()) }

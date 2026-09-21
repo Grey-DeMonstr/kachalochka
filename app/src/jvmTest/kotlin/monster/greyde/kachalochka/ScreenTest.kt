@@ -7,7 +7,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
+import monster.greyde.kachalochka.core.data.identity.AccountStorage
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
@@ -30,6 +32,8 @@ import kotlin.time.Clock
 
 fun fakeGymModule(gym: FakeGym) =
     module {
+        // The tests leave out corePlatformModule, which is where the real graph stores accounts.
+        single<AccountStorage> { InMemoryAccountStorage() }
         single<Clock> { gym.clock }
         single<Ticker> { gym.ticker }
         single<UtcOffset> { gym.utcOffset }
