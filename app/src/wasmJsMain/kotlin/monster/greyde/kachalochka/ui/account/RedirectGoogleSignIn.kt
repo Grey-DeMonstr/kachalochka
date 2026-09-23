@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.ui.account
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
+import kotlinx.browser.window
 import kotlinx.coroutines.awaitCancellation
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
@@ -16,7 +17,7 @@ class RedirectGoogleSignIn(
     private val client: SupabaseClient,
 ) : GoogleSignIn {
     override suspend fun signIn(): AccountSession {
-        client.auth.signInWith(Google)
+        client.auth.signInWith(Google, redirectUrl = signInReturnAddress(window.location.href))
         awaitCancellation()
     }
 }

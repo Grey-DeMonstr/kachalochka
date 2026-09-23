@@ -305,6 +305,10 @@ sync asks for one, so a fresh clone still launches and runs anonymously on Andro
 unavailable rather than merely hidden — the screens that offer it read `SignInAvailable`, and an
 attempt made anyway fails and is reported instead of resolving a client that cannot exist.
 
+Web sign-in asks Supabase to return to the page's own address rather than its origin, because
+GitHub Pages serves the app under a path. That address must match the project's redirect
+allowlist, alongside the local development server's.
+
 ---
 
 ## 6. Android specifics
