@@ -63,7 +63,12 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew :androidApp:assembleRelease -PversionName="${GITHUB_REF_NAME#v}"
 
+      - name: Name the APK after the version
+        run: |
+          mv androidApp/build/outputs/apk/release/androidApp-release.apk \
+            "$RUNNER_TEMP/kachalochka-${GITHUB_REF_NAME#v}.apk"
+
       - uses: softprops/action-gh-release@v3
         with:
           body_path: ${{ runner.temp }}/release-notes.txt
-          files: androidApp/build/outputs/apk/release/androidApp-release.apk
+          files: ${{ runner.temp }}/kachalochka-*.apk

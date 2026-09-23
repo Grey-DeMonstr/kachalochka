@@ -363,7 +363,8 @@ repositories, a fixed clock and a ticker that only advances when the test tells 
   `deploy` needs `check` and publishes that same artifact to GitHub Pages on a push to `master`,
   so nothing reaches Pages that the gate has not passed.
 - **`release.yml`**: on a `v*` tag, runs `check`, then builds a signed release APK from secrets
-  and creates a GitHub Release with the APK attached. No tag ships without the gate passing.
+  and creates a GitHub Release with it attached as `kachalochka-X.Y.Z.apk`. No tag ships without
+  the gate passing.
   `versionName` comes from the tag and `versionCode` is derived
   from it as `major * 10000 + minor * 100 + patch`, so rebuilding a tag reproduces the number it
   shipped; the release notes are that version's section of `changelog.txt`, and a tag whose
