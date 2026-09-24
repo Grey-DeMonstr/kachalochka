@@ -54,8 +54,8 @@ Android with nobody signed in, "Войти через Google" sits at the bottom
 
 The visit screen lists the visit's sets grouped by machine and ends with "Новый тренажёр", which
 opens the machine picker. Tapping a machine's row expands it to show its sets; tapping a set
-opens it for editing or deletion. "Завершить визит" ends the visit and returns to the home
-screen.
+opens it for editing or deletion. "Завершить визит" ends the visit and returns to the screen the
+visit was opened from.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,

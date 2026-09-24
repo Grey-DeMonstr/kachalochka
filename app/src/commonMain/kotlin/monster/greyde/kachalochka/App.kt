@@ -101,7 +101,7 @@ fun App() {
                             )
                         },
                         onVisitEnded = {
-                            navController.popBackStack(HomeRoute, inclusive = false)
+                            navController.popBackStack<VisitRoute>(inclusive = true)
                         },
                     )
                 }

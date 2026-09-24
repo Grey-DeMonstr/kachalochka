@@ -65,6 +65,21 @@ class AppTest {
         }
 
     @Test
+    fun a_visit_started_from_the_calendar_ends_back_on_the_calendar() =
+        runApp {
+            onNodeWithTag("section-visits").performClick()
+            waitForIdle()
+            onNodeWithTag("add-visit").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Визит")
+
+            onNodeWithTag("end-visit").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Визиты")
+        }
+
+    @Test
     fun picking_a_machine_from_the_visit_fills_the_sheet() {
         val press = Machine.new("Жим ногами", null, gym.clock.current)
         runBlocking { gym.machines.upsert(press) }
