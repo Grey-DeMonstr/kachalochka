@@ -61,7 +61,7 @@ class LocalMachineRepository(
         }
 }
 
-private fun machineOf(
+internal fun machineOf(
     id: String,
     userId: String?,
     name: String,

@@ -68,4 +68,16 @@ class OutboxDaoTest {
 
         assertTrue(dao.pending().isEmpty())
     }
+
+    @Test
+    fun a_pushed_entry_enqueued_again_meanwhile_stays_pending() {
+        val dao = dao()
+        val pushed = entry("row-1", 100)
+        dao.enqueue(pushed)
+        dao.enqueue(entry("row-1", 200))
+
+        dao.removePushed(pushed)
+
+        assertEquals(listOf(entry("row-1", 200)), dao.pending())
+    }
 }

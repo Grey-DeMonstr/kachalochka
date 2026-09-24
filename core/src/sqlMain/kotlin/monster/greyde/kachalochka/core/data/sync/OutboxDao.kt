@@ -24,4 +24,8 @@ class OutboxDao(
     ) {
         queries.remove(tableName, rowId)
     }
+
+    fun removePushed(entry: OutboxEntry) {
+        queries.removePushed(entry.tableName, entry.rowId, entry.enqueuedAt)
+    }
 }

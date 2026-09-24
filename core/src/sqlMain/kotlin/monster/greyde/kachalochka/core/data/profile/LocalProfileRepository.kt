@@ -9,6 +9,7 @@ import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
+import kotlin.time.Instant
 
 class LocalProfileRepository(
     database: KachalochkaDatabase,
@@ -38,16 +39,19 @@ class LocalProfileRepository(
         }
 
     override suspend fun byId(id: ProfileId): Profile? =
-        withContext(dispatcher) {
-            queries
-                .byId(id.value) { rowId, userId, displayName, updatedAt, deleted ->
-                    Profile(
-                        id = ProfileId(rowId),
-                        userId = userId?.let(::UserId),
-                        displayName = displayName,
-                        updatedAt = updatedAt,
-                        deleted = deleted,
-                    )
-                }.executeAsOneOrNull()
-        }
+        withContext(dispatcher) { queries.byId(id.value, ::profileOf).executeAsOneOrNull() }
 }
+
+internal fun profileOf(
+    id: String,
+    userId: String?,
+    displayName: String?,
+    updatedAt: Instant,
+    deleted: Boolean,
+) = Profile(
+    id = ProfileId(id),
+    userId = userId?.let(::UserId),
+    displayName = displayName,
+    updatedAt = updatedAt,
+    deleted = deleted,
+)

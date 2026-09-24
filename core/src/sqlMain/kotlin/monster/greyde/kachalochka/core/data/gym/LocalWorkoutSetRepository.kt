@@ -54,7 +54,7 @@ class LocalWorkoutSetRepository(
         }
 }
 
-private fun workoutSetOf(
+internal fun workoutSetOf(
     id: String,
     userId: String?,
     visitId: String,

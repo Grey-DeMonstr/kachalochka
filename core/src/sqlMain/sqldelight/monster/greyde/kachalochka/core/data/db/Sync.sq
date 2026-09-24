@@ -21,6 +21,9 @@ SELECT tableName, rowId, enqueuedAt FROM outbox ORDER BY enqueuedAt, rowId;
 remove:
 DELETE FROM outbox WHERE tableName = ? AND rowId = ?;
 
+removePushed:
+DELETE FROM outbox WHERE tableName = ? AND rowId = ? AND enqueuedAt = ?;
+
 lastPullAt:
 SELECT lastPullAt FROM syncState WHERE user_id = ?;
 

@@ -44,7 +44,7 @@ class LocalVisitRepository(
         }
 }
 
-private fun visitOf(
+internal fun visitOf(
     id: String,
     userId: String?,
     recordedAt: Instant,

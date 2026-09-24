@@ -22,6 +22,9 @@ INSERT OR REPLACE INTO workout_set(id, user_id, visit_id, machine_id, weight, re
     updated_at, deleted)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
+byId:
+SELECT * FROM workout_set WHERE id = ?;
+
 forVisit:
 SELECT * FROM workout_set WHERE visit_id = ? AND deleted = 0 ORDER BY recorded_at, id;
 
