@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka
 
 import android.app.Application
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.di.corePlatformModule
 import monster.greyde.kachalochka.core.di.followLiveSession
 import monster.greyde.kachalochka.di.appModule
@@ -17,5 +18,6 @@ class KachalochkaApplication : Application() {
                 modules(appModule, corePlatformModule(), platformModule())
             }.koin
         koin.followLiveSession()
+        koin.get<SyncTrigger>().request()
     }
 }

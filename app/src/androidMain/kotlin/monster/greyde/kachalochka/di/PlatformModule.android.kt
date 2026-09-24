@@ -9,6 +9,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.sync.WorkManagerSyncTrigger
 import monster.greyde.kachalochka.ui.account.ActivityHolder
 import monster.greyde.kachalochka.ui.account.CredentialManagerGoogleSignIn
 import monster.greyde.kachalochka.ui.account.SignInAvailable
@@ -38,6 +40,7 @@ actual fun platformModule(): Module =
             DataStoreThemePreference(get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }
         single { ActivityHolder() }
+        single<SyncTrigger> { WorkManagerSyncTrigger(androidContext()) }
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
         single<GoogleSignIn> {

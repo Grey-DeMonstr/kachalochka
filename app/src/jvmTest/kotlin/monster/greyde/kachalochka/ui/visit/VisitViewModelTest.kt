@@ -98,6 +98,7 @@ class VisitViewModelTest {
         timer,
         gym.clock,
         gym.utcOffset,
+        gym.sync,
     )
 
     @BeforeTest
@@ -229,6 +230,16 @@ class VisitViewModelTest {
 
             assertEquals(t0, gym.visits.byId(visit.id)?.endedAt)
             assertEquals(true, ended)
+        }
+
+    @Test
+    fun ending_the_visit_asks_for_a_sync_pass() =
+        runTest {
+            val vm = viewModel().also { it.refresh() }
+
+            vm.endVisit {}
+
+            assertEquals(1, gym.sync.requests)
         }
 
     @Test

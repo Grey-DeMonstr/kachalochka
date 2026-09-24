@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
@@ -13,12 +14,16 @@ import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.fakes.RecordingSyncTrigger
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.time.Instant
 
 private class GetCredentialCancellationException : Exception("the user backed out")
 
@@ -26,6 +31,12 @@ private class FailingSignIn(
     private val error: Throwable,
 ) : GoogleSignIn {
     override suspend fun signIn(): AccountSession = throw error
+}
+
+private class SucceedingSignIn(
+    private val session: AccountSession,
+) : GoogleSignIn {
+    override suspend fun signIn(): AccountSession = session
 }
 
 private class NoOpSessionActivation : SessionActivation {
@@ -44,15 +55,18 @@ class AccountsViewModelTest {
 
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel(signIn: GoogleSignIn) =
-        AccountsViewModel(
-            Accounts(
-                PersistedAccountStore(InMemoryAccountStorage()),
-                signIn,
-                NoOpSessionActivation(),
-                NoOpOwnerlessRows(),
-            ),
-        )
+    private fun viewModel(
+        signIn: GoogleSignIn,
+        sync: SyncTrigger = RecordingSyncTrigger(),
+    ) = AccountsViewModel(
+        Accounts(
+            PersistedAccountStore(InMemoryAccountStorage()),
+            signIn,
+            NoOpSessionActivation(),
+            NoOpOwnerlessRows(),
+        ),
+        sync,
+    )
 
     /**
      * `addAccount()` fires and forgets on `viewModelScope`, so a failure escapes as an uncaught
@@ -78,5 +92,27 @@ class AccountsViewModelTest {
             viewModel.addAccount()
 
             assertNull(viewModel.state.value.failure)
+        }
+
+    @Test
+    fun adding_an_account_asks_for_a_sync_pass() =
+        runTest {
+            val session =
+                AccountSession(
+                    Account(
+                        UserId("11111111-1111-4111-8111-111111111111"),
+                        "sam@example.test",
+                        "Sam",
+                    ),
+                    "access",
+                    "refresh",
+                    Instant.fromEpochSeconds(0),
+                )
+            val sync = RecordingSyncTrigger()
+            val viewModel = viewModel(SucceedingSignIn(session), sync)
+
+            viewModel.addAccount()
+
+            assertEquals(1, sync.requests)
         }
 }

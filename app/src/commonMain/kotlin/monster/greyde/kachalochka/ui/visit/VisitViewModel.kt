@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.DEFAULT_REPS
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -92,6 +93,7 @@ class VisitViewModel(
     private val restTimer: RestTimer,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
+    private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
@@ -220,6 +222,7 @@ class VisitViewModel(
         writes.launch {
             val now = clock.now()
             visits.upsert(current.copy(endedAt = now, updatedAt = now))
+            sync.request()
             onEnded()
         }
     }

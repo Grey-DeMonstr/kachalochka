@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -123,6 +124,14 @@ private class NoOpOwnerlessRows : OwnerlessRows {
     override suspend fun claim(owner: UserId) = Unit
 }
 
+class RecordingSyncTrigger : SyncTrigger {
+    var requests = 0
+
+    override fun request() {
+        requests++
+    }
+}
+
 class FakeGym(
     now: Instant = Instant.fromEpochSeconds(1_700_000_000),
     val credentials: SupabaseCredentials =
@@ -146,6 +155,7 @@ class FakeGym(
             override suspend fun id(): UserId? = accounts.activeId.value
         }
     val utcOffset = UtcOffset { Duration.ZERO }
+    val sync = RecordingSyncTrigger()
 
     /** Signs [sessions] in through [accounts] in order, then makes [active] the live one. */
     fun withAccounts(

@@ -60,6 +60,7 @@ kotlin {
             implementation(libs.androidx.credentials)
             implementation(libs.androidx.credentials.play.services.auth)
             implementation(libs.google.id)
+            implementation(libs.androidx.work.runtime.ktx)
             implementation(project.dependencies.platform(libs.supabase.bom))
             implementation(libs.supabase.auth)
         }

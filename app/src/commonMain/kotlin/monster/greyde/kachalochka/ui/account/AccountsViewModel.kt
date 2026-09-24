@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.format.monogram
 
@@ -47,6 +48,7 @@ fun accountsUi(
  */
 class AccountsViewModel(
     private val accounts: Accounts,
+    private val sync: SyncTrigger,
 ) : ViewModel() {
     val state: StateFlow<AccountsUi> =
         combine(
@@ -58,7 +60,10 @@ class AccountsViewModel(
         }.stateIn(viewModelScope, SharingStarted.Eagerly, AccountsUi(emptyList(), null))
 
     fun addAccount() {
-        viewModelScope.launch { accounts.addAccount() }
+        viewModelScope.launch {
+            accounts.addAccount()
+            sync.request()
+        }
     }
 
     fun switchTo(id: UserId) {

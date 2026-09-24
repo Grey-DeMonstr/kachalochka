@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountStorage
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
@@ -43,6 +44,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<CurrentUser> { gym.currentUser }
         single<Accounts> { gym.accounts }
         single<SupabaseCredentials> { gym.credentials }
+        single<SyncTrigger> { gym.sync }
         viewModelOf(::AccountsViewModel)
     }
 
