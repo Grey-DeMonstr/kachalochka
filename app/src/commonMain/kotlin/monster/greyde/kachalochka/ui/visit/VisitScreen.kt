@@ -109,21 +109,23 @@ fun VisitScreen(
             onToggle = viewModel::toggleGroup,
             onEdit = viewModel::editSet,
             onEnd = { viewModel.endVisit(onVisitEnded) },
+            onNewMachine = { onPickMachine(viewModel.selectedMachineId) },
             modifier = Modifier.weight(1f),
         )
-        SetSheet(
-            sheet = current.sheet,
-            onPickMachine = { onPickMachine(viewModel.selectedMachineId) },
-            onWeight = viewModel::changeWeight,
-            onReps = viewModel::changeReps,
-            onSave = viewModel::save,
-            onOpenMachineSettings = { viewModel.openMachineSettings(onOpenMachineSettings) },
-            onDelete = viewModel::deleteEditedSet,
-            onSwitchTo = viewModel::switchTo,
-            onAddAccount = accountsViewModel::addAccount,
-            onExpand = viewModel::expandSheet,
-            onCollapse = { viewModel.collapseSheet() },
-        )
+        current.sheet?.let { sheet ->
+            SetSheet(
+                sheet = sheet,
+                onWeight = viewModel::changeWeight,
+                onReps = viewModel::changeReps,
+                onSave = viewModel::save,
+                onOpenMachineSettings = { viewModel.openMachineSettings(onOpenMachineSettings) },
+                onDelete = viewModel::deleteEditedSet,
+                onSwitchTo = viewModel::switchTo,
+                onAddAccount = accountsViewModel::addAccount,
+                onExpand = viewModel::expandSheet,
+                onCollapse = { viewModel.collapseSheet() },
+            )
+        }
     }
 }
 
@@ -133,6 +135,7 @@ private fun VisitList(
     onToggle: (MachineId) -> Unit,
     onEdit: (WorkoutSetId) -> Unit,
     onEnd: () -> Unit,
+    onNewMachine: () -> Unit,
     modifier: Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -186,6 +189,12 @@ private fun VisitList(
             if (group.expanded) group.sets.forEach { SetRow(it, onEdit) }
             Rule()
         }
+        OutlineButton(
+            "Новый тренажёр",
+            PhosphorIcons.Plus,
+            onNewMachine,
+            Modifier.fillMaxWidth().padding(top = 14.dp).testTag("pick-machine"),
+        )
     }
 }
 
@@ -369,6 +378,7 @@ private fun SheetPeek(
         Modifier
             .fillMaxWidth()
             .swipeUpTo(onExpand)
+            .clip(SheetShape)
             .clickable(onClick = onExpand)
             .sheetChrome()
             .testTag("sheet-peek"),
@@ -400,8 +410,7 @@ private fun SheetPeek(
 
 @Composable
 private fun SetSheet(
-    sheet: SheetUi?,
-    onPickMachine: () -> Unit,
+    sheet: SheetUi,
     onWeight: (Int) -> Unit,
     onReps: (Int) -> Unit,
     onSave: () -> Unit,
@@ -414,7 +423,7 @@ private fun SetSheet(
 ) {
     val colors = MaterialTheme.colorScheme
     val muted = colors.onBackground.copy(alpha = 0.55f)
-    if (sheet != null && !sheet.expanded) {
+    if (!sheet.expanded) {
         SheetPeek(sheet, onExpand)
         return
     }
@@ -427,15 +436,6 @@ private fun SetSheet(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         SheetHandle(Modifier.align(Alignment.CenterHorizontally))
-        if (sheet == null) {
-            AccentButton(
-                "Выбрать тренажёр",
-                PhosphorIcons.MagnifyingGlass,
-                onPickMachine,
-                Modifier.testTag("pick-machine"),
-            )
-            return@Column
-        }
         if (sheet.people.size > 1 && !sheet.editing) {
             PersonChips(sheet.people, onSwitchTo, onAddAccount)
         }
@@ -444,7 +444,6 @@ private fun SetSheet(
             Column(
                 Modifier
                     .weight(1f)
-                    .clickable(enabled = !sheet.editing, onClick = onPickMachine)
                     .testTag("sheet-machine"),
             ) {
                 Row(

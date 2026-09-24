@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
@@ -80,9 +81,43 @@ class VisitScreenTest {
         runScreenTest(gym, screen = { visitScreen(onPickMachine = { picks++ }) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Визит")
             onNodeWithTag("visit-set-count").assertTextEquals("1 ПОДХОД")
-            onNodeWithTag("pick-machine").performClick()
+            onNodeWithTag("set-sheet").assertDoesNotExist()
+            onNodeWithTag("pick-machine").performScrollTo().performClick()
             waitForIdle()
             assertEquals(1, picks)
+        }
+    }
+
+    @Test
+    fun the_list_offers_a_new_machine_while_one_is_open() {
+        val picks = mutableListOf<MachineId?>()
+        runScreenTest(
+            gym,
+            screen = { visitScreen(picked = press.id, onPickMachine = { picks += it }) },
+        ) {
+            waitForIdle()
+            onNodeWithTag("pick-machine").assertTextEquals("Новый тренажёр")
+
+            onNodeWithTag("pick-machine").performScrollTo().performClick()
+            waitForIdle()
+
+            assertEquals(listOf<MachineId?>(press.id), picks)
+        }
+    }
+
+    @Test
+    fun tapping_the_machine_name_does_nothing() {
+        var picks = 0
+        runScreenTest(
+            gym,
+            screen = { visitScreen(picked = press.id, onPickMachine = { picks++ }) },
+        ) {
+            waitForIdle()
+            onNodeWithTag("sheet-machine").performClick()
+            waitForIdle()
+
+            assertEquals(0, picks)
+            onNodeWithTag("save-set").assertIsDisplayed()
         }
     }
 
