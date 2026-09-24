@@ -11,8 +11,10 @@ without an account.
 
 Several accounts can be signed in on one device at once, with one of them active. Everything is
 recorded into the active account, and each account keeps its own visits, machines and history.
-Switching between them is easy and works from inside a running visit. An account whose sign-in
-the server no longer accepts is signed out on its own; on Android its rows stay on the device.
+Switching between them is easy and works from inside a running visit. The account in use is
+signed out on its own once the server stops accepting its sign-in; on Android its rows stay on
+the device. Any other account the server stops accepting stays listed but stops syncing until it
+is switched to, and then the same rule applies.
 
 Both apps must support a dark and a light theme. By default the theme follows the system setting;
 the user can override it and pick light or dark explicitly. The choice is remembered between

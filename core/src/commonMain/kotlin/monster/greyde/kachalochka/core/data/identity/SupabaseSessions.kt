@@ -26,7 +26,8 @@ class SupabaseSessions(
     private val client: Lazy<SupabaseClient>,
     private val clock: Clock = Clock.System,
 ) : SessionActivation,
-    SessionRefresh {
+    SessionRefresh,
+    LiveRefresh {
     override suspend fun activate(session: AccountSession) {
         client.value.auth.importSession(session.toUserSession(clock.now()))
     }
@@ -36,14 +37,33 @@ class SupabaseSessions(
     }
 
     override suspend fun refresh(session: AccountSession): AccountSession? =
-        try {
+        nullWhenRefused {
             client.value.auth
                 .refreshSession(session.refreshToken)
                 .toAccountSession()
-        } catch (refused: RestException) {
-            if (refused.statusCode in 400..499) null else throw refused
+        }
+
+    // The refreshed session also reaches the store through the status flow, like any refresh.
+    override suspend fun refreshLive(): AccountSession? =
+        nullWhenRefused {
+            val auth = client.value.auth
+            auth.refreshCurrentSession()
+            auth.currentSessionOrNull()?.toAccountSession()
         }
 }
+
+// 429 is the server asking to come back later, not a verdict on the refresh token.
+internal fun refusesRefresh(statusCode: Int): Boolean =
+    statusCode in 400..499 && statusCode != HTTP_TOO_MANY_REQUESTS
+
+private const val HTTP_TOO_MANY_REQUESTS = 429
+
+private inline fun <T> nullWhenRefused(refresh: () -> T): T? =
+    try {
+        refresh()
+    } catch (refused: RestException) {
+        if (refusesRefresh(refused.statusCode)) null else throw refused
+    }
 
 fun Flow<SessionStatus>.liveSessionChanges(): Flow<LiveSessionChange> =
     mapNotNull { status ->

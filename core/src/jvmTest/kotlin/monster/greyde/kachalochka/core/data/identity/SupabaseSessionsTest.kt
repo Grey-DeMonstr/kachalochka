@@ -15,6 +15,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
@@ -148,4 +150,16 @@ class SupabaseSessionsTest {
 
             assertEquals(emptyList(), flowOf(status).liveSessionChanges().toList())
         }
+
+    @Test
+    fun a_client_error_refuses_the_refresh() {
+        assertTrue(refusesRefresh(400))
+        assertTrue(refusesRefresh(401))
+    }
+
+    @Test
+    fun too_many_requests_and_server_errors_are_worth_retrying() {
+        assertFalse(refusesRefresh(429))
+        assertFalse(refusesRefresh(500))
+    }
 }

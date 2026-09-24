@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.AccountTokens
 import monster.greyde.kachalochka.core.data.identity.FIXTURE_EXPIRY
+import monster.greyde.kachalochka.core.data.identity.FakeLiveTokens
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionRefresh
@@ -34,7 +35,7 @@ class SupabaseClientFactoryTest {
             object : SessionRefresh {
                 override suspend fun refresh(session: AccountSession): AccountSession? = null
             }
-        return AccountTokens(store, { null }, noRefresh, clockAt(FIXTURE_EXPIRY - 1.hours))
+        return AccountTokens(store, FakeLiveTokens(), noRefresh, clockAt(FIXTURE_EXPIRY - 1.hours))
     }
 
     @Test

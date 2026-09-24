@@ -13,11 +13,20 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private class LoggedActivation : SessionActivation {
+private class LoggedActivation :
+    SessionActivation,
+    LiveRefresh {
     val activated = mutableListOf<UserId>()
     var clears = 0
     val cleared get() = clears > 0
     var refusal: Throwable? = null
+    var renewed: AccountSession? = null
+    var refreshes = 0
+
+    override suspend fun refreshLive(): AccountSession? {
+        refreshes++
+        return renewed
+    }
 
     override suspend fun activate(session: AccountSession) {
         refusal?.let { throw it }
@@ -34,7 +43,7 @@ class LiveSessionTest {
     private val misha = accountSession("22222222-2222-4222-8222-222222222222", "Misha")
     private val store = PersistedAccountStore(InMemoryAccountStorage())
     private val inner = LoggedActivation()
-    private val live = LiveSession(inner, store)
+    private val live = LiveSession(inner, inner, store)
 
     @Test
     fun a_refreshed_live_session_is_written_back() =
@@ -199,7 +208,7 @@ class LiveSessionTest {
 
             assertFailsWith<IllegalStateException> { live.activate(misha) }
 
-            assertEquals(ivan.accessToken, live.accessTokenOf(ivan.account.userId))
+            assertEquals(ivan, live.liveSessionOf(ivan.account.userId))
         }
 
     @Test
@@ -209,7 +218,38 @@ class LiveSessionTest {
 
             live.follow(flowOf(Renewed(ivan)))
 
-            assertEquals(ivan.accessToken, live.accessTokenOf(ivan.account.userId))
-            assertNull(live.accessTokenOf(misha.account.userId))
+            assertEquals(ivan, live.liveSessionOf(ivan.account.userId))
+            assertNull(live.liveSessionOf(misha.account.userId))
+        }
+
+    @Test
+    fun the_live_session_is_refreshed_by_the_ui_client() =
+        runTest {
+            live.activate(ivan)
+            live.follow(flowOf(Renewed(ivan)))
+            inner.renewed = ivan.copy(accessToken = "fresh")
+
+            assertEquals("fresh", live.refreshLive(ivan.account.userId))
+            assertEquals("fresh", live.liveSessionOf(ivan.account.userId)?.accessToken)
+        }
+
+    @Test
+    fun an_account_that_is_not_live_is_never_refreshed_as_the_live_one() =
+        runTest {
+            live.activate(ivan)
+            live.follow(flowOf(Renewed(ivan)))
+            inner.renewed = misha
+
+            assertNull(live.refreshLive(misha.account.userId))
+            assertEquals(0, inner.refreshes)
+        }
+
+    @Test
+    fun a_refused_live_refresh_leaves_no_token() =
+        runTest {
+            live.activate(ivan)
+            live.follow(flowOf(Renewed(ivan)))
+
+            assertNull(live.refreshLive(ivan.account.userId))
         }
 }

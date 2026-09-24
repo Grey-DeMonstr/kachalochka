@@ -22,7 +22,7 @@ class AccountTokensTest {
     private val ivan = accountSession("11111111-1111-4111-8111-111111111111", "Ivan")
     private val misha = UserId("22222222-2222-4222-8222-222222222222")
     private val store = PersistedAccountStore(InMemoryAccountStorage())
-    private val neverLive = LiveTokens { null }
+    private val neverLive = FakeLiveTokens()
 
     @Test
     fun a_token_well_before_expiry_is_handed_back_unchanged() =
@@ -50,15 +50,33 @@ class AccountTokensTest {
     fun the_live_account_s_token_comes_from_the_live_session() =
         runTest {
             store.add(ivan)
+            val live = FakeLiveTokens(ivan.copy(accessToken = "live"))
             val tokens =
-                AccountTokens(
-                    store,
-                    LiveTokens { "live" },
-                    mustNotRefresh,
-                    clockAt(FIXTURE_EXPIRY),
-                )
+                AccountTokens(store, live, mustNotRefresh, clockAt(FIXTURE_EXPIRY - 1.hours))
 
             assertEquals("live", tokens.tokenFor(ivan.account.userId))
+            assertEquals(0, live.refreshes)
+        }
+
+    @Test
+    fun a_live_token_near_expiry_is_refreshed_by_the_ui_client() =
+        runTest {
+            store.add(ivan)
+            val live = FakeLiveTokens(ivan, renewed = "renewed")
+            val tokens = AccountTokens(store, live, mustNotRefresh, clockAt(FIXTURE_EXPIRY))
+
+            assertEquals("renewed", tokens.tokenFor(ivan.account.userId))
+        }
+
+    @Test
+    fun a_live_account_whose_refresh_is_refused_has_no_token() =
+        runTest {
+            store.add(ivan)
+            val live = FakeLiveTokens(ivan, renewed = null)
+            val tokens = AccountTokens(store, live, mustNotRefresh, clockAt(FIXTURE_EXPIRY))
+
+            assertNull(tokens.tokenFor(ivan.account.userId))
+            assertEquals(1, live.refreshes)
         }
 
     @Test

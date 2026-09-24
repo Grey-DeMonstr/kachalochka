@@ -18,11 +18,16 @@ class AccountTokens(
     private val clock: Clock,
 ) {
     suspend fun tokenFor(owner: UserId): String? {
-        live.accessTokenOf(owner)?.let { return it }
+        live.liveSessionOf(owner)?.let {
+            return if (usable(it)) it.accessToken else live.refreshLive(owner)
+        }
         val session = store.sessionOf(owner) ?: return null
-        if (clock.now() < session.expiresAt - 1.minutes) return session.accessToken
+        if (usable(session)) return session.accessToken
         val renewed = refresh.refresh(session) ?: return null
         store.replaceSession(renewed)
         return renewed.accessToken
     }
+
+    private fun usable(session: AccountSession): Boolean =
+        clock.now() < session.expiresAt - 1.minutes
 }

@@ -187,9 +187,13 @@ just another update that travels the same path.
 - **Triggers.** A pass runs on app start, when the user ends a visit, and after an account is
   added. It is a WorkManager job — unique work `"sync"`, `APPEND_OR_REPLACE` — with a network
   constraint, so a pass already queued waits for connectivity rather than failing outright.
-- **Tokens.** The account live on the UI client lends its own access token to the pass; every
-  other account refreshes through `refreshSession`, and the session that comes back is written to
-  the store before use. A refresh the server refuses leaves that account unsynced for the pass.
+- **Tokens.** The account live on the UI client lends its own access token to the pass while it
+  has more than a minute left; nearer its expiry the pass has the UI client refresh its own
+  session with `refreshCurrentSession`, because the rotated refresh token that client holds would
+  be spent by a refresh from anywhere else. Every other account refreshes through
+  `refreshSession`, and the session that comes back is written to the store before use. A refresh
+  the server refuses with a 4xx other than 429 leaves that account unsynced for the pass; a 429
+  or a network failure fails the pass instead.
 - **Every account.** A pass covers every account signed in on the device, not only the active
   one. `syncState` moved from one row to one row per `user_id` in the first local schema
   migration (`1.sqm`), so each account has its own pull watermark. Pushing only the active account

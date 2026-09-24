@@ -17,9 +17,23 @@ sealed interface LiveSessionChange {
     data object Reloading : LiveSessionChange
 }
 
-/** The token of the account live on the UI client, which that client keeps refreshed itself. */
-fun interface LiveTokens {
-    fun accessTokenOf(owner: UserId): String?
+/**
+ * The session of the account live on the UI client. Only that client may refresh it: its
+ * refresh token rotates, and a refresh from anywhere else would leave the client holding a spent
+ * one.
+ */
+interface LiveTokens {
+    /** Null unless [owner] is the account live on the UI client. */
+    fun liveSessionOf(owner: UserId): AccountSession?
+
+    /** Null when [owner] is no longer live or the server refuses the refresh. */
+    suspend fun refreshLive(owner: UserId): String?
+}
+
+/** The UI client refreshing the session live on it. */
+fun interface LiveRefresh {
+    /** Null when the server refuses the refresh token; a network failure throws. */
+    suspend fun refreshLive(): AccountSession?
 }
 
 /**
@@ -29,10 +43,11 @@ fun interface LiveTokens {
  */
 class LiveSession(
     private val sessions: SessionActivation,
+    private val refresher: LiveRefresh,
     private val store: AccountStore,
 ) : SessionActivation,
     LiveTokens {
-    // Written on the main thread, read by the sync worker.
+    // Shared between the main thread and the sync worker.
     @Volatile private var intended: UserId? = null
 
     @Volatile private var seen: AccountSession? = null
@@ -48,8 +63,16 @@ class LiveSession(
         sessions.clear()
     }
 
-    override fun accessTokenOf(owner: UserId): String? =
-        seen?.takeIf { it.account.userId == owner && owner == intended }?.accessToken
+    override fun liveSessionOf(owner: UserId): AccountSession? =
+        seen?.takeIf { it.account.userId == owner && owner == intended }
+
+    override suspend fun refreshLive(owner: UserId): String? {
+        if (liveSessionOf(owner) == null) return null
+        val renewed = refresher.refreshLive()?.takeIf { it.account.userId == owner } ?: return null
+        // The follower writes it back as well, but the pass asks for a token before it gets to.
+        seen = renewed
+        return renewed.accessToken
+    }
 
     suspend fun follow(changes: Flow<LiveSessionChange>) {
         changes.collect { change ->
