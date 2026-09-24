@@ -121,10 +121,10 @@ class SupabaseSessionsTest {
         }
 
     @Test
-    fun initializing_says_nothing() =
+    fun initializing_reads_as_reloading() =
         runTest {
             assertEquals(
-                emptyList(),
+                listOf(LiveSessionChange.Reloading),
                 flowOf(SessionStatus.Initializing).liveSessionChanges().toList(),
             )
         }

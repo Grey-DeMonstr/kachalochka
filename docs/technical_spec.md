@@ -226,7 +226,10 @@ import kotlinx.coroutines and so cannot expose the `StateFlow` the UI observes. 
 per platform behind one interface, as the theme mode is (§10): DataStore on Android,
 `localStorage` on web, in memory for tests. A switch calls `importSession` on the UI client, so
 one session is live at a time even though several are stored, and supabase-kt's own session
-storage is turned off — it holds a single session and would contend for the same slot.
+storage is turned off — it holds a single session and would contend for the same slot. So is its
+hook that reloads that storage whenever the app returns to the foreground: finding it empty, it
+would end the live session. As a second guard, an end the library reports right after it starts
+reloading signs nobody out.
 
 supabase-kt refreshes the live session on its own; each refresh is written back to the store
 through `LiveSession`, which records the account it put live only once `importSession` for it has

@@ -12,6 +12,9 @@ sealed interface LiveSessionChange {
     ) : LiveSessionChange
 
     data object Ended : LiveSessionChange
+
+    /** The library is reloading its session; an end it reports next is not a refused refresh. */
+    data object Reloading : LiveSessionChange
 }
 
 /** The token of the account live on the UI client, which that client keeps refreshed itself. */
@@ -75,6 +78,7 @@ class LiveSession(
                 val next = store.activeId.value?.let { store.sessionOf(it) }
                 if (next == null) clear() else activateOrDisown(next)
             }
+            LiveSessionChange.Reloading -> seen = null
         }
     }
 

@@ -53,6 +53,7 @@ fun Flow<SessionStatus>.liveSessionChanges(): Flow<LiveSessionChange> =
                     .getOrNull()
                     ?.let(LiveSessionChange::Renewed)
             is SessionStatus.NotAuthenticated -> LiveSessionChange.Ended
+            SessionStatus.Initializing -> LiveSessionChange.Reloading
             else -> null
         }
     }

@@ -87,4 +87,11 @@ class SupabaseClientFactoryTest {
         assertFalse(client.auth.config.autoLoadFromStorage)
         assertFalse(client.auth.config.autoSaveToStorage)
     }
+
+    @Test
+    fun coming_back_to_the_foreground_leaves_the_live_session_alone() {
+        val client = supabaseClient(SupabaseCredentials("https://example.supabase.co", "anon-key"))
+
+        assertFalse(client.auth.config.enableLifecycleCallbacks)
+    }
 }

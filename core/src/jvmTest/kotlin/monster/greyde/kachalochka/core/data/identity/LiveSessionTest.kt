@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.identity.LiveSessionChange.Ended
+import monster.greyde.kachalochka.core.data.identity.LiveSessionChange.Reloading
 import monster.greyde.kachalochka.core.data.identity.LiveSessionChange.Renewed
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
@@ -105,6 +106,19 @@ class LiveSessionTest {
             assertEquals(listOf(ivan.account), store.accounts.value)
             assertEquals(listOf(ivan.account.userId), inner.activated)
             assertEquals(1, inner.clears)
+        }
+
+    @Test
+    fun an_end_after_the_library_reloads_signs_nobody_out() =
+        runTest {
+            store.add(ivan)
+            live.activate(ivan)
+
+            live.follow(flowOf(Renewed(ivan), Reloading, Ended))
+
+            assertEquals(listOf(ivan.account), store.accounts.value)
+            assertEquals(ivan.account.userId, store.activeId.value)
+            assertEquals(0, inner.clears)
         }
 
     @Test

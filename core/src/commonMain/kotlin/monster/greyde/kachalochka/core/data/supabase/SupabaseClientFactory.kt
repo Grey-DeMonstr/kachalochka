@@ -26,6 +26,8 @@ fun supabaseClient(credentials: SupabaseCredentials): SupabaseClient {
         install(Auth) {
             autoLoadFromStorage = false
             autoSaveToStorage = false
+            // The foreground hook would reload that empty storage and end the live session.
+            enableLifecycleCallbacks = false
         }
         install(Postgrest)
         install(Storage)
