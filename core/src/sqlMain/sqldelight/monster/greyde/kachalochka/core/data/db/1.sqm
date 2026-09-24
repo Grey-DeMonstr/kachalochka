@@ -1,0 +1,6 @@
+CREATE TABLE syncState_byUser (
+    user_id    TEXT NOT NULL PRIMARY KEY,
+    lastPullAt INTEGER
+);
+DROP TABLE syncState;
+ALTER TABLE syncState_byUser RENAME TO syncState;

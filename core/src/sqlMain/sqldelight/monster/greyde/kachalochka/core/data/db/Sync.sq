@@ -8,11 +8,9 @@ CREATE TABLE outbox (
 );
 
 CREATE TABLE syncState (
-    id         INTEGER NOT NULL PRIMARY KEY,
+    user_id    TEXT NOT NULL PRIMARY KEY,
     lastPullAt INTEGER AS Instant
 );
-
-INSERT INTO syncState(id, lastPullAt) VALUES (0, NULL);
 
 enqueue:
 INSERT OR REPLACE INTO outbox(tableName, rowId, enqueuedAt) VALUES (?, ?, ?);
@@ -24,7 +22,7 @@ remove:
 DELETE FROM outbox WHERE tableName = ? AND rowId = ?;
 
 lastPullAt:
-SELECT lastPullAt FROM syncState WHERE id = 0;
+SELECT lastPullAt FROM syncState WHERE user_id = ?;
 
 setLastPullAt:
-UPDATE syncState SET lastPullAt = ? WHERE id = 0;
+INSERT OR REPLACE INTO syncState(user_id, lastPullAt) VALUES (?, ?);
