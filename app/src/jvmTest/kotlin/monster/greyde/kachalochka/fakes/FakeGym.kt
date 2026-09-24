@@ -71,7 +71,7 @@ class InMemoryMachineRepository : MachineRepository {
 class InMemoryVisitRepository : VisitRepository {
     val rows = linkedMapOf<VisitId, Visit>()
 
-    /** While set, [all] waits for it, which keeps a reload in flight for as long as a test needs. */
+    /** While set, [all] waits for it, which keeps a reload in flight as long as a test needs. */
     var gate: CompletableDeferred<Unit>? = null
 
     override suspend fun upsert(visit: Visit) {
@@ -99,6 +99,9 @@ class InMemoryWorkoutSetRepository : WorkoutSetRepository {
     /** While set, writes wait for it, which keeps a write in flight for as long as a test needs. */
     var gate: CompletableDeferred<Unit>? = null
 
+    /** While set, [forVisit] waits for it, which keeps a read in flight as long as a test needs. */
+    var readGate: CompletableDeferred<Unit>? = null
+
     override suspend fun upsert(set: WorkoutSet) {
         gate?.await()
         rows[set.id] = set
@@ -106,7 +109,10 @@ class InMemoryWorkoutSetRepository : WorkoutSetRepository {
 
     private fun live() = rows.values.filterNot { it.deleted }.sortedBy { it.recordedAt }
 
-    override suspend fun forVisit(visitId: VisitId) = live().filter { it.visitId == visitId }
+    override suspend fun forVisit(visitId: VisitId): List<WorkoutSet> {
+        readGate?.await()
+        return live().filter { it.visitId == visitId }
+    }
 
     override suspend fun forMachine(machineId: MachineId) =
         live().filter { it.machineId == machineId }

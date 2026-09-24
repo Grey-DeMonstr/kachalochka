@@ -10,6 +10,8 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
+import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -37,6 +39,7 @@ data class CalendarUiState(
     val weeks: List<List<DayUi?>>,
     val dayTitle: String,
     val visits: List<CalendarVisitUi>,
+    val noVisits: Boolean,
     val addLabel: String?,
     val moving: Boolean,
     val removal: RemovalUi?,
@@ -78,6 +81,8 @@ class CalendarViewModel(
 
     private var all: List<Visit> = emptyList()
     private var activeId: VisitId? = null
+    private var machinesById: Map<MachineId, Machine> = emptyMap()
+    private var stale = true
     private var dayVisits: List<CalendarVisitUi> = emptyList()
     private var month: CalendarMonth = CalendarMonth.of(today())
     private var selected: CalendarDay = today()
@@ -112,7 +117,9 @@ class CalendarViewModel(
         val target = moving
         if (target == null) {
             selected = day
-            reload()
+            dayVisits = emptyList()
+            publish()
+            reload(everything = false)
         } else {
             writes.launch {
                 // A sync may have removed the visit since the move began.
@@ -205,17 +212,24 @@ class CalendarViewModel(
         visits.upsert(rows.visit)
     }
 
-    /** Cancels the reload in flight, so one for a previous day or account never lands last. */
-    private fun reload() {
+    /**
+     * Cancels the reload in flight, so one for a previous day or account never lands last. A
+     * day-only reload still reads everything when a cancelled one had not finished doing so.
+     */
+    private fun reload(everything: Boolean = true) {
+        if (everything) stale = true
         reloading?.cancel()
         reloading = viewModelScope.launch { load() }
     }
 
     private suspend fun load() {
-        val owner = currentUser.id()
-        all = visits.all(owner)
-        activeId = visits.active(owner)?.id
-        val machinesById = machines.all(owner).associateBy { it.id }
+        if (stale) {
+            val owner = currentUser.id()
+            all = visits.all(owner)
+            activeId = visits.active(owner)?.id
+            machinesById = machines.all(owner).associateBy { it.id }
+            stale = false
+        }
         val day = selected
         dayVisits =
             all
@@ -270,6 +284,8 @@ class CalendarViewModel(
                 weeks = weeksUi,
                 dayTitle = "${weekdayName(day.dayOfWeek)}, ${dayMonthLabel(day, today.year)}",
                 visits = dayVisits,
+                // Read from the day marks, which are known while the day's cards still load.
+                noVisits = day !in visitDays,
                 addLabel = addLabel,
                 moving = moving != null,
                 removal = removing?.let { removalUi(it, today) },

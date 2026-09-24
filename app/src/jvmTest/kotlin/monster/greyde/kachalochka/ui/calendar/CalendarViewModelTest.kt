@@ -100,6 +100,7 @@ class CalendarViewModelTest {
         assertFalse(state.day(15).enabled)
         assertEquals("Вторник, 14 ноября", state.dayTitle)
         assertEquals(emptyList(), state.visits)
+        assertTrue(state.noVisits)
         assertEquals("Начать визит", state.addLabel)
     }
 
@@ -118,6 +119,29 @@ class CalendarViewModelTest {
         assertFalse(listed.running)
         assertEquals("Добавить визит", state.addLabel)
     }
+
+    @Test
+    fun a_chosen_day_shows_at_once_and_its_visits_follow_their_sets() =
+        runTest {
+            val vm = viewModel().also { it.refresh() }
+            val visitsRead = CompletableDeferred<Unit>()
+            val setsRead = CompletableDeferred<Unit>()
+            gym.visits.gate = visitsRead
+            gym.sets.readGate = setsRead
+
+            vm.selectDay(twelfth)
+
+            val chosen = assertNotNull(vm.state.value)
+            assertEquals("Воскресенье, 12 ноября", chosen.dayTitle)
+            assertTrue(chosen.day(12).selected)
+            assertEquals(emptyList(), chosen.visits)
+            assertFalse(chosen.noVisits)
+
+            setsRead.complete(Unit)
+
+            assertEquals(listOf(sunday.id), assertNotNull(vm.state.value).visits.map { it.id })
+            visitsRead.complete(Unit)
+        }
 
     @Test
     fun adding_on_a_past_day_records_an_ended_visit_and_opens_it() =

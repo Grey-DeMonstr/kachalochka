@@ -105,7 +105,7 @@ fun CalendarScreen(
                     onRemove = { viewModel.askToRemove(visit.id) },
                 )
             }
-            if (current.visits.isEmpty()) {
+            if (current.noVisits) {
                 Text(
                     "Нет визитов",
                     modifier = Modifier.testTag("calendar-empty"),
