@@ -109,6 +109,10 @@ version.ref = "kotlinxBrowser"
 module = "androidx.work:work-runtime-ktx"
 version.ref = "work"
 
+[libraries.androidx-lifecycle-process]
+module = "androidx.lifecycle:lifecycle-process"
+version.ref = "lifecycle"
+
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

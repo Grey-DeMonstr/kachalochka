@@ -184,8 +184,9 @@ just another update that travels the same path.
   skipped. The watermark then advances to the newest `updated_at` pulled.
 - **Conflicts** resolve by last-write-wins on `updated_at`. The data is single-user per row and
   edits are rare, so a merge strategy would be cost without benefit.
-- **Triggers.** A pass runs on app start, when the user ends a visit, and after an account is
-  added. It is a WorkManager job — unique work `"sync"` — with a network constraint, so a pass
+- **Triggers.** A pass runs whenever the app comes to the foreground (a `ProcessLifecycleOwner`
+  `ON_START` observer, which also fires at launch), when the user ends a visit, and after an
+  account is added. It is a WorkManager job — unique work `"sync"` — with a network constraint, so a pass
   already queued waits for connectivity rather than failing outright. A pass reports whether every
   push and pull succeeded, and one that did not is retried with exponential backoff. A new request
   replaces (`REPLACE`) whatever is queued or running, so it never waits behind a pass sitting out

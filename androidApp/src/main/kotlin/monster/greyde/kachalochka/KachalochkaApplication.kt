@@ -1,6 +1,9 @@
 package monster.greyde.kachalochka
 
 import android.app.Application
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.di.corePlatformModule
 import monster.greyde.kachalochka.core.di.followLiveSession
@@ -18,6 +21,12 @@ class KachalochkaApplication : Application() {
                 modules(appModule, corePlatformModule(), platformModule())
             }.koin
         koin.followLiveSession()
-        koin.get<SyncTrigger>().request()
+        val sync = koin.get<SyncTrigger>()
+        // Fires at launch and again on every return to the foreground.
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            object : DefaultLifecycleObserver {
+                override fun onStart(owner: LifecycleOwner) = sync.request()
+            },
+        )
     }
 }

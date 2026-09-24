@@ -73,6 +73,7 @@ dependencies {
     implementation(compose.runtime)
     implementation(compose.ui)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.process)
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
 }
