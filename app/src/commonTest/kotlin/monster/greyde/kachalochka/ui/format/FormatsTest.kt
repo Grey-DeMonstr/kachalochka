@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.ui.format
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -116,6 +117,14 @@ class FormatsTest {
         assertEquals("07:05", clockLabel(7 * 60 + 5))
         assertEquals("1:30", formatRest(90.seconds))
         assertEquals("0:05", formatRest(4.2.seconds))
+    }
+
+    @Test
+    fun calendar_labels_are_russian() {
+        assertEquals("Ноябрь 2023", monthTitle(CalendarMonth(2023, 11)))
+        assertEquals("Вторник", weekdayName(2))
+        assertEquals("Вс", WEEKDAY_LABELS.last())
+        assertEquals("2023-11-05", isoDate(CalendarDay(2023, 11, 5)))
     }
 
     @Test

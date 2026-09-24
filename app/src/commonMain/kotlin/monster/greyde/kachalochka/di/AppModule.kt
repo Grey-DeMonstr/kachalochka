@@ -4,6 +4,7 @@ import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
+import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.home.HomeViewModel
@@ -28,6 +29,7 @@ val appModule =
         single { RestTimer(get()) }
         viewModelOf(::HomeViewModel)
         viewModelOf(::AccountsViewModel)
+        viewModelOf(::CalendarViewModel)
         viewModel { (visitId: VisitId) ->
             VisitViewModel(visitId, get(), get(), get(), get(), get(), get(), get(), get(), get())
         }

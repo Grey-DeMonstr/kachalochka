@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.ui.format
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
@@ -120,6 +121,45 @@ fun dayMonthLabel(
 ): String {
     val label = "${day.day} ${monthGenitive(day.month)}"
     return if (day.year == currentYear) label else "$label ${day.year}"
+}
+
+private val monthsNominative =
+    listOf(
+        "Январь",
+        "Февраль",
+        "Март",
+        "Апрель",
+        "Май",
+        "Июнь",
+        "Июль",
+        "Август",
+        "Сентябрь",
+        "Октябрь",
+        "Ноябрь",
+        "Декабрь",
+    )
+
+fun monthTitle(month: CalendarMonth): String = "${monthsNominative[month.month - 1]} ${month.year}"
+
+private val weekdayNames =
+    listOf(
+        "Понедельник",
+        "Вторник",
+        "Среда",
+        "Четверг",
+        "Пятница",
+        "Суббота",
+        "Воскресенье",
+    )
+
+fun weekdayName(dayOfWeek: Int): String = weekdayNames[dayOfWeek - 1]
+
+val WEEKDAY_LABELS: List<String> = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
+
+fun isoDate(day: CalendarDay): String {
+    val month = day.month.toString().padStart(2, '0')
+    val date = day.day.toString().padStart(2, '0')
+    return "${day.year}-$month-$date"
 }
 
 fun clockLabel(minuteOfDay: Int): String {
