@@ -99,6 +99,7 @@ fun CalendarScreen(
             current.visits.forEach { visit ->
                 VisitCard(
                     visit,
+                    editable = !current.moving,
                     onOpen = { onOpenVisit(visit.id) },
                     onMove = { viewModel.startMove(visit.id) },
                     onRemove = { viewModel.askToRemove(visit.id) },
@@ -260,6 +261,7 @@ private fun RowScope.DayCell(
 @Composable
 private fun VisitCard(
     visit: CalendarVisitUi,
+    editable: Boolean,
     onOpen: () -> Unit,
     onMove: () -> Unit,
     onRemove: () -> Unit,
@@ -305,21 +307,23 @@ private fun VisitCard(
                 )
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (!visit.running) {
+        if (editable) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (!visit.running) {
+                    OutlineButton(
+                        "Перенести",
+                        PhosphorIcons.CalendarBlank,
+                        onMove,
+                        Modifier.weight(1f).testTag("move-visit-${visit.id.value}"),
+                    )
+                }
                 OutlineButton(
-                    "Перенести",
-                    PhosphorIcons.CalendarBlank,
-                    onMove,
-                    Modifier.weight(1f).testTag("move-visit-${visit.id.value}"),
+                    "Удалить",
+                    PhosphorIcons.Trash,
+                    onRemove,
+                    Modifier.weight(1f).testTag("remove-visit-${visit.id.value}"),
                 )
             }
-            OutlineButton(
-                "Удалить",
-                PhosphorIcons.Trash,
-                onRemove,
-                Modifier.weight(1f).testTag("remove-visit-${visit.id.value}"),
-            )
         }
     }
 }

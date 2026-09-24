@@ -99,6 +99,25 @@ class CalendarScreenTest {
     }
 
     @Test
+    fun a_move_offers_no_other_edits_and_can_be_cancelled() {
+        runScreenTest(gym, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("move-visit-${sunday.id.value}").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("move-visit-${sunday.id.value}").assertDoesNotExist()
+            onNodeWithTag("remove-visit-${sunday.id.value}").assertDoesNotExist()
+
+            onNodeWithTag("cancel-move").performClick()
+            waitForIdle()
+
+            onNodeWithTag("move-banner").assertDoesNotExist()
+            onNodeWithTag("remove-visit-${sunday.id.value}").performScrollTo().assertIsDisplayed()
+            assertEquals(sunday, gym.visits.rows[sunday.id])
+        }
+    }
+
+    @Test
     fun back_while_moving_cancels_the_move() {
         var backs = 0
         runScreenTest(gym, screen = { calendar(onBack = { backs++ }) }) {

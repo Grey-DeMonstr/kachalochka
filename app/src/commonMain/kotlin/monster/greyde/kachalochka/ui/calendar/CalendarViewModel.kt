@@ -115,9 +115,16 @@ class CalendarViewModel(
             reload()
         } else {
             writes.launch {
+                // A sync may have removed the visit since the move began.
+                val visit = visits.byId(target.id)?.takeIf { !it.deleted && it.endedAt != null }
+                if (visit == null) {
+                    moving = null
+                    publish()
+                    return@launch
+                }
                 val now = clock.now()
                 val offset = utcOffset.at(now)
-                write(movedVisit(target, sets.forVisit(target.id), day, offset, now))
+                write(movedVisit(visit, sets.forVisit(visit.id), day, offset, now))
                 moving = null
                 selected = day
                 month = CalendarMonth.of(day)
@@ -187,6 +194,7 @@ class CalendarViewModel(
             val now = clock.now()
             write(removedVisit(visit, sets.forVisit(visit.id), now))
             removing = null
+            moving = null
             sync.request()
             reload()
         }

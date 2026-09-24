@@ -230,6 +230,44 @@ class CalendarViewModelTest {
         }
 
     @Test
+    fun removing_the_visit_being_moved_leaves_move_mode_for_good() =
+        runTest {
+            val vm = viewModel().also { it.refresh() }
+            vm.selectDay(twelfth)
+            vm.startMove(sunday.id)
+
+            vm.askToRemove(sunday.id)
+            vm.confirmRemoval()
+            assertFalse(assertNotNull(vm.state.value).moving)
+            vm.selectDay(CalendarDay(2023, 11, 5))
+
+            assertEquals(true, gym.visits.byId(sunday.id)?.deleted)
+            assertEquals(emptyList(), gym.visits.all(null))
+            assertEquals(emptyList(), gym.sets.forVisit(sunday.id))
+        }
+
+    @Test
+    fun a_visit_removed_elsewhere_during_a_move_is_not_brought_back() =
+        runTest {
+            val vm = viewModel().also { it.refresh() }
+            vm.startMove(sunday.id)
+            val removed = sunday.copy(updatedAt = t0 + 1.minutes, deleted = true)
+            gym.visits.upsert(removed)
+
+            vm.selectDay(CalendarDay(2023, 11, 5))
+
+            assertEquals(removed, gym.visits.byId(sunday.id))
+            assertEquals(
+                listOf(12, 12, 12),
+                gym.sets
+                    .forVisit(sunday.id)
+                    .map { CalendarDay.of(it.recordedAt, Duration.ZERO).day },
+            )
+            assertFalse(assertNotNull(vm.state.value).moving)
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
     fun removal_asks_first_and_then_takes_the_sets_with_it() =
         runTest {
             val vm = viewModel().also { it.refresh() }
