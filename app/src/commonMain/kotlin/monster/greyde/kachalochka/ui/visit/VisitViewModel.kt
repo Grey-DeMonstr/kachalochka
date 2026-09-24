@@ -114,6 +114,10 @@ class VisitViewModel(
         viewModelScope.launch {
             accounts.activeId.collect { reload(reseed = true) }
         }
+        // The weight and reps the user is choosing stay as they are.
+        viewModelScope.launch {
+            sync.completed.collect { reload(reseed = false) }
+        }
     }
 
     val selectedMachineId: MachineId? get() = selected

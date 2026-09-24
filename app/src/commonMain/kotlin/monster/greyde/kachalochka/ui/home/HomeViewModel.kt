@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -34,10 +35,15 @@ class HomeViewModel(
     private val machines: MachineRepository,
     private val currentUser: CurrentUser,
     private val clock: Clock,
+    private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<HomeUiState?>(null)
     val state: StateFlow<HomeUiState?> = mutableState
     private val writes = WriteGuard(viewModelScope)
+
+    init {
+        viewModelScope.launch { sync.completed.collect { refresh() } }
+    }
 
     fun refresh() {
         viewModelScope.launch {

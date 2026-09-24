@@ -10,6 +10,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncPass
@@ -21,9 +23,18 @@ import java.util.concurrent.TimeUnit
 private const val SYNC_WORK_NAME = "sync"
 private const val BACKOFF_SECONDS = 30L
 
+/** The worker runs in the app's process, so this one instance tells the screens of its passes. */
 class WorkManagerSyncTrigger(
     private val context: Context,
 ) : SyncTrigger {
+    private val passes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    override val completed: Flow<Unit> = passes
+
+    fun passCompleted() {
+        passes.tryEmit(Unit)
+    }
+
     override fun request() {
         val request =
             OneTimeWorkRequestBuilder<SyncWorker>()
@@ -53,6 +64,7 @@ class SyncWorker(
             } catch (failed: Exception) {
                 false
             }
+        get<WorkManagerSyncTrigger>().passCompleted()
         return if (clean) Result.success() else Result.retry()
     }
 }

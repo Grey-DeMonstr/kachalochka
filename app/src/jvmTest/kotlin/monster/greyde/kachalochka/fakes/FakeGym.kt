@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.fakes
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.Accounts
@@ -126,6 +127,12 @@ private class NoOpOwnerlessRows : OwnerlessRows {
 
 class RecordingSyncTrigger : SyncTrigger {
     var requests = 0
+
+    override val completed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    fun completePass() {
+        completed.tryEmit(Unit)
+    }
 
     override fun request() {
         requests++

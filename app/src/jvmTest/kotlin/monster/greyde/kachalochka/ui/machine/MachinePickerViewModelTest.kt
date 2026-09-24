@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.machine
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -21,6 +22,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
@@ -71,6 +73,7 @@ class MachinePickerViewModelTest {
             gym.accounts,
             gym.clock,
             gym.utcOffset,
+            gym.sync,
         )
 
     @BeforeTest
@@ -88,6 +91,21 @@ class MachinePickerViewModelTest {
 
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun a_finished_sync_lists_the_machines_it_pulled() {
+        val vm = viewModel().also { it.load() }
+        val pulled = Machine.new("Бабочка", null, t0)
+
+        runBlocking { gym.machines.upsert(pulled) }
+        gym.sync.completePass()
+
+        assertTrue(
+            pulled.id in
+                vm.state.value.rows
+                    .map { it.id },
+        )
+    }
 
     @Test
     fun rows_say_what_happened_today_or_last_time() {
@@ -163,6 +181,7 @@ class MachinePickerViewModelTest {
                     shared.accounts,
                     shared.clock,
                     shared.utcOffset,
+                    shared.sync,
                 ).also { it.load() }
             assertEquals(
                 listOf("Жим ногами" to "3 подхода сегодня"),

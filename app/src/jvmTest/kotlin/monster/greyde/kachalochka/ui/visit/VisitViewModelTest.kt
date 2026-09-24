@@ -117,6 +117,20 @@ class VisitViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
+    fun a_finished_sync_shows_the_sets_it_pulled() =
+        runTest {
+            val vm = viewModel()
+
+            gym.sets.upsert(set(visit.id, press, 80.0, 8, 0))
+            gym.sync.completePass()
+
+            assertEquals(
+                listOf(press.id),
+                assertNotNull(vm.state.value).groups.map { it.machineId },
+            )
+        }
+
+    @Test
     fun before_a_machine_is_chosen_the_sheet_is_empty() {
         val vm = viewModel().also { it.refresh() }
 

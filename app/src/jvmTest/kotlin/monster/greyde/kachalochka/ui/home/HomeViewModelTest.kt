@@ -29,7 +29,7 @@ class HomeViewModelTest {
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private fun viewModel() =
-        HomeViewModel(gym.visits, gym.sets, gym.machines, gym.currentUser, gym.clock)
+        HomeViewModel(gym.visits, gym.sets, gym.machines, gym.currentUser, gym.clock, gym.sync)
 
     @Test
     fun without_a_running_visit_home_offers_to_start_one() {
@@ -67,6 +67,23 @@ class HomeViewModelTest {
             assertEquals(
                 ActiveVisitUi(visit.id, "2 тренажёра · 3 подхода", "Жим ногами 70 кг × 10"),
                 vm.state.value?.activeVisit,
+            )
+        }
+
+    @Test
+    fun a_finished_sync_shows_the_running_visit_it_pulled() =
+        runTest {
+            val vm = viewModel().also { it.refresh() }
+            val pulled = Visit(VisitId.random(), null, t0, null, t0, false)
+
+            gym.visits.upsert(pulled)
+            gym.sync.completePass()
+
+            assertEquals(
+                pulled.id,
+                vm.state.value
+                    ?.activeVisit
+                    ?.id,
             )
         }
 

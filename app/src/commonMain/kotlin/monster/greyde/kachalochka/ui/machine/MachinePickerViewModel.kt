@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -46,6 +47,7 @@ class MachinePickerViewModel(
     private val accounts: Accounts,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
+    private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PickerUiState())
     val state: StateFlow<PickerUiState> = mutableState
@@ -57,6 +59,7 @@ class MachinePickerViewModel(
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
         viewModelScope.launch { accounts.activeId.collect { load() } }
+        viewModelScope.launch { sync.completed.collect { load() } }
     }
 
     fun load() {

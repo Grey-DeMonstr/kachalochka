@@ -20,6 +20,7 @@ import monster.greyde.kachalochka.ui.theme.ThemePreference
 import okio.Path.Companion.toPath
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 actual fun platformModule(): Module =
@@ -40,7 +41,7 @@ actual fun platformModule(): Module =
             DataStoreThemePreference(get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }
         single { ActivityHolder() }
-        single<SyncTrigger> { WorkManagerSyncTrigger(androidContext()) }
+        single { WorkManagerSyncTrigger(androidContext()) } bind SyncTrigger::class
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
         single<GoogleSignIn> {
