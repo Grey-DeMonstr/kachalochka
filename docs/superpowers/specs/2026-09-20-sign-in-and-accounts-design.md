@@ -179,9 +179,10 @@ The top bar reads `Визит`, the home card loses its elapsed time and its tic
 
 Android only. The web target writes Supabase directly and has no outbox.
 
-The algorithm is technical spec §4.2 — push the outbox, then pull by watermark, `machine` and
-`visit` before `workout_set`, last-write-wins on `updated_at`, failures left enqueued. Several
-owners change three things.
+The algorithm is technical spec §4.2 — push the outbox, then pull by watermark, `machine`,
+`visit` and `profile` before `workout_set`, last-write-wins on `updated_at`, failures left
+enqueued. `profile` syncs alongside the gym tables: an account's display data is just another
+row an outbox entry can name. Several owners change three things.
 
 ### 7.1 Every account syncs, not only the active one
 
@@ -196,7 +197,8 @@ UI client     auth session = the active account        never touched by sync
 sync client   accessToken = { the token of the account this pass is on }
 ```
 
-The sync client installs no `Auth`; its `accessToken` resolver is handed a token by the store.
+The sync client installs no `Auth`; its `accessToken` resolver is handed a token by the store. The
+active account lends the UI client's own token instead of refreshing a second one for itself.
 Tokens for accounts that are not active are kept fresh with `auth.refreshSession(refreshToken)`
 on the UI client — an API call that returns a new session and leaves the current one alone.
 

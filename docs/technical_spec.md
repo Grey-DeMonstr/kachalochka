@@ -171,17 +171,22 @@ just another update that travels the same path.
 
 ### 4.2 Sync algorithm (Android only)
 
-- **Push.** Every local write appends the row's id and table to an `outbox`. A sync pass upserts
-  each outbox entry to Supabase and removes it on success. Failure leaves it for the next pass.
-  A pass pushes `machine` and `visit` entries before `workout_set` entries, because the server
-  enforces foreign keys the local SQLite does not.
-- **Pull.** The sync pass then fetches every row with `updated_at` later than the last pull
-  watermark and upserts it locally, skipping rows that have a pending outbox entry.
+- **Push.** Every local write appends the row's id and table to an `outbox`, which names only the
+  table and the row, not its owner. A pass reads each row to learn who owns it: an entry for
+  another account's row waits for that account's own turn, and an entry whose row is gone or
+  unowned is dropped. A pass pushes `machine`, `visit` and `profile` entries before `workout_set`
+  entries, because the server enforces foreign keys the local SQLite does not. An entry is removed
+  after a successful push only if nothing re-enqueued it in the meantime.
+- **Pull.** The sync pass fetches every row of every table newer than the account's pull
+  watermark, keyset-paged on `(updated_at, id)` using the values the server returned for the last
+  row of the previous page, and stops once a page comes back empty. It writes nothing, and leaves
+  the watermark alone, unless every table's pull succeeds; rows with a pending outbox entry are
+  skipped. The watermark then advances to the newest `updated_at` pulled.
 - **Conflicts** resolve by last-write-wins on `updated_at`. The data is single-user per row and
   edits are rare, so a merge strategy would be cost without benefit.
-- **Triggers.** A pass runs on app start, on connectivity gain, and after the user ends a visit.
-  It is a WorkManager job with a network constraint, so connectivity gain is that constraint
-  firing rather than a listener the app maintains.
+- **Triggers.** A pass runs on app start, when the user ends a visit, and after an account is
+  added. It is a WorkManager job — unique work `"sync"`, `APPEND_OR_REPLACE` — with a network
+  constraint, so a pass already queued waits for connectivity rather than failing outright.
 - **Every account.** A pass covers every account signed in on the device, not only the active
   one, and `syncState` is keyed by `user_id` so each has its own pull watermark. Pushing only the
   active account would leave a guest's sets enqueued until somebody happened to switch back to
@@ -220,6 +225,15 @@ per platform behind one interface, as the theme mode is (§10): DataStore on And
 `localStorage` on web, in memory for tests. A switch calls `importSession` on the UI client, so
 one session is live at a time even though several are stored, and supabase-kt's own session
 storage is turned off — it holds a single session and would contend for the same slot.
+
+supabase-kt refreshes the live session on its own; each refresh is written back to the store
+through `LiveSession`, which records the account it put live only once `importSession` for it has
+actually succeeded. When supabase-kt instead clears a session it could not refresh, `LiveSession`
+signs that account out of the store — the store never names an account the server has stopped
+accepting. A clear the app makes itself, such as an ordinary sign-out, does not trigger this. If
+activating the next account to take the vacated slot itself fails, the store is left with nobody
+active and the live session cleared; the account that failed to activate stays listed, so signing
+in again is a retry rather than adding it back.
 
 `CurrentUser` is one `commonMain` implementation reading that store's active id, on both targets.
 
