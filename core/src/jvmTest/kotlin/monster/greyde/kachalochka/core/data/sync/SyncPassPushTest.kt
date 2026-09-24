@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
@@ -66,8 +67,9 @@ class SyncPassPushTest {
             h.machines.upsert(ownedPress(IVAN))
             h.gateway.failing = VISIT_TABLE
 
-            h.pass.run(listOf(IVAN))
+            val clean = h.pass.run(listOf(IVAN))
 
+            assertFalse(clean)
             assertEquals(listOf(VISIT_TABLE), h.outbox.pending().map { it.tableName })
             assertEquals(
                 MACHINE_TABLE,
@@ -84,8 +86,9 @@ class SyncPassPushTest {
             h.visits.upsert(ownedVisit(IVAN))
             h.visits.upsert(mishas)
 
-            h.pass.run(listOf(IVAN))
+            val clean = h.pass.run(listOf(IVAN))
 
+            assertTrue(clean)
             assertEquals(listOf(mishas.id.value), h.outbox.pending().map { it.rowId })
         }
 

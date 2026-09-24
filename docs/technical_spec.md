@@ -185,8 +185,12 @@ just another update that travels the same path.
 - **Conflicts** resolve by last-write-wins on `updated_at`. The data is single-user per row and
   edits are rare, so a merge strategy would be cost without benefit.
 - **Triggers.** A pass runs on app start, when the user ends a visit, and after an account is
-  added. It is a WorkManager job — unique work `"sync"`, `APPEND_OR_REPLACE` — with a network
-  constraint, so a pass already queued waits for connectivity rather than failing outright.
+  added. It is a WorkManager job — unique work `"sync"` — with a network constraint, so a pass
+  already queued waits for connectivity rather than failing outright. A pass reports whether every
+  push and pull succeeded, and one that did not is retried with exponential backoff. A new request
+  replaces (`REPLACE`) whatever is queued or running, so it never waits behind a pass sitting out
+  its backoff; cancelling a running pass is safe, because its outbox entries stay and every push
+  is an upsert.
 - **Tokens.** The account live on the UI client lends its own access token to the pass while it
   has more than a minute left; nearer its expiry the pass has the UI client refresh its own
   session with `refreshCurrentSession`, because the rotated refresh token that client holds would

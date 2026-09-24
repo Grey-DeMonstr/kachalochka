@@ -5,6 +5,7 @@ import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.domain.gym.T0
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
@@ -21,6 +22,15 @@ class SyncPassPullTest {
             h.pass.run(listOf(IVAN))
 
             assertEquals(theirs, h.visits.byId(theirs.id))
+        }
+
+    @Test
+    fun a_pass_where_every_push_and_pull_succeeded_reports_it() =
+        runTest {
+            h.visits.upsert(ownedVisit(IVAN))
+            h.gateway.visitsToPull = listOf(ownedVisit(IVAN))
+
+            assertTrue(h.pass.run(listOf(IVAN, MISHA)))
         }
 
     @Test
@@ -88,8 +98,9 @@ class SyncPassPullTest {
             h.gateway.visitsToPull = listOf(theirs)
             h.gateway.pullFails = true
 
-            h.pass.run(listOf(IVAN))
+            val clean = h.pass.run(listOf(IVAN))
 
+            assertFalse(clean)
             assertEquals(T0, h.watermarks.lastPullAt(IVAN))
             assertNull(h.visits.byId(theirs.id))
         }

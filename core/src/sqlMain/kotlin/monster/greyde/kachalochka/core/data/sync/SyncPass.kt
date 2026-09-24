@@ -23,47 +23,51 @@ class SyncPass(
     private val session: SyncSession,
     private val dispatcher: CoroutineDispatcher,
 ) {
-    suspend fun run(owners: List<UserId>) {
-        owners.forEach { owner ->
-            session.owner = owner
-            try {
-                push(owner)
-                pull(owner)
-            } finally {
-                session.owner = null
-            }
-        }
-    }
+    /** True only when every push and every pull succeeded. */
+    suspend fun run(owners: List<UserId>): Boolean =
+        owners
+            .map { owner ->
+                session.owner = owner
+                try {
+                    val pushed = push(owner)
+                    pull(owner) && pushed
+                } finally {
+                    session.owner = null
+                }
+            }.all { it }
 
     // The server enforces a set's foreign keys to its visit and machine; SQLite does not.
-    private suspend fun push(owner: UserId) {
+    private suspend fun push(owner: UserId): Boolean {
         val entries = db { outbox.pending() }.sortedBy { it.tableName == WORKOUT_SET_TABLE }
-        entries.forEach { entry ->
-            when (entry.tableName) {
-                MACHINE_TABLE ->
-                    pushRow(entry, owner, db { rows.machine(entry.rowId) }, { it.userId }) {
-                        gateway.pushMachine(it)
-                    }
+        return entries
+            .map { entry ->
+                when (entry.tableName) {
+                    MACHINE_TABLE ->
+                        pushRow(entry, owner, db { rows.machine(entry.rowId) }, { it.userId }) {
+                            gateway.pushMachine(it)
+                        }
 
-                VISIT_TABLE ->
-                    pushRow(entry, owner, db { rows.visit(entry.rowId) }, { it.userId }) {
-                        gateway.pushVisit(it)
-                    }
+                    VISIT_TABLE ->
+                        pushRow(entry, owner, db { rows.visit(entry.rowId) }, { it.userId }) {
+                            gateway.pushVisit(it)
+                        }
 
-                WORKOUT_SET_TABLE ->
-                    pushRow(entry, owner, db { rows.set(entry.rowId) }, { it.userId }) {
-                        gateway.pushSet(it)
-                    }
+                    WORKOUT_SET_TABLE ->
+                        pushRow(entry, owner, db { rows.set(entry.rowId) }, { it.userId }) {
+                            gateway.pushSet(it)
+                        }
 
-                PROFILE_TABLE ->
-                    pushRow(entry, owner, db { rows.profile(entry.rowId) }, { it.userId }) {
-                        gateway.pushProfile(it)
-                    }
-            }
-        }
+                    PROFILE_TABLE ->
+                        pushRow(entry, owner, db { rows.profile(entry.rowId) }, { it.userId }) {
+                            gateway.pushProfile(it)
+                        }
+
+                    else -> true
+                }
+            }.all { it }
     }
 
-    private suspend fun pull(owner: UserId) {
+    private suspend fun pull(owner: UserId): Boolean {
         val since = db { watermarks.lastPullAt(owner) }
         var pulled: PulledRows? = null
         attempt {
@@ -75,7 +79,7 @@ class SyncPass(
                     gateway.pullProfiles(owner, since),
                 )
         }
-        val rowsPulled = pulled ?: return
+        val rowsPulled = pulled ?: return false
         db {
             rows.transaction {
                 val pending = outbox.pending().map { it.tableName to it.rowId }.toSet()
@@ -94,6 +98,7 @@ class SyncPass(
                 rowsPulled.newestUpdatedAt?.let { watermarks.advance(owner, it) }
             }
         }
+        return true
     }
 
     private class PulledRows(
@@ -115,30 +120,30 @@ class SyncPass(
         row: T?,
         ownerOf: (T) -> UserId?,
         send: suspend (T) -> Unit,
-    ) {
+    ): Boolean {
         val rowOwner = row?.let(ownerOf)
         // An entry with no owned row behind it can never be pushed and would sit in every pass.
         if (row == null || rowOwner == null) {
             db { outbox.removePushed(entry) }
-            return
+            return true
         }
-        if (rowOwner != owner) return
-        attempt {
+        if (rowOwner != owner) return true
+        return attempt {
             send(row)
             db { outbox.removePushed(entry) }
         }
     }
 
     // One refused row must not hold back the rest; its entry stays for the next pass.
-    private suspend fun attempt(work: suspend () -> Unit) {
+    private suspend fun attempt(work: suspend () -> Unit): Boolean =
         try {
             work()
+            true
         } catch (stopped: CancellationException) {
             throw stopped
         } catch (refused: Exception) {
-            return
+            false
         }
-    }
 
     private suspend fun <T> db(read: () -> T): T = withContext(dispatcher) { read() }
 }
