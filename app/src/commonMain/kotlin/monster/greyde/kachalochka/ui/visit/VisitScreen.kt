@@ -1,14 +1,19 @@
 package monster.greyde.kachalochka.ui.visit
 
+import androidx.compose.animation.core.animate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -23,17 +28,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -59,6 +69,7 @@ import monster.greyde.kachalochka.ui.components.Thumbnail
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import kotlin.math.roundToInt
 
 @Composable
 fun VisitScreen(
@@ -111,6 +122,7 @@ fun VisitScreen(
             onSwitchTo = viewModel::switchTo,
             onAddAccount = accountsViewModel::addAccount,
             onExpand = viewModel::expandSheet,
+            onCollapse = { viewModel.collapseSheet() },
         )
     }
 }
@@ -286,6 +298,56 @@ private fun PersonChip(
     }
 }
 
+private val CollapseDistance = 72.dp
+private val ExpandDistance = 24.dp
+private val FlingSpeed = 800.dp // per second
+private val SheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+
+@Composable
+private fun Modifier.sheetChrome(): Modifier {
+    val colors = MaterialTheme.colorScheme
+    return clip(SheetShape)
+        .background(colors.surface)
+        .border(1.dp, colors.onBackground.copy(alpha = 0.16f), SheetShape)
+        .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 20.dp)
+}
+
+@Composable
+private fun Modifier.swipeDownTo(onCollapse: () -> Unit): Modifier {
+    val density = LocalDensity.current
+    val distance = with(density) { CollapseDistance.toPx() }
+    val fling = with(density) { FlingSpeed.toPx() }
+    var pulled by remember { mutableFloatStateOf(0f) }
+    return draggable(
+        state = rememberDraggableState { pulled = (pulled + it).coerceAtLeast(0f) },
+        orientation = Orientation.Vertical,
+        onDragStopped = { velocity ->
+            if (pulled > distance || velocity > fling) {
+                pulled = 0f
+                onCollapse()
+            } else {
+                animate(pulled, 0f) { value, _ -> pulled = value }
+            }
+        },
+    ).offset { IntOffset(0, pulled.roundToInt()) }
+}
+
+@Composable
+private fun Modifier.swipeUpTo(onExpand: () -> Unit): Modifier {
+    val density = LocalDensity.current
+    val distance = with(density) { ExpandDistance.toPx() }
+    val fling = with(density) { FlingSpeed.toPx() }
+    var pulled by remember { mutableFloatStateOf(0f) }
+    return draggable(
+        state = rememberDraggableState { pulled += it },
+        orientation = Orientation.Vertical,
+        onDragStopped = { velocity ->
+            if (pulled < -distance || velocity < -fling) onExpand()
+            pulled = 0f
+        },
+    )
+}
+
 @Composable
 private fun SheetHandle(modifier: Modifier) {
     val colors = MaterialTheme.colorScheme
@@ -303,15 +365,12 @@ private fun SheetPeek(
     onExpand: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(colors.surface)
-            .border(1.dp, colors.onBackground.copy(alpha = 0.16f), shape)
+            .swipeUpTo(onExpand)
             .clickable(onClick = onExpand)
-            .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 20.dp)
+            .sheetChrome()
             .testTag("sheet-peek"),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -351,9 +410,9 @@ private fun SetSheet(
     onSwitchTo: (UserId) -> Unit,
     onAddAccount: () -> Unit,
     onExpand: () -> Unit,
+    onCollapse: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
     val muted = colors.onBackground.copy(alpha = 0.55f)
     if (sheet != null && !sheet.expanded) {
         SheetPeek(sheet, onExpand)
@@ -362,10 +421,8 @@ private fun SetSheet(
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(colors.surface)
-            .border(1.dp, colors.onBackground.copy(alpha = 0.16f), shape)
-            .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 20.dp)
+            .swipeDownTo(onCollapse)
+            .sheetChrome()
             .testTag("set-sheet"),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {

@@ -8,6 +8,9 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeUp
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
@@ -180,6 +183,33 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("save-set").assertIsDisplayed()
             onNodeWithTag("sheet-peek").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun swiping_down_collapses_the_sheet_and_swiping_the_bar_up_opens_it() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("set-sheet").performTouchInput { swipeDown() }
+            waitForIdle()
+            onNodeWithTag("save-set").assertDoesNotExist()
+            onNodeWithTag("sheet-peek").assertIsDisplayed()
+
+            onNodeWithTag("sheet-peek").performTouchInput { swipeUp() }
+            waitForIdle()
+            onNodeWithTag("save-set").assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun a_short_slow_drag_leaves_the_sheet_open() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("set-sheet").performTouchInput {
+                swipeDown(startY = top + 10f, endY = top + 40f, durationMillis = 1_000)
+            }
+            waitForIdle()
+            onNodeWithTag("save-set").assertIsDisplayed()
         }
     }
 
