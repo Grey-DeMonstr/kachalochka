@@ -5,6 +5,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
+import io.github.jan.supabase.exceptions.RestException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.JsonObject
@@ -24,7 +25,8 @@ private val NAME_CLAIMS = listOf(FULL_NAME_CLAIM, "name")
 class SupabaseSessions(
     private val client: Lazy<SupabaseClient>,
     private val clock: Clock = Clock.System,
-) : SessionActivation {
+) : SessionActivation,
+    SessionRefresh {
     override suspend fun activate(session: AccountSession) {
         client.value.auth.importSession(session.toUserSession(clock.now()))
     }
@@ -32,6 +34,15 @@ class SupabaseSessions(
     override suspend fun clear() {
         client.value.auth.clearSession()
     }
+
+    override suspend fun refresh(session: AccountSession): AccountSession? =
+        try {
+            client.value.auth
+                .refreshSession(session.refreshToken)
+                .toAccountSession()
+        } catch (refused: RestException) {
+            if (refused.statusCode in 400..499) null else throw refused
+        }
 }
 
 fun Flow<SessionStatus>.liveSessionChanges(): Flow<LiveSessionChange> =
