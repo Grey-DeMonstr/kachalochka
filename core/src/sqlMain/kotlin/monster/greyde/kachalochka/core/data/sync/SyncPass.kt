@@ -7,8 +7,13 @@ import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
+import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.Visit
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
+import kotlin.time.Instant
 
 class SyncPass(
     private val outbox: OutboxDao,
@@ -23,6 +28,7 @@ class SyncPass(
             session.owner = owner
             try {
                 push(owner)
+                pull(owner)
             } finally {
                 session.owner = null
             }
@@ -55,6 +61,52 @@ class SyncPass(
                     }
             }
         }
+    }
+
+    private suspend fun pull(owner: UserId) {
+        val since = db { watermarks.lastPullAt(owner) }
+        var pulled: PulledRows? = null
+        attempt {
+            pulled =
+                PulledRows(
+                    gateway.pullMachines(owner, since),
+                    gateway.pullVisits(owner, since),
+                    gateway.pullSets(owner, since),
+                    gateway.pullProfiles(owner, since),
+                )
+        }
+        val rowsPulled = pulled ?: return
+        db {
+            rows.transaction {
+                val pending = outbox.pending().map { it.tableName to it.rowId }.toSet()
+                rowsPulled.machines.forEach {
+                    if ((MACHINE_TABLE to it.id.value) !in pending) rows.writeMachine(it)
+                }
+                rowsPulled.visits.forEach {
+                    if ((VISIT_TABLE to it.id.value) !in pending) rows.writeVisit(it)
+                }
+                rowsPulled.sets.forEach {
+                    if ((WORKOUT_SET_TABLE to it.id.value) !in pending) rows.writeSet(it)
+                }
+                rowsPulled.profiles.forEach {
+                    if ((PROFILE_TABLE to it.id.value) !in pending) rows.writeProfile(it)
+                }
+                rowsPulled.newestUpdatedAt?.let { watermarks.advance(owner, it) }
+            }
+        }
+    }
+
+    private class PulledRows(
+        val machines: List<Machine>,
+        val visits: List<Visit>,
+        val sets: List<WorkoutSet>,
+        val profiles: List<Profile>,
+    ) {
+        val newestUpdatedAt: Instant? =
+            (
+                machines.map { it.updatedAt } + visits.map { it.updatedAt } +
+                    sets.map { it.updatedAt } + profiles.map { it.updatedAt }
+            ).maxOrNull()
     }
 
     private suspend fun <T : Any> pushRow(
