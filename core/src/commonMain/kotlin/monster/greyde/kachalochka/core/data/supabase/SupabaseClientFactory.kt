@@ -11,11 +11,15 @@ import monster.greyde.kachalochka.core.data.sync.SyncSession
 
 // A build without credentials is normal, so the failure has to wait until something actually
 // asks for a client and then say which two settings are missing.
-fun supabaseClient(credentials: SupabaseCredentials): SupabaseClient {
+private fun requireConfigured(credentials: SupabaseCredentials) {
     check(credentials.isConfigured) {
         "Supabase is not configured: set SUPABASE_URL and SUPABASE_ANON_KEY in local.properties " +
             "or in the environment."
     }
+}
+
+fun supabaseClient(credentials: SupabaseCredentials): SupabaseClient {
+    requireConfigured(credentials)
     return createSupabaseClient(credentials.url, credentials.anonKey) {
         // The account store holds every signed-in session; supabase-kt's own storage keeps one and
         // would contend for the same slot.
@@ -37,10 +41,7 @@ fun syncSupabaseClient(
     tokens: AccountTokens,
     session: SyncSession,
 ): SupabaseClient {
-    check(credentials.isConfigured) {
-        "Supabase is not configured: set SUPABASE_URL and SUPABASE_ANON_KEY in local.properties " +
-            "or in the environment."
-    }
+    requireConfigured(credentials)
     return createSupabaseClient(credentials.url, credentials.anonKey) {
         accessToken = { session.owner?.let { tokens.tokenFor(it) } }
         install(Postgrest)

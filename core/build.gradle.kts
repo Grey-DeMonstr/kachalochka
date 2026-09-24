@@ -115,6 +115,9 @@ kotlin {
                 implementation(libs.sqldelight.runtime)
             }
         }
+        jvmTest.dependencies {
+            implementation(libs.ktor.client.mock)
+        }
         androidMain.dependencies {
             implementation(libs.sqldelight.driver.android)
             implementation(libs.ktor.client.okhttp)

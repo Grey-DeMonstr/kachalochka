@@ -62,7 +62,7 @@ class CoreModuleTest {
         assertSame<SessionActivation>(koin.get<LiveSession>(), koin.get<SessionActivation>())
     }
 
-    /** No client may be built on resolution, or the same clone would crash constructing it. */
+    /** No client may be built on resolution, or a clone without `local.properties` would crash. */
     @Test
     fun the_sync_pass_is_built_without_supabase_credentials() {
         val koin =

@@ -21,9 +21,13 @@ import kotlin.time.Instant
 
 private const val PAGE_SIZE = 1000L
 
-/** The web repositories' PostgREST calls, reused here so both clients share one wire shape. */
+/**
+ * Talks to PostgREST through the same wire rows the web repositories use for these tables; the
+ * calls themselves are not shared.
+ */
 class SupabaseSyncGateway(
     private val client: Lazy<SupabaseClient>,
+    internal val pageSize: Long = PAGE_SIZE,
 ) : SyncGateway {
     override suspend fun pushMachine(machine: Machine) {
         client.value.postgrest
@@ -52,32 +56,44 @@ class SupabaseSyncGateway(
     override suspend fun pullMachines(
         owner: UserId,
         since: Instant?,
-    ): List<Machine> = pullAll<MachineRow>(MACHINE_TABLE, owner, since).map { it.toMachine() }
+    ): List<Machine> =
+        pullAll<MachineRow>(MACHINE_TABLE, owner, since) { it.updatedAt to it.id }
+            .map { it.toMachine() }
 
     override suspend fun pullVisits(
         owner: UserId,
         since: Instant?,
-    ): List<Visit> = pullAll<VisitRow>(VISIT_TABLE, owner, since).map { it.toVisit() }
+    ): List<Visit> =
+        pullAll<VisitRow>(VISIT_TABLE, owner, since) { it.updatedAt to it.id }
+            .map { it.toVisit() }
 
     override suspend fun pullSets(
         owner: UserId,
         since: Instant?,
     ): List<WorkoutSet> =
-        pullAll<WorkoutSetRow>(WORKOUT_SET_TABLE, owner, since).map { it.toWorkoutSet() }
+        pullAll<WorkoutSetRow>(WORKOUT_SET_TABLE, owner, since) { it.updatedAt to it.id }
+            .map { it.toWorkoutSet() }
 
     override suspend fun pullProfiles(
         owner: UserId,
         since: Instant?,
-    ): List<Profile> = pullAll<ProfileRow>(PROFILE_TABLE, owner, since).map { it.toProfile() }
+    ): List<Profile> =
+        pullAll<ProfileRow>(PROFILE_TABLE, owner, since) { it.updatedAt to it.id }
+            .map { it.toProfile() }
 
-    // A page is capped by the project's max_rows (1000 by default), so a first pull on a new
-    // device can exceed one page and has to be walked to the end.
+    // Keyset paging, not offset: a row another device edits between two page fetches would shift
+    // every later row's offset by one, so offset paging can skip a row while the watermark still
+    // advances past it. The cursor is the previous page's last row's own (updated_at, id), taken
+    // from the server's response so no reformatting can lose precision the server wouldn't accept
+    // back.
     private suspend inline fun <reified R : Any> pullAll(
         table: String,
         owner: UserId,
         since: Instant?,
+        key: (R) -> Pair<String, String>,
     ): List<R> {
         val rows = mutableListOf<R>()
+        var after: Pair<String, String>? = null
         do {
             val page =
                 client.value.postgrest
@@ -86,12 +102,22 @@ class SupabaseSyncGateway(
                         filter {
                             owned(owner)
                             if (since != null) gt("updated_at", since.toString())
+                            after?.let { (updatedAt, id) ->
+                                or {
+                                    gt("updated_at", updatedAt)
+                                    and {
+                                        eq("updated_at", updatedAt)
+                                        gt("id", id)
+                                    }
+                                }
+                            }
                         }
                         order("updated_at", Order.ASCENDING)
                         order("id", Order.ASCENDING)
-                        range(rows.size.toLong(), rows.size + PAGE_SIZE - 1L)
+                        limit(pageSize)
                     }.decodeList<R>()
             rows += page
+            after = page.lastOrNull()?.let(key)
         } while (page.isNotEmpty())
         return rows
     }
