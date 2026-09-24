@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.format
 
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
@@ -94,6 +95,32 @@ fun daysAgoLabel(days: Int): String =
         1 -> "вчера"
         else -> "$days ${pluralRu(days, "день", "дня", "дней")} назад"
     }
+
+private val monthsGenitive =
+    listOf(
+        "января",
+        "февраля",
+        "марта",
+        "апреля",
+        "мая",
+        "июня",
+        "июля",
+        "августа",
+        "сентября",
+        "октября",
+        "ноября",
+        "декабря",
+    )
+
+fun monthGenitive(month: Int): String = monthsGenitive[month - 1]
+
+fun dayMonthLabel(
+    day: CalendarDay,
+    currentYear: Int,
+): String {
+    val label = "${day.day} ${monthGenitive(day.month)}"
+    return if (day.year == currentYear) label else "$label ${day.year}"
+}
 
 fun clockLabel(minuteOfDay: Int): String {
     val hours = (minuteOfDay / 60).toString().padStart(2, '0')

@@ -1,12 +1,18 @@
 package monster.greyde.kachalochka.core.domain.gym
 
+import kotlin.time.Instant
+
 const val DEFAULT_REPS: Int = 10
 
 fun previousVisitSets(
     machineSets: List<WorkoutSet>,
     currentVisit: VisitId,
+    before: Instant? = null,
 ): List<WorkoutSet> {
-    val earlier = machineSets.filter { it.visitId != currentVisit && !it.deleted }
+    val earlier =
+        machineSets.filter {
+            it.visitId != currentVisit && !it.deleted && (before == null || it.recordedAt < before)
+        }
     val latest = earlier.maxByOrNull { it.recordedAt }?.visitId ?: return emptyList()
     return earlier.filter { it.visitId == latest }.sortedBy { it.recordedAt }
 }

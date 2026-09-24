@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.domain.gym
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.hours
 
 class SetSuggestionTest {
     private val yesterday =
@@ -23,6 +24,17 @@ class SetSuggestionTest {
         val deleted = set(VISIT_C, 99.0, atSeconds = 500, deleted = true)
 
         assertEquals(yesterday, previousVisitSets(yesterday + deleted, VISIT_B))
+    }
+
+    @Test
+    fun only_sets_before_the_bound_count_as_the_previous_visit() {
+        val older = listOf(set(VISIT_A, 50.0, atSeconds = 0))
+        val later = listOf(set(VISIT_B, 70.0, atSeconds = 86_400))
+
+        assertEquals(
+            older,
+            previousVisitSets(older + later, VISIT_C, before = T0 + 1.hours),
+        )
     }
 
     @Test

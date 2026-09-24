@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.format
 
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -100,6 +101,13 @@ class FormatsTest {
         assertEquals("вчера", daysAgoLabel(1))
         assertEquals("4 дня назад", daysAgoLabel(4))
         assertEquals("5 дней назад", daysAgoLabel(5))
+    }
+
+    @Test
+    fun a_date_reads_as_day_and_month_with_the_year_only_when_it_differs() {
+        assertEquals("7 ноября", dayMonthLabel(CalendarDay(2023, 11, 7), currentYear = 2023))
+        assertEquals("1 января 2022", dayMonthLabel(CalendarDay(2022, 1, 1), currentYear = 2023))
+        assertEquals("мая", monthGenitive(5))
     }
 
     @Test

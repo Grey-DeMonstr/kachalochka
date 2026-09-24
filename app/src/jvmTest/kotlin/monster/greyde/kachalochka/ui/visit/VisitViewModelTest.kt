@@ -30,6 +30,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VisitViewModelTest {
@@ -46,6 +47,7 @@ class VisitViewModelTest {
             ).copy(platformWeight = 20.0, setupNote = "Сиденье на 4")
     private val row = Machine.new("Тяга верхнего блока", null, t0)
     private val timer = RestTimer(gym.clock)
+    private val lastWeek = Visit(VisitId.random(), null, t0 - 7.days, t0 - 7.days, t0, false)
     private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
     private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
     private val ivanVisit = Visit(VisitId.random(), ivan.account.userId, t0, null, t0, false)
@@ -572,5 +574,117 @@ class VisitViewModelTest {
                     .toList(),
             )
             assertNull(two.visits.byId(ivanVisit.id)?.endedAt)
+        }
+
+    @Test
+    fun the_running_visit_keeps_its_plain_title() {
+        val state = assertNotNull(viewModel().also { it.refresh() }.state.value)
+
+        assertEquals("Визит", state.title)
+        assertEquals(false, state.ended)
+    }
+
+    @Test
+    fun an_ended_visit_is_titled_with_its_date() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+
+            val vm = viewModel(visitId = lastWeek.id).also { it.refresh() }
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals("Визит · 7 ноября", state.title)
+            assertEquals(true, state.ended)
+        }
+
+    @Test
+    fun a_set_added_to_an_ended_visit_lands_after_its_last_set_without_a_rest() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+            val last = set(lastWeek.id, press, 70.0, 10, -(7.days.inWholeMinutes.toInt()) + 5)
+            gym.sets.upsert(last)
+            val vm = viewModel(visitId = lastWeek.id).also { it.selectMachine(press.id) }
+
+            vm.save()
+
+            val added = gym.sets.forVisit(lastWeek.id).last()
+            assertNotEquals(last.id, added.id)
+            assertEquals(last.recordedAt + 1.seconds, added.recordedAt)
+            assertNull(timer.startedAt.value)
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun an_ended_visit_suggests_from_the_visit_before_it() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+            val nineDaysAgo = -(9.days.inWholeMinutes.toInt())
+            gym.sets.upsert(set(VisitId.random(), press, 50.0, 8, nineDaysAgo))
+            val vm = viewModel(visitId = lastWeek.id).also { it.selectMachine(press.id) }
+
+            val sheet = assertNotNull(vm.state.value?.sheet)
+            assertEquals("2 дня назад · 50×8", sheet.previous)
+            assertEquals("50", sheet.weight)
+        }
+
+    @Test
+    fun an_ended_visit_offers_no_person_chips() =
+        runTest {
+            val two = twoAccountGym()
+            val ended = ivanVisit.copy(id = VisitId.random(), endedAt = t0)
+            two.visits.upsert(ended)
+            val vm = viewModel(two, ended.id).also { it.selectMachine(ivanPress.id) }
+
+            val sheet = assertNotNull(vm.state.value?.sheet)
+            assertEquals(emptyList(), sheet.people)
+            assertEquals("Сохранить подход", sheet.saveLabel)
+        }
+
+    @Test
+    fun deleting_a_set_of_an_ended_visit_asks_for_a_sync_pass() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+            val recorded = set(lastWeek.id, press, 70.0, 10, -(7.days.inWholeMinutes.toInt()))
+            gym.sets.upsert(recorded)
+            val vm = viewModel(visitId = lastWeek.id).also { it.refresh() }
+            vm.editSet(recorded.id)
+
+            vm.deleteEditedSet()
+
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun an_edit_of_an_ended_visit_asks_for_a_sync_pass() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+            val recorded = set(lastWeek.id, press, 70.0, 10, -(7.days.inWholeMinutes.toInt()))
+            gym.sets.upsert(recorded)
+            val vm = viewModel(visitId = lastWeek.id).also { it.refresh() }
+            vm.editSet(recorded.id)
+
+            vm.save()
+
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_finished_sync_pass_on_an_ended_visit_asks_for_no_other() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+            viewModel(visitId = lastWeek.id).also { it.selectMachine(press.id) }
+
+            gym.sync.completePass()
+
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun a_set_added_to_the_running_visit_asks_for_no_sync_pass() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            vm.save()
+
+            assertEquals(0, gym.sync.requests)
         }
 }

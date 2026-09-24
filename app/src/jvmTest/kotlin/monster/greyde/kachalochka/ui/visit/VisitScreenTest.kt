@@ -157,6 +157,18 @@ class VisitScreenTest {
     }
 
     @Test
+    fun an_ended_visit_shows_its_date_and_no_end_button() {
+        val at = visit.recordedAt
+        val ended = Visit(VisitId.random(), null, at, at, at, false)
+        runBlocking { gym.visits.upsert(ended) }
+        runScreenTest(gym, screen = { visitScreen(visitId = ended.id) }) {
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 14 ноября")
+            onNodeWithTag("end-visit").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun top_bar_back_collapses_the_sheet_before_it_leaves() {
         var backs = 0
         runScreenTest(gym, screen = { visitScreen(onBack = { backs++ }) }) {

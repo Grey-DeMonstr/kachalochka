@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.DEFAULT_REPS
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -23,6 +24,7 @@ import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.minuteOfDay
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
+import monster.greyde.kachalochka.core.domain.gym.recordingInstant
 import monster.greyde.kachalochka.core.domain.gym.stepReps
 import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
@@ -33,6 +35,7 @@ import monster.greyde.kachalochka.ui.account.AccountUi
 import monster.greyde.kachalochka.ui.account.accountsUi
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.clockLabel
+import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.groupSummary
@@ -49,6 +52,8 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 
 data class VisitUiState(
+    val title: String,
+    val ended: Boolean,
     val setCountLabel: String,
     val groups: List<SetGroupUi>,
     val sheet: SheetUi?,
@@ -111,6 +116,8 @@ class VisitViewModel(
     private var values = SetValues(0.0, DEFAULT_REPS)
     private var sheetExpanded = true
 
+    private val ended: Boolean get() = visit?.endedAt != null
+
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
         viewModelScope.launch {
@@ -162,25 +169,28 @@ class VisitViewModel(
             val edited = editing
             if (edited == null) {
                 val owner = currentUser.id()
+                val target = startedVisitOf(owner)
+                val targetSets = if (target.id == visit?.id) visitSets else emptyList()
                 sets.upsert(
                     WorkoutSet(
                         WorkoutSetId.random(),
                         owner,
-                        startedVisitOf(owner).id,
+                        target.id,
                         ownMachine(owner, machine).id,
                         values.weight,
                         values.reps,
-                        now,
+                        recordingInstant(target, targetSets, now),
                         now,
                         false,
                     ),
                 )
-                restTimer.start()
+                if (target.endedAt == null) restTimer.start() else sync.request()
             } else {
                 sets.upsert(
                     edited.copy(weight = values.weight, reps = values.reps, updatedAt = now),
                 )
                 editing = null
+                requestSyncIfEnded()
             }
             reload(reseed = true)
         }
@@ -228,6 +238,7 @@ class VisitViewModel(
         writes.launch {
             sets.upsert(edited.copy(deleted = true, updatedAt = clock.now()))
             editing = null
+            requestSyncIfEnded()
             reload(reseed = true)
         }
     }
@@ -244,6 +255,11 @@ class VisitViewModel(
             sync.request()
             onEnded()
         }
+    }
+
+    /** An ended visit has no end left to trigger a pass. */
+    private fun requestSyncIfEnded() {
+        if (ended) sync.request()
     }
 
     private suspend fun startedVisitOf(owner: UserId?): Visit {
@@ -296,8 +312,13 @@ class VisitViewModel(
         previousSets =
             machine
                 ?.takeIf { it.userId == owner }
-                ?.let { previousVisitSets(sets.forMachine(it.id), shown?.id ?: visitId) }
-                .orEmpty()
+                ?.let {
+                    previousVisitSets(
+                        sets.forMachine(it.id),
+                        shown?.id ?: visitId,
+                        before = shown?.recordedAt,
+                    )
+                }.orEmpty()
         if (reseed && editing == null && machine != null) {
             values =
                 suggestNextSet(
@@ -310,9 +331,16 @@ class VisitViewModel(
     }
 
     private fun publish() {
-        val offset = utcOffset.at(clock.now())
+        val now = clock.now()
+        val offset = utcOffset.at(now)
         mutableState.value =
             VisitUiState(
+                title =
+                    visit?.takeIf { ended }?.let {
+                        val day = CalendarDay.of(it.recordedAt, offset)
+                        "Визит · ${dayMonthLabel(day, CalendarDay.of(now, offset).year)}"
+                    } ?: "Визит",
+                ended = ended,
                 setCountLabel = setCount(visitSets.size),
                 groups = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) },
                 sheet = sheetUi(offset),
@@ -345,7 +373,12 @@ class VisitViewModel(
 
     private fun sheetUi(offset: Duration): SheetUi? {
         val machine = open ?: return null
-        val people = accountsUi(accounts.accounts.value, accounts.activeId.value)
+        val people =
+            if (ended) {
+                emptyList()
+            } else {
+                accountsUi(accounts.accounts.value, accounts.activeId.value)
+            }
         val onMachine = visitSets.filter { it.machineId == machine.id }
         val edited = editing
         val number = setNumber(edited, onMachine)
@@ -358,7 +391,8 @@ class VisitViewModel(
             }
         val previous =
             previousSets.takeIf { edited == null && it.isNotEmpty() }?.let { previous ->
-                val days = calendarDaysBetween(previous.last().recordedAt, clock.now(), offset)
+                val until = visit?.takeIf { ended }?.recordedAt ?: clock.now()
+                val days = calendarDaysBetween(previous.last().recordedAt, until, offset)
                 val day = daysAgoLabel(days).replaceFirstChar { it.uppercase() }
                 (listOf(day) + previous.map { shortSet(it.weight, it.reps) }).joinToString(" · ")
             }

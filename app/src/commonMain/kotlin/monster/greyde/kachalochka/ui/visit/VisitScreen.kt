@@ -99,7 +99,7 @@ fun VisitScreen(
         onBackCompleted = { viewModel.collapseSheet() },
     )
     Screen(
-        "Визит",
+        current?.title ?: "Визит",
         onBack = { if (!viewModel.collapseSheet()) onBack() },
         onOpenSettings = onOpenSettings,
     ) {
@@ -158,12 +158,15 @@ private fun VisitList(
                 letterSpacing = 0.09.em,
                 color = colors.onBackground.copy(alpha = 0.5f),
             )
-            Text(
-                "Завершить визит",
-                modifier = Modifier.clickable(onClick = onEnd).padding(8.dp).testTag("end-visit"),
-                fontSize = 14.sp,
-                color = colors.tertiary,
-            )
+            if (!state.ended) {
+                Text(
+                    "Завершить визит",
+                    modifier =
+                        Modifier.clickable(onClick = onEnd).padding(8.dp).testTag("end-visit"),
+                    fontSize = 14.sp,
+                    color = colors.tertiary,
+                )
+            }
         }
         state.groups.forEach { group ->
             Row(
