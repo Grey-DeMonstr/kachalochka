@@ -182,8 +182,9 @@ just another update that travels the same path.
   row of the previous page, and stops once a page comes back empty. It writes nothing, and leaves
   the watermark alone, unless every table's pull succeeds; rows with a pending outbox entry are
   skipped. The watermark then advances to the newest `updated_at` pulled.
-- **Conflicts** resolve by last-write-wins on `updated_at`. The data is single-user per row and
-  edits are rare, so a merge strategy would be cost without benefit.
+- **Conflicts.** A row waiting in the device's outbox wins over the server's copy: the pull skips
+  it and its push overwrites the server's. Otherwise the server's copy wins on pull. Every row
+  belongs to one person and edits are rare, so a merge strategy would be cost without benefit.
 - **Triggers.** A pass runs whenever the app comes to the foreground (a `ProcessLifecycleOwner`
   `ON_START` observer, which also fires at launch), when the user ends a visit, and after an
   account is added. It is a WorkManager job — unique work `"sync"` — with a network constraint,
@@ -200,9 +201,9 @@ just another update that travels the same path.
   the server refuses with a 4xx other than 429 leaves that account unsynced for the pass; a 429
   or a network failure fails the pass instead.
 - **Every account.** A pass covers every account signed in on the device, not only the active
-  one. `syncState` moved from one row to one row per `user_id` in the first local schema
-  migration (`1.sqm`), so each account has its own pull watermark. Pushing only the active account
-  would leave a guest's sets enqueued until somebody happened to switch back to them.
+  one. `syncState` holds one row per `user_id`, created by the first local schema migration
+  (`1.sqm`), so each account has its own pull watermark. Pushing only the active account would
+  leave a guest's sets enqueued until somebody happened to switch back to them.
 
 Sync runs on a second `SupabaseClient` that installs no `Auth`; its `accessToken` resolver asks
 for the token of the account the pass is currently on. The UI's client and its active session are

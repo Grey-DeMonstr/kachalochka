@@ -22,8 +22,8 @@ import kotlin.time.Instant
 private const val PAGE_SIZE = 1000L
 
 /**
- * Talks to PostgREST through the same wire rows the web repositories use for these tables; the
- * calls themselves are not shared.
+ * Talks to PostgREST through the same wire rows the web repositories use, so both platforms write
+ * these tables in one format.
  */
 class SupabaseSyncGateway(
     private val client: Lazy<SupabaseClient>,
@@ -81,11 +81,10 @@ class SupabaseSyncGateway(
         pullAll<ProfileRow>(PROFILE_TABLE, owner, since) { it.updatedAt to it.id }
             .map { it.toProfile() }
 
-    // Keyset paging, not offset: a row another device edits between two page fetches would shift
-    // every later row's offset by one, so offset paging can skip a row while the watermark still
-    // advances past it. The cursor is the previous page's last row's own (updated_at, id), taken
-    // from the server's response so no reformatting can lose precision the server wouldn't accept
-    // back.
+    // Each page starts after the previous page's last (updated_at, id), so a row another device
+    // edits between two fetches only moves later in the order and never makes the pull skip one.
+    // The cursor is taken from the server's response so no reformatting can lose precision the
+    // server wouldn't accept back.
     private suspend inline fun <reified R : Any> pullAll(
         table: String,
         owner: UserId,
