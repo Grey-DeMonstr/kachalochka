@@ -2,6 +2,8 @@ package monster.greyde.kachalochka.core.data.identity
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -27,6 +29,9 @@ class PersistedAccountStore(
     private val storage: AccountStorage,
 ) : AccountStore {
     private val json = Json { ignoreUnknownKeys = true }
+
+    // The sync worker writes refreshed tokens back while the UI adds and switches accounts.
+    private val lock = Mutex()
     private val sessions: MutableList<AccountSession>
     private val accountState: MutableStateFlow<List<Account>>
     private val activeState: MutableStateFlow<UserId?>
@@ -48,32 +53,52 @@ class PersistedAccountStore(
     override val activeId: StateFlow<UserId?> = activeState
 
     override suspend fun add(session: AccountSession) {
-        sessions.removeAll { it.account.userId == session.account.userId }
-        sessions.add(session)
-        activeState.value = session.account.userId
-        publish()
+        lock.withLock {
+            sessions.removeAll { it.account.userId == session.account.userId }
+            sessions.add(session)
+            activeState.value = session.account.userId
+            publish()
+        }
     }
 
     override suspend fun switch(id: UserId) {
-        if (sessions.none { it.account.userId == id }) return
-        activeState.value = id
-        publish()
+        lock.withLock {
+            if (sessions.none { it.account.userId == id }) return
+            activeState.value = id
+            publish()
+        }
     }
 
     override suspend fun remove(id: UserId) {
-        sessions.removeAll { it.account.userId == id }
-        if (activeState.value == id) activeState.value = sessions.firstOrNull()?.account?.userId
-        publish()
+        lock.withLock {
+            sessions.removeAll { it.account.userId == id }
+            if (activeState.value == id) {
+                activeState.value = sessions.firstOrNull()?.account?.userId
+            }
+            publish()
+        }
+    }
+
+    override suspend fun replaceSession(session: AccountSession) {
+        lock.withLock {
+            val index = sessions.indexOfFirst { it.account.userId == session.account.userId }
+            if (index < 0) return
+            sessions[index] = session
+            publish()
+        }
     }
 
     override suspend fun deactivate() {
-        activeState.value = null
-        publish()
+        lock.withLock {
+            activeState.value = null
+            publish()
+        }
     }
 
     override suspend fun sessionOf(id: UserId): AccountSession? =
-        sessions.firstOrNull { it.account.userId == id }
+        lock.withLock { sessions.firstOrNull { it.account.userId == id } }
 
+    // Runs under the caller's lock, which a Mutex would not let it take a second time.
     private suspend fun publish() {
         accountState.value = sessions.map { it.account }
         val stored = StoredAccounts(sessions.map(::toStored), activeState.value?.value)

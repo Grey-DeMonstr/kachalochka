@@ -4,6 +4,8 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
+import monster.greyde.kachalochka.core.data.identity.LiveSession
+import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import org.koin.core.context.startKoin
@@ -13,6 +15,7 @@ import org.koin.dsl.module
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.test.assertSame
 
 private object UnusedSignIn : GoogleSignIn {
     override suspend fun signIn(): AccountSession = error("the graph is only built, never used")
@@ -55,5 +58,6 @@ class CoreModuleTest {
             }.koin
 
         assertNotNull(koin.get<Accounts>())
+        assertSame<SessionActivation>(koin.get<LiveSession>(), koin.get<SessionActivation>())
     }
 }

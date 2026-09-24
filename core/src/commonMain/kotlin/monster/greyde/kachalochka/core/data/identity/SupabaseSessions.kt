@@ -2,8 +2,11 @@ package monster.greyde.kachalochka.core.data.identity
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -30,6 +33,18 @@ class SupabaseSessions(
         client.value.auth.clearSession()
     }
 }
+
+fun Flow<SessionStatus>.liveSessionChanges(): Flow<LiveSessionChange> =
+    mapNotNull { status ->
+        when (status) {
+            is SessionStatus.Authenticated ->
+                runCatching { status.session.toAccountSession() }
+                    .getOrNull()
+                    ?.let(LiveSessionChange::Renewed)
+            is SessionStatus.NotAuthenticated -> LiveSessionChange.Ended
+            else -> null
+        }
+    }
 
 fun AccountSession.toUserSession(now: Instant): UserSession =
     UserSession(

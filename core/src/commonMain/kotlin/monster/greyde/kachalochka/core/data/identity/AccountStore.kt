@@ -14,6 +14,9 @@ interface AccountStore {
 
     suspend fun remove(id: UserId)
 
+    /** Swaps in fresh tokens for an account already stored; anybody else is ignored. */
+    suspend fun replaceSession(session: AccountSession)
+
     /** Leaves the accounts in place and nobody signed in. */
     suspend fun deactivate()
 

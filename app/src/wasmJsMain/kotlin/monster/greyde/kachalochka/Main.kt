@@ -10,6 +10,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.di.corePlatformModule
+import monster.greyde.kachalochka.core.di.followLiveSession
 import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
 import monster.greyde.kachalochka.ui.account.disownActiveAccount
@@ -36,6 +37,8 @@ fun main() {
         } catch (failure: Throwable) {
             report("Start-up could not finish: $failure")
         }
+        // After the restore, so the refresh the restore itself may trigger is written back.
+        koin.followLiveSession()
         ComposeViewport(document.body!!) { App() }
     }
 }

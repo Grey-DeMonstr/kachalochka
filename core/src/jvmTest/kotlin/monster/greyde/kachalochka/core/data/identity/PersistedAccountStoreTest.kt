@@ -132,6 +132,46 @@ class PersistedAccountStoreTest {
         }
 
     @Test
+    fun replacing_a_session_keeps_the_order_and_the_active_account() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            store.add(misha)
+            store.switch(ivan.account.userId)
+
+            store.replaceSession(misha.copy(accessToken = "fresh"))
+
+            assertEquals(listOf(ivan.account, misha.account), store.accounts.value)
+            assertEquals(ivan.account.userId, store.activeId.value)
+            assertEquals("fresh", store.sessionOf(misha.account.userId)?.accessToken)
+        }
+
+    @Test
+    fun replacing_the_session_of_an_unknown_account_adds_nothing() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+
+            store.replaceSession(misha)
+
+            assertEquals(listOf(ivan.account), store.accounts.value)
+            assertEquals(ivan.account.userId, store.activeId.value)
+        }
+
+    @Test
+    fun a_replaced_session_survives_a_new_store_over_the_same_storage() =
+        runTest {
+            val storage = FakeStorage()
+            val fresh = ivan.copy(accessToken = "fresh", refreshToken = "fresh-refresh")
+            PersistedAccountStore(storage).run {
+                add(ivan)
+                replaceSession(fresh)
+            }
+
+            assertEquals(fresh, PersistedAccountStore(storage).sessionOf(ivan.account.userId))
+        }
+
+    @Test
     fun unreadable_storage_opens_empty_instead_of_failing() =
         runTest {
             val store = PersistedAccountStore(FakeStorage("not json"))

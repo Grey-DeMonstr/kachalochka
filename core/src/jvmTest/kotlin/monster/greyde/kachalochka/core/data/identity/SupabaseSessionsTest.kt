@@ -1,7 +1,13 @@
 package monster.greyde.kachalochka.core.data.identity
 
+import io.github.jan.supabase.auth.status.RefreshFailureCause.NetworkError
+import io.github.jan.supabase.auth.status.SessionSource
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -90,4 +96,56 @@ class SupabaseSessionsTest {
 
         assertEquals("Иван", userSession(metadata).toAccountSession().account.displayName)
     }
+
+    @Test
+    fun an_authenticated_status_carries_the_session_to_write_back() =
+        runTest {
+            val session = userSession(emptyMap())
+            val status = SessionStatus.Authenticated(session, SessionSource.External)
+
+            assertEquals(
+                listOf(LiveSessionChange.Renewed(session.toAccountSession())),
+                flowOf(status).liveSessionChanges().toList(),
+            )
+        }
+
+    @Test
+    fun a_cleared_session_reads_as_ended() =
+        runTest {
+            assertEquals(
+                listOf(LiveSessionChange.Ended),
+                flowOf(SessionStatus.NotAuthenticated(isSignOut = false))
+                    .liveSessionChanges()
+                    .toList(),
+            )
+        }
+
+    @Test
+    fun initializing_says_nothing() =
+        runTest {
+            assertEquals(
+                emptyList(),
+                flowOf(SessionStatus.Initializing).liveSessionChanges().toList(),
+            )
+        }
+
+    @Test
+    fun a_refresh_that_could_not_reach_the_server_says_nothing() =
+        runTest {
+            val failure = SessionStatus.RefreshFailure(NetworkError(IllegalStateException()))
+
+            assertEquals(emptyList(), flowOf(failure).liveSessionChanges().toList())
+        }
+
+    @Test
+    fun a_session_without_a_user_says_nothing() =
+        runTest {
+            val status =
+                SessionStatus.Authenticated(
+                    userSession(emptyMap()).copy(user = null),
+                    SessionSource.External,
+                )
+
+            assertEquals(emptyList(), flowOf(status).liveSessionChanges().toList())
+        }
 }
