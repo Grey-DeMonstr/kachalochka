@@ -24,6 +24,9 @@ interface VisitRepository {
 
     /** The owner's newest visit that has not ended and is not deleted. */
     suspend fun active(owner: UserId?): Visit?
+
+    /** The owner's visits that are not deleted, newest first. */
+    suspend fun all(owner: UserId?): List<Visit>
 }
 
 /** Every list leaves deleted sets out and runs in recording order. */

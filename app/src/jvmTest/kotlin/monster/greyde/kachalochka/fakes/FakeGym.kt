@@ -81,6 +81,11 @@ class InMemoryVisitRepository : VisitRepository {
         rows.values
             .filter { it.endedAt == null && !it.deleted && it.userId == owner }
             .maxByOrNull { it.recordedAt }
+
+    override suspend fun all(owner: UserId?): List<Visit> =
+        rows.values
+            .filter { !it.deleted && it.userId == owner }
+            .sortedByDescending { it.recordedAt }
 }
 
 class InMemoryWorkoutSetRepository : WorkoutSetRepository {

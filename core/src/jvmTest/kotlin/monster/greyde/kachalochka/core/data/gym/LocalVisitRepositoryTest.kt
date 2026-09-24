@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
@@ -77,5 +78,19 @@ class LocalVisitRepositoryTest {
             repository.upsert(visit(userId = ivan))
 
             assertNull(repository.active(null))
+        }
+
+    @Test
+    fun an_owner_s_visits_list_newest_first_without_the_deleted() =
+        runTest {
+            val ivan = UserId("11111111-1111-4111-8111-111111111111")
+            val older = visit(t0, endedAt = t0 + 1.hours)
+            val newer = visit(t0 + 1.days)
+            val deleted = visit(t0 + 2.days, deleted = true)
+            val ivans = visit(t0 + 3.days, userId = ivan)
+            listOf(older, newer, deleted, ivans).forEach { repository.upsert(it) }
+
+            assertEquals(listOf(newer, older), repository.all(null))
+            assertEquals(listOf(ivans), repository.all(ivan))
         }
 }

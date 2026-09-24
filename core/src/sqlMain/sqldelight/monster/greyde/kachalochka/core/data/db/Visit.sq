@@ -25,6 +25,12 @@ WHERE ended_at IS NULL AND deleted = 0
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 ORDER BY recorded_at DESC LIMIT 1;
 
+forOwner:
+SELECT * FROM visit
+WHERE deleted = 0
+  AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
+ORDER BY recorded_at DESC;
+
 ownerlessIds:
 SELECT id FROM visit WHERE user_id IS NULL;
 

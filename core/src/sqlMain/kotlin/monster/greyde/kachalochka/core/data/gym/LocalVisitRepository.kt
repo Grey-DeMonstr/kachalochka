@@ -42,6 +42,11 @@ class LocalVisitRepository(
         withContext(dispatcher) {
             queries.active(owner?.value, ::visitOf).executeAsOneOrNull()
         }
+
+    override suspend fun all(owner: UserId?): List<Visit> =
+        withContext(dispatcher) {
+            queries.forOwner(owner?.value, ::visitOf).executeAsList()
+        }
 }
 
 internal fun visitOf(
