@@ -23,9 +23,11 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
@@ -322,21 +324,73 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun leaving_edit_mode_returns_to_adding_on_the_same_machine() =
+    fun a_chosen_machine_opens_the_sheet_expanded() {
+        val vm = viewModel().also { it.selectMachine(press.id) }
+
+        assertEquals(
+            true,
+            vm.state.value
+                ?.sheet
+                ?.expanded,
+        )
+    }
+
+    @Test
+    fun collapsing_keeps_the_machine_and_the_stepper_values() {
+        val vm = viewModel().also { it.selectMachine(press.id) }
+        vm.changeWeight(+1)
+
+        assertTrue(vm.collapseSheet())
+
+        val collapsed = assertNotNull(vm.state.value?.sheet)
+        assertEquals(false, collapsed.expanded)
+        assertEquals("Жим ногами", collapsed.name)
+        assertEquals(press.id, vm.selectedMachineId)
+        assertFalse(vm.collapseSheet())
+
+        vm.expandSheet()
+
+        val expanded = assertNotNull(vm.state.value?.sheet)
+        assertEquals(true, expanded.expanded)
+        assertEquals("72,5", expanded.weight)
+    }
+
+    @Test
+    fun without_a_machine_there_is_nothing_to_collapse() {
+        val vm = viewModel().also { it.refresh() }
+
+        assertFalse(vm.collapseSheet())
+    }
+
+    @Test
+    fun tapping_a_set_while_collapsed_opens_the_sheet_on_it() =
+        runTest {
+            val recorded = set(visit.id, press, 70.0, 10, 0)
+            gym.sets.upsert(recorded)
+            val vm = viewModel().also { it.selectMachine(row.id) }
+            vm.collapseSheet()
+
+            vm.editSet(recorded.id)
+
+            val sheet = assertNotNull(vm.state.value?.sheet)
+            assertEquals(true, sheet.expanded)
+            assertEquals(true, sheet.editing)
+        }
+
+    @Test
+    fun collapsing_while_editing_leaves_edit_mode_on_the_same_machine() =
         runTest {
             val recorded = set(visit.id, press, 70.0, 10, 0)
             gym.sets.upsert(recorded)
             val vm = viewModel().also { it.refresh() }
             vm.editSet(recorded.id)
 
-            assertEquals(true, vm.leaveEdit())
-            assertEquals(false, vm.leaveEdit())
-            assertEquals(
-                "подход 2",
-                vm.state.value
-                    ?.sheet
-                    ?.setNumberLabel,
-            )
+            assertTrue(vm.collapseSheet())
+
+            val sheet = assertNotNull(vm.state.value?.sheet)
+            assertEquals(false, sheet.editing)
+            assertEquals(false, sheet.expanded)
+            assertEquals("подход 2", sheet.setNumberLabel)
         }
 
     @Test

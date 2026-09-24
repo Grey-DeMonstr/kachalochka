@@ -119,24 +119,30 @@ class VisitScreenTest {
     }
 
     @Test
-    fun tapping_a_set_opens_the_sheet_in_edit_mode_and_back_leaves_it() {
+    fun top_bar_back_collapses_the_sheet_before_it_leaves() {
         var backs = 0
         runScreenTest(gym, screen = { visitScreen(onBack = { backs++ }) }) {
             onNodeWithTag("group-${press.id.value}").performClick()
             onNodeWithTag("set-row-${recorded.id.value}").performClick()
             waitForIdle()
-            onNodeWithTag("save-set").assertTextEquals("Сохранить")
             onNodeWithTag("delete-set").assertIsDisplayed()
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("machine-settings").assertIsDisplayed()
+            onNodeWithTag("delete-set").assertDoesNotExist()
+            onNodeWithTag("save-set").assertDoesNotExist()
+            onNodeWithTag("sheet-peek-label", useUnmergedTree = true)
+                .assertTextEquals("Жим ногами · подход 2")
             assertEquals(0, backs)
+
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            assertEquals(1, backs)
         }
     }
 
     @Test
-    fun system_back_while_editing_a_set_leaves_edit_mode() {
+    fun system_back_collapses_the_sheet() {
         var backs = 0
         val dispatcher = NavigationEventDispatcher()
         val systemBack = DirectNavigationEventInput().also(dispatcher::addInput)
@@ -148,19 +154,32 @@ class VisitScreenTest {
             gym,
             screen = {
                 CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) {
-                    visitScreen(onBack = { backs++ })
+                    visitScreen(picked = press.id, onBack = { backs++ })
                 }
             },
         ) {
-            onNodeWithTag("group-${press.id.value}").performClick()
-            onNodeWithTag("set-row-${recorded.id.value}").performClick()
             waitForIdle()
-            onNodeWithTag("delete-set").assertIsDisplayed()
+            onNodeWithTag("save-set").assertIsDisplayed()
 
             runOnIdle { systemBack.backCompleted() }
             waitForIdle()
-            onNodeWithTag("machine-settings").assertIsDisplayed()
+            onNodeWithTag("save-set").assertDoesNotExist()
+            onNodeWithTag("sheet-peek").assertIsDisplayed()
             assertEquals(0, backs)
+        }
+    }
+
+    @Test
+    fun tapping_the_collapsed_bar_opens_the_sheet_again() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+
+            onNodeWithTag("sheet-peek").performClick()
+            waitForIdle()
+            onNodeWithTag("save-set").assertIsDisplayed()
+            onNodeWithTag("sheet-peek").assertDoesNotExist()
         }
     }
 

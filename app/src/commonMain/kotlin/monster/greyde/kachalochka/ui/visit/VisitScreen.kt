@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -83,12 +84,12 @@ fun VisitScreen(
     val current = state
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
-        isBackEnabled = current?.sheet?.editing == true,
-        onBackCompleted = { viewModel.leaveEdit() },
+        isBackEnabled = current?.sheet?.expanded == true,
+        onBackCompleted = { viewModel.collapseSheet() },
     )
     Screen(
         "Визит",
-        onBack = { if (!viewModel.leaveEdit()) onBack() },
+        onBack = { if (!viewModel.collapseSheet()) onBack() },
         onOpenSettings = onOpenSettings,
     ) {
         if (current == null) return@Screen
@@ -109,6 +110,7 @@ fun VisitScreen(
             onDelete = viewModel::deleteEditedSet,
             onSwitchTo = viewModel::switchTo,
             onAddAccount = accountsViewModel::addAccount,
+            onExpand = viewModel::expandSheet,
         )
     }
 }
@@ -126,7 +128,7 @@ private fun VisitList(
         modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .alpha(if (state.sheet != null) 0.55f else 1f)
+            .alpha(if (state.sheet?.expanded == true) 0.55f else 1f)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Row(
@@ -285,6 +287,59 @@ private fun PersonChip(
 }
 
 @Composable
+private fun SheetHandle(modifier: Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier
+            .size(width = 44.dp, height = 4.dp)
+            .clip(RoundedCornerShape(2.dp))
+            .background(colors.onBackground.copy(alpha = 0.26f)),
+    )
+}
+
+@Composable
+private fun SheetPeek(
+    sheet: SheetUi,
+    onExpand: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(colors.surface)
+            .border(1.dp, colors.onBackground.copy(alpha = 0.16f), shape)
+            .clickable(onClick = onExpand)
+            .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 20.dp)
+            .testTag("sheet-peek"),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        SheetHandle(Modifier.align(Alignment.CenterHorizontally))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "${sheet.name} · ${sheet.setNumberLabel}",
+                modifier = Modifier.weight(1f).testTag("sheet-peek-label"),
+                fontSize = 17.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = colors.onBackground,
+            )
+            Icon(
+                PhosphorIcons.CaretRight,
+                "Развернуть",
+                modifier = Modifier.size(20.dp).rotate(-90f),
+                tint = colors.onBackground.copy(alpha = 0.55f),
+            )
+        }
+    }
+}
+
+@Composable
 private fun SetSheet(
     sheet: SheetUi?,
     onPickMachine: () -> Unit,
@@ -295,10 +350,15 @@ private fun SetSheet(
     onDelete: () -> Unit,
     onSwitchTo: (UserId) -> Unit,
     onAddAccount: () -> Unit,
+    onExpand: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
     val muted = colors.onBackground.copy(alpha = 0.55f)
+    if (sheet != null && !sheet.expanded) {
+        SheetPeek(sheet, onExpand)
+        return
+    }
     Column(
         Modifier
             .fillMaxWidth()
@@ -309,13 +369,7 @@ private fun SetSheet(
             .testTag("set-sheet"),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(
-            Modifier
-                .align(Alignment.CenterHorizontally)
-                .size(width = 44.dp, height = 4.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(colors.onBackground.copy(alpha = 0.26f)),
-        )
+        SheetHandle(Modifier.align(Alignment.CenterHorizontally))
         if (sheet == null) {
             AccentButton(
                 "Выбрать тренажёр",

@@ -81,6 +81,7 @@ data class SheetUi(
     val editing: Boolean,
     val people: List<AccountUi>,
     val saveLabel: String,
+    val expanded: Boolean,
 )
 
 class VisitViewModel(
@@ -108,6 +109,7 @@ class VisitViewModel(
     private var editing: WorkoutSet? = null
     private var expanded: Set<MachineId> = emptySet()
     private var values = SetValues(0.0, DEFAULT_REPS)
+    private var sheetExpanded = true
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -129,6 +131,7 @@ class VisitViewModel(
     fun selectMachine(id: MachineId) {
         selected = id
         editing = null
+        sheetExpanded = true
         viewModelScope.launch { reload(reseed = true) }
     }
 
@@ -198,14 +201,26 @@ class VisitViewModel(
         editing = set
         selected = set.machineId
         values = SetValues(set.weight, set.reps)
+        sheetExpanded = true
         refresh()
     }
 
-    fun leaveEdit(): Boolean {
-        if (editing == null) return false
-        editing = null
-        viewModelScope.launch { reload(reseed = true) }
+    fun collapseSheet(): Boolean {
+        if (open == null || !sheetExpanded) return false
+        sheetExpanded = false
+        if (editing == null) {
+            publish()
+        } else {
+            editing = null
+            viewModelScope.launch { reload(reseed = true) }
+        }
         return true
+    }
+
+    fun expandSheet() {
+        if (open == null) return
+        sheetExpanded = true
+        publish()
     }
 
     fun deleteEditedSet() {
@@ -363,6 +378,7 @@ class VisitViewModel(
                     people.takeIf { it.size > 1 }?.firstOrNull { it.active }?.displayName,
                     edited != null,
                 ),
+            expanded = sheetExpanded,
         )
     }
 }
