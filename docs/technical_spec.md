@@ -187,16 +187,18 @@ just another update that travels the same path.
 - **Triggers.** A pass runs on app start, when the user ends a visit, and after an account is
   added. It is a WorkManager job — unique work `"sync"`, `APPEND_OR_REPLACE` — with a network
   constraint, so a pass already queued waits for connectivity rather than failing outright.
+- **Tokens.** The account live on the UI client lends its own access token to the pass; every
+  other account refreshes through `refreshSession`, and the session that comes back is written to
+  the store before use. A refresh the server refuses leaves that account unsynced for the pass.
 - **Every account.** A pass covers every account signed in on the device, not only the active
-  one, and `syncState` is keyed by `user_id` so each has its own pull watermark. Pushing only the
-  active account would leave a guest's sets enqueued until somebody happened to switch back to
-  them.
+  one. `syncState` moved from one row to one row per `user_id` in the first local schema
+  migration (`1.sqm`), so each account has its own pull watermark. Pushing only the active account
+  would leave a guest's sets enqueued until somebody happened to switch back to them.
 
-Sync runs on a second `SupabaseClient` that installs no `Auth`; its `accessToken` resolver
-returns the token of the account the pass is currently on, refreshed when stale through
-`refreshSession`, which returns a session without making it current. The UI's client and its
-active session are never touched. Importing each account's session in turn on the one client
-would race every write the UI makes meanwhile.
+Sync runs on a second `SupabaseClient` that installs no `Auth`; its `accessToken` resolver asks
+for the token of the account the pass is currently on. The UI's client and its active session are
+never touched. Importing each account's session in turn on the one client would race every write
+the UI makes meanwhile.
 
 Sync is a `data/` concern. Nothing in `domain/` or `app` knows whether a row has been pushed.
 
@@ -232,8 +234,8 @@ actually succeeded. When supabase-kt instead clears a session it could not refre
 signs that account out of the store — the store never names an account the server has stopped
 accepting. A clear the app makes itself, such as an ordinary sign-out, does not trigger this. If
 activating the next account to take the vacated slot itself fails, the store is left with nobody
-active and the live session cleared; the account that failed to activate stays listed, so signing
-in again is a retry rather than adding it back.
+active and the live session cleared; the account that failed to activate stays listed, so
+switching to it again is a retry rather than adding it back.
 
 `CurrentUser` is one `commonMain` implementation reading that store's active id, on both targets.
 
