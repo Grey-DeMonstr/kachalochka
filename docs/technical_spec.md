@@ -1,6 +1,6 @@
 # Kachalochka — Technical Specification
 
-**Last reviewed:** 2026-09-20
+**Last reviewed:** 2026-09-24
 
 The architectural decisions and invariants new work must respect. It is not a description of the
 current code — read the code for that. What is written here is what the code cannot tell you: why
@@ -186,8 +186,9 @@ just another update that travels the same path.
   it and its push overwrites the server's. Otherwise the server's copy wins on pull. Every row
   belongs to one person and edits are rare, so a merge strategy would be cost without benefit.
 - **Triggers.** A pass runs whenever the app comes to the foreground (a `ProcessLifecycleOwner`
-  `ON_START` observer, which also fires at launch), when the user ends a visit, and after an
-  account is added. It is a WorkManager job — unique work `"sync"` — with a network constraint,
+  `ON_START` observer, which also fires at launch), when the user ends a visit, after an account
+  is added, after a visit is added, moved or removed on the calendar, and after any write to an
+  ended visit. It is a WorkManager job — unique work `"sync"` — with a network constraint,
   so a pass already queued waits for connectivity rather than failing outright. A pass reports
   whether every push and pull succeeded, and one that did not is retried with exponential
   backoff. A new request replaces (`REPLACE`) whatever is queued or running, so it never waits
@@ -274,6 +275,15 @@ A visit is active while it has no end; an account's active visit is the newest o
 with no `ended_at`, so each account has at most one. A visit carries `recorded_at` to order and
 group it, never a start time or a duration — the functional spec asks for neither, and nothing
 computes elapsed time.
+
+A visit added for a past day is ended when it is created, with `recorded_at` and `ended_at`
+both at local noon of that day, so it can never become the active visit; only a visit started
+now is running. Moving a visit to another day moves its sets, and removing a visit
+soft-deletes its sets: every reader of sets filters on the set's own `deleted` and
+`recorded_at` and never joins `visit`. Such a rewrite writes the sets first and the visit last,
+and places each set by its clock time after the visit's, so a retry after a half-finished write
+on the web writes the same rows. A set added to an ended visit is stamped one second after the
+visit's last set, which keeps a late correction on the visit's day and in order.
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward
@@ -446,3 +456,7 @@ Phosphor library ships every weight of every icon, about 27 MB per platform arti
 `kotlin.time` has no time zones. `app` reads the UTC offset from the platform —
 `java.util.TimeZone` on Android and the JVM, `Date.getTimezoneOffset` on Wasm — and passes it
 into the pure day and clock-time functions in `domain/`.
+
+Calendar dates are `CalendarDay` values in `domain/`, with epoch-day arithmetic, because
+`kotlin.time` has no calendar and the stack adds no date library. The calendar screen, adding a
+visit on a past day and moving one all go through them.

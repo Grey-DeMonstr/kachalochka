@@ -13,8 +13,8 @@ Several accounts can be signed in on one device at once, with one of them active
 recorded into the active account, and each account keeps its own visits, machines and history.
 Switching between them is easy and works from inside a running visit. The account in use is
 signed out on its own once the server stops accepting its sign-in; on Android its rows stay on
-the device. Any other account the server stops accepting stays listed but stops syncing until it
-is switched to, and then the same rule applies.
+the device. Any other account the server stops accepting stays listed but stops syncing; switching
+to it fails to activate and reports the failure, and the account stays listed.
 
 Both apps must support a dark and a light theme. By default the theme follows the system setting;
 the user can override it and pick light or dark explicitly. The choice is remembered between
@@ -48,19 +48,24 @@ account, the settings and signing out. With nobody signed in the avatar is an em
 
 The home screen shows a visit card. While a visit is running, the card shows "Визит идёт", how
 many machines and sets so far, the last recorded set and a "Продолжить" button. With no visit
-running, the card offers "Начать визит", which starts one. Below the card are rows for plans,
-statistics and friends; they are shown but not yet available. On Android with nobody signed in,
-"Войти через Google" sits at the bottom of the screen.
+running, the card offers "Начать визит", which starts one. Below the card are rows for visits,
+plans, statistics and friends; plans, statistics and friends are shown but not yet available. On
+Android with nobody signed in, "Войти через Google" sits at the bottom of the screen.
 
-The visit screen lists the visit's sets grouped by machine. Tapping a machine's row expands it
-to show its sets; tapping a set opens it for editing or deletion. "Завершить визит" ends the
-visit and returns to the home screen.
+The visit screen lists the visit's sets grouped by machine and ends with "Новый тренажёр", which
+opens the machine picker. Tapping a machine's row expands it to show its sets; tapping a set
+opens it for editing or deletion. "Завершить визит" ends the visit and returns to the home
+screen.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,
 and weight and reps steppers seeded from the previous visit's set. Saving records the set.
 Tapping another account's chip switches to it: the shown history and the save button follow that
-person, and the set is recorded into their own visit.
+person, and the set is recorded into their own visit. Swiping the sheet down, or pressing back on
+the phone or in the top bar, collapses it to a bar naming the machine and the next set; tapping
+the bar or swiping it up opens the sheet again. Pressing back while a set is being edited leaves
+the edit and collapses the sheet. The machine's name is not a button: another machine is chosen
+with "Новый тренажёр".
 
 The machine picker lets the user search machines by name; "Создать «…»" opens the machine form
 pre-filled with the typed name. When a machine is already chosen for the visit, "Скопировать
@@ -70,6 +75,16 @@ Recently used machines are listed with their last result.
 The machine form collects a name, a setup note, how the weight is counted (total, per side or
 counterweight), the platform weight and whether it is added to the recorded weight, the unit
 (kg or lb) and the weight step.
+
+The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
+visit are marked, today and the chosen day are highlighted, and future days cannot be chosen.
+Below the month are the chosen day's visits, each with its machines and set count. Tapping one
+opens it on the visit screen, where its sets are added, edited and deleted as in a running visit;
+a past visit's title carries its date and it has no "Завершить визит". "Добавить визит" records a
+visit on a past day; on today the button is "Начать визит", offered while no visit is running.
+"Перенести" moves a visit, with its sets, to the day tapped next; the running visit cannot be
+moved. "Удалить" asks for confirmation, then removes the visit and its sets from the history and
+the statistics.
 
 Photos, comments on a set, a custom unit and counting left and right separately are shown on
 these screens but not yet available.
