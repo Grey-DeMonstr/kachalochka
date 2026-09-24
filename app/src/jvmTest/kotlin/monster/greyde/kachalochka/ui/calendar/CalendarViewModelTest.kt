@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.calendar
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -148,6 +149,25 @@ class CalendarViewModelTest {
         }
 
     @Test
+    fun adding_on_today_opens_the_visit_already_running() =
+        runTest {
+            val running = Visit(VisitId.random(), null, t0 - 1.hours, null, t0, false)
+            gym.visits.upsert(running)
+            val vm = viewModel().also { it.refresh() }
+            var opened: VisitId? = null
+
+            vm.addVisit { opened = it }
+
+            assertEquals(running.id, opened)
+            assertEquals(
+                1,
+                gym.visits.rows.values
+                    .count { it.endedAt == null && !it.deleted },
+            )
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
     fun today_offers_no_second_running_visit() =
         runTest {
             gym.visits.upsert(Visit(VisitId.random(), null, t0 - 1.hours, null, t0, false))
@@ -278,6 +298,42 @@ class CalendarViewModelTest {
         }
 
     @Test
+    fun switching_accounts_leaves_move_mode() =
+        runTest {
+            val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
+            val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+            val two = FakeGym().withAccounts(ivan, misha, active = ivan)
+            val ivanVisit = sunday.copy(userId = ivan.account.userId)
+            two.visits.upsert(ivanVisit)
+            val vm = viewModel(two)
+            vm.startMove(ivanVisit.id)
+            assertEquals(true, vm.state.value?.moving)
+
+            two.accounts.switchTo(misha.account.userId)
+
+            assertFalse(assertNotNull(vm.state.value).moving)
+        }
+
+    @Test
+    fun a_reload_overtaken_by_an_account_switch_never_lands() =
+        runTest {
+            val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
+            val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+            val two = FakeGym().withAccounts(ivan, misha, active = ivan)
+            two.visits.upsert(sunday.copy(userId = ivan.account.userId))
+            val vm = viewModel(two)
+            val gate = CompletableDeferred<Unit>()
+            two.visits.gate = gate
+            vm.refresh()
+            two.visits.gate = null
+
+            two.accounts.switchTo(misha.account.userId)
+            gate.complete(Unit)
+
+            assertFalse(assertNotNull(vm.state.value).day(12).hasVisit)
+        }
+
+    @Test
     fun a_completed_sync_reloads_the_calendar() =
         runTest {
             val vm = viewModel().also { it.refresh() }
@@ -290,6 +346,7 @@ class CalendarViewModelTest {
                     ?.day(14)
                     ?.hasVisit == true,
             )
+            assertEquals(0, gym.sync.requests)
         }
 
     private fun session(

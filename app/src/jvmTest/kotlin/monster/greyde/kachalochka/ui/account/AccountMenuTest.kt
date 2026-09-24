@@ -53,7 +53,7 @@ class AccountMenuTest {
     @Test
     fun the_menu_lists_the_accounts_and_marks_the_active_one() {
         val gym = FakeGym().withAccounts(ivan, misha, active = misha)
-        runScreenTest(gym, screen = { HomeScreen(onOpenVisit = {}, onOpenSettings = {}) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}) }) {
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-11111111-1111-4111-8111-111111111111").assertExists()
             onNodeWithTag("account-22222222-2222-4222-8222-222222222222-active").assertExists()
@@ -66,7 +66,7 @@ class AccountMenuTest {
     @Test
     fun tapping_another_account_switches_to_it() {
         val gym = FakeGym().withAccounts(ivan, misha, active = misha)
-        runScreenTest(gym, screen = { HomeScreen(onOpenVisit = {}, onOpenSettings = {}) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}) }) {
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-11111111-1111-4111-8111-111111111111").performClick()
             onNodeWithTag("account-avatar").assertTextEquals("I")
@@ -75,7 +75,7 @@ class AccountMenuTest {
 
     @Test
     fun the_avatar_is_an_outline_while_nobody_is_signed_in() {
-        runScreenTest(FakeGym(), screen = { HomeScreen(onOpenVisit = {}, onOpenSettings = {}) }) {
+        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}) }) {
             onNodeWithTag("account-avatar-empty").assertExists()
         }
     }
@@ -97,7 +97,7 @@ class AccountMenuTest {
     fun signing_out_keeps_what_the_account_recorded() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
         runBlocking { gym.sets.upsert(recordedSet(owner = ivan.account.userId)) }
-        runScreenTest(gym, screen = { HomeScreen(onOpenVisit = {}, onOpenSettings = {}) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}) }) {
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-sign-out").performClick()
             onNodeWithTag("account-avatar-empty").assertExists()

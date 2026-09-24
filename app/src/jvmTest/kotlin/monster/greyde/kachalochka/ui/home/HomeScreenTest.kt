@@ -28,14 +28,14 @@ class HomeScreenTest {
 
     @Test
     fun friends_stay_locked_until_an_account_is_signed_in() =
-        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}) }) {
+        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}) }) {
             onNodeWithTag("section-friends-lock", useUnmergedTree = true).assertExists()
         }
 
     @Test
     fun friends_unlock_once_an_account_is_signed_in() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
-        runScreenTest(gym, screen = { HomeScreen({}, {}) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}) }) {
             onNodeWithTag("section-friends-lock", useUnmergedTree = true).assertDoesNotExist()
         }
     }
@@ -43,7 +43,7 @@ class HomeScreenTest {
     @Test
     fun the_sign_in_button_stays_hidden_without_supabase_credentials() {
         val gym = FakeGym(credentials = SupabaseCredentials("", ""))
-        runScreenTest(gym, screen = { HomeScreen({}, {}) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}) }) {
             onNodeWithTag("home-sign-in").assertDoesNotExist()
         }
     }
@@ -51,7 +51,7 @@ class HomeScreenTest {
     /** The fake sign-in has nothing queued to hand back, which is a refusal like any other. */
     @Test
     fun a_refused_sign_in_says_so_under_the_button() =
-        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}) }) {
+        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}) }) {
             onNodeWithTag("sign-in-failure").assertDoesNotExist()
 
             onNodeWithTag("home-sign-in").performClick()
@@ -64,7 +64,7 @@ class HomeScreenTest {
     @Test
     fun the_sign_in_button_stays_hidden_without_a_google_web_client_id() {
         val gym = FakeGym(credentials = SupabaseCredentials("https://example.test", "anon-key"))
-        runScreenTest(gym, screen = { HomeScreen({}, {}) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}) }) {
             onNodeWithTag("home-sign-in").assertDoesNotExist()
         }
     }

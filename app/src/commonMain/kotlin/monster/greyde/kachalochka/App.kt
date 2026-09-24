@@ -12,6 +12,7 @@ import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.navigation.CalendarRoute
 import monster.greyde.kachalochka.navigation.HomeRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
 import monster.greyde.kachalochka.navigation.MachinePickerRoute
@@ -20,6 +21,7 @@ import monster.greyde.kachalochka.navigation.VisitRoute
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.SignInScreen
+import monster.greyde.kachalochka.ui.calendar.CalendarScreen
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
@@ -60,6 +62,14 @@ fun App() {
                     HomeScreen(
                         onOpenVisit = { navController.navigate(VisitRoute(it.value)) },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenCalendar = { navController.navigate(CalendarRoute) },
+                    )
+                }
+                composable<CalendarRoute> {
+                    CalendarScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenVisit = { navController.navigate(VisitRoute(it.value)) },
                     )
                 }
                 composable<SettingsRoute> {

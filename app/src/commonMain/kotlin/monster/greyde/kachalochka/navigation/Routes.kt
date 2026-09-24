@@ -9,6 +9,9 @@ object HomeRoute
 object SettingsRoute
 
 @Serializable
+object CalendarRoute
+
+@Serializable
 data class VisitRoute(
     val visitId: String,
 )

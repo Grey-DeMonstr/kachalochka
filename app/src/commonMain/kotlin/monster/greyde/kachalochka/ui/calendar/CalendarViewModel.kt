@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.calendar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -78,11 +79,12 @@ class CalendarViewModel(
     private var all: List<Visit> = emptyList()
     private var activeId: VisitId? = null
     private var dayVisits: List<CalendarVisitUi> = emptyList()
-    private var month: CalendarMonth? = CalendarMonth.of(today())
-    private var selected: CalendarDay? = today()
+    private var month: CalendarMonth = CalendarMonth.of(today())
+    private var selected: CalendarDay = today()
     private var moving: Visit? = null
     private var removing: Visit? = null
     private var removingSets: Int = 0
+    private var reloading: Job? = null
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -96,12 +98,10 @@ class CalendarViewModel(
         viewModelScope.launch { sync.completed.collect { reload() } }
     }
 
-    fun refresh() {
-        viewModelScope.launch { reload() }
-    }
+    fun refresh() = reload()
 
     fun showMonth(direction: Int) {
-        val next = (month ?: CalendarMonth.of(today())).plusMonths(direction)
+        val next = month.plusMonths(direction)
         if (monthRank(next) > monthRank(CalendarMonth.of(today()))) return
         month = next
         publish()
@@ -112,7 +112,7 @@ class CalendarViewModel(
         val target = moving
         if (target == null) {
             selected = day
-            viewModelScope.launch { reload() }
+            reload()
         } else {
             writes.launch {
                 val now = clock.now()
@@ -129,7 +129,7 @@ class CalendarViewModel(
 
     fun addVisit(onOpen: (VisitId) -> Unit) {
         writes.launch {
-            val day = selected ?: today()
+            val day = selected
             val owner = currentUser.id()
             val now = clock.now()
             val id =
@@ -197,12 +197,18 @@ class CalendarViewModel(
         visits.upsert(rows.visit)
     }
 
-    private suspend fun reload() {
+    /** Cancels the reload in flight, so one for a previous day or account never lands last. */
+    private fun reload() {
+        reloading?.cancel()
+        reloading = viewModelScope.launch { load() }
+    }
+
+    private suspend fun load() {
         val owner = currentUser.id()
         all = visits.all(owner)
         activeId = visits.active(owner)?.id
         val machinesById = machines.all(owner).associateBy { it.id }
-        val day = selected ?: today()
+        val day = selected
         dayVisits =
             all
                 .filter { CalendarDay.of(it.recordedAt, utcOffset.at(it.recordedAt)) == day }
@@ -226,12 +232,11 @@ class CalendarViewModel(
 
     private fun publish() {
         val today = today()
-        val currentMonth = month ?: CalendarMonth.of(today)
-        val day = selected ?: today
+        val day = selected
         val visitDays =
             all.map { CalendarDay.of(it.recordedAt, utcOffset.at(it.recordedAt)) }.toSet()
         val weeksUi =
-            currentMonth.weeks().map { week ->
+            month.weeks().map { week ->
                 week.map { d ->
                     d?.let {
                         DayUi(
@@ -252,8 +257,8 @@ class CalendarViewModel(
             }
         mutableState.value =
             CalendarUiState(
-                monthTitle = monthTitle(currentMonth),
-                canShowNextMonth = monthRank(currentMonth) < monthRank(CalendarMonth.of(today)),
+                monthTitle = monthTitle(month),
+                canShowNextMonth = monthRank(month) < monthRank(CalendarMonth.of(today)),
                 weeks = weeksUi,
                 dayTitle = "${weekdayName(day.dayOfWeek)}, ${dayMonthLabel(day, today.year)}",
                 visits = dayVisits,

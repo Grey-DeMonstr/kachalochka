@@ -44,6 +44,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun HomeScreen(
     onOpenVisit: (VisitId) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenCalendar: () -> Unit,
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -67,6 +68,12 @@ fun HomeScreen(
                 VisitCard(visit, onContinue = { onOpenVisit(visit.id) })
             }
         }
+        SectionRow(
+            PhosphorIcons.CalendarBlank,
+            "Визиты",
+            "section-visits",
+            onClick = onOpenCalendar,
+        )
         SectionRow(PhosphorIcons.ListChecks, "Планы", "section-plans")
         SectionRow(PhosphorIcons.ChartLineUp, "Статистика", "section-stats")
         SectionRow(PhosphorIcons.UsersThree, "Друзья", "section-friends", locked = !signedIn)
@@ -137,8 +144,9 @@ private fun VisitCard(
 }
 
 /**
- * Sections without screens yet: drawn as in the design, disabled until they exist. [locked]
- * marks a section that additionally needs a signed-in account, with its own trailing icon.
+ * A section without [onClick] has no screen yet and is drawn disabled, as in the design.
+ * [locked] marks a section that additionally needs a signed-in account, with its own trailing
+ * icon.
  */
 @Composable
 private fun SectionRow(
@@ -146,14 +154,15 @@ private fun SectionRow(
     label: String,
     tag: String,
     locked: Boolean = false,
+    onClick: (() -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     Rule()
     Row(
         Modifier
             .fillMaxWidth()
-            .alpha(DISABLED_ALPHA)
-            .clickable(enabled = false) {}
+            .alpha(if (onClick != null) 1f else DISABLED_ALPHA)
+            .clickable(enabled = onClick != null) { onClick?.invoke() }
             .padding(horizontal = 16.dp, vertical = 20.dp)
             .testTag(tag),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
