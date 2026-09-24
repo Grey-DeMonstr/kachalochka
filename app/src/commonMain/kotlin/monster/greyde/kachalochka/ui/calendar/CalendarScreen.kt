@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -226,33 +227,37 @@ private fun RowScope.DayCell(
     onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    Column(
-        Modifier
-            .weight(1f)
-            // A fixed height keeps the grid short on wide web windows.
-            .height(44.dp)
-            .clip(CircleShape)
-            .then(
-                if (day.selected) Modifier.border(1.dp, colors.primary, CircleShape) else Modifier,
-            ).alpha(if (day.enabled) 1f else DISABLED_ALPHA)
-            .clickable(enabled = day.enabled, onClick = onClick)
-            .testTag("day-${isoDate(day.day)}"),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            day.day.day.toString(),
-            fontSize = 15.sp,
-            fontWeight = if (day.today) FontWeight.Medium else FontWeight.Normal,
-            color = if (day.today) colors.secondary else colors.onBackground,
-        )
-        if (day.hasVisit) {
+    // A fixed height keeps the grid short on wide web windows.
+    Box(Modifier.weight(1f).height(44.dp), contentAlignment = Alignment.Center) {
+        Column(
+            Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .then(
+                    if (day.selected) {
+                        Modifier.border(1.dp, colors.primary, CircleShape)
+                    } else {
+                        Modifier
+                    },
+                ).alpha(if (day.enabled) 1f else DISABLED_ALPHA)
+                .clickable(enabled = day.enabled, onClick = onClick)
+                .testTag("day-${isoDate(day.day)}"),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                day.day.day.toString(),
+                fontSize = 15.sp,
+                fontWeight = if (day.today) FontWeight.Medium else FontWeight.Normal,
+                color = if (day.today) colors.secondary else colors.onBackground,
+            )
+            // Drawn on every day, so a visit mark never shifts the number.
             Box(
                 Modifier
                     .padding(top = 2.dp)
                     .size(5.dp)
                     .clip(CircleShape)
-                    .background(colors.primary),
+                    .background(if (day.hasVisit) colors.primary else Color.Transparent),
             )
         }
     }

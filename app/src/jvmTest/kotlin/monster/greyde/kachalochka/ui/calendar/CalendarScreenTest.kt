@@ -2,12 +2,17 @@ package monster.greyde.kachalochka.ui.calendar
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.assertWidthIsEqualTo
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -47,6 +52,18 @@ class CalendarScreenTest {
             onNodeWithTag("calendar-visit-${sunday.id.value}").performScrollTo().performClick()
             waitForIdle()
             assertEquals(sunday.id, opened)
+        }
+    }
+
+    @Test
+    fun days_are_round_and_a_visit_mark_keeps_the_number_in_place() {
+        runScreenTest(gym, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12")
+                .assertWidthIsEqualTo(40.dp)
+                .assertHeightIsEqualTo(40.dp)
+            val plain = onNodeWithText("11", useUnmergedTree = true).getBoundsInRoot()
+            val marked = onNodeWithText("12", useUnmergedTree = true).getBoundsInRoot()
+            assertEquals(plain.top, marked.top)
         }
     }
 
