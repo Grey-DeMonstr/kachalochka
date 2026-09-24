@@ -17,7 +17,12 @@ fun minuteOfDay(
     utcOffset: Duration,
 ): Int = (localMillis(instant, utcOffset).mod(MILLIS_PER_DAY) / MILLIS_PER_MINUTE).toInt()
 
-private fun localDay(
+fun millisOfDay(
+    instant: Instant,
+    utcOffset: Duration,
+): Long = localMillis(instant, utcOffset).mod(MILLIS_PER_DAY)
+
+internal fun localDay(
     instant: Instant,
     utcOffset: Duration,
 ): Long = localMillis(instant, utcOffset).floorDiv(MILLIS_PER_DAY)
