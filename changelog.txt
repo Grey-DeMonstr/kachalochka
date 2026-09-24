@@ -1,5 +1,14 @@
 Kachalochka - Changelog
 
+1.0.1
+
+- A calendar of your visits, opened from the home screen: add, open, move or remove a visit.
+- The set panel on the visit screen closes with a swipe down or the back button.
+- A new machine button at the end of the visit list adds the next machine.
+- Fixed: on Android, machines, visits and sets now sync with the web version and other phones.
+- Fixed: the web version no longer signs you out when you come back to it later.
+
+
 1.0.0
 
 - Initial version.
