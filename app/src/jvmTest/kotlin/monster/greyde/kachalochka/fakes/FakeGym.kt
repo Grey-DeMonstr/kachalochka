@@ -96,10 +96,10 @@ class InMemoryVisitRepository : VisitRepository {
 class InMemoryWorkoutSetRepository : WorkoutSetRepository {
     val rows = linkedMapOf<WorkoutSetId, WorkoutSet>()
 
-    /** While set, writes wait for it, which keeps a write in flight for as long as a test needs. */
+    /** While set, writes wait for it, keeping a write in flight for as long as a test needs. */
     var gate: CompletableDeferred<Unit>? = null
 
-    /** While set, [forVisit] waits for it, which keeps a read in flight as long as a test needs. */
+    /** While set, [forVisit] waits for it, keeping a read in flight as long as a test needs. */
     var readGate: CompletableDeferred<Unit>? = null
 
     override suspend fun upsert(set: WorkoutSet) {
