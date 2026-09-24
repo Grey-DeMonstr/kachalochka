@@ -34,9 +34,10 @@ class LiveSession(
 
     @Volatile private var seen: AccountSession? = null
 
+    // A refused switch leaves the previous account live, so the guard stays on it.
     override suspend fun activate(session: AccountSession) {
-        intended = session.account.userId
         sessions.activate(session)
+        intended = session.account.userId
     }
 
     override suspend fun clear() {
@@ -72,8 +73,20 @@ class LiveSession(
                 if (gone == null || gone != intended) return
                 store.remove(gone)
                 val next = store.activeId.value?.let { store.sessionOf(it) }
-                if (next == null) clear() else activate(next)
+                if (next == null) clear() else activateOrDisown(next)
             }
+        }
+    }
+
+    // The account stays listed, so a tap on it retries; until then nobody reads as signed in.
+    private suspend fun activateOrDisown(next: AccountSession) {
+        try {
+            activate(next)
+        } catch (stopped: CancellationException) {
+            throw stopped
+        } catch (refused: Exception) {
+            store.deactivate()
+            clear()
         }
     }
 }

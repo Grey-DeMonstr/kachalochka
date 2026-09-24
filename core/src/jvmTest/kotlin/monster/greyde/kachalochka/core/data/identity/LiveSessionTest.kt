@@ -8,12 +8,14 @@ import monster.greyde.kachalochka.core.data.identity.LiveSessionChange.Renewed
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private class LoggedActivation : SessionActivation {
     val activated = mutableListOf<UserId>()
-    var cleared = false
+    var clears = 0
+    val cleared get() = clears > 0
     var refusal: Throwable? = null
 
     override suspend fun activate(session: AccountSession) {
@@ -22,7 +24,7 @@ private class LoggedActivation : SessionActivation {
     }
 
     override suspend fun clear() {
-        cleared = true
+        clears++
     }
 }
 
@@ -101,6 +103,8 @@ class LiveSessionTest {
             )
 
             assertEquals(listOf(ivan.account), store.accounts.value)
+            assertEquals(listOf(ivan.account.userId), inner.activated)
+            assertEquals(1, inner.clears)
         }
 
     @Test
@@ -150,6 +154,38 @@ class LiveSessionTest {
 
             assertEquals(listOf(ivan.account), store.accounts.value)
             assertEquals("fresh", store.sessionOf(ivan.account.userId)?.accessToken)
+        }
+
+    @Test
+    fun a_sign_out_whose_next_account_is_refused_leaves_nobody_live() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            live.activate(misha)
+
+            live.follow(
+                flow {
+                    emit(Renewed(misha))
+                    inner.refusal = IllegalStateException("no connectivity")
+                    emit(Ended)
+                },
+            )
+
+            assertEquals(listOf(ivan.account), store.accounts.value)
+            assertNull(store.activeId.value)
+            assertTrue(inner.cleared)
+        }
+
+    @Test
+    fun a_refused_switch_keeps_the_live_account_s_token() =
+        runTest {
+            live.activate(ivan)
+            live.follow(flowOf(Renewed(ivan)))
+            inner.refusal = IllegalStateException("no connectivity")
+
+            assertFailsWith<IllegalStateException> { live.activate(misha) }
+
+            assertEquals(ivan.accessToken, live.accessTokenOf(ivan.account.userId))
         }
 
     @Test

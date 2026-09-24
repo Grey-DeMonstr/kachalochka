@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.ActiveAccountUser
@@ -35,7 +36,10 @@ val coreModule =
 /** A build without credentials has no live session to follow, and must not build a client. */
 fun Koin.followLiveSession() {
     if (!get<SupabaseCredentials>().isConfigured) return
-    val changes = get<SupabaseClient>().auth.sessionStatus.liveSessionChanges()
     val live = get<LiveSession>()
-    CoroutineScope(SupervisorJob() + Dispatchers.Main).launch { live.follow(changes) }
+    CoroutineScope(SupervisorJob() + Dispatchers.Main).launch {
+        // Building the client is kept off the main thread a cold start is drawing on.
+        val status = withContext(Dispatchers.Default) { get<SupabaseClient>().auth.sessionStatus }
+        live.follow(status.liveSessionChanges())
+    }
 }
