@@ -3,8 +3,6 @@ package monster.greyde.kachalochka.core.domain.gym
 import kotlin.time.Duration
 import kotlin.time.Instant
 
-private const val MILLIS_PER_DAY = 86_400_000L
-
 data class CalendarDay(
     val year: Int,
     val month: Int,
