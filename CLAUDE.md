@@ -19,6 +19,13 @@ All development happens directly on `master` — no feature branches, no PRs.
 Actions verifies every push, publishes the web build to GitHub Pages, and pushing a `vX.Y.Z` tag
 cuts a release with a signed APK. See `docs/technical_spec.md` §8.
 
+## Issue backlog
+
+`ISSUES.local.md` in the repo root is the user's git-ignored backlog: one `## N. Title — status`
+heading per issue (`open` or `done`), the user's description below it. When the user asks to list
+issues, show the open ones; when they report a new one, append it with the next number, worded
+from the user's point of view. Mark an issue `done` once its fix is committed.
+
 ## Commits and releases
 
 Commit titles are read by whoever scans `git log`, so make them **product-oriented**: a reader
