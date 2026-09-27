@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -96,6 +97,32 @@ class VisitNormalizerTest {
             assertEquals(true, visits.byId(empty.id)?.deleted)
             assertEquals(listOf(workoutSet), sets.forVisit(workout.id))
             assertEquals(workout, visits.onDay(ivan, fourteenth))
+        }
+
+    @Test
+    fun a_visit_changed_after_the_normalizer_read_it_is_left_alone() =
+        runTest {
+            val morning = visit(t0 - 3.hours)
+            val evening = visit(t0)
+            listOf(morning, evening).forEach {
+                pulled.writeVisit(it)
+                pulled.writeSet(set(it))
+            }
+            val changed = morning.copy(updatedAt = t0 + 1.hours)
+            // Sets are read after the visits, so a pull landing here postdates the snapshot.
+            val pulling =
+                object : WorkoutSetRepository by sets {
+                    override suspend fun forVisit(visitId: VisitId): List<WorkoutSet> {
+                        pulled.writeVisit(changed)
+                        return sets.forVisit(visitId)
+                    }
+                }
+
+            assertFalse(VisitNormalizer(visits, pulling, clock) { Duration.ZERO }.normalize(ivan))
+
+            assertEquals(changed, visits.byId(morning.id))
+            assertEquals(1, sets.forVisit(morning.id).size)
+            assertEquals(emptyList(), outbox.pending())
         }
 
     @Test

@@ -27,11 +27,15 @@ class VisitNormalizer(
                 .filter { it.size > 1 }
                 .flatten()
         val theirSets = crowded.flatMap { sets.forVisit(it.id) }
-        val rows = normalizedVisits(owned, theirSets, utcOffset, clock.now())
-        rows.forEach { row ->
+        val read = owned.associate { it.id to it.updatedAt }
+        var wrote = false
+        normalizedVisits(owned, theirSets, utcOffset, clock.now()).forEach { row ->
+            // A visit a sync or a screen changed since the read is judged again on the next run.
+            if (visits.byId(row.visit.id)?.updatedAt != read[row.visit.id]) return@forEach
             row.sets.forEach { sets.upsert(it) }
             visits.upsert(row.visit)
+            wrote = true
         }
-        return rows.isNotEmpty()
+        return wrote
     }
 }
