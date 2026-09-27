@@ -66,18 +66,35 @@ class FormatsTest {
 
     @Test
     fun sets_read_as_weight_times_reps() {
-        assertEquals("70 кг × 10", setValue(70.0, 10, WeightUnit.Kg))
+        assertEquals("70 кг × 10", setValue(70.0, 10, "кг"))
         assertEquals("72,5×8", shortSet(72.5, 8))
     }
 
     @Test
     fun a_group_of_equal_weights_is_counted_and_others_are_listed() {
-        assertEquals("2 × 45 кг", groupSummary(listOf(set(45.0), set(45.0)), WeightUnit.Kg))
+        assertEquals("2 × 45 кг", groupSummary(listOf(set(45.0), set(45.0)), "кг"))
         assertEquals(
             "60, 70, 70 кг",
-            groupSummary(listOf(set(60.0), set(70.0), set(70.0)), WeightUnit.Kg),
+            groupSummary(listOf(set(60.0), set(70.0), set(70.0)), "кг"),
         )
-        assertEquals("45 кг", groupSummary(listOf(set(45.0)), WeightUnit.Kg))
+        assertEquals("45 кг", groupSummary(listOf(set(45.0)), "кг"))
+    }
+
+    @Test
+    fun an_own_unit_is_written_by_its_name() {
+        val gravitron =
+            press.copy(
+                unit = WeightUnit.Custom,
+                unitLabel = "плитка",
+                weightStep = 1.0,
+                platformWeight = 2.0,
+            )
+
+        assertEquals("плитка", unitLabel(gravitron))
+        assertEquals("плитка всего · ±1", weightCaption(gravitron))
+        assertEquals("(+2 плитка)", platformSuffix(gravitron))
+        assertEquals("ед.", unitLabel(press.copy(unit = WeightUnit.Custom)))
+        assertEquals("lb", unitLabel(press.copy(unit = WeightUnit.Lb, unitLabel = "плитка")))
     }
 
     @Test

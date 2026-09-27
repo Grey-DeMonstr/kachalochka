@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.data.sync
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.domain.gym.T0
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -31,6 +32,17 @@ class SyncPassPullTest {
             h.gateway.visitsToPull = listOf(ownedVisit(IVAN))
 
             assertTrue(h.pass.run(listOf(IVAN, MISHA)))
+        }
+
+    @Test
+    fun a_pulled_machine_keeps_its_own_unit() =
+        runTest {
+            val gravitron = ownedPress(IVAN).copy(unit = WeightUnit.Custom, unitLabel = "плитка")
+            h.gateway.machinesToPull = listOf(gravitron)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(gravitron, h.machines.byId(gravitron.id))
         }
 
     @Test

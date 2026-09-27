@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
+import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.ownVisit
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -99,6 +100,7 @@ class MachinePickerViewModel(
         today[machine.id]?.let { return "${setCount(it)} сегодня" }
         val last = latest[machine.id] ?: return null
         val days = calendarDaysBetween(last.recordedAt, now, utcOffset.at(now))
-        return "Было ${setValue(last.weight, last.reps, machine.unit)} · ${daysAgoLabel(days)}"
+        val value = setValue(last.weight, last.reps, unitLabel(machine))
+        return "Было $value · ${daysAgoLabel(days)}"
     }
 }

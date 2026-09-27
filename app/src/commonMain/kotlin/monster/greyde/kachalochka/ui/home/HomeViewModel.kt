@@ -17,6 +17,7 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
+import monster.greyde.kachalochka.ui.format.unitLabel
 import kotlin.time.Clock
 
 data class HomeUiState(
@@ -68,7 +69,7 @@ class HomeViewModel(
                 machines
                     .byId(
                         set.machineId,
-                    )?.let { "${it.name} ${setValue(set.weight, set.reps, it.unit)}" }
+                    )?.let { "${it.name} ${setValue(set.weight, set.reps, unitLabel(it))}" }
             }
         return ActiveVisitUi(
             id = visit.id,

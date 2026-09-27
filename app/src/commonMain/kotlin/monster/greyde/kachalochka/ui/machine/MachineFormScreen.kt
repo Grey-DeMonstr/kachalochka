@@ -272,7 +272,7 @@ private fun PlatformWeightField(
             modifier = Modifier.testTag("platform-weight"),
         )
         Text(
-            unitLabel(state.unit),
+            unitLabel(state.unit, ""),
             fontSize = 13.sp,
             color = colors.onBackground.copy(alpha = 0.55f),
         )

@@ -17,12 +17,18 @@ fun formatNumber(value: Double): String {
     return text.replace('.', ',')
 }
 
-fun unitLabel(unit: WeightUnit): String =
+fun unitLabel(
+    unit: WeightUnit,
+    customLabel: String,
+): String =
     when (unit) {
         WeightUnit.Kg -> "кг"
         WeightUnit.Lb -> "lb"
-        WeightUnit.Custom -> "ед."
+        // Only a row written elsewhere can leave the name blank; the form requires one.
+        WeightUnit.Custom -> customLabel.trim().ifEmpty { "ед." }
     }
+
+fun unitLabel(machine: Machine): String = unitLabel(machine.unit, machine.unitLabel)
 
 private fun modeLabel(mode: WeightMode): String =
     when (mode) {
@@ -31,14 +37,14 @@ private fun modeLabel(mode: WeightMode): String =
     }
 
 fun weightCaption(machine: Machine): String {
-    val unit = unitLabel(machine.unit)
+    val unit = unitLabel(machine)
     val mode = modeLabel(machine.weightMode)
     return "$unit $mode · ±${formatNumber(machine.weightStep)}"
 }
 
 fun platformSuffix(machine: Machine): String? =
     if (machine.platformWeight > 0 && !machine.platformIncluded) {
-        "(+${formatNumber(machine.platformWeight)} ${unitLabel(machine.unit)})"
+        "(+${formatNumber(machine.platformWeight)} ${unitLabel(machine)})"
     } else {
         null
     }
@@ -49,8 +55,8 @@ fun machineTitle(machine: Machine): String =
 fun setValue(
     weight: Double,
     reps: Int,
-    unit: WeightUnit,
-): String = "${formatNumber(weight)} ${unitLabel(unit)} × $reps"
+    unit: String,
+): String = "${formatNumber(weight)} $unit × $reps"
 
 fun shortSet(
     weight: Double,
@@ -59,14 +65,13 @@ fun shortSet(
 
 fun groupSummary(
     sets: List<WorkoutSet>,
-    unit: WeightUnit,
+    unit: String,
 ): String {
     val weights = sets.map { it.weight }
-    val label = unitLabel(unit)
     return if (weights.size > 1 && weights.distinct().size == 1) {
-        "${weights.size} × ${formatNumber(weights.first())} $label"
+        "${weights.size} × ${formatNumber(weights.first())} $unit"
     } else {
-        weights.joinToString(", ") { formatNumber(it) } + " $label"
+        weights.joinToString(", ") { formatNumber(it) } + " $unit"
     }
 }
 

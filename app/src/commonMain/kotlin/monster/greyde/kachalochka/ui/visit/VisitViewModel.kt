@@ -16,7 +16,6 @@ import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
-import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
@@ -45,6 +44,7 @@ import monster.greyde.kachalochka.ui.format.saveLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.shortSet
+import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.ownVisit
 import monster.greyde.kachalochka.ui.timer.RestTimer
@@ -353,7 +353,7 @@ class VisitViewModel(
     ): SetGroupUi {
         val machine = machinesById[machineId]
         val title = machine?.let(::machineTitle).orEmpty()
-        val unit = machine?.unit ?: WeightUnit.Kg
+        val unit = machine?.let(::unitLabel) ?: "кг"
         return SetGroupUi(
             machineId = machineId,
             title = title,
@@ -387,7 +387,7 @@ class VisitViewModel(
                 machine.setupNote.ifBlank { null }
             } else {
                 "Правка · записано ${clockLabel(minuteOfDay(edited.recordedAt, offset))}, " +
-                    "было ${setValue(edited.weight, edited.reps, machine.unit)}"
+                    "было ${setValue(edited.weight, edited.reps, unitLabel(machine))}"
             }
         val previous =
             previousSets.takeIf { edited == null && it.isNotEmpty() }?.let { previous ->

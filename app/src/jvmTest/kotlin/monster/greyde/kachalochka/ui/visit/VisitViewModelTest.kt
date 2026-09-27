@@ -14,6 +14,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -236,6 +237,23 @@ class VisitViewModelTest {
                 ),
                 group.sets.map { it.title to it.value },
             )
+        }
+
+    @Test
+    fun a_machine_with_an_own_unit_shows_it_in_the_list_and_the_sheet() =
+        runTest {
+            val gravitron =
+                Machine
+                    .new("Гравитрон", null, t0)
+                    .copy(unit = WeightUnit.Custom, unitLabel = "плитка", weightStep = 1.0)
+            gym.machines.upsert(gravitron)
+            gym.sets.upsert(set(visit.id, gravitron, 7.0, 10, 0))
+
+            val vm = viewModel().also { it.selectMachine(gravitron.id) }
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals("7 плитка", state.groups.single().summary)
+            assertEquals("плитка всего · ±1", state.sheet?.weightCaption)
         }
 
     @Test
