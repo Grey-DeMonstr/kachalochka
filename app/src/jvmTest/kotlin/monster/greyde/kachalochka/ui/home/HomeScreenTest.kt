@@ -4,10 +4,16 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.Visit
+import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
@@ -82,6 +88,36 @@ class HomeScreenTest {
             waitForIdle()
         }
         assertEquals(listOf(CalendarDay(2023, 11, 14)), opened)
+    }
+
+    @Test
+    fun the_today_card_offers_to_continue_once_today_has_a_set() {
+        val gym = FakeGym()
+        val t0 = gym.clock.current
+        val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
+        val press = Machine.new("Жим ногами", null, t0)
+        runBlocking {
+            gym.visits.upsert(visit)
+            gym.machines.upsert(press)
+            gym.sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    visit.id,
+                    press.id,
+                    70.0,
+                    10,
+                    0,
+                    t0,
+                    t0,
+                    false,
+                ),
+            )
+        }
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}) }) {
+            onNodeWithTag("visit-counts").assertTextEquals("1 тренажёр · 1 подход")
+            onNodeWithTag("open-today").assertTextEquals("Продолжить")
+        }
     }
 
     @Test

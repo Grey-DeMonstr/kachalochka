@@ -5,14 +5,19 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.VISIT_A
+import monster.greyde.kachalochka.core.domain.gym.VISIT_B
+import monster.greyde.kachalochka.core.domain.gym.VISIT_C
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 class LocalVisitRepositoryTest {
@@ -69,6 +74,26 @@ class LocalVisitRepositoryTest {
             assertEquals(ivans, repository.onDay(ivan, fourteenth))
             assertNull(repository.onDay(null, CalendarDay(2023, 11, 13)))
             assertEquals(morning, repository.byId(morning.id))
+        }
+
+    @Test
+    fun a_tie_on_recording_time_goes_to_the_later_update_then_the_greater_id() =
+        runTest {
+            val fourteenth = CalendarDay(2023, 11, 14)
+            val thirteenth = CalendarDay(2023, 11, 13)
+            val updated = Visit(VISIT_A, null, fourteenth, t0, t0 + 1.seconds, false)
+            val greaterId = Visit(VISIT_C, null, fourteenth, t0, t0, false)
+            val smaller = Visit(VISIT_B, null, thirteenth, t0, t0, false)
+            val greatestId = VisitId("0f000000-0000-4000-8000-00000000000f")
+            val greater = Visit(greatestId, null, thirteenth, t0, t0, false)
+            val byUpdate = listOf(greaterId, updated)
+            val byId = listOf(greater, smaller)
+            (byUpdate + byId).forEach { repository.upsert(it) }
+
+            assertEquals(updated, repository.onDay(null, fourteenth))
+            assertEquals(byUpdate.maxWith(visitRecency), repository.onDay(null, fourteenth))
+            assertEquals(greater, repository.onDay(null, thirteenth))
+            assertEquals(byId.maxWith(visitRecency), repository.onDay(null, thirteenth))
         }
 
     @Test

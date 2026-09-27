@@ -936,6 +936,66 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun a_new_set_takes_the_position_after_the_visit_s_highest() =
+        runTest {
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 0).copy(position = 3))
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            vm.save()
+
+            val saved = gym.sets.forVisit(visit.id).single { it.machineId == press.id }
+            assertEquals(4, saved.position)
+        }
+
+    @Test
+    fun a_new_set_on_another_day_takes_the_position_after_its_visit_s_highest() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+            val base = -(7.days.inWholeMinutes.toInt())
+            gym.sets.upsert(set(lastWeek.id, row, 45.0, 12, base).copy(position = 3))
+            val vm = viewModel(day = seventh).also { it.selectMachine(press.id) }
+
+            vm.save()
+
+            val saved = gym.sets.forVisit(lastWeek.id).single { it.machineId == press.id }
+            assertEquals(4, saved.position)
+        }
+
+    @Test
+    fun two_saves_on_an_empty_past_day_record_into_one_visit() =
+        runTest {
+            val tenth = CalendarDay(2023, 11, 10)
+            val vm = viewModel(day = tenth).also { it.selectMachine(press.id) }
+
+            vm.save()
+            vm.save()
+
+            val created = assertNotNull(gym.visits.onDay(null, tenth))
+            assertEquals(
+                listOf(visit.id, created.id),
+                gym.visits.rows.keys
+                    .toList(),
+            )
+            assertEquals(2, gym.sets.forVisit(created.id).size)
+        }
+
+    @Test
+    fun a_finished_sync_while_ordering_keeps_order_mode_and_the_new_order() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))
+            val vm = viewModel().also { it.refresh() }
+            vm.toggleOrdering()
+            vm.moveMachine(row.id, -1)
+
+            gym.sync.completePass()
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(true, state.ordering)
+            assertEquals(listOf(row.id, press.id), state.groups.map { it.machineId })
+        }
+
+    @Test
     fun opening_a_day_without_a_visit_writes_nothing() {
         viewModel(day = CalendarDay(2023, 11, 10)).also { it.refresh() }
 

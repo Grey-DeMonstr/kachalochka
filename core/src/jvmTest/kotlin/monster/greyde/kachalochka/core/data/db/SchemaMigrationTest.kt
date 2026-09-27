@@ -2,13 +2,23 @@ package monster.greyde.kachalochka.core.data.db
 
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import monster.greyde.kachalochka.core.data.gym.visitOf
+import monster.greyde.kachalochka.core.data.gym.workoutSetOf
+import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.Visit
+import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Instant
 
 /**
  * Each test rebuilds the tables its migration changes as the previous schema version declared
- * them, migrates one step and reads the columns back with raw SQL, which later columns cannot
- * break.
+ * them. A one-step test reads the columns back with raw SQL, which later columns cannot break; a
+ * test migrating to [KachalochkaDatabase.Schema.version] reads through the generated queries, as
+ * the app does, and so must also rebuild every table a later migration changes.
  */
 class SchemaMigrationTest {
     private val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
@@ -91,8 +101,7 @@ class SchemaMigrationTest {
         assertEquals(listOf<Any?>("per_side", "", 7L), machineColumns("press"))
     }
 
-    @Test
-    fun version_3_visits_gain_an_empty_day_and_sets_a_zero_position() {
+    private fun version3VisitTables() {
         KachalochkaDatabase.Schema.create(driver)
         exec("DROP TABLE visit")
         exec("DROP TABLE workout_set")
@@ -123,6 +132,11 @@ class SchemaMigrationTest {
             )
             """.trimIndent(),
         )
+    }
+
+    @Test
+    fun version_3_visits_gain_an_empty_day_and_sets_a_zero_position() {
+        version3VisitTables()
         exec(
             "INSERT INTO visit(id, recorded_at, ended_at, updated_at) " +
                 "VALUES ('sunday', 5, 6, 7)",
@@ -141,5 +155,39 @@ class SchemaMigrationTest {
             "visit_day_idx",
             text("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'visit_day_idx'"),
         )
+    }
+
+    @Test
+    fun a_version_3_visit_and_its_set_read_back_whole_on_the_current_schema() {
+        val owner = UserId("11111111-1111-4111-8111-111111111111")
+        val visit = Visit(VISIT, owner, null, at(5), at(7), false)
+        val set = WorkoutSet(SET, owner, VISIT, PRESS, 70.5, 10, 0, at(6), at(7), false)
+        version3VisitTables()
+        exec(
+            "INSERT INTO visit(id, user_id, recorded_at, ended_at, updated_at) " +
+                "VALUES ('${VISIT.value}', '${owner.value}', 5, 5, 7)",
+        )
+        exec(
+            "INSERT INTO workout_set(id, user_id, visit_id, machine_id, weight, reps, " +
+                "recorded_at, updated_at) VALUES ('${SET.value}', '${owner.value}', " +
+                "'${VISIT.value}', '${PRESS.value}', 70.5, 10, 6, 7)",
+        )
+
+        KachalochkaDatabase.Schema.migrate(driver, 3, KachalochkaDatabase.Schema.version)
+
+        val database = kachalochkaDatabase(driver)
+        assertEquals(visit, database.visitQueries.byId(VISIT.value, ::visitOf).executeAsOne())
+        assertEquals(
+            listOf(set),
+            database.workoutSetQueries.forVisit(VISIT.value, ::workoutSetOf).executeAsList(),
+        )
+    }
+
+    private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)
+
+    private companion object {
+        val VISIT = VisitId("0a000000-0000-4000-8000-00000000000a")
+        val SET = WorkoutSetId("0b000000-0000-4000-8000-00000000000b")
+        val PRESS = MachineId("0d000000-0000-4000-8000-00000000000d")
     }
 }
