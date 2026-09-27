@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
@@ -67,6 +68,40 @@ class HomeViewModelTest {
             assertEquals(
                 ActiveVisitUi(visit.id, "2 тренажёра · 3 подхода", "Жим ногами 70 кг × 10"),
                 vm.state.value?.activeVisit,
+            )
+        }
+
+    @Test
+    fun the_last_set_names_a_custom_unit() =
+        runTest {
+            val visit = Visit(VisitId.random(), null, t0, null, t0, false)
+            val gravitron =
+                Machine
+                    .new("Гравитрон", null, t0)
+                    .copy(unit = WeightUnit.Custom, unitLabel = "плитка")
+            gym.visits.upsert(visit)
+            gym.machines.upsert(gravitron)
+            gym.sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    visit.id,
+                    gravitron.id,
+                    7.0,
+                    10,
+                    t0,
+                    t0,
+                    false,
+                ),
+            )
+
+            val vm = viewModel().also { it.refresh() }
+
+            assertEquals(
+                "Гравитрон 7 плитка × 10",
+                vm.state.value
+                    ?.activeVisit
+                    ?.lastSet,
             )
         }
 

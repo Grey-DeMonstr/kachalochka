@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -122,6 +123,25 @@ class MachinePickerViewModelTest {
         assertEquals("Недавние", vm.state.value.sectionLabel)
         assertNull(vm.state.value.createLabel)
     }
+
+    @Test
+    fun a_row_s_detail_names_a_custom_unit() =
+        runTest {
+            val gravitron =
+                Machine
+                    .new("Гравитрон", null, t0)
+                    .copy(unit = WeightUnit.Custom, unitLabel = "плитка")
+            gym.machines.upsert(gravitron)
+            gym.sets.upsert(set(otherVisit, gravitron, 7.0, 10, t0 - 1.days))
+            val vm = viewModel().also { it.load() }
+
+            assertEquals(
+                "Было 7 плитка × 10 · вчера",
+                vm.state.value.rows
+                    .single { it.id == gravitron.id }
+                    .detail,
+            )
+        }
 
     @Test
     fun typing_a_new_name_offers_to_create_it_and_shows_similar_machines() {
