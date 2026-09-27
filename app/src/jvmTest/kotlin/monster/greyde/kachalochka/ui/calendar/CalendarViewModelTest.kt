@@ -421,6 +421,57 @@ class CalendarViewModelTest {
             assertEquals(1, gym.sync.requests)
         }
 
+    // Not written test-first: confirmReplacement() already re-reads the day; this pins that
+    // behaviour, which no earlier test exercised.
+    @Test
+    fun confirming_replaces_whoever_occupies_the_day_by_confirm_time() =
+        runTest {
+            gym.visits.upsert(fifthVisit)
+            gym.sets.upsert(set(fifthVisit, press, 0))
+            val vm = viewModel().also { it.refresh() }
+            vm.startMove(sunday.id)
+            vm.selectDay(fifth)
+
+            // A sync pulls a different visit onto the day between the ask and the confirmation.
+            gym.visits.upsert(fifthVisit.copy(updatedAt = t0 + 1.minutes, deleted = true))
+            val pulled = Visit(VisitId.random(), null, fifth, t0 - 1.days, t0, false)
+            gym.visits.upsert(pulled)
+            gym.sets.upsert(set(pulled, press, 0))
+
+            vm.confirmReplacement()
+
+            assertEquals(true, gym.visits.byId(pulled.id)?.deleted)
+            assertEquals(emptyList(), gym.sets.forVisit(pulled.id))
+            assertEquals(fifth, gym.visits.byId(sunday.id)?.day)
+            assertEquals(3, gym.sets.forVisit(sunday.id).size)
+            assertEquals(1, gym.sync.requests)
+        }
+
+    // Not written test-first, for the same reason as the test above.
+    @Test
+    fun confirming_after_the_day_is_vacated_still_moves_and_deletes_nothing_else() =
+        runTest {
+            gym.visits.upsert(fifthVisit)
+            gym.sets.upsert(set(fifthVisit, press, 0))
+            val vm = viewModel().also { it.refresh() }
+            vm.startMove(sunday.id)
+            vm.selectDay(fifth)
+
+            // A sync removes the occupant before the confirmation, leaving the day free.
+            gym.visits.upsert(fifthVisit.copy(updatedAt = t0 + 1.minutes, deleted = true))
+
+            vm.confirmReplacement()
+
+            assertEquals(fifth, gym.visits.byId(sunday.id)?.day)
+            assertEquals(3, gym.sets.forVisit(sunday.id).size)
+            assertEquals(
+                0,
+                gym.sets.rows.values
+                    .count { it.deleted },
+            )
+            assertEquals(1, gym.sync.requests)
+        }
+
     private fun session(
         id: String,
         name: String,
