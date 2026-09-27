@@ -10,10 +10,15 @@ data class WorkoutSet(
     val machineId: MachineId,
     val weight: Double,
     val reps: Int,
+    val position: Int,
     val recordedAt: Instant,
     val updatedAt: Instant,
     val deleted: Boolean,
 )
+
+/** A visit's sets run by position; sets at the same position keep their recording order. */
+val visitOrder: Comparator<WorkoutSet> =
+    compareBy<WorkoutSet>({ it.position }, { it.recordedAt }, { it.id.value })
 
 data class SetValues(
     val weight: Double,

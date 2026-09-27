@@ -79,6 +79,7 @@ class SqlOwnerlessRowsTest {
                     press.id,
                     70.0,
                     10,
+                    0,
                     t0,
                     t0,
                     false,

@@ -26,6 +26,7 @@ class FormatsTest {
             press.id,
             weight,
             10,
+            0,
             t0,
             t0,
             false,

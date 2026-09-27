@@ -36,7 +36,18 @@ internal fun ownedSet(
     visit: Visit,
     machine: Machine,
     updatedAt: Instant = T0,
-) = WorkoutSet(WorkoutSetId.random(), owner, visit.id, machine.id, 70.0, 10, T0, updatedAt, false)
+) = WorkoutSet(
+    WorkoutSetId.random(),
+    owner,
+    visit.id,
+    machine.id,
+    70.0,
+    10,
+    0,
+    T0,
+    updatedAt,
+    false,
+)
 
 internal fun ownedProfile(
     owner: UserId,

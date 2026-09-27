@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -22,6 +23,8 @@ import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.visitOrder
+import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.format.UtcOffset
@@ -85,6 +88,14 @@ class InMemoryVisitRepository : VisitRepository {
             .filter { it.endedAt == null && !it.deleted && it.userId == owner }
             .maxByOrNull { it.recordedAt }
 
+    override suspend fun onDay(
+        owner: UserId?,
+        day: CalendarDay,
+    ): Visit? =
+        rows.values
+            .filter { !it.deleted && it.userId == owner && it.day == day }
+            .maxWithOrNull(visitRecency)
+
     override suspend fun all(owner: UserId?): List<Visit> {
         gate?.await()
         return rows.values
@@ -111,7 +122,7 @@ class InMemoryWorkoutSetRepository : WorkoutSetRepository {
 
     override suspend fun forVisit(visitId: VisitId): List<WorkoutSet> {
         readGate?.await()
-        return live().filter { it.visitId == visitId }
+        return live().filter { it.visitId == visitId }.sortedWith(visitOrder)
     }
 
     override suspend fun forMachine(machineId: MachineId) =

@@ -52,6 +52,7 @@ class CalendarViewModelTest {
         machine.id,
         70.0,
         10,
+        0,
         visit.recordedAt + minutes.minutes,
         t0,
         false,

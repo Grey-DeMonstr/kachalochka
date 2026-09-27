@@ -195,6 +195,7 @@ class VisitViewModel(
                         ownMachine(owner, machine).id,
                         values.weight,
                         values.reps,
+                        0,
                         recordingInstant(target, targetSets, now),
                         now,
                         false,

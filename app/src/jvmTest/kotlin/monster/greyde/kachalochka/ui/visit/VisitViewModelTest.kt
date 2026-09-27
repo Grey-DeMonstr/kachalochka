@@ -85,6 +85,7 @@ class VisitViewModelTest {
         machine.id,
         weight,
         reps,
+        0,
         t0 + minutes.minutes,
         t0,
         false,

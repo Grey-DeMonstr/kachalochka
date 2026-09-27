@@ -50,6 +50,7 @@ class LocalSyncRows(
             visit.endedAt,
             visit.updatedAt,
             visit.deleted,
+            visit.day,
         )
 
     fun writeSet(set: WorkoutSet) =
@@ -63,6 +64,7 @@ class LocalSyncRows(
             set.recordedAt,
             set.updatedAt,
             set.deleted,
+            set.position.toLong(),
         )
 
     fun writeProfile(profile: Profile) =

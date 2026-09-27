@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
@@ -28,6 +29,7 @@ class LocalVisitRepository(
                     visit.endedAt,
                     visit.updatedAt,
                     visit.deleted,
+                    visit.day,
                 )
                 if (visit.userId != null) {
                     outbox.enqueue(OutboxEntry(VISIT_TABLE, visit.id.value, visit.updatedAt))
@@ -43,6 +45,14 @@ class LocalVisitRepository(
             queries.active(owner?.value, ::visitOf).executeAsOneOrNull()
         }
 
+    override suspend fun onDay(
+        owner: UserId?,
+        day: CalendarDay,
+    ): Visit? =
+        withContext(dispatcher) {
+            queries.onDay(day = day, owner = owner?.value, mapper = ::visitOf).executeAsOneOrNull()
+        }
+
     override suspend fun all(owner: UserId?): List<Visit> =
         withContext(dispatcher) {
             queries.forOwner(owner?.value, ::visitOf).executeAsList()
@@ -56,4 +66,5 @@ internal fun visitOf(
     endedAt: Instant?,
     updatedAt: Instant,
     deleted: Boolean,
-) = Visit(VisitId(id), userId?.let(::UserId), recordedAt, endedAt, updatedAt, deleted)
+    day: CalendarDay?,
+) = Visit(VisitId(id), userId?.let(::UserId), recordedAt, endedAt, updatedAt, deleted, day = day)

@@ -3,9 +3,11 @@ package monster.greyde.kachalochka.core.data.gym
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
+import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
 class RemoteVisitRepository(
@@ -36,6 +38,22 @@ class RemoteVisitRepository(
             }.decodeList<VisitRow>()
             .firstOrNull()
             ?.toVisit()
+
+    override suspend fun onDay(
+        owner: UserId?,
+        day: CalendarDay,
+    ): Visit? =
+        client.postgrest
+            .from(VISIT_TABLE)
+            .select {
+                filter {
+                    eq("day", day.iso)
+                    eq("deleted", false)
+                    owned(owner)
+                }
+            }.decodeList<VisitRow>()
+            .map { it.toVisit() }
+            .maxWithOrNull(visitRecency)
 
     override suspend fun all(owner: UserId?): List<Visit> =
         client.postgrest

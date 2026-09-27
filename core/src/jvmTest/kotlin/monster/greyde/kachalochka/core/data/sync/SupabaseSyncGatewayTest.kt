@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.data.gym.VisitRow
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
@@ -34,6 +35,7 @@ private fun visitRow(
     endedAt = null,
     updatedAt = updatedAt,
     deleted = false,
+    day = null,
 )
 
 private fun jsonHeaders() = headersOf(HttpHeaders.ContentType, "application/json")
@@ -165,5 +167,55 @@ class SupabaseSyncGatewayTest {
                     .toByteArray()
                     .decodeToString()
             assertTrue("\"unit_label\":\"\"" in body, body)
+        }
+
+    @Test
+    fun a_pushed_visit_carries_its_day_and_a_pushed_set_its_position() =
+        runTest {
+            val engine = MockEngine.Queue()
+            repeat(2) { engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) } }
+            val visit = ownedVisit(OWNER).copy(day = CalendarDay(2023, 11, 14))
+            val gateway = gatewayOn(engine, pageSize = 10)
+
+            gateway.pushVisit(visit)
+            gateway.pushSet(ownedSet(OWNER, visit, ownedPress(OWNER)))
+
+            val (visitBody, setBody) =
+                engine.requestHistory.map { it.body.toByteArray().decodeToString() }
+            assertTrue("\"day\":\"2023-11-14\"" in visitBody, visitBody)
+            assertTrue("\"position\":0" in setBody, setBody)
+        }
+
+    @Test
+    fun a_visit_an_old_client_pushed_arrives_without_a_day() =
+        runTest {
+            val old = visitRow("11111111-0000-4000-8000-000000000001", "2024-01-01T00:00:00+00:00")
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond(page(listOf(old)), HttpStatusCode.OK, jsonHeaders()) }
+            engine.enqueue { respond(page(emptyList()), HttpStatusCode.OK, jsonHeaders()) }
+
+            val pulled = gatewayOn(engine, pageSize = 10).pullVisits(OWNER, since = null)
+
+            assertNull(pulled.single().day)
+        }
+
+    @Test
+    fun a_pulled_set_keeps_its_position() =
+        runTest {
+            val row =
+                """[{"id":"44444444-4444-4444-8444-444444444444",""" +
+                    """"user_id":"${OWNER.value}",""" +
+                    """"visit_id":"11111111-0000-4000-8000-000000000001",""" +
+                    """"machine_id":"33333333-3333-4333-8333-333333333333",""" +
+                    """"weight":70.0,"reps":10,"position":3,""" +
+                    """"recorded_at":"2024-01-01T00:00:00+00:00",""" +
+                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false}]"""
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond(row, HttpStatusCode.OK, jsonHeaders()) }
+            engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }
+
+            val pulled = gatewayOn(engine, pageSize = 10).pullSets(OWNER, since = null)
+
+            assertEquals(3, pulled.single().position)
         }
 }

@@ -59,6 +59,7 @@ class MachinePickerViewModelTest {
         machine.id,
         weight,
         reps,
+        0,
         recordedAt,
         t0,
         false,

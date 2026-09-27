@@ -31,6 +31,7 @@ class LocalWorkoutSetRepositoryTest {
         weight: Double = 70.0,
         deleted: Boolean = false,
         userId: UserId? = null,
+        position: Int = 0,
     ) = WorkoutSet(
         WorkoutSetId.random(),
         userId,
@@ -38,6 +39,7 @@ class LocalWorkoutSetRepositoryTest {
         machine,
         weight,
         10,
+        position,
         t0 + minute.minutes,
         t0,
         deleted,
@@ -64,6 +66,18 @@ class LocalWorkoutSetRepositoryTest {
 
             assertEquals(listOf(early, late), repository.forVisit(visitA))
             assertEquals(listOf(early, late, elsewhere), repository.forMachine(press))
+        }
+
+    @Test
+    fun a_visit_lists_its_sets_by_position_then_recording_time() =
+        runTest {
+            val moved = set(visitA, press, 5, position = 1)
+            val early = set(visitA, row, 1)
+            val late = set(visitA, press, 3)
+            listOf(moved, early, late).forEach { repository.upsert(it) }
+
+            assertEquals(listOf(early, late, moved), repository.forVisit(visitA))
+            assertEquals(listOf(late, moved), repository.forMachine(press))
         }
 
     @Test

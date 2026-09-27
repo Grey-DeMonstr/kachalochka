@@ -25,11 +25,20 @@ interface VisitRepository {
     /** The owner's newest visit that has not ended and is not deleted. */
     suspend fun active(owner: UserId?): Visit?
 
+    /** The owner's live visit on [day]; of several, the one normalization keeps. */
+    suspend fun onDay(
+        owner: UserId?,
+        day: CalendarDay,
+    ): Visit?
+
     /** The owner's visits that are not deleted, newest first. */
     suspend fun all(owner: UserId?): List<Visit>
 }
 
-/** Every list leaves deleted sets out and runs in recording order. */
+/**
+ * Every list leaves deleted sets out; a visit's sets run in [visitOrder], the others in recording
+ * order.
+ */
 interface WorkoutSetRepository {
     suspend fun upsert(set: WorkoutSet)
 

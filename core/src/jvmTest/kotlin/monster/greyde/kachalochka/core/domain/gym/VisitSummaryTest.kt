@@ -23,6 +23,21 @@ class VisitSummaryTest {
     }
 
     @Test
+    fun a_set_s_position_ranks_before_its_recording_time() {
+        val moved = press1.copy(position = 1)
+
+        val groups = groupByMachine(listOf(moved, row2, press2, rowFirst))
+
+        assertEquals(
+            listOf(
+                MachineSets(ROW, listOf(rowFirst, row2)),
+                MachineSets(PRESS, listOf(press2, moved)),
+            ),
+            groups,
+        )
+    }
+
+    @Test
     fun the_summary_counts_machines_and_sets_and_names_the_last_set() {
         val summary = summarize(listOf(rowFirst, press1, row2, press2))
 

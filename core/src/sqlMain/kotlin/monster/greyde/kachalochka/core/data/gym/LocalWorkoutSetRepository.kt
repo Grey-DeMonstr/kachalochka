@@ -33,6 +33,7 @@ class LocalWorkoutSetRepository(
                     set.recordedAt,
                     set.updatedAt,
                     set.deleted,
+                    set.position.toLong(),
                 )
                 if (set.userId != null) {
                     outbox.enqueue(OutboxEntry(WORKOUT_SET_TABLE, set.id.value, set.updatedAt))
@@ -64,6 +65,7 @@ internal fun workoutSetOf(
     recordedAt: Instant,
     updatedAt: Instant,
     deleted: Boolean,
+    position: Long,
 ) = WorkoutSet(
     id = WorkoutSetId(id),
     userId = userId?.let(::UserId),
@@ -71,6 +73,7 @@ internal fun workoutSetOf(
     machineId = MachineId(machineId),
     weight = weight,
     reps = reps.toInt(),
+    position = position.toInt(),
     recordedAt = recordedAt,
     updatedAt = updatedAt,
     deleted = deleted,

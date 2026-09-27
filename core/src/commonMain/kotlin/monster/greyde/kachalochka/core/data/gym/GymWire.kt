@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.data.gym
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -98,6 +99,7 @@ internal data class VisitRow(
     @SerialName("ended_at") val endedAt: String?,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
+    val day: String?,
 ) {
     fun toVisit(): Visit =
         Visit(
@@ -107,6 +109,7 @@ internal data class VisitRow(
             endedAt = endedAt?.let(Instant::parse),
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
+            day = day?.let(CalendarDay::parse),
         )
 
     companion object {
@@ -118,6 +121,7 @@ internal data class VisitRow(
                 endedAt = visit.endedAt?.toString(),
                 updatedAt = visit.updatedAt.toString(),
                 deleted = visit.deleted,
+                day = visit.day?.iso,
             )
     }
 }
@@ -130,6 +134,7 @@ internal data class WorkoutSetRow(
     @SerialName("machine_id") val machineId: String,
     val weight: Double,
     val reps: Int,
+    val position: Int,
     @SerialName("recorded_at") val recordedAt: String,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
@@ -142,6 +147,7 @@ internal data class WorkoutSetRow(
             machineId = MachineId(machineId),
             weight = weight,
             reps = reps,
+            position = position,
             recordedAt = Instant.parse(recordedAt),
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
@@ -156,6 +162,7 @@ internal data class WorkoutSetRow(
                 machineId = set.machineId.value,
                 weight = set.weight,
                 reps = set.reps,
+                position = set.position,
                 recordedAt = set.recordedAt.toString(),
                 updatedAt = set.updatedAt.toString(),
                 deleted = set.deleted,

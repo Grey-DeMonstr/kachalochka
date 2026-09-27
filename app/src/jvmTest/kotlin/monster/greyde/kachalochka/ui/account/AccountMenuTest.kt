@@ -40,6 +40,7 @@ private fun recordedSet(owner: UserId) =
         MachineId.random(),
         40.0,
         10,
+        0,
         Instant.fromEpochSeconds(1_700_000_000),
         Instant.fromEpochSeconds(1_700_000_000),
         false,

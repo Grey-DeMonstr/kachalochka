@@ -7,7 +7,7 @@ data class MachineSets(
 
 fun groupByMachine(sets: List<WorkoutSet>): List<MachineSets> =
     sets
-        .sortedBy { it.recordedAt }
+        .sortedWith(visitOrder)
         .groupBy { it.machineId }
         .map { (machineId, machineSets) -> MachineSets(machineId, machineSets) }
 

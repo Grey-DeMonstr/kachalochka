@@ -47,6 +47,7 @@ class VisitScreenTest {
             press.id,
             70.0,
             10,
+            0,
             gym.clock.current,
             gym.clock.current,
             false,

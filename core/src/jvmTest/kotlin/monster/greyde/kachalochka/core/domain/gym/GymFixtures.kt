@@ -27,6 +27,7 @@ internal fun set(
     atSeconds: Long,
     machine: MachineId = PRESS,
     deleted: Boolean = false,
+    position: Int = 0,
 ) = WorkoutSet(
     id = WorkoutSetId.random(),
     userId = null,
@@ -34,6 +35,7 @@ internal fun set(
     machineId = machine,
     weight = weight,
     reps = reps,
+    position = position,
     recordedAt = Instant.fromEpochSeconds(T0.epochSeconds + atSeconds),
     updatedAt = T0,
     deleted = deleted,

@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
 class RemoteWorkoutSetRepository(
@@ -18,7 +19,7 @@ class RemoteWorkoutSetRepository(
     }
 
     override suspend fun forVisit(visitId: VisitId): List<WorkoutSet> =
-        live { eq("visit_id", visitId.value) }
+        live { eq("visit_id", visitId.value) }.sortedWith(visitOrder)
 
     override suspend fun forMachine(machineId: MachineId): List<WorkoutSet> =
         live { eq("machine_id", machineId.value) }
