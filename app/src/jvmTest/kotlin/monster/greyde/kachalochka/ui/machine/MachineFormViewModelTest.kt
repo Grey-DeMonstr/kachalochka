@@ -158,6 +158,36 @@ class MachineFormViewModelTest {
         }
 
     @Test
+    fun an_own_unit_needs_a_name() {
+        val custom = MachineFormState(name = "Гравитрон", unit = WeightUnit.Custom)
+
+        assertEquals(false, custom.canSave)
+        assertEquals(false, custom.copy(unitLabel = "  ").canSave)
+        assertEquals(true, custom.copy(unitLabel = "плитка").canSave)
+    }
+
+    @Test
+    fun an_own_unit_is_saved_with_its_name_and_kilograms_without_one() =
+        runTest {
+            val vm = viewModel(MachineFormArgs(null, null, "Гравитрон")).also { it.load() }
+            vm.update { it.copy(unit = WeightUnit.Custom, unitLabel = " плитка ") }
+            var saved: MachineId? = null
+
+            vm.save { saved = it }
+
+            val machine = assertNotNull(gym.machines.byId(assertNotNull(saved)))
+            assertEquals(WeightUnit.Custom to "плитка", machine.unit to machine.unitLabel)
+
+            val again = viewModel(MachineFormArgs(machine.id, null, "")).also { it.load() }
+            assertEquals("плитка", again.state.value.unitLabel)
+            again.update { it.copy(unit = WeightUnit.Kg) }
+            again.save {}
+
+            val kilograms = assertNotNull(gym.machines.byId(machine.id))
+            assertEquals(WeightUnit.Kg to "", kilograms.unit to kilograms.unitLabel)
+        }
+
+    @Test
     fun a_switch_while_editing_saves_a_copy_for_the_account_that_became_active() =
         runTest {
             gym.withAccounts(misha, ivan, active = misha)

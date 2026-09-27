@@ -1,8 +1,10 @@
 package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -24,7 +26,6 @@ class MachineFormScreenTest {
         }) {
             onNodeWithTag("save-machine").assertIsNotEnabled()
             onNodeWithTag("machine-photo").assertIsNotEnabled()
-            onNodeWithTag("unit-custom").assertIsNotEnabled()
             onNodeWithTag("per-limb").assertIsNotEnabled()
             onNodeWithTag("mode-total").assertIsSelected()
             onNodeWithTag("mode-counterweight").assertDoesNotExist()
@@ -36,6 +37,27 @@ class MachineFormScreenTest {
             waitForIdle()
 
             assertEquals(1, saved.size)
+        }
+    }
+
+    @Test
+    fun an_own_unit_asks_for_its_name_and_shows_it_by_the_platform_weight() {
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, "Гравитрон"), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("unit-label").assertDoesNotExist()
+
+            onNodeWithTag("unit-custom").performClick()
+            waitForIdle()
+            onNodeWithTag("unit-custom").assertIsSelected()
+            onNodeWithTag("save-machine").assertIsNotEnabled()
+
+            onNodeWithTag("unit-label").performTextInput("очень длинная единица")
+            waitForIdle()
+            onNodeWithTag("unit-label").assertTextEquals("очень длинна")
+            onNodeWithTag("platform-weight-unit", useUnmergedTree = true)
+                .assertTextEquals("очень длинна")
+            onNodeWithTag("save-machine").assertIsEnabled()
         }
     }
 }

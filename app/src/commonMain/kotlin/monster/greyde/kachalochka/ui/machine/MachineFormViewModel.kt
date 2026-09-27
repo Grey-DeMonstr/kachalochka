@@ -29,6 +29,7 @@ data class MachineFormState(
     val platformWeight: String = "0",
     val platformIncluded: Boolean = false,
     val unit: WeightUnit = WeightUnit.Kg,
+    val unitLabel: String = "",
     val weightStep: Double = 2.5,
 ) {
     val platformWeightValue: Double?
@@ -43,9 +44,15 @@ data class MachineFormState(
                     ?.takeIf { it >= 0 }
             }
 
-    val canSave: Boolean get() = name.isNotBlank() && platformWeightValue != null
+    val canSave: Boolean
+        get() =
+            name.isNotBlank() &&
+                platformWeightValue != null &&
+                (unit != WeightUnit.Custom || unitLabel.isNotBlank())
 
     companion object {
+        const val UNIT_LABEL_LENGTH: Int = 12
+
         fun of(
             machine: Machine,
             name: String = machine.name,
@@ -56,6 +63,7 @@ data class MachineFormState(
             platformWeight = formatNumber(machine.platformWeight),
             platformIncluded = machine.platformIncluded,
             unit = machine.unit,
+            unitLabel = machine.unitLabel,
             weightStep = machine.weightStep,
         )
     }
@@ -123,6 +131,7 @@ class MachineFormViewModel(
                     platformWeight = platformWeight,
                     platformIncluded = form.platformIncluded,
                     unit = form.unit,
+                    unitLabel = if (form.unit == WeightUnit.Custom) form.unitLabel.trim() else "",
                     weightStep = form.weightStep,
                     updatedAt = now,
                 )

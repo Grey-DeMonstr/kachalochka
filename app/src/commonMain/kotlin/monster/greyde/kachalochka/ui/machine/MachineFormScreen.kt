@@ -98,6 +98,21 @@ fun MachineFormScreen(
                 onChange = { v -> viewModel.update { it.copy(platformIncluded = v) } },
             )
             UnitRow(state.unit, onSelect = { unit -> viewModel.update { it.copy(unit = unit) } })
+            if (state.unit == WeightUnit.Custom) {
+                FieldLabel("Название единицы")
+                FormField(
+                    value = state.unitLabel,
+                    onValueChange = { label ->
+                        viewModel.update {
+                            it.copy(unitLabel = label.take(MachineFormState.UNIT_LABEL_LENGTH))
+                        }
+                    },
+                    tag = "unit-label",
+                    minHeight = 50.dp,
+                    fontSize = 17.sp,
+                    singleLine = true,
+                )
+            }
             WeightStepRow(state.weightStep, onSelect = { step ->
                 viewModel.update { it.copy(weightStep = step) }
             })
@@ -272,9 +287,10 @@ private fun PlatformWeightField(
             modifier = Modifier.testTag("platform-weight"),
         )
         Text(
-            unitLabel(state.unit, ""),
+            unitLabel(state.unit, state.unitLabel),
             fontSize = 13.sp,
             color = colors.onBackground.copy(alpha = 0.55f),
+            modifier = Modifier.testTag("platform-weight-unit"),
         )
     }
 }
@@ -322,20 +338,16 @@ private fun UnitRow(
     unit: WeightUnit,
     onSelect: (WeightUnit) -> Unit,
 ) {
+    val units = WeightUnit.entries
     ChoiceRow(
         choices =
             listOf(
                 Choice("кг", "unit-kg"),
                 Choice("lb", "unit-lb"),
-                Choice("Своя единица", "unit-custom", enabled = false, weight = 2f),
+                Choice("Своя единица", "unit-custom", weight = 2f),
             ),
-        selected = if (unit == WeightUnit.Lb) 1 else 0,
-        onSelect = { index ->
-            when (index) {
-                0 -> onSelect(WeightUnit.Kg)
-                1 -> onSelect(WeightUnit.Lb)
-            }
-        },
+        selected = units.indexOf(unit),
+        onSelect = { onSelect(units[it]) },
     )
 }
 
