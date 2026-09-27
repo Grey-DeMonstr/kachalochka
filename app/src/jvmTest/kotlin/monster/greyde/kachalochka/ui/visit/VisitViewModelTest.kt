@@ -241,6 +241,23 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun a_typed_weight_survives_a_sync_reload_and_collapse_expand() {
+        val vm = viewModel().also { it.selectMachine(press.id) }
+        vm.typeWeight("22,5")
+
+        gym.sync.completePass()
+        vm.collapseSheet()
+        vm.expandSheet()
+
+        assertEquals(
+            "22,5",
+            vm.state.value
+                ?.sheet
+                ?.weight,
+        )
+    }
+
+    @Test
     fun a_refresh_keeps_the_stepper_values() {
         val vm = viewModel().also { it.selectMachine(press.id) }
         vm.changeWeight(+1)
