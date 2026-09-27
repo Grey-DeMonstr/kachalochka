@@ -68,6 +68,7 @@ class VisitNormalizerTest {
             pulled.writeVisit(morning)
             pulled.writeVisit(evening)
             pulled.writeSet(morningSet)
+            pulled.writeSet(set(evening))
 
             assertTrue(normalizer.normalize(ivan))
 
@@ -78,6 +79,23 @@ class VisitNormalizerTest {
                 setOf(morning.id.value, morningSet.id.value),
                 outbox.pending().map { it.rowId }.toSet(),
             )
+        }
+
+    @Test
+    fun a_visit_opened_after_the_day_s_workout_and_left_empty_is_the_one_that_goes() =
+        runTest {
+            val workout = visit(t0 - 3.hours)
+            val empty = visit(t0)
+            val workoutSet = set(workout)
+            pulled.writeVisit(workout)
+            pulled.writeVisit(empty)
+            pulled.writeSet(workoutSet)
+
+            assertTrue(normalizer.normalize(ivan))
+
+            assertEquals(true, visits.byId(empty.id)?.deleted)
+            assertEquals(listOf(workoutSet), sets.forVisit(workout.id))
+            assertEquals(workout, visits.onDay(ivan, fourteenth))
         }
 
     @Test

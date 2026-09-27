@@ -24,7 +24,7 @@ interface VisitRepository {
 
     suspend fun byId(id: VisitId): Visit?
 
-    /** The owner's live visit on [day]; of several, the one normalization keeps. */
+    /** The owner's live visit on [day]; of several, the greatest by [visitRecency]. */
     suspend fun onDay(
         owner: UserId?,
         day: CalendarDay,
@@ -42,7 +42,7 @@ interface VisitRepository {
 
 /**
  * The owner's visit shown on [day], carrying it: of the visits on it and those not yet given a
- * day that were recorded on it, the one normalization will keep.
+ * day that were recorded on it, the greatest by [visitRecency].
  */
 suspend fun VisitRepository.shownOn(
     owner: UserId?,

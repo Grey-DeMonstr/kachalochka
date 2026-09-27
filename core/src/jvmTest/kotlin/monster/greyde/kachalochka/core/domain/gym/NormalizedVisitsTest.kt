@@ -55,6 +55,29 @@ class NormalizedVisitsTest {
     }
 
     @Test
+    fun a_later_visit_without_sets_gives_way_to_an_earlier_one_with_sets() {
+        val workout = visit(VISIT_A, fourteenth, -3_600)
+        val empty = visit(VISIT_B, fourteenth, 0)
+        val workoutSet = set(VISIT_A, 60.0, atSeconds = -3_500)
+        val removedSet = set(VISIT_B, 70.0, atSeconds = 60, deleted = true)
+
+        val rows =
+            normalizedVisits(listOf(empty, workout), listOf(workoutSet, removedSet), utc, now)
+
+        assertEquals(listOf(removedVisit(empty, emptyList(), now)), rows)
+    }
+
+    @Test
+    fun of_several_visits_without_sets_the_newest_stays() {
+        val morning = visit(VISIT_A, fourteenth, -3_600)
+        val evening = visit(VISIT_B, fourteenth, 0)
+
+        val rows = normalizedVisits(listOf(evening, morning), emptyList(), utc, now)
+
+        assertEquals(listOf(removedVisit(morning, emptyList(), now)), rows)
+    }
+
+    @Test
     fun a_tie_on_recording_time_goes_to_the_later_update_then_the_greater_id() {
         val first = visit(VISIT_A, fourteenth, 0)
         val updated = visit(VISIT_B, fourteenth, 0, updatedAt = T0 + 1.seconds)
@@ -72,8 +95,9 @@ class NormalizedVisitsTest {
         val old = visit(VISIT_A, null, -3_600)
         val current = visit(VISIT_B, fourteenth, 0)
         val oldSet = set(VISIT_A, 60.0, atSeconds = -3_500)
+        val currentSet = set(VISIT_B, 70.0, atSeconds = 60)
 
-        val rows = normalizedVisits(listOf(old, current), listOf(oldSet), utc, now)
+        val rows = normalizedVisits(listOf(old, current), listOf(oldSet, currentSet), utc, now)
 
         assertEquals(listOf(removedVisit(old, listOf(oldSet), now)), rows)
     }
@@ -93,7 +117,7 @@ class NormalizedVisitsTest {
         val setsAfter =
             sets.map { s -> first.flatMap { it.sets }.firstOrNull { it.id == s.id } ?: s }
 
-        assertEquals(2, first.size)
+        assertEquals(3, first.size)
         assertEquals(emptyList(), normalizedVisits(visitsAfter, setsAfter, utc, now))
     }
 

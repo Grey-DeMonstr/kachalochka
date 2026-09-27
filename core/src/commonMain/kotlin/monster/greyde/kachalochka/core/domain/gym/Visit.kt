@@ -13,6 +13,9 @@ data class Visit(
     val deleted: Boolean,
 )
 
-/** Of several live visits on one day, the greatest is the one normalization keeps. */
+/**
+ * Of several live visits on one day, the greatest is the one shown; normalization keeps the
+ * greatest of those with sets.
+ */
 val visitRecency: Comparator<Visit> =
     compareBy<Visit>({ it.recordedAt }, { it.updatedAt }, { it.id.value })

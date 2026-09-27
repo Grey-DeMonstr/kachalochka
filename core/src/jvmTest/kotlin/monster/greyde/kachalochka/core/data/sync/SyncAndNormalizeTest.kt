@@ -22,7 +22,7 @@ class SyncAndNormalizeTest {
             val oldSet = ownedSet(IVAN, old, press)
             h.gateway.visitsToPull = listOf(old, current)
             h.gateway.machinesToPull = listOf(press)
-            h.gateway.setsToPull = listOf(oldSet)
+            h.gateway.setsToPull = listOf(oldSet, ownedSet(IVAN, current, press))
 
             assertTrue(h.pass.runAndNormalize(listOf(IVAN), h.normalizer))
 

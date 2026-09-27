@@ -44,7 +44,7 @@ class ShownVisitTest {
         }
 
     @Test
-    fun of_a_dated_and_an_undated_visit_on_one_day_the_one_normalization_keeps_shows() =
+    fun of_a_dated_and_an_undated_visit_on_one_day_the_newest_shows() =
         runTest {
             val dated = visit(t0 - 1.hours, fourteenth)
             val undated = visit(t0, null)
