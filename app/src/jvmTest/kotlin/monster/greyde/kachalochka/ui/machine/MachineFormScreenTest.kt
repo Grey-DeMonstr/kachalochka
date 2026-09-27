@@ -36,11 +36,14 @@ class MachineFormScreenTest {
             onNodeWithTag("step-2.5").assertIsSelected()
 
             onNodeWithTag("machine-name").performTextInput("Гакк-машина")
+            onNodeWithTag("step-5").performScrollTo()
             onNodeWithTag("step-5").performClick()
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
             assertEquals(1, saved.size)
+            val machine = runBlocking { gym.machines.byId(saved.single()) }
+            assertEquals(5.0, machine?.weightStep)
         }
     }
 
