@@ -900,6 +900,30 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun choosing_a_machine_ends_order_mode() {
+        val vm = viewModel().also { it.refresh() }
+        vm.toggleOrdering()
+
+        vm.selectMachine(press.id)
+
+        val state = assertNotNull(vm.state.value)
+        assertEquals(false, state.ordering)
+        assertEquals(true, state.sheet?.expanded)
+    }
+
+    @Test
+    fun expanding_the_sheet_ends_order_mode() {
+        val vm = viewModel().also { it.selectMachine(press.id) }
+        vm.toggleOrdering()
+
+        vm.expandSheet()
+
+        val state = assertNotNull(vm.state.value)
+        assertEquals(false, state.ordering)
+        assertEquals(true, state.sheet?.expanded)
+    }
+
+    @Test
     fun a_new_set_goes_after_every_set_of_the_visit() =
         runTest {
             gym.sets.upsert(set(visit.id, row, 45.0, 12, 0))

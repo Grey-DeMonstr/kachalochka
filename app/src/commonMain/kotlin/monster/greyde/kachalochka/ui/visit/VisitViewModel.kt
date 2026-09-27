@@ -156,6 +156,7 @@ class VisitViewModel(
         selected = id
         editing = null
         sheetExpanded = true
+        ordering = false
         viewModelScope.launch { reload(reseed = true) }
     }
 
@@ -288,6 +289,7 @@ class VisitViewModel(
     fun expandSheet() {
         if (open == null) return
         sheetExpanded = true
+        ordering = false
         publish()
     }
 
