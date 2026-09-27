@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -13,17 +14,32 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import org.koin.core.Koin
 
 /**
- * Normalizes the owners given at start, then every account that becomes active; a run that wrote
- * asks for a pass. A run that fails, as the web does offline, waits for the next start or switch.
+ * Where the visits normalization rewrites live. A device copy of an account's visits is
+ * normalized only by the sync pass, after it pulls: normalized before that, it would push old
+ * rows over newer ones.
+ */
+enum class VisitStore { Server, Device }
+
+/**
+ * Normalizes the owners given at start, then every account that becomes active, or on a device
+ * asks for the pass that does; a run that wrote asks for a pass. A run that fails, as the web does
+ * offline, is recorded and waits for the next start or switch.
  */
 class VisitNormalization(
     private val normalizer: VisitNormalizer,
     private val accounts: Accounts,
     private val sync: SyncTrigger,
+    private val store: VisitStore,
+    private val failures: FailureLog,
 ) {
     suspend fun run(atStart: List<UserId?>) {
         normalize(atStart)
-        accounts.activeId.filterNotNull().collect { normalize(listOf(it)) }
+        accounts.activeId.filterNotNull().collect { active ->
+            when (store) {
+                VisitStore.Server -> normalize(listOf(active))
+                VisitStore.Device -> sync.request()
+            }
+        }
     }
 
     private suspend fun normalize(owners: List<UserId?>) {
@@ -37,6 +53,7 @@ class VisitNormalization(
         } catch (stopped: CancellationException) {
             throw stopped
         } catch (failed: Exception) {
+            failures.record(failed)
             false
         }
 }

@@ -25,6 +25,7 @@ import monster.greyde.kachalochka.core.domain.gym.minuteOfDay
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
 import monster.greyde.kachalochka.core.domain.gym.recordingInstant
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
+import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.stepReps
 import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
@@ -186,7 +187,7 @@ class VisitViewModel(
                 val offset = utcOffset.at(now)
                 val today = CalendarDay.of(now, offset)
                 val target =
-                    visits.onDay(owner, day)
+                    visits.shownOn(owner, day, utcOffset::at)
                         ?: dayVisit(day, owner, today, offset, now).also { visits.upsert(it) }
                 val targetSets =
                     if (target.id == visit?.id) visitSets else sets.forVisit(target.id)
@@ -308,7 +309,7 @@ class VisitViewModel(
 
     private suspend fun reload(reseed: Boolean) {
         val owner = currentUser.id()
-        val shown = visits.onDay(owner, day)
+        val shown = visits.shownOn(owner, day, utcOffset::at)
         visit = shown
         machinesById = machines.all(owner).associateBy { it.id }
         visitSets = shown?.let { sets.forVisit(it.id) }.orEmpty()

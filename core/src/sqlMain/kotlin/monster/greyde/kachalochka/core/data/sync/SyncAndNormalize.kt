@@ -11,8 +11,8 @@ suspend fun SyncPass.runAndNormalize(
     owners: List<UserId>,
     normalizer: VisitNormalizer,
 ): Boolean {
-    val clean = run(owners)
-    // Every owner is normalized, even after one wrote.
-    val wrote = owners.map { normalizer.normalize(it) }.any { it }
-    return if (wrote) run(owners) else clean
+    val clean = owners.filter { run(listOf(it)) }
+    // A copy that has not pulled may be older than the server's rows its writes would replace.
+    val wrote = clean.map { normalizer.normalize(it) }.any { it }
+    return if (wrote) run(owners) else clean.size == owners.size
 }

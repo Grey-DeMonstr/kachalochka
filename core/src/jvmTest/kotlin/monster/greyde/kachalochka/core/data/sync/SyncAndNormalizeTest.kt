@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.domain.gym.T0
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 
@@ -30,6 +31,21 @@ class SyncAndNormalizeTest {
                 h.gateway.pushed,
             )
             assertEquals(8, h.gateway.pulledSince.size)
+        }
+
+    @Test
+    fun an_account_that_could_not_pull_keeps_its_local_visits_as_they_are() =
+        runTest {
+            val rows = LocalSyncRows(h.database)
+            val older = ownedVisit(IVAN).copy(recordedAt = T0 - 1.hours)
+            rows.writeVisit(older)
+            rows.writeVisit(ownedVisit(IVAN))
+            h.gateway.pullFails = true
+
+            assertFalse(h.pass.runAndNormalize(listOf(IVAN), h.normalizer))
+
+            assertEquals(older, h.visits.byId(older.id))
+            assertEquals(emptyList(), h.outbox.pending())
         }
 
     @Test

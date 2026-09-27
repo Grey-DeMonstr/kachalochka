@@ -144,6 +144,38 @@ class HomeViewModelTest {
         }
 
     @Test
+    fun a_visit_no_client_has_dated_counts_for_the_day_it_was_recorded_on() =
+        runTest {
+            val visit = Visit(VisitId.random(), null, null, t0, t0, false)
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.visits.upsert(visit)
+            gym.machines.upsert(press)
+            gym.sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    visit.id,
+                    press.id,
+                    70.0,
+                    10,
+                    0,
+                    t0,
+                    t0,
+                    false,
+                ),
+            )
+
+            val vm = viewModel().also { it.refresh() }
+
+            assertEquals(
+                "1 тренажёр · 1 подход",
+                vm.state.value
+                    ?.today
+                    ?.counts,
+            )
+        }
+
+    @Test
     fun a_finished_sync_shows_the_sets_it_pulled() =
         runTest {
             val vm = viewModel().also { it.refresh() }

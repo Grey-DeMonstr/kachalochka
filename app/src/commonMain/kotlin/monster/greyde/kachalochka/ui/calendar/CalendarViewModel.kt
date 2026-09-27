@@ -18,9 +18,11 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRows
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.dayAt
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.movedVisit
 import monster.greyde.kachalochka.core.domain.gym.removedVisit
+import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.summarize
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -84,7 +86,7 @@ class CalendarViewModel(
     val state: StateFlow<CalendarUiState?> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
-    /** The owner's visits that have a day; the others wait for normalization. */
+    /** The owner's visits, each carrying the day it shows on. */
     private var all: List<Visit> = emptyList()
     private val visitDays: Set<CalendarDay> get() = all.mapNotNull { it.day }.toSet()
     private var machinesById: Map<MachineId, Machine> = emptyMap()
@@ -218,7 +220,7 @@ class CalendarViewModel(
             if (visit != null) {
                 val owner = currentUser.id()
                 // Re-read the day, so a visit pulled onto it since the ask is replaced too.
-                visits.onDay(owner, day)?.let {
+                visits.shownOn(owner, day, utcOffset::at)?.let {
                     write(removedVisit(it, sets.forVisit(it.id), now))
                 }
                 write(movedVisit(visit, sets.forVisit(visit.id), day, utcOffset.at(now), now))
@@ -250,7 +252,7 @@ class CalendarViewModel(
     private suspend fun load() {
         if (stale) {
             val owner = currentUser.id()
-            all = visits.all(owner).filter { it.day != null }
+            all = visits.all(owner).map { it.copy(day = it.dayAt(utcOffset::at)) }
             machinesById = machines.all(owner).associateBy { it.id }
             stale = false
         }

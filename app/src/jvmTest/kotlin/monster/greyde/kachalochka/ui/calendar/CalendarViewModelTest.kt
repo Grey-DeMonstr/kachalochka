@@ -106,6 +106,22 @@ class CalendarViewModelTest {
     }
 
     @Test
+    fun a_visit_no_client_has_dated_shows_on_the_day_it_was_recorded_on() =
+        runTest {
+            val undated = Visit(VisitId.random(), null, null, t0 - 3.days, t0, false)
+            gym.visits.upsert(undated)
+            gym.sets.upsert(set(undated, press, 5))
+            val vm = viewModel().also { it.refresh() }
+
+            vm.selectDay(CalendarDay(2023, 11, 11))
+
+            val state = assertNotNull(vm.state.value)
+            assertTrue(state.day(11).hasVisit)
+            assertEquals(undated.id, state.visit?.id)
+            assertEquals("1 тренажёр · 1 подход", state.visit?.counts)
+        }
+
+    @Test
     fun a_chosen_day_shows_its_visit_with_machines_and_sets() {
         val vm = viewModel().also { it.refresh() }
 
@@ -346,17 +362,28 @@ class CalendarViewModelTest {
         }
 
     @Test
-    fun a_day_shows_the_newest_of_its_visits_and_ignores_undated_ones() =
+    fun a_day_shows_the_newest_of_its_visits_those_not_yet_given_a_day_included() =
         runTest {
             val later = Visit(VisitId.random(), null, twelfth, t0 - 2.days + 1.hours, t0, false)
-            val undated = Visit(VisitId.random(), null, null, t0 - 3.days, t0, false)
             gym.visits.upsert(later)
-            gym.visits.upsert(undated)
             val vm = viewModel().also { it.selectDay(twelfth) }
+            assertEquals(
+                later.id,
+                vm.state.value
+                    ?.visit
+                    ?.id,
+            )
 
-            val state = assertNotNull(vm.state.value)
-            assertEquals(later.id, state.visit?.id)
-            assertFalse(state.day(11).hasVisit)
+            val latest = Visit(VisitId.random(), null, null, t0 - 2.days + 90.minutes, t0, false)
+            gym.visits.upsert(latest)
+            vm.refresh()
+
+            assertEquals(
+                latest.id,
+                vm.state.value
+                    ?.visit
+                    ?.id,
+            )
         }
 
     @Test

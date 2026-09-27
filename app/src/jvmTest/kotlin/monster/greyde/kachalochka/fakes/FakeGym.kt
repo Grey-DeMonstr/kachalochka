@@ -97,6 +97,9 @@ class InMemoryVisitRepository : VisitRepository {
             .filter { !it.deleted && it.userId == owner }
             .sortedByDescending { it.recordedAt }
     }
+
+    override suspend fun undated(owner: UserId?): List<Visit> =
+        rows.values.filter { !it.deleted && it.userId == owner && it.day == null }
 }
 
 class InMemoryWorkoutSetRepository : WorkoutSetRepository {

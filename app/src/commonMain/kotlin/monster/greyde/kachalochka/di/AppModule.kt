@@ -34,7 +34,7 @@ val appModule =
             val offset: UtcOffset = get()
             VisitNormalizer(get(), get(), get(), offset::at)
         }
-        single { VisitNormalization(get(), get(), get()) }
+        single { VisitNormalization(get(), get(), get(), get(), get()) }
         viewModelOf(::HomeViewModel)
         viewModelOf(::AccountsViewModel)
         viewModelOf(::CalendarViewModel)

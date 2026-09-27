@@ -146,6 +146,24 @@ class MachinePickerViewModelTest {
         }
 
     @Test
+    fun a_visit_no_client_has_dated_counts_on_the_day_it_was_recorded_on() =
+        runTest {
+            val tenth = CalendarDay(2023, 11, 10)
+            val undated = Visit(VisitId.random(), null, null, t0 - 4.days, t0, false)
+            gym.visits.upsert(undated)
+            gym.sets.upsert(set(undated.id, smith, 80.0, 8, t0 - 4.days))
+
+            val vm = viewModel(tenth).also { it.load() }
+
+            assertEquals(
+                "1 подход в этом визите",
+                vm.state.value.rows
+                    .single { it.id == smith.id }
+                    .detail,
+            )
+        }
+
+    @Test
     fun another_day_counts_the_sets_of_its_own_visit() =
         runTest {
             val tenth = CalendarDay(2023, 11, 10)

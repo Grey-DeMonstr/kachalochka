@@ -51,6 +51,11 @@ class LocalVisitRepository(
         withContext(dispatcher) {
             queries.forOwner(owner?.value, ::visitOf).executeAsList()
         }
+
+    override suspend fun undated(owner: UserId?): List<Visit> =
+        withContext(dispatcher) {
+            queries.undated(owner?.value, ::visitOf).executeAsList()
+        }
 }
 
 internal fun visitOf(

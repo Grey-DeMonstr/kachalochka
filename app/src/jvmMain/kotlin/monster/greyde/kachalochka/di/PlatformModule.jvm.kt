@@ -1,8 +1,10 @@
 package monster.greyde.kachalochka.di
 
+import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.UnavailableGoogleSignIn
@@ -19,4 +21,6 @@ actual fun platformModule(): Module =
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
         single<SyncTrigger> { SyncTrigger {} }
+        single { VisitStore.Device }
+        single<FailureLog> { FailureLog {} }
     }

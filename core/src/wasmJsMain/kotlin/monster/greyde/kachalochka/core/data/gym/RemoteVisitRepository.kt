@@ -51,4 +51,16 @@ class RemoteVisitRepository(
                 order("recorded_at", Order.DESCENDING)
             }.decodeList<VisitRow>()
             .map { it.toVisit() }
+
+    override suspend fun undated(owner: UserId?): List<Visit> =
+        client.postgrest
+            .from(VISIT_TABLE)
+            .select {
+                filter {
+                    exact("day", null)
+                    eq("deleted", false)
+                    owned(owner)
+                }
+            }.decodeList<VisitRow>()
+            .map { it.toVisit() }
 }

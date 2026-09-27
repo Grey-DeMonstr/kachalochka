@@ -680,6 +680,25 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun a_visit_no_client_has_dated_opens_on_its_day_and_takes_the_day_s_new_sets() =
+        runTest {
+            val undated = lastWeek.copy(day = null)
+            gym.visits.upsert(undated)
+            gym.sets.upsert(set(undated.id, press, 70.0, 10, -(7.days.inWholeMinutes.toInt())))
+            val vm = viewModel(day = seventh).also { it.selectMachine(press.id) }
+
+            assertEquals(
+                listOf(press.id),
+                assertNotNull(vm.state.value).groups.map { it.machineId },
+            )
+
+            vm.save()
+
+            assertEquals(2, gym.sets.forVisit(undated.id).size)
+            assertNull(gym.visits.onDay(null, seventh))
+        }
+
+    @Test
     fun another_day_s_visit_suggests_from_the_visit_before_it() =
         runTest {
             gym.visits.upsert(lastWeek)

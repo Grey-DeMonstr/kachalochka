@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
@@ -25,6 +26,7 @@ class VisitNormalizationTest {
     private val t0 = gym.clock.current
     private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
     private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+    private val failures = mutableListOf<Throwable>()
 
     private fun session(
         id: String,
@@ -34,10 +36,13 @@ class VisitNormalizationTest {
     private fun normalization(
         on: FakeGym = gym,
         visits: VisitRepository = on.visits,
+        store: VisitStore = VisitStore.Server,
     ) = VisitNormalization(
         VisitNormalizer(visits, on.sets, on.clock) { Duration.ZERO },
         on.accounts,
         on.sync,
+        store,
+        FailureLog { failures += it },
     )
 
     /** Two visits on today; returns the one normalization removes. */
@@ -66,7 +71,7 @@ class VisitNormalizationTest {
         }
 
     @Test
-    fun an_account_that_becomes_active_is_normalized() =
+    fun on_the_server_an_account_that_becomes_active_is_normalized() =
         runTest(UnconfinedTestDispatcher()) {
             val two = FakeGym().withAccounts(ivan, misha, active = ivan)
             val older = twoVisitsToday(two, misha.account.userId)
@@ -81,6 +86,24 @@ class VisitNormalizationTest {
         }
 
     @Test
+    fun on_a_device_an_account_that_becomes_active_asks_for_a_pass_and_keeps_its_rows() =
+        runTest(UnconfinedTestDispatcher()) {
+            val two = FakeGym().withAccounts(ivan, misha, active = ivan)
+            val older = twoVisitsToday(two, misha.account.userId)
+            backgroundScope.launch {
+                normalization(two, store = VisitStore.Device).run(emptyList())
+            }
+            runCurrent()
+            assertEquals(1, two.sync.requests)
+
+            two.accounts.switchTo(misha.account.userId)
+            runCurrent()
+
+            assertEquals(2, two.sync.requests)
+            assertEquals(false, two.visits.byId(older.id)?.deleted)
+        }
+
+    @Test
     fun nothing_to_normalize_asks_for_no_pass() =
         runTest(UnconfinedTestDispatcher()) {
             gym.visits.upsert(Visit(VisitId.random(), null, gym.today, t0, t0, false))
@@ -92,16 +115,23 @@ class VisitNormalizationTest {
         }
 
     @Test
-    fun a_normalization_that_fails_leaves_the_app_running() =
+    fun an_owner_that_fails_is_reported_and_the_next_one_still_runs() =
         runTest(UnconfinedTestDispatcher()) {
-            val offline =
+            val ivanId = ivan.account.userId
+            val older = twoVisitsToday(gym, ivanId)
+            val offlineForNull =
                 object : VisitRepository by gym.visits {
-                    override suspend fun all(owner: UserId?): List<Visit> = error("no connection")
+                    override suspend fun all(owner: UserId?): List<Visit> =
+                        if (owner == null) error("no connection") else gym.visits.all(owner)
                 }
 
-            backgroundScope.launch { normalization(visits = offline).run(listOf(null)) }
+            backgroundScope.launch {
+                normalization(visits = offlineForNull).run(listOf(null, ivanId))
+            }
             runCurrent()
 
-            assertEquals(0, gym.sync.requests)
+            assertEquals(listOf("no connection"), failures.map { it.message })
+            assertEquals(true, gym.visits.byId(older.id)?.deleted)
+            assertEquals(1, gym.sync.requests)
         }
 }

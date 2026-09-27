@@ -31,6 +31,17 @@ class NormalizedVisitsTest {
     }
 
     @Test
+    fun a_missing_day_is_read_at_the_offset_in_force_when_the_visit_was_recorded() {
+        val old = visit(VISIT_A, null, 0)
+        val cutOver = T0 + 1.hours
+        val offset: (Instant) -> Duration = { if (it < cutOver) 1.hours else 3.hours }
+
+        val rows = normalizedVisits(listOf(old), emptyList(), offset, now)
+
+        assertEquals(listOf(fourteenth), rows.map { it.visit.day })
+    }
+
+    @Test
     fun of_several_visits_on_one_day_the_newest_stays_and_the_rest_go_with_their_sets() {
         val morning = visit(VISIT_A, fourteenth, -3_600)
         val evening = visit(VISIT_B, fourteenth, 0)

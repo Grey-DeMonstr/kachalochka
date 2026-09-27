@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
+import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
@@ -69,7 +70,7 @@ class MachinePickerViewModel(
             latest = sets.latestPerMachine(owner).associateBy { it.machineId }
             inVisit =
                 visits
-                    .onDay(owner, day)
+                    .shownOn(owner, day, utcOffset::at)
                     ?.let { sets.forVisit(it.id) }
                     .orEmpty()
                     .groupingBy { it.machineId }

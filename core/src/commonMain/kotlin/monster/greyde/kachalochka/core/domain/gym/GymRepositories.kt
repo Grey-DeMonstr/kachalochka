@@ -1,6 +1,8 @@
 package monster.greyde.kachalochka.core.domain.gym
 
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import kotlin.time.Duration
+import kotlin.time.Instant
 
 interface MachineRepository {
     suspend fun upsert(machine: Machine)
@@ -33,6 +35,24 @@ interface VisitRepository {
      * not given a day yet.
      */
     suspend fun all(owner: UserId?): List<Visit>
+
+    /** The owner's live visits normalization has not given a day yet. */
+    suspend fun undated(owner: UserId?): List<Visit>
+}
+
+/**
+ * The owner's visit shown on [day], carrying it: of the visits on it and those not yet given a
+ * day that were recorded on it, the one normalization will keep.
+ */
+suspend fun VisitRepository.shownOn(
+    owner: UserId?,
+    day: CalendarDay,
+    utcOffset: (Instant) -> Duration,
+): Visit? {
+    val recordedOnDay = undated(owner).filter { it.dayAt(utcOffset) == day }
+    return (listOfNotNull(onDay(owner, day)) + recordedOnDay)
+        .maxWithOrNull(visitRecency)
+        ?.copy(day = day)
 }
 
 /**

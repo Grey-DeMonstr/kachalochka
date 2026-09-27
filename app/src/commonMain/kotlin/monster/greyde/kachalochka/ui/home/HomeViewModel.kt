@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.summarize
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.ui.format.UtcOffset
@@ -52,7 +53,10 @@ class HomeViewModel(
             val now = clock.now()
             val today = CalendarDay.of(now, utcOffset.at(now))
             val daySets =
-                visits.onDay(currentUser.id(), today)?.let { sets.forVisit(it.id) }.orEmpty()
+                visits
+                    .shownOn(currentUser.id(), today, utcOffset::at)
+                    ?.let { sets.forVisit(it.id) }
+                    .orEmpty()
             mutableState.value = HomeUiState(todayUi(today, daySets))
         }
     }

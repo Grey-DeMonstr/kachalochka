@@ -70,4 +70,18 @@ class LocalVisitRepositoryTest {
             assertNull(repository.onDay(null, CalendarDay(2023, 11, 13)))
             assertEquals(morning, repository.byId(morning.id))
         }
+
+    @Test
+    fun undated_lists_the_owner_s_live_visits_no_client_has_given_a_day() =
+        runTest {
+            val ivan = UserId("11111111-1111-4111-8111-111111111111")
+            val dated = visit(t0)
+            val undated = visit(t0 + 1.hours, day = null)
+            val deleted = visit(t0 + 2.hours, day = null, deleted = true)
+            val ivans = visit(t0 + 3.hours, day = null, userId = ivan)
+            listOf(dated, undated, deleted, ivans).forEach { repository.upsert(it) }
+
+            assertEquals(listOf(undated), repository.undated(null))
+            assertEquals(listOf(ivans), repository.undated(ivan))
+        }
 }

@@ -62,4 +62,4 @@ private suspend fun Koin.restoreSession() {
 }
 
 // The browser console is where anyone debugging a page that will not load looks first.
-private fun report(message: String): Unit = js("console.error(message)")
+internal fun report(message: String): Unit = js("console.error(message)")

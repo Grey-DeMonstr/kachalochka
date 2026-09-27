@@ -1,15 +1,18 @@
 package monster.greyde.kachalochka.di
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.sync.WorkManagerSyncTrigger
 import monster.greyde.kachalochka.ui.account.ActivityHolder
 import monster.greyde.kachalochka.ui.account.CredentialManagerGoogleSignIn
@@ -22,6 +25,8 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.module
+
+private const val LOG_TAG = "Kachalochka"
 
 actual fun platformModule(): Module =
     module {
@@ -42,6 +47,8 @@ actual fun platformModule(): Module =
         }
         single { ActivityHolder() }
         single { WorkManagerSyncTrigger(androidContext()) } bind SyncTrigger::class
+        single { VisitStore.Device }
+        single<FailureLog> { FailureLog { Log.w(LOG_TAG, "Background work failed", it) } }
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
         single<GoogleSignIn> {

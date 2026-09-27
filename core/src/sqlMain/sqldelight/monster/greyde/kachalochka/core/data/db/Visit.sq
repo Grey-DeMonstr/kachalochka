@@ -37,6 +37,11 @@ WHERE deleted = 0
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 ORDER BY recorded_at DESC;
 
+undated:
+SELECT id, user_id, day, recorded_at, updated_at, deleted FROM visit
+WHERE day IS NULL AND deleted = 0
+  AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
+
 ownerlessIds:
 SELECT id FROM visit WHERE user_id IS NULL;
 
