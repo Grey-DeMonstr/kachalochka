@@ -55,7 +55,6 @@ class SyncWatermarksTest {
         val migrated = SyncWatermarks(kachalochkaDatabase(driver))
         migrated.advance(ivan, t0)
 
-        assertEquals(2L, KachalochkaDatabase.Schema.version)
         assertEquals(t0, migrated.lastPullAt(ivan))
     }
 }

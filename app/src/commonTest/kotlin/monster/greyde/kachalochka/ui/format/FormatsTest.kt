@@ -51,10 +51,6 @@ class FormatsTest {
                 ),
             ),
         )
-        assertEquals(
-            "кг противовес · ±2,5",
-            weightCaption(press.copy(weightMode = WeightMode.Counterweight)),
-        )
     }
 
     @Test

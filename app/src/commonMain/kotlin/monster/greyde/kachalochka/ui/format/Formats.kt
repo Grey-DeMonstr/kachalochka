@@ -21,13 +21,13 @@ fun unitLabel(unit: WeightUnit): String =
     when (unit) {
         WeightUnit.Kg -> "кг"
         WeightUnit.Lb -> "lb"
+        WeightUnit.Custom -> "ед."
     }
 
 private fun modeLabel(mode: WeightMode): String =
     when (mode) {
         WeightMode.Total -> "всего"
         WeightMode.PerSide -> "на сторону"
-        WeightMode.Counterweight -> "противовес"
     }
 
 fun weightCaption(machine: Machine): String {

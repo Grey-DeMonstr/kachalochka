@@ -17,6 +17,7 @@ class MachineTest {
         assertEquals(0.0, machine.platformWeight)
         assertEquals(false, machine.platformIncluded)
         assertEquals(WeightUnit.Kg, machine.unit)
+        assertEquals("", machine.unitLabel)
         assertEquals(2.5, machine.weightStep)
         assertEquals(now, machine.updatedAt)
         assertEquals(false, machine.deleted)

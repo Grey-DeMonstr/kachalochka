@@ -84,4 +84,18 @@ class LocalMachineRepositoryTest {
             assertEquals(ivanPress.id, repository.named(ivan, "Жим ногами")?.id)
             assertNull(repository.named(misha, "Жим ногами"))
         }
+
+    @Test
+    fun a_custom_unit_reads_back_with_its_name() =
+        runTest {
+            val gravitron =
+                Machine.new("Гравитрон", null, now).copy(
+                    unit = WeightUnit.Custom,
+                    unitLabel = "плитка",
+                )
+
+            repository.upsert(gravitron)
+
+            assertEquals(gravitron, repository.byId(gravitron.id))
+        }
 }

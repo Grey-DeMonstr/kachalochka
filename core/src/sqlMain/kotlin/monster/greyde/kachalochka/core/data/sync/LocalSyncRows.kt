@@ -39,6 +39,7 @@ class LocalSyncRows(
             machine.weightStep,
             machine.updatedAt,
             machine.deleted,
+            machine.unitLabel,
         )
 
     fun writeVisit(visit: Visit) =

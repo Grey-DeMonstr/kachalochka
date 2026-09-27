@@ -211,7 +211,6 @@ private fun WeightModeRow(
             listOf(
                 Choice("Всего", "mode-total"),
                 Choice("На сторону", "mode-per-side"),
-                Choice("Противовес", "mode-counterweight"),
             ),
         selected = modes.indexOf(state.weightMode),
         onSelect = { onSelect(modes[it]) },

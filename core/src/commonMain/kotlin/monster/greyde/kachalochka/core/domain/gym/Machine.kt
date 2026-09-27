@@ -3,9 +3,9 @@ package monster.greyde.kachalochka.core.domain.gym
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Instant
 
-enum class WeightMode { Total, PerSide, Counterweight }
+enum class WeightMode { Total, PerSide }
 
-enum class WeightUnit { Kg, Lb }
+enum class WeightUnit { Kg, Lb, Custom }
 
 data class Machine(
     val id: MachineId,
@@ -16,6 +16,7 @@ data class Machine(
     val platformWeight: Double,
     val platformIncluded: Boolean,
     val unit: WeightUnit,
+    val unitLabel: String,
     val weightStep: Double,
     val updatedAt: Instant,
     val deleted: Boolean,
@@ -37,6 +38,7 @@ data class Machine(
                 platformWeight = 0.0,
                 platformIncluded = false,
                 unit = WeightUnit.Kg,
+                unitLabel = "",
                 weightStep = 2.5,
                 updatedAt = now,
                 deleted = false,

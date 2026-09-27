@@ -4,6 +4,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
@@ -11,10 +12,14 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.data.gym.VisitRow
+import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.WeightMode
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 private val OWNER = UserId("11111111-1111-4111-8111-111111111111")
@@ -120,5 +125,45 @@ class SupabaseSyncGatewayTest {
                     "id.gt.${v1.id}))",
                 second["or"],
             )
+        }
+
+    @Test
+    fun a_pulled_machine_keeps_its_unit_name_and_ignores_columns_it_does_not_know() =
+        runTest {
+            val row =
+                """[{"id":"33333333-3333-4333-8333-333333333333","user_id":"${OWNER.value}",""" +
+                    """"name":"Гравитрон","setup_note":"","weight_mode":"counterweight",""" +
+                    """"platform_weight":0.0,"platform_included":false,"unit":"custom",""" +
+                    """"unit_label":"плитка","weight_step":1.0,""" +
+                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false,""" +
+                    """"link_id":null}]"""
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond(row, HttpStatusCode.OK, jsonHeaders()) }
+            engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }
+
+            val pulled = gatewayOn(engine, pageSize = 10).pullMachines(OWNER, since = null)
+
+            val machine = pulled.single()
+
+            assertEquals(WeightMode.Total, machine.weightMode)
+            assertEquals(WeightUnit.Custom to "плитка", machine.unit to machine.unitLabel)
+        }
+
+    @Test
+    fun a_pushed_machine_always_sends_its_unit_name() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
+            val press = Machine.new("Жим ногами", OWNER, Instant.parse("2024-01-01T00:00:00Z"))
+
+            gatewayOn(engine, pageSize = 10).pushMachine(press)
+
+            val body =
+                engine.requestHistory
+                    .single()
+                    .body
+                    .toByteArray()
+                    .decodeToString()
+            assertTrue("\"unit_label\":\"\"" in body, body)
         }
 }

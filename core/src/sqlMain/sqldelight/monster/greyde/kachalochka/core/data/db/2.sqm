@@ -1,0 +1,2 @@
+ALTER TABLE machine ADD COLUMN unit_label TEXT NOT NULL DEFAULT '';
+UPDATE machine SET weight_mode = 'total' WHERE weight_mode = 'counterweight';

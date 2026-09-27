@@ -27,6 +27,7 @@ class MachineFormScreenTest {
             onNodeWithTag("unit-custom").assertIsNotEnabled()
             onNodeWithTag("per-limb").assertIsNotEnabled()
             onNodeWithTag("mode-total").assertIsSelected()
+            onNodeWithTag("mode-counterweight").assertDoesNotExist()
             onNodeWithTag("step-2.5").assertIsSelected()
 
             onNodeWithTag("machine-name").performTextInput("Гакк-машина")

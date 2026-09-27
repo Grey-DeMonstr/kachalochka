@@ -21,18 +21,22 @@ fun WeightMode.wireName(): String =
     when (this) {
         WeightMode.Total -> "total"
         WeightMode.PerSide -> "per_side"
-        WeightMode.Counterweight -> "counterweight"
     }
 
-fun weightModeOf(wire: String): WeightMode = WeightMode.entries.first { it.wireName() == wire }
+// Older clients still write `counterweight`, and one unreadable row must not stop a pull.
+fun weightModeOf(wire: String): WeightMode =
+    WeightMode.entries.firstOrNull { it.wireName() == wire } ?: WeightMode.Total
 
 fun WeightUnit.wireName(): String =
     when (this) {
         WeightUnit.Kg -> "kg"
         WeightUnit.Lb -> "lb"
+        WeightUnit.Custom -> "custom"
     }
 
-fun weightUnitOf(wire: String): WeightUnit = WeightUnit.entries.first { it.wireName() == wire }
+// See [weightModeOf].
+fun weightUnitOf(wire: String): WeightUnit =
+    WeightUnit.entries.firstOrNull { it.wireName() == wire } ?: WeightUnit.Kg
 
 @Serializable
 internal data class MachineRow(
@@ -44,6 +48,9 @@ internal data class MachineRow(
     @SerialName("platform_weight") val platformWeight: Double,
     @SerialName("platform_included") val platformIncluded: Boolean,
     val unit: String,
+    // No default: an upsert leaves a column it is not sent unchanged, and supabase-kt skips
+    // defaults.
+    @SerialName("unit_label") val unitLabel: String,
     @SerialName("weight_step") val weightStep: Double,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
@@ -58,6 +65,7 @@ internal data class MachineRow(
             platformWeight = platformWeight,
             platformIncluded = platformIncluded,
             unit = weightUnitOf(unit),
+            unitLabel = unitLabel,
             weightStep = weightStep,
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
@@ -74,6 +82,7 @@ internal data class MachineRow(
                 platformWeight = machine.platformWeight,
                 platformIncluded = machine.platformIncluded,
                 unit = machine.unit.wireName(),
+                unitLabel = machine.unitLabel,
                 weightStep = machine.weightStep,
                 updatedAt = machine.updatedAt.toString(),
                 deleted = machine.deleted,
