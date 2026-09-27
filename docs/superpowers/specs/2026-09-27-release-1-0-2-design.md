@@ -255,8 +255,10 @@ The table-level grants of `0003_grants.sql` cover the new column.
 - A 1.0.1 client ignores `unit_label` (supabase-kt decodes with `ignoreUnknownKeys`), but its
   `weightUnitOf("custom")` throws: once any device of an account saves a custom unit, that
   account's 1.0.1 devices stop pulling. The release notes ask to update every device.
-- Order of rollout: `supabase db push` first, then the release. A 1.0.2 client against a server
-  without `unit_label` fails to decode every machine.
+- **Order of rollout: every migration of this release is applied with `supabase db push` before
+  `master` is pushed, because the web deploys on every push to `master`; `master` goes first,
+  the `vX.Y.Z` tag last.** A 1.0.2 client against a server without `unit_label` fails to decode
+  every machine.
 
 ---
 
