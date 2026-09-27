@@ -120,10 +120,25 @@ fun CalendarScreen(
             }
         }
         current.removal?.let {
-            RemovalDialog(
-                it,
+            ConfirmDialog(
+                it.title,
+                it.text,
+                "Удалить",
+                "confirm-remove",
+                "cancel-remove",
                 onConfirm = viewModel::confirmRemoval,
                 onCancel = viewModel::cancelRemoval,
+            )
+        }
+        current.replacement?.let {
+            ConfirmDialog(
+                it.title,
+                it.text,
+                "Заменить",
+                "confirm-replace",
+                "cancel-replace",
+                onConfirm = viewModel::confirmReplacement,
+                onCancel = viewModel::cancelReplacement,
             )
         }
     }
@@ -317,22 +332,26 @@ private fun VisitCard(
 }
 
 @Composable
-private fun RemovalDialog(
-    removal: RemovalUi,
+private fun ConfirmDialog(
+    title: String,
+    text: String,
+    confirmLabel: String,
+    confirmTag: String,
+    cancelTag: String,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onCancel,
-        title = { Text(removal.title) },
-        text = { Text(removal.text) },
+        title = { Text(title) },
+        text = { Text(text) },
         confirmButton = {
-            TextButton(onClick = onConfirm, modifier = Modifier.testTag("confirm-remove")) {
-                Text("Удалить", color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = onConfirm, modifier = Modifier.testTag(confirmTag)) {
+                Text(confirmLabel, color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {
-            TextButton(onClick = onCancel, modifier = Modifier.testTag("cancel-remove")) {
+            TextButton(onClick = onCancel, modifier = Modifier.testTag(cancelTag)) {
                 Text("Отмена")
             }
         },

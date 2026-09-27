@@ -38,6 +38,8 @@ class CalendarViewModelTest {
     private val row = Machine.new("Тяга верхнего блока", null, t0)
     private val twelfth = CalendarDay(2023, 11, 12)
     private val sunday = Visit(VisitId.random(), null, twelfth, t0 - 2.days, t0, false)
+    private val fifth = CalendarDay(2023, 11, 5)
+    private val fifthVisit = Visit(VisitId.random(), null, fifth, t0 - 9.days, t0, false)
 
     private fun set(
         visit: Visit,
@@ -368,6 +370,55 @@ class CalendarViewModelTest {
             assertFalse(assertNotNull(vm.state.value).moving)
             assertEquals(sunday, gym.visits.byId(sunday.id))
             assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun moving_onto_a_day_with_a_visit_asks_before_replacing_it() =
+        runTest {
+            gym.visits.upsert(fifthVisit)
+            gym.sets.upsert(set(fifthVisit, press, 0))
+            val vm = viewModel().also { it.refresh() }
+            vm.startMove(sunday.id)
+
+            vm.selectDay(fifth)
+
+            val replacement = assertNotNull(vm.state.value?.replacement)
+            assertEquals("Заменить визит?", replacement.title)
+            assertEquals(
+                "На 5 ноября уже есть визит: 1 подход. " +
+                    "Он и его подходы пропадут из истории и статистики.",
+                replacement.text,
+            )
+            vm.cancelReplacement()
+            val state = assertNotNull(vm.state.value)
+            assertNull(state.replacement)
+            assertTrue(state.moving)
+            assertEquals(fifthVisit, gym.visits.byId(fifthVisit.id))
+            assertEquals(twelfth, gym.visits.byId(sunday.id)?.day)
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun replacing_removes_the_day_s_visit_with_its_sets_and_moves_in() =
+        runTest {
+            gym.visits.upsert(fifthVisit)
+            gym.sets.upsert(set(fifthVisit, press, 0))
+            val vm = viewModel().also { it.refresh() }
+            vm.startMove(sunday.id)
+            vm.selectDay(fifth)
+
+            vm.confirmReplacement()
+
+            assertEquals(true, gym.visits.byId(fifthVisit.id)?.deleted)
+            assertEquals(emptyList(), gym.sets.forVisit(fifthVisit.id))
+            assertEquals(fifth, gym.visits.byId(sunday.id)?.day)
+            assertEquals(3, gym.sets.forVisit(sunday.id).size)
+            val state = assertNotNull(vm.state.value)
+            assertFalse(state.moving)
+            assertNull(state.replacement)
+            assertTrue(state.day(5).selected)
+            assertEquals(sunday.id, state.visit?.id)
+            assertEquals(1, gym.sync.requests)
         }
 
     private fun session(

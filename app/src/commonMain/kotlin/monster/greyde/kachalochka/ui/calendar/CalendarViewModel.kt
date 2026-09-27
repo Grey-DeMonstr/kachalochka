@@ -43,6 +43,7 @@ data class CalendarUiState(
     val noVisit: Boolean,
     val moving: Boolean,
     val removal: RemovalUi?,
+    val replacement: ReplacementUi?,
 )
 
 data class DayUi(
@@ -60,6 +61,11 @@ data class CalendarVisitUi(
 )
 
 data class RemovalUi(
+    val title: String,
+    val text: String,
+)
+
+data class ReplacementUi(
     val title: String,
     val text: String,
 )
@@ -89,6 +95,8 @@ class CalendarViewModel(
     private var moving: Visit? = null
     private var removing: Visit? = null
     private var removingSets: Int = 0
+    private var replacing: Visit? = null
+    private var replacingSets: Int = 0
     private var reloading: Job? = null
 
     /** The screen follows whoever is active, wherever the switch came from. */
@@ -97,6 +105,7 @@ class CalendarViewModel(
             accounts.activeId.collect {
                 moving = null
                 removing = null
+                replacing = null
                 reload()
             }
         }
@@ -117,19 +126,29 @@ class CalendarViewModel(
         val target = moving
         if (target == null || day == target.day) {
             moving = null
+            replacing = null
             selected = day
             dayCard = null
             publish()
             reload(everything = false)
             return
         }
-        // A day holds one visit.
-        if (day in visitDays) return
+        // A day holds one visit; moving onto an occupied one asks before replacing it.
+        val occupant = all.filter { it.day == day }.maxWithOrNull(visitRecency)
+        if (occupant != null) {
+            viewModelScope.launch {
+                replacingSets = sets.forVisit(occupant.id).size
+                replacing = occupant
+                publish()
+            }
+            return
+        }
         writes.launch {
             // A sync may have removed the visit since the move began.
             val visit = visits.byId(target.id)?.takeIf { !it.deleted }
             if (visit == null) {
                 moving = null
+                replacing = null
                 publish()
                 return@launch
             }
@@ -137,6 +156,7 @@ class CalendarViewModel(
             val offset = utcOffset.at(now)
             write(movedVisit(visit, sets.forVisit(visit.id), day, offset, now))
             moving = null
+            replacing = null
             selected = day
             month = CalendarMonth.of(day)
             sync.request()
@@ -152,6 +172,7 @@ class CalendarViewModel(
     fun cancelMove(): Boolean {
         if (moving == null) return false
         moving = null
+        replacing = null
         publish()
         return true
     }
@@ -177,7 +198,36 @@ class CalendarViewModel(
             write(removedVisit(visit, sets.forVisit(visit.id), now))
             removing = null
             moving = null
+            replacing = null
             sync.request()
+            reload()
+        }
+    }
+
+    fun cancelReplacement() {
+        replacing = null
+        publish()
+    }
+
+    fun confirmReplacement() {
+        val target = moving ?: return
+        val day = replacing?.day ?: return
+        writes.launch {
+            val visit = visits.byId(target.id)?.takeIf { !it.deleted }
+            val now = clock.now()
+            if (visit != null) {
+                val owner = currentUser.id()
+                // Re-read the day, so a visit pulled onto it since the ask is replaced too.
+                visits.onDay(owner, day)?.let {
+                    write(removedVisit(it, sets.forVisit(it.id), now))
+                }
+                write(movedVisit(visit, sets.forVisit(visit.id), day, utcOffset.at(now), now))
+                selected = day
+                month = CalendarMonth.of(day)
+                sync.request()
+            }
+            moving = null
+            replacing = null
             reload()
         }
     }
@@ -252,6 +302,7 @@ class CalendarViewModel(
                 noVisit = day !in marked,
                 moving = moving != null,
                 removal = removing?.let { removalUi(it, today) },
+                replacement = replacing?.let { replacementUi(it, today) },
             )
     }
 
@@ -264,6 +315,18 @@ class CalendarViewModel(
             "Удалить визит?",
             "${dayMonthLabel(day, today.year)} · ${setCount(removingSets)}. " +
                 "Подходы пропадут из истории и статистики.",
+        )
+    }
+
+    private fun replacementUi(
+        occupant: Visit,
+        today: CalendarDay,
+    ): ReplacementUi {
+        val day = occupant.day ?: today
+        return ReplacementUi(
+            "Заменить визит?",
+            "На ${dayMonthLabel(day, today.year)} уже есть визит: ${setCount(replacingSets)}. " +
+                "Он и его подходы пропадут из истории и статистики.",
         )
     }
 

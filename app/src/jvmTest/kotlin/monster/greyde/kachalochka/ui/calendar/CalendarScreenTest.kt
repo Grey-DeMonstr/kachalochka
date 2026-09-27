@@ -173,6 +173,42 @@ class CalendarScreenTest {
     }
 
     @Test
+    fun moving_onto_a_visit_replaces_it_only_once_confirmed() {
+        val fifth = Visit(VisitId.random(), null, CalendarDay(2023, 11, 5), t0 - 9.days, t0, false)
+        runBlocking { gym.visits.upsert(fifth) }
+        runScreenTest(gym, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("move-visit-${sunday.id.value}").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("day-2023-11-05").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("cancel-replace").performClick()
+            waitForIdle()
+            onNodeWithTag("move-banner").assertIsDisplayed()
+
+            onNodeWithTag("day-2023-11-05").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("confirm-replace").performClick()
+            waitForIdle()
+
+            onNodeWithTag("move-banner").assertDoesNotExist()
+        }
+        assertEquals(
+            true,
+            gym.visits.rows
+                .getValue(fifth.id)
+                .deleted,
+        )
+        assertEquals(
+            CalendarDay(2023, 11, 5),
+            gym.visits.rows
+                .getValue(sunday.id)
+                .day,
+        )
+    }
+
+    @Test
     fun today_without_a_visit_offers_to_add_one() {
         var opened: CalendarDay? = null
         runScreenTest(gym, screen = { calendar(onOpenVisit = { opened = it }) }) {
