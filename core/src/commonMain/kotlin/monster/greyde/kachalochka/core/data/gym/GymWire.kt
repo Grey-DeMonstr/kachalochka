@@ -34,7 +34,7 @@ fun WeightUnit.wireName(): String =
         WeightUnit.Custom -> "custom"
     }
 
-// See [weightModeOf].
+// A unit this version does not know must not stop a pull either.
 fun weightUnitOf(wire: String): WeightUnit =
     WeightUnit.entries.firstOrNull { it.wireName() == wire } ?: WeightUnit.Kg
 
@@ -48,8 +48,8 @@ internal data class MachineRow(
     @SerialName("platform_weight") val platformWeight: Double,
     @SerialName("platform_included") val platformIncluded: Boolean,
     val unit: String,
-    // No default: an upsert leaves a column it is not sent unchanged, and supabase-kt skips
-    // defaults.
+    // No default: an upsert leaves a column it is not sent unchanged, and supabase-kt
+    // skips defaults.
     @SerialName("unit_label") val unitLabel: String,
     @SerialName("weight_step") val weightStep: Double,
     @SerialName("updated_at") val updatedAt: String,
