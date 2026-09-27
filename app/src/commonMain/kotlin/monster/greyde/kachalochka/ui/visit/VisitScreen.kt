@@ -116,6 +116,7 @@ fun VisitScreen(
             SetSheet(
                 sheet = sheet,
                 onWeight = viewModel::changeWeight,
+                onTypeWeight = viewModel::typeWeight,
                 onReps = viewModel::changeReps,
                 onSave = viewModel::save,
                 onOpenMachineSettings = { viewModel.openMachineSettings(onOpenMachineSettings) },
@@ -415,6 +416,7 @@ private fun SheetPeek(
 private fun SetSheet(
     sheet: SheetUi,
     onWeight: (Int) -> Unit,
+    onTypeWeight: (String) -> Unit,
     onReps: (Int) -> Unit,
     onSave: () -> Unit,
     onOpenMachineSettings: () -> Unit,
@@ -516,6 +518,7 @@ private fun SetSheet(
             { onWeight(+1) },
             "weight",
             accent = sheet.editing,
+            onValueChange = onTypeWeight,
         )
         Stepper(sheet.reps, "повторы", { onReps(-1) }, { onReps(+1) }, "reps")
         AccentButton(
@@ -524,6 +527,7 @@ private fun SetSheet(
             onSave,
             Modifier.testTag("save-set"),
             height = 72.dp,
+            enabled = sheet.canSave,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlineButton(

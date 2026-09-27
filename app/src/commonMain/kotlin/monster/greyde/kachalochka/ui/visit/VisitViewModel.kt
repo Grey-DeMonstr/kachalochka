@@ -24,6 +24,7 @@ import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.minuteOfDay
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
 import monster.greyde.kachalochka.core.domain.gym.recordingInstant
+import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.gym.stepReps
 import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
@@ -39,6 +40,7 @@ import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.groupSummary
 import monster.greyde.kachalochka.ui.format.machineTitle
+import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.platformSuffix
 import monster.greyde.kachalochka.ui.format.saveLabel
 import monster.greyde.kachalochka.ui.format.setCount
@@ -87,6 +89,7 @@ data class SheetUi(
     val people: List<AccountUi>,
     val saveLabel: String,
     val expanded: Boolean,
+    val canSave: Boolean,
 )
 
 class VisitViewModel(
@@ -116,6 +119,11 @@ class VisitViewModel(
     private var values = SetValues(0.0, DEFAULT_REPS)
     private var sheetExpanded = true
 
+    /** The text as typed; null while the weight shows the stepped, formatted value. */
+    private var weightText: String? = null
+    private val typedWeight: Double? get() = weightText?.let(::parseDecimal)?.takeIf { it >= 0 }
+    private val weightValid: Boolean get() = weightText == null || typedWeight != null
+
     private val ended: Boolean get() = visit?.endedAt != null
 
     /** The screen follows whoever is active, wherever the switch came from. */
@@ -144,7 +152,14 @@ class VisitViewModel(
 
     fun changeWeight(direction: Int) {
         val machine = open ?: return
+        weightText = null
         values = values.copy(weight = stepWeight(values.weight, machine.weightStep, direction))
+        publish()
+    }
+
+    fun typeWeight(text: String) {
+        weightText = text
+        typedWeight?.let { values = values.copy(weight = roundWeight(it)) }
         publish()
     }
 
@@ -164,6 +179,7 @@ class VisitViewModel(
 
     fun save() {
         val machine = open ?: return
+        if (!weightValid) return
         writes.launch {
             val now = clock.now()
             val edited = editing
@@ -211,6 +227,7 @@ class VisitViewModel(
         editing = set
         selected = set.machineId
         values = SetValues(set.weight, set.reps)
+        weightText = null
         sheetExpanded = true
         refresh()
     }
@@ -326,6 +343,7 @@ class VisitViewModel(
                     previousSets,
                     visitSets.filter { it.machineId == machine.id },
                 )
+            weightText = null
         }
         publish()
     }
@@ -402,7 +420,7 @@ class VisitViewModel(
             setNumberLabel = "подход $number",
             caption = caption,
             previous = previous,
-            weight = formatNumber(values.weight),
+            weight = weightText ?: formatNumber(values.weight),
             weightCaption = weightCaption(machine),
             reps = values.reps.toString(),
             editing = edited != null,
@@ -413,6 +431,7 @@ class VisitViewModel(
                     edited != null,
                 ),
             expanded = sheetExpanded,
+            canSave = weightValid,
         )
     }
 }

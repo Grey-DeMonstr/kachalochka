@@ -172,6 +172,75 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun a_typed_weight_takes_a_comma_or_a_point_and_the_steppers_go_on_from_it() {
+        val vm = viewModel().also { it.selectMachine(press.id) }
+
+        vm.typeWeight("22,5")
+        assertEquals(
+            "22,5",
+            vm.state.value
+                ?.sheet
+                ?.weight,
+        )
+        vm.changeWeight(+1)
+        assertEquals(
+            "25",
+            vm.state.value
+                ?.sheet
+                ?.weight,
+        )
+
+        vm.typeWeight("22.75")
+        vm.changeWeight(-1)
+        assertEquals(
+            "20,25",
+            vm.state.value
+                ?.sheet
+                ?.weight,
+        )
+    }
+
+    @Test
+    fun a_weight_that_is_not_a_number_is_not_saved() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            listOf("7,,5", "", "-5").forEach {
+                vm.typeWeight(it)
+                assertEquals(
+                    false,
+                    vm.state.value
+                        ?.sheet
+                        ?.canSave,
+                    it,
+                )
+            }
+            vm.save()
+
+            assertEquals(emptyList(), gym.sets.forVisit(visit.id))
+        }
+
+    @Test
+    fun the_typed_weight_is_saved_and_the_next_set_is_suggested_again() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            vm.typeWeight("22,5")
+
+            vm.save()
+
+            assertEquals(
+                22.5,
+                gym.sets
+                    .forVisit(visit.id)
+                    .single()
+                    .weight,
+            )
+            val sheet = assertNotNull(vm.state.value?.sheet)
+            assertEquals("70", sheet.weight)
+            assertEquals(true, sheet.canSave)
+        }
+
+    @Test
     fun a_refresh_keeps_the_stepper_values() {
         val vm = viewModel().also { it.selectMachine(press.id) }
         vm.changeWeight(+1)

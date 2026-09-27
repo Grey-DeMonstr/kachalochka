@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
@@ -143,6 +144,29 @@ class VisitScreenTest {
             onNodeWithTag("sheet-set-number", useUnmergedTree = true).assertTextEquals("подход 3")
             onNodeWithTag("rest-timer").assertTextEquals("1:30")
             assertEquals(1, consumed)
+        }
+    }
+
+    @Test
+    fun a_weight_typed_with_a_comma_is_saved() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("weight-value").performTextReplacement("22,5")
+            waitForIdle()
+            onNodeWithTag("save-set").performClick()
+            waitForIdle()
+        }
+        val weights = runBlocking { gym.sets.forVisit(visit.id) }.map { it.weight }
+        assertEquals(setOf(70.0, 22.5), weights.toSet())
+    }
+
+    @Test
+    fun a_weight_that_is_not_a_number_disables_saving() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("weight-value").performTextReplacement("abc")
+            waitForIdle()
+            onNodeWithTag("save-set").assertIsNotEnabled()
         }
     }
 

@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -21,9 +23,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -196,22 +202,43 @@ fun Stepper(
     onPlus: () -> Unit,
     tag: String,
     accent: Boolean = false,
+    onValueChange: ((String) -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
+    val valueColor = if (accent) colors.onPrimaryContainer else colors.onBackground
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         StepButton("−", onMinus, Modifier.testTag("$tag-minus"))
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                value,
-                modifier = Modifier.testTag("$tag-value"),
-                fontSize = 52.sp,
-                lineHeight = 52.sp,
-                fontWeight = FontWeight.Medium,
-                color = if (accent) colors.onPrimaryContainer else colors.onBackground,
-            )
+            if (onValueChange != null) {
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    singleLine = true,
+                    textStyle =
+                        TextStyle(
+                            fontSize = 52.sp,
+                            lineHeight = 52.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = valueColor,
+                            textAlign = TextAlign.Center,
+                        ),
+                    cursorBrush = SolidColor(colors.secondary),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth().testTag("$tag-value"),
+                )
+            } else {
+                Text(
+                    value,
+                    modifier = Modifier.testTag("$tag-value"),
+                    fontSize = 52.sp,
+                    lineHeight = 52.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = valueColor,
+                )
+            }
             Text(caption, fontSize = 13.sp, color = colors.onBackground.copy(alpha = 0.55f))
         }
         StepButton("+", onPlus, Modifier.testTag("$tag-plus"))
