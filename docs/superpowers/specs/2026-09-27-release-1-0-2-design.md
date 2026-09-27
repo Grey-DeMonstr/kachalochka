@@ -100,10 +100,13 @@ Each decision, then why.
   `recorded_at` is the moment the visit row was created for today, and local noon for another
   day, as in 1.0.1.
 - **Normalization keeps, of the visits sharing a day, the one with the newest `(recorded_at,
-  updated_at, id)` and soft-deletes the others with their sets.** The approved design merges
-  nothing; the newest is what the user saw last.
-- **Normalization runs once per account at start, and again after every sync pass and account
-  switch; it is idempotent, so "once" needs no stored flag.** A second run finds nothing to write.
+  updated_at, id)` among those with a live set — among all when none has one — and soft-deletes
+  the others with their sets.** The approved design merges nothing; the newest is what the user
+  saw last, but 1.0.1 wrote a visit on "Начать визит", so an empty one may follow the workout.
+- **Normalization runs where the rows it rewrites are current: on Android at start for the
+  anonymous owner and, for a signed-in account, in the sync worker after that account's clean
+  pass; on the web at start and after every account switch (§4.5). It is idempotent, so it
+  needs no stored flag.** A second run finds nothing to write.
 - **Moving a visit onto a day that has one asks "Заменить визит?"; cancelling keeps move mode.**
   The user can tap another day without starting over.
 - **Moving still restamps the sets' `recorded_at` onto the new day.** Suggestions and the picker
@@ -304,11 +307,13 @@ The button (`open-today`) opens `VisitRoute(today)`. `start-visit` and `continue
 - A day holds at most one visit card: its counts and machines, "Перенести" and "Удалить".
 - A day without a visit, today included, shows "Нет визита" and "Добавить визит", which opens
   that day's visit screen.
-- Moving: "Перенести", then tap a day. An empty day receives the visit. A day with a visit opens
-  the dialog "Заменить визит?" with "На 12 ноября уже есть визит: 3 подхода. Он и его подходы
+- Moving: "Перенести", then tap a day. An empty day receives the visit; the day is read again
+  before the move, so one a sync has filled since asks first. A day with a visit opens the
+  dialog "Заменить визит?" with "На 12 ноября уже есть визит: 3 подхода. Он и его подходы
   пропадут из истории и статистики." and "Заменить" (`confirm-replace`) / "Отмена"
-  (`cancel-replace`). Replacing soft-deletes that visit and its sets, then moves. Cancel closes
-  the dialog and stays in move mode. Tapping the visit's own day leaves move mode.
+  (`cancel-replace`). Replacing soft-deletes every live visit on that day with its sets, then
+  moves. Cancel closes the dialog and stays in move mode. Tapping the visit's own day leaves
+  move mode.
 - Removing is unchanged.
 
 ### 4.5 Normalization
@@ -317,12 +322,14 @@ The button (`open-today`) opens `VisitRoute(today)`. `start-visit` and `continue
 
 1. A live visit without `day` gets `CalendarDay.of(recordedAt, utcOffset)`.
 2. Live visits are grouped by day; each group keeps its newest by `(recordedAt, updatedAt, id)`
-   and every other visit becomes `removedVisit(visit, itsSets, now)`.
+   of those with a live set, or of all when none has one, and every other visit becomes
+   `removedVisit(visit, itsSets, now)`.
 3. Only rows that changed are returned; a second run returns nothing.
 
 `VisitNormalizer` in `core/data/gym` (`commonMain`) reads the owner's visits and their sets
 through the repositories, applies the result sets first, visit last, and reports whether it
-wrote. It runs:
+wrote. Before rewriting a visit it re-reads it and skips it when its `updatedAt` changed since
+the read; the next run judges it again. It runs:
 
 - **Android**: at start, only for the anonymous owner; a signed-in account is normalized only
   inside `SyncWorker`, once that account's own pass comes back clean, and the worker runs one
@@ -330,18 +337,22 @@ wrote. It runs:
   active account requests a pass instead of normalizing directly.
 - **Web**: after the session restore and after every account switch, against the server.
 
-A failure normalizing one owner at start or on a switch is logged (Android) or sent to the
-console (web) and does not stop the next owner's turn. Until an account's visits are normalized,
-readers show a visit with no `day` on the day of its recorded instant (`Visit.dayAt`), newest by
+A failure normalizing one owner at start, on a switch or in `SyncWorker` is logged (Android) or
+sent to the console (web) and does not stop the next owner's turn; in the worker it leaves the
+pass clean, and the second pass still runs. Until an account's visits are normalized, readers
+show a visit with no `day` on the day of its recorded instant (`Visit.dayAt`), newest by
 `visitRecency` when several fall on it (`VisitRepository.shownOn`).
 
 ### 4.6 Domain and data
 
 - `Visit(id, userId, day: CalendarDay?, recordedAt, updatedAt, deleted)`: `endedAt` leaves the
-  domain. `day` is null only on rows normalization has not reached; readers skip them.
+  domain. `day` is null only on rows normalization has not reached; readers place them on their
+  recorded day through `Visit.dayAt` and `shownOn`.
 - `CalendarDay` gains `iso` ("2023-11-14") and `parse(iso)`; `isoDate` in `Formats.kt` uses it.
 - `WorkoutSet` gains `position: Int` after `reps`.
-- `VisitRepository`: `onDay(owner, day): Visit?`; `active` goes.
+- `VisitRepository`: `onDay(owner, day): Visit?` and `undated(owner)`, the live visits without a
+  day; `active` goes. Beside it, `shownOn(owner, day, utcOffset)` is the visit a day shows, and
+  `allOn(owner, day, utcOffset)` every live visit on it, which the calendar's replace removes.
 - `recordingInstant(visit, visitSets, today, now)`: `now` in today's visit; otherwise one second
   after the visit's last set, or after its `recordedAt`.
 - `VisitRow` gains `day: String?` and keeps `recorded_at` and `ended_at`, writing `ended_at =
@@ -830,11 +841,14 @@ C's friend screens reuse.
 
 - **1.0.1 devices stop pulling** once an account has a custom unit (§3.6). The changelog must say
   to update every device.
-- **Normalization soft-deletes** the earlier of two visits on one day, sets included, both for
-  old multi-visit days and for a day two devices created offline. The rows stay in the database,
+- **Normalization soft-deletes** all but one visit on a day, sets included, both for old
+  multi-visit days and for a day two devices created offline. The rows stay in the database,
   flagged deleted.
 - **A 1.0.1 device and a 1.0.2 device on one account** fight over running visits: 1.0.1 starts
   them, 1.0.2 normalizes them onto days and may delete the older one.
+- **A 1.0.1 device moving a visit that 1.0.2 has dated** rewrites `recorded_at` but never sends
+  `day`, so the server keeps the old `day`.
+- **Sets pushed later into a visit normalization deleted** stay live but belong to no live visit.
 - **Every own-data query must keep `owned(owner)` or an id the owner holds** once Part C widens
   `select`: a web query filtering by anything else starts returning friends' rows. The calendar's
   `byId` callers take their ids from the owner's own `all`, so an id from elsewhere never reaches

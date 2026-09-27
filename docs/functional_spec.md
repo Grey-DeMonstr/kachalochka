@@ -11,7 +11,7 @@ without an account.
 
 Several accounts can be signed in on one device at once, with one of them active. Everything is
 recorded into the active account, and each account keeps its own visits, machines and history.
-Switching between them is easy and works from inside a running visit. The account in use is
+Switching between them is easy and works from inside a visit. The account in use is
 signed out on its own once the server stops accepting its sign-in; on Android its rows stay on
 the device. Any other account the server stops accepting stays listed but stops syncing; switching
 to it fails to activate and reports the failure, and the account stays listed.
