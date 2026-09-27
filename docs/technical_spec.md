@@ -1,6 +1,6 @@
 # Kachalochka — Technical Specification
 
-**Last reviewed:** 2026-09-24
+**Last reviewed:** 2026-09-27
 
 The architectural decisions and invariants new work must respect. It is not a description of the
 current code — read the code for that. What is written here is what the code cannot tell you: why
@@ -266,10 +266,13 @@ displayed photos from the local file on Android and from a signed Storage URL on
 ### 4.5 Gym data
 
 Three synced tables: `machine`, `visit` and `workout_set`. The last is not called `set` — a
-keyword in both SQLDelight's dialect and Postgres. Weights are `Double`; every step (±1, ±2.5,
-±5 or ±10) is rounded to three decimals so a running total never drifts. The weight-counting
-mode and the unit are enums, mapped to the wire names `total` / `per_side` / `counterweight` and
-`kg` / `lb` by one shared mapping in `core/data/gym`, used by both implementations.
+keyword in both SQLDelight's dialect and Postgres. Weights are `Double`; every step and every
+typed weight is rounded to three decimals so a running total never drifts. The weight-counting
+mode and the unit are enums, mapped to the wire names `total` / `per_side` and `kg` / `lb` /
+`custom` by one shared mapping in `core/data/gym`, used by both implementations. A name the
+mapping does not know reads as `total` or `kg`: clients before 1.0.2 still write `counterweight`,
+and one unreadable row must not stop a pull. A custom unit's name is `unit_label`, empty for kg
+and lb.
 
 A visit is active while it has no end; an account's active visit is the newest of its own rows
 with no `ended_at`, so each account has at most one. A visit carries `recorded_at` to order and
@@ -309,6 +312,13 @@ The local SQLite database is recreated rather than migrated until the first rele
 `core`'s schema makes unreadable is taken by clearing the app's data, and the migration written
 is the Postgres one. From the first `vX.Y.Z` tag on, such a change ships a SQLDelight `.sqm`
 beside it and moves `Schema.version`, because by then the rows belong to somebody.
+
+A column a `.sqm` adds with `ALTER TABLE … ADD COLUMN` lands at the end of the table, so the
+`.sq` declares it last too: the generated `SELECT *` mappers read columns by position. A wire
+row declares no Kotlin default values, because supabase-kt encodes without defaults and an
+upsert leaves a column it was not sent unchanged. Old clients keep working against a newer
+schema only as far as their decoders allow: unknown columns are ignored, but a value they
+cannot map, such as the unit `custom`, fails their pull.
 
 ### 5.2 Access rules
 

@@ -49,8 +49,9 @@ account, the settings and signing out. With nobody signed in the avatar is an em
 The home screen shows a visit card. While a visit is running, the card shows "Визит идёт", how
 many machines and sets so far, the last recorded set and a "Продолжить" button. With no visit
 running, the card offers "Начать визит", which starts one. Below the card are rows for visits,
-plans, statistics and friends; plans, statistics and friends are shown but not yet available. On
-Android with nobody signed in, "Войти через Google" sits at the bottom of the screen.
+machines, plans, statistics and friends; plans, statistics and friends are shown but not yet
+available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
+screen.
 
 The visit screen lists the visit's sets grouped by machine and ends with "Новый тренажёр", which
 opens the machine picker. Tapping a machine's row expands it to show its sets; tapping a set
@@ -59,7 +60,8 @@ visit was opened from.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,
-and weight and reps steppers seeded from the previous visit's set. Saving records the set.
+and weight and reps steppers seeded from the previous visit's set. Saving records the set. The
+weight can also be typed, with a comma or a point; − and + step it by the machine's weight step.
 Tapping another account's chip switches to it: the shown history and the save button follow that
 person, and the set is recorded into their own visit. Swiping the sheet down, or pressing back on
 the phone or in the top bar, collapses it to a bar naming the machine and the next set; tapping
@@ -72,9 +74,15 @@ pre-filled with the typed name. When a machine is already chosen for the visit, 
 тренажёр" opens the form pre-filled from that machine, with the typed name instead of its own.
 Recently used machines are listed with their last result.
 
-The machine form collects a name, a setup note, how the weight is counted (total, per side or
-counterweight), the platform weight and whether it is added to the recorded weight, the unit
-(kg or lb) and the weight step.
+The machine form collects a name, a setup note, how the weight is counted (total or per side),
+the platform weight and whether it is added to the recorded weight, the unit and the weight
+step. The unit is kg, lb or an own unit such as "плитка", whose name is then written after
+every weight on that machine, with no conversion. The weight step is any positive number, with
+1, 2,5, 5 and 10 one tap away.
+
+The "Тренажёры" row lists the active account's machines by name, each with its unit, how its
+weight is counted and its step. Tapping one opens it in the machine form; "Новый тренажёр"
+adds one. Saving returns to the list.
 
 The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
 visit are marked, today and the chosen day are highlighted, and future days cannot be chosen.
@@ -86,8 +94,8 @@ visit on a past day; on today the button is "Начать визит", offered w
 moved. "Удалить" asks for confirmation, then removes the visit and its sets from the history and
 the statistics.
 
-Photos, comments on a set, a custom unit and counting left and right separately are shown on
-these screens but not yet available.
+Photos, comments on a set and counting left and right separately are shown on these screens but
+not yet available.
 
 ## Sign-in and accounts
 
