@@ -38,21 +38,21 @@ fun MachineListScreen(
                 .verticalScroll(rememberScrollState()),
         ) {
             val rows = state
-            if (rows.isNullOrEmpty()) {
-                if (rows != null) {
+            when {
+                rows == null -> Unit
+                rows.isEmpty() ->
                     Text(
                         "Тренажёров пока нет",
                         modifier = Modifier.padding(16.dp).testTag("machine-list-empty"),
                         fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                     )
-                }
-            } else {
-                rows.forEach { row ->
-                    MachineRow(row.name, row.detail, "machine-list-row-${row.id.value}") {
-                        onOpenMachine(row.id)
+                else ->
+                    rows.forEach { row ->
+                        MachineRow(row.name, row.detail, "machine-list-row-${row.id.value}") {
+                            onOpenMachine(row.id)
+                        }
                     }
-                }
             }
         }
         Box(Modifier.padding(16.dp)) {
