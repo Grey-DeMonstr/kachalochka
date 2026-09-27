@@ -7,6 +7,7 @@ import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.AccountTokens
 import monster.greyde.kachalochka.core.data.identity.FIXTURE_EXPIRY
 import monster.greyde.kachalochka.core.data.identity.FakeLiveTokens
@@ -29,8 +30,10 @@ class SupabaseClientFactoryTest {
     private val ivan = accountSession("11111111-1111-4111-8111-111111111111", "Ivan")
     private val credentials = SupabaseCredentials("https://example.test", "anon-key")
 
-    private suspend fun tokens(): AccountTokens {
-        val store = PersistedAccountStore(InMemoryAccountStorage()).also { it.add(ivan) }
+    private suspend fun ivanStore(): AccountStore =
+        PersistedAccountStore(InMemoryAccountStorage()).also { it.add(ivan) }
+
+    private fun tokens(store: AccountStore): AccountTokens {
         val noRefresh =
             object : SessionRefresh {
                 override suspend fun refresh(session: AccountSession): AccountSession? = null
@@ -42,7 +45,7 @@ class SupabaseClientFactoryTest {
     fun the_sync_client_resolves_the_token_of_the_account_the_pass_is_on() =
         runTest {
             val session = SyncSession()
-            val client = syncSupabaseClient(credentials, tokens(), session)
+            val client = syncSupabaseClient(credentials, tokens(ivanStore()), session)
 
             session.owner = ivan.account.userId
 
@@ -52,7 +55,7 @@ class SupabaseClientFactoryTest {
     @Test
     fun the_sync_client_has_no_token_between_accounts() =
         runTest {
-            val client = syncSupabaseClient(credentials, tokens(), SyncSession())
+            val client = syncSupabaseClient(credentials, tokens(ivanStore()), SyncSession())
 
             assertNull(client.accessToken?.invoke())
         }
@@ -60,9 +63,28 @@ class SupabaseClientFactoryTest {
     @Test
     fun the_sync_client_leaves_the_live_session_to_the_ui_client() =
         runTest {
-            val client = syncSupabaseClient(credentials, tokens(), SyncSession())
+            val client = syncSupabaseClient(credentials, tokens(ivanStore()), SyncSession())
 
             assertNull(client.pluginManager.getPluginOrNull(Auth))
+        }
+
+    @Test
+    fun the_friends_client_asks_for_the_active_account_s_token_and_holds_no_session() =
+        runTest {
+            val store = ivanStore()
+            val client = activeAccountSupabaseClient(credentials, tokens(store), store)
+
+            assertEquals(ivan.accessToken, client.accessToken?.invoke())
+            assertNull(client.pluginManager.getPluginOrNull(Auth))
+        }
+
+    @Test
+    fun the_friends_client_has_no_token_without_an_active_account() =
+        runTest {
+            val store = PersistedAccountStore(InMemoryAccountStorage())
+            val client = activeAccountSupabaseClient(credentials, tokens(store), store)
+
+            assertNull(client.accessToken?.invoke())
         }
 
     @Test

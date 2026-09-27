@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.core.di
 
+import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
 import monster.greyde.kachalochka.core.data.gym.RemoteMachineRepository
 import monster.greyde.kachalochka.core.data.gym.RemoteVisitRepository
 import monster.greyde.kachalochka.core.data.gym.RemoteWorkoutSetRepository
@@ -8,12 +9,14 @@ import monster.greyde.kachalochka.core.data.identity.LocalStorageAccountStorage
 import monster.greyde.kachalochka.core.data.identity.NoOwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.profile.RemoteProfileRepository
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import kotlin.time.Clock
 
 actual fun corePlatformModule(): Module =
     module {
@@ -21,6 +24,7 @@ actual fun corePlatformModule(): Module =
         single<MachineRepository> { RemoteMachineRepository(get()) }
         single<VisitRepository> { RemoteVisitRepository(get()) }
         single<WorkoutSetRepository> { RemoteWorkoutSetRepository(get()) }
+        single<FriendsRepository> { SupabaseFriendsRepository(inject(), Clock.System) }
         single<AccountStorage> { LocalStorageAccountStorage() }
         single<OwnerlessRows> { NoOwnerlessRows }
     }

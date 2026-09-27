@@ -2,9 +2,11 @@ package monster.greyde.kachalochka.core.di
 
 import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.db.kachalochkaDatabase
+import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
+import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.AccountTokens
 import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
@@ -13,6 +15,7 @@ import monster.greyde.kachalochka.core.data.identity.SqlOwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.SupabaseSessions
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import monster.greyde.kachalochka.core.data.supabase.activeAccountSupabaseClient
 import monster.greyde.kachalochka.core.data.supabase.syncSupabaseClient
 import monster.greyde.kachalochka.core.data.sync.LocalSyncRows
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
@@ -21,6 +24,7 @@ import monster.greyde.kachalochka.core.data.sync.SyncGateway
 import monster.greyde.kachalochka.core.data.sync.SyncPass
 import monster.greyde.kachalochka.core.data.sync.SyncSession
 import monster.greyde.kachalochka.core.data.sync.SyncWatermarks
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
@@ -51,4 +55,13 @@ internal fun sqlModule(): Module =
             SupabaseSyncGateway(lazy { syncSupabaseClient(credentials, tokens, session) })
         }
         single { SyncPass(get(), get(), get(), get(), get(), Dispatchers.IO) }
+        single<FriendsRepository> {
+            val credentials: SupabaseCredentials = get()
+            val tokens: AccountTokens = get()
+            val store: AccountStore = get()
+            SupabaseFriendsRepository(
+                lazy { activeAccountSupabaseClient(credentials, tokens, store) },
+                Clock.System,
+            )
+        }
     }

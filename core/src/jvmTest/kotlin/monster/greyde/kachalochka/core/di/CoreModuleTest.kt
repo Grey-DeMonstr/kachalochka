@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncPass
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -78,5 +79,23 @@ class CoreModuleTest {
             }.koin
 
         assertNotNull(koin.get<SyncPass>())
+    }
+
+    /** Friends are read online, but a clone without credentials must still build the graph. */
+    @Test
+    fun the_friends_repository_is_built_without_supabase_credentials() {
+        val koin =
+            koinApplication {
+                modules(
+                    coreModule,
+                    corePlatformModule(),
+                    module {
+                        single { SupabaseCredentials("", "") }
+                        single<GoogleSignIn> { UnusedSignIn }
+                    },
+                )
+            }.koin
+
+        assertNotNull(koin.get<FriendsRepository>())
     }
 }

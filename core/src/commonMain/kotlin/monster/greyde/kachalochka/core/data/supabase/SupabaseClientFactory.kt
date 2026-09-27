@@ -6,6 +6,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
+import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.AccountTokens
 import monster.greyde.kachalochka.core.data.sync.SyncSession
 
@@ -46,6 +47,20 @@ fun syncSupabaseClient(
     requireConfigured(credentials)
     return createSupabaseClient(credentials.url, credentials.anonKey) {
         accessToken = { session.owner?.let { tokens.tokenFor(it) } }
+        install(Postgrest)
+    }
+}
+
+// Android's UI client holds a session only after a sign-in or a switch in the same process, so
+// friends' reads resolve the active account's token per request, as the sync client does.
+fun activeAccountSupabaseClient(
+    credentials: SupabaseCredentials,
+    tokens: AccountTokens,
+    store: AccountStore,
+): SupabaseClient {
+    requireConfigured(credentials)
+    return createSupabaseClient(credentials.url, credentials.anonKey) {
+        accessToken = { store.activeId.value?.let { tokens.tokenFor(it) } }
         install(Postgrest)
     }
 }
