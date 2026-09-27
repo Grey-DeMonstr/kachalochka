@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncPass
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.data.sync.runAndNormalize
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.util.concurrent.TimeUnit
@@ -58,7 +59,10 @@ class SyncWorker(
         if (!get<SupabaseCredentials>().isConfigured) return Result.success()
         val clean =
             try {
-                get<SyncPass>().run(get<AccountStore>().accounts.value.map { it.userId })
+                get<SyncPass>().runAndNormalize(
+                    get<AccountStore>().accounts.value.map { it.userId },
+                    get(),
+                )
             } catch (stopped: CancellationException) {
                 throw stopped
             } catch (failed: Exception) {

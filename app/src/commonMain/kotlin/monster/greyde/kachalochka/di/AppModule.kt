@@ -1,8 +1,10 @@
 package monster.greyde.kachalochka.di
 
 import kotlinx.coroutines.delay
+import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
@@ -28,6 +30,11 @@ val appModule =
         single<Ticker> { Ticker { delay(1.seconds) } }
         single<UtcOffset> { UtcOffset(::platformUtcOffset) }
         single { RestTimer(get()) }
+        single {
+            val offset: UtcOffset = get()
+            VisitNormalizer(get(), get(), get(), offset::at)
+        }
+        single { VisitNormalization(get(), get(), get()) }
         viewModelOf(::HomeViewModel)
         viewModelOf(::AccountsViewModel)
         viewModelOf(::CalendarViewModel)

@@ -5,6 +5,7 @@ import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
+import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -17,7 +18,9 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.identity.newUuidV4
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
+import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 internal val IVAN = UserId("11111111-1111-4111-8111-111111111111")
@@ -75,4 +78,12 @@ internal class SyncHarness {
             session,
             Dispatchers.Unconfined,
         )
+    val normalizer =
+        VisitNormalizer(
+            visits,
+            sets,
+            object : Clock {
+                override fun now(): Instant = T0 + 1.hours
+            },
+        ) { Duration.ZERO }
 }

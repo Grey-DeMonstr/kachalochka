@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.di.corePlatformModule
 import monster.greyde.kachalochka.core.di.followLiveSession
 import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
+import monster.greyde.kachalochka.sync.startVisitNormalization
 import monster.greyde.kachalochka.ui.account.disownActiveAccount
 import monster.greyde.kachalochka.ui.account.restoreSession
 import monster.greyde.kachalochka.ui.account.sessionFromRedirect
@@ -39,6 +40,8 @@ fun main() {
         }
         // After the restore, so the refresh the restore itself may trigger is written back.
         koin.followLiveSession()
+        // The active account, reached through its id, is the only owner the web reads.
+        koin.startVisitNormalization(emptyList())
         ComposeViewport(document.body!!) { App() }
     }
 }

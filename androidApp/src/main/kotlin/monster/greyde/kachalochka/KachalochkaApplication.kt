@@ -4,11 +4,13 @@ import android.app.Application
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.di.corePlatformModule
 import monster.greyde.kachalochka.core.di.followLiveSession
 import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
+import monster.greyde.kachalochka.sync.startVisitNormalization
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
@@ -21,6 +23,8 @@ class KachalochkaApplication : Application() {
                 modules(appModule, corePlatformModule(), platformModule())
             }.koin
         koin.followLiveSession()
+        val signedIn = koin.get<AccountStore>().accounts.value
+        koin.startVisitNormalization(listOf(null) + signedIn.map { it.userId })
         val sync = koin.get<SyncTrigger>()
         // Fires at launch and again on every return to the foreground.
         ProcessLifecycleOwner.get().lifecycle.addObserver(
