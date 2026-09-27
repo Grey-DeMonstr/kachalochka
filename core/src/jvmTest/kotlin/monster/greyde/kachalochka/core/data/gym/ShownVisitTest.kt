@@ -7,6 +7,7 @@ import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.allOn
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -56,5 +57,18 @@ class ShownVisitTest {
             visits.upsert(undated.copy(deleted = true))
 
             assertEquals(dated, visits.shownOn(null, fourteenth, utc))
+        }
+
+    @Test
+    fun a_day_s_visits_are_the_live_ones_dated_on_it_or_recorded_on_it_undated() =
+        runTest {
+            val dated = visit(t0 - 1.hours, fourteenth)
+            val undated = visit(t0, null)
+            val removed = visit(t0 - 2.hours, fourteenth).copy(deleted = true)
+            val nextDay = visit(t0 + 3.hours, null)
+            val movedAway = visit(t0 - 3.hours, fifteenth)
+            listOf(dated, undated, removed, nextDay, movedAway).forEach { visits.upsert(it) }
+
+            assertEquals(setOf(dated, undated), visits.allOn(null, fourteenth, utc).toSet())
         }
 }

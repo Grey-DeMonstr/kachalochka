@@ -18,6 +18,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRows
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.allOn
 import monster.greyde.kachalochka.core.domain.gym.dayAt
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.movedVisit
@@ -154,6 +155,15 @@ class CalendarViewModel(
                 publish()
                 return@launch
             }
+            // The day marks may predate a sync that has since put a visit on the day.
+            val arrived =
+                visits.shownOn(currentUser.id(), day, utcOffset::at)?.takeIf { it.id != visit.id }
+            if (arrived != null) {
+                replacingSets = sets.forVisit(arrived.id).size
+                replacing = arrived
+                publish()
+                return@launch
+            }
             val now = clock.now()
             val offset = utcOffset.at(now)
             write(movedVisit(visit, sets.forVisit(visit.id), day, offset, now))
@@ -218,11 +228,12 @@ class CalendarViewModel(
             val visit = visits.byId(target.id)?.takeIf { !it.deleted }
             val now = clock.now()
             if (visit != null) {
-                val owner = currentUser.id()
-                // Re-read the day, so a visit pulled onto it since the ask is replaced too.
-                visits.shownOn(owner, day, utcOffset::at)?.let {
-                    write(removedVisit(it, sets.forVisit(it.id), now))
-                }
+                // Read at confirmation, so a visit pulled onto the day since the ask goes too.
+                // Every one goes: normalization could otherwise keep another over the moved one.
+                visits
+                    .allOn(currentUser.id(), day, utcOffset::at)
+                    .filter { it.id != visit.id }
+                    .forEach { write(removedVisit(it, sets.forVisit(it.id), now)) }
                 write(movedVisit(visit, sets.forVisit(visit.id), day, utcOffset.at(now), now))
                 selected = day
                 month = CalendarMonth.of(day)

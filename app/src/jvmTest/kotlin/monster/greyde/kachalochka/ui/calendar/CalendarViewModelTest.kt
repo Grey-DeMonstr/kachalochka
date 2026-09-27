@@ -448,8 +448,47 @@ class CalendarViewModelTest {
             assertEquals(1, gym.sync.requests)
         }
 
-    // Not written test-first: confirmReplacement() already re-reads the day; this pins that
-    // behaviour, which no earlier test exercised.
+    @Test
+    fun replacing_removes_every_visit_on_the_day_normalization_has_not_reached() =
+        runTest {
+            gym.visits.upsert(fifthVisit)
+            gym.sets.upsert(set(fifthVisit, press, 0))
+            val undated = Visit(VisitId.random(), null, null, t0 - 9.days + 1.hours, t0, false)
+            gym.visits.upsert(undated)
+            gym.sets.upsert(set(undated, row, 0))
+            val vm = viewModel().also { it.refresh() }
+            vm.startMove(sunday.id)
+            vm.selectDay(fifth)
+
+            vm.confirmReplacement()
+
+            assertEquals(true, gym.visits.byId(fifthVisit.id)?.deleted)
+            assertEquals(true, gym.visits.byId(undated.id)?.deleted)
+            assertEquals(emptyList(), gym.sets.forVisit(fifthVisit.id))
+            assertEquals(emptyList(), gym.sets.forVisit(undated.id))
+            assertEquals(listOf(sunday.id), gym.visits.all(null).map { it.id })
+            assertEquals(fifth, gym.visits.byId(sunday.id)?.day)
+        }
+
+    @Test
+    fun a_day_that_gained_a_visit_since_the_calendar_loaded_asks_before_the_move() =
+        runTest {
+            val vm = viewModel().also { it.refresh() }
+            vm.startMove(sunday.id)
+            // A sync pulls a visit onto the day before the calendar reloads.
+            gym.visits.upsert(fifthVisit)
+            gym.sets.upsert(set(fifthVisit, press, 0))
+
+            vm.selectDay(fifth)
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals("Заменить визит?", state.replacement?.title)
+            assertTrue(state.moving)
+            assertEquals(twelfth, gym.visits.byId(sunday.id)?.day)
+            assertEquals(fifthVisit, gym.visits.byId(fifthVisit.id))
+            assertEquals(0, gym.sync.requests)
+        }
+
     @Test
     fun confirming_replaces_whoever_occupies_the_day_by_confirm_time() =
         runTest {
@@ -474,7 +513,6 @@ class CalendarViewModelTest {
             assertEquals(1, gym.sync.requests)
         }
 
-    // Not written test-first, for the same reason as the test above.
     @Test
     fun confirming_after_the_day_is_vacated_still_moves_and_deletes_nothing_else() =
         runTest {

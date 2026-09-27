@@ -55,6 +55,13 @@ suspend fun VisitRepository.shownOn(
         ?.copy(day = day)
 }
 
+/** Every live visit of the owner's that [shownOn] weighs for [day]. */
+suspend fun VisitRepository.allOn(
+    owner: UserId?,
+    day: CalendarDay,
+    utcOffset: (Instant) -> Duration,
+): List<Visit> = all(owner).filter { it.dayAt(utcOffset) == day }
+
 /**
  * Every list leaves deleted sets out; a visit's sets run in [visitOrder], the others in recording
  * order.
