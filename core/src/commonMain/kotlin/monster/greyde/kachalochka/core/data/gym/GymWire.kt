@@ -55,6 +55,8 @@ internal data class MachineRow(
     @SerialName("weight_step") val weightStep: Double,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
+    // See [unitLabel].
+    @SerialName("link_id") val linkId: String?,
 ) {
     fun toMachine(): Machine =
         Machine(
@@ -70,6 +72,7 @@ internal data class MachineRow(
             weightStep = weightStep,
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
+            linkId = linkId?.let(::MachineId),
         )
 
     companion object {
@@ -87,6 +90,7 @@ internal data class MachineRow(
                 weightStep = machine.weightStep,
                 updatedAt = machine.updatedAt.toString(),
                 deleted = machine.deleted,
+                linkId = machine.linkId?.value,
             )
     }
 }

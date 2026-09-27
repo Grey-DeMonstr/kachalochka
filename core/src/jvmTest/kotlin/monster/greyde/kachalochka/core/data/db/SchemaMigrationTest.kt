@@ -105,6 +105,7 @@ class SchemaMigrationTest {
         KachalochkaDatabase.Schema.create(driver)
         exec("DROP TABLE visit")
         exec("DROP TABLE workout_set")
+        exec("DROP TABLE machine")
         exec(
             """
             CREATE TABLE visit (
@@ -129,6 +130,24 @@ class SchemaMigrationTest {
                 recorded_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL,
                 deleted INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+        )
+        exec(
+            """
+            CREATE TABLE machine (
+                id TEXT NOT NULL PRIMARY KEY,
+                user_id TEXT,
+                name TEXT NOT NULL,
+                setup_note TEXT NOT NULL DEFAULT '',
+                weight_mode TEXT NOT NULL,
+                platform_weight REAL NOT NULL DEFAULT 0,
+                platform_included INTEGER NOT NULL DEFAULT 0,
+                unit TEXT NOT NULL,
+                weight_step REAL NOT NULL,
+                updated_at INTEGER NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0,
+                unit_label TEXT NOT NULL DEFAULT ''
             )
             """.trimIndent(),
         )
@@ -181,6 +200,40 @@ class SchemaMigrationTest {
             listOf(set),
             database.workoutSetQueries.forVisit(VISIT.value, ::workoutSetOf).executeAsList(),
         )
+    }
+
+    @Test
+    fun version_4_machines_gain_an_empty_link() {
+        KachalochkaDatabase.Schema.create(driver)
+        exec("DROP TABLE machine")
+        exec(
+            """
+            CREATE TABLE machine (
+                id TEXT NOT NULL PRIMARY KEY,
+                user_id TEXT,
+                name TEXT NOT NULL,
+                setup_note TEXT NOT NULL DEFAULT '',
+                weight_mode TEXT NOT NULL,
+                platform_weight REAL NOT NULL DEFAULT 0,
+                platform_included INTEGER NOT NULL DEFAULT 0,
+                unit TEXT NOT NULL,
+                weight_step REAL NOT NULL,
+                updated_at INTEGER NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0,
+                unit_label TEXT NOT NULL DEFAULT ''
+            )
+            """.trimIndent(),
+        )
+        exec(
+            "INSERT INTO machine(id, name, weight_mode, unit, weight_step, updated_at, " +
+                "unit_label) VALUES ('press', 'Жим ногами', 'total', 'custom', 5, 7, 'плитка')",
+        )
+
+        KachalochkaDatabase.Schema.migrate(driver, 4, 5)
+
+        assertEquals(null, text("SELECT link_id FROM machine WHERE id = 'press'"))
+        assertEquals("плитка", text("SELECT unit_label FROM machine WHERE id = 'press'"))
+        assertEquals(7L, number("SELECT updated_at FROM machine WHERE id = 'press'"))
     }
 
     private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)

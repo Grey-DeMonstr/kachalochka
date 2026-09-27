@@ -14,6 +14,7 @@ import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -138,7 +139,7 @@ class SupabaseSyncGatewayTest {
                     """"platform_weight":0.0,"platform_included":false,"unit":"custom",""" +
                     """"unit_label":"плитка","weight_step":1.0,""" +
                     """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false,""" +
-                    """"link_id":null}]"""
+                    """"link_id":null,"photo_id":null}]"""
             val engine = MockEngine.Queue()
             engine.enqueue { respond(row, HttpStatusCode.OK, jsonHeaders()) }
             engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }
@@ -167,6 +168,46 @@ class SupabaseSyncGatewayTest {
                     .toByteArray()
                     .decodeToString()
             assertTrue("\"unit_label\":\"\"" in body, body)
+        }
+
+    @Test
+    fun a_pulled_machine_keeps_its_link() =
+        runTest {
+            val row =
+                """[{"id":"33333333-3333-4333-8333-333333333333","user_id":"${OWNER.value}",""" +
+                    """"name":"Жим ногами","setup_note":"","weight_mode":"total",""" +
+                    """"platform_weight":0.0,"platform_included":false,"unit":"kg",""" +
+                    """"unit_label":"","weight_step":2.5,""" +
+                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false,""" +
+                    """"link_id":"44444444-4444-4444-8444-444444444444"}]"""
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond(row, HttpStatusCode.OK, jsonHeaders()) }
+            engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }
+
+            val pulled = gatewayOn(engine, pageSize = 10).pullMachines(OWNER, since = null)
+
+            assertEquals(
+                MachineId("44444444-4444-4444-8444-444444444444"),
+                pulled.single().linkId,
+            )
+        }
+
+    @Test
+    fun a_pushed_machine_always_sends_its_link() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
+            val press = Machine.new("Жим ногами", OWNER, Instant.parse("2024-01-01T00:00:00Z"))
+
+            gatewayOn(engine, pageSize = 10).pushMachine(press)
+
+            val body =
+                engine.requestHistory
+                    .single()
+                    .body
+                    .toByteArray()
+                    .decodeToString()
+            assertTrue("\"link_id\":null" in body, body)
         }
 
     @Test

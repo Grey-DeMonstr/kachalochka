@@ -34,6 +34,7 @@ class LocalMachineRepository(
                     machine.updatedAt,
                     machine.deleted,
                     machine.unitLabel,
+                    machine.linkId?.value,
                 )
                 if (machine.userId != null) {
                     outbox.enqueue(OutboxEntry(MACHINE_TABLE, machine.id.value, machine.updatedAt))
@@ -75,6 +76,7 @@ internal fun machineOf(
     updatedAt: Instant,
     deleted: Boolean,
     unitLabel: String,
+    linkId: String?,
 ) = Machine(
     id = MachineId(id),
     userId = userId?.let(::UserId),
@@ -88,4 +90,5 @@ internal fun machineOf(
     weightStep = weightStep,
     updatedAt = updatedAt,
     deleted = deleted,
+    linkId = linkId?.let(::MachineId),
 )

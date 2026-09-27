@@ -5,6 +5,7 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -97,5 +98,15 @@ class LocalMachineRepositoryTest {
             repository.upsert(gravitron)
 
             assertEquals(gravitron, repository.byId(gravitron.id))
+        }
+
+    @Test
+    fun a_linked_machine_reads_back_with_its_link() =
+        runTest {
+            val linked = sled.copy(linkId = MachineId.random())
+
+            repository.upsert(linked)
+
+            assertEquals(linked, repository.byId(linked.id))
         }
 }

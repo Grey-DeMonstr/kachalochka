@@ -40,6 +40,7 @@ class LocalSyncRows(
             machine.updatedAt,
             machine.deleted,
             machine.unitLabel,
+            machine.linkId?.value,
         )
 
     fun writeVisit(visit: Visit) =
