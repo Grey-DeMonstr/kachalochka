@@ -186,6 +186,10 @@ class FakeGym(
         object : CurrentUser {
             override suspend fun id(): UserId? = accounts.activeId.value
         }
+    val friends =
+        FakeFriends {
+            accounts.accounts.value.firstOrNull { it.userId == accounts.activeId.value }
+        }
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
     val today: CalendarDay get() = CalendarDay.of(clock.current, utcOffset.at(clock.current))

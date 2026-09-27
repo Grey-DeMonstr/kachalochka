@@ -4,11 +4,13 @@ import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
+import monster.greyde.kachalochka.ui.friends.FriendVisitViewModel
 import monster.greyde.kachalochka.ui.home.HomeViewModel
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
@@ -47,5 +49,8 @@ val appModule =
         }
         viewModel { (args: MachineFormArgs) ->
             MachineFormViewModel(args, get(), get(), get(), get())
+        }
+        viewModel { (member: UserId, name: String, day: CalendarDay) ->
+            FriendVisitViewModel(member, name, day, get(), get(), get(), get(), get(), get())
         }
     }

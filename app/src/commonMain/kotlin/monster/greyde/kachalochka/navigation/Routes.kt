@@ -32,3 +32,10 @@ data class MachineFormRoute(
     val name: String = "",
     val fromList: Boolean = false,
 )
+
+@Serializable
+data class FriendVisitRoute(
+    val userId: String,
+    val name: String,
+    val day: String,
+)

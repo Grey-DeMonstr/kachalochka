@@ -12,7 +12,9 @@ import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.navigation.CalendarRoute
+import monster.greyde.kachalochka.navigation.FriendVisitRoute
 import monster.greyde.kachalochka.navigation.HomeRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
 import monster.greyde.kachalochka.navigation.MachineListRoute
@@ -23,6 +25,7 @@ import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.SignInScreen
 import monster.greyde.kachalochka.ui.calendar.CalendarScreen
+import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
@@ -156,6 +159,16 @@ fun App() {
                             }
                         },
                         inVisit = !route.fromList,
+                    )
+                }
+                composable<FriendVisitRoute> { entry ->
+                    val route = entry.toRoute<FriendVisitRoute>()
+                    FriendVisitScreen(
+                        member = UserId(route.userId),
+                        name = route.name,
+                        day = CalendarDay.parse(route.day),
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
                     )
                 }
             }
