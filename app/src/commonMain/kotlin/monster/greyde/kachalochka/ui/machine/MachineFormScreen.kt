@@ -63,6 +63,7 @@ fun MachineFormScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onSaved: (MachineId) -> Unit,
+    inVisit: Boolean = true,
 ) {
     val viewModel: MachineFormViewModel = koinViewModel { parametersOf(args) }
     val state by viewModel.state.collectAsState()
@@ -118,7 +119,7 @@ fun MachineFormScreen(
                 viewModel.update { it.copy(weightStep = step) }
             })
             PerLimbCard()
-            HintRow()
+            if (inVisit) HintRow()
         }
         Column(
             Modifier.padding(top = 12.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
@@ -437,6 +438,7 @@ private fun PerLimbCard() {
 private fun HintRow() {
     val colors = MaterialTheme.colorScheme
     Row(
+        Modifier.testTag("machine-visit-hint"),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

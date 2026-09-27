@@ -3,6 +3,7 @@ package monster.greyde.kachalochka
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
@@ -16,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.fakes.FakeGym
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 
@@ -34,6 +36,7 @@ class AppTest {
             onNodeWithTag("section-plans").assertIsNotEnabled()
             onNodeWithTag("section-stats").assertIsNotEnabled()
             onNodeWithTag("section-friends").assertIsNotEnabled()
+            onNodeWithTag("section-machines").assertIsEnabled()
         }
 
     @Test
@@ -159,6 +162,41 @@ class AppTest {
             waitForIdle()
 
             onNodeWithTag("calendar-visit-${later.id.value}").performScrollTo().assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun a_machine_added_from_the_machine_list_shows_up_in_it() =
+        runApp {
+            onNodeWithTag("section-machines").performClick()
+            waitForIdle()
+            onNodeWithTag("new-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-name").performTextInput("Гакк")
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
+            val gakk = runBlocking { gym.machines.all(null) }.single()
+            onNodeWithTag("machine-list-row-${gakk.id.value}").assertIsDisplayed()
+        }
+
+    @Test
+    fun a_machine_edited_from_the_list_returns_to_it() {
+        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        runBlocking { gym.machines.upsert(press) }
+        runApp {
+            onNodeWithTag("section-machines").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-list-row-${press.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-name").assertTextContains("Жим ногами")
+            onNodeWithTag("step-10").performScrollTo().performClick()
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
+            assertEquals(10.0, runBlocking { gym.machines.byId(press.id) }?.weightStep)
         }
     }
 }

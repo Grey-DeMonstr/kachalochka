@@ -12,6 +12,9 @@ object SettingsRoute
 object CalendarRoute
 
 @Serializable
+object MachineListRoute
+
+@Serializable
 data class VisitRoute(
     val visitId: String,
 )
@@ -27,4 +30,5 @@ data class MachineFormRoute(
     val machineId: String? = null,
     val copyOfId: String? = null,
     val name: String = "",
+    val fromList: Boolean = false,
 )

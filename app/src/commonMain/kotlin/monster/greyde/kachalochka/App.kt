@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.navigation.CalendarRoute
 import monster.greyde.kachalochka.navigation.HomeRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
+import monster.greyde.kachalochka.navigation.MachineListRoute
 import monster.greyde.kachalochka.navigation.MachinePickerRoute
 import monster.greyde.kachalochka.navigation.SettingsRoute
 import monster.greyde.kachalochka.navigation.VisitRoute
@@ -25,6 +26,7 @@ import monster.greyde.kachalochka.ui.calendar.CalendarScreen
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
+import monster.greyde.kachalochka.ui.machine.MachineListScreen
 import monster.greyde.kachalochka.ui.machine.MachinePickerScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
@@ -63,6 +65,21 @@ fun App() {
                         onOpenVisit = { navController.navigate(VisitRoute(it.value)) },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenCalendar = { navController.navigate(CalendarRoute) },
+                        onOpenMachines = { navController.navigate(MachineListRoute) },
+                    )
+                }
+                composable<MachineListRoute> {
+                    MachineListScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenMachine = {
+                            navController.navigate(
+                                MachineFormRoute(machineId = it.value, fromList = true),
+                            )
+                        },
+                        onNewMachine = {
+                            navController.navigate(MachineFormRoute(fromList = true))
+                        },
                     )
                 }
                 composable<CalendarRoute> {
@@ -134,7 +151,14 @@ fun App() {
                             ),
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
-                        onSaved = { navController.returnMachineToVisit(it) },
+                        onSaved = {
+                            if (route.fromList) {
+                                navController.popBackStack()
+                            } else {
+                                navController.returnMachineToVisit(it)
+                            }
+                        },
+                        inVisit = !route.fromList,
                     )
                 }
             }

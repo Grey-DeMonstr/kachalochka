@@ -93,4 +93,20 @@ class MachineFormScreenTest {
         val machine = runBlocking { gym.machines.byId(saved.single()) }
         assertEquals(1.25, machine?.weightStep)
     }
+
+    @Test
+    fun a_form_opened_from_a_visit_says_where_the_machine_goes() =
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("machine-visit-hint").assertExists()
+        }
+
+    @Test
+    fun a_form_opened_from_the_list_has_no_visit_hint() =
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, {}, inVisit = false)
+        }) {
+            onNodeWithTag("machine-visit-hint").assertDoesNotExist()
+        }
 }

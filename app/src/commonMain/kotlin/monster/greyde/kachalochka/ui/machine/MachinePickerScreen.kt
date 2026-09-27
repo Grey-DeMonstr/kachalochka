@@ -73,7 +73,11 @@ fun MachinePickerScreen(
                         .testTag("picker-section"),
             )
             state.rows.forEach { row ->
-                MachineRow(row, onClick = { onPicked(row.id) })
+                MachineRow(
+                    row.name,
+                    row.detail,
+                    "machine-row-${row.id.value}",
+                ) { onPicked(row.id) }
             }
             if (selectedMachineId != null) {
                 SectionLabel(
@@ -183,8 +187,10 @@ private fun CreateRow(
 }
 
 @Composable
-private fun MachineRow(
-    row: PickerRowUi,
+internal fun MachineRow(
+    name: String,
+    detail: String?,
+    tag: String,
     onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -194,14 +200,14 @@ private fun MachineRow(
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
-                .testTag("machine-row-${row.id.value}"),
+                .testTag(tag),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Thumbnail(PhosphorIcons.Image)
             Column(Modifier.weight(1f)) {
-                Text(row.name, fontSize = 17.sp, color = colors.onBackground)
-                row.detail?.let {
+                Text(name, fontSize = 17.sp, color = colors.onBackground)
+                detail?.let {
                     Text(it, fontSize = 13.sp, color = colors.onBackground.copy(alpha = 0.52f))
                 }
             }

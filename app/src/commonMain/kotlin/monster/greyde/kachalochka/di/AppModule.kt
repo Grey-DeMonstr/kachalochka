@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.home.HomeViewModel
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
+import monster.greyde.kachalochka.ui.machine.MachineListViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
@@ -30,6 +31,7 @@ val appModule =
         viewModelOf(::HomeViewModel)
         viewModelOf(::AccountsViewModel)
         viewModelOf(::CalendarViewModel)
+        viewModelOf(::MachineListViewModel)
         viewModel { (visitId: VisitId) ->
             VisitViewModel(visitId, get(), get(), get(), get(), get(), get(), get(), get(), get())
         }
