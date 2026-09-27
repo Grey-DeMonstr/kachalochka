@@ -25,10 +25,13 @@ class KachalochkaApplication : Application() {
         // Signed-in accounts are normalized by the sync pass, once they have pulled.
         koin.startVisitNormalization(listOf(null))
         val sync = koin.get<SyncTrigger>()
-        // Fires at launch and again on every return to the foreground.
+        // At launch and on every return to the foreground; leaving the app ends a session, so
+        // what it recorded goes out then too.
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 override fun onStart(owner: LifecycleOwner) = sync.request()
+
+                override fun onStop(owner: LifecycleOwner) = sync.request()
             },
         )
     }
