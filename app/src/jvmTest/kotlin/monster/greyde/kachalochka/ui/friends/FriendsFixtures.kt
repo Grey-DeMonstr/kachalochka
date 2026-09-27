@@ -3,8 +3,17 @@ package monster.greyde.kachalochka.ui.friends
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.friends.Friend
+import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.Visit
+import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 internal val IVAN_SESSION =
@@ -20,3 +29,52 @@ internal val PASHA = Friend(UserId("44444444-4444-4444-8444-444444444444"), "П�
 
 /** Иван signed in and active. */
 internal fun signedInGym(): FakeGym = FakeGym().withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+
+/**
+ * Oleg's yesterday visit, shared by [FriendVisitViewModelTest] and [FriendVisitScreenTest]: his
+ * "Платформа" links to Ivan's own "Жим ногами", his "Тяга" does not, and both carry sets.
+ */
+internal class OlegVisitFixture(
+    private val gym: FakeGym,
+) {
+    private val t0 = gym.clock.current
+    val yesterday = gym.today.plusDays(-1)
+    val myPress = Machine.new("Жим ногами", ME.userId, t0)
+    val olegPress = linkedCopy(myPress, OLEG.userId, t0).copy(name = "Платформа")
+    val olegRow = Machine.new("Тяга", OLEG.userId, t0).copy(unit = WeightUnit.Lb)
+    val olegVisit = Visit(VisitId.random(), OLEG.userId, yesterday, t0 - 1.days, t0, false)
+
+    private fun olegSet(
+        machine: Machine,
+        weight: Double,
+        reps: Int,
+        minutes: Int,
+    ) = WorkoutSet(
+        WorkoutSetId.random(),
+        OLEG.userId,
+        olegVisit.id,
+        machine.id,
+        weight,
+        reps,
+        0,
+        t0 - 1.days + minutes.minutes,
+        t0,
+        false,
+    )
+
+    val sets =
+        listOf(
+            olegSet(olegPress, 80.0, 8, 0),
+            olegSet(olegPress, 85.0, 6, 1),
+            olegSet(olegRow, 100.0, 10, 2),
+        )
+
+    /** Wires a group, Oleg's machines/visit/sets and Ivan's own press into [gym]. */
+    suspend fun install() {
+        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        gym.friends.machines += listOf(olegPress, olegRow)
+        gym.friends.visits += olegVisit
+        gym.friends.sets += sets
+        gym.machines.upsert(myPress)
+    }
+}

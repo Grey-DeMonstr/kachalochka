@@ -7,13 +7,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
-import monster.greyde.kachalochka.core.domain.gym.WeightUnit
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
-import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -21,38 +16,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FriendVisitViewModelTest {
     private val gym = signedInGym()
-    private val t0 = gym.clock.current
-    private val yesterday = gym.today.plusDays(-1)
-    private val myPress = Machine.new("Жим ногами", ME.userId, t0)
-    private val olegPress = linkedCopy(myPress, OLEG.userId, t0).copy(name = "Платформа")
-    private val olegRow = Machine.new("Тяга", OLEG.userId, t0).copy(unit = WeightUnit.Lb)
-    private val olegVisit = Visit(VisitId.random(), OLEG.userId, yesterday, t0 - 1.days, t0, false)
+    private val fixture = OlegVisitFixture(gym)
 
-    private fun olegSet(
-        machine: Machine,
-        weight: Double,
-        reps: Int,
-        minutes: Int,
-    ) = WorkoutSet(
-        WorkoutSetId.random(),
-        OLEG.userId,
-        olegVisit.id,
-        machine.id,
-        weight,
-        reps,
-        0,
-        t0 - 1.days + minutes.minutes,
-        t0,
-        false,
-    )
-
-    private fun viewModel(day: CalendarDay = yesterday) =
+    private fun viewModel(day: CalendarDay = fixture.yesterday) =
         FriendVisitViewModel(
             OLEG.userId,
             "Олег",
@@ -69,16 +40,7 @@ class FriendVisitViewModelTest {
     fun setUp() =
         runTest {
             Dispatchers.setMain(UnconfinedTestDispatcher())
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
-            gym.friends.machines += listOf(olegPress, olegRow)
-            gym.friends.visits += olegVisit
-            gym.friends.sets +=
-                listOf(
-                    olegSet(olegPress, 80.0, 8, 0),
-                    olegSet(olegPress, 85.0, 6, 1),
-                    olegSet(olegRow, 100.0, 10, 2),
-                )
-            gym.machines.upsert(myPress)
+            fixture.install()
         }
 
     @AfterTest
@@ -109,6 +71,25 @@ class FriendVisitViewModelTest {
 
         assertEquals(emptyList(), state.groups)
         assertEquals("0 подходов", state.setCountLabel)
+    }
+
+    @Test
+    fun an_empty_later_visit_does_not_hide_the_earlier_one_s_sets() {
+        val emptyLater =
+            Visit(
+                VisitId.random(),
+                OLEG.userId,
+                fixture.yesterday,
+                fixture.olegVisit.recordedAt + 5.minutes,
+                fixture.olegVisit.recordedAt + 5.minutes,
+                false,
+            )
+        gym.friends.visits += emptyLater
+
+        val state = assertNotNull(viewModel().state.value)
+
+        assertEquals("3 подхода", state.setCountLabel)
+        assertEquals(2, state.groups.size)
     }
 
     @Test

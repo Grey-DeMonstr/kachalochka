@@ -10,7 +10,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -37,7 +36,7 @@ fun FriendVisitScreen(
     val viewModel: FriendVisitViewModel = koinViewModel { parametersOf(member, name, day) }
     val state by viewModel.state.collectAsState()
     val offline by viewModel.offline.collectAsState()
-    LaunchedEffect(Unit) { viewModel.refresh() }
+    // The view model already loads once created: it follows accounts.activeId from init.
     Screen(state?.title ?: name, onBack = onBack, onOpenSettings = onOpenSettings) {
         val current = state
         if (offline) {

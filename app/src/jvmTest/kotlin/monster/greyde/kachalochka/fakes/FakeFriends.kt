@@ -63,6 +63,12 @@ class FakeFriends(
             .filter { it.userId != viewer }
             .associateBy { it.userId }
 
+    /** [member]'s own rows, or a group-mate's: what `shares_group_with` widens the server to. */
+    private fun visibleMember(member: UserId): Boolean {
+        val myId = me()?.userId ?: return false
+        return member == myId || member in mates(myId).keys
+    }
+
     override suspend fun groups() =
         online {
             groups.values
@@ -111,6 +117,7 @@ class FakeFriends(
 
     override suspend fun visits(member: UserId) =
         online {
+            if (!visibleMember(member)) return@online emptyList()
             visits
                 .filter { it.userId == member && !it.deleted }
                 .sortedByDescending { it.recordedAt }
@@ -118,13 +125,15 @@ class FakeFriends(
 
     override suspend fun sets(visit: Visit) =
         online {
+            val owner = visit.userId?.takeIf { visibleMember(it) } ?: return@online emptyList()
             sets
-                .filter { it.visitId == visit.id && it.userId == visit.userId && !it.deleted }
+                .filter { it.visitId == visit.id && it.userId == owner && !it.deleted }
                 .sortedWith(visitOrder)
         }
 
     override suspend fun machines(member: UserId) =
         online {
+            if (!visibleMember(member)) return@online emptyList()
             machines.filter { it.userId == member && !it.deleted }.sortedBy { it.name.lowercase() }
         }
 
