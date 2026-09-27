@@ -20,6 +20,7 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -37,7 +38,7 @@ import kotlin.test.assertNotNull
 class VisitScreenTest {
     private val gym = FakeGym()
     private val visit =
-        Visit(VisitId.random(), null, gym.clock.current, null, gym.clock.current, false)
+        Visit(VisitId.random(), null, gym.today, gym.clock.current, gym.clock.current, false)
     private val press = Machine.new("Жим ногами", null, gym.clock.current)
     private val recorded =
         WorkoutSet(
@@ -60,8 +61,8 @@ class VisitScreenTest {
         Visit(
             VisitId.random(),
             ivan.account.userId,
+            shared.today,
             shared.clock.current,
-            null,
             shared.clock.current,
             false,
         )
@@ -81,7 +82,8 @@ class VisitScreenTest {
     fun a_fresh_visit_asks_for_a_machine() {
         var picks = 0
         runScreenTest(gym, screen = { visitScreen(onPickMachine = { picks++ }) }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Визит")
+            onNodeWithTag("top-bar-title").assertTextEquals("Сегодня")
+            onNodeWithTag("end-visit").assertDoesNotExist()
             onNodeWithTag("visit-set-count").assertTextEquals("1 ПОДХОД")
             onNodeWithTag("set-sheet").assertDoesNotExist()
             onNodeWithTag("pick-machine").performScrollTo().performClick()
@@ -172,24 +174,10 @@ class VisitScreenTest {
     }
 
     @Test
-    fun ending_the_visit_reports_back() {
-        var ended = 0
-        runScreenTest(gym, screen = { visitScreen(onEnded = { ended++ }) }) {
-            onNodeWithTag("end-visit").performClick()
+    fun another_day_is_titled_with_its_date() {
+        runScreenTest(gym, screen = { visitScreen(day = CalendarDay(2023, 11, 12)) }) {
             waitForIdle()
-            assertEquals(1, ended)
-        }
-    }
-
-    @Test
-    fun an_ended_visit_shows_its_date_and_no_end_button() {
-        val at = visit.recordedAt
-        val ended = Visit(VisitId.random(), null, at, at, at, false)
-        runBlocking { gym.visits.upsert(ended) }
-        runScreenTest(gym, screen = { visitScreen(visitId = ended.id) }) {
-            waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 14 ноября")
-            onNodeWithTag("end-visit").assertDoesNotExist()
+            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 12 ноября")
         }
     }
 
@@ -298,7 +286,7 @@ class VisitScreenTest {
     fun a_person_chip_switches_who_the_save_button_records_as() {
         runScreenTest(
             shared,
-            screen = { visitScreen(visitId = sharedVisit.id, picked = sharedPress.id) },
+            screen = { visitScreen(day = shared.today, picked = sharedPress.id) },
         ) {
             waitForIdle()
             onNodeWithTag("person-add").assertExists()
@@ -326,7 +314,7 @@ class VisitScreenTest {
             shared,
             screen = {
                 visitScreen(
-                    visitId = sharedVisit.id,
+                    day = shared.today,
                     picked = sharedPress.id,
                     onOpenMachineSettings = { opened = it },
                 )
@@ -354,21 +342,19 @@ class VisitScreenTest {
 
     @Composable
     private fun visitScreen(
-        visitId: VisitId = visit.id,
+        day: CalendarDay = gym.today,
         picked: MachineId? = null,
         onConsumed: () -> Unit = {},
         onPickMachine: (MachineId?) -> Unit = {},
         onOpenMachineSettings: (MachineId) -> Unit = {},
-        onEnded: () -> Unit = {},
         onBack: () -> Unit = {},
     ) = VisitScreen(
-        visitId = visitId,
+        day = day,
         pickedMachineId = picked,
         onPickedMachineConsumed = onConsumed,
         onBack = onBack,
         onOpenSettings = {},
         onPickMachine = onPickMachine,
         onOpenMachineSettings = onOpenMachineSettings,
-        onVisitEnded = onEnded,
     )
 }

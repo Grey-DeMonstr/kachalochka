@@ -31,11 +31,11 @@ private fun visitRow(
 ) = VisitRow(
     id = id,
     userId = OWNER.value,
+    day = null,
     recordedAt = updatedAt,
     endedAt = null,
     updatedAt = updatedAt,
     deleted = false,
-    day = null,
 )
 
 private fun jsonHeaders() = headersOf(HttpHeaders.ContentType, "application/json")
@@ -170,7 +170,7 @@ class SupabaseSyncGatewayTest {
         }
 
     @Test
-    fun a_pushed_visit_carries_its_day_and_a_pushed_set_its_position() =
+    fun a_pushed_visit_carries_its_day_and_its_end_and_a_pushed_set_its_position() =
         runTest {
             val engine = MockEngine.Queue()
             repeat(2) { engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) } }
@@ -183,6 +183,7 @@ class SupabaseSyncGatewayTest {
             val (visitBody, setBody) =
                 engine.requestHistory.map { it.body.toByteArray().decodeToString() }
             assertTrue("\"day\":\"2023-11-14\"" in visitBody, visitBody)
+            assertTrue("\"ended_at\":\"2023-11-14T22:13:20Z\"" in visitBody, visitBody)
             assertTrue("\"position\":0" in setBody, setBody)
         }
 

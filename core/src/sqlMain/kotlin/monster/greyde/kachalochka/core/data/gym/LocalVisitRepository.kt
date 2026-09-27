@@ -25,11 +25,10 @@ class LocalVisitRepository(
                 queries.upsert(
                     visit.id.value,
                     visit.userId?.value,
+                    visit.day,
                     visit.recordedAt,
-                    visit.endedAt,
                     visit.updatedAt,
                     visit.deleted,
-                    visit.day,
                 )
                 if (visit.userId != null) {
                     outbox.enqueue(OutboxEntry(VISIT_TABLE, visit.id.value, visit.updatedAt))
@@ -39,11 +38,6 @@ class LocalVisitRepository(
 
     override suspend fun byId(id: VisitId): Visit? =
         withContext(dispatcher) { queries.byId(id.value, ::visitOf).executeAsOneOrNull() }
-
-    override suspend fun active(owner: UserId?): Visit? =
-        withContext(dispatcher) {
-            queries.active(owner?.value, ::visitOf).executeAsOneOrNull()
-        }
 
     override suspend fun onDay(
         owner: UserId?,
@@ -62,9 +56,8 @@ class LocalVisitRepository(
 internal fun visitOf(
     id: String,
     userId: String?,
+    day: CalendarDay?,
     recordedAt: Instant,
-    endedAt: Instant?,
     updatedAt: Instant,
     deleted: Boolean,
-    day: CalendarDay?,
-) = Visit(VisitId(id), userId?.let(::UserId), recordedAt, endedAt, updatedAt, deleted, day = day)
+) = Visit(VisitId(id), userId?.let(::UserId), day, recordedAt, updatedAt, deleted)

@@ -2,7 +2,7 @@ package monster.greyde.kachalochka.di
 
 import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.core.di.coreModule
-import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
@@ -32,11 +32,11 @@ val appModule =
         viewModelOf(::AccountsViewModel)
         viewModelOf(::CalendarViewModel)
         viewModelOf(::MachineListViewModel)
-        viewModel { (visitId: VisitId) ->
-            VisitViewModel(visitId, get(), get(), get(), get(), get(), get(), get(), get(), get())
+        viewModel { (day: CalendarDay) ->
+            VisitViewModel(day, get(), get(), get(), get(), get(), get(), get(), get(), get())
         }
-        viewModel { (visitId: VisitId) ->
-            MachinePickerViewModel(visitId, get(), get(), get(), get(), get(), get(), get(), get())
+        viewModel { (day: CalendarDay) ->
+            MachinePickerViewModel(day, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (args: MachineFormArgs) ->
             MachineFormViewModel(args, get(), get(), get(), get())

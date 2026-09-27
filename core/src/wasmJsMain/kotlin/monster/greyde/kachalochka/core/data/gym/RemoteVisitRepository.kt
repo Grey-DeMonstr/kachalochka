@@ -24,21 +24,6 @@ class RemoteVisitRepository(
             .decodeSingleOrNull<VisitRow>()
             ?.toVisit()
 
-    override suspend fun active(owner: UserId?): Visit? =
-        client.postgrest
-            .from(VISIT_TABLE)
-            .select {
-                filter {
-                    exact("ended_at", null)
-                    eq("deleted", false)
-                    owned(owner)
-                }
-                order("recorded_at", Order.DESCENDING)
-                limit(1)
-            }.decodeList<VisitRow>()
-            .firstOrNull()
-            ?.toVisit()
-
     override suspend fun onDay(
         owner: UserId?,
         day: CalendarDay,

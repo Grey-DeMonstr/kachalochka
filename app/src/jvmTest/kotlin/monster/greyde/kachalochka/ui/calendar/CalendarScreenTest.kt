@@ -29,7 +29,8 @@ import kotlin.time.Duration.Companion.days
 class CalendarScreenTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val sunday = Visit(VisitId.random(), null, t0 - 2.days, t0 - 2.days, t0, false)
+    private val sunday =
+        Visit(VisitId.random(), null, CalendarDay(2023, 11, 12), t0 - 2.days, t0, false)
 
     init {
         runBlocking { gym.visits.upsert(sunday) }
@@ -38,12 +39,12 @@ class CalendarScreenTest {
     @Composable
     private fun calendar(
         onBack: () -> Unit = {},
-        onOpenVisit: (VisitId) -> Unit = {},
+        onOpenVisit: (CalendarDay) -> Unit = {},
     ) = CalendarScreen(onBack = onBack, onOpenSettings = {}, onOpenVisit = onOpenVisit)
 
     @Test
     fun a_marked_day_lists_its_visit_and_opens_it() {
-        var opened: VisitId? = null
+        var opened: CalendarDay? = null
         runScreenTest(gym, screen = { calendar(onOpenVisit = { opened = it }) }) {
             onNodeWithTag("calendar-month").assertTextEquals("Ноябрь 2023")
             onNodeWithTag("day-2023-11-15").assertIsNotEnabled()
@@ -51,7 +52,7 @@ class CalendarScreenTest {
             waitForIdle()
             onNodeWithTag("calendar-visit-${sunday.id.value}").performScrollTo().performClick()
             waitForIdle()
-            assertEquals(sunday.id, opened)
+            assertEquals(CalendarDay(2023, 11, 12), opened)
         }
     }
 
@@ -94,6 +95,7 @@ class CalendarScreenTest {
                     .deleted,
             )
             onNodeWithTag("calendar-empty").performScrollTo().assertIsDisplayed()
+            onNodeWithTag("calendar-empty").assertTextEquals("Нет визита")
         }
     }
 
@@ -112,6 +114,7 @@ class CalendarScreenTest {
             onNodeWithTag("move-banner").assertDoesNotExist()
             val moved = assertNotNull(gym.visits.rows[sunday.id])
             assertEquals(CalendarDay(2023, 11, 5), CalendarDay.of(moved.recordedAt, Duration.ZERO))
+            assertEquals(CalendarDay(2023, 11, 5), moved.day)
         }
     }
 
@@ -153,14 +156,30 @@ class CalendarScreenTest {
 
     @Test
     fun a_past_day_offers_to_add_a_visit_and_opens_it() {
-        var opened: VisitId? = null
+        var opened: CalendarDay? = null
         runScreenTest(gym, screen = { calendar(onOpenVisit = { opened = it }) }) {
             onNodeWithTag("day-2023-11-10").performClick()
             waitForIdle()
             onNodeWithTag("add-visit").performScrollTo().assertTextEquals("Добавить визит")
             onNodeWithTag("add-visit").performClick()
             waitForIdle()
-            assertNotNull(opened)
         }
+        assertEquals(CalendarDay(2023, 11, 10), opened)
+        assertEquals(
+            listOf(sunday.id),
+            gym.visits.rows.keys
+                .toList(),
+        )
+    }
+
+    @Test
+    fun today_without_a_visit_offers_to_add_one() {
+        var opened: CalendarDay? = null
+        runScreenTest(gym, screen = { calendar(onOpenVisit = { opened = it }) }) {
+            onNodeWithTag("calendar-empty").performScrollTo().assertTextEquals("Нет визита")
+            onNodeWithTag("add-visit").performScrollTo().performClick()
+            waitForIdle()
+        }
+        assertEquals(CalendarDay(2023, 11, 14), opened)
     }
 }

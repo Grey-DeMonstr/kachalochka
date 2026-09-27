@@ -83,11 +83,6 @@ class InMemoryVisitRepository : VisitRepository {
 
     override suspend fun byId(id: VisitId): Visit? = rows[id]
 
-    override suspend fun active(owner: UserId?): Visit? =
-        rows.values
-            .filter { it.endedAt == null && !it.deleted && it.userId == owner }
-            .maxByOrNull { it.recordedAt }
-
     override suspend fun onDay(
         owner: UserId?,
         day: CalendarDay,
@@ -190,6 +185,7 @@ class FakeGym(
         }
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
+    val today: CalendarDay get() = CalendarDay.of(clock.current, utcOffset.at(clock.current))
 
     /** Signs [sessions] in through [accounts] in order, then makes [active] the live one. */
     fun withAccounts(

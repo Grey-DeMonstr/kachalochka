@@ -50,8 +50,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountUi
@@ -73,16 +73,15 @@ import kotlin.math.roundToInt
 
 @Composable
 fun VisitScreen(
-    visitId: VisitId,
+    day: CalendarDay,
     pickedMachineId: MachineId?,
     onPickedMachineConsumed: () -> Unit,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onPickMachine: (selected: MachineId?) -> Unit,
     onOpenMachineSettings: (MachineId) -> Unit,
-    onVisitEnded: () -> Unit,
 ) {
-    val viewModel: VisitViewModel = koinViewModel { parametersOf(visitId) }
+    val viewModel: VisitViewModel = koinViewModel { parametersOf(day) }
     val accountsViewModel: AccountsViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -108,7 +107,6 @@ fun VisitScreen(
             state = current,
             onToggle = viewModel::toggleGroup,
             onEdit = viewModel::editSet,
-            onEnd = { viewModel.endVisit(onVisitEnded) },
             onNewMachine = { onPickMachine(viewModel.selectedMachineId) },
             modifier = Modifier.weight(1f),
         )
@@ -135,7 +133,6 @@ private fun VisitList(
     state: VisitUiState,
     onToggle: (MachineId) -> Unit,
     onEdit: (WorkoutSetId) -> Unit,
-    onEnd: () -> Unit,
     onNewMachine: () -> Unit,
     modifier: Modifier,
 ) {
@@ -159,15 +156,6 @@ private fun VisitList(
                 letterSpacing = 0.09.em,
                 color = colors.onBackground.copy(alpha = 0.5f),
             )
-            if (!state.ended) {
-                Text(
-                    "Завершить визит",
-                    modifier =
-                        Modifier.clickable(onClick = onEnd).padding(8.dp).testTag("end-visit"),
-                    fontSize = 14.sp,
-                    color = colors.tertiary,
-                )
-            }
         }
         state.groups.forEach { group ->
             Row(

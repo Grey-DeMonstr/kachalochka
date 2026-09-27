@@ -31,8 +31,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
@@ -44,7 +44,7 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun MachinePickerScreen(
-    visitId: VisitId,
+    day: CalendarDay,
     selectedMachineId: MachineId?,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -52,7 +52,7 @@ fun MachinePickerScreen(
     onCreate: (name: String) -> Unit,
     onCopy: (source: MachineId, name: String) -> Unit,
 ) {
-    val viewModel: MachinePickerViewModel = koinViewModel { parametersOf(visitId) }
+    val viewModel: MachinePickerViewModel = koinViewModel { parametersOf(day) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Screen("Тренажёр", onBack = onBack, onOpenSettings = onOpenSettings) {

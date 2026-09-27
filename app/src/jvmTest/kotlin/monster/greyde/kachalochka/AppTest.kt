@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -48,35 +49,32 @@ class AppTest {
             onNodeWithTag("settings-title").assertIsDisplayed()
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("start-visit").assertIsDisplayed()
+            onNodeWithTag("open-today").assertIsDisplayed()
         }
 
     @Test
-    fun a_visit_started_at_home_can_be_ended_back_to_home() =
+    fun home_opens_today_and_comes_back_to_it() =
         runApp {
-            onNodeWithTag("start-visit").performClick()
+            onNodeWithTag("open-today").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визит")
+            onNodeWithTag("top-bar-title").assertTextEquals("Сегодня")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("visit-counts").assertTextEquals("0 тренажёров · 0 подходов")
-            onNodeWithTag("continue-visit").performClick()
-            waitForIdle()
-            onNodeWithTag("end-visit").performClick()
-            waitForIdle()
-            onNodeWithTag("start-visit").assertIsDisplayed()
+            onNodeWithTag("visit-counts").assertTextEquals("Подходов пока нет")
         }
 
     @Test
-    fun a_visit_started_from_the_calendar_ends_back_on_the_calendar() =
+    fun a_day_added_on_the_calendar_opens_on_the_visit_screen() =
         runApp {
             onNodeWithTag("section-visits").performClick()
             waitForIdle()
+            onNodeWithTag("day-2023-11-10").performClick()
+            waitForIdle()
             onNodeWithTag("add-visit").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визит")
+            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 10 ноября")
 
-            onNodeWithTag("end-visit").performClick()
+            onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
 
             onNodeWithTag("top-bar-title").assertTextEquals("Визиты")
@@ -87,7 +85,7 @@ class AppTest {
         val press = Machine.new("Жим ногами", null, gym.clock.current)
         runBlocking { gym.machines.upsert(press) }
         runApp {
-            onNodeWithTag("start-visit").performClick()
+            onNodeWithTag("open-today").performClick()
             waitForIdle()
             onNodeWithTag("pick-machine").performClick()
             waitForIdle()
@@ -103,7 +101,7 @@ class AppTest {
     @Test
     fun a_machine_created_from_the_picker_lands_in_the_visit_sheet() =
         runApp {
-            onNodeWithTag("start-visit").performClick()
+            onNodeWithTag("open-today").performClick()
             waitForIdle()
             onNodeWithTag("pick-machine").performClick()
             waitForIdle()
@@ -124,7 +122,8 @@ class AppTest {
     @Test
     fun home_opens_the_visit_calendar_and_a_past_visit_from_it() {
         val now = gym.clock.current
-        val past = Visit(VisitId.random(), null, now - 2.days, now - 2.days, now, false)
+        val past =
+            Visit(VisitId.random(), null, CalendarDay(2023, 11, 12), now - 2.days, now, false)
         runBlocking { gym.visits.upsert(past) }
         runApp {
             onNodeWithTag("section-visits").performClick()
@@ -145,9 +144,9 @@ class AppTest {
     @Test
     fun the_calendar_shows_a_visit_recorded_while_another_was_open() {
         val now = gym.clock.current
-        val past = Visit(VisitId.random(), null, now - 2.days, now - 2.days, now, false)
-        val hourLater = now - 2.days + 1.hours
-        val later = Visit(VisitId.random(), null, hourLater, hourLater, now, false)
+        val twelfth = CalendarDay(2023, 11, 12)
+        val past = Visit(VisitId.random(), null, twelfth, now - 2.days, now, false)
+        val later = Visit(VisitId.random(), null, twelfth, now - 2.days + 1.hours, now, false)
         runBlocking { gym.visits.upsert(past) }
         runApp {
             onNodeWithTag("section-visits").performClick()

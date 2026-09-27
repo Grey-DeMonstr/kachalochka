@@ -14,14 +14,14 @@ class SignInGateTest {
     fun the_web_shows_only_the_sign_in_screen_until_an_account_exists() {
         runNavigationUiTest(content = { TestKoin(FakeGym(), signInRequired = true) { App() } }) {
             onNodeWithTag("sign-in-google").assertExists()
-            onNodeWithTag("start-visit").assertDoesNotExist()
+            onNodeWithTag("open-today").assertDoesNotExist()
         }
     }
 
     @Test
     fun android_reaches_the_home_screen_with_nobody_signed_in() {
         runNavigationUiTest(content = { TestKoin(FakeGym(), signInRequired = false) { App() } }) {
-            onNodeWithTag("start-visit").assertExists()
+            onNodeWithTag("open-today").assertExists()
             onNodeWithTag("home-sign-in").assertExists()
         }
     }

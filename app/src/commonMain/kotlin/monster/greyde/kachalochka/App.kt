@@ -10,8 +10,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.navigation.CalendarRoute
 import monster.greyde.kachalochka.navigation.HomeRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
@@ -62,7 +62,7 @@ fun App() {
             NavHost(navController = navController, startDestination = HomeRoute) {
                 composable<HomeRoute> {
                     HomeScreen(
-                        onOpenVisit = { navController.navigate(VisitRoute(it.value)) },
+                        onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenCalendar = { navController.navigate(CalendarRoute) },
                         onOpenMachines = { navController.navigate(MachineListRoute) },
@@ -86,7 +86,7 @@ fun App() {
                     CalendarScreen(
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
-                        onOpenVisit = { navController.navigate(VisitRoute(it.value)) },
+                        onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
                     )
                 }
                 composable<SettingsRoute> {
@@ -102,7 +102,7 @@ fun App() {
                         .getStateFlow<String?>(PICKED_MACHINE, null)
                         .collectAsState()
                     VisitScreen(
-                        visitId = VisitId(route.visitId),
+                        day = CalendarDay.parse(route.day),
                         pickedMachineId = picked?.let(::MachineId),
                         onPickedMachineConsumed = {
                             entry.savedStateHandle[PICKED_MACHINE] = null
@@ -110,22 +110,19 @@ fun App() {
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onPickMachine = {
-                            navController.navigate(MachinePickerRoute(route.visitId, it?.value))
+                            navController.navigate(MachinePickerRoute(route.day, it?.value))
                         },
                         onOpenMachineSettings = {
                             navController.navigate(
                                 MachineFormRoute(machineId = it.value),
                             )
                         },
-                        onVisitEnded = {
-                            navController.popBackStack<VisitRoute>(inclusive = true)
-                        },
                     )
                 }
                 composable<MachinePickerRoute> { entry ->
                     val route = entry.toRoute<MachinePickerRoute>()
                     MachinePickerScreen(
-                        visitId = VisitId(route.visitId),
+                        day = CalendarDay.parse(route.day),
                         selectedMachineId = route.selectedMachineId?.let(::MachineId),
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },

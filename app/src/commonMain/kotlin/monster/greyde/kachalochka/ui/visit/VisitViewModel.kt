@@ -14,12 +14,12 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.Visit
-import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
+import monster.greyde.kachalochka.core.domain.gym.dayVisit
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.minuteOfDay
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
@@ -48,14 +48,12 @@ import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.shortSet
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
-import monster.greyde.kachalochka.ui.ownVisit
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Clock
 import kotlin.time.Duration
 
 data class VisitUiState(
     val title: String,
-    val ended: Boolean,
     val setCountLabel: String,
     val groups: List<SetGroupUi>,
     val sheet: SheetUi?,
@@ -93,7 +91,7 @@ data class SheetUi(
 )
 
 class VisitViewModel(
-    private val visitId: VisitId,
+    private val day: CalendarDay,
     private val visits: VisitRepository,
     private val machines: MachineRepository,
     private val sets: WorkoutSetRepository,
@@ -124,7 +122,7 @@ class VisitViewModel(
     private val typedWeight: Double? get() = weightText?.let(::parseDecimal)?.takeIf { it >= 0 }
     private val weightValid: Boolean get() = weightText == null || typedWeight != null
 
-    private val ended: Boolean get() = visit?.endedAt != null
+    private val isToday: Boolean get() = day == today()
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -185,8 +183,13 @@ class VisitViewModel(
             val edited = editing
             if (edited == null) {
                 val owner = currentUser.id()
-                val target = startedVisitOf(owner)
-                val targetSets = if (target.id == visit?.id) visitSets else emptyList()
+                val offset = utcOffset.at(now)
+                val today = CalendarDay.of(now, offset)
+                val target =
+                    visits.onDay(owner, day)
+                        ?: dayVisit(day, owner, today, offset, now).also { visits.upsert(it) }
+                val targetSets =
+                    if (target.id == visit?.id) visitSets else sets.forVisit(target.id)
                 sets.upsert(
                     WorkoutSet(
                         WorkoutSetId.random(),
@@ -196,18 +199,18 @@ class VisitViewModel(
                         values.weight,
                         values.reps,
                         0,
-                        recordingInstant(target, targetSets, now),
+                        recordingInstant(target, targetSets, today, now),
                         now,
                         false,
                     ),
                 )
-                if (target.endedAt == null) restTimer.start() else sync.request()
+                if (day == today) restTimer.start() else sync.request()
             } else {
                 sets.upsert(
                     edited.copy(weight = values.weight, reps = values.reps, updatedAt = now),
                 )
                 editing = null
-                requestSyncIfEnded()
+                requestSyncIfPast()
             }
             reload(reseed = true)
         }
@@ -256,34 +259,19 @@ class VisitViewModel(
         writes.launch {
             sets.upsert(edited.copy(deleted = true, updatedAt = clock.now()))
             editing = null
-            requestSyncIfEnded()
+            requestSyncIfPast()
             reload(reseed = true)
         }
     }
 
-    fun endVisit(onEnded: () -> Unit) {
-        val current = visit
-        if (current == null) {
-            onEnded()
-            return
-        }
-        writes.launch {
-            val now = clock.now()
-            visits.upsert(current.copy(endedAt = now, updatedAt = now))
-            sync.request()
-            onEnded()
-        }
+    /** A past day's edit is a one-off, so it is pushed at once rather than with today's sets. */
+    private fun requestSyncIfPast() {
+        if (!isToday) sync.request()
     }
 
-    /** An ended visit has no end left to trigger a pass. */
-    private fun requestSyncIfEnded() {
-        if (ended) sync.request()
-    }
-
-    private suspend fun startedVisitOf(owner: UserId?): Visit {
-        visits.ownVisit(visitId, owner)?.let { return it }
+    private fun today(): CalendarDay {
         val now = clock.now()
-        return Visit(VisitId.random(), owner, now, null, now, false).also { visits.upsert(it) }
+        return CalendarDay.of(now, utcOffset.at(now))
     }
 
     /**
@@ -320,7 +308,7 @@ class VisitViewModel(
 
     private suspend fun reload(reseed: Boolean) {
         val owner = currentUser.id()
-        val shown = visits.ownVisit(visitId, owner)
+        val shown = visits.onDay(owner, day)
         visit = shown
         machinesById = machines.all(owner).associateBy { it.id }
         visitSets = shown?.let { sets.forVisit(it.id) }.orEmpty()
@@ -333,8 +321,8 @@ class VisitViewModel(
                 ?.let {
                     previousVisitSets(
                         sets.forMachine(it.id),
-                        shown?.id ?: visitId,
-                        before = shown?.recordedAt,
+                        shown?.id,
+                        before = day.at(0L, utcOffset.at(clock.now())),
                     )
                 }.orEmpty()
         if (reseed && editing == null && machine != null) {
@@ -355,11 +343,11 @@ class VisitViewModel(
         mutableState.value =
             VisitUiState(
                 title =
-                    visit?.takeIf { ended }?.let {
-                        val day = CalendarDay.of(it.recordedAt, offset)
+                    if (isToday) {
+                        "Сегодня"
+                    } else {
                         "Визит · ${dayMonthLabel(day, CalendarDay.of(now, offset).year)}"
-                    } ?: "Визит",
-                ended = ended,
+                    },
                 setCountLabel = setCount(visitSets.size),
                 groups = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) },
                 sheet = sheetUi(offset),
@@ -393,10 +381,10 @@ class VisitViewModel(
     private fun sheetUi(offset: Duration): SheetUi? {
         val machine = open ?: return null
         val people =
-            if (ended) {
-                emptyList()
-            } else {
+            if (isToday) {
                 accountsUi(accounts.accounts.value, accounts.activeId.value)
+            } else {
+                emptyList()
             }
         val onMachine = visitSets.filter { it.machineId == machine.id }
         val edited = editing
@@ -410,10 +398,10 @@ class VisitViewModel(
             }
         val previous =
             previousSets.takeIf { edited == null && it.isNotEmpty() }?.let { previous ->
-                val until = visit?.takeIf { ended }?.recordedAt ?: clock.now()
+                val until = if (isToday) clock.now() else day.at(0L, offset)
                 val days = calendarDaysBetween(previous.last().recordedAt, until, offset)
-                val day = daysAgoLabel(days).replaceFirstChar { it.uppercase() }
-                (listOf(day) + previous.map { shortSet(it.weight, it.reps) }).joinToString(" · ")
+                val ago = daysAgoLabel(days).replaceFirstChar { it.uppercase() }
+                (listOf(ago) + previous.map { shortSet(it.weight, it.reps) }).joinToString(" · ")
             }
         return SheetUi(
             name = machine.name,

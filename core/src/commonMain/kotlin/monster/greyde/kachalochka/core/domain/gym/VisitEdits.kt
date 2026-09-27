@@ -13,14 +13,16 @@ data class VisitRows(
     val sets: List<WorkoutSet>,
 )
 
-fun pastVisit(
+/** The row a day's first set creates: now for today, local noon for another day. */
+fun dayVisit(
     day: CalendarDay,
     owner: UserId?,
+    today: CalendarDay,
     utcOffset: Duration,
     now: Instant,
 ): Visit {
-    val noon = day.at(12.hours.inWholeMilliseconds, utcOffset)
-    return Visit(VisitId.random(), owner, noon, noon, now, false)
+    val recordedAt = if (day == today) now else day.at(12.hours.inWholeMilliseconds, utcOffset)
+    return Visit(VisitId.random(), owner, day, recordedAt, now, false)
 }
 
 fun movedVisit(
@@ -38,9 +40,7 @@ fun movedVisit(
             val after = (millisOfDay(it.recordedAt, utcOffset) - clock).mod(MILLIS_PER_DAY)
             it.copy(recordedAt = recordedAt + after.milliseconds, updatedAt = now)
         }
-    val endedAt = visit.endedAt?.let { recordedAt + (it - visit.recordedAt) }
-    val shifted = visit.copy(recordedAt = recordedAt, endedAt = endedAt, updatedAt = now)
-    return VisitRows(shifted, moved)
+    return VisitRows(visit.copy(day = day, recordedAt = recordedAt, updatedAt = now), moved)
 }
 
 fun removedVisit(
@@ -52,13 +52,14 @@ fun removedVisit(
     return VisitRows(visit.copy(deleted = true, updatedAt = now), removed)
 }
 
-/** A late addition to an ended visit stays on its day and in order. */
+/** A late addition to another day's visit stays on its day and in order. */
 fun recordingInstant(
     visit: Visit,
     visitSets: List<WorkoutSet>,
+    today: CalendarDay,
     now: Instant,
 ): Instant =
-    if (visit.endedAt == null) {
+    if (visit.day == today) {
         now
     } else {
         (visitSets.maxOfOrNull { it.recordedAt } ?: visit.recordedAt) + 1.seconds

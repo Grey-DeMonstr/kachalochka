@@ -6,6 +6,7 @@ CREATE TABLE visit (
     id          TEXT    NOT NULL PRIMARY KEY,
     user_id     TEXT,
     recorded_at INTEGER AS Instant NOT NULL,
+    -- Read by nothing; SQLite on API 29 predates DROP COLUMN.
     ended_at    INTEGER AS Instant,
     updated_at  INTEGER AS Instant NOT NULL,
     deleted     INTEGER AS Boolean NOT NULL DEFAULT 0,
@@ -17,27 +18,21 @@ CREATE INDEX visit_updated_at_idx ON visit (updated_at);
 CREATE INDEX visit_day_idx ON visit (user_id, day);
 
 upsert:
-INSERT OR REPLACE INTO visit(id, user_id, recorded_at, ended_at, updated_at, deleted, day)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO visit(id, user_id, day, recorded_at, updated_at, deleted)
+VALUES (?, ?, ?, ?, ?, ?);
 
 byId:
-SELECT * FROM visit WHERE id = ?;
-
-active:
-SELECT * FROM visit
-WHERE ended_at IS NULL AND deleted = 0
-  AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
-ORDER BY recorded_at DESC LIMIT 1;
+SELECT id, user_id, day, recorded_at, updated_at, deleted FROM visit WHERE id = ?;
 
 onDay:
-SELECT * FROM visit
+SELECT id, user_id, day, recorded_at, updated_at, deleted FROM visit
 WHERE day = :day AND deleted = 0
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 ORDER BY recorded_at DESC, updated_at DESC, id DESC
 LIMIT 1;
 
 forOwner:
-SELECT * FROM visit
+SELECT id, user_id, day, recorded_at, updated_at, deleted FROM visit
 WHERE deleted = 0
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 ORDER BY recorded_at DESC;

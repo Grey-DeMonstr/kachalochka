@@ -29,7 +29,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalendarViewModelTest {
@@ -37,9 +36,8 @@ class CalendarViewModelTest {
     private val t0 = gym.clock.current
     private val press = Machine.new("Жим ногами", null, t0)
     private val row = Machine.new("Тяга верхнего блока", null, t0)
-    private val sunday =
-        Visit(VisitId.random(), null, t0 - 2.days, t0 - 2.days + 1.hours, t0, false)
     private val twelfth = CalendarDay(2023, 11, 12)
+    private val sunday = Visit(VisitId.random(), null, twelfth, t0 - 2.days, t0, false)
 
     private fun set(
         visit: Visit,
@@ -100,25 +98,23 @@ class CalendarViewModelTest {
         assertTrue(state.day(14).today && state.day(14).selected)
         assertFalse(state.day(15).enabled)
         assertEquals("Вторник, 14 ноября", state.dayTitle)
-        assertEquals(emptyList(), state.visits)
-        assertTrue(state.noVisits)
-        assertEquals("Начать визит", state.addLabel)
+        assertNull(state.visit)
+        assertTrue(state.noVisit)
+        assertEquals(CalendarDay(2023, 11, 14), state.day)
     }
 
     @Test
-    fun a_chosen_day_lists_its_visits_with_machines_and_sets() {
+    fun a_chosen_day_shows_its_visit_with_machines_and_sets() {
         val vm = viewModel().also { it.refresh() }
 
         vm.selectDay(twelfth)
 
         val state = assertNotNull(vm.state.value)
         assertEquals("Воскресенье, 12 ноября", state.dayTitle)
-        val listed = state.visits.single()
+        val listed = assertNotNull(state.visit)
         assertEquals(sunday.id, listed.id)
         assertEquals("2 тренажёра · 3 подхода", listed.counts)
         assertEquals("Жим ногами, Тяга верхнего блока", listed.machines)
-        assertFalse(listed.running)
-        assertEquals("Добавить визит", state.addLabel)
     }
 
     @Test
@@ -135,72 +131,18 @@ class CalendarViewModelTest {
             val chosen = assertNotNull(vm.state.value)
             assertEquals("Воскресенье, 12 ноября", chosen.dayTitle)
             assertTrue(chosen.day(12).selected)
-            assertEquals(emptyList(), chosen.visits)
-            assertFalse(chosen.noVisits)
+            assertNull(chosen.visit)
+            assertFalse(chosen.noVisit)
 
             setsRead.complete(Unit)
 
-            assertEquals(listOf(sunday.id), assertNotNull(vm.state.value).visits.map { it.id })
-            visitsRead.complete(Unit)
-        }
-
-    @Test
-    fun adding_on_a_past_day_records_an_ended_visit_and_opens_it() =
-        runTest {
-            val vm = viewModel().also { it.refresh() }
-            vm.selectDay(CalendarDay(2023, 11, 10))
-            var opened: VisitId? = null
-
-            vm.addVisit { opened = it }
-
-            val added = assertNotNull(gym.visits.byId(assertNotNull(opened)))
-            assertEquals(Instant.parse("2023-11-10T12:00:00Z"), added.recordedAt)
-            assertEquals(added.recordedAt, added.endedAt)
-            assertNull(gym.visits.active(null))
-            assertEquals(1, gym.sync.requests)
-        }
-
-    @Test
-    fun adding_on_today_starts_the_running_visit() =
-        runTest {
-            val vm = viewModel().also { it.refresh() }
-            var opened: VisitId? = null
-
-            vm.addVisit { opened = it }
-
-            val running = assertNotNull(gym.visits.active(null))
-            assertEquals(running.id, opened)
-            assertEquals(t0, running.recordedAt)
-        }
-
-    @Test
-    fun adding_on_today_opens_the_visit_already_running() =
-        runTest {
-            val running = Visit(VisitId.random(), null, t0 - 1.hours, null, t0, false)
-            gym.visits.upsert(running)
-            val vm = viewModel().also { it.refresh() }
-            var opened: VisitId? = null
-
-            vm.addVisit { opened = it }
-
-            assertEquals(running.id, opened)
             assertEquals(
-                1,
-                gym.visits.rows.values
-                    .count { it.endedAt == null && !it.deleted },
+                sunday.id,
+                vm.state.value
+                    ?.visit
+                    ?.id,
             )
-            assertEquals(0, gym.sync.requests)
-        }
-
-    @Test
-    fun today_offers_no_second_running_visit() =
-        runTest {
-            gym.visits.upsert(Visit(VisitId.random(), null, t0 - 1.hours, null, t0, false))
-
-            val state = assertNotNull(viewModel().also { it.refresh() }.state.value)
-
-            assertNull(state.addLabel)
-            assertTrue(state.visits.single().running)
+            visitsRead.complete(Unit)
         }
 
     @Test
@@ -215,6 +157,7 @@ class CalendarViewModelTest {
 
             val moved = assertNotNull(gym.visits.byId(sunday.id))
             assertEquals(5, CalendarDay.of(moved.recordedAt, Duration.ZERO).day)
+            assertEquals(CalendarDay(2023, 11, 5), moved.day)
             assertEquals(
                 listOf(5, 5, 5),
                 gym.sets
@@ -226,18 +169,6 @@ class CalendarViewModelTest {
             assertTrue(state.day(5).selected && state.day(5).hasVisit)
             assertFalse(state.day(12).hasVisit)
             assertEquals(1, gym.sync.requests)
-        }
-
-    @Test
-    fun a_visit_that_has_not_ended_cannot_be_moved() =
-        runTest {
-            val running = Visit(VisitId.random(), null, t0 - 1.hours, null, t0, false)
-            gym.visits.upsert(running)
-            val vm = viewModel().also { it.refresh() }
-
-            vm.startMove(running.id)
-
-            assertEquals(false, vm.state.value?.moving)
         }
 
     @Test
@@ -347,16 +278,16 @@ class CalendarViewModelTest {
             two.visits.upsert(sunday.copy(userId = ivan.account.userId))
             val vm = viewModel(two).also { it.selectDay(twelfth) }
             assertEquals(
-                1,
+                sunday.id,
                 vm.state.value
-                    ?.visits
-                    ?.size,
+                    ?.visit
+                    ?.id,
             )
 
             two.accounts.switchTo(misha.account.userId)
 
             val state = assertNotNull(vm.state.value)
-            assertEquals(emptyList(), state.visits)
+            assertNull(state.visit)
             assertFalse(state.day(12).hasVisit)
         }
 
@@ -400,7 +331,7 @@ class CalendarViewModelTest {
     fun a_completed_sync_reloads_the_calendar() =
         runTest {
             val vm = viewModel().also { it.refresh() }
-            gym.visits.upsert(Visit(VisitId.random(), null, t0, t0, t0, false))
+            gym.visits.upsert(Visit(VisitId.random(), null, gym.today, t0, t0, false))
 
             gym.sync.completePass()
 
@@ -409,6 +340,33 @@ class CalendarViewModelTest {
                     ?.day(14)
                     ?.hasVisit == true,
             )
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun a_day_shows_the_newest_of_its_visits_and_ignores_undated_ones() =
+        runTest {
+            val later = Visit(VisitId.random(), null, twelfth, t0 - 2.days + 1.hours, t0, false)
+            val undated = Visit(VisitId.random(), null, null, t0 - 3.days, t0, false)
+            gym.visits.upsert(later)
+            gym.visits.upsert(undated)
+            val vm = viewModel().also { it.selectDay(twelfth) }
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(later.id, state.visit?.id)
+            assertFalse(state.day(11).hasVisit)
+        }
+
+    @Test
+    fun tapping_the_moving_visit_s_own_day_leaves_move_mode_without_writing() =
+        runTest {
+            val vm = viewModel().also { it.refresh() }
+            vm.startMove(sunday.id)
+
+            vm.selectDay(twelfth)
+
+            assertFalse(assertNotNull(vm.state.value).moving)
+            assertEquals(sunday, gym.visits.byId(sunday.id))
             assertEquals(0, gym.sync.requests)
         }
 

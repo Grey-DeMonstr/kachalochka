@@ -6,7 +6,7 @@ const val DEFAULT_REPS: Int = 10
 
 fun previousVisitSets(
     machineSets: List<WorkoutSet>,
-    currentVisit: VisitId,
+    currentVisit: VisitId?,
     before: Instant? = null,
 ): List<WorkoutSet> {
     val earlier =

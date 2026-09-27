@@ -17,7 +17,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -30,19 +30,27 @@ class HomeViewModelTest {
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private fun viewModel() =
-        HomeViewModel(gym.visits, gym.sets, gym.machines, gym.currentUser, gym.clock, gym.sync)
+        HomeViewModel(
+            gym.visits,
+            gym.sets,
+            gym.machines,
+            gym.currentUser,
+            gym.clock,
+            gym.utcOffset,
+            gym.sync,
+        )
 
     @Test
-    fun without_a_running_visit_home_offers_to_start_one() {
+    fun a_day_without_sets_offers_to_record_one() {
         val vm = viewModel().also { it.refresh() }
 
-        assertEquals(HomeUiState(activeVisit = null), vm.state.value)
+        assertEquals(HomeUiState(TodayUi(gym.today, null, null)), vm.state.value)
     }
 
     @Test
-    fun a_running_visit_is_summarised_with_its_last_set() =
+    fun today_s_visit_is_summarised_with_its_last_set() =
         runTest {
-            val visit = Visit(VisitId.random(), null, t0, null, t0, false)
+            val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
             val press = Machine.new("Жим ногами", null, t0).copy(platformWeight = 20.0)
             val row = Machine.new("Тяга", null, t0)
             gym.visits.upsert(visit)
@@ -67,15 +75,15 @@ class HomeViewModelTest {
             val vm = viewModel().also { it.refresh() }
 
             assertEquals(
-                ActiveVisitUi(visit.id, "2 тренажёра · 3 подхода", "Жим ногами 70 кг × 10"),
-                vm.state.value?.activeVisit,
+                TodayUi(gym.today, "2 тренажёра · 3 подхода", "Жим ногами 70 кг × 10"),
+                vm.state.value?.today,
             )
         }
 
     @Test
     fun the_last_set_names_a_custom_unit() =
         runTest {
-            val visit = Visit(VisitId.random(), null, t0, null, t0, false)
+            val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
             val gravitron =
                 Machine
                     .new("Гравитрон", null, t0)
@@ -102,37 +110,57 @@ class HomeViewModelTest {
             assertEquals(
                 "Гравитрон 7 плитка × 10",
                 vm.state.value
-                    ?.activeVisit
+                    ?.today
                     ?.lastSet,
             )
         }
 
     @Test
-    fun a_finished_sync_shows_the_running_visit_it_pulled() =
+    fun another_day_s_visit_is_not_today_s() =
         runTest {
-            val vm = viewModel().also { it.refresh() }
-            val pulled = Visit(VisitId.random(), null, t0, null, t0, false)
-
-            gym.visits.upsert(pulled)
-            gym.sync.completePass()
-
-            assertEquals(
-                pulled.id,
-                vm.state.value
-                    ?.activeVisit
-                    ?.id,
+            val yesterday = gym.today.plusDays(-1)
+            val visit = Visit(VisitId.random(), null, yesterday, t0 - 1.days, t0, false)
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.visits.upsert(visit)
+            gym.machines.upsert(press)
+            gym.sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    visit.id,
+                    press.id,
+                    70.0,
+                    10,
+                    0,
+                    t0 - 1.days,
+                    t0,
+                    false,
+                ),
             )
+
+            val vm = viewModel().also { it.refresh() }
+
+            assertEquals(TodayUi(gym.today, null, null), vm.state.value?.today)
         }
 
     @Test
-    fun starting_a_visit_saves_it_and_hands_back_its_id() =
+    fun a_finished_sync_shows_the_sets_it_pulled() =
         runTest {
-            var started: VisitId? = null
+            val vm = viewModel().also { it.refresh() }
+            val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.visits.upsert(visit)
+            gym.machines.upsert(press)
+            val id = WorkoutSetId.random()
+            gym.sets.upsert(WorkoutSet(id, null, visit.id, press.id, 70.0, 10, 0, t0, t0, false))
 
-            viewModel().startVisit { started = it }
+            gym.sync.completePass()
 
-            val active = assertNotNull(gym.visits.active(null))
-            assertEquals(active.id, started)
-            assertEquals(t0, active.recordedAt)
+            assertEquals(
+                "1 тренажёр · 1 подход",
+                vm.state.value
+                    ?.today
+                    ?.counts,
+            )
         }
 }

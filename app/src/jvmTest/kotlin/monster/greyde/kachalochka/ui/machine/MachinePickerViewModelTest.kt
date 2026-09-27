@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -32,7 +33,7 @@ import kotlin.time.Instant
 class MachinePickerViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val visit = Visit(VisitId.random(), null, t0, null, t0, false)
+    private val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
     private val otherVisit = VisitId.random()
     private val press = Machine.new("Жим ногами", null, t0)
     private val smith = Machine.new("Приседания в Смите", null, t0)
@@ -65,9 +66,9 @@ class MachinePickerViewModelTest {
         false,
     )
 
-    private fun viewModel() =
+    private fun viewModel(day: CalendarDay = gym.today) =
         MachinePickerViewModel(
-            visit.id,
+            day,
             gym.machines,
             gym.sets,
             gym.visits,
@@ -145,6 +146,24 @@ class MachinePickerViewModelTest {
         }
 
     @Test
+    fun another_day_counts_the_sets_of_its_own_visit() =
+        runTest {
+            val tenth = CalendarDay(2023, 11, 10)
+            val past = Visit(VisitId.random(), null, tenth, t0 - 4.days, t0, false)
+            gym.visits.upsert(past)
+            repeat(2) { gym.sets.upsert(set(past.id, smith, 80.0, 8, t0 - 4.days + it.minutes)) }
+
+            val vm = viewModel(tenth).also { it.load() }
+
+            assertEquals(
+                "2 подхода в этом визите",
+                vm.state.value.rows
+                    .single { it.id == smith.id }
+                    .detail,
+            )
+        }
+
+    @Test
     fun typing_a_new_name_offers_to_create_it_and_shows_similar_machines() {
         val vm = viewModel().also { it.load() }
 
@@ -174,8 +193,8 @@ class MachinePickerViewModelTest {
     fun the_rows_and_their_counts_follow_the_account_that_became_active() =
         runTest {
             val shared = FakeGym().withAccounts(misha, ivan, active = misha)
-            val hers = Visit(VisitId.random(), misha.account.userId, t0, null, t0, false)
-            val his = Visit(VisitId.random(), ivan.account.userId, t0, null, t0, false)
+            val hers = Visit(VisitId.random(), misha.account.userId, shared.today, t0, t0, false)
+            val his = Visit(VisitId.random(), ivan.account.userId, shared.today, t0, t0, false)
             val herPress = Machine.new("Жим ногами", misha.account.userId, t0)
             val hisPress = Machine.new("Жим Ивана", ivan.account.userId, t0)
             shared.visits.upsert(hers)
@@ -194,7 +213,7 @@ class MachinePickerViewModelTest {
             }
             val vm =
                 MachinePickerViewModel(
-                    hers.id,
+                    shared.today,
                     shared.machines,
                     shared.sets,
                     shared.visits,

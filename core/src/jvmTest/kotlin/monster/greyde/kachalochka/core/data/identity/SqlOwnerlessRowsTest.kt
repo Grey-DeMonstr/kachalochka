@@ -7,6 +7,7 @@ import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -17,6 +18,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
@@ -39,7 +41,8 @@ class SqlOwnerlessRowsTest {
 
     private val rows = SqlOwnerlessRows(database, outbox, clock, Dispatchers.Unconfined)
 
-    private fun visit(userId: UserId?) = Visit(VisitId.random(), userId, t0, null, t0, false)
+    private fun visit(userId: UserId?) =
+        Visit(VisitId.random(), userId, CalendarDay.of(t0, Duration.ZERO), t0, t0, false)
 
     @Test
     fun claiming_stamps_unowned_rows_and_leaves_other_owners_alone() =

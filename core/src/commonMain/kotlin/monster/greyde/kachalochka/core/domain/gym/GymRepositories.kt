@@ -22,16 +22,16 @@ interface VisitRepository {
 
     suspend fun byId(id: VisitId): Visit?
 
-    /** The owner's newest visit that has not ended and is not deleted. */
-    suspend fun active(owner: UserId?): Visit?
-
     /** The owner's live visit on [day]; of several, the one normalization keeps. */
     suspend fun onDay(
         owner: UserId?,
         day: CalendarDay,
     ): Visit?
 
-    /** The owner's visits that are not deleted, newest first. */
+    /**
+     * The owner's visits that are not deleted, newest first, including those normalization has
+     * not given a day yet.
+     */
     suspend fun all(owner: UserId?): List<Visit>
 }
 

@@ -16,12 +16,12 @@ object MachineListRoute
 
 @Serializable
 data class VisitRoute(
-    val visitId: String,
+    val day: String,
 )
 
 @Serializable
 data class MachinePickerRoute(
-    val visitId: String,
+    val day: String,
     val selectedMachineId: String? = null,
 )
 

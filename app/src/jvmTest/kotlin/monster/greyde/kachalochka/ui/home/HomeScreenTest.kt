@@ -1,11 +1,13 @@
 package monster.greyde.kachalochka.ui.home
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
@@ -68,6 +70,18 @@ class HomeScreenTest {
         runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}) }) {
             onNodeWithTag("home-sign-in").assertDoesNotExist()
         }
+    }
+
+    @Test
+    fun the_today_card_offers_the_first_set_and_opens_today() {
+        val opened = mutableListOf<CalendarDay>()
+        runScreenTest(FakeGym(), screen = { HomeScreen({ opened += it }, {}, {}, {}) }) {
+            onNodeWithTag("visit-counts").assertTextEquals("Подходов пока нет")
+            onNodeWithTag("open-today").assertTextEquals("Записать подход")
+            onNodeWithTag("open-today").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(CalendarDay(2023, 11, 14)), opened)
     }
 
     @Test

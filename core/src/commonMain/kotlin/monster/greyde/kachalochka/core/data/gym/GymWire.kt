@@ -95,21 +95,21 @@ internal data class MachineRow(
 internal data class VisitRow(
     val id: String,
     @SerialName("user_id") val userId: String?,
+    val day: String?,
     @SerialName("recorded_at") val recordedAt: String,
+    // Clients before 1.0.2 read a visit without an end as their running visit.
     @SerialName("ended_at") val endedAt: String?,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
-    val day: String?,
 ) {
     fun toVisit(): Visit =
         Visit(
             id = VisitId(id),
             userId = userId?.let(::UserId),
+            day = day?.let(CalendarDay::parse),
             recordedAt = Instant.parse(recordedAt),
-            endedAt = endedAt?.let(Instant::parse),
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
-            day = day?.let(CalendarDay::parse),
         )
 
     companion object {
@@ -117,11 +117,11 @@ internal data class VisitRow(
             VisitRow(
                 id = visit.id.value,
                 userId = visit.userId?.value,
+                day = visit.day?.iso,
                 recordedAt = visit.recordedAt.toString(),
-                endedAt = visit.endedAt?.toString(),
+                endedAt = visit.recordedAt.toString(),
                 updatedAt = visit.updatedAt.toString(),
                 deleted = visit.deleted,
-                day = visit.day?.iso,
             )
     }
 }

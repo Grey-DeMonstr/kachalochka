@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -32,12 +33,15 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VisitViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val visit = Visit(VisitId.random(), null, t0, null, t0, false)
+    private val today = CalendarDay(2023, 11, 14)
+    private val seventh = CalendarDay(2023, 11, 7)
+    private val visit = Visit(VisitId.random(), null, today, t0, t0, false)
     private val yesterday = VisitId.random()
     private val press =
         Machine
@@ -48,10 +52,10 @@ class VisitViewModelTest {
             ).copy(platformWeight = 20.0, setupNote = "Сиденье на 4")
     private val row = Machine.new("Тяга верхнего блока", null, t0)
     private val timer = RestTimer(gym.clock)
-    private val lastWeek = Visit(VisitId.random(), null, t0 - 7.days, t0 - 7.days, t0, false)
+    private val lastWeek = Visit(VisitId.random(), null, seventh, t0 - 7.days, t0, false)
     private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
     private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
-    private val ivanVisit = Visit(VisitId.random(), ivan.account.userId, t0, null, t0, false)
+    private val ivanVisit = Visit(VisitId.random(), ivan.account.userId, today, t0, t0, false)
     private val ivanPress =
         Machine
             .new("Жим ногами", ivan.account.userId, t0)
@@ -93,9 +97,9 @@ class VisitViewModelTest {
 
     private fun viewModel(
         gym: FakeGym = this.gym,
-        visitId: VisitId = visit.id,
+        day: CalendarDay = today,
     ) = VisitViewModel(
-        visitId,
+        day,
         gym.visits,
         gym.machines,
         gym.sets,
@@ -344,28 +348,6 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun ending_the_visit_stamps_its_end() =
-        runTest {
-            val vm = viewModel().also { it.refresh() }
-            var ended = false
-
-            vm.endVisit { ended = true }
-
-            assertEquals(t0, gym.visits.byId(visit.id)?.endedAt)
-            assertEquals(true, ended)
-        }
-
-    @Test
-    fun ending_the_visit_asks_for_a_sync_pass() =
-        runTest {
-            val vm = viewModel().also { it.refresh() }
-
-            vm.endVisit {}
-
-            assertEquals(1, gym.sync.requests)
-        }
-
-    @Test
     fun editing_a_set_shows_what_was_recorded_and_when() =
         runTest {
             val first = set(visit.id, press, 60.0, 10, 0)
@@ -504,7 +486,7 @@ class VisitViewModelTest {
     fun saving_as_another_account_records_into_that_account_s_own_visit() =
         runTest {
             val two = twoAccountGym()
-            val vm = viewModel(two, ivanVisit.id).also { it.selectMachine(ivanPress.id) }
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 
             vm.switchTo(misha.account.userId)
             vm.save()
@@ -513,7 +495,7 @@ class VisitViewModelTest {
                 two.sets.rows.values
                     .single()
             assertEquals(misha.account.userId, saved.userId)
-            assertEquals(two.visits.active(misha.account.userId)?.id, saved.visitId)
+            assertEquals(two.visits.onDay(misha.account.userId, today)?.id, saved.visitId)
             assertNotEquals(ivanVisit.id, saved.visitId)
         }
 
@@ -522,7 +504,7 @@ class VisitViewModelTest {
         runTest {
             val two = twoAccountGym()
             two.sets.upsert(set(ivanVisit.id, ivanPress, 70.0, 10, 0, ivan.account.userId))
-            val vm = viewModel(two, ivanVisit.id).also { it.selectMachine(ivanPress.id) }
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
             assertEquals("1 подход", vm.state.value?.setCountLabel)
 
             vm.switchTo(misha.account.userId)
@@ -539,7 +521,7 @@ class VisitViewModelTest {
     fun the_visit_a_save_lands_in_is_the_one_on_screen() =
         runTest {
             val two = twoAccountGym()
-            val vm = viewModel(two, ivanVisit.id).also { it.selectMachine(ivanPress.id) }
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
             vm.switchTo(misha.account.userId)
 
             vm.save()
@@ -563,7 +545,7 @@ class VisitViewModelTest {
     fun the_sheet_names_the_account_a_save_would_record_as() =
         runTest {
             val two = twoAccountGym()
-            val vm = viewModel(two, ivanVisit.id).also { it.selectMachine(ivanPress.id) }
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
             assertEquals(
                 "Сохранить · Иван",
                 vm.state.value
@@ -587,7 +569,7 @@ class VisitViewModelTest {
     fun saving_as_another_account_mirrors_the_machine_to_them() =
         runTest {
             val two = twoAccountGym()
-            val vm = viewModel(two, ivanVisit.id).also { it.selectMachine(ivanPress.id) }
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 
             vm.switchTo(misha.account.userId)
             vm.save()
@@ -607,7 +589,7 @@ class VisitViewModelTest {
     fun a_second_set_as_the_same_account_reuses_the_mirrored_machine() =
         runTest {
             val two = twoAccountGym()
-            val vm = viewModel(two, ivanVisit.id).also { it.selectMachine(ivanPress.id) }
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
             vm.switchTo(misha.account.userId)
 
             vm.save()
@@ -625,7 +607,7 @@ class VisitViewModelTest {
     fun opening_machine_settings_after_a_switch_mirrors_the_machine_first() =
         runTest {
             val two = twoAccountGym()
-            val vm = viewModel(two, ivanVisit.id).also { it.selectMachine(ivanPress.id) }
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
             vm.switchTo(misha.account.userId)
             var opened: MachineId? = null
 
@@ -643,7 +625,7 @@ class VisitViewModelTest {
             val two = twoAccountGym()
             val recorded = set(ivanVisit.id, ivanPress, 70.0, 10, 0, ivan.account.userId)
             two.sets.upsert(recorded)
-            val vm = viewModel(two, ivanVisit.id).also { it.refresh() }
+            val vm = viewModel(two).also { it.refresh() }
             vm.editSet(recorded.id)
 
             two.accounts.switchTo(misha.account.userId)
@@ -663,51 +645,30 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun ending_a_visit_the_switched_to_account_never_started_just_leaves() =
-        runTest {
-            val two = twoAccountGym()
-            val vm = viewModel(two, ivanVisit.id).also { it.refresh() }
-            vm.switchTo(misha.account.userId)
-            var ended = false
-
-            vm.endVisit { ended = true }
-
-            assertEquals(true, ended)
-            assertEquals(
-                listOf(ivanVisit.id),
-                two.visits.rows.keys
-                    .toList(),
-            )
-            assertNull(two.visits.byId(ivanVisit.id)?.endedAt)
-        }
-
-    @Test
-    fun the_running_visit_keeps_its_plain_title() {
+    fun today_s_visit_is_titled_today() {
         val state = assertNotNull(viewModel().also { it.refresh() }.state.value)
 
-        assertEquals("Визит", state.title)
-        assertEquals(false, state.ended)
+        assertEquals("Сегодня", state.title)
     }
 
     @Test
-    fun an_ended_visit_is_titled_with_its_date() =
+    fun another_day_s_visit_is_titled_with_its_date() =
         runTest {
             gym.visits.upsert(lastWeek)
 
-            val vm = viewModel(visitId = lastWeek.id).also { it.refresh() }
+            val vm = viewModel(day = seventh).also { it.refresh() }
 
             val state = assertNotNull(vm.state.value)
             assertEquals("Визит · 7 ноября", state.title)
-            assertEquals(true, state.ended)
         }
 
     @Test
-    fun a_set_added_to_an_ended_visit_lands_after_its_last_set_without_a_rest() =
+    fun a_set_added_to_another_day_s_visit_lands_after_its_last_set_without_a_rest() =
         runTest {
             gym.visits.upsert(lastWeek)
             val last = set(lastWeek.id, press, 70.0, 10, -(7.days.inWholeMinutes.toInt()) + 5)
             gym.sets.upsert(last)
-            val vm = viewModel(visitId = lastWeek.id).also { it.selectMachine(press.id) }
+            val vm = viewModel(day = seventh).also { it.selectMachine(press.id) }
 
             vm.save()
 
@@ -719,12 +680,12 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun an_ended_visit_suggests_from_the_visit_before_it() =
+    fun another_day_s_visit_suggests_from_the_visit_before_it() =
         runTest {
             gym.visits.upsert(lastWeek)
             val nineDaysAgo = -(9.days.inWholeMinutes.toInt())
             gym.sets.upsert(set(VisitId.random(), press, 50.0, 8, nineDaysAgo))
-            val vm = viewModel(visitId = lastWeek.id).also { it.selectMachine(press.id) }
+            val vm = viewModel(day = seventh).also { it.selectMachine(press.id) }
 
             val sheet = assertNotNull(vm.state.value?.sheet)
             assertEquals("2 дня назад · 50×8", sheet.previous)
@@ -732,12 +693,12 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun an_ended_visit_offers_no_person_chips() =
+    fun another_day_offers_no_person_chips() =
         runTest {
             val two = twoAccountGym()
-            val ended = ivanVisit.copy(id = VisitId.random(), endedAt = t0)
-            two.visits.upsert(ended)
-            val vm = viewModel(two, ended.id).also { it.selectMachine(ivanPress.id) }
+            val thirteenth = CalendarDay(2023, 11, 13)
+            two.visits.upsert(ivanVisit.copy(id = VisitId.random(), day = thirteenth))
+            val vm = viewModel(two, thirteenth).also { it.selectMachine(ivanPress.id) }
 
             val sheet = assertNotNull(vm.state.value?.sheet)
             assertEquals(emptyList(), sheet.people)
@@ -745,12 +706,12 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun deleting_a_set_of_an_ended_visit_asks_for_a_sync_pass() =
+    fun deleting_a_set_of_another_day_asks_for_a_sync_pass() =
         runTest {
             gym.visits.upsert(lastWeek)
             val recorded = set(lastWeek.id, press, 70.0, 10, -(7.days.inWholeMinutes.toInt()))
             gym.sets.upsert(recorded)
-            val vm = viewModel(visitId = lastWeek.id).also { it.refresh() }
+            val vm = viewModel(day = seventh).also { it.refresh() }
             vm.editSet(recorded.id)
 
             vm.deleteEditedSet()
@@ -759,12 +720,12 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun an_edit_of_an_ended_visit_asks_for_a_sync_pass() =
+    fun an_edit_of_another_day_asks_for_a_sync_pass() =
         runTest {
             gym.visits.upsert(lastWeek)
             val recorded = set(lastWeek.id, press, 70.0, 10, -(7.days.inWholeMinutes.toInt()))
             gym.sets.upsert(recorded)
-            val vm = viewModel(visitId = lastWeek.id).also { it.refresh() }
+            val vm = viewModel(day = seventh).also { it.refresh() }
             vm.editSet(recorded.id)
 
             vm.save()
@@ -773,10 +734,10 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun a_finished_sync_pass_on_an_ended_visit_asks_for_no_other() =
+    fun a_finished_sync_pass_on_another_day_asks_for_no_other() =
         runTest {
             gym.visits.upsert(lastWeek)
-            viewModel(visitId = lastWeek.id).also { it.selectMachine(press.id) }
+            viewModel(day = seventh).also { it.selectMachine(press.id) }
 
             gym.sync.completePass()
 
@@ -784,7 +745,7 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun a_set_added_to_the_running_visit_asks_for_no_sync_pass() =
+    fun a_set_added_today_asks_for_no_sync_pass() =
         runTest {
             val vm = viewModel().also { it.selectMachine(press.id) }
 
@@ -792,4 +753,58 @@ class VisitViewModelTest {
 
             assertEquals(0, gym.sync.requests)
         }
+
+    @Test
+    fun the_first_set_of_another_day_creates_its_visit_at_local_noon() =
+        runTest {
+            val tenth = CalendarDay(2023, 11, 10)
+            val vm = viewModel(day = tenth).also { it.selectMachine(press.id) }
+            assertNull(gym.visits.onDay(null, tenth))
+
+            vm.save()
+
+            val created = assertNotNull(gym.visits.onDay(null, tenth))
+            assertEquals(Instant.parse("2023-11-10T12:00:00Z"), created.recordedAt)
+            assertEquals(
+                created.recordedAt + 1.seconds,
+                gym.sets
+                    .forVisit(created.id)
+                    .single()
+                    .recordedAt,
+            )
+            assertNull(timer.startedAt.value)
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun the_first_set_of_today_creates_today_s_visit_now() =
+        runTest {
+            val fresh = FakeGym()
+            fresh.machines.upsert(press)
+            val vm = viewModel(fresh).also { it.selectMachine(press.id) }
+
+            vm.save()
+
+            val created = assertNotNull(fresh.visits.onDay(null, today))
+            assertEquals(t0, created.recordedAt)
+            assertEquals(
+                t0,
+                fresh.sets
+                    .forVisit(created.id)
+                    .single()
+                    .recordedAt,
+            )
+            assertEquals(t0, timer.startedAt.value)
+        }
+
+    @Test
+    fun opening_a_day_without_a_visit_writes_nothing() {
+        viewModel(day = CalendarDay(2023, 11, 10)).also { it.refresh() }
+
+        assertEquals(
+            listOf(visit.id),
+            gym.visits.rows.keys
+                .toList(),
+        )
+    }
 }

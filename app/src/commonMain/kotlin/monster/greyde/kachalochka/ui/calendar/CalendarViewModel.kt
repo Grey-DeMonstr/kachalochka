@@ -20,9 +20,9 @@ import monster.greyde.kachalochka.core.domain.gym.VisitRows
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.movedVisit
-import monster.greyde.kachalochka.core.domain.gym.pastVisit
 import monster.greyde.kachalochka.core.domain.gym.removedVisit
 import monster.greyde.kachalochka.core.domain.gym.summarize
+import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.UtcOffset
@@ -37,10 +37,10 @@ data class CalendarUiState(
     val monthTitle: String,
     val canShowNextMonth: Boolean,
     val weeks: List<List<DayUi?>>,
+    val day: CalendarDay,
     val dayTitle: String,
-    val visits: List<CalendarVisitUi>,
-    val noVisits: Boolean,
-    val addLabel: String?,
+    val visit: CalendarVisitUi?,
+    val noVisit: Boolean,
     val moving: Boolean,
     val removal: RemovalUi?,
 )
@@ -55,7 +55,6 @@ data class DayUi(
 
 data class CalendarVisitUi(
     val id: VisitId,
-    val running: Boolean,
     val counts: String,
     val machines: String?,
 )
@@ -79,11 +78,12 @@ class CalendarViewModel(
     val state: StateFlow<CalendarUiState?> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
+    /** The owner's visits that have a day; the others wait for normalization. */
     private var all: List<Visit> = emptyList()
-    private var activeId: VisitId? = null
+    private val visitDays: Set<CalendarDay> get() = all.mapNotNull { it.day }.toSet()
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var stale = true
-    private var dayVisits: List<CalendarVisitUi> = emptyList()
+    private var dayCard: CalendarVisitUi? = null
     private var month: CalendarMonth = CalendarMonth.of(today())
     private var selected: CalendarDay = today()
     private var moving: Visit? = null
@@ -115,62 +115,37 @@ class CalendarViewModel(
     fun selectDay(day: CalendarDay) {
         if (day > today()) return
         val target = moving
-        if (target == null) {
+        if (target == null || day == target.day) {
+            moving = null
             selected = day
-            dayVisits = emptyList()
+            dayCard = null
             publish()
             reload(everything = false)
-        } else {
-            writes.launch {
-                // A sync may have removed the visit since the move began.
-                val visit = visits.byId(target.id)?.takeIf { !it.deleted && it.endedAt != null }
-                if (visit == null) {
-                    moving = null
-                    publish()
-                    return@launch
-                }
-                val now = clock.now()
-                val offset = utcOffset.at(now)
-                write(movedVisit(visit, sets.forVisit(visit.id), day, offset, now))
-                moving = null
-                selected = day
-                month = CalendarMonth.of(day)
-                sync.request()
-                reload()
-            }
+            return
         }
-    }
-
-    fun addVisit(onOpen: (VisitId) -> Unit) {
+        // A day holds one visit.
+        if (day in visitDays) return
         writes.launch {
-            val day = selected
-            val owner = currentUser.id()
+            // A sync may have removed the visit since the move began.
+            val visit = visits.byId(target.id)?.takeIf { !it.deleted }
+            if (visit == null) {
+                moving = null
+                publish()
+                return@launch
+            }
             val now = clock.now()
-            val id =
-                if (day < today()) {
-                    val visit = pastVisit(day, owner, utcOffset.at(now), now)
-                    visits.upsert(visit)
-                    sync.request()
-                    visit.id
-                } else {
-                    val active = visits.active(owner)
-                    if (active != null) {
-                        active.id
-                    } else {
-                        val visit = Visit(VisitId.random(), owner, now, null, now, false)
-                        visits.upsert(visit)
-                        sync.request()
-                        visit.id
-                    }
-                }
-            onOpen(id)
+            val offset = utcOffset.at(now)
+            write(movedVisit(visit, sets.forVisit(visit.id), day, offset, now))
+            moving = null
+            selected = day
+            month = CalendarMonth.of(day)
+            sync.request()
+            reload()
         }
     }
 
     fun startMove(id: VisitId) {
-        val visit = all.firstOrNull { it.id == id } ?: return
-        if (visit.endedAt == null) return
-        moving = visit
+        moving = all.firstOrNull { it.id == id } ?: return
         publish()
     }
 
@@ -225,45 +200,39 @@ class CalendarViewModel(
     private suspend fun load() {
         if (stale) {
             val owner = currentUser.id()
-            all = visits.all(owner)
-            activeId = visits.active(owner)?.id
+            all = visits.all(owner).filter { it.day != null }
             machinesById = machines.all(owner).associateBy { it.id }
             stale = false
         }
         val day = selected
-        dayVisits =
-            all
-                .filter { CalendarDay.of(it.recordedAt, utcOffset.at(it.recordedAt)) == day }
-                .sortedBy { it.recordedAt }
-                .map { visit ->
-                    val visitSets = sets.forVisit(visit.id)
-                    val summary = summarize(visitSets)
-                    val names =
-                        groupByMachine(visitSets).mapNotNull { machinesById[it.machineId]?.name }
-                    val machinesLabel = machineCount(summary.machineCount)
-                    val setsLabel = setCount(summary.setCount)
-                    CalendarVisitUi(
-                        id = visit.id,
-                        running = visit.endedAt == null,
-                        counts = "$machinesLabel · $setsLabel",
-                        machines = names.joinToString(", ").ifEmpty { null },
-                    )
-                }
+        dayCard =
+            all.filter { it.day == day }.maxWithOrNull(visitRecency)?.let { visit ->
+                val visitSets = sets.forVisit(visit.id)
+                val summary = summarize(visitSets)
+                val names =
+                    groupByMachine(visitSets).mapNotNull { machinesById[it.machineId]?.name }
+                val machinesLabel = machineCount(summary.machineCount)
+                val setsLabel = setCount(summary.setCount)
+                CalendarVisitUi(
+                    id = visit.id,
+                    counts = "$machinesLabel · $setsLabel",
+                    machines = names.joinToString(", ").ifEmpty { null },
+                )
+            }
         publish()
     }
 
     private fun publish() {
         val today = today()
         val day = selected
-        val visitDays =
-            all.map { CalendarDay.of(it.recordedAt, utcOffset.at(it.recordedAt)) }.toSet()
+        val marked = visitDays
         val weeksUi =
             month.weeks().map { week ->
                 week.map { d ->
                     d?.let {
                         DayUi(
                             day = it,
-                            hasVisit = it in visitDays,
+                            hasVisit = it in marked,
                             today = it == today,
                             selected = it == day,
                             enabled = it <= today,
@@ -271,22 +240,16 @@ class CalendarViewModel(
                     }
                 }
             }
-        val addLabel =
-            when {
-                day < today -> "Добавить визит"
-                day == today && activeId == null -> "Начать визит"
-                else -> null
-            }
         mutableState.value =
             CalendarUiState(
                 monthTitle = monthTitle(month),
                 canShowNextMonth = monthRank(month) < monthRank(CalendarMonth.of(today)),
                 weeks = weeksUi,
+                day = day,
                 dayTitle = "${weekdayName(day.dayOfWeek)}, ${dayMonthLabel(day, today.year)}",
-                visits = dayVisits,
-                // Read from the day marks, which are known while the day's cards still load.
-                noVisits = day !in visitDays,
-                addLabel = addLabel,
+                visit = dayCard,
+                // Read from the day marks, which are known while the day's card still loads.
+                noVisit = day !in marked,
                 moving = moving != null,
                 removal = removing?.let { removalUi(it, today) },
             )
@@ -296,7 +259,7 @@ class CalendarViewModel(
         visit: Visit,
         today: CalendarDay,
     ): RemovalUi {
-        val day = CalendarDay.of(visit.recordedAt, utcOffset.at(visit.recordedAt))
+        val day = checkNotNull(visit.day)
         return RemovalUi(
             "Удалить визит?",
             "${dayMonthLabel(day, today.year)} · ${setCount(removingSets)}. " +

@@ -35,13 +35,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
@@ -58,7 +56,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun CalendarScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenVisit: (VisitId) -> Unit,
+    onOpenVisit: (CalendarDay) -> Unit,
 ) {
     val viewModel: CalendarViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -97,28 +95,26 @@ fun CalendarScreen(
                 fontSize = 17.sp,
                 color = MaterialTheme.colorScheme.onBackground,
             )
-            current.visits.forEach { visit ->
+            current.visit?.let { visit ->
                 VisitCard(
                     visit,
                     editable = !current.moving,
-                    onOpen = { onOpenVisit(visit.id) },
+                    onOpen = { onOpenVisit(current.day) },
                     onMove = { viewModel.startMove(visit.id) },
                     onRemove = { viewModel.askToRemove(visit.id) },
                 )
             }
-            if (current.noVisits) {
+            if (current.noVisit) {
                 Text(
-                    "Нет визитов",
+                    "Нет визита",
                     modifier = Modifier.testTag("calendar-empty"),
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 )
-            }
-            current.addLabel?.let {
                 AccentButton(
-                    it,
+                    "Добавить визит",
                     PhosphorIcons.Plus,
-                    { viewModel.addVisit(onOpenVisit) },
+                    { onOpenVisit(current.day) },
                     Modifier.testTag("add-visit"),
                 )
             }
@@ -277,11 +273,8 @@ private fun VisitCard(
         Modifier
             .fillMaxWidth()
             .clip(shape)
-            .border(
-                1.dp,
-                if (visit.running) colors.primary else colors.onBackground.copy(alpha = 0.16f),
-                shape,
-            ).padding(12.dp),
+            .border(1.dp, colors.onBackground.copy(alpha = 0.16f), shape)
+            .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(
@@ -293,14 +286,6 @@ private fun VisitCard(
                 .testTag("calendar-visit-${visit.id.value}"),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            if (visit.running) {
-                Text(
-                    "ВИЗИТ ИДЁТ",
-                    fontSize = 11.sp,
-                    letterSpacing = 0.09.em,
-                    color = colors.secondary,
-                )
-            }
             Text(visit.counts, fontSize = 15.sp, color = colors.onBackground)
             visit.machines?.let {
                 Text(
@@ -314,14 +299,12 @@ private fun VisitCard(
         }
         if (editable) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (!visit.running) {
-                    OutlineButton(
-                        "Перенести",
-                        PhosphorIcons.CalendarBlank,
-                        onMove,
-                        Modifier.weight(1f).testTag("move-visit-${visit.id.value}"),
-                    )
-                }
+                OutlineButton(
+                    "Перенести",
+                    PhosphorIcons.CalendarBlank,
+                    onMove,
+                    Modifier.weight(1f).testTag("move-visit-${visit.id.value}"),
+                )
                 OutlineButton(
                     "Удалить",
                     PhosphorIcons.Trash,

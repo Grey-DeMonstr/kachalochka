@@ -28,7 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInFailure
@@ -42,7 +42,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun HomeScreen(
-    onOpenVisit: (VisitId) -> Unit,
+    onOpenVisit: (CalendarDay) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenCalendar: () -> Unit,
     onOpenMachines: () -> Unit,
@@ -57,17 +57,7 @@ fun HomeScreen(
     Screen("Качалочка", onBack = null, onOpenSettings = onOpenSettings) {
         val current = state ?: return@Screen
         Box(Modifier.padding(16.dp)) {
-            val visit = current.activeVisit
-            if (visit == null) {
-                AccentButton(
-                    "Начать визит",
-                    PhosphorIcons.Plus,
-                    { viewModel.startVisit(onOpenVisit) },
-                    Modifier.testTag("start-visit"),
-                )
-            } else {
-                VisitCard(visit, onContinue = { onOpenVisit(visit.id) })
-            }
+            TodayCard(current.today, onOpen = { onOpenVisit(current.today.day) })
         }
         SectionRow(
             PhosphorIcons.CalendarBlank,
@@ -100,9 +90,9 @@ fun HomeScreen(
 }
 
 @Composable
-private fun VisitCard(
-    visit: ActiveVisitUi,
-    onContinue: () -> Unit,
+private fun TodayCard(
+    today: TodayUi,
+    onOpen: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(12.dp)
@@ -118,19 +108,19 @@ private fun VisitCard(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
                 Text(
-                    "ВИЗИТ ИДЁТ",
+                    "СЕГОДНЯ",
                     fontSize = 11.sp,
                     letterSpacing = 0.09.em,
                     color = colors.secondary,
                 )
                 Text(
-                    visit.counts,
+                    today.counts ?: "Подходов пока нет",
                     modifier = Modifier.testTag("visit-counts"),
                     fontSize = 14.sp,
                     color = colors.tertiary,
                 )
             }
-            visit.lastSet?.let {
+            today.lastSet?.let {
                 Text(
                     "Последний подход\n$it",
                     modifier = Modifier.testTag("visit-last-set"),
@@ -142,10 +132,10 @@ private fun VisitCard(
             }
         }
         AccentButton(
-            "Продолжить",
-            PhosphorIcons.ArrowRight,
-            onContinue,
-            Modifier.testTag("continue-visit"),
+            if (today.counts == null) "Записать подход" else "Продолжить",
+            if (today.counts == null) PhosphorIcons.Plus else PhosphorIcons.ArrowRight,
+            onOpen,
+            Modifier.testTag("open-today"),
         )
     }
 }

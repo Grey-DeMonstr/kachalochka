@@ -23,75 +23,33 @@ class LocalVisitRepositoryTest {
 
     private fun visit(
         recordedAt: Instant = t0,
-        endedAt: Instant? = null,
+        day: CalendarDay? = CalendarDay(2023, 11, 14),
         deleted: Boolean = false,
         userId: UserId? = null,
-    ) = Visit(VisitId.random(), userId, recordedAt, endedAt, recordedAt, deleted)
+    ) = Visit(VisitId.random(), userId, day, recordedAt, recordedAt, deleted)
 
     @Test
-    fun a_visit_reads_back_with_its_end() =
+    fun a_visit_reads_back_with_its_day() =
         runTest {
-            val ended = visit(t0, endedAt = t0 + 1.hours)
+            val visit = visit(t0)
 
-            repository.upsert(ended)
+            repository.upsert(visit)
 
-            assertEquals(ended, repository.byId(ended.id))
-        }
-
-    @Test
-    fun the_active_visit_is_the_newest_one_without_an_end() =
-        runTest {
-            val older = visit(t0)
-            val newer = visit(t0 + 1.hours)
-            val ended = visit(t0 + 2.hours, endedAt = t0 + 3.hours)
-            val deleted = visit(t0 + 4.hours, deleted = true)
-            listOf(older, newer, ended, deleted).forEach { repository.upsert(it) }
-
-            assertEquals(newer, repository.active(null))
-        }
-
-    @Test
-    fun there_is_no_active_visit_once_every_visit_ended() =
-        runTest {
-            repository.upsert(visit(t0, endedAt = t0 + 1.hours))
-
-            assertNull(repository.active(null))
-        }
-
-    @Test
-    fun each_account_resolves_its_own_active_visit() =
-        runTest {
-            val ivan = UserId("11111111-1111-4111-8111-111111111111")
-            val misha = UserId("22222222-2222-4222-8222-222222222222")
-            val ivanVisit = visit(userId = ivan)
-            val mishaVisit = visit(userId = misha)
-            repository.upsert(ivanVisit)
-            repository.upsert(mishaVisit)
-
-            assertEquals(ivanVisit.id, repository.active(ivan)?.id)
-            assertEquals(mishaVisit.id, repository.active(misha)?.id)
-        }
-
-    @Test
-    fun an_owned_visit_is_not_the_anonymous_active_visit() =
-        runTest {
-            val ivan = UserId("11111111-1111-4111-8111-111111111111")
-            repository.upsert(visit(userId = ivan))
-
-            assertNull(repository.active(null))
+            assertEquals(visit, repository.byId(visit.id))
         }
 
     @Test
     fun an_owner_s_visits_list_newest_first_without_the_deleted() =
         runTest {
             val ivan = UserId("11111111-1111-4111-8111-111111111111")
-            val older = visit(t0, endedAt = t0 + 1.hours)
+            val older = visit(t0)
             val newer = visit(t0 + 1.days)
             val deleted = visit(t0 + 2.days, deleted = true)
             val ivans = visit(t0 + 3.days, userId = ivan)
-            listOf(older, newer, deleted, ivans).forEach { repository.upsert(it) }
+            val undated = visit(t0 + 4.days, day = null)
+            listOf(older, newer, deleted, ivans, undated).forEach { repository.upsert(it) }
 
-            assertEquals(listOf(newer, older), repository.all(null))
+            assertEquals(listOf(undated, newer, older), repository.all(null))
             assertEquals(listOf(ivans), repository.all(ivan))
         }
 
@@ -100,11 +58,11 @@ class LocalVisitRepositoryTest {
         runTest {
             val ivan = UserId("11111111-1111-4111-8111-111111111111")
             val fourteenth = CalendarDay(2023, 11, 14)
-            val morning = visit(t0 - 3.hours).copy(day = fourteenth)
-            val evening = visit(t0).copy(day = fourteenth)
-            val deleted = visit(t0 + 1.hours, deleted = true).copy(day = fourteenth)
-            val ivans = visit(t0 + 2.hours, userId = ivan).copy(day = fourteenth)
-            val undated = visit(t0 + 3.hours)
+            val morning = visit(t0 - 3.hours, fourteenth)
+            val evening = visit(t0, fourteenth)
+            val deleted = visit(t0 + 1.hours, fourteenth, deleted = true)
+            val ivans = visit(t0 + 2.hours, fourteenth, userId = ivan)
+            val undated = visit(t0 + 3.hours, day = null)
             listOf(morning, evening, deleted, ivans, undated).forEach { repository.upsert(it) }
 
             assertEquals(evening, repository.onDay(null, fourteenth))

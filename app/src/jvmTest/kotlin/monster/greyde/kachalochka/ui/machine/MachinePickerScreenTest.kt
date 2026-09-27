@@ -19,7 +19,7 @@ import kotlin.test.assertEquals
 class MachinePickerScreenTest {
     private val gym = FakeGym()
     private val visit =
-        Visit(VisitId.random(), null, gym.clock.current, null, gym.clock.current, false)
+        Visit(VisitId.random(), null, gym.today, gym.clock.current, gym.clock.current, false)
     private val press = Machine.new("Жим ногами", null, gym.clock.current)
 
     init {
@@ -36,7 +36,7 @@ class MachinePickerScreenTest {
         val copied = mutableListOf<Pair<MachineId, String>>()
         runScreenTest(gym, screen = {
             MachinePickerScreen(
-                visit.id,
+                gym.today,
                 selectedMachineId = press.id,
                 onBack = {},
                 onOpenSettings = {},
@@ -63,7 +63,7 @@ class MachinePickerScreenTest {
     fun without_a_chosen_machine_there_is_nothing_to_copy() =
         runScreenTest(
             gym,
-            screen = { MachinePickerScreen(visit.id, null, {}, {}, {}, {}, { _, _ -> }) },
+            screen = { MachinePickerScreen(gym.today, null, {}, {}, {}, {}, { _, _ -> }) },
         ) {
             onNodeWithTag("copy-machine").assertDoesNotExist()
         }

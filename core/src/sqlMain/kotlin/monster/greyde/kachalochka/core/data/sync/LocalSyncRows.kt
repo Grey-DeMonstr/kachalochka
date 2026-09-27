@@ -46,11 +46,10 @@ class LocalSyncRows(
         database.visitQueries.upsert(
             visit.id.value,
             visit.userId?.value,
+            visit.day,
             visit.recordedAt,
-            visit.endedAt,
             visit.updatedAt,
             visit.deleted,
-            visit.day,
         )
 
     fun writeSet(set: WorkoutSet) =

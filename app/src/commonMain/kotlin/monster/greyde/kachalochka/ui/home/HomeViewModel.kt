@@ -6,14 +6,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
-import monster.greyde.kachalochka.core.domain.gym.Visit
-import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.summarize
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
-import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
@@ -21,12 +21,13 @@ import monster.greyde.kachalochka.ui.format.unitLabel
 import kotlin.time.Clock
 
 data class HomeUiState(
-    val activeVisit: ActiveVisitUi?,
+    val today: TodayUi,
 )
 
-data class ActiveVisitUi(
-    val id: VisitId,
-    val counts: String,
+/** [counts] and [lastSet] stay null until the day's first set. */
+data class TodayUi(
+    val day: CalendarDay,
+    val counts: String?,
     val lastSet: String?,
 )
 
@@ -36,11 +37,11 @@ class HomeViewModel(
     private val machines: MachineRepository,
     private val currentUser: CurrentUser,
     private val clock: Clock,
+    private val utcOffset: UtcOffset,
     private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<HomeUiState?>(null)
     val state: StateFlow<HomeUiState?> = mutableState
-    private val writes = WriteGuard(viewModelScope)
 
     init {
         viewModelScope.launch { sync.completed.collect { refresh() } }
@@ -48,22 +49,20 @@ class HomeViewModel(
 
     fun refresh() {
         viewModelScope.launch {
-            val active = visits.active(currentUser.id())
-            mutableState.value = HomeUiState(active?.let { activeVisitUi(it) })
-        }
-    }
-
-    fun startVisit(onStarted: (VisitId) -> Unit) {
-        writes.launch {
             val now = clock.now()
-            val visit = Visit(VisitId.random(), currentUser.id(), now, null, now, false)
-            visits.upsert(visit)
-            onStarted(visit.id)
+            val today = CalendarDay.of(now, utcOffset.at(now))
+            val daySets =
+                visits.onDay(currentUser.id(), today)?.let { sets.forVisit(it.id) }.orEmpty()
+            mutableState.value = HomeUiState(todayUi(today, daySets))
         }
     }
 
-    private suspend fun activeVisitUi(visit: Visit): ActiveVisitUi {
-        val summary = summarize(sets.forVisit(visit.id))
+    private suspend fun todayUi(
+        day: CalendarDay,
+        daySets: List<WorkoutSet>,
+    ): TodayUi {
+        if (daySets.isEmpty()) return TodayUi(day, null, null)
+        val summary = summarize(daySets)
         val lastSet =
             summary.lastSet?.let { set ->
                 machines
@@ -71,8 +70,8 @@ class HomeViewModel(
                         set.machineId,
                     )?.let { "${it.name} ${setValue(set.weight, set.reps, unitLabel(it))}" }
             }
-        return ActiveVisitUi(
-            id = visit.id,
+        return TodayUi(
+            day = day,
             counts = "${machineCount(summary.machineCount)} · ${setCount(summary.setCount)}",
             lastSet = lastSet,
         )

@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -16,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.identity.newUuidV4
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
+import kotlin.time.Duration
 import kotlin.time.Instant
 
 internal val IVAN = UserId("11111111-1111-4111-8111-111111111111")
@@ -24,7 +26,7 @@ internal val MISHA = UserId("22222222-2222-4222-8222-222222222222")
 internal fun ownedVisit(
     owner: UserId,
     updatedAt: Instant = T0,
-) = Visit(VisitId.random(), owner, T0, null, updatedAt, false)
+) = Visit(VisitId.random(), owner, CalendarDay.of(T0, Duration.ZERO), T0, updatedAt, false)
 
 internal fun ownedPress(
     owner: UserId,
