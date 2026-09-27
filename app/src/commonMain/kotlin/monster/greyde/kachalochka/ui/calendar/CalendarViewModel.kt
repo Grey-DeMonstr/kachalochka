@@ -50,14 +50,6 @@ data class CalendarUiState(
     val replacement: ReplacementUi?,
 )
 
-data class DayUi(
-    val day: CalendarDay,
-    val hasVisit: Boolean,
-    val today: Boolean,
-    val selected: Boolean,
-    val enabled: Boolean,
-)
-
 data class CalendarVisitUi(
     val id: VisitId,
     val counts: String,
@@ -302,25 +294,11 @@ class CalendarViewModel(
         val today = today()
         val day = selected
         val marked = visitDays
-        val weeksUi =
-            month.weeks().map { week ->
-                week.map { d ->
-                    d?.let {
-                        DayUi(
-                            day = it,
-                            hasVisit = it in marked,
-                            today = it == today,
-                            selected = it == day,
-                            enabled = it <= today,
-                        )
-                    }
-                }
-            }
         mutableState.value =
             CalendarUiState(
                 monthTitle = monthTitle(month),
                 canShowNextMonth = monthRank(month) < monthRank(CalendarMonth.of(today)),
-                weeks = weeksUi,
+                weeks = monthWeeks(month, marked, today, day),
                 day = day,
                 dayTitle = "${weekdayName(day.dayOfWeek)}, ${dayMonthLabel(day, today.year)}",
                 visit = dayCard,
@@ -360,6 +338,4 @@ class CalendarViewModel(
         val now = clock.now()
         return CalendarDay.of(now, utcOffset.at(now))
     }
-
-    private fun monthRank(month: CalendarMonth): Int = month.year * 12 + month.month
 }

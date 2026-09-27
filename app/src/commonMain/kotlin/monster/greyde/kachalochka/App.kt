@@ -14,6 +14,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.navigation.CalendarRoute
+import monster.greyde.kachalochka.navigation.FriendCalendarRoute
 import monster.greyde.kachalochka.navigation.FriendVisitRoute
 import monster.greyde.kachalochka.navigation.HomeRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
@@ -25,6 +26,7 @@ import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.SignInScreen
 import monster.greyde.kachalochka.ui.calendar.CalendarScreen
+import monster.greyde.kachalochka.ui.friends.FriendCalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
@@ -169,6 +171,20 @@ fun App() {
                         day = CalendarDay.parse(route.day),
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
+                    )
+                }
+                composable<FriendCalendarRoute> { entry ->
+                    val route = entry.toRoute<FriendCalendarRoute>()
+                    FriendCalendarScreen(
+                        member = UserId(route.userId),
+                        name = route.name,
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenVisit = {
+                            navController.navigate(
+                                FriendVisitRoute(route.userId, route.name, it.iso),
+                            )
+                        },
                     )
                 }
             }

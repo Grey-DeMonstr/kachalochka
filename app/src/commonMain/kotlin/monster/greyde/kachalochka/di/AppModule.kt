@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
+import monster.greyde.kachalochka.ui.friends.FriendCalendarViewModel
 import monster.greyde.kachalochka.ui.friends.FriendVisitViewModel
 import monster.greyde.kachalochka.ui.home.HomeViewModel
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
@@ -52,5 +53,8 @@ val appModule =
         }
         viewModel { (member: UserId, name: String, day: CalendarDay) ->
             FriendVisitViewModel(member, name, day, get(), get(), get(), get(), get(), get())
+        }
+        viewModel { (member: UserId) ->
+            FriendCalendarViewModel(member, get(), get(), get(), get(), get(), get())
         }
     }

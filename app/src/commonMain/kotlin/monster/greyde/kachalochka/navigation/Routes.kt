@@ -39,3 +39,9 @@ data class FriendVisitRoute(
     val name: String,
     val day: String,
 )
+
+@Serializable
+data class FriendCalendarRoute(
+    val userId: String,
+    val name: String,
+)
