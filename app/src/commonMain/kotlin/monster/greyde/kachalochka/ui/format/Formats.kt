@@ -17,12 +17,16 @@ fun formatNumber(value: Double): String {
     return text.replace('.', ',')
 }
 
-fun parseDecimal(text: String): Double? =
-    text
-        .trim()
-        .replace(',', '.')
-        .toDoubleOrNull()
-        ?.takeIf { it.isFinite() }
+// A typed weight must read like a plain decimal, not any string a JVM Double parses:
+// scientific notation, hex floats or a trailing unit would round-trip to Infinity or NaN
+// and break sync, which cannot encode either as JSON.
+private val plainDecimal = Regex("""\d*[.,]?\d*""")
+
+fun parseDecimal(text: String): Double? {
+    val trimmed = text.trim()
+    if (!trimmed.any { it.isDigit() } || !plainDecimal.matches(trimmed)) return null
+    return trimmed.replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() }
+}
 
 fun unitLabel(
     unit: WeightUnit,

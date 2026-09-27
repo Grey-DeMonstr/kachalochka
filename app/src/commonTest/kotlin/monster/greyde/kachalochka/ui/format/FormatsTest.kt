@@ -151,9 +151,19 @@ class FormatsTest {
     fun a_typed_number_takes_a_comma_or_a_point() {
         assertEquals(22.5, parseDecimal("22,5"))
         assertEquals(22.5, parseDecimal(" 22.5 "))
+        assertEquals(22.0, parseDecimal("22."))
+        assertEquals(0.5, parseDecimal(",5"))
         assertNull(parseDecimal(""))
         assertNull(parseDecimal("7,,5"))
         assertNull(parseDecimal("abc"))
         assertNull(parseDecimal("NaN"))
+    }
+
+    @Test
+    fun a_typed_number_rejects_scientific_and_hex_notation() {
+        assertNull(parseDecimal("1e308"))
+        assertNull(parseDecimal("1e3"))
+        assertNull(parseDecimal("22d"))
+        assertNull(parseDecimal("0x1p3"))
     }
 }
