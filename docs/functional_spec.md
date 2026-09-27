@@ -46,17 +46,18 @@ the chip, or saving a set, restarts it, and it shows the full 1:30 when idle. Ta
 opens the account menu: the signed-in accounts with the active one marked, then adding another
 account, the settings and signing out. With nobody signed in the avatar is an empty outline.
 
-The home screen shows a visit card. While a visit is running, the card shows "Визит идёт", how
-many machines and sets so far, the last recorded set and a "Продолжить" button. With no visit
-running, the card offers "Начать визит", which starts one. Below the card are rows for visits,
-machines, plans, statistics and friends; plans, statistics and friends are shown but not yet
-available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
+The home screen shows today's card: how many machines and sets were recorded today and the
+last set, or "Подходов пока нет", and a button opening today's visit. A visit is one calendar
+day; it has no start or end and comes into being with its first set. Below the card are rows for
+visits, machines, plans, statistics and friends; plans, statistics and friends are shown but not
+yet available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
 screen.
 
-The visit screen lists the visit's sets grouped by machine and ends with "Новый тренажёр", which
-opens the machine picker. Tapping a machine's row expands it to show its sets; tapping a set
-opens it for editing or deletion. "Завершить визит" ends the visit and returns to the screen the
-visit was opened from.
+The visit screen lists the day's sets grouped by machine, machines in the order of their first
+set, and ends with "Новый тренажёр", which opens the machine picker. Tapping a machine's row
+expands it to show its sets; tapping a set opens it for editing or deletion. "Порядок" shows
+arrows that move a machine or a set up or down. Today's visit is titled "Сегодня", any other
+day's with its date.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,
@@ -86,13 +87,12 @@ adds one. Saving returns to the list.
 
 The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
 visit are marked, today and the chosen day are highlighted, and future days cannot be chosen.
-Below the month are the chosen day's visits, each with its machines and set count. Tapping one
-opens it on the visit screen, where its sets are added, edited and deleted as in a running visit;
-a past visit's title carries its date and it has no "Завершить визит". "Добавить визит" records a
-visit on a past day; on today the button is "Начать визит", offered while no visit is running.
-"Перенести" moves a visit, with its sets, to the day tapped next; the running visit cannot be
-moved. "Удалить" asks for confirmation, then removes the visit and its sets from the history and
-the statistics.
+Below the month is the chosen day's visit, with its machines and set count. Tapping it opens
+it on the visit screen, where its sets are added, edited, deleted and ordered as today's are.
+A day without a visit offers "Добавить визит". "Перенести" moves a visit, with its sets, to the
+day tapped next; if that day already has a visit, the app asks whether to replace it, and
+replacing removes it with its sets. "Удалить" asks for confirmation, then removes the visit
+and its sets from the history and the statistics.
 
 Photos, comments on a set and counting left and right separately are shown on these screens but
 not yet available.

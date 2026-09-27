@@ -293,7 +293,8 @@ The button (`open-today`) opens `VisitRoute(today)`. `start-visit` and `continue
   Tapping a set does not open it while ordering.
 - Moving a machine renumbers every set of the visit 1…n: machines in the new order, sets inside
   each in their current order. Moving a set swaps its position with its neighbour on the same
-  machine; if the two positions are equal (old rows), the visit is renumbered first.
+  machine; if any two of the visit's sets share a position — old rows, or a reorder written
+  halfway — the visit is renumbered first.
 - A new set takes the visit's highest position plus one.
 - Every reorder writes only the sets whose position changed, requests a sync pass when the
   day is not today, and keeps "Порядок" on.
@@ -323,10 +324,16 @@ The button (`open-today`) opens `VisitRoute(today)`. `start-visit` and `continue
 through the repositories, applies the result sets first, visit last, and reports whether it
 wrote. It runs:
 
-- **Android**: at start for the anonymous owner and every signed-in account; in `SyncWorker`
-  after each pass for every account, requesting one more pass when it wrote; after an account
-  switch.
-- **Web**: after the session restore and after every account switch.
+- **Android**: at start, only for the anonymous owner; a signed-in account is normalized only
+  inside `SyncWorker`, once that account's own pass comes back clean, and the worker runs one
+  more pass inline — never a new `request()` — when normalization wrote something. Switching the
+  active account requests a pass instead of normalizing directly.
+- **Web**: after the session restore and after every account switch, against the server.
+
+A failure normalizing one owner at start or on a switch is logged (Android) or sent to the
+console (web) and does not stop the next owner's turn. Until an account's visits are normalized,
+readers show a visit with no `day` on the day of its recorded instant (`Visit.dayAt`), newest by
+`visitRecency` when several fall on it (`VisitRepository.shownOn`).
 
 ### 4.6 Domain and data
 
@@ -369,7 +376,9 @@ alter table public.workout_set add column position integer not null default 0;
 ### 4.7 Sync
 
 - A pass is also requested on `ON_STOP` of the process lifecycle; "after the user ends a visit"
-  goes. Writes to a day other than today and every calendar write keep requesting one.
+  goes. Writes to a day other than today and every calendar write keep requesting one. On the
+  web, where a pass is only the screens re-reading what a write already sent, requesting one
+  reloads them.
 - A pulled visit without `day` is written as pulled; the normalization after the pass fills it
   and the push that follows carries it to the server.
 - 1.0.1 sees every 1.0.2 visit as ended, on its `recorded_at` day. A 1.0.1 device still writes
@@ -827,8 +836,9 @@ C's friend screens reuse.
 - **A 1.0.1 device and a 1.0.2 device on one account** fight over running visits: 1.0.1 starts
   them, 1.0.2 normalizes them onto days and may delete the older one.
 - **Every own-data query must keep `owned(owner)` or an id the owner holds** once Part C widens
-  `select`: a web query filtering by anything else starts returning friends' rows. `byId` reads
-  already check the owner through `ownVisit`.
+  `select`: a web query filtering by anything else starts returning friends' rows. The calendar's
+  `byId` callers take their ids from the owner's own `all`, so an id from elsewhere never reaches
+  one.
 - **`shares_group_with` runs per row** of every friend-visible table. Fine at a few hundred rows
   per member; an index on `group_member (user_id)` is its only help.
 - **PostgREST's row cap (1000)** applies to a friend's `visits(member)` as to `all(owner)`.
