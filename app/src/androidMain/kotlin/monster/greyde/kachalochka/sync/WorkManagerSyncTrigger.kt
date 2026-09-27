@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncPass
@@ -57,15 +58,18 @@ class SyncWorker(
     KoinComponent {
     override suspend fun doWork(): Result {
         if (!get<SupabaseCredentials>().isConfigured) return Result.success()
+        val failures = get<FailureLog>()
         val clean =
             try {
                 get<SyncPass>().runAndNormalize(
                     get<AccountStore>().accounts.value.map { it.userId },
                     get(),
+                    failures::record,
                 )
             } catch (stopped: CancellationException) {
                 throw stopped
             } catch (failed: Exception) {
+                failures.record(failed)
                 false
             }
         get<WorkManagerSyncTrigger>().passCompleted()

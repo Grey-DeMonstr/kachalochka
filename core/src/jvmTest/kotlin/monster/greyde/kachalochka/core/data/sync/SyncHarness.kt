@@ -78,12 +78,10 @@ internal class SyncHarness {
             session,
             Dispatchers.Unconfined,
         )
-    val normalizer =
-        VisitNormalizer(
-            visits,
-            sets,
-            object : Clock {
-                override fun now(): Instant = T0 + 1.hours
-            },
-        ) { Duration.ZERO }
+    val clock =
+        object : Clock {
+            override fun now(): Instant = T0 + 1.hours
+        }
+    val normalizer = VisitNormalizer(visits, sets, clock) { Duration.ZERO }
+    val failures = mutableListOf<Throwable>()
 }
