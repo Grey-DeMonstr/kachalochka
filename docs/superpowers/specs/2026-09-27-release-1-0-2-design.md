@@ -128,8 +128,9 @@ Each decision, then why.
   the pull stays `owned(owner)`, so widened policies cannot leak rows into the local database.
 - **Row-level security, not the client, decides who reads whom: a security-definer
   `shares_group_with(other)` widens only the `select` policies of `machine`, `visit`,
-  `workout_set` and `profile`.** Insert and update policies stay owner-only, so friends read and
-  never write.
+  `workout_set` and `profile`, and only to rows not deleted.** Insert and update policies stay
+  owner-only, and a set may point only at its owner's own visit and machine, so friends read and
+  never write, not even into each other's visits.
 - **Membership changes only through security-definer functions: `create_group`, `join_group`
   (takes the code), `leave_group`.** A plain insert policy would let anyone add themselves to any
   group whose id they learned.
@@ -487,7 +488,9 @@ ALTER TABLE machine ADD COLUMN link_id TEXT;
 alter table public.machine add column link_id uuid;
 create index machine_link_id_idx on public.machine (link_id);
 
-create function public.new_invite_code() returns text
+create extension if not exists pgcrypto with schema extensions;
+
+create or replace function public.new_invite_code() returns text
 language sql volatile set search_path = '' as $$
     select string_agg(
         substr('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 1 + get_byte(bytes, i) % 32, 1), ''
@@ -516,7 +519,8 @@ create table public.group_member (
 );
 create index group_member_user_id_idx on public.group_member (user_id);
 
-create function public.is_group_member(target uuid) returns boolean
+-- Definer rights read group_member past its own policy, which calls this.
+create or replace function public.is_group_member(target uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
     select exists (
         select 1
@@ -527,7 +531,7 @@ language sql stable security definer set search_path = '' as $$
     );
 $$;
 
-create function public.shares_group_with(other uuid) returns boolean
+create or replace function public.shares_group_with(other uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
     select exists (
         select 1
@@ -539,13 +543,18 @@ language sql stable security definer set search_path = '' as $$
     );
 $$;
 
-create function public.my_display_name() returns text
+-- Google's name lands under either claim, as SupabaseSessions also allows for.
+create or replace function public.my_display_name() returns text
 language sql stable security definer set search_path = '' as $$
-    select coalesce(nullif(trim(raw_user_meta_data ->> 'full_name'), ''), 'Участник')
+    select left(coalesce(
+        nullif(trim(raw_user_meta_data ->> 'full_name'), ''),
+        nullif(trim(raw_user_meta_data ->> 'name'), ''),
+        'Участник'
+    ), 40)
     from auth.users where id = (select auth.uid());
 $$;
 
-create function public.create_group(group_name text) returns uuid
+create or replace function public.create_group(group_name text) returns uuid
 language plpgsql security definer set search_path = '' as $$
 declare
     created uuid;
@@ -559,13 +568,14 @@ begin
 end;
 $$;
 
-create function public.join_group(code text) returns uuid
+-- The code is read as inviteCodeOf reads it: any surrounding whitespace, any case.
+create or replace function public.join_group(code text) returns uuid
 language plpgsql security definer set search_path = '' as $$
 declare
     target uuid;
 begin
     select id into target from public.friend_group
-    where invite_code = upper(trim(code)) and not deleted;
+    where invite_code = upper(regexp_replace(code, '^\s+|\s+$', '', 'g')) and not deleted;
     if target is null then
         raise exception 'unknown invite code' using errcode = 'P0002';
     end if;
@@ -577,7 +587,7 @@ begin
 end;
 $$;
 
-create function public.leave_group(target uuid) returns void
+create or replace function public.leave_group(target uuid) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
     if exists (select 1 from public.friend_group
@@ -595,7 +605,7 @@ alter table public.group_member enable row level security;
 create policy friend_group_select_member on public.friend_group
     for select using (owner_id = (select auth.uid()) or public.is_group_member(id));
 create policy friend_group_update_owner on public.friend_group
-    for update using (owner_id = (select auth.uid()))
+    for update using (owner_id = (select auth.uid()) and not deleted)
     with check (owner_id = (select auth.uid()));
 create policy group_member_select_member on public.group_member
     for select using (public.is_group_member(group_id));
@@ -604,24 +614,57 @@ grant select on public.friend_group to authenticated;
 grant update (name, deleted, updated_at) on public.friend_group to authenticated;
 grant select on public.group_member to authenticated;
 
-drop policy machine_select_own on public.machine;
+drop policy if exists machine_select_own on public.machine;
 create policy machine_select_own_or_group on public.machine
-    for select using ((select auth.uid()) = user_id or public.shares_group_with(user_id));
-drop policy visit_select_own on public.visit;
+    for select using (
+        (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
+    );
+drop policy if exists visit_select_own on public.visit;
 create policy visit_select_own_or_group on public.visit
-    for select using ((select auth.uid()) = user_id or public.shares_group_with(user_id));
-drop policy workout_set_select_own on public.workout_set;
+    for select using (
+        (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
+    );
+drop policy if exists workout_set_select_own on public.workout_set;
 create policy workout_set_select_own_or_group on public.workout_set
-    for select using ((select auth.uid()) = user_id or public.shares_group_with(user_id));
-drop policy profile_select_own on public.profile;
+    for select using (
+        (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
+    );
+drop policy if exists profile_select_own on public.profile;
 create policy profile_select_own_or_group on public.profile
-    for select using ((select auth.uid()) = user_id or public.shares_group_with(user_id));
+    for select using (
+        (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
+    );
+
+-- Friends can read each other's visit and machine ids; a set may point only at its owner's own.
+drop policy if exists workout_set_insert_own on public.workout_set;
+create policy workout_set_insert_own on public.workout_set
+    for insert with check (
+        (select auth.uid()) = user_id
+        and exists (select 1 from public.visit v
+                    where v.id = visit_id and v.user_id = (select auth.uid()))
+        and exists (select 1 from public.machine m
+                    where m.id = machine_id and m.user_id = (select auth.uid()))
+    );
+drop policy if exists workout_set_update_own on public.workout_set;
+create policy workout_set_update_own on public.workout_set
+    for update using ((select auth.uid()) = user_id)
+    with check (
+        (select auth.uid()) = user_id
+        and exists (select 1 from public.visit v
+                    where v.id = visit_id and v.user_id = (select auth.uid()))
+        and exists (select 1 from public.machine m
+                    where m.id = machine_id and m.user_id = (select auth.uid()))
+    );
 
 revoke execute on function
     public.new_invite_code(), public.is_group_member(uuid), public.shares_group_with(uuid),
     public.my_display_name(), public.create_group(text), public.join_group(text),
     public.leave_group(uuid)
     from public, anon;
+-- Supabase's default privileges grant every new function to authenticated as well; these two
+-- run only inside the definer functions and the column default.
+revoke execute on function public.new_invite_code(), public.my_display_name()
+    from authenticated;
 grant execute on function
     public.is_group_member(uuid), public.shares_group_with(uuid), public.create_group(text),
     public.join_group(text), public.leave_group(uuid)
@@ -805,13 +848,14 @@ Replace the section "## Group sharing" with:
 
 §5.2, replace the three bullets with:
 
-> - A user writes only rows with their own `user_id`.
-> - A user reads their own rows and the `machine`, `visit`, `workout_set` and `profile` rows of
->   everyone who shares a live group with them, through the security-definer function
+> - A user writes only rows with their own `user_id`, and a set only into their own visit and on
+>   their own machine.
+> - A user reads their own rows and the live `machine`, `visit`, `workout_set` and `profile`
+>   rows of everyone who shares a live group with them, through the security-definer function
 >   `shares_group_with`.
 > - Group membership is readable by the group's members and changes only through the
 >   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
->   and soft-deletes the group directly.
+>   and soft-deletes the group directly, and a deleted group stays deleted.
 
 §5.4, append:
 

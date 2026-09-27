@@ -151,14 +151,16 @@ class SupabaseFriendsRepository(
         val mates = mates(viewer)
         if (mates.isEmpty()) return emptyList()
         val mateIds = mates.keys.map { it.value }
-        val machineIds =
+        // The server narrows by either column; a machine linked elsewhere still has the key as id.
+        val candidates =
             liveMachines {
                 isIn("user_id", mateIds)
                 or {
                     eq("id", linkKey.value)
                     eq("link_id", linkKey.value)
                 }
-            }.map { it.id.value }
+            }
+        val machineIds = candidates.filter { it.linkKey == linkKey }.map { it.id.value }
         if (machineIds.isEmpty()) return emptyList()
         val recent =
             liveSets(newestFirst = RECENT_SETS) {

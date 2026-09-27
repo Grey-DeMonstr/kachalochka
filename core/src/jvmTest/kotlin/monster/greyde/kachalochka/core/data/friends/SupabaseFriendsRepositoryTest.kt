@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.GroupId
+import monster.greyde.kachalochka.core.domain.friends.GroupMember
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -68,6 +69,28 @@ private val MEMBERSHIPS =
         """"deleted":false},{"group_id":"$GROUP","user_id":"${OLEG.value}",""" +
         """"display_name":"Олег","deleted":false}]"""
 
+private fun olegSet(
+    visit: VisitId,
+    machine: MachineId,
+    weight: Double,
+    minutes: Int,
+) = WorkoutSet(
+    id = WorkoutSetId.random(),
+    userId = OLEG,
+    visitId = visit,
+    machineId = machine,
+    weight = weight,
+    reps = 8,
+    position = 0,
+    recordedAt = NOW + minutes.minutes,
+    updatedAt = NOW,
+    deleted = false,
+)
+
+private val OLEG_S_GROUP =
+    """[{"id":"$GROUP","name":"Зал на Лесной","owner_id":"${OLEG.value}",""" +
+        """"invite_code":"ABCD2345","deleted":false}]"""
+
 class SupabaseFriendsRepositoryTest {
     private suspend fun HttpRequestData.bodyText() = body.toByteArray().decodeToString()
 
@@ -75,10 +98,7 @@ class SupabaseFriendsRepositoryTest {
     fun groups_are_counted_by_their_live_members() =
         runTest {
             val engine = MockEngine.Queue()
-            engine.answer(
-                """[{"id":"$GROUP","name":"Зал на Лесной","owner_id":"${OLEG.value}",""" +
-                    """"invite_code":"ABCD2345","deleted":false}]""",
-            )
+            engine.answer(OLEG_S_GROUP)
             engine.answer(MEMBERSHIPS)
 
             val groups = repositoryOn(engine).groups()
@@ -180,18 +200,7 @@ class SupabaseFriendsRepositoryTest {
                 visit: VisitId,
                 weight: Double,
                 minutes: Int,
-            ) = WorkoutSet(
-                id = WorkoutSetId.random(),
-                userId = OLEG,
-                visitId = visit,
-                machineId = press.id,
-                weight = weight,
-                reps = 8,
-                position = 0,
-                recordedAt = NOW + minutes.minutes,
-                updatedAt = NOW,
-                deleted = false,
-            )
+            ) = olegSet(visit, press.id, weight, minutes)
             val first = set(latest, 80.0, 60)
             val second = set(latest, 85.0, 61)
             val engine = MockEngine.Queue()
@@ -219,6 +228,133 @@ class SupabaseFriendsRepositoryTest {
             assertTrue(order.startsWith("recorded_at.desc"), order)
             assertEquals("50", recentRequest.url.parameters["limit"])
             assertEquals("in.(${latest.value})", visitRequest.url.parameters["visit_id"])
+            assertEquals("in.(${OLEG.value})", recentRequest.url.parameters["user_id"])
+            assertEquals("in.(${OLEG.value})", visitRequest.url.parameters["user_id"])
+        }
+
+    @Test
+    fun a_machine_whose_own_id_is_the_key_but_linked_elsewhere_is_not_on_that_key() =
+        runTest {
+            val key = MachineId.random()
+            val elsewhere =
+                Machine.new("Жим ногами", OLEG, NOW).copy(id = key, linkId = MachineId.random())
+            val set = olegSet(VisitId.random(), elsewhere.id, 80.0, 0)
+            val engine = MockEngine.Queue()
+            engine.answer(MEMBERSHIPS)
+            engine.answer(Json.encodeToString(listOf(MachineRow.of(elsewhere))))
+            engine.answer(Json.encodeToString(listOf(WorkoutSetRow.of(set))))
+            engine.answer(Json.encodeToString(listOf(WorkoutSetRow.of(set))))
+
+            assertEquals(emptyList(), repositoryOn(engine).latestOn(IVAN, key))
+            assertEquals(2, engine.requestHistory.size)
+        }
+
+    @Test
+    fun a_visit_s_sets_are_asked_for_by_its_owner_in_visit_order() =
+        runTest {
+            val visit = Visit(VisitId.random(), OLEG, CalendarDay(2023, 11, 14), NOW, NOW, false)
+            val machine = MachineId.random()
+            val first = olegSet(visit.id, machine, 80.0, 0)
+            val second = olegSet(visit.id, machine, 85.0, 1)
+            val engine = MockEngine.Queue()
+            engine.answer(Json.encodeToString(listOf(second, first).map(WorkoutSetRow::of)))
+
+            assertEquals(listOf(first, second), repositoryOn(engine).sets(visit))
+
+            val params =
+                engine.requestHistory
+                    .single()
+                    .url.parameters
+            assertEquals("eq.${visit.id.value}", params["visit_id"])
+            assertEquals("eq.${OLEG.value}", params["user_id"])
+            assertEquals("eq.false", params["deleted"])
+        }
+
+    @Test
+    fun members_list_the_owner_first_then_everyone_by_name() =
+        runTest {
+            val anna = UserId("44444444-4444-4444-8444-444444444444")
+            val engine = MockEngine.Queue()
+            engine.answer(
+                MEMBERSHIPS.dropLast(1) +
+                    """,{"group_id":"$GROUP","user_id":"${anna.value}",""" +
+                    """"display_name":"Анна","deleted":false}]""",
+            )
+            val group = FriendGroup(GroupId(GROUP), "Зал на Лесной", OLEG, "ABCD2345", 3)
+
+            val members = repositoryOn(engine).members(group)
+
+            assertEquals(
+                listOf(
+                    GroupMember(OLEG, "Олег", isOwner = true),
+                    GroupMember(anna, "Анна", isOwner = false),
+                    GroupMember(IVAN, "Иван", isOwner = false),
+                ),
+                members,
+            )
+            val params =
+                engine.requestHistory
+                    .single()
+                    .url.parameters
+            assertEquals("eq.$GROUP", params["group_id"])
+            assertEquals("eq.false", params["deleted"])
+        }
+
+    @Test
+    fun a_group_is_read_by_its_id_with_its_live_members_counted() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer(OLEG_S_GROUP)
+            engine.answer(MEMBERSHIPS)
+
+            assertEquals(
+                FriendGroup(GroupId(GROUP), "Зал на Лесной", OLEG, "ABCD2345", 2),
+                repositoryOn(engine).group(GroupId(GROUP)),
+            )
+            val (groupRequest, memberRequest) = engine.requestHistory
+            assertEquals("eq.$GROUP", groupRequest.url.parameters["id"])
+            assertEquals("eq.false", groupRequest.url.parameters["deleted"])
+            assertEquals("eq.$GROUP", memberRequest.url.parameters["group_id"])
+        }
+
+    @Test
+    fun a_group_the_account_no_longer_sees_is_null() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer("[]")
+
+            assertNull(repositoryOn(engine).group(GroupId(GROUP)))
+            assertEquals(1, engine.requestHistory.size)
+        }
+
+    @Test
+    fun creating_a_group_sends_its_trimmed_name_and_answers_its_id() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer("\"$GROUP\"")
+
+            assertEquals(GroupId(GROUP), repositoryOn(engine).create("  Зал на Лесной "))
+
+            val request = engine.requestHistory.single()
+            val path = request.url.encodedPath
+            assertTrue(path.endsWith("/rpc/create_group"), path)
+            val body = request.bodyText()
+            assertTrue("\"group_name\":\"Зал на Лесной\"" in body, body)
+        }
+
+    @Test
+    fun leaving_a_group_names_it() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer("", HttpStatusCode.NoContent)
+
+            repositoryOn(engine).leave(GroupId(GROUP))
+
+            val request = engine.requestHistory.single()
+            val path = request.url.encodedPath
+            assertTrue(path.endsWith("/rpc/leave_group"), path)
+            val body = request.bodyText()
+            assertTrue("\"target\":\"$GROUP\"" in body, body)
         }
 
     @Test

@@ -1,5 +1,5 @@
-alter table public.machine add column if not exists link_id uuid;
-create index if not exists machine_link_id_idx on public.machine (link_id);
+alter table public.machine add column link_id uuid;
+create index machine_link_id_idx on public.machine (link_id);
 
 create extension if not exists pgcrypto with schema extensions;
 
@@ -11,7 +11,7 @@ language sql volatile set search_path = '' as $$
     from extensions.gen_random_bytes(8) as bytes, generate_series(0, 7) as i;
 $$;
 
-create table if not exists public.friend_group (
+create table public.friend_group (
     id          uuid        primary key default gen_random_uuid(),
     name        text        not null check (length(trim(name)) between 1 and 40),
     owner_id    uuid        not null references auth.users (id) on delete cascade,
@@ -21,7 +21,7 @@ create table if not exists public.friend_group (
     deleted     boolean     not null default false
 );
 
-create table if not exists public.group_member (
+create table public.group_member (
     group_id     uuid        not null references public.friend_group (id) on delete cascade,
     user_id      uuid        not null references auth.users (id) on delete cascade,
     display_name text        not null,
@@ -30,7 +30,7 @@ create table if not exists public.group_member (
     deleted      boolean     not null default false,
     primary key (group_id, user_id)
 );
-create index if not exists group_member_user_id_idx on public.group_member (user_id);
+create index group_member_user_id_idx on public.group_member (user_id);
 
 -- Definer rights read group_member past its own policy, which calls this.
 create or replace function public.is_group_member(target uuid) returns boolean
@@ -59,11 +59,11 @@ $$;
 -- Google's name lands under either claim, as SupabaseSessions also allows for.
 create or replace function public.my_display_name() returns text
 language sql stable security definer set search_path = '' as $$
-    select coalesce(
+    select left(coalesce(
         nullif(trim(raw_user_meta_data ->> 'full_name'), ''),
         nullif(trim(raw_user_meta_data ->> 'name'), ''),
         'Участник'
-    )
+    ), 40)
     from auth.users where id = (select auth.uid());
 $$;
 
@@ -115,14 +115,11 @@ $$;
 alter table public.friend_group enable row level security;
 alter table public.group_member enable row level security;
 
-drop policy if exists friend_group_select_member on public.friend_group;
 create policy friend_group_select_member on public.friend_group
     for select using (owner_id = (select auth.uid()) or public.is_group_member(id));
-drop policy if exists friend_group_update_owner on public.friend_group;
 create policy friend_group_update_owner on public.friend_group
-    for update using (owner_id = (select auth.uid()))
+    for update using (owner_id = (select auth.uid()) and not deleted)
     with check (owner_id = (select auth.uid()));
-drop policy if exists group_member_select_member on public.group_member;
 create policy group_member_select_member on public.group_member
     for select using (public.is_group_member(group_id));
 
@@ -131,21 +128,46 @@ grant update (name, deleted, updated_at) on public.friend_group to authenticated
 grant select on public.group_member to authenticated;
 
 drop policy if exists machine_select_own on public.machine;
-drop policy if exists machine_select_own_or_group on public.machine;
 create policy machine_select_own_or_group on public.machine
-    for select using ((select auth.uid()) = user_id or public.shares_group_with(user_id));
+    for select using (
+        (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
+    );
 drop policy if exists visit_select_own on public.visit;
-drop policy if exists visit_select_own_or_group on public.visit;
 create policy visit_select_own_or_group on public.visit
-    for select using ((select auth.uid()) = user_id or public.shares_group_with(user_id));
+    for select using (
+        (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
+    );
 drop policy if exists workout_set_select_own on public.workout_set;
-drop policy if exists workout_set_select_own_or_group on public.workout_set;
 create policy workout_set_select_own_or_group on public.workout_set
-    for select using ((select auth.uid()) = user_id or public.shares_group_with(user_id));
+    for select using (
+        (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
+    );
 drop policy if exists profile_select_own on public.profile;
-drop policy if exists profile_select_own_or_group on public.profile;
 create policy profile_select_own_or_group on public.profile
-    for select using ((select auth.uid()) = user_id or public.shares_group_with(user_id));
+    for select using (
+        (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
+    );
+
+-- Friends can read each other's visit and machine ids; a set may point only at its owner's own.
+drop policy if exists workout_set_insert_own on public.workout_set;
+create policy workout_set_insert_own on public.workout_set
+    for insert with check (
+        (select auth.uid()) = user_id
+        and exists (select 1 from public.visit v
+                    where v.id = visit_id and v.user_id = (select auth.uid()))
+        and exists (select 1 from public.machine m
+                    where m.id = machine_id and m.user_id = (select auth.uid()))
+    );
+drop policy if exists workout_set_update_own on public.workout_set;
+create policy workout_set_update_own on public.workout_set
+    for update using ((select auth.uid()) = user_id)
+    with check (
+        (select auth.uid()) = user_id
+        and exists (select 1 from public.visit v
+                    where v.id = visit_id and v.user_id = (select auth.uid()))
+        and exists (select 1 from public.machine m
+                    where m.id = machine_id and m.user_id = (select auth.uid()))
+    );
 
 revoke execute on function
     public.new_invite_code(), public.is_group_member(uuid), public.shares_group_with(uuid),
