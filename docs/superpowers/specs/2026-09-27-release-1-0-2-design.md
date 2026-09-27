@@ -321,10 +321,13 @@ The button (`open-today`) opens `VisitRoute(today)`. `start-visit` and `continue
 `normalizedVisits(visits, sets, utcOffset, now): List<VisitRows>` in `domain/gym`, pure:
 
 1. A live visit without `day` gets `CalendarDay.of(recordedAt, utcOffset)`.
-2. Live visits are grouped by day; each group keeps its newest by `(recordedAt, updatedAt, id)`
-   of those with a live set, or of all when none has one, and every other visit becomes
-   `removedVisit(visit, itsSets, now)`.
+2. Live visits are grouped by day; each group keeps its `keptVisit` — the newest by
+   `(recordedAt, updatedAt, id)` of those with a live set, or of all when none has one — and
+   every other visit becomes `removedVisit(visit, itsSets, now)`.
 3. Only rows that changed are returned; a second run returns nothing.
+
+`keptVisit(sameDay, hasLiveSets)` in `domain/gym` is the pure rule behind step 2, shared with
+`VisitRepository.shownOn` so a day's shown visit is always the one normalization would keep.
 
 `VisitNormalizer` in `core/data/gym` (`commonMain`) reads the owner's visits and their sets
 through the repositories, applies the result sets first, visit last, and reports whether it
@@ -340,8 +343,9 @@ the read; the next run judges it again. It runs:
 A failure normalizing one owner at start, on a switch or in `SyncWorker` is logged (Android) or
 sent to the console (web) and does not stop the next owner's turn; in the worker it leaves the
 pass clean, and the second pass still runs. Until an account's visits are normalized, readers
-show a visit with no `day` on the day of its recorded instant (`Visit.dayAt`), newest by
-`visitRecency` when several fall on it (`VisitRepository.shownOn`).
+show a visit with no `day` on the day of its recorded instant (`Visit.dayAt`); where several fall
+on a day, the one with a live set, or the newest by `visitRecency` when none has one (`keptVisit`,
+`VisitRepository.shownOn`).
 
 ### 4.6 Domain and data
 
@@ -351,8 +355,9 @@ show a visit with no `day` on the day of its recorded instant (`Visit.dayAt`), n
 - `CalendarDay` gains `iso` ("2023-11-14") and `parse(iso)`; `isoDate` in `Formats.kt` uses it.
 - `WorkoutSet` gains `position: Int` after `reps`.
 - `VisitRepository`: `onDay(owner, day): Visit?` and `undated(owner)`, the live visits without a
-  day; `active` goes. Beside it, `shownOn(owner, day, utcOffset)` is the visit a day shows, and
-  `allOn(owner, day, utcOffset)` every live visit on it, which the calendar's replace removes.
+  day; `active` goes. Beside it, `allOn(owner, day, utcOffset)` is every live visit on a day, which
+  the calendar's replace removes, and `shownOn(owner, day, sets, utcOffset)` is the `keptVisit`
+  among them; `sets` is read only past one visit, so an ordinary day costs no extra read.
 - `recordingInstant(visit, visitSets, today, now)`: `now` in today's visit; otherwise one second
   after the visit's last set, or after its `recordedAt`.
 - `VisitRow` gains `day: String?` and keeps `recorded_at` and `ended_at`, writing `ended_at =

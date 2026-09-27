@@ -198,7 +198,7 @@ class VisitViewModel(
                 val offset = utcOffset.at(now)
                 val today = CalendarDay.of(now, offset)
                 val target =
-                    visits.shownOn(owner, day, utcOffset::at)
+                    visits.shownOn(owner, day, sets, utcOffset::at)
                         ?: dayVisit(day, owner, today, offset, now).also { visits.upsert(it) }
                 val targetSets =
                     if (target.id == visit?.id) visitSets else sets.forVisit(target.id)
@@ -347,7 +347,7 @@ class VisitViewModel(
 
     private suspend fun reload(reseed: Boolean) {
         val owner = currentUser.id()
-        val shown = visits.shownOn(owner, day, utcOffset::at)
+        val shown = visits.shownOn(owner, day, sets, utcOffset::at)
         visit = shown
         machinesById = machines.all(owner).associateBy { it.id }
         visitSets = shown?.let { sets.forVisit(it.id) }.orEmpty()

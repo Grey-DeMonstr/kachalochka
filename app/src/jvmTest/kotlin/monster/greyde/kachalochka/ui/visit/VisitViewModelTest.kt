@@ -518,6 +518,24 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun the_day_s_workout_shows_over_a_later_empty_visit_and_keeps_taking_its_sets() =
+        runTest {
+            val early = set(visit.id, press, 70.0, 10, 0)
+            gym.sets.upsert(early)
+            val laterEmpty = visit.copy(id = VisitId.random(), recordedAt = t0 + 30.minutes)
+            gym.visits.upsert(laterEmpty)
+            val vm = viewModel().also { it.refresh() }
+
+            assertEquals("1 подход", vm.state.value?.setCountLabel)
+
+            vm.selectMachine(press.id)
+            vm.save()
+
+            assertEquals(2, gym.sets.forVisit(visit.id).size)
+            assertEquals(0, gym.sets.forVisit(laterEmpty.id).size)
+        }
+
+    @Test
     fun the_visit_a_save_lands_in_is_the_one_on_screen() =
         runTest {
             val two = twoAccountGym()

@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.allOn
 import monster.greyde.kachalochka.core.domain.gym.dayAt
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
+import monster.greyde.kachalochka.core.domain.gym.keptVisit
 import monster.greyde.kachalochka.core.domain.gym.movedVisit
 import monster.greyde.kachalochka.core.domain.gym.removedVisit
 import monster.greyde.kachalochka.core.domain.gym.shownOn
@@ -157,7 +158,9 @@ class CalendarViewModel(
             }
             // The day marks may predate a sync that has since put a visit on the day.
             val arrived =
-                visits.shownOn(currentUser.id(), day, utcOffset::at)?.takeIf { it.id != visit.id }
+                visits
+                    .shownOn(currentUser.id(), day, sets, utcOffset::at)
+                    ?.takeIf { it.id != visit.id }
             if (arrived != null) {
                 replacingSets = sets.forVisit(arrived.id).size
                 replacing = arrived
@@ -268,9 +271,19 @@ class CalendarViewModel(
             stale = false
         }
         val day = selected
+        val sameDay = all.filter { it.day == day }
         dayCard =
-            all.filter { it.day == day }.maxWithOrNull(visitRecency)?.let { visit ->
-                val visitSets = sets.forVisit(visit.id)
+            if (sameDay.isEmpty()) {
+                null
+            } else {
+                val setsByVisit =
+                    if (sameDay.size > 1) {
+                        sameDay.associate { it.id to sets.forVisit(it.id) }
+                    } else {
+                        emptyMap()
+                    }
+                val visit = keptVisit(sameDay) { setsByVisit[it]?.isNotEmpty() == true }
+                val visitSets = setsByVisit[visit.id] ?: sets.forVisit(visit.id)
                 val summary = summarize(visitSets)
                 val names =
                     groupByMachine(visitSets).mapNotNull { machinesById[it.machineId]?.name }

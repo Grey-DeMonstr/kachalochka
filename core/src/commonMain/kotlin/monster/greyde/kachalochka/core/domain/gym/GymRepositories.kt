@@ -40,27 +40,33 @@ interface VisitRepository {
     suspend fun undated(owner: UserId?): List<Visit>
 }
 
-/**
- * The owner's visit shown on [day], carrying it: of the visits on it and those not yet given a
- * day that were recorded on it, the greatest by [visitRecency].
- */
-suspend fun VisitRepository.shownOn(
-    owner: UserId?,
-    day: CalendarDay,
-    utcOffset: (Instant) -> Duration,
-): Visit? {
-    val recordedOnDay = undated(owner).filter { it.dayAt(utcOffset) == day }
-    return (listOfNotNull(onDay(owner, day)) + recordedOnDay)
-        .maxWithOrNull(visitRecency)
-        ?.copy(day = day)
-}
-
 /** Every live visit of the owner's that [shownOn] weighs for [day]. */
 suspend fun VisitRepository.allOn(
     owner: UserId?,
     day: CalendarDay,
     utcOffset: (Instant) -> Duration,
 ): List<Visit> = all(owner).filter { it.dayAt(utcOffset) == day }
+
+/**
+ * The owner's visit shown on [day]: of [allOn]'s visits, the one [keptVisit] would keep. [sets] is
+ * read only when more than one visit is in play, so an ordinary day costs no extra read.
+ */
+suspend fun VisitRepository.shownOn(
+    owner: UserId?,
+    day: CalendarDay,
+    sets: WorkoutSetRepository,
+    utcOffset: (Instant) -> Duration,
+): Visit? {
+    val sameDay = allOn(owner, day, utcOffset)
+    if (sameDay.isEmpty()) return null
+    val withSets =
+        if (sameDay.size > 1) {
+            sameDay.filter { sets.forVisit(it.id).isNotEmpty() }.map { it.id }.toSet()
+        } else {
+            emptySet()
+        }
+    return keptVisit(sameDay) { it in withSets }.copy(day = day)
+}
 
 /**
  * Every list leaves deleted sets out; a visit's sets run in [visitOrder], the others in recording

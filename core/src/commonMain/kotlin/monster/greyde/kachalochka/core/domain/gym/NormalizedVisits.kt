@@ -8,11 +8,22 @@ fun Visit.dayAt(utcOffset: (Instant) -> Duration): CalendarDay =
     day ?: CalendarDay.of(recordedAt, utcOffset(recordedAt))
 
 /**
+ * Of one day's live visits, the one [normalizedVisits] keeps and [VisitRepository.shownOn] shows:
+ * the newest by [visitRecency] of those [hasLiveSets] marks, or of all when none is marked. 1.0.1
+ * wrote a visit on opening it, so an empty one may follow the day's workout.
+ */
+fun keptVisit(
+    sameDay: List<Visit>,
+    hasLiveSets: (VisitId) -> Boolean,
+): Visit {
+    val withSets = sameDay.filter { hasLiveSets(it.id) }
+    return withSets.ifEmpty { sameDay }.maxWith(visitRecency)
+}
+
+/**
  * The rows that leave one live visit per day: a missing day filled in, and of the visits sharing
- * a day all but one removed with their [sets]. The one kept is the newest by [visitRecency] of
- * those with a live set, or of all where none has one: 1.0.1 wrote a visit on opening it, so an
- * empty one may follow the day's workout. Rows already in shape are left out, so a second run
- * returns nothing.
+ * a day all but the [keptVisit] removed with their [sets]. Rows already in shape are left out, so
+ * a second run returns nothing.
  */
 fun normalizedVisits(
     visits: List<Visit>,
@@ -25,8 +36,7 @@ fun normalizedVisits(
         .filterNot { it.deleted }
         .groupBy { it.dayAt(utcOffset) }
         .flatMap { (day, sameDay) ->
-            val withSets = sameDay.filter { it.id in liveSets }
-            val kept = withSets.ifEmpty { sameDay }.maxWith(visitRecency)
+            val kept = keptVisit(sameDay) { it in liveSets }
             sameDay.mapNotNull { visit ->
                 when {
                     visit.id != kept.id ->

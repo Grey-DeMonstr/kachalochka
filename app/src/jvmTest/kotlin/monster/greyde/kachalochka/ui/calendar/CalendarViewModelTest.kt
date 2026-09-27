@@ -362,10 +362,27 @@ class CalendarViewModelTest {
         }
 
     @Test
-    fun a_day_shows_the_newest_of_its_visits_those_not_yet_given_a_day_included() =
+    fun a_day_s_card_shows_the_visit_with_sets_over_a_later_empty_one() =
+        runTest {
+            val laterEmpty =
+                Visit(VisitId.random(), null, twelfth, t0 - 2.days + 1.hours, t0, false)
+            gym.visits.upsert(laterEmpty)
+            val vm = viewModel().also { it.selectDay(twelfth) }
+
+            assertEquals(
+                sunday.id,
+                vm.state.value
+                    ?.visit
+                    ?.id,
+            )
+        }
+
+    @Test
+    fun a_day_shows_the_newest_with_sets_of_its_visits_those_not_yet_given_a_day_included() =
         runTest {
             val later = Visit(VisitId.random(), null, twelfth, t0 - 2.days + 1.hours, t0, false)
             gym.visits.upsert(later)
+            gym.sets.upsert(set(later, press, 20))
             val vm = viewModel().also { it.selectDay(twelfth) }
             assertEquals(
                 later.id,
@@ -376,6 +393,7 @@ class CalendarViewModelTest {
 
             val latest = Visit(VisitId.random(), null, null, t0 - 2.days + 90.minutes, t0, false)
             gym.visits.upsert(latest)
+            gym.sets.upsert(set(latest, press, 25))
             vm.refresh()
 
             assertEquals(

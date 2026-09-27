@@ -54,7 +54,7 @@ class HomeViewModel(
             val today = CalendarDay.of(now, utcOffset.at(now))
             val daySets =
                 visits
-                    .shownOn(currentUser.id(), today, utcOffset::at)
+                    .shownOn(currentUser.id(), today, sets, utcOffset::at)
                     ?.let { sets.forVisit(it.id) }
                     .orEmpty()
             mutableState.value = HomeUiState(todayUi(today, daySets))

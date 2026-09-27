@@ -281,15 +281,18 @@ is created with the day's first set. `day` is nullable and unconstrained, becaus
 1.0.2 push visits without it and two devices may create the same day offline; `recorded_at` and
 `ended_at` stay, written equal, so a client before 1.0.2 reads every visit as ended on its day.
 Before a visit's `day` is set, readers place it on the day of its `recorded_at` instead
-(`Visit.dayAt`), and where more than one visit falls on a day, show the newest by
-`(recorded_at, updated_at, id)` (`visitRecency`, `VisitRepository.shownOn`).
+(`Visit.dayAt`), and where more than one visit falls on a day, show `keptVisit`'s pick: the newest
+by `(recorded_at, updated_at, id)` (`visitRecency`) of those with a live set, or of all when none
+has one (`VisitRepository.shownOn`).
 
 `normalizedVisits` in `domain/gym` is the pure function that reconciles this: it fills a missing
-`day` from `recorded_at` and, per day, keeps the newest by `visitRecency` of the visits with a
-live set — of all of them when none has one — and soft-deletes the rest with their sets; a second
-run over already-normalized rows writes nothing. Clients before 1.0.2 wrote a visit on opening
-it, so an empty visit may follow the day's workout. `VisitNormalizer` re-reads each visit before
-rewriting it and skips one whose `updated_at` changed since it read the owner's visits; the next
+`day` from `recorded_at` and, per day, keeps `keptVisit` of the visits — the newest by
+`visitRecency` of those with a live set, of all of them when none has one — and soft-deletes the
+rest with their sets; a second run over already-normalized rows writes nothing. `keptVisit` is
+shared with `shownOn`, so a day's shown visit is always the one normalization would keep. Clients
+before 1.0.2 wrote a visit on opening it, so an empty visit may follow the day's workout.
+`VisitNormalizer` re-reads each visit before rewriting it and skips one whose `updated_at` changed
+since it read the owner's visits; the next
 run judges it again.
 
 On Android normalization runs at start only for the anonymous owner; a signed-in account is

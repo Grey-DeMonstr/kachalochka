@@ -70,7 +70,7 @@ class MachinePickerViewModel(
             latest = sets.latestPerMachine(owner).associateBy { it.machineId }
             inVisit =
                 visits
-                    .shownOn(owner, day, utcOffset::at)
+                    .shownOn(owner, day, sets, utcOffset::at)
                     ?.let { sets.forVisit(it.id) }
                     .orEmpty()
                     .groupingBy { it.machineId }
