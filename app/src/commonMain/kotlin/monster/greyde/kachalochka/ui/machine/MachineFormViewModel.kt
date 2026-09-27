@@ -11,9 +11,11 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.formatNumber
+import monster.greyde.kachalochka.ui.format.parseDecimal
 import kotlin.time.Clock
 
 data class MachineFormArgs(
@@ -30,24 +32,20 @@ data class MachineFormState(
     val platformIncluded: Boolean = false,
     val unit: WeightUnit = WeightUnit.Kg,
     val unitLabel: String = "",
-    val weightStep: Double = 2.5,
+    val weightStep: String = "2,5",
 ) {
     val platformWeightValue: Double?
         get() =
-            if (platformWeight.isBlank()) {
-                0.0
-            } else {
-                platformWeight
-                    .trim()
-                    .replace(',', '.')
-                    .toDoubleOrNull()
-                    ?.takeIf { it >= 0 }
-            }
+            if (platformWeight.isBlank()) 0.0 else parseDecimal(platformWeight)?.takeIf { it >= 0 }
+
+    val weightStepValue: Double?
+        get() = parseDecimal(weightStep)?.let(::roundWeight)?.takeIf { it > 0 }
 
     val canSave: Boolean
         get() =
             name.isNotBlank() &&
                 platformWeightValue != null &&
+                weightStepValue != null &&
                 (unit != WeightUnit.Custom || unitLabel.isNotBlank())
 
     companion object {
@@ -64,7 +62,7 @@ data class MachineFormState(
             platformIncluded = machine.platformIncluded,
             unit = machine.unit,
             unitLabel = machine.unitLabel,
-            weightStep = machine.weightStep,
+            weightStep = formatNumber(machine.weightStep),
         )
     }
 }
@@ -116,6 +114,7 @@ class MachineFormViewModel(
     fun save(onSaved: (MachineId) -> Unit) {
         val form = mutableState.value
         val platformWeight = form.platformWeightValue ?: return
+        val weightStep = form.weightStepValue ?: return
         if (!form.canSave) return
         writes.launch {
             val now = clock.now()
@@ -132,7 +131,7 @@ class MachineFormViewModel(
                     platformIncluded = form.platformIncluded,
                     unit = form.unit,
                     unitLabel = if (form.unit == WeightUnit.Custom) form.unitLabel.trim() else "",
-                    weightStep = form.weightStep,
+                    weightStep = weightStep,
                     updatedAt = now,
                 )
             machines.upsert(machine)

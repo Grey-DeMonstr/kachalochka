@@ -17,6 +17,13 @@ fun formatNumber(value: Double): String {
     return text.replace('.', ',')
 }
 
+fun parseDecimal(text: String): Double? =
+    text
+        .trim()
+        .replace(',', '.')
+        .toDoubleOrNull()
+        ?.takeIf { it.isFinite() }
+
 fun unitLabel(
     unit: WeightUnit,
     customLabel: String,

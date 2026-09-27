@@ -28,4 +28,10 @@ class SteppingTest {
         assertEquals(11, stepReps(10, +1))
         assertEquals(1, stepReps(1, -1))
     }
+
+    @Test
+    fun a_weight_is_kept_to_three_decimals() {
+        assertEquals(0.3, roundWeight(0.1 + 0.2))
+        assertEquals(1.235, roundWeight(1.23456))
+    }
 }

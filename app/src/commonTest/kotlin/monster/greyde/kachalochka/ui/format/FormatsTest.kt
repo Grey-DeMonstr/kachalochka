@@ -146,4 +146,14 @@ class FormatsTest {
         assertEquals("М", monogram("миша"))
         assertEquals("?", monogram("  "))
     }
+
+    @Test
+    fun a_typed_number_takes_a_comma_or_a_point() {
+        assertEquals(22.5, parseDecimal("22,5"))
+        assertEquals(22.5, parseDecimal(" 22.5 "))
+        assertNull(parseDecimal(""))
+        assertNull(parseDecimal("7,,5"))
+        assertNull(parseDecimal("abc"))
+        assertNull(parseDecimal("NaN"))
+    }
 }

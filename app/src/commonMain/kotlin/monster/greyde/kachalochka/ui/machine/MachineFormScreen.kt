@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -113,7 +114,7 @@ fun MachineFormScreen(
                     singleLine = true,
                 )
             }
-            WeightStepRow(state.weightStep, onSelect = { step ->
+            WeightStepRow(state, onChange = { step ->
                 viewModel.update { it.copy(weightStep = step) }
             })
             PerLimbCard()
@@ -251,14 +252,23 @@ private fun PlatformWeightRow(
                 color = colors.onBackground.copy(alpha = 0.48f),
             )
         }
-        PlatformWeightField(state, onChange)
+        NumberField(
+            state.platformWeight,
+            onChange,
+            unitLabel(state.unit, state.unitLabel),
+            "platform-weight",
+            "platform-weight-unit",
+        )
     }
 }
 
 @Composable
-private fun PlatformWeightField(
-    state: MachineFormState,
+private fun NumberField(
+    value: String,
     onChange: (String) -> Unit,
+    unit: String,
+    tag: String,
+    unitTag: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     Row(
@@ -273,7 +283,7 @@ private fun PlatformWeightField(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicTextField(
-            value = state.platformWeight,
+            value = value,
             onValueChange = onChange,
             singleLine = true,
             textStyle =
@@ -284,13 +294,13 @@ private fun PlatformWeightField(
                 ),
             cursorBrush = SolidColor(colors.secondary),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            modifier = Modifier.testTag("platform-weight"),
+            modifier = Modifier.testTag(tag),
         )
         Text(
-            unitLabel(state.unit, state.unitLabel),
+            unit,
             fontSize = 13.sp,
             color = colors.onBackground.copy(alpha = 0.55f),
-            modifier = Modifier.testTag("platform-weight-unit"),
+            modifier = if (unitTag != null) Modifier.testTag(unitTag) else Modifier,
         )
     }
 }
@@ -353,25 +363,33 @@ private fun UnitRow(
 
 @Composable
 private fun WeightStepRow(
-    weightStep: Double,
-    onSelect: (Double) -> Unit,
+    state: MachineFormState,
+    onChange: (String) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            "Шаг веса",
-            modifier = Modifier.width(82.dp),
-            fontSize = 14.sp,
-            color = colors.onBackground.copy(alpha = 0.72f),
-        )
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Шаг веса",
+                modifier = Modifier.width(82.dp),
+                fontSize = 14.sp,
+                color = colors.onBackground.copy(alpha = 0.72f),
+            )
+            Spacer(Modifier.weight(1f))
+            NumberField(
+                state.weightStep,
+                onChange,
+                unitLabel(state.unit, state.unitLabel),
+                "weight-step",
+            )
+        }
         ChoiceRow(
             choices =
                 Machine.WEIGHT_STEPS.map { step ->
                     Choice(formatNumber(step), "step-" + step.toString().removeSuffix(".0"))
                 },
-            selected = Machine.WEIGHT_STEPS.indexOf(weightStep),
-            onSelect = { onSelect(Machine.WEIGHT_STEPS[it]) },
-            modifier = Modifier.weight(1f),
+            selected = state.weightStepValue?.let(Machine.WEIGHT_STEPS::indexOf) ?: -1,
+            onSelect = { onChange(formatNumber(Machine.WEIGHT_STEPS[it])) },
         )
     }
 }

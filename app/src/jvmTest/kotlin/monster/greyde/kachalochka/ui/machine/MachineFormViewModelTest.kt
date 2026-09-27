@@ -83,7 +83,7 @@ class MachineFormViewModelTest {
                     platformWeight = "25",
                     platformIncluded = true,
                     unit = WeightUnit.Lb,
-                    weightStep = 5.0,
+                    weightStep = "5",
                 )
             }
             var saved: MachineId? = null
@@ -148,7 +148,7 @@ class MachineFormViewModelTest {
             val vm = viewModel(MachineFormArgs(source.id, null, "")).also { it.load() }
             assertEquals("Жим ногами", vm.state.value.name)
 
-            vm.update { it.copy(weightStep = 10.0) }
+            vm.update { it.copy(weightStep = "10") }
             vm.save {}
 
             val saved = assertNotNull(gym.machines.byId(source.id))
@@ -196,7 +196,7 @@ class MachineFormViewModelTest {
             val vm = viewModel(MachineFormArgs(hers.id, null, "")).also { it.load() }
 
             gym.accounts.switchTo(ivan.account.userId)
-            vm.update { it.copy(weightStep = 10.0, setupNote = "Упоры на 3") }
+            vm.update { it.copy(weightStep = "10", setupNote = "Упоры на 3") }
             var saved: MachineId? = null
             vm.save { saved = it }
 
@@ -207,5 +207,26 @@ class MachineFormViewModelTest {
             assertNotEquals(hers.id, mirrored.id)
             assertEquals(ivan.account.userId, mirrored.userId)
             assertEquals(10.0, mirrored.weightStep)
+        }
+
+    @Test
+    fun the_weight_step_is_any_positive_decimal() {
+        assertEquals(1.25, MachineFormState(name = "Гакк", weightStep = "1,25").weightStepValue)
+        assertEquals(0.5, MachineFormState(name = "Гакк", weightStep = "0.5").weightStepValue)
+        assertEquals(false, MachineFormState(name = "Гакк", weightStep = "0").canSave)
+        assertEquals(false, MachineFormState(name = "Гакк", weightStep = "0,0001").canSave)
+        assertEquals(false, MachineFormState(name = "Гакк", weightStep = "").canSave)
+        assertEquals(false, MachineFormState(name = "Гакк", weightStep = "-1").canSave)
+    }
+
+    @Test
+    fun an_existing_step_loads_as_text() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0).copy(weightStep = 1.25)
+            gym.machines.upsert(press)
+
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            assertEquals("1,25", vm.state.value.weightStep)
         }
 }
