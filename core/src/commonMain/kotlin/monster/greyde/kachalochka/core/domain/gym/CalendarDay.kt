@@ -29,6 +29,13 @@ data class CalendarDay(
     val dayOfWeek: Int
         get() = (epochDay + 3).mod(7) + 1
 
+    val iso: String
+        get() {
+            val paddedMonth = month.toString().padStart(2, '0')
+            val paddedDay = day.toString().padStart(2, '0')
+            return "${year.toString().padStart(4, '0')}-$paddedMonth-$paddedDay"
+        }
+
     fun plusDays(days: Long): CalendarDay = ofEpochDay(epochDay + days)
 
     fun at(
@@ -60,6 +67,13 @@ data class CalendarDay(
             instant: Instant,
             utcOffset: Duration,
         ): CalendarDay = ofEpochDay(localDay(instant, utcOffset))
+
+        // A malformed number throws NumberFormatException, an IllegalArgumentException.
+        fun parse(iso: String): CalendarDay {
+            val parts = iso.split('-')
+            require(parts.size == 3) { "not an ISO date: $iso" }
+            return CalendarDay(parts[0].toInt(), parts[1].toInt(), parts[2].toInt())
+        }
     }
 }
 

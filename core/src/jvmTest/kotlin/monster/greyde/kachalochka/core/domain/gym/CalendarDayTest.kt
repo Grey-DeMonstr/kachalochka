@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.domain.gym
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -72,5 +73,14 @@ class CalendarDayTest {
         assertEquals(CalendarMonth(2024, 1), CalendarMonth(2023, 12).plusMonths(1))
         assertEquals(CalendarMonth(2022, 12), CalendarMonth(2023, 1).plusMonths(-1))
         assertEquals(CalendarMonth(2023, 11), CalendarMonth.of(CalendarDay(2023, 11, 14)))
+    }
+
+    @Test
+    fun a_day_reads_and_writes_as_an_iso_date() {
+        assertEquals("2023-11-05", CalendarDay(2023, 11, 5).iso)
+        assertEquals(CalendarDay(2023, 11, 5), CalendarDay.parse("2023-11-05"))
+        assertEquals(CalendarDay(2024, 2, 29), CalendarDay.parse(CalendarDay(2024, 2, 29).iso))
+        assertFailsWith<IllegalArgumentException> { CalendarDay.parse("2023-02-30") }
+        assertFailsWith<IllegalArgumentException> { CalendarDay.parse("14.11.2023") }
     }
 }

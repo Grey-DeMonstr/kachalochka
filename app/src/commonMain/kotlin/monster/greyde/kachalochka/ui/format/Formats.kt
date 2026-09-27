@@ -172,11 +172,7 @@ fun weekdayName(dayOfWeek: Int): String = weekdayNames[dayOfWeek - 1]
 
 val WEEKDAY_LABELS: List<String> = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
 
-fun isoDate(day: CalendarDay): String {
-    val month = day.month.toString().padStart(2, '0')
-    val date = day.day.toString().padStart(2, '0')
-    return "${day.year}-$month-$date"
-}
+fun isoDate(day: CalendarDay): String = day.iso
 
 fun clockLabel(minuteOfDay: Int): String {
     val hours = (minuteOfDay / 60).toString().padStart(2, '0')
