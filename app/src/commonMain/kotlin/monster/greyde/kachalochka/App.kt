@@ -10,12 +10,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.navigation.CalendarRoute
 import monster.greyde.kachalochka.navigation.FriendCalendarRoute
 import monster.greyde.kachalochka.navigation.FriendVisitRoute
+import monster.greyde.kachalochka.navigation.GroupRoute
 import monster.greyde.kachalochka.navigation.HomeRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
 import monster.greyde.kachalochka.navigation.MachineListRoute
@@ -28,6 +30,7 @@ import monster.greyde.kachalochka.ui.account.SignInScreen
 import monster.greyde.kachalochka.ui.calendar.CalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendCalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
+import monster.greyde.kachalochka.ui.friends.GroupScreen
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
@@ -185,6 +188,20 @@ fun App() {
                                 FriendVisitRoute(route.userId, route.name, it.iso),
                             )
                         },
+                    )
+                }
+                composable<GroupRoute> { entry ->
+                    val route = entry.toRoute<GroupRoute>()
+                    GroupScreen(
+                        groupId = GroupId(route.groupId),
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenMember = {
+                            navController.navigate(
+                                FriendCalendarRoute(it.userId.value, it.displayName),
+                            )
+                        },
+                        onGone = { navController.popBackStack() },
                     )
                 }
             }
