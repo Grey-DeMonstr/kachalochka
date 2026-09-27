@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
@@ -33,6 +34,7 @@ import monster.greyde.kachalochka.runScreenTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalTestApi::class)
 class VisitScreenTest {
@@ -328,6 +330,41 @@ class VisitScreenTest {
         val mishaPress = shared.machines.rows.getValue(assertNotNull(opened))
         assertEquals(misha.account.userId, mishaPress.userId)
         assertEquals("Жим ногами", mishaPress.name)
+    }
+
+    @Test
+    fun order_mode_moves_a_machine_with_its_arrows_and_opens_no_set() {
+        val row = Machine.new("Тяга", null, gym.clock.current)
+        val pulled =
+            recorded.copy(
+                id = WorkoutSetId.random(),
+                machineId = row.id,
+                recordedAt = gym.clock.current + 1.minutes,
+            )
+        runBlocking {
+            gym.machines.upsert(row)
+            gym.sets.upsert(pulled)
+        }
+        runScreenTest(gym, screen = { visitScreen() }) {
+            onNodeWithTag("reorder-toggle").assertTextEquals("Порядок").performClick()
+            waitForIdle()
+            onNodeWithTag("reorder-toggle").assertTextEquals("Готово")
+            onNodeWithTag("machine-up-${press.id.value}").assertIsNotEnabled()
+            onNodeWithTag("machine-down-${row.id.value}").assertIsNotEnabled()
+            onNodeWithTag("set-up-${recorded.id.value}").assertIsNotEnabled()
+
+            onNodeWithTag("machine-up-${row.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-up-${press.id.value}").assertIsEnabled()
+            onNodeWithTag("set-row-${recorded.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("delete-set").assertDoesNotExist()
+        }
+        assertEquals(
+            mapOf(row.id to 1, press.id to 2),
+            gym.sets.rows.values
+                .associate { it.machineId to it.position },
+        )
     }
 
     private fun session(

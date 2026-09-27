@@ -21,10 +21,13 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
 import monster.greyde.kachalochka.core.domain.gym.dayVisit
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
+import monster.greyde.kachalochka.core.domain.gym.machineMoved
 import monster.greyde.kachalochka.core.domain.gym.minuteOfDay
+import monster.greyde.kachalochka.core.domain.gym.nextPosition
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
 import monster.greyde.kachalochka.core.domain.gym.recordingInstant
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
+import monster.greyde.kachalochka.core.domain.gym.setMoved
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.stepReps
 import monster.greyde.kachalochka.core.domain.gym.stepWeight
@@ -52,12 +55,14 @@ import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Instant
 
 data class VisitUiState(
     val title: String,
     val setCountLabel: String,
     val groups: List<SetGroupUi>,
     val sheet: SheetUi?,
+    val ordering: Boolean,
 )
 
 data class SetGroupUi(
@@ -66,6 +71,8 @@ data class SetGroupUi(
     val summary: String,
     val expanded: Boolean,
     val sets: List<SetRowUi>,
+    val canMoveUp: Boolean,
+    val canMoveDown: Boolean,
 )
 
 data class SetRowUi(
@@ -73,6 +80,8 @@ data class SetRowUi(
     val title: String,
     val value: String,
     val selected: Boolean,
+    val canMoveUp: Boolean,
+    val canMoveDown: Boolean,
 )
 
 data class SheetUi(
@@ -117,6 +126,7 @@ class VisitViewModel(
     private var expanded: Set<MachineId> = emptySet()
     private var values = SetValues(0.0, DEFAULT_REPS)
     private var sheetExpanded = true
+    private var ordering = false
 
     /** The text as typed; null while the weight shows the stepped, formatted value. */
     private var weightText: String? = null
@@ -199,7 +209,7 @@ class VisitViewModel(
                         ownMachine(owner, machine).id,
                         values.weight,
                         values.reps,
-                        0,
+                        nextPosition(targetSets),
                         recordingInstant(target, targetSets, today, now),
                         now,
                         false,
@@ -227,7 +237,33 @@ class VisitViewModel(
         }
     }
 
+    fun toggleOrdering() {
+        ordering = !ordering
+        if (ordering) collapseSheet()
+        publish()
+    }
+
+    fun moveMachine(
+        id: MachineId,
+        direction: Int,
+    ) = reorder { machineMoved(visitSets, id, direction, it) }
+
+    fun moveSet(
+        id: WorkoutSetId,
+        direction: Int,
+    ) = reorder { setMoved(visitSets, id, direction, it) }
+
+    private fun reorder(moved: (Instant) -> List<WorkoutSet>) {
+        writes.launch {
+            val changed = moved(clock.now())
+            changed.forEach { sets.upsert(it) }
+            if (changed.isNotEmpty()) requestSyncIfPast()
+            reload(reseed = false)
+        }
+    }
+
     fun editSet(id: WorkoutSetId) {
+        if (ordering) return
         val set = visitSets.firstOrNull { it.id == id } ?: return
         editing = set
         selected = set.machineId
@@ -350,14 +386,22 @@ class VisitViewModel(
                         "Визит · ${dayMonthLabel(day, CalendarDay.of(now, offset).year)}"
                     },
                 setCountLabel = setCount(visitSets.size),
-                groups = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) },
+                groups =
+                    groupByMachine(visitSets).let { groups ->
+                        groups.mapIndexed { index, group ->
+                            groupUi(group.machineId, group.sets, index, groups.lastIndex)
+                        }
+                    },
                 sheet = sheetUi(offset),
+                ordering = ordering,
             )
     }
 
     private fun groupUi(
         machineId: MachineId,
         machineSets: List<WorkoutSet>,
+        index: Int,
+        lastIndex: Int,
     ): SetGroupUi {
         val machine = machinesById[machineId]
         val title = machine?.let(::machineTitle).orEmpty()
@@ -366,16 +410,21 @@ class VisitViewModel(
             machineId = machineId,
             title = title,
             summary = groupSummary(machineSets, unit),
-            expanded = machineId in expanded || machineSets.any { it.id == editing?.id },
+            expanded =
+                ordering || machineId in expanded || machineSets.any { it.id == editing?.id },
             sets =
-                machineSets.mapIndexed { index, set ->
+                machineSets.mapIndexed { setIndex, set ->
                     SetRowUi(
                         set.id,
-                        "$title · подход ${index + 1}",
+                        "$title · подход ${setIndex + 1}",
                         setValue(set.weight, set.reps, unit),
                         set.id == editing?.id,
+                        canMoveUp = setIndex > 0,
+                        canMoveDown = setIndex < machineSets.lastIndex,
                     )
                 },
+            canMoveUp = index > 0,
+            canMoveDown = index < lastIndex,
         )
     }
 

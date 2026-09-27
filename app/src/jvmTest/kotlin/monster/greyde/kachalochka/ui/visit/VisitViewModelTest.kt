@@ -817,6 +817,101 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun order_mode_collapses_the_sheet_and_opens_every_group() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            vm.toggleOrdering()
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(true, state.ordering)
+            assertEquals(false, state.sheet?.expanded)
+            assertEquals(listOf(true, true), state.groups.map { it.expanded })
+            assertEquals(
+                listOf(false to true, true to false),
+                state.groups.map { it.canMoveUp to it.canMoveDown },
+            )
+        }
+
+    @Test
+    fun moving_a_machine_up_puts_it_first_and_keeps_order_mode() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))
+            val vm = viewModel().also { it.refresh() }
+            vm.toggleOrdering()
+
+            vm.moveMachine(row.id, -1)
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(listOf(row.id, press.id), state.groups.map { it.machineId })
+            assertEquals(true, state.ordering)
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun moving_a_set_down_swaps_it_with_the_next_one() =
+        runTest {
+            val first = set(visit.id, press, 60.0, 10, 0)
+            val second = set(visit.id, press, 70.0, 10, 1)
+            gym.sets.upsert(first)
+            gym.sets.upsert(second)
+            val vm = viewModel().also { it.refresh() }
+            vm.toggleOrdering()
+
+            vm.moveSet(first.id, +1)
+
+            val rows = assertNotNull(vm.state.value).groups.single().sets
+            assertEquals(listOf(second.id, first.id), rows.map { it.id })
+            assertEquals(
+                listOf(false to true, true to false),
+                rows.map { it.canMoveUp to it.canMoveDown },
+            )
+        }
+
+    @Test
+    fun a_reorder_on_another_day_asks_for_a_sync_pass() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+            val base = -(7.days.inWholeMinutes.toInt())
+            gym.sets.upsert(set(lastWeek.id, press, 70.0, 10, base))
+            gym.sets.upsert(set(lastWeek.id, row, 45.0, 12, base + 1))
+            val vm = viewModel(day = seventh).also { it.refresh() }
+            vm.toggleOrdering()
+
+            vm.moveMachine(row.id, -1)
+
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_set_does_not_open_while_ordering() =
+        runTest {
+            val recorded = set(visit.id, press, 70.0, 10, 0)
+            gym.sets.upsert(recorded)
+            val vm = viewModel().also { it.refresh() }
+            vm.toggleOrdering()
+
+            vm.editSet(recorded.id)
+
+            assertNull(vm.state.value?.sheet)
+        }
+
+    @Test
+    fun a_new_set_goes_after_every_set_of_the_visit() =
+        runTest {
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 0))
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            vm.save()
+
+            val saved = gym.sets.forVisit(visit.id).single { it.machineId == press.id }
+            assertEquals(1, saved.position)
+        }
+
+    @Test
     fun opening_a_day_without_a_visit_writes_nothing() {
         viewModel(day = CalendarDay(2023, 11, 10)).also { it.refresh() }
 

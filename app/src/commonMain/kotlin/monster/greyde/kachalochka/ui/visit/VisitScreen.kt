@@ -60,6 +60,7 @@ import monster.greyde.kachalochka.ui.account.MonogramBadge
 import monster.greyde.kachalochka.ui.account.dashedCircle
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ControlShape
+import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.RestTimerChip
 import monster.greyde.kachalochka.ui.components.Rule
@@ -107,6 +108,9 @@ fun VisitScreen(
             state = current,
             onToggle = viewModel::toggleGroup,
             onEdit = viewModel::editSet,
+            onToggleOrdering = viewModel::toggleOrdering,
+            onMoveMachine = viewModel::moveMachine,
+            onMoveSet = viewModel::moveSet,
             onNewMachine = { onPickMachine(viewModel.selectedMachineId) },
             modifier = Modifier.weight(1f),
         )
@@ -133,6 +137,9 @@ private fun VisitList(
     state: VisitUiState,
     onToggle: (MachineId) -> Unit,
     onEdit: (WorkoutSetId) -> Unit,
+    onToggleOrdering: () -> Unit,
+    onMoveMachine: (MachineId, Int) -> Unit,
+    onMoveSet: (WorkoutSetId, Int) -> Unit,
     onNewMachine: () -> Unit,
     modifier: Modifier,
 ) {
@@ -156,15 +163,25 @@ private fun VisitList(
                 letterSpacing = 0.09.em,
                 color = colors.onBackground.copy(alpha = 0.5f),
             )
+            Text(
+                if (state.ordering) "Готово" else "Порядок",
+                Modifier
+                    .clickable(onClick = onToggleOrdering)
+                    .padding(8.dp)
+                    .testTag("reorder-toggle"),
+                fontSize = 14.sp,
+                color = colors.tertiary,
+            )
         }
         state.groups.forEach { group ->
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .clickable { onToggle(group.machineId) }
+                    .clickable(enabled = !state.ordering) { onToggle(group.machineId) }
                     .padding(vertical = 12.dp)
                     .testTag("group-${group.machineId.value}"),
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     group.title,
@@ -177,8 +194,20 @@ private fun VisitList(
                     fontSize = 15.sp,
                     color = colors.onBackground.copy(alpha = 0.6f),
                 )
+                if (state.ordering) {
+                    MoveArrows(
+                        "machine-up-${group.machineId.value}",
+                        "machine-down-${group.machineId.value}",
+                        group.canMoveUp,
+                        group.canMoveDown,
+                    ) { onMoveMachine(group.machineId, it) }
+                }
             }
-            if (group.expanded) group.sets.forEach { SetRow(it, onEdit) }
+            if (group.expanded) {
+                group.sets.forEach { row ->
+                    SetRow(row, state.ordering, onEdit) { onMoveSet(row.id, it) }
+                }
+            }
             Rule()
         }
         OutlineButton(
@@ -191,9 +220,51 @@ private fun VisitList(
 }
 
 @Composable
+private fun MoveArrows(
+    upTag: String,
+    downTag: String,
+    canUp: Boolean,
+    canDown: Boolean,
+    onMove: (Int) -> Unit,
+) {
+    Row {
+        MoveArrow("Выше", -90f, upTag, canUp) { onMove(-1) }
+        MoveArrow("Ниже", 90f, downTag, canDown) { onMove(+1) }
+    }
+}
+
+@Composable
+private fun MoveArrow(
+    description: String,
+    rotation: Float,
+    tag: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        Modifier
+            .size(40.dp)
+            .clip(ControlShape)
+            .alpha(if (enabled) 1f else DISABLED_ALPHA)
+            .clickable(enabled = enabled, onClick = onClick)
+            .testTag(tag),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            PhosphorIcons.CaretRight,
+            description,
+            modifier = Modifier.size(20.dp).rotate(rotation),
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
+        )
+    }
+}
+
+@Composable
 private fun SetRow(
     row: SetRowUi,
+    ordering: Boolean,
     onEdit: (WorkoutSetId) -> Unit,
+    onMove: (Int) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     Row(
@@ -209,10 +280,11 @@ private fun SetRow(
                 } else {
                     Modifier
                 },
-            ).clickable { onEdit(row.id) }
-            .padding(horizontal = 12.dp, vertical = 10.dp)
+            ).clickable(enabled = !ordering) { onEdit(row.id) }
+            .padding(horizontal = 12.dp, vertical = if (ordering) 0.dp else 10.dp)
             .testTag("set-row-${row.id.value}"),
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             row.title,
@@ -225,6 +297,15 @@ private fun SetRow(
             fontSize = 15.sp,
             color = if (row.selected) colors.tertiary else colors.onBackground.copy(alpha = 0.6f),
         )
+        if (ordering) {
+            MoveArrows(
+                "set-up-${row.id.value}",
+                "set-down-${row.id.value}",
+                row.canMoveUp,
+                row.canMoveDown,
+                onMove,
+            )
+        }
     }
 }
 
