@@ -97,8 +97,8 @@ Recently used machines are listed with their last result.
 The machine form collects a name, a setup note, how the weight is counted (total or per side),
 the platform weight and whether it is added to the recorded weight, the unit and the weight
 step. The unit is kg, lb or an own unit such as "плитка", whose name is then written after
-every weight on that machine, with no conversion. The weight step is any positive number, with
-1, 2,5, 5 and 10 one tap away.
+every weight on that machine, with no conversion. The weight step is any positive number, typed
+in its field.
 
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
 search field: "Мои тренажёры", the account's other machines, and, signed in and online,

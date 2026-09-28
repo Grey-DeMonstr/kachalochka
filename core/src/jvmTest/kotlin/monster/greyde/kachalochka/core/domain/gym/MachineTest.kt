@@ -30,11 +30,6 @@ class MachineTest {
     }
 
     @Test
-    fun the_weight_steps_are_the_four_the_form_offers() {
-        assertEquals(listOf(1.0, 2.5, 5.0, 10.0), Machine.WEIGHT_STEPS)
-    }
-
-    @Test
     fun a_linked_copy_is_the_owner_s_own_row_with_the_friend_s_settings() {
         val theirs =
             Machine

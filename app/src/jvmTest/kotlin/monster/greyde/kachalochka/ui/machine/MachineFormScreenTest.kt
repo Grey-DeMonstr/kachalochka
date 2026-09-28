@@ -3,7 +3,6 @@ package monster.greyde.kachalochka.ui.machine
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
@@ -53,17 +52,15 @@ class MachineFormScreenTest {
             onNodeWithTag("per-limb").assertIsNotEnabled()
             onNodeWithTag("mode-total").assertIsSelected()
             onNodeWithTag("mode-counterweight").assertDoesNotExist()
-            onNodeWithTag("step-2.5").assertIsSelected()
+            onNodeWithTag("weight-step").assertTextEquals("2,5")
 
             onNodeWithTag("machine-name").performTextInput("Гакк-машина")
-            onNodeWithTag("step-5").performScrollTo()
-            onNodeWithTag("step-5").performClick()
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
             assertEquals(1, saved.size)
             val machine = runBlocking { gym.machines.byId(saved.single()) }
-            assertEquals(5.0, machine?.weightStep)
+            assertEquals(2.5, machine?.weightStep)
         }
     }
 
@@ -89,7 +86,7 @@ class MachineFormScreenTest {
     }
 
     @Test
-    fun a_quick_step_fills_the_field_and_a_typed_step_is_saved() {
+    fun the_step_is_only_typed_and_the_typed_step_is_saved() {
         val saved = mutableListOf<MachineId>()
         runScreenTest(gym, screen = {
             MachineFormScreen(
@@ -99,17 +96,12 @@ class MachineFormScreenTest {
                 onSaved = { saved += it },
             )
         }) {
-            onNodeWithTag("weight-step").assertTextEquals("2,5")
-            // The chips sit below the fold; a real click needs them scrolled into view first.
-            onNodeWithTag("step-5").performScrollTo()
-            onNodeWithTag("step-5").performClick()
-            waitForIdle()
-            onNodeWithTag("weight-step").assertTextEquals("5")
-            onNodeWithTag("step-5").assertIsSelected()
+            listOf("1", "2.5", "5", "10").forEach {
+                onNodeWithTag("step-$it").assertDoesNotExist()
+            }
 
             onNodeWithTag("weight-step").performTextReplacement("1,25")
             waitForIdle()
-            onNodeWithTag("step-5").assertIsNotSelected()
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
         }

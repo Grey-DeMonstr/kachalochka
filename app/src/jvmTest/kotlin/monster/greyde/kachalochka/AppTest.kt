@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -248,7 +249,7 @@ class AppTest {
             onNodeWithTag("machine-list-row-${press.id.value}").performClick()
             waitForIdle()
             onNodeWithTag("machine-name").assertTextContains("Жим ногами")
-            onNodeWithTag("step-10").performScrollTo().performClick()
+            onNodeWithTag("weight-step").performScrollTo().performTextReplacement("10")
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 

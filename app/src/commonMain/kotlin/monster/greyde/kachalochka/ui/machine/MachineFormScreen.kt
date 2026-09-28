@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
@@ -60,7 +59,6 @@ import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
-import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import org.koin.compose.viewmodel.koinViewModel
@@ -419,29 +417,19 @@ private fun WeightStepRow(
     onChange: (String) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "Шаг веса",
-                modifier = Modifier.width(82.dp),
-                fontSize = 14.sp,
-                color = colors.onBackground.copy(alpha = 0.72f),
-            )
-            Spacer(Modifier.weight(1f))
-            NumberField(
-                state.weightStep,
-                onChange,
-                unitLabel(state.unit, state.unitLabel),
-                "weight-step",
-            )
-        }
-        ChoiceRow(
-            choices =
-                Machine.WEIGHT_STEPS.map { step ->
-                    Choice(formatNumber(step), "step-" + step.toString().removeSuffix(".0"))
-                },
-            selected = state.weightStepValue?.let(Machine.WEIGHT_STEPS::indexOf) ?: -1,
-            onSelect = { onChange(formatNumber(Machine.WEIGHT_STEPS[it])) },
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            "Шаг веса",
+            modifier = Modifier.width(82.dp),
+            fontSize = 14.sp,
+            color = colors.onBackground.copy(alpha = 0.72f),
+        )
+        Spacer(Modifier.weight(1f))
+        NumberField(
+            state.weightStep,
+            onChange,
+            unitLabel(state.unit, state.unitLabel),
+            "weight-step",
         )
     }
 }

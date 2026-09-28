@@ -22,8 +22,6 @@ data class Machine(
     val deleted: Boolean,
 ) {
     companion object {
-        val WEIGHT_STEPS: List<Double> = listOf(1.0, 2.5, 5.0, 10.0)
-
         fun new(
             name: String,
             userId: UserId?,
