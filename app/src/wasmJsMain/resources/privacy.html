@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kachalochka Privacy Policy</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #fbfaf7;
+            --fg: #1d1c1a;
+            --muted: #6b675f;
+            --link: #2f5fb3;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #141417;
+                --fg: #e8e6e1;
+                --muted: #9a968d;
+                --link: #8fb3ff;
+            }
+        }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+        main { max-width: 42rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+        nav { font-size: 0.9rem; color: var(--muted); }
+        h1 { font-size: 1.75rem; line-height: 1.25; margin: 1.5rem 0 0.5rem; }
+        h2 { font-size: 1.15rem; margin: 2rem 0 0.5rem; }
+        .meta { color: var(--muted); margin: 0; }
+        a { color: var(--link); }
+        ul { padding-left: 1.25rem; }
+        li { margin: 0.4rem 0; }
+        code { overflow-wrap: anywhere; }
+    </style>
+</head>
+<body>
+<main>
+    <nav>
+        <a href="./">Kachalochka</a> ·
+        <a href="privacy.html">Privacy Policy</a> ·
+        <a href="terms.html">Terms of Service</a>
+    </nav>
+
+    <h1>Kachalochka Privacy Policy</h1>
+    <p class="meta">
+        App: Kachalochka (<code>monster.greyde.kachalochka</code>) for Android and the web<br>
+        Provided by Sergei Ivanov, an individual developer (“we”, “us”)<br>
+        Effective date: <time datetime="2026-09-28">28 September 2026</time>
+    </p>
+
+    <h2>Summary</h2>
+    <p>
+        Kachalochka keeps a log of your gym workouts. When you sign in, we store your workouts
+        so they sync between your devices and so the members of groups you join can see them.
+        We use your data only to provide that service.
+    </p>
+    <p>
+        There are no ads, no analytics and no crash reporting, and we never sell your data or
+        share it for marketing.
+    </p>
+
+    <h2>What we collect</h2>
+    <ul>
+        <li>
+            <strong>From Google sign-in:</strong> your e-mail address, your name and your
+            Google account identifier. The e-mail address tells your accounts apart in the
+            app’s account menu; the name is shown to members of your groups.
+        </li>
+        <li>
+            <strong>What you record:</strong> your machines (name, setup note, weight settings
+            and unit), your visits (the day of each) and your sets (weight, repetitions and the
+            time each was recorded).
+        </li>
+        <li>
+            <strong>Groups:</strong> the groups you create or join, their names and invite
+            codes, who belongs to each, and the display name taken from your Google name.
+        </li>
+        <li>
+            <strong>Technical data:</strong> the sign-in tokens that keep you signed in, and
+            the request logs, including IP addresses, that our hosting providers keep to run
+            and secure their services.
+        </li>
+    </ul>
+
+    <h2>Where it is stored</h2>
+    <ul>
+        <li>
+            <strong>Android:</strong> on your device. Without an account nothing leaves the
+            device. Once you sign in, what you record is synced to our backend. When several
+            accounts are signed in on one device, each keeps its own data.
+        </li>
+        <li>
+            <strong>Web:</strong> in our backend only. Your browser keeps just your sign-in
+            session and your theme choice.
+        </li>
+    </ul>
+
+    <h2>Who can see it</h2>
+    <p>
+        You see your own data. When you join a group, its members see your display name, your
+        visits and your machines, read-only; nobody but you can change your data. Leaving a
+        group, or its owner deleting it, stops the sharing. There is no public profile, and
+        nothing is shared outside the groups you join.
+    </p>
+
+    <h2>Service providers</h2>
+    <p>
+        We rely on these providers. Each processes data under its own privacy policy and may do
+        so in countries other than yours.
+    </p>
+    <ul>
+        <li>
+            <a href="https://supabase.com/privacy">Supabase</a> hosts the database and handles
+            authentication.
+        </li>
+        <li><a href="https://policies.google.com/privacy">Google</a> provides sign-in.</li>
+        <li>
+            <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub</a>
+            hosts the web app and the Android app’s downloads.
+        </li>
+    </ul>
+    <p>
+        Kachalochka’s use of information received from Google APIs adheres to the
+        <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API
+        Services User Data Policy</a>, including the Limited Use requirements.
+    </p>
+
+    <h2>Retention and deletion</h2>
+    <ul>
+        <li>We keep your data for as long as your account exists.</li>
+        <li>
+            When you delete a visit or a set in the app, it disappears from the app, but the
+            record stays on our servers, marked deleted, until your account is deleted.
+        </li>
+        <li>
+            Signing out removes the account from that device. Its data stays on our servers, so
+            signing back in finds it again.
+        </li>
+        <li>
+            To delete your account and all the data tied to it,
+            <a href="https://github.com/Grey-DeMonstr/kachalochka/issues/new">open an issue</a>
+            asking for deletion. Do not put your e-mail address or any other personal data in
+            the issue: we reply there and confirm the account with you privately before
+            deleting it. Deletion is completed within 30 days of the request.
+        </li>
+        <li>
+            On Android, data recorded without an account is removed by uninstalling the app or
+            clearing its data.
+        </li>
+    </ul>
+
+    <h2>Security</h2>
+    <p>
+        Every request between the app and our backend is encrypted with HTTPS. Row-level
+        security in the database lets an account read only its own data and that of the groups
+        it belongs to.
+    </p>
+
+    <h2>Permissions</h2>
+    <p>The Android app uses internet access, to sign in and to sync.</p>
+
+    <h2>Children</h2>
+    <p>
+        Kachalochka is not directed at children under 13. A child may use it only with a parent
+        or guardian who sets it up and supervises its use, including a child’s own account
+        signed in beside the parent’s on one device.
+    </p>
+
+    <h2>Changes</h2>
+    <p>
+        We publish any change to this policy on this page with a new effective date. Its full
+        history is public in the
+        <a href="https://github.com/Grey-DeMonstr/kachalochka">repository</a>.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+        Questions and requests go to the repository’s
+        <a href="https://github.com/Grey-DeMonstr/kachalochka/issues">issues</a>.
+    </p>
+</main>
+</body>
+</html>

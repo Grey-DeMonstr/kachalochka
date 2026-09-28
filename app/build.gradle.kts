@@ -76,3 +76,11 @@ kotlin {
         }
     }
 }
+
+// LegalPagesTest reads the web pages, so an edited page must rerun it.
+tasks.named<Test>("jvmTest") {
+    inputs
+        .dir("src/wasmJsMain/resources")
+        .withPropertyName("webResources")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}
