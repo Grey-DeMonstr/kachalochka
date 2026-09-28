@@ -206,8 +206,9 @@ failing a pull.
   another account's row waits for that account's own turn, and an entry whose row is gone or
   unowned is dropped. A pass pushes entries by table rank: `machine`, `visit`, `profile`,
   `machine_link`, then `workout_set`, because the server checks a set's visit and machine, which
-  the local SQLite does not, and a link follows the machines it names. An entry is removed after a
-  successful push only if nothing re-enqueued it in the meantime.
+  the local SQLite does not. The server checks nothing a link names, but links follow machines so
+  a friend never reads a link before the machine it names. An entry is removed after a successful
+  push only if nothing re-enqueued it in the meantime.
 - **Pull.** The sync pass fetches every row of every table newer than the account's pull
   watermark, keyset-paged on `(updated_at, id)` using the values the server returned for the last
   row of the previous page, and stops once a page comes back empty. It writes nothing, and leaves
@@ -410,8 +411,8 @@ Row-level security enforces every visibility rule from the functional spec:
   `shares_group_with`. `profile` stays readable by its owner alone.
 - A friend's link into one's own machine is changed only through two security-definer
   functions. `break_machine_links(machine)` soft-deletes the live links pointing at `machine`
-  when the caller owns it on the server. `repoint_machine_links(removed, kept)` moves the live
-  links pointing at `removed` to `kept` when the caller owns `removed` and nobody else owns
+  when the caller owns it on the server. `repoint_machine_links(removed, kept)` moves friends'
+  live links pointing at `removed` to `kept` when the caller owns `removed` and nobody else owns
   `kept`; `kept` need not exist yet, since it may have been created offline.
 - A group's current members are readable by its members. Membership changes only through the
   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames

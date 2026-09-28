@@ -67,7 +67,7 @@ begin
         raise exception 'not your machines' using errcode = 'P0001';
     end if;
     update public.machine_link set linked_machine_id = kept, updated_at = now()
-    where linked_machine_id = removed and not deleted;
+    where linked_machine_id = removed and not deleted and user_id <> (select auth.uid());
 end;
 $$;
 

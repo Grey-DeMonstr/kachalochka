@@ -166,7 +166,8 @@ class SyncPass(
     private suspend fun <T> db(read: () -> T): T = withContext(dispatcher) { read() }
 
     private companion object {
-        // The server checks a set's visit and machine; a link follows the machines it names.
+        // The server checks a set's visit and machine. It checks nothing a link names, but a
+        // link follows the machines so a friend never reads one before its machine.
         val PUSH_RANK =
             listOf(
                 MACHINE_TABLE,

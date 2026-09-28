@@ -27,7 +27,12 @@ data class MachineLink(
     val linkedMachineId: MachineId,
     val updatedAt: Instant,
     val deleted: Boolean,
-)
+) {
+    // The server refuses a self-link, so one would sit in the outbox forever.
+    init {
+        require(machineId != linkedMachineId) { "A machine cannot be linked to itself" }
+    }
+}
 
 interface MachineLinkRepository {
     suspend fun upsert(link: MachineLink)
