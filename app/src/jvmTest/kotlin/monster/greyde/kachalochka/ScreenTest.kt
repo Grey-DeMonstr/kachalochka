@@ -17,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
 import monster.greyde.kachalochka.fakes.FakeGym
@@ -44,6 +45,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<MachineRepository> { gym.machines }
         single<VisitRepository> { gym.visits }
         single<WorkoutSetRepository> { gym.sets }
+        single<ProfileRepository> { gym.profiles }
         single<CurrentUser> { gym.currentUser }
         single<Accounts> { gym.accounts }
         single<FriendsRepository> { gym.friends }

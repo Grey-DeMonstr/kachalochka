@@ -2,18 +2,37 @@ import kotlin.Boolean;
 import kotlin.time.Instant;
 
 CREATE TABLE profile (
-    id           TEXT    NOT NULL PRIMARY KEY,
-    user_id      TEXT,
-    display_name TEXT,
-    updated_at   INTEGER AS Instant NOT NULL,
-    deleted      INTEGER AS Boolean NOT NULL DEFAULT 0
+    id            TEXT    NOT NULL PRIMARY KEY,
+    user_id       TEXT,
+    display_name  TEXT,
+    updated_at    INTEGER AS Instant NOT NULL,
+    deleted       INTEGER AS Boolean NOT NULL DEFAULT 0,
+    -- Last, where 5.sqm's ALTER TABLE puts them.
+    friend_colors TEXT    NOT NULL DEFAULT '{}',
+    sex           TEXT,
+    birth_year    INTEGER,
+    height_cm     REAL
 );
 
 CREATE INDEX profile_updated_at_idx ON profile (updated_at);
 
 upsert:
-INSERT OR REPLACE INTO profile(id, user_id, display_name, updated_at, deleted)
-VALUES (?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO profile(
+    id, user_id, display_name, updated_at, deleted, friend_colors, sex, birth_year, height_cm
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 byId:
-SELECT id, user_id, display_name, updated_at, deleted FROM profile WHERE id = ?;
+SELECT * FROM profile WHERE id = ?;
+
+forOwner:
+SELECT * FROM profile
+WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
+ORDER BY updated_at DESC
+LIMIT 1;
+
+ownerlessIds:
+SELECT id FROM profile WHERE user_id IS NULL;
+
+claimOwnerless:
+UPDATE profile SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;

@@ -3,10 +3,31 @@ package monster.greyde.kachalochka.core.domain.profile
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Instant
 
+enum class Sex { Male, Female }
+
 data class Profile(
     val id: ProfileId,
     val userId: UserId?,
     val displayName: String?,
     val updatedAt: Instant,
     val deleted: Boolean,
-)
+    val friendColors: Map<UserId, Int> = emptyMap(),
+    val sex: Sex? = null,
+    val birthYear: Int? = null,
+    val heightCm: Double? = null,
+) {
+    companion object {
+        /** A signed-in owner's profile id is the owner's own, so devices converge on one row. */
+        fun new(
+            owner: UserId?,
+            now: Instant,
+        ): Profile =
+            Profile(
+                id = owner?.let { ProfileId(it.value) } ?: ProfileId.random(),
+                userId = owner,
+                displayName = null,
+                updatedAt = now,
+                deleted = false,
+            )
+    }
+}

@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.data.profile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
+import monster.greyde.kachalochka.core.data.db.ProfileQueries
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -23,13 +24,7 @@ class LocalProfileRepository(
     override suspend fun upsert(profile: Profile) =
         withContext(dispatcher) {
             queries.transaction {
-                queries.upsert(
-                    profile.id.value,
-                    profile.userId?.value,
-                    profile.displayName,
-                    profile.updatedAt,
-                    profile.deleted,
-                )
+                queries.write(profile)
                 // An owner is what a row-level-security policy matches on, so an unowned row
                 // waits for the login that stamps it (technical spec §4.3).
                 if (profile.userId != null) {
@@ -40,7 +35,25 @@ class LocalProfileRepository(
 
     override suspend fun byId(id: ProfileId): Profile? =
         withContext(dispatcher) { queries.byId(id.value, ::profileOf).executeAsOneOrNull() }
+
+    override suspend fun forOwner(owner: UserId?): Profile? =
+        withContext(dispatcher) {
+            queries.forOwner(owner?.value, ::profileOf).executeAsOneOrNull()
+        }
 }
+
+internal fun ProfileQueries.write(profile: Profile) =
+    upsert(
+        profile.id.value,
+        profile.userId?.value,
+        profile.displayName,
+        profile.updatedAt,
+        profile.deleted,
+        friendColorsText(profile.friendColors),
+        profile.sex?.wireName(),
+        profile.birthYear?.toLong(),
+        profile.heightCm,
+    )
 
 internal fun profileOf(
     id: String,
@@ -48,10 +61,18 @@ internal fun profileOf(
     displayName: String?,
     updatedAt: Instant,
     deleted: Boolean,
+    friendColors: String,
+    sex: String?,
+    birthYear: Long?,
+    heightCm: Double?,
 ) = Profile(
     id = ProfileId(id),
     userId = userId?.let(::UserId),
     displayName = displayName,
     updatedAt = updatedAt,
     deleted = deleted,
+    friendColors = friendColorsOf(friendColors),
+    sex = sexOf(sex),
+    birthYear = birthYear?.toInt(),
+    heightCm = heightCm,
 )

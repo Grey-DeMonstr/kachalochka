@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.data.gym.visitOf
 import monster.greyde.kachalochka.core.data.gym.wireName
 import monster.greyde.kachalochka.core.data.gym.workoutSetOf
 import monster.greyde.kachalochka.core.data.profile.profileOf
+import monster.greyde.kachalochka.core.data.profile.write
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -67,14 +68,7 @@ class LocalSyncRows(
             set.position.toLong(),
         )
 
-    fun writeProfile(profile: Profile) =
-        database.profileQueries.upsert(
-            profile.id.value,
-            profile.userId?.value,
-            profile.displayName,
-            profile.updatedAt,
-            profile.deleted,
-        )
+    fun writeProfile(profile: Profile) = database.profileQueries.write(profile)
 
     fun transaction(body: () -> Unit) = database.transaction { body() }
 }

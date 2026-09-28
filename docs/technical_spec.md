@@ -177,6 +177,13 @@ Client-generated ids are what make offline creation possible: a visit and its se
 before the server has ever seen them. Soft deletes are what make sync convergent: a delete is
 just another update that travels the same path.
 
+Each account keeps one `profile` row. A signed-in owner's new profile takes the owner's own id as
+its `id` (`Profile.new`), so two devices creating it offline converge on one row; an anonymous one
+takes a random id. Readers take the owner's live profile with the newest `updated_at`
+(`ProfileRepository.forOwner`) and every profile write updates the row it returned, so an owner
+who ends up with two after a claim (§4.3) still reads one. `friend_colors` is a JSON object in a
+text column, `'{}'` when empty; an entry that cannot be read is dropped rather than failing a pull.
+
 ### 4.2 Sync algorithm (Android only)
 
 - **Push.** Every local write appends the row's id and table to an `outbox`, which names only the
@@ -229,8 +236,9 @@ already reached the server, `ServerSyncTrigger` emits on every request instead.
 ### 4.3 Anonymous use and several accounts
 
 Android works without an account: rows are created with a null `user_id` and never pushed. On the
-first successful sign-in, every row with null `user_id` is stamped with that user's id and
-enqueued in the outbox. Accounts added afterwards claim nothing and start empty.
+first successful sign-in, every row with null `user_id`, the anonymous profile included, is
+stamped with that user's id and enqueued in the outbox. Accounts added afterwards claim nothing
+and start empty.
 
 Several accounts are signed in at once and one of them is active; the active one owns whatever is
 recorded now. Their rows share one local database, which is why reads are scoped by owner (§3)
@@ -368,6 +376,11 @@ Row-level security enforces every visibility rule from the functional spec:
 - A group's current members are readable by its members. Membership changes only through the
   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
   and soft-deletes the group directly, and a deleted group stays deleted.
+- A member's `group_member.display_name` follows one rule, `member_display_name`: the nickname
+  of their newest live profile when not blank, else the Google name (`google_display_name`).
+  `my_display_name` applies it when a group is created or joined, and a security-definer trigger
+  on `profile` insert and update rewrites the owner's member rows, since clients may only read
+  that table.
 
 Because visibility is enforced in Postgres, no client code path can leak data by omission.
 

@@ -6,6 +6,8 @@ import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
+import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
+import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -14,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -28,6 +31,7 @@ class SqlOwnerlessRowsTest {
     private val visits = LocalVisitRepository(database, outbox, Dispatchers.Unconfined)
     private val machines = LocalMachineRepository(database, outbox, Dispatchers.Unconfined)
     private val sets = LocalWorkoutSetRepository(database, outbox, Dispatchers.Unconfined)
+    private val profiles = LocalProfileRepository(database, outbox, Dispatchers.Unconfined)
 
     private val owner = UserId("11111111-1111-4111-8111-111111111111")
     private val stranger = UserId("22222222-2222-4222-8222-222222222222")
@@ -95,5 +99,21 @@ class SqlOwnerlessRowsTest {
 
             assertEquals(owner, machines.byId(press.id)?.userId)
             assertEquals(owner, sets.forVisit(unowned.id).single().userId)
+        }
+
+    @Test
+    fun claiming_covers_the_anonymous_profile_and_enqueues_it() =
+        runTest {
+            val anonymous = Profile.new(null, t0)
+            profiles.upsert(anonymous)
+
+            rows.claim(owner)
+
+            assertEquals(owner, profiles.byId(anonymous.id)?.userId)
+            assertTrue(
+                outbox.pending().any {
+                    it.tableName == PROFILE_TABLE && it.rowId == anonymous.id.value
+                },
+            )
         }
 }

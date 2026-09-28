@@ -1,0 +1,6 @@
+ALTER TABLE profile ADD COLUMN friend_colors TEXT NOT NULL DEFAULT '{}';
+ALTER TABLE profile ADD COLUMN sex TEXT;
+ALTER TABLE profile ADD COLUMN birth_year INTEGER;
+ALTER TABLE profile ADD COLUMN height_cm REAL;
+-- Rows pulled before this version lack the columns other clients have since written to them.
+UPDATE syncState SET lastPullAt = NULL;

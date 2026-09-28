@@ -27,6 +27,9 @@ import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.ProfileId
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.Invite
@@ -137,6 +140,19 @@ class InMemoryWorkoutSetRepository : WorkoutSetRepository {
             .map { it.last() }
 }
 
+class InMemoryProfileRepository : ProfileRepository {
+    val rows = linkedMapOf<ProfileId, Profile>()
+
+    override suspend fun upsert(profile: Profile) {
+        rows[profile.id] = profile
+    }
+
+    override suspend fun byId(id: ProfileId): Profile? = rows[id]
+
+    override suspend fun forOwner(owner: UserId?): Profile? =
+        rows.values.filter { !it.deleted && it.userId == owner }.maxByOrNull { it.updatedAt }
+}
+
 private class QueuedGoogleSignIn : GoogleSignIn {
     val queue = ArrayDeque<AccountSession>()
 
@@ -188,6 +204,7 @@ class FakeGym(
     val machines = InMemoryMachineRepository()
     val visits = InMemoryVisitRepository()
     val sets = InMemoryWorkoutSetRepository()
+    val profiles = InMemoryProfileRepository()
     private val signIn = QueuedGoogleSignIn()
     val accounts =
         Accounts(

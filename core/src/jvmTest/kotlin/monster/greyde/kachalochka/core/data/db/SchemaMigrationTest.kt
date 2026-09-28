@@ -4,12 +4,15 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import monster.greyde.kachalochka.core.data.gym.visitOf
 import monster.greyde.kachalochka.core.data.gym.workoutSetOf
+import monster.greyde.kachalochka.core.data.profile.profileOf
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -151,6 +154,23 @@ class SchemaMigrationTest {
             )
             """.trimIndent(),
         )
+        version5ProfileTable()
+    }
+
+    /** Every version before 6 declares the profile table this way. */
+    private fun version5ProfileTable() {
+        exec("DROP TABLE profile")
+        exec(
+            """
+            CREATE TABLE profile (
+                id TEXT NOT NULL PRIMARY KEY,
+                user_id TEXT,
+                display_name TEXT,
+                updated_at INTEGER NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+        )
     }
 
     @Test
@@ -203,6 +223,25 @@ class SchemaMigrationTest {
     }
 
     @Test
+    fun a_version_3_profile_reads_back_whole_on_the_current_schema() {
+        val owner = UserId("11111111-1111-4111-8111-111111111111")
+        val profile = Profile(ProfileId(owner.value), owner, "Иван", at(7), false)
+        version3VisitTables()
+        exec(
+            "INSERT INTO profile(id, user_id, display_name, updated_at) " +
+                "VALUES ('${owner.value}', '${owner.value}', 'Иван', 7)",
+        )
+
+        KachalochkaDatabase.Schema.migrate(driver, 3, KachalochkaDatabase.Schema.version)
+
+        val database = kachalochkaDatabase(driver)
+        assertEquals(
+            profile,
+            database.profileQueries.byId(owner.value, ::profileOf).executeAsOne(),
+        )
+    }
+
+    @Test
     fun version_4_machines_gain_an_empty_link_and_every_row_is_pulled_again() {
         KachalochkaDatabase.Schema.create(driver)
         exec("DROP TABLE machine")
@@ -235,6 +274,27 @@ class SchemaMigrationTest {
         assertEquals(null, text("SELECT link_id FROM machine WHERE id = 'press'"))
         assertEquals("плитка", text("SELECT unit_label FROM machine WHERE id = 'press'"))
         assertEquals(7L, number("SELECT updated_at FROM machine WHERE id = 'press'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
+    @Test
+    fun version_5_profiles_gain_empty_body_fields_and_every_row_is_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        version5ProfileTable()
+        exec(
+            "INSERT INTO profile(id, user_id, display_name, updated_at) " +
+                "VALUES ('ivan', 'ivan', 'Иван', 7)",
+        )
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 5, 6)
+
+        assertEquals("{}", text("SELECT friend_colors FROM profile WHERE id = 'ivan'"))
+        assertEquals(null, text("SELECT sex FROM profile WHERE id = 'ivan'"))
+        assertEquals(null, number("SELECT birth_year FROM profile WHERE id = 'ivan'"))
+        assertEquals(null, text("SELECT height_cm FROM profile WHERE id = 'ivan'"))
+        assertEquals("Иван", text("SELECT display_name FROM profile WHERE id = 'ivan'"))
+        assertEquals(7L, number("SELECT updated_at FROM profile WHERE id = 'ivan'"))
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
