@@ -49,6 +49,21 @@ fun namesForViewer(
         machine.id to (own ?: machine).name
     }
 
+/** The friends' machines in [machine]'s cluster, by owner name, then machine name. */
+fun linkedFriendMachines(
+    machine: MachineId,
+    friendMachines: List<FriendMachine>,
+    clusters: MachineClusters,
+): List<FriendMachine> {
+    val cluster = clusters.of(machine)
+    return friendMachines
+        .filter { it.machine.id in cluster }
+        .sortedWith(
+            compareBy<FriendMachine> { it.owner.displayName.lowercase() }
+                .thenBy { it.machine.name.lowercase() },
+        )
+}
+
 /** One row per friends' cluster without an own machine: the original-most machine. */
 fun friendMachineRows(
     friendMachines: List<FriendMachine>,

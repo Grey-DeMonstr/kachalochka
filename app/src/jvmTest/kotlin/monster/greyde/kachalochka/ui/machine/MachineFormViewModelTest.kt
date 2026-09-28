@@ -274,22 +274,31 @@ class MachineFormViewModelTest {
         }
 
     @Test
-    fun the_form_names_every_friend_whose_machine_is_the_same() =
+    fun the_form_names_every_friend_s_machine_that_is_the_same_by_owner_then_name() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
             val oleg = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Олег")
             gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend, oleg)
-            val hers = Machine.new("Жим ногами", misha.account.userId, t0)
+            val hers = Machine.new("Платформа", misha.account.userId, t0)
             val (press, link) = linkedCopy(hers, ivan.account.userId, t0)
             val (his, hisLink) = linkedCopy(hers, oleg.userId, t0)
+            val (hisOther, otherLink) = linkedCopy(his, oleg.userId, t0)
             gym.machines.upsert(press)
             gym.machineLinks.upsert(link)
-            gym.friends.machines += listOf(hers, his)
-            gym.friends.links += hisLink
+            gym.friends.machines +=
+                listOf(hers, his.copy(name = "Жим ногами"), hisOther.copy(name = "Жим"))
+            gym.friends.links += listOf(hisLink, otherLink)
 
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
-            assertEquals(listOf("Миша", "Олег"), vm.linking.value.linkedWith)
+            assertEquals(
+                listOf(
+                    LinkedMachineUi(hers.id, misha.account.userId, "Платформа (Миша)"),
+                    LinkedMachineUi(hisOther.id, oleg.userId, "Жим (Олег)"),
+                    LinkedMachineUi(his.id, oleg.userId, "Жим ногами (Олег)"),
+                ),
+                vm.linking.value.linkedWith,
+            )
         }
 
     @Test
@@ -380,7 +389,11 @@ class MachineFormViewModelTest {
             val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
 
             assertTrue(vm.linking.value.canUnlink)
-            assertEquals(listOf("Миша"), vm.linking.value.linkedWith)
+            assertEquals(
+                listOf("Жим ногами (Миша)"),
+                vm.linking.value.linkedWith
+                    .map { it.label },
+            )
         }
 
     @Test
@@ -470,7 +483,11 @@ class MachineFormViewModelTest {
             )
             vm.load()
 
-            assertEquals(listOf("Миша"), vm.linking.value.linkedWith)
+            assertEquals(
+                listOf("Жим ногами (Миша)"),
+                vm.linking.value.linkedWith
+                    .map { it.label },
+            )
             assertEquals("Сиденье на 4", vm.state.value.setupNote)
         }
 }

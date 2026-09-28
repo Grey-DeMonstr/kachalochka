@@ -7,9 +7,11 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performFirstLinkClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.text.LinkAnnotation
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
@@ -21,6 +23,7 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -173,7 +176,7 @@ class MachineFormScreenTest {
         }
 
     @Test
-    fun a_saved_machine_offers_linking_and_names_the_friends_it_is_linked_with() {
+    fun a_saved_machine_offers_linking_and_names_the_machines_it_is_linked_with() {
         val signedIn = signedInGym()
         val now = signedIn.clock.current
         val olegs = Machine.new("Жим ногами", OLEG.userId, now)
@@ -194,10 +197,44 @@ class MachineFormScreenTest {
                 onLink = { linking++ },
             )
         }) {
-            onNodeWithTag("machine-linked-with").assertTextEquals("Связан с: Олег")
+            onNodeWithTag("machine-linked-with").assertTextEquals("Связан с: Жим ногами (Олег)")
             onNodeWithTag("link-machine").performScrollTo().performClick()
             waitForIdle()
         }
         assertEquals(1, linking)
+    }
+
+    @Test
+    fun tapping_a_linked_machine_opens_it_as_its_owner_s() {
+        val signedIn = signedInGym()
+        val now = signedIn.clock.current
+        val olegs = Machine.new("Жим ногами", OLEG.userId, now)
+        val (press, link) = linkedCopy(olegs, ME.userId, now)
+        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, now)
+        signedIn.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        signedIn.friends.machines += listOf(olegs, pashas.copy(name = "Платформа"))
+        signedIn.friends.links += pashaLink
+        runBlocking {
+            signedIn.machines.upsert(press)
+            signedIn.machineLinks.upsert(link)
+        }
+        val opened = mutableListOf<Pair<MachineId, UserId>>()
+        runScreenTest(signedIn, screen = {
+            MachineFormScreen(
+                MachineFormArgs(press.id, null, ""),
+                {},
+                {},
+                onSaved = {},
+                onOpenFriendMachine = { machine, owner -> opened += machine to owner },
+            )
+        }) {
+            onNodeWithTag("machine-linked-with")
+                .assertTextEquals("Связан с: Жим ногами (Олег), Платформа (Паша)")
+                .performFirstLinkClick {
+                    (it.item as LinkAnnotation.Clickable).tag == pashas.id.value
+                }
+            waitForIdle()
+        }
+        assertEquals(listOf(pashas.id to PASHA.userId), opened)
     }
 }

@@ -168,4 +168,42 @@ class FriendResultsTest {
 
         assertEquals(listOf(press, row), rowsOf(listOf(row, press), emptyList(), emptyList()))
     }
+
+    @Test
+    fun a_machine_is_linked_with_its_cluster_s_friends_machines_by_owner_then_name() {
+        val mine = Machine.new("Жим ногами", me, T0)
+        val (pashas, pashaLink) = linkedCopy(mine, pasha.userId, T0)
+        val (olegsPlatform, platformLink) = linkedCopy(pashas, oleg.userId, T0)
+        val (olegsPress, pressLink) = linkedCopy(mine, oleg.userId, T0)
+        val friendMachines =
+            listOf(
+                FriendMachine(pashas, pasha),
+                FriendMachine(olegsPlatform.copy(name = "платформа"), oleg),
+                FriendMachine(olegsPress.copy(name = "Жим"), oleg),
+                oleg.owns("Тяга"),
+            )
+
+        assertEquals(
+            listOf(friendMachines[2], friendMachines[1], friendMachines[0]),
+            linkedFriendMachines(
+                mine.id,
+                friendMachines,
+                MachineClusters(listOf(pashaLink, platformLink, pressLink)),
+            ),
+        )
+    }
+
+    @Test
+    fun an_unlinked_machine_is_linked_with_no_friend_s_machine() {
+        val mine = Machine.new("Жим ногами", me, T0)
+
+        assertEquals(
+            emptyList(),
+            linkedFriendMachines(
+                mine.id,
+                listOf(oleg.owns("Жим ногами")),
+                MachineClusters(emptyList()),
+            ),
+        )
+    }
 }

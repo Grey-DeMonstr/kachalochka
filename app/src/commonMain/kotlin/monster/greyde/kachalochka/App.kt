@@ -258,6 +258,9 @@ fun App() {
                                 navController.navigate(LinkChooserRoute(it, route.fromList))
                             }
                         },
+                        onOpenFriendMachine = { machine, owner ->
+                            navController.navigate(FriendMachineRoute(machine.value, owner.value))
+                        },
                     )
                 }
                 composable<LinkChooserRoute> { entry ->

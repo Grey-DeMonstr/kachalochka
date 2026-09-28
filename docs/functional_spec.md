@@ -256,8 +256,9 @@ linked to the friend's machine as one physical machine. An own machine can also 
 friend's with "Привязать к…". Machines linked directly or through other friends' links are one
 machine: the picker no longer offers the friend's machine beside the user's own, the set sheet
 shows each friend's latest visit on it ("Олег · вчера · 80-85кг 8-6"), a friend's visit shows
-their sets on it under the user's own machine name, and the machine form names the friends it is
-linked with ("Связан с: …").
+their sets on it under the user's own machine name, and the machine form lists the friends'
+machines it is linked with, by owner and then by name ("Связан с: Жим ногами (Олег), Платформа
+(Паша)"). Tapping one opens that friend's machine, as from the machine list.
 "Отвязать от друзей" in the form's menu, after a confirmation, breaks every link between the
 machine and friends' machines, whichever side made it.
 

@@ -38,9 +38,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -48,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Choice
 import monster.greyde.kachalochka.ui.components.ChoiceRow
@@ -71,6 +77,7 @@ fun MachineFormScreen(
     onSaved: (MachineId) -> Unit,
     inVisit: Boolean = true,
     onLink: () -> Unit = {},
+    onOpenFriendMachine: (MachineId, UserId) -> Unit = { _, _ -> },
 ) {
     val viewModel: MachineFormViewModel = koinViewModel { parametersOf(args) }
     val state by viewModel.state.collectAsState()
@@ -93,12 +100,7 @@ fun MachineFormScreen(
                 viewModel.update { it.copy(name = name) }
             })
             if (linking.linkedWith.isNotEmpty()) {
-                Text(
-                    "Связан с: ${linking.linkedWith.joinToString(", ")}",
-                    modifier = Modifier.testTag("machine-linked-with"),
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.60f),
-                )
+                LinkedWith(linking.linkedWith, onOpenFriendMachine)
             }
             FieldLabel("Заметка о настройке")
             FormField(
@@ -182,6 +184,33 @@ fun MachineFormScreen(
             onCancel = viewModel::cancelUnlink,
         )
     }
+}
+
+@Composable
+private fun LinkedWith(
+    linked: List<LinkedMachineUi>,
+    onOpen: (MachineId, UserId) -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val linkStyle = TextLinkStyles(SpanStyle(color = colors.tertiary))
+    val text =
+        buildAnnotatedString {
+            append("Связан с: ")
+            linked.forEachIndexed { index, machine ->
+                if (index > 0) append(", ")
+                val link =
+                    LinkAnnotation.Clickable(machine.machineId.value, linkStyle) {
+                        onOpen(machine.machineId, machine.ownerId)
+                    }
+                withLink(link) { append(machine.label) }
+            }
+        }
+    Text(
+        text,
+        modifier = Modifier.testTag("machine-linked-with"),
+        fontSize = 13.sp,
+        color = colors.onBackground.copy(alpha = 0.60f),
+    )
 }
 
 @Composable

@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
+import monster.greyde.kachalochka.core.domain.friends.linkedFriendMachines
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -18,6 +19,7 @@ import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
@@ -30,9 +32,15 @@ data class MachineFormArgs(
     val name: String,
 )
 
+data class LinkedMachineUi(
+    val machineId: MachineId,
+    val ownerId: UserId,
+    val label: String,
+)
+
 data class LinkingUi(
     val canLink: Boolean = false,
-    val linkedWith: List<String> = emptyList(),
+    val linkedWith: List<LinkedMachineUi> = emptyList(),
     val canUnlink: Boolean = false,
     val confirmingUnlink: Boolean = false,
     val error: String? = null,
@@ -144,7 +152,7 @@ class MachineFormViewModel(
 
     /**
      * Own links are on hand offline; friends' links and machines need the network, and without
-     * it the form names no friends.
+     * it the form names no friends' machines.
      */
     private suspend fun readLinks() {
         val shown = existing
@@ -164,17 +172,17 @@ class MachineFormViewModel(
             }
         val group = owner?.let { loadGroupMachines(it, friends, machineLinks) }
         if (accounts.activeId.value != owner || existing?.id != shown.id) return
-        val cluster = group?.clusters?.of(shown.id).orEmpty()
+        val linked = group?.let { linkedFriendMachines(shown.id, it.friends, it.clusters) }
         mutableLinking.value =
             mutableLinking.value.copy(
                 linkedWith =
-                    group
-                        ?.friends
-                        .orEmpty()
-                        .filter { it.machine.id in cluster }
-                        .map { it.owner.displayName }
-                        .distinct()
-                        .sortedBy { it.lowercase() },
+                    linked.orEmpty().map {
+                        LinkedMachineUi(
+                            it.machine.id,
+                            it.owner.userId,
+                            "${it.machine.name} (${it.owner.displayName})",
+                        )
+                    },
                 canUnlink = (group?.links ?: ownLinks).any { it.touches(shown.id) },
             )
     }
