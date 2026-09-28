@@ -56,6 +56,16 @@ private fun MockEngine.Queue.answer(
     status: HttpStatusCode = HttpStatusCode.OK,
 ) = enqueue { respond(body, status, jsonHeaders()) }
 
+private fun HttpRequestData.table() = url.encodedPath.substringAfterLast('/')
+
+/** Answers each table's body however the requests interleave, for reads sent concurrently. */
+private fun answeringByTable(vararg bodies: Pair<String, String>): MockEngine {
+    val byTable = bodies.toMap()
+    return MockEngine { request ->
+        respond(byTable.getValue(request.table()), HttpStatusCode.OK, jsonHeaders())
+    }
+}
+
 private fun repositoryOn(engine: HttpClientEngine): SupabaseFriendsRepository {
     val client =
         createSupabaseClient("https://example.test", "anon-key") {
@@ -102,9 +112,11 @@ class SupabaseFriendsRepositoryTest {
     @Test
     fun groups_are_counted_by_their_live_members() =
         runTest {
-            val engine = MockEngine.Queue()
-            engine.answer(OLEG_S_GROUP)
-            engine.answer(MEMBERSHIPS)
+            val engine =
+                answeringByTable(
+                    "friend_group" to OLEG_S_GROUP,
+                    "group_member" to MEMBERSHIPS,
+                )
 
             val groups = repositoryOn(engine).groups()
 
@@ -112,9 +124,9 @@ class SupabaseFriendsRepositoryTest {
                 listOf(FriendGroup(GroupId(GROUP), "Зал на Лесной", OLEG, "ABCD2345", 2)),
                 groups,
             )
-            val (groupRequest, memberRequest) = engine.requestHistory
-            assertEquals("eq.false", groupRequest.url.parameters["deleted"])
-            assertEquals("eq.false", memberRequest.url.parameters["deleted"])
+            val requests = engine.requestHistory.associateBy { it.table() }
+            assertEquals(setOf("friend_group", "group_member"), requests.keys)
+            requests.values.forEach { assertEquals("eq.false", it.url.parameters["deleted"]) }
         }
 
     @Test
