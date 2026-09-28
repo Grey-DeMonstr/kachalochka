@@ -28,6 +28,8 @@ import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.friends.Invite
+import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.timer.Ticker
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -164,6 +166,17 @@ class RecordingSyncTrigger : SyncTrigger {
     }
 }
 
+class RecordingInviteSharing : InviteSharing {
+    override var pageAddress: String? = "https://example.test/kachalochka/"
+    var notice: String? = "Ссылка скопирована"
+    val shared = mutableListOf<Invite>()
+
+    override suspend fun share(invite: Invite): String? {
+        shared += invite
+        return notice
+    }
+}
+
 class FakeGym(
     now: Instant = Instant.fromEpochSeconds(1_700_000_000),
     val credentials: SupabaseCredentials =
@@ -192,6 +205,7 @@ class FakeGym(
         }
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
+    val invites = RecordingInviteSharing()
     val today: CalendarDay get() = CalendarDay.of(clock.current, utcOffset.at(clock.current))
 
     /** Signs [sessions] in through [accounts] in order, then makes [active] the live one. */

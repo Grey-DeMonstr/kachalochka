@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.GroupId
+import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
@@ -77,6 +78,12 @@ fun GroupScreen(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 )
             }
+            AccentButton(
+                "Пригласить",
+                PhosphorIcons.UsersThree,
+                viewModel::invite,
+                Modifier.testTag("invite"),
+            )
             if (current.isOwner) {
                 OutlineButton(
                     "Удалить группу",

@@ -10,6 +10,8 @@ import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.ui.account.RedirectGoogleSignIn
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
+import monster.greyde.kachalochka.ui.friends.ClipboardInviteSharing
+import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.theme.LocalStorageThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import org.koin.core.module.Module
@@ -22,6 +24,7 @@ actual fun platformModule(): Module =
         single { SignInRequired(true) }
         single { SignInAvailable(get<SupabaseCredentials>().isConfigured) }
         single<SyncTrigger> { ServerSyncTrigger() }
+        single<InviteSharing> { ClipboardInviteSharing() }
         single { VisitStore.Server }
         single<FailureLog> { FailureLog { report(it.toString()) } }
     }

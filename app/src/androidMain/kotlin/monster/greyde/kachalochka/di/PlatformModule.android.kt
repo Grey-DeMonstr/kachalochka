@@ -11,6 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import monster.greyde.kachalochka.core.data.supabase.webAppUrlFromBuild
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.sync.WorkManagerSyncTrigger
@@ -18,6 +19,8 @@ import monster.greyde.kachalochka.ui.account.ActivityHolder
 import monster.greyde.kachalochka.ui.account.CredentialManagerGoogleSignIn
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
+import monster.greyde.kachalochka.ui.friends.InviteSharing
+import monster.greyde.kachalochka.ui.friends.ShareSheetInviteSharing
 import monster.greyde.kachalochka.ui.theme.DataStoreThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import okio.Path.Companion.toPath
@@ -51,6 +54,9 @@ actual fun platformModule(): Module =
         single<FailureLog> { FailureLog { Log.w(LOG_TAG, "Background work failed", it) } }
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
+        single<InviteSharing> {
+            ShareSheetInviteSharing(androidContext(), webAppUrlFromBuild().ifBlank { null })
+        }
         single<GoogleSignIn> {
             val activities: ActivityHolder = get()
             CredentialManagerGoogleSignIn(

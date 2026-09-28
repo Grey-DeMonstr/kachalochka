@@ -38,6 +38,7 @@ data class GroupConfirmUi(
 class GroupViewModel(
     private val groupId: GroupId,
     private val friends: FriendsRepository,
+    private val invites: InviteSharing,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
 ) : ViewModel() {
@@ -85,6 +86,16 @@ class GroupViewModel(
                     notice = "Нет связи с сервером"
                     publish()
                 }
+        }
+    }
+
+    fun invite() {
+        val shown = group ?: return
+        writes.launch {
+            val link = invites.pageAddress?.let { inviteLink(it, shown.inviteCode) }
+            val invite = Invite(shown.name, shown.inviteCode, link)
+            notice = reading { invites.share(invite) }.getOrNull()
+            publish()
         }
     }
 

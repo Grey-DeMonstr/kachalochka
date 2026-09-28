@@ -61,6 +61,16 @@ class GroupScreenTest {
     }
 
     @Test
+    fun inviting_shows_the_confirmation() {
+        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        runScreenTest(gym, screen = { GroupScreen(group.id, {}, {}, {}, {}) }) {
+            onNodeWithTag("invite").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("group-notice").assertTextEquals("Ссылка скопирована")
+        }
+    }
+
+    @Test
     fun offline_it_offers_a_retry() {
         val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
         gym.friends.offline = true

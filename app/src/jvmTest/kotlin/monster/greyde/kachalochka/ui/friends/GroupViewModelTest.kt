@@ -20,7 +20,7 @@ class GroupViewModelTest {
     private val gym = signedInGym()
 
     private fun viewModel(group: FriendGroup) =
-        GroupViewModel(group.id, gym.friends, gym.currentUser, gym.accounts)
+        GroupViewModel(group.id, gym.friends, gym.invites, gym.currentUser, gym.accounts)
 
     @BeforeTest
     fun setUp() {
@@ -139,5 +139,41 @@ class GroupViewModelTest {
         vm.refresh()
 
         assertEquals("Зал на Лесной", vm.state.value?.title)
+    }
+
+    @Test
+    fun inviting_hands_the_group_s_link_and_code_over_and_shows_what_came_back() {
+        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME, code = "ABCD2345")
+        val vm = viewModel(group)
+
+        vm.invite()
+
+        assertEquals(
+            listOf(
+                Invite(
+                    "Зал на Лесной",
+                    "ABCD2345",
+                    "https://example.test/kachalochka/?join=ABCD2345",
+                ),
+            ),
+            gym.invites.shared,
+        )
+        assertEquals("Ссылка скопирована", vm.state.value?.notice)
+    }
+
+    @Test
+    fun without_an_address_only_the_code_is_shared() {
+        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME, code = "ABCD2345")
+        gym.invites.pageAddress = null
+        gym.invites.notice = null
+
+        viewModel(group).invite()
+
+        assertEquals(
+            null,
+            gym.invites.shared
+                .single()
+                .link,
+        )
     }
 }

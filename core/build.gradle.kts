@@ -30,14 +30,17 @@ val generateSupabaseConfig =
         val url = localOrEnv("SUPABASE_URL")
         val anonKey = localOrEnv("SUPABASE_ANON_KEY")
         val googleWebClientId = localOrEnv("GOOGLE_WEB_CLIENT_ID")
+        val webAppUrl = localOrEnv("WEB_APP_URL")
         val escapedUrl = escapeKotlinString(url)
         val escapedAnonKey = escapeKotlinString(anonKey)
         val escapedGoogleWebClientId = escapeKotlinString(googleWebClientId)
+        val escapedWebAppUrl = escapeKotlinString(webAppUrl)
         val outputDir = layout.buildDirectory.dir("generated/supabase")
 
         inputs.property("url", url)
         inputs.property("anonKey", anonKey)
         inputs.property("googleWebClientId", googleWebClientId)
+        inputs.property("webAppUrl", webAppUrl)
         outputs.dir(outputDir)
 
         doLast {
@@ -55,6 +58,7 @@ val generateSupabaseConfig =
                     const val URL: String = "$escapedUrl"
                     const val ANON_KEY: String = "$escapedAnonKey"
                     const val GOOGLE_WEB_CLIENT_ID: String = "$escapedGoogleWebClientId"
+                    const val WEB_APP_URL: String = "$escapedWebAppUrl"
                 }
 
                 """.trimIndent(),
