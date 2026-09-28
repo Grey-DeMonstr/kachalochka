@@ -161,7 +161,7 @@ val appModule =
             )
         }
         viewModel { (member: UserId) ->
-            FriendCalendarViewModel(member, get(), get(), get(), get(), get(), get(), get())
+            FriendCalendarViewModel(member, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (group: GroupId) ->
             GroupViewModel(group, get(), get(), get(), get(), get(), get())

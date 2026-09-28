@@ -57,6 +57,7 @@ class FriendCalendarViewModel(
     private val clock: Clock,
     private val utcOffset: UtcOffset,
     private val machineLinks: MachineLinkRepository,
+    private val colors: FriendColorStore,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FriendCalendarUiState?>(null)
     val state: StateFlow<FriendCalendarUiState?> = mutableState
@@ -67,6 +68,7 @@ class FriendCalendarViewModel(
     private var all: List<Visit> = emptyList()
     private val visitDays: Set<CalendarDay> get() = all.mapNotNull { it.day }.toSet()
     private var names: Map<MachineId, String> = emptyMap()
+    private var color: Int? = null
     private var stale = true
     private var dayCard: FriendDayUi? = null
     private var month: CalendarMonth = CalendarMonth.of(today())
@@ -114,6 +116,7 @@ class FriendCalendarViewModel(
                 val me = currentUser.id()
                 val links = me?.let { visibleLinks(it, friends, machineLinks) }.orEmpty()
                 names = namesForViewer(theirs, machines.all(me), MachineClusters(links))
+                color = me?.let { colors.colorsFor(it, listOf(member))[member] }
                 stale = false
             }
             val day = selected
@@ -155,7 +158,17 @@ class FriendCalendarViewModel(
             FriendCalendarUiState(
                 monthTitle = monthTitle(month),
                 canShowNextMonth = monthRank(month) < monthRank(CalendarMonth.of(today)),
-                weeks = monthWeeks(month, marked, today, day),
+                // The friend's visits wear the colour chosen for them, as in the own calendar.
+                weeks =
+                    color?.let { chosen ->
+                        monthWeeks(
+                            month,
+                            emptySet(),
+                            today,
+                            day,
+                            marked.associateWith { listOf(chosen) },
+                        )
+                    } ?: monthWeeks(month, marked, today, day),
                 day = day,
                 dayTitle = "${weekdayName(day.dayOfWeek)}, ${dayMonthLabel(day, today.year)}",
                 visit = dayCard,

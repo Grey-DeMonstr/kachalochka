@@ -36,6 +36,7 @@ class FriendCalendarViewModelTest {
             gym.clock,
             gym.utcOffset,
             gym.machineLinks,
+            FriendColorStore(gym.profiles, gym.clock),
         )
 
     @BeforeTest
@@ -50,6 +51,17 @@ class FriendCalendarViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
+    fun the_friend_s_visits_are_marked_in_the_colour_chosen_for_them() =
+        runTest {
+            FriendColorStore(gym.profiles, gym.clock).set(ME.userId, OLEG.userId, 5)
+
+            val days = assertNotNull(viewModel().state.value).weeks.flatten().filterNotNull()
+
+            assertEquals(listOf(5), days.single { it.day == CalendarDay(2023, 11, 13) }.friendDots)
+            assertTrue(days.none { it.hasVisit })
+        }
+
+    @Test
     fun it_opens_on_today_with_the_friend_s_visit_days_marked() {
         val state = assertNotNull(viewModel().state.value)
 
@@ -57,7 +69,7 @@ class FriendCalendarViewModelTest {
             state.weeks
                 .flatten()
                 .filterNotNull()
-                .filter { it.hasVisit }
+                .filter { it.friendDots.isNotEmpty() }
                 .map { it.day }
         assertEquals(listOf(CalendarDay(2023, 11, 13)), marked)
         assertEquals(gym.today, state.day)
