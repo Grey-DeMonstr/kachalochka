@@ -60,11 +60,13 @@ fun MeasureScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenDay: (CalendarDay) -> Unit,
-    onDeleted: () -> Unit,
+    onGone: () -> Unit,
 ) {
     val viewModel: MeasureViewModel = koinViewModel { parametersOf(measureId) }
     val state by viewModel.state.collectAsState()
+    val gone by viewModel.gone.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
+    LaunchedEffect(gone) { if (gone) onGone() }
     val measure = state
     Screen(
         measure?.name.orEmpty(),
@@ -113,7 +115,7 @@ fun MeasureScreen(
             confirmLabel = "Удалить",
             confirmTag = "confirm-delete-measure",
             cancelTag = "cancel-delete-measure",
-            onConfirm = { viewModel.confirmDelete(onDeleted) },
+            onConfirm = viewModel::confirmDelete,
             onCancel = viewModel::cancelDelete,
         )
     }

@@ -18,6 +18,7 @@ import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.missingDefaults
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -51,11 +52,11 @@ class MeasureScreenTest {
 
     private fun runMeasure(
         onOpenDay: (CalendarDay) -> Unit = {},
-        onDeleted: () -> Unit = {},
+        onGone: () -> Unit = {},
         assertions: ComposeUiTest.() -> Unit,
     ) = runScreenTest(
         gym,
-        screen = { MeasureScreen(weight.id, {}, {}, onOpenDay, onDeleted) },
+        screen = { MeasureScreen(weight.id, {}, {}, onOpenDay, onGone) },
         assertions = assertions,
     )
 
@@ -121,9 +122,21 @@ class MeasureScreenTest {
     }
 
     @Test
+    fun the_screen_leaves_once_another_account_without_the_measure_is_active() {
+        var left = 0
+        runMeasure(onGone = { left++ }) {
+            onNodeWithTag("top-bar-title").assertTextEquals("Вес")
+
+            gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+            waitForIdle()
+        }
+        assertEquals(1, left)
+    }
+
+    @Test
     fun the_menu_deletes_the_measure_after_confirmation() {
         var deleted = 0
-        runMeasure(onDeleted = { deleted++ }) {
+        runMeasure(onGone = { deleted++ }) {
             onNodeWithTag("measure-menu").performClick()
             onNodeWithTag("delete-measure").performClick()
             waitForIdle()

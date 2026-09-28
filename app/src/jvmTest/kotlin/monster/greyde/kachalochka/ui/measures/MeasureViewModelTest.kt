@@ -6,7 +6,10 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
@@ -42,6 +45,13 @@ class MeasureViewModelTest {
             CalendarDay(2023, 11, 14) to 82.0,
         ).map { (day, value) -> record(weight, day, value) }
     private val waisted = record(waist, CalendarDay(2023, 11, 14), 90.0)
+    private val ivan =
+        AccountSession(
+            Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Иван"),
+            "access",
+            "refresh",
+            t0,
+        )
 
     init {
         runBlocking { seeded.forEach { gym.measures.upsert(it) } }
@@ -191,21 +201,31 @@ class MeasureViewModelTest {
     }
 
     @Test
+    fun the_measure_is_gone_for_an_account_that_does_not_have_it() {
+        val vm = viewModel()
+        assertFalse(vm.gone.value)
+
+        gym.withAccounts(ivan, active = ivan)
+
+        assertTrue(vm.gone.value)
+    }
+
+    @Test
     fun deleting_removes_the_measure_and_its_values_after_confirmation() {
         val vm = viewModel()
         gym.clock.current = t0 + 5.minutes
-        var deleted = 0
 
         vm.askDelete()
         assertTrue(vm.ui.deleting)
         vm.cancelDelete()
         assertFalse(vm.ui.deleting)
         assertEquals(weight, gym.measures.rows.getValue(weight.id))
+        assertFalse(vm.gone.value)
 
         vm.askDelete()
-        vm.confirmDelete { deleted++ }
+        vm.confirmDelete()
 
-        assertEquals(1, deleted)
+        assertTrue(vm.gone.value)
         assertEquals(
             weight.copy(deleted = true, updatedAt = t0 + 5.minutes),
             gym.measures.rows.getValue(weight.id),

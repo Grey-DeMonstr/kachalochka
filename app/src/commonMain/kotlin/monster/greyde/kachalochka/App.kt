@@ -114,7 +114,7 @@ fun App() {
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenDay = { navController.navigate(MeasurementFormRoute(it.iso)) },
-                        onDeleted = { navController.popBackStack() },
+                        onGone = { navController.popBackStack() },
                     )
                 }
                 composable<MeasurementFormRoute> { entry ->

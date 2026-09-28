@@ -50,8 +50,8 @@ The home screen shows today's card: how many machines and sets were recorded tod
 last set, or "Подходов пока нет", and a button opening today's visit. A visit is one calendar
 day; it has no start or end and comes into being with its first set. Below the card are rows for
 visits, machines, plans, statistics, friends and body measures; plans and statistics are shown
-but not yet available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
-screen.
+but not yet available. On Android with nobody signed in, "Войти через Google" sits at the bottom
+of the screen.
 
 The visit screen lists the day's sets grouped by machine, machines in the order of their first
 set, and ends with "Новый тренажёр", which opens the machine picker. Tapping a machine's row

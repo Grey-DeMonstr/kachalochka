@@ -59,6 +59,10 @@ class MeasureViewModel(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<MeasureUi?>(null)
     val state: StateFlow<MeasureUi?> = mutableState
+
+    /** Deleted here or elsewhere, or not the active account's: nothing is left to show. */
+    private val mutableGone = MutableStateFlow(false)
+    val gone: StateFlow<Boolean> = mutableGone
     private val writes = WriteGuard(viewModelScope)
 
     private var measure: Measure? = null
@@ -70,7 +74,7 @@ class MeasureViewModel(
     private var deleting = false
     private var loading: Job? = null
 
-    /** Another account cannot see this measure, so a switch empties the screen. */
+    /** Another account cannot see this measure, so a switch leaves the screen. */
     init {
         viewModelScope.launch { accounts.activeId.collect { load() } }
         viewModelScope.launch { sync.completed.collect { load() } }
@@ -83,6 +87,7 @@ class MeasureViewModel(
                 val owner = currentUser.id()
                 measure = measures.all(owner).firstOrNull { it.id == measureId }
                 values = measurements.all(owner).filter { it.measureId == measureId }
+                if (measure == null) mutableGone.value = true
                 publish()
             }
     }
@@ -140,14 +145,14 @@ class MeasureViewModel(
         publish()
     }
 
-    fun confirmDelete(onDeleted: () -> Unit) {
+    fun confirmDelete() {
         val shown = measure?.takeIf { deleting } ?: return
         writes.launch {
             val now = clock.now()
             measures.upsert(shown.copy(deleted = true, updatedAt = now))
             values.forEach { measurements.upsert(it.copy(deleted = true, updatedAt = now)) }
             deleting = false
-            onDeleted()
+            mutableGone.value = true
         }
     }
 
