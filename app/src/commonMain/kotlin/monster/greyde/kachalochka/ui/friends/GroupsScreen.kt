@@ -54,18 +54,26 @@ fun GroupsScreen(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
         ) {
-            if (groups.isNullOrEmpty()) {
-                Text(
-                    "Групп пока нет",
-                    modifier = Modifier.padding(16.dp).testTag("groups-empty"),
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                )
-            } else {
-                groups.forEach { row ->
-                    GroupRow(row, onOpen = { onOpenGroup(row.id) })
-                    Rule()
-                }
+            when {
+                groups == null ->
+                    Text(
+                        "Загрузка…",
+                        modifier = Modifier.padding(16.dp).testTag("groups-loading"),
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                    )
+                groups.isEmpty() ->
+                    Text(
+                        "Групп пока нет",
+                        modifier = Modifier.padding(16.dp).testTag("groups-empty"),
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                    )
+                else ->
+                    groups.forEach { row ->
+                        GroupRow(row, onOpen = { onOpenGroup(row.id) })
+                        Rule()
+                    }
             }
         }
         Column(

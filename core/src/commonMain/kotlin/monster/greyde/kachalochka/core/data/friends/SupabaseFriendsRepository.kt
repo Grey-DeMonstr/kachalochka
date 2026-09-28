@@ -52,15 +52,19 @@ class SupabaseFriendsRepository(
 ) : FriendsRepository {
     private val postgrest: Postgrest get() = client.value.postgrest
 
-    override suspend fun groups(): List<FriendGroup> {
-        val rows =
-            postgrest
-                .from(FRIEND_GROUP_TABLE)
-                .select { filter { eq("deleted", false) } }
-                .decodeList<FriendGroupRow>()
-        val counts = memberships().groupingBy { it.groupId }.eachCount()
-        return rows.map { it.toGroup(counts[it.id] ?: 0) }.sortedBy { it.name.lowercase() }
-    }
+    override suspend fun groups(): List<FriendGroup> =
+        coroutineScope {
+            val rows =
+                async {
+                    postgrest
+                        .from(FRIEND_GROUP_TABLE)
+                        .select { filter { eq("deleted", false) } }
+                        .decodeList<FriendGroupRow>()
+                }
+            val members = async { memberships() }
+            val counts = members.await().groupingBy { it.groupId }.eachCount()
+            rows.await().map { it.toGroup(counts[it.id] ?: 0) }.sortedBy { it.name.lowercase() }
+        }
 
     override suspend fun group(id: GroupId): FriendGroup? {
         val row =

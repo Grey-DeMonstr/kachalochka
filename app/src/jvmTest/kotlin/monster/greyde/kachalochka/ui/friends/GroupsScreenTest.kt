@@ -1,10 +1,13 @@
 package monster.greyde.kachalochka.ui.friends
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import kotlinx.coroutines.CompletableDeferred
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.runScreenTest
 import kotlin.test.Test
@@ -24,6 +27,21 @@ class GroupsScreenTest {
             waitForIdle()
         }
         assertEquals(listOf(group.id), opened)
+    }
+
+    @Test
+    fun groups_show_as_loading_until_the_read_completes() {
+        val gate = CompletableDeferred<Unit>()
+        gym.friends.gate = gate
+        val group = gym.friends.group("Зал на Лесной", owner = ME)
+        runScreenTest(gym, screen = { GroupsScreen({}, {}, {}) }) {
+            onNodeWithTag("groups-loading").assertExists()
+            onAllNodesWithTag("groups-empty").assertCountEquals(0)
+            gate.complete(Unit)
+            waitForIdle()
+            onNodeWithTag("group-row-${group.id.value}").assertExists()
+            onAllNodesWithTag("groups-loading").assertCountEquals(0)
+        }
     }
 
     @Test
