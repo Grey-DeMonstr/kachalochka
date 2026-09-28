@@ -19,6 +19,8 @@ import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.measures.Measurement
+import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
@@ -64,6 +66,36 @@ class AppTest {
             onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
             onNodeWithTag("measure-value-${weight.id.value}", useUnmergedTree = true)
                 .assertTextEquals("82,4 кг")
+        }
+
+    @Test
+    fun a_measure_opens_from_the_list_and_its_history_opens_the_day() =
+        runApp {
+            onNodeWithTag("section-measures").performClick()
+            waitForIdle()
+            val weight = runBlocking { gym.measures.all(null) }.first()
+            runBlocking {
+                gym.measurements.upsert(
+                    Measurement(
+                        MeasurementId.random(),
+                        null,
+                        weight.id,
+                        gym.today.plusDays(-7),
+                        82.4,
+                        gym.clock.current,
+                        false,
+                    ),
+                )
+            }
+            onNodeWithTag("measure-row-${weight.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Вес")
+
+            onNodeWithTag("history-${gym.today.plusDays(-7).iso}").performScrollTo().performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Замер")
+            onNodeWithTag("measure-field-${weight.id.value}").assertTextEquals("82,4")
         }
 
     @Test

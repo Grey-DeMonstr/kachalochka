@@ -49,8 +49,8 @@ account, the settings and signing out. With nobody signed in the avatar is an em
 The home screen shows today's card: how many machines and sets were recorded today and the
 last set, or "Подходов пока нет", and a button opening today's visit. A visit is one calendar
 day; it has no start or end and comes into being with its first set. Below the card are rows for
-visits, machines, plans, statistics and friends; plans and statistics are shown but not yet
-available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
+visits, machines, plans, statistics, friends and body measures; plans and statistics are shown
+but not yet available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
 screen.
 
 The visit screen lists the day's sets grouped by machine, machines in the order of their first
@@ -155,6 +155,34 @@ one. Friends stay locked until an account is signed in.
 Settings has a "Ник" field for the signed-in account, up to 40 characters; the Google account
 name is shown as a placeholder and used when the field is left blank. Friends see this nickname
 instead of the Google name, and it heads a visit shared as text.
+
+## Body measures
+
+Alongside the gym, the user tracks their body: weight, girths and body fat, typically once a week
+on a day of their choice. Measures are private: they sync between the account's devices like its
+visits, but friends never see them, whatever groups they share.
+
+Eight measures are ready from the start: Вес (кг), Талия, Грудь, Бёдра, Бицепс, Бедро, Шея (см)
+and Жир (%). The user can rename any of them, change its unit, delete it or add their own with a
+name and a free-text unit. A deleted ready-made measure does not come back.
+
+The "Замеры" row on the home screen lists the measures, each with its latest value and unit, the
+change since the value before it ("−0,4", omitted when there is only one) and how long ago it was
+taken ("вчера", "7 дней назад"). "Порядок" shows drag handles to reorder them. "Новый замер" opens
+the measurement form for today; "Добавить показатель" asks for a name and a unit.
+
+The measurement form ("Замер") is one day's values, one decimal field per measure with its unit,
+the previous value shown as a placeholder. The day at the top is today by default; tapping it
+opens a month calendar where days with values are marked and future days cannot be chosen.
+Choosing a day that has values loads them for editing. "Сохранить" writes the changed values,
+and an emptied field clears that value. "Удалить замер", on a day that has values, asks and then
+clears the whole day.
+
+Tapping a measure in the list opens it: its latest value and the change over the chosen period,
+a line chart of its values over 1 мес, 3 мес (the default), 6 мес, Год or Всё, then every value
+it ever had, newest first. A period with a single value shows that value instead of a line.
+Tapping a value opens that day's measurement form. The menu in the top bar edits the measure's
+name and unit, or deletes the measure with all its values after a confirmation.
 
 ## Custom exercsies
 

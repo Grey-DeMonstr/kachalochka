@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.measures
 
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -23,5 +24,19 @@ class MeasureFormatsTest {
     fun an_unchanged_value_has_no_change_to_show() {
         assertNull(measureDelta(82.4, 82.4))
         assertNull(measureDelta(0.1 + 0.2, 0.3))
+    }
+
+    @Test
+    fun a_chart_day_reads_as_the_day_and_the_short_month() {
+        assertEquals("14 ноя", chartDayLabel(CalendarDay(2023, 11, 14)))
+        assertEquals("1 мая", chartDayLabel(CalendarDay(2023, 5, 1)))
+    }
+
+    @Test
+    fun the_chart_labels_about_four_days_across_its_span() {
+        assertEquals(1, chartLabelSpacing(0))
+        assertEquals(1, chartLabelSpacing(3))
+        assertEquals(4, chartLabelSpacing(10))
+        assertEquals(122, chartLabelSpacing(365))
     }
 }

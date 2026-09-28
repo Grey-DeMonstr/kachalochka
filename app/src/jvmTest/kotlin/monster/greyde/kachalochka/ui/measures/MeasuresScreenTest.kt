@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
@@ -50,7 +51,7 @@ class MeasuresScreenTest {
     @Test
     fun a_row_reads_its_latest_value_change_and_age_and_the_button_starts_a_measurement() {
         var started = 0
-        runScreenTest(gym, screen = { MeasuresScreen({}, {}, onNewMeasurement = { started++ }) }) {
+        runScreenTest(gym, screen = { MeasuresScreen({}, {}, { started++ }, {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
             val id = weight.id.value
             onNodeWithTag("measure-value-$id", useUnmergedTree = true).assertTextEquals("82 кг")
@@ -67,8 +68,25 @@ class MeasuresScreenTest {
     }
 
     @Test
+    fun tapping_a_row_opens_its_measure_but_not_while_ordering() {
+        val opened = mutableListOf<MeasureId>()
+        runScreenTest(
+            gym,
+            screen = { MeasuresScreen({}, {}, {}, onOpenMeasure = { opened += it }) },
+        ) {
+            onNodeWithTag("measure-row-${waist.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("reorder-toggle").performClick()
+            waitForIdle()
+            onNodeWithTag("measure-row-${weight.id.value}").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(waist.id), opened)
+    }
+
+    @Test
     fun a_measure_added_in_the_dialog_is_listed_last() {
-        runScreenTest(gym, screen = { MeasuresScreen({}, {}, {}) }) {
+        runScreenTest(gym, screen = { MeasuresScreen({}, {}, {}, {}) }) {
             onNodeWithTag("add-measure").performClick()
             waitForIdle()
             onNodeWithTag("new-measure-name").performTextInput("Предплечье")
@@ -84,7 +102,7 @@ class MeasuresScreenTest {
 
     @Test
     fun ordering_drags_a_measure_by_its_handle() {
-        runScreenTest(gym, screen = { MeasuresScreen({}, {}, {}) }) {
+        runScreenTest(gym, screen = { MeasuresScreen({}, {}, {}, {}) }) {
             onNodeWithTag("drag-measure-${chest.id.value}").assertDoesNotExist()
             onNodeWithTag("reorder-toggle").assertTextEquals("Порядок").performClick()
             waitForIdle()

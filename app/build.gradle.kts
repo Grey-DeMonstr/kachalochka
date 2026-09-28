@@ -45,6 +45,7 @@ kotlin {
             implementation(libs.navigationevent.compose)
             implementation(libs.lifecycle.viewmodel.compose)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.vico.multiplatform)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

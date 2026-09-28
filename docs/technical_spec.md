@@ -223,13 +223,12 @@ failing a pull.
   `ON_START` observer, which also fires at launch), when the app goes to the background, after an
   account is added, after a visit is moved, replaced or removed on the calendar, and after any
   write to a visit or measurement of a day other than today, and after visit normalization wrote
-  something. It
-  is a WorkManager job — unique work `"sync"` — with a network constraint, so a pass already
-  queued waits for connectivity rather than failing outright. A pass reports whether every push
-  and pull succeeded, and one that did not is retried with exponential backoff. A new request
-  replaces (`REPLACE`) whatever is queued or running, so it never waits behind a pass sitting out
-  its backoff; cancelling a running pass is safe, because its outbox entries stay and every push
-  is an upsert.
+  something. It is a WorkManager job — unique work `"sync"` — with a network constraint, so a
+  pass already queued waits for connectivity rather than failing outright. A pass reports whether
+  every push and pull succeeded, and one that did not is retried with exponential backoff. A new
+  request replaces (`REPLACE`) whatever is queued or running, so it never waits behind a pass
+  sitting out its backoff; cancelling a running pass is safe, because its outbox entries stay and
+  every push is an upsert.
 - **Tokens.** The account live on the UI client lends its own access token to the pass while it
   has more than a minute left; nearer its expiry the pass has the UI client refresh its own
   session with `refreshCurrentSession`, because the rotated refresh token that client holds would
@@ -446,6 +445,13 @@ failed in the same pass.
 owner would each add a full set. The "Замер" form writes only the fields whose value changed: the
 day's newest row updated in place, or a new row; an emptied field soft-deletes that row, which
 `newestPerDay` then reads as a cleared day.
+
+The measure screen's periods (`MeasurePeriod`, `inPeriod`) count calendar months back from today,
+starting on today's day of the month or the shorter month's last day. Its Vico chart puts each
+value at its epoch day, so an irregular week keeps its true width, and fits the y range to the
+values instead of Vico's default from zero, which would flatten a body weight. Deleting a measure
+also soft-deletes the values `MeasurementRepository.all` returns for it; older rows of those days
+stay hidden behind them through `newestPerDay`.
 
 ---
 

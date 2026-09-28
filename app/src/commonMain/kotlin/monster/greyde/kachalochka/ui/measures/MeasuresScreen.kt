@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.DragHandle
 import monster.greyde.kachalochka.ui.components.OutlineButton
@@ -41,6 +42,7 @@ fun MeasuresScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onNewMeasurement: () -> Unit,
+    onOpenMeasure: (MeasureId) -> Unit,
 ) {
     val viewModel: MeasuresViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -68,7 +70,13 @@ fun MeasuresScreen(
             val order = rememberReorderState()
             SideEffect { order.retain(state.rows.size) }
             state.rows.forEachIndexed { index, row ->
-                MeasureRow(row, index, order, state.ordering) { from, to ->
+                MeasureRow(
+                    row,
+                    index,
+                    order,
+                    state.ordering,
+                    { onOpenMeasure(row.id) },
+                ) { from, to ->
                     viewModel.move(state.rows[from].id, to)
                 }
             }
@@ -108,6 +116,7 @@ private fun MeasureRow(
     index: Int,
     order: ReorderState,
     ordering: Boolean,
+    onOpen: () -> Unit,
     onDrop: (from: Int, to: Int) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -117,6 +126,8 @@ private fun MeasureRow(
         Row(
             Modifier
                 .fillMaxWidth()
+                // A clickable row would merge the drag handle's semantics into its own.
+                .then(if (ordering) Modifier else Modifier.clickable(onClick = onOpen))
                 .padding(vertical = if (ordering) 4.dp else 12.dp)
                 .padding(end = if (ordering) 12.dp else 0.dp)
                 .testTag("measure-row-$id"),

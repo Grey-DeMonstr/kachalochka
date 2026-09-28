@@ -142,7 +142,7 @@ class MeasurementFormViewModel(
             val owner = currentUser.id()
             val now = clock.now()
             shown.forEach { measure ->
-                val existing = onDay[measure.id]?.takeIf { it.userId == owner }
+                val existing = onDay[measure.id]
                 val value = typedValue(measure.id)
                 if (value == existing?.value) return@forEach
                 val row =
@@ -219,18 +219,11 @@ class MeasurementFormViewModel(
                     kind = measure.kind,
                 )
             }
-        val label = dayMonthLabel(day, today.year)
+        val dayName = if (day == today) "Сегодня" else weekdayName(day.dayOfWeek)
         mutableState.value =
             MeasurementFormUi(
                 day = day,
-                dayTitle =
-                    if (day ==
-                        today
-                    ) {
-                        "Сегодня, $label"
-                    } else {
-                        "${weekdayName(day.dayOfWeek)}, $label"
-                    },
+                dayTitle = "$dayName, ${dayMonthLabel(day, today.year)}",
                 fields = fields,
                 canSave = fields.all { it.valid } && shown.any { changed(it.id) },
                 canDelete = onDay.isNotEmpty(),
