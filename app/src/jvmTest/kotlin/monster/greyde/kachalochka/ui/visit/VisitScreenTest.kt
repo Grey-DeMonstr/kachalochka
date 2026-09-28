@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
@@ -21,6 +22,7 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -31,6 +33,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.ui.friends.olegTrainedOn
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -365,6 +368,20 @@ class VisitScreenTest {
             gym.sets.rows.values
                 .associate { it.machineId to it.position },
         )
+    }
+
+    @Test
+    fun friends_results_show_under_the_previous_visit() {
+        val ivanId = checkNotNull(shared.accounts.activeId.value)
+        shared.olegTrainedOn(sharedPress, Friend(ivanId, "Иван"))
+        runScreenTest(
+            shared,
+            screen = { visitScreen(day = shared.today, picked = sharedPress.id) },
+        ) {
+            waitForIdle()
+            onNodeWithTag("sheet-friends").assertIsDisplayed()
+            onNodeWithText("Олег · вчера · 80×8, 85×6").assertIsDisplayed()
+        }
     }
 
     private fun session(

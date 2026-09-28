@@ -49,7 +49,19 @@ val appModule =
         viewModelOf(::CalendarViewModel)
         viewModelOf(::MachineListViewModel)
         viewModel { (day: CalendarDay) ->
-            VisitViewModel(day, get(), get(), get(), get(), get(), get(), get(), get(), get())
+            VisitViewModel(
+                day,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
         }
         viewModel { (day: CalendarDay) ->
             MachinePickerViewModel(

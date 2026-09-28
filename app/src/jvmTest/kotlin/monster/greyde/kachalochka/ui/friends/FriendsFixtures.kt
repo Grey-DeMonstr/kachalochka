@@ -16,6 +16,35 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
+/** Олег, in a group with [viewer], trained yesterday on his copy of [machine]: 80×8, 85×6. */
+internal fun FakeGym.olegTrainedOn(
+    machine: Machine,
+    viewer: Friend,
+) {
+    val t0 = clock.current
+    friends.group("Зал на Лесной", owner = OLEG, viewer)
+    val olegPress = linkedCopy(machine, OLEG.userId, t0)
+    val olegVisit =
+        Visit(VisitId.random(), OLEG.userId, today.plusDays(-1), t0 - 1.days, t0, false)
+    friends.machines += olegPress
+    friends.visits += olegVisit
+    friends.sets +=
+        listOf(80.0 to 8, 85.0 to 6).mapIndexed { i, (weight, reps) ->
+            WorkoutSet(
+                WorkoutSetId.random(),
+                OLEG.userId,
+                olegVisit.id,
+                olegPress.id,
+                weight,
+                reps,
+                i + 1,
+                t0 - 1.days + i.minutes,
+                t0,
+                false,
+            )
+        }
+}
+
 internal val IVAN_SESSION =
     AccountSession(
         Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Иван"),

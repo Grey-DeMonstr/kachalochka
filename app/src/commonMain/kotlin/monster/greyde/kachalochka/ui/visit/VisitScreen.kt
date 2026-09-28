@@ -579,6 +579,14 @@ private fun SetSheet(
                 )
                 RestTimerChip(Modifier.testTag("sheet-rest-timer"), pill = true)
             }
+            if (sheet.friends.isNotEmpty()) {
+                Column(Modifier.fillMaxWidth().testTag("sheet-friends")) {
+                    Text("Друзья:", fontSize = 13.sp, color = colors.secondary)
+                    sheet.friends.forEach {
+                        Text(it, fontSize = 13.sp, color = colors.onBackground.copy(alpha = 0.6f))
+                    }
+                }
+            }
         }
         Stepper(
             sheet.weight,

@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -20,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.olegTrainedOn
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -60,6 +62,7 @@ class VisitViewModelTest {
         Machine
             .new("Жим ногами", ivan.account.userId, t0)
             .copy(weightStep = 5.0, setupNote = "Сиденье на 4")
+    private val ivanFriend = Friend(ivan.account.userId, "Иван")
 
     private fun session(
         id: String,
@@ -109,6 +112,7 @@ class VisitViewModelTest {
         gym.clock,
         gym.utcOffset,
         gym.sync,
+        gym.friends,
     )
 
     @BeforeTest
@@ -1023,4 +1027,67 @@ class VisitViewModelTest {
                 .toList(),
         )
     }
+
+    @Test
+    fun friends_latest_results_on_a_linked_machine_show_in_the_sheet() {
+        val two = twoAccountGym()
+        two.olegTrainedOn(ivanPress, ivanFriend)
+
+        val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+        assertEquals(
+            listOf("Олег · вчера · 80×8, 85×6"),
+            vm.state.value
+                ?.sheet
+                ?.friends,
+        )
+    }
+
+    @Test
+    fun offline_the_sheet_shows_no_friends() {
+        val two = twoAccountGym()
+        two.olegTrainedOn(ivanPress, ivanFriend)
+        two.friends.offline = true
+
+        val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+        assertEquals(
+            emptyList(),
+            vm.state.value
+                ?.sheet
+                ?.friends,
+        )
+    }
+
+    @Test
+    fun an_anonymous_sheet_asks_no_friends() {
+        val vm = viewModel().also { it.selectMachine(press.id) }
+
+        assertEquals(
+            emptyList(),
+            vm.state.value
+                ?.sheet
+                ?.friends,
+        )
+        assertEquals(0, gym.friends.reads)
+    }
+
+    @Test
+    fun an_edit_shows_no_friends() =
+        runTest {
+            val two = twoAccountGym()
+            two.olegTrainedOn(ivanPress, ivanFriend)
+            val recorded = set(ivanVisit.id, ivanPress, 70.0, 10, 0, ivan.account.userId)
+            two.sets.upsert(recorded)
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+            vm.editSet(recorded.id)
+
+            assertEquals(
+                emptyList(),
+                vm.state.value
+                    ?.sheet
+                    ?.friends,
+            )
+        }
 }

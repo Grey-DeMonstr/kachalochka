@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.friends.FriendResult
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.DEFAULT_REPS
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -52,6 +54,7 @@ import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.shortSet
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
+import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -98,6 +101,7 @@ data class SheetUi(
     val saveLabel: String,
     val expanded: Boolean,
     val canSave: Boolean,
+    val friends: List<String>,
 )
 
 class VisitViewModel(
@@ -111,6 +115,7 @@ class VisitViewModel(
     private val clock: Clock,
     private val utcOffset: UtcOffset,
     private val sync: SyncTrigger,
+    private val friends: FriendsRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
@@ -127,6 +132,8 @@ class VisitViewModel(
     private var values = SetValues(0.0, DEFAULT_REPS)
     private var sheetExpanded = true
     private var ordering = false
+    private var friendLines: List<String> = emptyList()
+    private var friendsFor: Pair<UserId, MachineId>? = null
 
     /** The text as typed; null while the weight shows the stepped, formatted value. */
     private var weightText: String? = null
@@ -373,7 +380,32 @@ class VisitViewModel(
                 )
             weightText = null
         }
+        // Only an own machine has a key worth asking about; a switch drops the old answer.
+        val asked =
+            owner?.let { me -> machine?.takeIf { it.userId == me }?.let { me to it.linkKey } }
+        if (asked != friendsFor) {
+            friendsFor = asked
+            friendLines = emptyList()
+            asked?.let(::loadFriends)
+        }
         publish()
+    }
+
+    private fun loadFriends(asked: Pair<UserId, MachineId>) {
+        viewModelScope.launch {
+            val results =
+                reading { friends.latestOn(asked.first, asked.second) }.getOrDefault(emptyList())
+            if (friendsFor != asked) return@launch
+            friendLines = results.map(::friendLine)
+            publish()
+        }
+    }
+
+    private fun friendLine(result: FriendResult): String {
+        val now = clock.now()
+        val days = calendarDaysBetween(result.sets.last().recordedAt, now, utcOffset.at(now))
+        val sets = result.sets.joinToString(", ") { shortSet(it.weight, it.reps) }
+        return "${result.friend.displayName} · ${daysAgoLabel(days)} · $sets"
     }
 
     private fun publish() {
@@ -473,6 +505,7 @@ class VisitViewModel(
                 ),
             expanded = sheetExpanded,
             canSave = weightValid,
+            friends = if (edited == null) friendLines else emptyList(),
         )
     }
 }
