@@ -233,3 +233,9 @@ machine and friends' machines, whichever side made it.
 
 Unlinking and, when signed in, merging duplicates change friends' links on the server, so they
 need the network: without it the app says "Нет связи с сервером" and changes nothing.
+
+## Privacy and terms
+
+The Privacy Policy and the Terms of Service are separate pages published beside the web app
+and linked from its entry page, readable without signing in. Account deletion is requested
+through the repository's issues.
