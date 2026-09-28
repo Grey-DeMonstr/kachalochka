@@ -442,8 +442,8 @@ on both platforms.
 On every load "Замеры" applies `measureUpkeep` to the owner's predefined rows, live or deleted
 (`MeasureRepository.predefined`). `missingDefaults` seeds the seven predefined measures for every
 kind the owner has no row of, so a deleted one stays deleted, unless `isLocked(kind, sex)`: a kind
-a body-fat method reads for the profile's sex is revived, dated now. A live `BodyFat` row without
-values is deleted; the kind is no longer seeded. A predefined row shows `Measure.displayName` and
+a body-fat method reads for the profile's sex is revived, dated now. A live `BodyFat` row is
+deleted with the values `MeasurementRepository.all` returns for it; the kind is never seeded. A predefined row shows `Measure.displayName` and
 `displayUnit`, the app's own for its kind, whatever the row stores, so a renamed default and an
 older name both read as today's. A signed-in
 owner's seeds take `derivedId(owner, kind)` — FNV-1a 64 of `"<owner>:<kind>"` under two offset

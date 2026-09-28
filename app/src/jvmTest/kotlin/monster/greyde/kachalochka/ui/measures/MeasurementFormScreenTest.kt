@@ -90,7 +90,7 @@ class MeasurementFormScreenTest {
         runScreenTest(gym, screen = { MeasurementFormScreen(null, {}, {}, {}, {}) }) {
             onNodeWithTag("measure-how-to-${neck.id.value}")
                 .performScrollTo()
-                .assertTextEquals(howToMeasure(MeasureKind.Neck))
+                .assertTextEquals(howToMeasure(MeasureKind.Neck)!!)
         }
     }
 

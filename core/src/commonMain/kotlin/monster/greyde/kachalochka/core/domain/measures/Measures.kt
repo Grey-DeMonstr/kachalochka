@@ -64,9 +64,9 @@ data class Measure(
     val updatedAt: Instant,
     val deleted: Boolean,
 ) {
-    val displayName: String get() = kind?.let { predefinedOf(it).name } ?: name
+    val displayName: String get() = kind?.let(::predefinedOf)?.name ?: name
 
-    val displayUnit: String get() = kind?.let { predefinedOf(it).unit } ?: unit
+    val displayUnit: String get() = kind?.let(::predefinedOf)?.unit ?: unit
 }
 
 data class Measurement(
@@ -129,11 +129,8 @@ private val defaultMeasures =
         Predefined(MeasureKind.Neck, "Шея", "см"),
     )
 
-// Calculated now, so only accounts that typed values into it keep one.
-private val typedBodyFat = Predefined(MeasureKind.BodyFat, "Жир по весам или калиперу", "%")
-
-private fun predefinedOf(kind: MeasureKind): Predefined =
-    defaultMeasures.firstOrNull { it.kind == kind } ?: typedBodyFat
+private fun predefinedOf(kind: MeasureKind): Predefined? =
+    defaultMeasures.firstOrNull { it.kind == kind }
 
 /** The `updatedAt` of every seeded predefined measure, older than any real edit. */
 val MEASURE_SEEDED_AT: Instant = Instant.fromEpochSeconds(0)
@@ -141,12 +138,11 @@ val MEASURE_SEEDED_AT: Instant = Instant.fromEpochSeconds(0)
 /**
  * The writes that keep [owner]'s [predefined] measures, deleted ones included, as the formulas
  * need them for [sex]: kinds never had are seeded, a deleted kind a formula reads comes back, and
- * a fat measure outside [measured] goes.
+ * a typed body fat measure goes, since body fat is calculated.
  */
 fun measureUpkeep(
     owner: UserId?,
     predefined: List<Measure>,
-    measured: Set<MeasureId>,
     sex: Sex?,
     now: Instant,
 ): List<Measure> {
@@ -157,11 +153,11 @@ fun measureUpkeep(
             .groupBy { it.kind }
             .values
             .map { rows -> rows.maxBy { it.updatedAt }.copy(deleted = false, updatedAt = now) }
-    val unusedFat =
+    val typedFat =
         predefined
-            .filter { !it.deleted && it.kind == MeasureKind.BodyFat && it.id !in measured }
+            .filter { !it.deleted && it.kind == MeasureKind.BodyFat }
             .map { it.copy(deleted = true, updatedAt = now) }
-    return missingDefaults(owner, predefined.mapNotNull { it.kind }.toSet()) + revived + unusedFat
+    return missingDefaults(owner, predefined.mapNotNull { it.kind }.toSet()) + revived + typedFat
 }
 
 /** The predefined measures [owner] lacks, dated at the epoch so a real edit always wins. */

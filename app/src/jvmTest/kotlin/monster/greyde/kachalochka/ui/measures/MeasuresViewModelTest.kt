@@ -197,28 +197,26 @@ class MeasuresViewModelTest {
         }
 
     @Test
-    fun a_typed_fat_measure_without_values_goes_and_one_with_values_stays() =
+    fun the_fat_measure_goes_with_its_values() =
         runTest {
             val fat =
                 Measure(MeasureId.random(), null, "Жир", "%", MeasureKind.BodyFat, 7, t0, false)
             gym.measures.upsert(fat)
-
-            viewModel().load()
-
-            assertTrue(
-                gym.measures.rows
-                    .getValue(fat.id)
-                    .deleted,
-            )
-
-            gym.measures.upsert(fat)
             record(fat, gym.today, 18.0)
+            gym.clock.current = t0 + 5.minutes
+
             val vm = viewModel().also { it.load() }
 
-            val last =
+            assertEquals(
+                defaults,
                 vm.state.value.rows
-                    .last()
-            assertEquals("Жир по весам или калиперу" to "18 %", last.name to last.value)
+                    .map { it.name },
+            )
+            assertEquals(
+                fat.copy(deleted = true, updatedAt = t0 + 5.minutes),
+                gym.measures.rows.getValue(fat.id),
+            )
+            assertTrue(gym.measurements.all(null).none { it.measureId == fat.id })
         }
 
     @Test

@@ -109,9 +109,15 @@ class MeasuresViewModel(
 
     private suspend fun upkeep(owner: UserId?) =
         seeding.withLock {
-            val measured = measurements.all(owner).map { it.measureId }.toSet()
-            measureUpkeep(owner, measures.predefined(owner), measured, profile?.sex, clock.now())
-                .forEach { measures.upsert(it) }
+            val now = clock.now()
+            val writes = measureUpkeep(owner, measures.predefined(owner), profile?.sex, now)
+            writes.forEach { measures.upsert(it) }
+            // A deleted measure's values go with it, as when the user deletes one.
+            val gone = writes.filter { it.deleted }.map { it.id }.toSet()
+            measurements
+                .all(owner)
+                .filter { it.measureId in gone }
+                .forEach { measurements.upsert(it.copy(deleted = true, updatedAt = now)) }
         }
 
     fun toggleOrdering() {

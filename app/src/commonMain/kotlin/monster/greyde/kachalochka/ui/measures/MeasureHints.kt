@@ -3,7 +3,7 @@ package monster.greyde.kachalochka.ui.measures
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 
 /** How to take a predefined measure so that values from different days compare. */
-internal fun howToMeasure(kind: MeasureKind): String =
+internal fun howToMeasure(kind: MeasureKind): String? =
     when (kind) {
         MeasureKind.Weight -> "Утром натощак, после туалета, без одежды."
         MeasureKind.Waist ->
@@ -20,5 +20,5 @@ internal fun howToMeasure(kind: MeasureKind): String =
             "Стоя, вес на обеих ногах, лента горизонтально сразу под ягодичной складкой."
         MeasureKind.Neck ->
             "Сразу под кадыком, лента чуть наклонена вперёд и вниз, шея расслаблена."
-        MeasureKind.BodyFat -> "Значение с умных весов или калипера."
+        MeasureKind.BodyFat -> null
     }

@@ -83,17 +83,13 @@ class MeasuresTest {
 
         assertEquals("Обхват бёдер" to "см", hips.displayName to hips.displayUnit)
         assertEquals("Предплечье" to "см", own.displayName to own.displayUnit)
-        assertEquals(
-            "Жир по весам или калиперу" to "%",
-            predefined(MeasureKind.BodyFat).let { it.displayName to it.displayUnit },
-        )
     }
 
     @Test
     fun upkeep_seeds_the_kinds_the_owner_never_had() {
         val stored = missingDefaults(ivan, emptySet()).filter { it.kind != MeasureKind.Neck }
 
-        val writes = measureUpkeep(ivan, stored, emptySet(), Sex.Male, now)
+        val writes = measureUpkeep(ivan, stored, Sex.Male, now)
 
         assertEquals(listOf(MeasureKind.Neck), writes.map { it.kind })
         assertEquals(epoch, writes.single().updatedAt)
@@ -107,7 +103,7 @@ class MeasuresTest {
             everyPredefined() - predefined(MeasureKind.Neck) -
                 predefined(MeasureKind.Chest) + neck + chest
 
-        val writes = measureUpkeep(ivan, stored, emptySet(), Sex.Male, now)
+        val writes = measureUpkeep(ivan, stored, Sex.Male, now)
 
         assertEquals(listOf(neck.copy(deleted = false, updatedAt = now)), writes)
     }
@@ -117,27 +113,30 @@ class MeasuresTest {
         val hips = predefined(MeasureKind.Hips).copy(deleted = true)
         val stored = everyPredefined() - predefined(MeasureKind.Hips) + hips
 
-        assertEquals(emptyList(), measureUpkeep(ivan, stored, emptySet(), Sex.Male, now))
+        assertEquals(emptyList(), measureUpkeep(ivan, stored, Sex.Male, now))
         assertEquals(
             listOf(MeasureKind.Hips),
-            measureUpkeep(ivan, stored, emptySet(), Sex.Female, now).map { it.kind },
+            measureUpkeep(ivan, stored, Sex.Female, now).map { it.kind },
         )
         assertEquals(
             listOf(MeasureKind.Hips),
-            measureUpkeep(ivan, stored, emptySet(), null, now).map { it.kind },
+            measureUpkeep(ivan, stored, null, now).map { it.kind },
         )
     }
 
     @Test
-    fun upkeep_deletes_a_fat_measure_without_values_and_keeps_one_with_values() {
+    fun upkeep_deletes_the_fat_measure() {
         val fat = predefined(MeasureKind.BodyFat)
         val stored = everyPredefined() + fat
 
         assertEquals(
             listOf(fat.copy(deleted = true, updatedAt = now)),
-            measureUpkeep(ivan, stored, emptySet(), Sex.Male, now),
+            measureUpkeep(ivan, stored, Sex.Male, now),
         )
-        assertEquals(emptyList(), measureUpkeep(ivan, stored, setOf(fat.id), Sex.Male, now))
+        assertEquals(
+            emptyList(),
+            measureUpkeep(ivan, everyPredefined() + fat.copy(deleted = true), Sex.Male, now),
+        )
     }
 
     @Test

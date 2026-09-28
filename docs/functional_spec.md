@@ -191,8 +191,8 @@ their own measures with a name and a free-text unit, and can rename them, change
 delete them. A ready-made measure a body fat formula reads is marked with that formula's tag and
 cannot be deleted; if it was deleted before, it comes back without its old values. Other
 ready-made measures can be deleted and do not come back. Hips count as read only while the sex in
-the profile is not "Мужской". An account that recorded values into the former "Жир" measure keeps
-it as "Жир по весам или калиперу" (%), which can be deleted; without values it is removed.
+the profile is not "Мужской". Body fat is only ever calculated: an account's former typed body fat
+measure is removed with all its values.
 
 The "Замеры" row on the home screen lists the measures, each with its latest value and unit, the
 change since the value before it ("−0,4", omitted when there is only one) and how long ago it was
