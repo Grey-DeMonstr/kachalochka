@@ -36,8 +36,8 @@ deletion, a governing-law clause.
   app's stored choice from.
 - **The entry page gets a plain-HTML footer with both links and a one-line description of the
   app.** The app draws on a canvas, so a crawler checking the OAuth homepage sees nothing else.
-  The footer sits at the bottom edge, small, above the canvas; the app's bottom controls stay
-  reachable.
+  Compose mounts into its own `<div id="app">`, which takes the height the footer leaves, so the
+  footer never covers the app's controls.
 - **The provider is Sergei Ivanov, an individual developer.** Google's consent screen names the
   developer anyway.
 - **Contact and deletion requests go through the repository's GitHub issues, handled within 30
@@ -76,7 +76,8 @@ effective date. Sections:
    name, visits and machines, read-only. Leaving a group stops it. No public profile.
 5. **Service providers.** Supabase (database and authentication), Google (sign-in), GitHub
    (hosting of the web app and the APK). Each processes data under its own privacy policy,
-   linked.
+   linked. Use of information received from Google APIs adheres to the Google API Services User
+   Data Policy, including its Limited Use requirements.
 6. **Retention and deletion.**
    - Data is kept while the account exists.
    - Deleting a visit or set in the app hides it; the row stays on the server until the account
@@ -133,17 +134,19 @@ Policy. Sections:
 
 ## 5. Entry page
 
-`index.html` gains a `<meta name="description">` and a footer:
+`index.html` gains a `<meta name="description">`, a `<div id="app">` and a footer after it:
 
 ```html
+<div id="app"></div>
 <footer class="legal">
     Kachalochka — a gym workout log.
     <a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a>
 </footer>
 ```
 
-Styled small, fixed to the bottom edge, with a translucent background so the canvas under it
-stays visible. Links are relative, so they resolve under the Pages path.
+The body is a flex column: `#app` takes the remaining height and the footer is one slim line of
+small text under it. `Main.kt` mounts `ComposeViewport` into `#app` instead of the body. Links
+are relative, so they resolve under the Pages path.
 
 ---
 
