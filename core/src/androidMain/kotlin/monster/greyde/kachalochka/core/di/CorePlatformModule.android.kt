@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.Preferences
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
+import monster.greyde.kachalochka.core.data.gym.DirectoryPhotoFiles
+import monster.greyde.kachalochka.core.data.gym.PhotoFiles
 import monster.greyde.kachalochka.core.data.identity.AccountStorage
 import monster.greyde.kachalochka.core.data.identity.DataStoreAccountStorage
 import okio.Path.Companion.toPath
@@ -33,4 +35,5 @@ actual fun corePlatformModule(): Module =
             )
         }
         single<AccountStorage> { DataStoreAccountStorage(get(named("accounts"))) }
+        single<PhotoFiles> { DirectoryPhotoFiles(androidContext().filesDir.resolve("photos")) }
     }

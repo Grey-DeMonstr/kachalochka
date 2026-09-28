@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.data.sync
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.gym.machineLinkOf
 import monster.greyde.kachalochka.core.data.gym.machineOf
+import monster.greyde.kachalochka.core.data.gym.photoOf
 import monster.greyde.kachalochka.core.data.gym.visitOf
 import monster.greyde.kachalochka.core.data.gym.wireName
 import monster.greyde.kachalochka.core.data.gym.workoutSetOf
@@ -14,6 +15,7 @@ import monster.greyde.kachalochka.core.data.profile.profileOf
 import monster.greyde.kachalochka.core.data.profile.write
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.measures.Measure
@@ -43,6 +45,8 @@ class LocalSyncRows(
 
     fun measurement(id: String): Measurement? =
         database.measurementQueries.byId(id, ::measurementOf).executeAsOneOrNull()
+
+    fun photo(id: String): Photo? = database.photoQueries.byId(id, ::photoOf).executeAsOneOrNull()
 
     fun writeMachine(machine: Machine) =
         database.machineQueries.upsert(
@@ -91,6 +95,8 @@ class LocalSyncRows(
     fun writeMeasure(measure: Measure) = database.measureQueries.write(measure)
 
     fun writeMeasurement(measurement: Measurement) = database.measurementQueries.write(measurement)
+
+    fun writePhoto(photo: Photo) = database.photoQueries.write(photo)
 
     fun transaction(body: () -> Unit) = database.transaction { body() }
 }

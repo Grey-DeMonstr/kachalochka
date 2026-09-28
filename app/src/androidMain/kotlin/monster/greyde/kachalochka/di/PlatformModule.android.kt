@@ -25,6 +25,8 @@ import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.ShareSheetInviteSharing
+import monster.greyde.kachalochka.ui.photos.PhotoCapture
+import monster.greyde.kachalochka.ui.photos.SystemPhotoCapture
 import monster.greyde.kachalochka.ui.share.ShareSheetTextSharing
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.theme.DataStoreThemePreference
@@ -71,6 +73,7 @@ actual fun platformModule(): Module =
             ShareSheetInviteSharing(get(), webAppUrlFromBuild().ifBlank { null })
         }
         single<JoinCodeStore> { InMemoryJoinCodeStore() }
+        single<PhotoCapture> { SystemPhotoCapture(androidContext()) }
         single<GoogleSignIn> {
             val activities: ActivityHolder = get()
             CredentialManagerGoogleSignIn(

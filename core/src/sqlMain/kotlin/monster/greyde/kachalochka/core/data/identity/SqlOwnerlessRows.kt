@@ -5,6 +5,7 @@ import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -33,6 +34,7 @@ class SqlOwnerlessRows(
                 val linkIds = database.machineLinkQueries.ownerlessIds().executeAsList()
                 val measureIds = database.measureQueries.ownerlessIds().executeAsList()
                 val measurementIds = database.measurementQueries.ownerlessIds().executeAsList()
+                val photoIds = database.photoQueries.ownerlessIds().executeAsList()
 
                 database.visitQueries.claimOwnerless(owner.value, now)
                 database.machineQueries.claimOwnerless(owner.value, now)
@@ -41,6 +43,7 @@ class SqlOwnerlessRows(
                 database.machineLinkQueries.claimOwnerless(owner.value, now)
                 database.measureQueries.claimOwnerless(owner.value, now)
                 database.measurementQueries.claimOwnerless(owner.value, now)
+                database.photoQueries.claimOwnerless(owner.value, now)
 
                 enqueue(VISIT_TABLE, visitIds, now)
                 enqueue(MACHINE_TABLE, machineIds, now)
@@ -49,6 +52,7 @@ class SqlOwnerlessRows(
                 enqueue(MACHINE_LINK_TABLE, linkIds, now)
                 enqueue(MEASURE_TABLE, measureIds, now)
                 enqueue(MEASUREMENT_TABLE, measurementIds, now)
+                enqueue(PHOTO_TABLE, photoIds, now)
             }
         }
 

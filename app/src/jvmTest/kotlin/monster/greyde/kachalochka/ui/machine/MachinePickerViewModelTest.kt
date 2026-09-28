@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -94,6 +95,7 @@ class MachinePickerViewModelTest {
             gym.friends,
             gym.machineLinks,
             gym.profiles,
+            gym.photos,
         )
 
     private fun pickerOn(on: FakeGym) =
@@ -110,7 +112,30 @@ class MachinePickerViewModelTest {
             on.friends,
             on.machineLinks,
             on.profiles,
+            on.photos,
         )
+
+    @Test
+    fun a_machine_without_its_own_photo_shows_a_linked_friend_s_one() =
+        runTest {
+            val on = signedInGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val olegs = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
+            val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current)
+            val olegsPhoto = Photo.new(olegs.id, OLEG.userId, on.clock.current)
+            on.friends.machines += olegs
+            on.friends.photos += olegsPhoto
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+
+            val vm = pickerOn(on).also { it.load() }
+
+            assertEquals(
+                listOf(olegsPhoto),
+                vm.state.value.rows
+                    .map { it.photo },
+            )
+        }
 
     private fun olegsGym(): Pair<FakeGym, Machine> {
         val on = signedInGym()
@@ -318,6 +343,7 @@ class MachinePickerViewModelTest {
                     shared.friends,
                     shared.machineLinks,
                     shared.profiles,
+                    shared.photos,
                 ).also { it.load() }
             assertEquals(
                 listOf("Жим ногами" to "3 подхода сегодня"),

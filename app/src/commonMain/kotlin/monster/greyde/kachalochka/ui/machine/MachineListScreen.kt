@@ -52,7 +52,12 @@ fun MachineListScreen(
                     )
                 else ->
                     rows.forEach { row ->
-                        MachineRow(row.name, row.detail, "machine-list-row-${row.id.value}") {
+                        MachineRow(
+                            row.name,
+                            row.detail,
+                            "machine-list-row-${row.id.value}",
+                            row.photo,
+                        ) {
                             onOpenMachine(row.id)
                         }
                     }
@@ -66,7 +71,12 @@ fun MachineListScreen(
                             .testTag("machine-list-friends"),
                 )
                 state.friends.forEach { row ->
-                    MachineRow(row.name, row.detail, "machine-list-friend-${row.id.value}") {
+                    MachineRow(
+                        row.name,
+                        row.detail,
+                        "machine-list-friend-${row.id.value}",
+                        row.photo,
+                    ) {
                         row.friend?.let { onOpenFriendMachine(row.id, it) }
                     }
                 }

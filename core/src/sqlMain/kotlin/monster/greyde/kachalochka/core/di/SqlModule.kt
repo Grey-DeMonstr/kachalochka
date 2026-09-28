@@ -5,8 +5,11 @@ import monster.greyde.kachalochka.core.data.db.kachalochkaDatabase
 import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
+import monster.greyde.kachalochka.core.data.gym.LocalPhotoRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
+import monster.greyde.kachalochka.core.data.gym.PhotoImages
+import monster.greyde.kachalochka.core.data.gym.StoragePhotoImages
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.AccountTokens
 import monster.greyde.kachalochka.core.data.identity.LiveSession
@@ -30,6 +33,7 @@ import monster.greyde.kachalochka.core.data.sync.SyncWatermarks
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
@@ -50,6 +54,7 @@ internal fun sqlModule(): Module =
         single<WorkoutSetRepository> { LocalWorkoutSetRepository(get(), get(), Dispatchers.IO) }
         single<MachineLinkRepository> { LocalMachineLinkRepository(get(), get(), Dispatchers.IO) }
         single<MeasureRepository> { LocalMeasureRepository(get(), get(), Dispatchers.IO) }
+        single<PhotoRepository> { LocalPhotoRepository(get(), get(), get(), Dispatchers.IO) }
         single<MeasurementRepository> {
             LocalMeasurementRepository(get(), get(), Dispatchers.IO)
         }
@@ -65,7 +70,7 @@ internal fun sqlModule(): Module =
             val session: SyncSession = get()
             SupabaseSyncGateway(lazy { syncSupabaseClient(credentials, tokens, session) })
         }
-        single { SyncPass(get(), get(), get(), get(), get(), Dispatchers.IO) }
+        single { SyncPass(get(), get(), get(), get(), get(), get(), Dispatchers.IO) }
         single<FriendsRepository> {
             val credentials: SupabaseCredentials = get()
             val tokens: AccountTokens = get()
@@ -73,6 +78,18 @@ internal fun sqlModule(): Module =
             SupabaseFriendsRepository(
                 lazy { activeAccountSupabaseClient(credentials, tokens, store) },
                 Clock.System,
+            )
+        }
+        single<PhotoImages> {
+            val credentials: SupabaseCredentials = get()
+            val tokens: AccountTokens = get()
+            val store: AccountStore = get()
+            // An own photo pulled from another device is kept like the ones taken here.
+            StoragePhotoImages(
+                lazy { activeAccountSupabaseClient(credentials, tokens, store) },
+                get(),
+                { photo -> store.accounts.value.any { it.userId == photo.userId } },
+                Dispatchers.IO,
             )
         }
     }

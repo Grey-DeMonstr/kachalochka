@@ -2,8 +2,10 @@ package monster.greyde.kachalochka.core.data.sync
 
 import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
+import monster.greyde.kachalochka.core.data.gym.InMemoryPhotoFiles
 import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
+import monster.greyde.kachalochka.core.data.gym.LocalPhotoRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
@@ -110,6 +112,8 @@ internal class SyncHarness {
     val links = LocalMachineLinkRepository(database, outbox, Dispatchers.Unconfined)
     val measures = LocalMeasureRepository(database, outbox, Dispatchers.Unconfined)
     val measurements = LocalMeasurementRepository(database, outbox, Dispatchers.Unconfined)
+    val files = InMemoryPhotoFiles()
+    val photos = LocalPhotoRepository(database, outbox, files, Dispatchers.Unconfined)
     val watermarks = SyncWatermarks(database)
     val session = SyncSession()
     val gateway = FakeSyncGateway(session)
@@ -120,6 +124,7 @@ internal class SyncHarness {
             watermarks,
             gateway,
             session,
+            files,
             Dispatchers.Unconfined,
         )
     val clock =

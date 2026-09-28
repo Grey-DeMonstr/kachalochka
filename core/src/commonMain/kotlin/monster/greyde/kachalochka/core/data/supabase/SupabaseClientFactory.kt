@@ -48,6 +48,7 @@ fun syncSupabaseClient(
     return createSupabaseClient(credentials.url, credentials.anonKey) {
         accessToken = { session.owner?.let { tokens.tokenFor(it) } }
         install(Postgrest)
+        install(Storage)
     }
 }
 
@@ -62,5 +63,6 @@ fun activeAccountSupabaseClient(
     return createSupabaseClient(credentials.url, credentials.anonKey) {
         accessToken = { store.activeId.value?.let { tokens.tokenFor(it) } }
         install(Postgrest)
+        install(Storage)
     }
 }

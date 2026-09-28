@@ -42,6 +42,15 @@ class MachineMergeTest {
     ) = MachineLink(MachineLinkId.random(), ivan, from.id, to, T0, false)
 
     @Test
+    fun the_removed_machine_s_photos_move_to_the_kept_one() {
+        val photo = Photo.new(other.id, ivan, T0)
+
+        val merged = mergedMachines(edited, other, emptyList(), emptyList(), now, listOf(photo))
+
+        assertEquals(listOf(photo.copy(machineId = edited.id, updatedAt = now)), merged.photos)
+    }
+
+    @Test
     fun the_machine_used_first_is_kept() {
         val older = firstSets(edited to T0 + 5.minutes, other to T0)
 

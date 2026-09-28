@@ -4,10 +4,12 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -45,6 +47,23 @@ class FriendMachineScreenTest {
             on.machineLinks.rows.values
                 .single()
         assertEquals(taken.single() to olegPress.id, link.machineId to link.linkedMachineId)
+    }
+
+    @Test
+    fun the_friend_s_photos_open_without_a_delete_button() {
+        on.friends.photos += Photo.new(olegPress.id, OLEG.userId, on.clock.current)
+        runScreenTest(on, screen = {
+            FriendMachineScreen(olegPress.id, OLEG.userId, {}, {}, {})
+        }) {
+            onAllNodesWithTag("photo-thumbnail").assertCountEquals(1)
+            onNodeWithTag("machine-photo").assertDoesNotExist()
+
+            onNodeWithTag("photo-thumbnail").performClick()
+            waitForIdle()
+
+            onNodeWithTag("photo-viewer").assertExists()
+            onNodeWithTag("delete-photo").assertDoesNotExist()
+        }
     }
 
     @Test

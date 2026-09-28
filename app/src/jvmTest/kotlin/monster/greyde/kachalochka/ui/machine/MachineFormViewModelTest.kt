@@ -14,6 +14,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
@@ -53,6 +54,7 @@ class MachineFormViewModelTest {
             gym.friends,
             gym.machineLinks,
             gym.sync,
+            gym.photos,
         )
 
     @BeforeTest
@@ -62,6 +64,80 @@ class MachineFormViewModelTest {
 
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun photos_taken_in_the_form_are_written_with_the_machine_it_saves() =
+        runTest {
+            val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+
+            vm.addPhoto(byteArrayOf(7))
+            gym.clock.current = t0 + 1.minutes
+            vm.addPhoto(byteArrayOf(8))
+
+            assertEquals(2, vm.photos.value.size)
+            assertTrue(gym.photos.rows.isEmpty())
+            var saved: MachineId? = null
+            vm.save { saved = it }
+            val photos = gym.photos.forMachine(assertNotNull(saved))
+            assertEquals(2, photos.size)
+            assertEquals(listOf(7.toByte()), gym.photos.bytes[photos.first().id]?.toList())
+            assertEquals(t0, photos.first().takenAt)
+            assertEquals(t0 + 1.minutes, photos.first().updatedAt)
+        }
+
+    @Test
+    fun a_saved_machine_shows_its_photos_and_a_removal_waits_for_the_save() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            val photo = Photo.new(press.id, null, t0)
+            gym.machines.upsert(press)
+            gym.photos.add(photo, byteArrayOf(1))
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            assertEquals(listOf(photo.id.value), vm.photos.value.map { it.key })
+
+            vm.removePhoto(photo.id.value)
+
+            assertEquals(emptyList(), vm.photos.value)
+            assertEquals(listOf(photo), gym.photos.forMachine(press.id))
+            gym.clock.current = t0 + 1.minutes
+            vm.save {}
+            assertEquals(emptyList(), gym.photos.forMachine(press.id))
+            assertEquals(
+                photo.copy(deleted = true, updatedAt = t0 + 1.minutes),
+                gym.photos.rows[photo.id],
+            )
+        }
+
+    @Test
+    fun a_copied_machine_starts_without_the_source_s_photos() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.machines.upsert(press)
+            gym.photos.add(Photo.new(press.id, null, t0), byteArrayOf(1))
+
+            val vm = viewModel(MachineFormArgs(null, press.id, "Жим ногами 2")).also { it.load() }
+
+            assertEquals(emptyList(), vm.photos.value)
+        }
+
+    @Test
+    fun a_switch_drops_the_other_account_s_photos_and_keeps_the_ones_just_taken() =
+        runTest {
+            gym.withAccounts(ivan, misha, active = ivan)
+            val press = Machine.new("Жим ногами", ivan.account.userId, t0)
+            gym.machines.upsert(press)
+            gym.photos.add(Photo.new(press.id, ivan.account.userId, t0), byteArrayOf(1))
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            vm.addPhoto(byteArrayOf(2))
+
+            gym.accounts.switchTo(misha.account.userId)
+
+            assertEquals(1, vm.photos.value.size)
+            var saved: MachineId? = null
+            vm.save { saved = it }
+            val taken = gym.photos.forMachine(assertNotNull(saved)).single()
+            assertEquals(misha.account.userId, taken.userId)
+        }
 
     @Test
     fun a_new_machine_starts_from_the_typed_name_and_the_defaults() {

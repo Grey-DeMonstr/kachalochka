@@ -11,6 +11,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -21,6 +24,9 @@ import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.friends.OfflineNotice
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.photos.PhotoStrip
+import monster.greyde.kachalochka.ui.photos.PhotoViewer
+import monster.greyde.kachalochka.ui.photos.ShownPhoto
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -35,6 +41,7 @@ fun FriendMachineScreen(
     val viewModel: FriendMachineViewModel = koinViewModel { parametersOf(machineId, ownerId) }
     val state by viewModel.state.collectAsState()
     val offline by viewModel.offline.collectAsState()
+    var opened by remember { mutableStateOf<ShownPhoto?>(null) }
     // The view model already loads once created: it follows accounts.activeId from init.
     Screen("Тренажёр друга", onBack = onBack, onOpenSettings = onOpenSettings) {
         val current = state
@@ -62,6 +69,7 @@ fun FriendMachineScreen(
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
+                PhotoStrip(current.photos, launchers = null, onOpen = { opened = it })
                 if (current.note.isNotBlank()) {
                     Setting("Заметка о настройке", current.note, "friend-machine-note")
                 }
@@ -80,6 +88,7 @@ fun FriendMachineScreen(
             }
         }
     }
+    opened?.let { PhotoViewer(it, onClose = { opened = null }) }
 }
 
 @Composable

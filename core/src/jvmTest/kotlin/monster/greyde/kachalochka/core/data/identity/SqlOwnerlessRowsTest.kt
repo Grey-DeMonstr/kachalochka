@@ -3,11 +3,14 @@ package monster.greyde.kachalochka.core.data.identity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
+import monster.greyde.kachalochka.core.data.gym.InMemoryPhotoFiles
 import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
+import monster.greyde.kachalochka.core.data.gym.LocalPhotoRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
+import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -20,6 +23,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -48,6 +52,8 @@ class SqlOwnerlessRowsTest {
     private val links = LocalMachineLinkRepository(database, outbox, Dispatchers.Unconfined)
     private val measures = LocalMeasureRepository(database, outbox, Dispatchers.Unconfined)
     private val values = LocalMeasurementRepository(database, outbox, Dispatchers.Unconfined)
+    private val photos =
+        LocalPhotoRepository(database, outbox, InMemoryPhotoFiles(), Dispatchers.Unconfined)
 
     private val owner = UserId("11111111-1111-4111-8111-111111111111")
     private val stranger = UserId("22222222-2222-4222-8222-222222222222")
@@ -213,6 +219,25 @@ class SqlOwnerlessRowsTest {
                     .map { it.tableName to it.rowId }
                     .filter { it.first == MEASURE_TABLE || it.first == MEASUREMENT_TABLE }
                     .toSet(),
+            )
+        }
+
+    @Test
+    fun claiming_stamps_an_anonymous_photo_and_enqueues_it() =
+        runTest {
+            val anonymous = Photo.new(MachineId.random(), null, t0)
+            photos.add(anonymous, byteArrayOf(1))
+
+            rows.claim(owner)
+
+            assertEquals(
+                listOf(anonymous.copy(userId = owner, updatedAt = clock.now())),
+                photos.forMachine(anonymous.machineId),
+            )
+            assertTrue(
+                outbox.pending().any {
+                    it.tableName == PHOTO_TABLE && it.rowId == anonymous.id.value
+                },
             )
         }
 }

@@ -161,6 +161,7 @@ class SchemaMigrationTest {
         exec("DROP TABLE machine_link")
         exec("DROP TABLE measure")
         exec("DROP TABLE measurement")
+        exec("DROP TABLE photo")
     }
 
     /** Every version before 6 declares the profile table this way. */
@@ -447,6 +448,32 @@ class SchemaMigrationTest {
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
+    @Test
+    fun version_10_gains_the_photo_table_and_every_row_is_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        exec("DROP TABLE photo")
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 10, 11)
+
+        exec(
+            "INSERT INTO photo(id, user_id, machine_id, taken_at, updated_at) " +
+                "VALUES ('front', 'ivan', 'press', 5, 7)",
+        )
+        assertEquals("press", text("SELECT machine_id FROM photo WHERE id = 'front'"))
+        assertEquals(0L, number("SELECT deleted FROM photo WHERE id = 'front'"))
+        assertEquals(
+            listOf("photo_updated_at_idx", "photo_machine_id_idx"),
+            listOf("updated_at", "machine_id").map {
+                text(
+                    "SELECT name FROM sqlite_master " +
+                        "WHERE type = 'index' AND name = 'photo_${it}_idx'",
+                )
+            },
+        )
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
     /** Version 9 declares the profile table as 8.sqm rebuilds it. */
     private fun version9ProfileTable() {
         KachalochkaDatabase.Schema.create(driver)
@@ -467,6 +494,7 @@ class SchemaMigrationTest {
             """.trimIndent(),
         )
         exec("CREATE INDEX profile_updated_at_idx ON profile (updated_at)")
+        exec("DROP TABLE photo")
     }
 
     /** Versions 6 to 8 declare the profile table this way. */
@@ -489,6 +517,7 @@ class SchemaMigrationTest {
             """.trimIndent(),
         )
         exec("CREATE INDEX profile_updated_at_idx ON profile (updated_at)")
+        exec("DROP TABLE photo")
     }
 
     private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)

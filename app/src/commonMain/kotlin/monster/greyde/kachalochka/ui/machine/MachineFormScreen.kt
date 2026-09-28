@@ -2,7 +2,6 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,13 +58,17 @@ import monster.greyde.kachalochka.ui.components.Choice
 import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.ControlShape
-import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.photos.PhotoCapture
+import monster.greyde.kachalochka.ui.photos.PhotoStrip
+import monster.greyde.kachalochka.ui.photos.PhotoViewer
+import monster.greyde.kachalochka.ui.photos.ShownPhoto
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -82,6 +85,10 @@ fun MachineFormScreen(
     val viewModel: MachineFormViewModel = koinViewModel { parametersOf(args) }
     val state by viewModel.state.collectAsState()
     val linking by viewModel.linking.collectAsState()
+    val photos by viewModel.photos.collectAsState()
+    val capture: PhotoCapture = koinInject()
+    val launchers = capture.rememberLaunchers(viewModel::addPhoto)
+    var opened by remember { mutableStateOf<ShownPhoto?>(null) }
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(
         "Тренажёр",
@@ -96,9 +103,16 @@ fun MachineFormScreen(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            PhotoAndName(state.name, onChange = { name ->
-                viewModel.update { it.copy(name = name) }
-            })
+            FieldLabel("Название")
+            FormField(
+                value = state.name,
+                onValueChange = { name -> viewModel.update { it.copy(name = name) } },
+                tag = "machine-name",
+                minHeight = 50.dp,
+                fontSize = 18.sp,
+                singleLine = true,
+            )
+            PhotoStrip(photos, launchers, onOpen = { opened = it })
             if (linking.linkedWith.isNotEmpty()) {
                 LinkedWith(linking.linkedWith, onOpenFriendMachine)
             }
@@ -173,6 +187,16 @@ fun MachineFormScreen(
             )
         }
     }
+    opened?.let { photo ->
+        PhotoViewer(
+            photo,
+            onClose = { opened = null },
+            onDelete = {
+                viewModel.removePhoto(photo.key)
+                opened = null
+            },
+        )
+    }
     if (linking.confirmingUnlink) {
         ConfirmDialog(
             title = "Отвязать тренажёр?",
@@ -220,48 +244,6 @@ private fun FieldLabel(text: String) {
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.48f),
     )
-}
-
-@Composable
-private fun PhotoAndName(
-    name: String,
-    onChange: (String) -> Unit,
-) {
-    val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(10.dp)
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(
-            Modifier
-                .size(100.dp)
-                .alpha(DISABLED_ALPHA)
-                .clip(shape)
-                .border(1.dp, colors.primary, shape)
-                .background(colors.primary.copy(alpha = 0.10f))
-                .clickable(enabled = false) {}
-                .testTag("machine-photo"),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Icon(
-                PhosphorIcons.Camera,
-                null,
-                tint = colors.tertiary,
-                modifier = Modifier.size(30.dp),
-            )
-            Text("Снять фото", fontSize = 13.sp, color = colors.tertiary)
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FieldLabel("Название")
-            FormField(
-                value = name,
-                onValueChange = onChange,
-                tag = "machine-name",
-                minHeight = 50.dp,
-                fontSize = 18.sp,
-                singleLine = true,
-            )
-        }
-    }
 }
 
 @Composable

@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
@@ -29,6 +30,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MachineListViewModelTest {
@@ -51,6 +53,7 @@ class MachineListViewModelTest {
             on.friends,
             on.machineLinks,
             on.profiles,
+            on.photos,
         )
 
     private fun olegsGym(): Pair<FakeGym, Machine> {
@@ -113,6 +116,46 @@ class MachineListViewModelTest {
                 listOf("lb всего · ±5"),
                 vm.state.value.own
                     ?.map { it.detail },
+            )
+        }
+
+    @Test
+    fun an_own_machine_shows_its_own_first_photo() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.machines.upsert(press)
+            val photo = Photo.new(press.id, null, t0)
+            gym.photos.add(photo, byteArrayOf(1))
+            gym.photos.add(Photo.new(press.id, null, t0 + 1.minutes), byteArrayOf(2))
+
+            val vm = viewModel().also { it.load() }
+
+            assertEquals(
+                listOf(photo),
+                vm.state.value.own
+                    ?.map { it.photo },
+            )
+        }
+
+    @Test
+    fun without_an_own_photo_a_linked_friend_s_photo_stands_for_the_machine() =
+        runTest {
+            val on = signedInGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val olegs = Machine.new("Жим ногами", OLEG.userId, t0)
+            val (mine, link) = linkedCopy(olegs, ME.userId, t0)
+            val olegsPhoto = Photo.new(olegs.id, OLEG.userId, t0)
+            on.friends.machines += olegs
+            on.friends.photos += olegsPhoto
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+
+            val vm = viewModel(on).also { it.load() }
+
+            assertEquals(
+                listOf(olegsPhoto),
+                vm.state.value.own
+                    ?.map { it.photo },
             )
         }
 

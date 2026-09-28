@@ -15,6 +15,9 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
+import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
@@ -24,7 +27,9 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.photos.ShownPhoto
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 data class MachineFormArgs(
     val machineId: MachineId?,
@@ -91,6 +96,13 @@ data class MachineFormState(
 
 private const val OFFLINE = "Нет связи с сервером"
 
+/** A photo taken in the form, written with the machine when it is saved. */
+private class TakenPhoto(
+    val id: PhotoId,
+    val jpeg: ByteArray,
+    val takenAt: Instant,
+)
+
 class MachineFormViewModel(
     private val args: MachineFormArgs,
     private val machines: MachineRepository,
@@ -100,12 +112,20 @@ class MachineFormViewModel(
     private val friends: FriendsRepository,
     private val machineLinks: MachineLinkRepository,
     private val sync: SyncTrigger,
+    private val photoRows: PhotoRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineFormState(name = args.name))
     val state: StateFlow<MachineFormState> = mutableState
     private val mutableLinking = MutableStateFlow(LinkingUi())
     val linking: StateFlow<LinkingUi> = mutableLinking
     private val writes = WriteGuard(viewModelScope)
+
+    /** The saved machine's photos the form still shows, then the ones taken since. */
+    private var savedPhotos: List<Photo> = emptyList()
+    private var removedPhotos: List<Photo> = emptyList()
+    private var takenPhotos: List<TakenPhoto> = emptyList()
+    private val mutablePhotos = MutableStateFlow<List<ShownPhoto>>(emptyList())
+    val photos: StateFlow<List<ShownPhoto>> = mutablePhotos
 
     private var existing: Machine? = null
     private var loaded = false
@@ -116,6 +136,11 @@ class MachineFormViewModel(
         viewModelScope.launch {
             accounts.activeId.collect { active ->
                 existing = existing?.takeIf { it.userId == active }
+                if (existing == null) {
+                    savedPhotos = emptyList()
+                    removedPhotos = emptyList()
+                    showPhotos()
+                }
                 refreshLinks()
             }
         }
@@ -141,6 +166,8 @@ class MachineFormViewModel(
                     source != null -> MachineFormState.of(source, name = args.name)
                     else -> MachineFormState(name = args.name)
                 }
+            savedPhotos = current?.let { photoRows.forMachine(it.id) }.orEmpty()
+            showPhotos()
             refreshLinks()
         }
     }
@@ -227,6 +254,27 @@ class MachineFormViewModel(
         }
     }
 
+    fun addPhoto(jpeg: ByteArray) {
+        takenPhotos = takenPhotos + TakenPhoto(PhotoId.random(), jpeg, clock.now())
+        showPhotos()
+    }
+
+    fun removePhoto(key: String) {
+        val saved = savedPhotos.firstOrNull { it.id.value == key }
+        if (saved != null) {
+            savedPhotos = savedPhotos - saved
+            removedPhotos = removedPhotos + saved
+        }
+        takenPhotos = takenPhotos.filterNot { it.id.value == key }
+        showPhotos()
+    }
+
+    private fun showPhotos() {
+        mutablePhotos.value =
+            savedPhotos.map { ShownPhoto(it.id.value, it) } +
+            takenPhotos.map { ShownPhoto(it.id.value, it.jpeg) }
+    }
+
     fun update(change: (MachineFormState) -> MachineFormState) {
         mutableState.value = change(mutableState.value)
     }
@@ -255,6 +303,12 @@ class MachineFormViewModel(
                     updatedAt = now,
                 )
             machines.upsert(machine)
+            takenPhotos.forEach {
+                photoRows.add(Photo(it.id, owner, machine.id, it.takenAt, now, false), it.jpeg)
+            }
+            removedPhotos
+                .filter { it.userId == owner }
+                .forEach { photoRows.upsert(it.copy(deleted = true, updatedAt = now)) }
             onSaved(machine.id)
         }
     }

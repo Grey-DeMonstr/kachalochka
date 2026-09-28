@@ -17,6 +17,7 @@ data class MergedRows(
     val sets: List<WorkoutSet>,
     val links: List<MachineLink>,
     val removed: Machine,
+    val photos: List<Photo> = emptyList(),
 )
 
 /** Everything of [removed]'s that the owner holds moves to [kept]; [removed] is deleted. */
@@ -26,6 +27,7 @@ fun mergedMachines(
     removedSets: List<WorkoutSet>,
     ownLinks: List<MachineLink>,
     now: Instant,
+    removedPhotos: List<Photo> = emptyList(),
 ): MergedRows {
     val linked =
         ownLinks
@@ -48,5 +50,6 @@ fun mergedMachines(
         sets = removedSets.map { it.copy(machineId = kept.id, updatedAt = now) },
         links = links,
         removed = removed.copy(deleted = true, updatedAt = now),
+        photos = removedPhotos.map { it.copy(machineId = kept.id, updatedAt = now) },
     )
 }

@@ -1,10 +1,15 @@
 package monster.greyde.kachalochka.core.di
 
+import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
+import monster.greyde.kachalochka.core.data.gym.NoPhotoFiles
+import monster.greyde.kachalochka.core.data.gym.PhotoImages
 import monster.greyde.kachalochka.core.data.gym.RemoteMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.RemoteMachineRepository
+import monster.greyde.kachalochka.core.data.gym.RemotePhotoRepository
 import monster.greyde.kachalochka.core.data.gym.RemoteVisitRepository
 import monster.greyde.kachalochka.core.data.gym.RemoteWorkoutSetRepository
+import monster.greyde.kachalochka.core.data.gym.StoragePhotoImages
 import monster.greyde.kachalochka.core.data.identity.AccountStorage
 import monster.greyde.kachalochka.core.data.identity.LocalStorageAccountStorage
 import monster.greyde.kachalochka.core.data.identity.NoOwnerlessRows
@@ -15,6 +20,7 @@ import monster.greyde.kachalochka.core.data.profile.RemoteProfileRepository
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
@@ -32,6 +38,10 @@ actual fun corePlatformModule(): Module =
         single<WorkoutSetRepository> { RemoteWorkoutSetRepository(get()) }
         single<MachineLinkRepository> { RemoteMachineLinkRepository(get()) }
         single<MeasureRepository> { RemoteMeasureRepository(get()) }
+        single<PhotoRepository> { RemotePhotoRepository(get()) }
+        single<PhotoImages> {
+            StoragePhotoImages(inject(), NoPhotoFiles, { false }, Dispatchers.Default)
+        }
         single<MeasurementRepository> { RemoteMeasurementRepository(get()) }
         single<FriendsRepository> { SupabaseFriendsRepository(inject(), Clock.System) }
         single<AccountStorage> { LocalStorageAccountStorage() }

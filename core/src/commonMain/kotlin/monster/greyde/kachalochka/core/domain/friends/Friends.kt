@@ -4,6 +4,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -89,6 +90,12 @@ interface FriendsRepository {
     suspend fun sets(visit: Visit): List<WorkoutSet>
 
     suspend fun machines(member: UserId): List<Machine>
+
+    /** A group mate's live photos of [machine], in [photoOrder]. */
+    suspend fun photos(machine: MachineId): List<Photo>
+
+    /** The live photos of everyone sharing a group with [viewer]. */
+    suspend fun groupPhotos(viewer: UserId): List<Photo>
 
     /** The live machines of everyone sharing a group with [viewer], by name. */
     suspend fun groupMachines(viewer: UserId): List<FriendMachine>

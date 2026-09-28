@@ -49,7 +49,7 @@
     <p class="meta">
         App: Kachalochka (<code>monster.greyde.kachalochka</code>) for Android and the web<br>
         Provided by Sergei Ivanov, an individual developer (“we”, “us”)<br>
-        Effective date: <time datetime="2026-09-28">28 September 2026</time>
+        Effective date: <time datetime="2026-09-29">29 September 2026</time>
     </p>
 
     <h2>Summary</h2>
@@ -80,9 +80,9 @@
         </li>
         <li>
             <strong>What you record:</strong> your machines (name, setup note, weight settings
-            and unit) and their links to friends’ machines, your visits (the day of each and
-            when it was recorded) and your sets (weight, repetitions and the time each was
-            recorded).
+            and unit), the photos you add to them, and their links to friends’ machines, your
+            visits (the day of each and when it was recorded) and your sets (weight, repetitions
+            and the time each was recorded). Photos are shrunk before they are stored.
         </li>
         <li>
             <strong>Body measures:</strong> your weight, girths, body fat and any measures you
@@ -119,7 +119,8 @@
     <h2>Who can see it</h2>
     <p>
         You see your own data. When you join a group, its members see your nickname, your
-        visits, your machines and how your machines are linked to theirs, read-only; they never
+        visits, your machines with their photos and how your machines are linked to theirs,
+        read-only; they never
         see your body measures or your profile details, and nobody but you can change your
         data. Leaving a group, or its owner deleting it, stops the sharing. There is no public
         profile, and nothing is shared outside the groups you join.
@@ -136,8 +137,8 @@
     </p>
     <ul>
         <li>
-            <a href="https://supabase.com/privacy">Supabase</a> hosts the database and handles
-            authentication.
+            <a href="https://supabase.com/privacy">Supabase</a> hosts the database and the
+            photos, and handles authentication.
         </li>
         <li><a href="https://policies.google.com/privacy">Google</a> provides sign-in.</li>
         <li>
@@ -189,7 +190,9 @@
     <h2>Permissions</h2>
     <p>
         The Android app asks for no runtime permissions. Its manifest declares network access,
-        and the permissions its libraries need for background sync and Google sign-in.
+        and the permissions its libraries need for background sync and Google sign-in. Photos
+        come from the phone’s own camera app or photo picker, which hand over only the picture
+        you take or choose; the web app reads only the file you pick.
     </p>
 
     <h2>Children</h2>

@@ -1,6 +1,6 @@
 # Kachalochka — Technical Specification
 
-**Last reviewed:** 2026-09-28
+**Last reviewed:** 2026-09-29
 
 The architectural decisions and invariants new work must respect. It is not a description of the
 current code — read the code for that. What is written here is what the code cannot tell you: why
@@ -214,8 +214,8 @@ failing a pull.
   table and the row, not its owner. A pass reads each row to learn who owns it: an entry for
   another account's row waits for that account's own turn, and an entry whose row is gone or
   unowned is dropped. A pass pushes entries by table rank: `machine`, `visit`, `profile`,
-  `measure`, `machine_link`, `workout_set`, then `measurement`, because the server checks a set's
-  visit and machine, which the local SQLite does not. The server checks nothing a link or a
+  `measure`, `machine_link`, `photo`, `workout_set`, then `measurement`, because the server checks
+  a set's visit and machine, which the local SQLite does not. The server checks nothing a link or a
   measure's value names, but each follows the rows it names, so a reader never meets it before
   them. An entry is removed after a successful push only if nothing re-enqueued it in the
   meantime.
@@ -316,10 +316,36 @@ switching to it again is a retry rather than adding it back.
 
 ### 4.4 Photos
 
-Photo bytes are not rows. Android stores the file in app-private storage under the photo's id
-and records a `photo` row pointing at it; the sync pass uploads the file to the `photos` Storage
-bucket at `<user_id>/<photo_id>` before pushing the row. Web uploads directly. Coil loads
-displayed photos from the local file on Android and from a signed Storage URL on web.
+A photo belongs to a machine: the synced `photo` table (`machine_id`, `taken_at`), sorted by
+`photoOrder`, `(taken_at, id)`. `machine_id` is not a foreign key, as on `machine_link`. Photo bytes
+are not rows: they are a JPEG in the private `photos` Storage bucket at `<user_id>/<photo_id>`
+(`Photo.storagePath`), whose policies let the owner write, read and delete their own folder and
+group mates read it. Both platforms shrink a new photo to 1600 px on its long edge, upright, as JPEG
+quality 85, before anything stores it: Android with `BitmapFactory` and the EXIF orientation, the
+web on a canvas.
+
+Android keeps the bytes in `PhotoFiles` (`filesDir/photos/<id>.jpg`, written aside and renamed)
+and records the row; `LocalPhotoRepository` writes the file before the row and removes the file
+of a deleted photo. The sync pass pushes a live row after uploading its file, when the device has
+it, and a deleted row after removing its Storage object; a pulled deleted row removes the file.
+`10.sqm` resets `lastPullAt`, so photos uploaded before a device updated are still pulled. The web
+uploads and deletes directly in `RemotePhotoRepository`.
+
+Displayed photos go through Coil with a `Photo` fetcher that asks `PhotoImages`: the device's file
+when there is one, else a download from Storage as the active account. On Android a downloaded
+photo of an account signed in on the device is kept as its file. One `ImageLoader`, held by
+`PhotoLoaders`, serves every screen, keyed by photo id. A photo not saved yet is shown from its
+bytes.
+
+The machine form holds photos taken and removed as edits and writes them on save. The camera and
+gallery come from `PhotoCapture`, bound per platform: Android's registers the `TakePicture` and
+`PickVisualMedia` launchers in the composition, and the camera writes into the cache through the
+`FileProvider` `androidApp` declares; the web's opens a file input, with `capture` for the camera.
+
+`coverPhoto` picks the photo standing for a machine in the machine list and the picker: its own
+first, else the first of any machine in its cluster (§4.5). Own photos are read locally
+(`PhotoRepository.all`); group mates' come in one read, `FriendsRepository.groupPhotos`, beside the
+friends' machines, and "Тренажёр друга" reads its machine's with `photos`.
 
 ### 4.5 Gym data
 
@@ -355,7 +381,7 @@ The machine form's "Привязать к…" chooser (`LinkChooserViewModel`) l
 friend's by writing one own link, and merges two own machines. A merge removes a duplicate and
 writes no link: `olderMachine` keeps the machine whose earliest live set is earlier, one without
 sets counting as newest and a tie keeping the edited one, and `mergedMachines` returns the rows to
-write — the removed machine's sets and own links moved to the kept one (a link the kept one
+write — the removed machine's sets, photos and own links moved to the kept one (a link the kept one
 already has, or one into it, is soft-deleted instead) and the removed machine soft-deleted.
 Signed in, friends' links into the removed machine are moved first through
 `FriendsRepository.repointLinks`, called only when `groupLinks` shows one; if the server does not
@@ -517,9 +543,10 @@ Row-level security enforces every visibility rule from the functional spec:
 
 - A user writes only rows with their own `user_id`, and a set only into their own visit and on
   their own machine.
-- A user reads their own rows and the live `machine`, `visit`, `workout_set` and `machine_link`
-  rows of everyone who shares a live group with them, through the security-definer function
-  `shares_group_with`. `profile`, `measure` and `measurement` stay readable by their owner alone:
+- A user reads their own rows and the live `machine`, `visit`, `workout_set`, `machine_link` and
+  `photo` rows of everyone who shares a live group with them, through the security-definer
+  function `shares_group_with`; the `photos` bucket's read policy applies it to the first folder
+  of an object's name. `profile`, `measure` and `measurement` stay readable by their owner alone:
   each has one owner-only policy and no group policy.
 - A friend's link into one's own machine is changed only through two security-definer
   functions, called by `FriendsRepository.breakLinks` and `repointLinks`.
@@ -578,7 +605,8 @@ builds them from its own address.
   has no build types, so there is nowhere else for a signing config to go.
 - Koin starts once, in an `Application` subclass. A graph built per Activity constructs a second
   DataStore over the same file on configuration change, and DataStore rejects that.
-- Camera capture uses the platform take-picture activity contract; no camera library.
+- Camera capture uses the platform take-picture activity contract; no camera library. The
+  manifest must not declare the camera permission: the system camera would then require it.
 - Google sign-in goes through Credential Manager, whose sheet needs an `Activity` rather than the
   `Application`, so the implementation takes a context supplier the Activity installs.
 - The sync pass is a WorkManager job so it survives the app being backgrounded.

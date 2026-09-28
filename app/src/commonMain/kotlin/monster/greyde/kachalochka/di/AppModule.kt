@@ -34,6 +34,7 @@ import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
 import monster.greyde.kachalochka.ui.measures.MeasureViewModel
 import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
 import monster.greyde.kachalochka.ui.measures.MeasuresViewModel
+import monster.greyde.kachalochka.ui.photos.PhotoLoaders
 import monster.greyde.kachalochka.ui.settings.SettingsViewModel
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
@@ -59,6 +60,7 @@ val appModule =
         single { PendingJoin(get(), get()) }
         single { Nickname(get(), get()) }
         single { FriendColorStore(get(), get()) }
+        single { PhotoLoaders(get()) }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }
@@ -108,14 +110,16 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
             )
         }
         viewModel { (args: MachineFormArgs) ->
-            MachineFormViewModel(args, get(), get(), get(), get(), get(), get(), get())
+            MachineFormViewModel(args, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (machine: MachineId) ->
             LinkChooserViewModel(
                 machine,
+                get(),
                 get(),
                 get(),
                 get(),

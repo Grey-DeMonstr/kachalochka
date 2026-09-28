@@ -15,6 +15,8 @@ import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.MachineLinkRow
 import monster.greyde.kachalochka.core.data.gym.MachineRow
+import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
+import monster.greyde.kachalochka.core.data.gym.PhotoRow
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
@@ -33,8 +35,10 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Clock
@@ -149,6 +153,32 @@ class SupabaseFriendsRepository(
 
     override suspend fun machines(member: UserId): List<Machine> =
         liveMachines { eq("user_id", member.value) }.sortedBy { it.name.lowercase() }
+
+    override suspend fun photos(machine: MachineId): List<Photo> =
+        postgrest
+            .from(PHOTO_TABLE)
+            .select {
+                filter {
+                    eq("machine_id", machine.value)
+                    eq("deleted", false)
+                }
+            }.decodeList<PhotoRow>()
+            .map { it.toPhoto() }
+            .sortedWith(photoOrder)
+
+    override suspend fun groupPhotos(viewer: UserId): List<Photo> {
+        val mates = mates(viewer)
+        if (mates.isEmpty()) return emptyList()
+        return postgrest
+            .from(PHOTO_TABLE)
+            .select {
+                filter {
+                    isIn("user_id", mates.keys.map { it.value })
+                    eq("deleted", false)
+                }
+            }.decodeList<PhotoRow>()
+            .map { it.toPhoto() }
+    }
 
     override suspend fun groupMachines(viewer: UserId): List<FriendMachine> {
         val mates = mates(viewer)

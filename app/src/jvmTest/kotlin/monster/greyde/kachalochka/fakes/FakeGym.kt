@@ -1,9 +1,11 @@
 package monster.greyde.kachalochka.fakes
 
+import androidx.compose.runtime.Composable
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.data.gym.PhotoImages
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
@@ -20,12 +22,16 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
+import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -45,6 +51,8 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.Invite
 import monster.greyde.kachalochka.ui.friends.InviteSharing
+import monster.greyde.kachalochka.ui.photos.PhotoCapture
+import monster.greyde.kachalochka.ui.photos.PhotoLaunchers
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.timer.Ticker
 import kotlin.time.Clock
@@ -203,6 +211,38 @@ class InMemoryMeasurementRepository : MeasurementRepository {
         newestPerDay(rows.values.filter { it.userId == owner })
 }
 
+class InMemoryPhotoRepository : PhotoRepository {
+    val rows = linkedMapOf<PhotoId, Photo>()
+    val bytes = mutableMapOf<PhotoId, ByteArray>()
+
+    override suspend fun add(
+        photo: Photo,
+        jpeg: ByteArray,
+    ) {
+        bytes[photo.id] = jpeg
+        rows[photo.id] = photo
+    }
+
+    override suspend fun upsert(photo: Photo) {
+        rows[photo.id] = photo
+    }
+
+    override suspend fun forMachine(machineId: MachineId): List<Photo> =
+        rows.values.filter { !it.deleted && it.machineId == machineId }.sortedWith(photoOrder)
+
+    override suspend fun all(owner: UserId?): List<Photo> =
+        rows.values.filter { !it.deleted && it.userId == owner }
+}
+
+/** Hands [jpeg] over the moment either launcher is tapped, as a camera would once it is done. */
+class InstantPhotoCapture(
+    val jpeg: ByteArray,
+) : PhotoCapture {
+    @Composable
+    override fun rememberLaunchers(onPhoto: (ByteArray) -> Unit) =
+        PhotoLaunchers(takePhoto = { onPhoto(jpeg) }, pickPhoto = { onPhoto(jpeg) })
+}
+
 private class QueuedGoogleSignIn : GoogleSignIn {
     val queue = ArrayDeque<AccountSession>()
 
@@ -268,6 +308,9 @@ class FakeGym(
     val machineLinks = InMemoryMachineLinkRepository()
     val measures = InMemoryMeasureRepository()
     val measurements = InMemoryMeasurementRepository()
+    val photos = InMemoryPhotoRepository()
+    val photoImages = PhotoImages { photos.bytes[it.id] }
+    val photoCapture = InstantPhotoCapture(byteArrayOf(1, 2, 3))
     private val signIn = QueuedGoogleSignIn()
     val accounts =
         Accounts(

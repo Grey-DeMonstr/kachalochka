@@ -16,6 +16,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.data.gym.MachineLinkRow
 import monster.greyde.kachalochka.core.data.gym.MachineRow
+import monster.greyde.kachalochka.core.data.gym.PhotoRow
 import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.data.gym.WorkoutSetRow
 import monster.greyde.kachalochka.core.domain.friends.Friend
@@ -30,6 +31,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -108,6 +110,52 @@ private val OLEG_S_GROUP =
 
 class SupabaseFriendsRepositoryTest {
     private suspend fun HttpRequestData.bodyText() = body.toByteArray().decodeToString()
+
+    @Test
+    fun group_photos_are_the_live_photos_of_every_group_mate_in_one_read() =
+        runTest {
+            val photo = Photo.new(MachineId.random(), OLEG, NOW)
+            val requests = mutableListOf<HttpRequestData>()
+            val engine =
+                MockEngine { request ->
+                    requests += request
+                    val body =
+                        when (request.table()) {
+                            "group_member" -> MEMBERSHIPS
+                            else -> Json.encodeToString(listOf(PhotoRow.of(photo)))
+                        }
+                    respond(body, HttpStatusCode.OK, jsonHeaders())
+                }
+
+            assertEquals(listOf(photo), repositoryOn(engine).groupPhotos(IVAN))
+
+            val query = requests.single { it.table() == "photo" }.url.parameters
+            assertEquals("in.(${OLEG.value})", query["user_id"])
+            assertEquals("eq.false", query["deleted"])
+        }
+
+    @Test
+    fun a_machine_s_photos_are_its_live_rows_oldest_first() =
+        runTest {
+            val press = MachineId.random()
+            val later = Photo.new(press, OLEG, NOW + 1.minutes)
+            val first = Photo.new(press, OLEG, NOW)
+            val requests = mutableListOf<HttpRequestData>()
+            val engine =
+                MockEngine { request ->
+                    requests += request
+                    val rows = listOf(later, first).map(PhotoRow::of)
+                    respond(Json.encodeToString(rows), HttpStatusCode.OK, jsonHeaders())
+                }
+
+            val photos = repositoryOn(engine).photos(press)
+
+            assertEquals(listOf(first, later), photos)
+            val query = requests.single().url.parameters
+            assertEquals("photo", requests.single().table())
+            assertEquals("eq.${press.value}", query["machine_id"])
+            assertEquals("eq.false", query["deleted"])
+        }
 
     @Test
     fun groups_are_counted_by_their_live_members() =

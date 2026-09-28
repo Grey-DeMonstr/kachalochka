@@ -5,6 +5,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
+import monster.greyde.kachalochka.core.data.gym.PhotoFiles
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -12,6 +14,7 @@ import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -28,6 +31,7 @@ class SyncPass(
     private val watermarks: SyncWatermarks,
     private val gateway: SyncGateway,
     private val session: SyncSession,
+    private val files: PhotoFiles,
     private val dispatcher: CoroutineDispatcher,
 ) {
     /** True only when every push and every pull succeeded. */
@@ -89,6 +93,12 @@ class SyncPass(
                             { it.userId },
                         ) { gateway.pushMeasurement(it) }
 
+                    PHOTO_TABLE ->
+                        pushRow(entry, owner, db { rows.photo(entry.rowId) }, { it.userId }) {
+                            val jpeg = if (it.deleted) null else db { files.read(it.id) }
+                            gateway.pushPhoto(it, jpeg)
+                        }
+
                     else -> true
                 }
             }.all { it }
@@ -107,6 +117,7 @@ class SyncPass(
                     gateway.pullMachineLinks(owner, since),
                     gateway.pullMeasures(owner, since),
                     gateway.pullMeasurements(owner, since),
+                    gateway.pullPhotos(owner, since),
                 )
         }
         val rowsPulled = pulled ?: return false
@@ -140,6 +151,12 @@ class SyncPass(
                 rowsPulled.measurements.forEach {
                     if ((MEASUREMENT_TABLE to it.id.value) !in pending) rows.writeMeasurement(it)
                 }
+                rowsPulled.photos.forEach {
+                    if ((PHOTO_TABLE to it.id.value) !in pending) {
+                        rows.writePhoto(it)
+                        if (it.deleted) files.delete(it.id)
+                    }
+                }
                 rowsPulled.newestUpdatedAt?.let { watermarks.advance(owner, it) }
             }
         }
@@ -154,13 +171,14 @@ class SyncPass(
         val links: List<MachineLink>,
         val measures: List<Measure>,
         val measurements: List<Measurement>,
+        val photos: List<Photo>,
     ) {
         val newestUpdatedAt: Instant? =
             (
                 machines.map { it.updatedAt } + visits.map { it.updatedAt } +
                     sets.map { it.updatedAt } + profiles.map { it.updatedAt } +
                     links.map { it.updatedAt } + measures.map { it.updatedAt } +
-                    measurements.map { it.updatedAt }
+                    measurements.map { it.updatedAt } + photos.map { it.updatedAt }
             ).maxOrNull()
     }
 
@@ -210,6 +228,7 @@ class SyncPass(
                 PROFILE_TABLE,
                 MEASURE_TABLE,
                 MACHINE_LINK_TABLE,
+                PHOTO_TABLE,
                 WORKOUT_SET_TABLE,
                 MEASUREMENT_TABLE,
             )

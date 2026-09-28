@@ -18,6 +18,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.mergedMachines
 import monster.greyde.kachalochka.core.domain.gym.olderMachine
@@ -64,6 +65,7 @@ class LinkChooserViewModel(
     private val clock: Clock,
     private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
+    private val photos: PhotoRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(LinkChooserUiState())
     val state: StateFlow<LinkChooserUiState> = mutableState
@@ -178,9 +180,11 @@ class LinkChooserViewModel(
                         sets.forMachine(removed.id).filter { it.userId == owner },
                         machineLinks.all(owner),
                         clock.now(),
+                        photos.forMachine(removed.id).filter { it.userId == owner },
                     )
                 rows.sets.forEach { sets.upsert(it) }
                 rows.links.forEach { machineLinks.upsert(it) }
+                rows.photos.forEach { photos.upsert(it) }
                 machines.upsert(rows.removed)
                 sync.request()
             }

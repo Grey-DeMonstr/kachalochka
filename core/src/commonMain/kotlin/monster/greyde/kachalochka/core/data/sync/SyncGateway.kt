@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.data.sync
 
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -25,6 +26,12 @@ interface SyncGateway {
     suspend fun pushMeasure(measure: Measure)
 
     suspend fun pushMeasurement(measurement: Measurement)
+
+    /** A live photo uploads [jpeg] first, when given; a deleted one removes its bytes first. */
+    suspend fun pushPhoto(
+        photo: Photo,
+        jpeg: ByteArray?,
+    )
 
     suspend fun pullMachines(
         owner: UserId,
@@ -60,4 +67,9 @@ interface SyncGateway {
         owner: UserId,
         since: Instant?,
     ): List<Measurement>
+
+    suspend fun pullPhotos(
+        owner: UserId,
+        since: Instant?,
+    ): List<Photo>
 }

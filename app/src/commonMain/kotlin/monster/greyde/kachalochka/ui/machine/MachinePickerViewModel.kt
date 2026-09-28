@@ -12,13 +12,18 @@ import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
+import monster.greyde.kachalochka.core.domain.gym.coverPhoto
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
 import monster.greyde.kachalochka.core.domain.gym.shownOn
@@ -32,6 +37,7 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
+import monster.greyde.kachalochka.ui.friends.reading
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -47,6 +53,7 @@ data class PickerRowUi(
     val id: MachineId,
     val name: String,
     val detail: String?,
+    val photo: Photo? = null,
 )
 
 class MachinePickerViewModel(
@@ -62,12 +69,16 @@ class MachinePickerViewModel(
     private val friends: FriendsRepository,
     private val machineLinks: MachineLinkRepository,
     private val profiles: ProfileRepository,
+    private val photos: PhotoRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PickerUiState())
     val state: StateFlow<PickerUiState> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
     private var all: List<Machine> = emptyList()
+    private var ownPhotos: List<Photo> = emptyList()
+    private var ownLinks: List<MachineLink> = emptyList()
+    private var groupPhotos: List<Photo> = emptyList()
     private var latest: Map<MachineId, WorkoutSet> = emptyMap()
     private var inVisit: Map<MachineId, Int> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
@@ -100,6 +111,8 @@ class MachinePickerViewModel(
             viewModelScope.launch {
                 val owner = currentUser.id()
                 all = machines.all(owner)
+                ownPhotos = photos.all(owner)
+                ownLinks = machineLinks.all(owner)
                 latest = sets.latestPerMachine(owner).associateBy { it.machineId }
                 inVisit =
                     visits
@@ -119,8 +132,10 @@ class MachinePickerViewModel(
         loadingFriends =
             viewModelScope.launch {
                 val found = loadGroupMachines(owner, friends, machineLinks)
+                val mates = found?.let { reading { friends.groupPhotos(owner) }.getOrNull() }
                 if (currentUser.id() != owner) return@launch
                 group = found
+                groupPhotos = mates.orEmpty()
                 friendsFor = owner
                 publish(mutableState.value.query)
             }
@@ -150,18 +165,30 @@ class MachinePickerViewModel(
         val ranking = rankMachines(query, all, latest.mapValues { it.value.recordedAt })
         val now = clock.now()
         val needle = query.trim()
+        val read = group?.takeIf { friendsFor != null && friendsFor == shownFor }
+        val clusters = read?.clusters ?: MachineClusters(ownLinks)
+        val shownPhotos = ownPhotos + if (read != null) groupPhotos else emptyList()
         val friendRows =
             offeredFriends
                 .filter { it.machine.name.contains(needle, ignoreCase = true) }
                 .map {
-                    PickerRowUi(it.machine.id, it.machine.name, friendMachineDetail(it, preferred))
+                    PickerRowUi(
+                        it.machine.id,
+                        it.machine.name,
+                        friendMachineDetail(it, preferred),
+                        coverPhoto(it.machine.id, shownPhotos, clusters),
+                    )
                 }
         mutableState.value =
             PickerUiState(
                 query = query,
                 createLabel = if (ranking.offerCreate) "Создать «${query.trim()}»" else null,
                 sectionLabel = if (query.isBlank()) "Недавние" else "Похожие",
-                rows = ranking.machines.map { PickerRowUi(it.id, it.name, detail(it, now)) },
+                rows =
+                    ranking.machines.map {
+                        val cover = coverPhoto(it.id, shownPhotos, clusters)
+                        PickerRowUi(it.id, it.name, detail(it, now), cover)
+                    },
                 friendRows = friendRows,
             )
     }

@@ -115,6 +115,13 @@ step. The unit is kg, lb or an own unit such as "плитка", whose name is th
 every weight on that machine, with no conversion. The weight step is any positive number, typed
 in its field.
 
+Under the name, the machine's photos run in a row, oldest first, ending with "Добавить фото",
+which offers "Снять фото" and "Из галереи". On Android they open the phone's camera and its photo
+picker; on the web the first opens a phone's camera and the second picks a file, and a computer
+picks a file for both. Tapping a photo opens it over the whole screen, with "Удалить". New and
+removed photos are part of the form's edits: "Сохранить тренажёр" writes them, and leaving the
+form drops them. A photo is shrunk to at most 1600 pixels on its long edge before it is kept.
+
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
 search field: "Мои тренажёры", the account's other machines, and, signed in and online,
 "Тренажёры друзей", one row per friends' machine that is not yet the same machine as one of the
@@ -122,16 +129,19 @@ account's. Choosing an own machine removes a duplicate: after "Объедини�
 used first stays (a machine with no sets counts as the newest, and of two equal ones the edited
 one stays), the other one's sets move to it, and the other one disappears. Friends who linked to
 the removed machine are linked to the one that stays. The form of the machine that stays then
-replaces the list, and unsaved edits in the old form are dropped. Choosing a friend's machine
+replaces the list, and unsaved edits in the old form are dropped. The other machine's photos move
+to the one that stays. Choosing a friend's machine
 links the two as one physical machine (see Group sharing) and returns to the form.
 
 The "Тренажёры" row lists the active account's machines by name, each with the unit its weights are
-shown in, how its weight is counted and its step. Tapping one opens it in the machine form; "Новый
+shown in, how its weight is counted and its step, and its photo: the machine's first photo, or,
+when it has none, the first photo of a friend's machine linked with it. The machine picker's rows
+show the same photo. Tapping one opens it in the machine form; "Новый
 тренажёр" adds one. Saving returns to the list. Signed in and online, "Тренажёры друзей" follows
 once the server answers: the machines of everyone sharing a group, one row per physical machine
 that is not yet the same machine as one of the account's, each with its owner and weight setup.
-Tapping one opens "Тренажёр друга", its settings to read — name, owner, setup note, how its weight
-is counted and its platform — with "Взять себе", which saves the account's own copy linked to it
+Tapping one opens "Тренажёр друга", its settings to read — name, owner, photos, setup note, how its
+weight is counted and its platform — with "Взять себе", which saves the account's own copy linked to it
 (see Group sharing) and opens that copy in the machine form; a machine already linked to one of the
 account's, directly or through friends' links, is shown without it. Offline that view says "Нет
 связи с сервером" and offers a retry.
@@ -155,7 +165,7 @@ calendar shows only the account's own visits. Each friend gets a colour at rando
 the account can change it on the group screen. The colours are personal to the account: friends
 never see them, and they follow the account to its other devices.
 
-Photos and comments on a set are shown on these screens but not yet available.
+Comments on a set are shown on these screens but not yet available.
 
 ## Sign-in and accounts
 
@@ -247,8 +257,8 @@ Signed-in users form groups. The creator owns the group and invites others with 
 web app or with its eight-character code; the Android app joins by code. An invite link asks
 before joining, warning that the group's members will see the user's visits and machines; a
 link opened while signed out is offered to whichever account signs in next in that browser.
-Every member sees the other members' calendars and visits, read-only, and nothing is shared
-outside a group. A member can leave; the owner deletes the group instead. Friends' data is read
+Every member sees the other members' calendars, visits and machine photos, read-only, and nothing
+is shared outside a group. A member can leave; the owner deletes the group instead. Friends' data is read
 online and never stored on the device.
 
 The group screen shows a colour dot before every member's name but the user's own. Tapping it

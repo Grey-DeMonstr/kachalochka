@@ -1,0 +1,14 @@
+CREATE TABLE photo (
+    id         TEXT NOT NULL PRIMARY KEY,
+    user_id    TEXT,
+    machine_id TEXT NOT NULL,
+    taken_at   INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX photo_updated_at_idx ON photo (updated_at);
+CREATE INDEX photo_machine_id_idx ON photo (machine_id);
+
+-- Photos another device uploaded may be older than the watermark the other tables advanced.
+UPDATE syncState SET lastPullAt = NULL;

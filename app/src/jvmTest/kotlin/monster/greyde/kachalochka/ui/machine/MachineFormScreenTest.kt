@@ -1,10 +1,12 @@
 package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performFirstLinkClick
@@ -45,13 +47,12 @@ class MachineFormScreenTest {
     )
 
     @Test
-    fun the_form_saves_with_defaults_and_shows_unbuilt_controls_disabled() {
+    fun the_form_saves_with_defaults() {
         val saved = mutableListOf<MachineId>()
         runScreenTest(gym, screen = {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = { saved += it })
         }) {
             onNodeWithTag("save-machine").assertIsNotEnabled()
-            onNodeWithTag("machine-photo").assertIsNotEnabled()
             onNodeWithTag("per-limb").assertDoesNotExist()
             onNodeWithTag("mode-total").assertIsSelected()
             onNodeWithTag("mode-counterweight").assertDoesNotExist()
@@ -68,13 +69,60 @@ class MachineFormScreenTest {
     }
 
     @Test
+    fun a_photo_taken_in_the_form_is_saved_with_the_machine() {
+        val saved = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            MachineFormScreen(
+                MachineFormArgs(null, null, "Гакк"),
+                {},
+                {},
+                onSaved = { saved += it },
+            )
+        }) {
+            onAllNodesWithTag("photo-thumbnail").assertCountEquals(0)
+
+            onNodeWithTag("machine-photo").performClick()
+            onNodeWithTag("take-photo").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-photo").performClick()
+            onNodeWithTag("pick-photo").performClick()
+            waitForIdle()
+
+            onAllNodesWithTag("photo-thumbnail").assertCountEquals(2)
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+        }
+        assertEquals(2, runBlocking { gym.photos.forMachine(saved.single()) }.size)
+    }
+
+    @Test
+    fun an_opened_photo_can_be_removed_from_the_form() {
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, "Гакк"), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("machine-photo").performClick()
+            onNodeWithTag("take-photo").performClick()
+            waitForIdle()
+
+            onNodeWithTag("photo-thumbnail").performClick()
+            waitForIdle()
+            onNodeWithTag("photo-viewer").assertExists()
+            onNodeWithTag("delete-photo").performClick()
+            waitForIdle()
+
+            onNodeWithTag("photo-viewer").assertDoesNotExist()
+            onAllNodesWithTag("photo-thumbnail").assertCountEquals(0)
+        }
+    }
+
+    @Test
     fun an_own_unit_asks_for_its_name_and_shows_it_by_the_platform_weight() {
         runScreenTest(gym, screen = {
             MachineFormScreen(MachineFormArgs(null, null, "Гравитрон"), {}, {}, onSaved = {})
         }) {
             onNodeWithTag("unit-label").assertDoesNotExist()
 
-            onNodeWithTag("unit-custom").performClick()
+            onNodeWithTag("unit-custom").performScrollTo().performClick()
             waitForIdle()
             onNodeWithTag("unit-custom").assertIsSelected()
             onNodeWithTag("save-machine").assertIsNotEnabled()

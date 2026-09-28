@@ -16,8 +16,10 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Duration
@@ -33,6 +35,7 @@ class FakeFriends(
     val sets = mutableListOf<WorkoutSet>()
     val machines = mutableListOf<Machine>()
     val links = mutableListOf<MachineLink>()
+    val photos = mutableListOf<Photo>()
     var offline = false
     var reads = 0
         private set
@@ -152,6 +155,20 @@ class FakeFriends(
         online {
             if (!visibleMember(member)) return@online emptyList()
             machines.filter { it.userId == member && !it.deleted }.sortedBy { it.name.lowercase() }
+        }
+
+    override suspend fun photos(machine: MachineId) =
+        online {
+            photos
+                .filter { !it.deleted && it.machineId == machine }
+                .filter { photo -> photo.userId?.let(::visibleMember) == true }
+                .sortedWith(photoOrder)
+        }
+
+    override suspend fun groupPhotos(viewer: UserId) =
+        online {
+            val mates = mates(viewer)
+            photos.filter { !it.deleted && it.userId in mates.keys }
         }
 
     override suspend fun groupMachines(viewer: UserId) =

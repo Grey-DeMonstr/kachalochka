@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -83,6 +84,7 @@ class LinkChooserViewModelTest {
         gym.clock,
         gym.sync,
         gym.profiles,
+        gym.photos,
     ).also { it.load() }
 
     /** Олег's machines: his copy of [press], linked to it, and one of his own. */
@@ -255,6 +257,23 @@ class LinkChooserViewModelTest {
         assertEquals(press.copy(deleted = true, updatedAt = now), gym.machines.rows[press.id])
         assertEquals(1, gym.sync.requests)
         assertEquals(emptyList(), gym.friends.repointed)
+    }
+
+    @Test
+    fun a_merge_moves_the_removed_machine_s_photos_to_the_kept_one() {
+        runBlocking { gym.sets.upsert(set(duplicate, 0)) }
+        val photo = Photo.new(press.id, me, t0)
+        runBlocking { gym.photos.add(photo, byteArrayOf(1)) }
+        gym.clock.current += 1.days
+        val vm = viewModel()
+
+        vm.chooseOwn(duplicate.id)
+        vm.confirmMerge {}
+
+        assertEquals(
+            listOf(photo.copy(machineId = duplicate.id, updatedAt = gym.clock.current)),
+            runBlocking { gym.photos.forMachine(duplicate.id) },
+        )
     }
 
     @Test

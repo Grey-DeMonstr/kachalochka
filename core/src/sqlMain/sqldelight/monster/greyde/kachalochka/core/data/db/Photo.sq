@@ -1,0 +1,34 @@
+import kotlin.Boolean;
+import kotlin.time.Instant;
+
+CREATE TABLE photo (
+    id         TEXT NOT NULL PRIMARY KEY,
+    user_id    TEXT,
+    machine_id TEXT NOT NULL,
+    taken_at   INTEGER AS Instant NOT NULL,
+    updated_at INTEGER AS Instant NOT NULL,
+    deleted    INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+CREATE INDEX photo_updated_at_idx ON photo (updated_at);
+CREATE INDEX photo_machine_id_idx ON photo (machine_id);
+
+upsert:
+INSERT OR REPLACE INTO photo(id, user_id, machine_id, taken_at, updated_at, deleted)
+VALUES (?, ?, ?, ?, ?, ?);
+
+byId:
+SELECT * FROM photo WHERE id = ?;
+
+forMachine:
+SELECT * FROM photo WHERE machine_id = ? AND deleted = 0 ORDER BY taken_at, id;
+
+live:
+SELECT * FROM photo
+WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
+
+ownerlessIds:
+SELECT id FROM photo WHERE user_id IS NULL;
+
+claimOwnerless:
+UPDATE photo SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;

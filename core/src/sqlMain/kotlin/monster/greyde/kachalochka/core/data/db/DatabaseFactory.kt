@@ -14,6 +14,11 @@ internal fun kachalochkaDatabase(driver: SqlDriver): KachalochkaDatabase =
                 updated_atAdapter = InstantColumnAdapter,
             ),
         outboxAdapter = Outbox.Adapter(enqueuedAtAdapter = InstantColumnAdapter),
+        photoAdapter =
+            Photo.Adapter(
+                taken_atAdapter = InstantColumnAdapter,
+                updated_atAdapter = InstantColumnAdapter,
+            ),
         profileAdapter = Profile.Adapter(updated_atAdapter = InstantColumnAdapter),
         syncStateAdapter = SyncState.Adapter(lastPullAtAdapter = InstantColumnAdapter),
         visitAdapter =

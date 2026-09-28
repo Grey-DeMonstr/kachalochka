@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -27,6 +28,7 @@ import monster.greyde.kachalochka.ui.format.shownLabel
 import monster.greyde.kachalochka.ui.format.shownWeight
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.photos.ShownPhoto
 import kotlin.time.Clock
 
 data class FriendMachineUi(
@@ -36,6 +38,7 @@ data class FriendMachineUi(
     val caption: String,
     val platform: String?,
     val canTake: Boolean,
+    val photos: List<ShownPhoto> = emptyList(),
 )
 
 /** A group mate's machine, read online, that the account can take as its own linked copy. */
@@ -76,11 +79,17 @@ class FriendMachineViewModel(
                 val viewer = currentUser.id() ?: return@launch
                 reading {
                     val found = friends.groupMachines(viewer).firstOrNull(::isShown)
-                    Triple(found, profiles.preferredUnit(viewer), alreadyHas(viewer))
-                }.onSuccess { (found, preferred, had) ->
+                    val had = alreadyHas(viewer)
+                    val ui =
+                        found?.let {
+                            val photos = friends.photos(machineId)
+                            uiOf(it, profiles.preferredUnit(viewer), canTake = !had, photos)
+                        }
+                    Triple(found, had, ui)
+                }.onSuccess { (found, had, ui) ->
                     shown = found?.machine?.takeUnless { had }
                     shownFor = viewer
-                    mutableState.value = found?.let { uiOf(it, preferred, canTake = !had) }
+                    mutableState.value = ui
                     mutableOffline.value = false
                 }.onFailure { mutableOffline.value = true }
             }
@@ -115,6 +124,7 @@ class FriendMachineViewModel(
         friend: FriendMachine,
         preferred: PreferredWeightUnit,
         canTake: Boolean,
+        photos: List<Photo>,
     ): FriendMachineUi {
         val machine = friend.machine
         return FriendMachineUi(
@@ -124,6 +134,7 @@ class FriendMachineViewModel(
             caption = weightCaption(machine, preferred),
             platform = platformText(machine, preferred),
             canTake = canTake,
+            photos = photos.map { ShownPhoto(it.id.value, it) },
         )
     }
 

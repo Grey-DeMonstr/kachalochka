@@ -16,6 +16,8 @@ import monster.greyde.kachalochka.ui.friends.ClipboardInviteSharing
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.LocalStorageJoinCodeStore
+import monster.greyde.kachalochka.ui.photos.BrowserPhotoCapture
+import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.share.ClipboardTextSharing
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.theme.LocalStorageThemePreference
@@ -35,5 +37,6 @@ actual fun platformModule(): Module =
         single<TextSharing> { ClipboardTextSharing() }
         single<JoinCodeStore> { LocalStorageJoinCodeStore() }
         single { VisitStore.Server }
+        single<PhotoCapture> { BrowserPhotoCapture() }
         single<FailureLog> { FailureLog { report(it.toString()) } }
     }
