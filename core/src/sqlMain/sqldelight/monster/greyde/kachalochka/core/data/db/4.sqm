@@ -1,1 +1,3 @@
 ALTER TABLE machine ADD COLUMN link_id TEXT;
+-- Rows pulled before this version lack the columns other clients have since written to them.
+UPDATE syncState SET lastPullAt = NULL;

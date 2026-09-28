@@ -203,7 +203,7 @@ class SchemaMigrationTest {
     }
 
     @Test
-    fun version_4_machines_gain_an_empty_link() {
+    fun version_4_machines_gain_an_empty_link_and_every_row_is_pulled_again() {
         KachalochkaDatabase.Schema.create(driver)
         exec("DROP TABLE machine")
         exec(
@@ -228,12 +228,14 @@ class SchemaMigrationTest {
             "INSERT INTO machine(id, name, weight_mode, unit, weight_step, updated_at, " +
                 "unit_label) VALUES ('press', 'Жим ногами', 'total', 'custom', 5, 7, 'плитка')",
         )
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
 
         KachalochkaDatabase.Schema.migrate(driver, 4, 5)
 
         assertEquals(null, text("SELECT link_id FROM machine WHERE id = 'press'"))
         assertEquals("плитка", text("SELECT unit_label FROM machine WHERE id = 'press'"))
         assertEquals(7L, number("SELECT updated_at FROM machine WHERE id = 'press'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
     private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)
