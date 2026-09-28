@@ -1,5 +1,21 @@
 Kachalochka - Changelog
 
+1.0.4
+
+- Body fat is calculated under your measures by three formulas, and the measures they need are
+  tagged.
+- Sex, birth date and height are set in the profile section of the settings.
+- Clearer measure names, and a hint on how to take each one in the measurement form.
+- The manual body fat measure is kept only if you recorded values in it.
+- Choose kg, lb or mixed weight units in the settings.
+- Screen transitions are short, and their length is set in the settings; 0 turns them off.
+- Machine results in a visit and friends' results read the same way as a shared visit.
+- A machine's weight step is typed in its field.
+- The web app links to its privacy policy and terms of service.
+- Fixed: the next set no longer jumps back to last visit's weight after you save one.
+- Fixed: a bright flash between screens in the dark theme.
+
+
 1.0.3
 
 - Body measures on the home screen: record them for any day and follow each one on a chart.
