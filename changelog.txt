@@ -1,5 +1,20 @@
 Kachalochka - Changelog
 
+1.0.2
+
+- Groups of friends: create a group, invite friends with a link or a code, and see each other's
+  visits and machines.
+- Add a friend's machine to your visit to get your own copy linked to theirs; you then see each
+  other's results on it, and either of you can unlink it.
+- One visit per day: the home screen opens today's visit, with no start or end.
+- Moving a visit onto a day that already has one offers to replace it.
+- Change the order of machines and sets in a visit with the order button.
+- A list of all your machines on the home screen, to add or edit them.
+- A set's weight and a machine's weight step can be typed in, with decimals.
+- Machines can use an own unit, such as plates, with its name shown next to every weight.
+- The counterweight option is gone; such machines now count total weight.
+
+
 1.0.1
 
 - A calendar of your visits, opened from the home screen: add, open, move or remove a visit.
