@@ -8,6 +8,9 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import kotlin.random.Random
 import kotlin.time.Clock
 
+private const val FNV_OFFSET = 0x811C9DC5.toInt()
+private const val FNV_PRIME = 0x01000193
+
 /** Friends' palette indices, a personal setting kept in the viewer's synced profile. */
 class FriendColorStore(
     private val profiles: ProfileRepository,
@@ -24,9 +27,17 @@ class FriendColorStore(
         friends: List<UserId>,
     ): Map<UserId, Int> {
         val profile = profiles.forOwner(owner)
-        val stored = profile?.friendColors.orEmpty()
-        val colors = assignedColors(stored, friends, FRIEND_PALETTE_SIZE, random)
-        if (profile != null && colors != stored) save(owner, profile, colors)
+        val colors =
+            if (profile == null) {
+                // Nothing keeps these, so every screen and platform must draw them alike.
+                val sorted = friends.distinct().sortedBy { it.value }
+                assignedColors(emptyMap(), sorted, FRIEND_PALETTE_SIZE, Random(seedOf(owner)))
+            } else {
+                val stored = profile.friendColors
+                assignedColors(stored, friends, FRIEND_PALETTE_SIZE, random).also {
+                    if (it != stored) save(owner, profile, it)
+                }
+            }
         return colors.filterKeys { it in friends }
     }
 
@@ -38,6 +49,10 @@ class FriendColorStore(
         val profile = profiles.forOwner(owner)
         save(owner, profile, profile?.friendColors.orEmpty() + (friend to index))
     }
+
+    // 32-bit FNV-1a, spelled out so the seed never depends on a platform's String.hashCode.
+    private fun seedOf(owner: UserId): Int =
+        owner.value.fold(FNV_OFFSET) { hash, char -> (hash xor char.code) * FNV_PRIME }
 
     private suspend fun save(
         owner: UserId,

@@ -266,7 +266,9 @@ devices. `FriendColorStore` draws a colour for a friend without one with the pur
 `assignedColors` and saves it only into a profile that already exists. It never creates one on
 its own: a device that has not pulled the account's profile yet would push the new row over the
 server's under outbox-wins (§4.2), wiping the nickname and colours chosen elsewhere. Only a colour
-the user picks creates the profile.
+the user picks creates the profile. Without one, the draw is seeded by an FNV-1a hash of the
+owner's id over the friends sorted by id, so every screen and platform shows the same colours for
+the same owner and friends; a new friend may recolour the others until a profile keeps them.
 
 The avatar sits in every screen's top bar, so the active account can change under any screen. No
 screen-scoped view model carries a row across that change: each observes the store's active id and

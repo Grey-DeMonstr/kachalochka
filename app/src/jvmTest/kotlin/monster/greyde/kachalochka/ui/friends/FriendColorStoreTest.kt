@@ -33,6 +33,25 @@ class FriendColorStoreTest {
             colors.values.forEach { assertEquals(true, it in 0 until FRIEND_PALETTE_SIZE) }
         }
 
+    /**
+     * Guaranteed: the same owner and the same set of friends give the same map, whatever the
+     * order they are listed in or the store's own random source. Adding a friend may recolour
+     * the others until a profile keeps the colours.
+     */
+    @Test
+    fun without_a_profile_every_screen_draws_the_same_colours() =
+        runTest {
+            val friends = listOf(OLEG.userId, PASHA.userId)
+            val first = FriendColorStore(gym.profiles, gym.clock, Random(1))
+            val second = FriendColorStore(gym.profiles, gym.clock, Random(2))
+
+            val colors = first.colorsFor(owner, friends)
+
+            assertEquals(colors, first.colorsFor(owner, friends))
+            assertEquals(colors, second.colorsFor(owner, friends.reversed()))
+            assertNull(gym.profiles.forOwner(owner))
+        }
+
     @Test
     fun colours_drawn_for_an_existing_profile_are_saved_into_it() =
         runTest {
