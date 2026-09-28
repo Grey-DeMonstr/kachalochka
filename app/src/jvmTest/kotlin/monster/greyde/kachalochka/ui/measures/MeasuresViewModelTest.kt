@@ -143,7 +143,7 @@ class MeasuresViewModelTest {
                     weight.id,
                     "Вес",
                     "82 кг",
-                    "−0,4",
+                    "−0.4",
                     "2 дня назад",
                     listOf("YMCA", "BMI"),
                 ),

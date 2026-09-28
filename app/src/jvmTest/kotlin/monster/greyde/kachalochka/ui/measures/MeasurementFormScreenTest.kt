@@ -52,7 +52,7 @@ class MeasurementFormScreenTest {
             onNodeWithTag("top-bar-title").assertTextEquals("Замер")
             onNodeWithTag("measurement-day").assertTextEquals("Сегодня, 14 ноября")
             onNodeWithTag("measure-hint-${weight.id.value}", useUnmergedTree = true)
-                .assertTextEquals("82,4")
+                .assertTextEquals("82.4")
             onNodeWithTag("delete-measurement").assertDoesNotExist()
 
             onNodeWithTag("measure-field-${waist.id.value}").performTextInput("90,5")
@@ -80,7 +80,7 @@ class MeasurementFormScreenTest {
 
             onNodeWithTag("day-picker").assertDoesNotExist()
             onNodeWithTag("measurement-day").assertTextEquals("Суббота, 11 ноября")
-            onNodeWithTag("measure-field-${weight.id.value}").assertTextEquals("82,4")
+            onNodeWithTag("measure-field-${weight.id.value}").assertTextEquals("82.4")
         }
     }
 

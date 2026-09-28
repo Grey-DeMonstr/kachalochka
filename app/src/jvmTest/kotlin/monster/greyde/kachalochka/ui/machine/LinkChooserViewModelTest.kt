@@ -127,7 +127,7 @@ class LinkChooserViewModelTest {
 
         val state = viewModel().state.value
 
-        assertEquals("lb всего · ±5,5", state.own.first().detail)
+        assertEquals("lb всего · ±5.5", state.own.first().detail)
     }
 
     @Test

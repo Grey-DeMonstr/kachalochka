@@ -130,7 +130,7 @@ class MeasurementFormViewModelTest {
         val vm = viewModel(saturday)
 
         assertEquals("Суббота, 11 ноября", vm.state.value!!.dayTitle)
-        assertEquals("82,4", vm.field(weight).text)
+        assertEquals("82.4", vm.field(weight).text)
         assertEquals("90", vm.field(waist).text)
         assertEquals("", vm.field(chest).text)
         assertTrue(vm.state.value!!.canDelete)
@@ -143,7 +143,7 @@ class MeasurementFormViewModelTest {
         record(weight, today.plusDays(-7), 82.5)
         record(weight, today, 82.0)
 
-        assertEquals("82,5", viewModel(saturday).field(weight).hint)
+        assertEquals("82.5", viewModel(saturday).field(weight).hint)
         assertNull(viewModel(today.plusDays(-14)).field(weight).hint)
         assertNull(viewModel(saturday).field(waist).hint)
     }
@@ -227,7 +227,7 @@ class MeasurementFormViewModelTest {
         val form = vm.state.value!!
         assertEquals(saturday, form.day)
         assertFalse(form.picking)
-        assertEquals("82,4", vm.field(weight).text)
+        assertEquals("82.4", vm.field(weight).text)
         assertEquals("", vm.field(waist).text)
     }
 

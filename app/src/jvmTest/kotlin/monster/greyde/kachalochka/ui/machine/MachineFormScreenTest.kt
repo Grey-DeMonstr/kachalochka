@@ -55,7 +55,7 @@ class MachineFormScreenTest {
             onNodeWithTag("per-limb").assertDoesNotExist()
             onNodeWithTag("mode-total").assertIsSelected()
             onNodeWithTag("mode-counterweight").assertDoesNotExist()
-            onNodeWithTag("weight-step").assertTextEquals("2,5")
+            onNodeWithTag("weight-step").assertTextEquals("2.5")
 
             onNodeWithTag("machine-name").performTextInput("Гакк-машина")
             onNodeWithTag("save-machine").performClick()

@@ -217,7 +217,7 @@ class MachinePickerViewModelTest {
             vm.load()
 
             assertEquals("Было 90 lb × 8 · вчера", details()["Кроссовер"])
-            assertEquals("Было 176,5 lb × 8 · 4 дня назад", details()["Приседания в Смите"])
+            assertEquals("Было 176.5 lb × 8 · 4 дня назад", details()["Приседания в Смите"])
         }
 
     @Test
@@ -455,7 +455,7 @@ class MachinePickerViewModelTest {
         val vm = pickerOn(on).also { it.load() }
 
         assertEquals(
-            listOf(PickerRowUi(olegPress.id, "Жим ногами", "Олег · кг всего · ±2,5")),
+            listOf(PickerRowUi(olegPress.id, "Жим ногами", "Олег · кг всего · ±2.5")),
             vm.state.value.friendRows,
         )
     }

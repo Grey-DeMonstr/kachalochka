@@ -14,7 +14,7 @@ fun measureValue(
 /** A positive [value] with exactly one decimal, as a calculated percent claims no more. */
 fun oneDecimal(value: Double): String {
     val tenths = round(value * 10).toLong()
-    return "${tenths / 10},${tenths % 10}"
+    return "${tenths / 10}.${tenths % 10}"
 }
 
 /** Rounded as [formatNumber] shows values, so two equal-looking values show no change. */

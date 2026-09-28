@@ -13,8 +13,7 @@ import kotlin.time.Duration
 
 fun formatNumber(value: Double): String {
     val rounded = round(value * 1000) / 1000
-    val text = if (rounded == floor(rounded)) rounded.toLong().toString() else rounded.toString()
-    return text.replace('.', ',')
+    return if (rounded == floor(rounded)) rounded.toLong().toString() else rounded.toString()
 }
 
 // A typed weight must read like a plain decimal, not any string a JVM Double parses:

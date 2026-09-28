@@ -54,7 +54,7 @@ data class MachineFormState(
     val platformIncluded: Boolean = false,
     val unit: WeightUnit = WeightUnit.Kg,
     val unitLabel: String = "",
-    val weightStep: String = "2,5",
+    val weightStep: String = "2.5",
 ) {
     val platformWeightValue: Double?
         get() =

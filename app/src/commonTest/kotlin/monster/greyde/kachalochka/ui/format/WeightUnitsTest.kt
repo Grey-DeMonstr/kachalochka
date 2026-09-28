@@ -54,8 +54,8 @@ class WeightUnitsTest {
 
     @Test
     fun a_machine_s_caption_names_the_shown_unit_and_the_converted_step() {
-        assertEquals("кг всего · ±2,3", weightCaption(lbCable, PreferredWeightUnit.Kg))
-        assertEquals("lb всего · ±5,5", weightCaption(kgPress, PreferredWeightUnit.Lb))
+        assertEquals("кг всего · ±2.3", weightCaption(lbCable, PreferredWeightUnit.Kg))
+        assertEquals("lb всего · ±5.5", weightCaption(kgPress, PreferredWeightUnit.Lb))
         assertEquals("lb всего · ±5", weightCaption(lbCable, PreferredWeightUnit.Mixed))
         assertEquals("плитка всего · ±1", weightCaption(gravitron, PreferredWeightUnit.Lb))
     }
@@ -63,11 +63,11 @@ class WeightUnitsTest {
     @Test
     fun recording_puts_the_machine_s_unit_first_and_the_chosen_one_in_brackets() {
         assertEquals(
-            "lb (41кг) всего · ±5lb (2,3кг)",
+            "lb (41кг) всего · ±5lb (2.3кг)",
             recordingCaption(lbCable, 90.0, PreferredWeightUnit.Kg),
         )
         assertEquals(
-            "кг (88lb) всего · ±2,5кг (5,5lb)",
+            "кг (88lb) всего · ±2.5кг (5.5lb)",
             recordingCaption(kgPress, 40.0, PreferredWeightUnit.Lb),
         )
     }
@@ -76,7 +76,7 @@ class WeightUnitsTest {
     fun recording_in_the_chosen_unit_or_with_mixed_units_adds_no_brackets() {
         assertEquals("lb всего · ±5", recordingCaption(lbCable, 90.0, PreferredWeightUnit.Mixed))
         assertEquals("lb всего · ±5", recordingCaption(lbCable, 90.0, PreferredWeightUnit.Lb))
-        assertEquals("кг всего · ±2,5", recordingCaption(kgPress, 40.0, PreferredWeightUnit.Kg))
+        assertEquals("кг всего · ±2.5", recordingCaption(kgPress, 40.0, PreferredWeightUnit.Kg))
         assertEquals(
             "плитка всего · ±1",
             recordingCaption(gravitron, 7.0, PreferredWeightUnit.Kg),
@@ -88,7 +88,7 @@ class WeightUnitsTest {
         val kg = PreferredWeightUnit.Kg
         assertEquals("41 кг × 8", setValue(90.0, 8, lbCable, kg))
         assertEquals("90 lb × 8", setValue(90.0, 8, lbCable, PreferredWeightUnit.Mixed))
-        assertEquals("(+45,5 кг)", platformSuffix(lbCable.copy(platformWeight = 100.0), kg))
+        assertEquals("(+45.5 кг)", platformSuffix(lbCable.copy(platformWeight = 100.0), kg))
         assertEquals(
             "Жим ногами (+44 lb)",
             machineTitle(kgPress.copy(platformWeight = 20.0), PreferredWeightUnit.Lb),

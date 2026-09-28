@@ -66,7 +66,7 @@ class AppTest {
 
             onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
             onNodeWithTag("measure-value-${weight.id.value}", useUnmergedTree = true)
-                .assertTextEquals("82,4 кг")
+                .assertTextEquals("82.4 кг")
         }
 
     @Test
@@ -96,7 +96,7 @@ class AppTest {
             waitForIdle()
 
             onNodeWithTag("top-bar-title").assertTextEquals("Замер")
-            onNodeWithTag("measure-field-${weight.id.value}").assertTextEquals("82,4")
+            onNodeWithTag("measure-field-${weight.id.value}").assertTextEquals("82.4")
         }
 
     @Test

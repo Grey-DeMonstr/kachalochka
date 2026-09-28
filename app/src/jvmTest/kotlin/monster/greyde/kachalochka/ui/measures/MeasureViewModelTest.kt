@@ -123,7 +123,7 @@ class MeasureViewModelTest {
 
         vm.choose(MeasurePeriod.Month)
         assertEquals(2, vm.ui.points.size)
-        assertEquals("−0,4", vm.ui.change)
+        assertEquals("−0.4", vm.ui.change)
 
         vm.choose(MeasurePeriod.HalfYear)
         assertEquals(4, vm.ui.points.size)
@@ -145,7 +145,7 @@ class MeasureViewModelTest {
         vm.choose(MeasurePeriod.Month)
 
         assertEquals(listOf(CalendarDay(2023, 11, 7) to 82.4), vm.ui.points)
-        assertEquals("82,4 кг", vm.ui.latest)
+        assertEquals("82.4 кг", vm.ui.latest)
         assertNull(vm.ui.change)
     }
 
@@ -156,7 +156,7 @@ class MeasureViewModelTest {
         assertEquals(
             listOf(
                 HistoryRowUi(CalendarDay(2023, 11, 14), "14 ноября", "82 кг"),
-                HistoryRowUi(CalendarDay(2023, 11, 7), "7 ноября", "82,4 кг"),
+                HistoryRowUi(CalendarDay(2023, 11, 7), "7 ноября", "82.4 кг"),
                 HistoryRowUi(CalendarDay(2023, 10, 10), "10 октября", "83 кг"),
                 HistoryRowUi(CalendarDay(2023, 8, 1), "1 августа", "84 кг"),
                 HistoryRowUi(CalendarDay(2023, 5, 10), "10 мая", "85 кг"),

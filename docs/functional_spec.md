@@ -20,6 +20,9 @@ Both apps must support a dark and a light theme. By default the theme follows th
 the user can override it and pick light or dark explicitly. The choice is remembered between
 launches.
 
+Numbers are written with a decimal point everywhere, the shared text included ("11.3кг"); a typed
+number takes a point or a comma.
+
 Moving between screens is a short fade that never flashes a colour outside the theme. Settings
 has an "Анимация переходов" field for its length in milliseconds, 0 to 1000, 150 by default;
 0 switches screens instantly. Like the theme, it is remembered on the device and not synced.
@@ -79,9 +82,9 @@ kilogram; with "lb", kilograms are converted to the nearest half pound ("Тяг�
 "Смешанные", every machine's weights stay in its own unit. An own unit is never converted and is
 written as is with its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zero shows
 only its reps ("Подтягивания 3x10"). A machine whose weight is counted per side says so after the
-weights ("Гребная тяга (+11,3кг) 15кг на каждую, 3x12"). The machine rows of the visit screen and of a friend's
-visit, and friends' results in the set sheet, write a machine's weights and reps exactly the same
-way.
+weights ("Гребная тяга (+11.3кг) 15кг на каждую, 3x12"). The machine rows of the visit screen and
+of a friend's visit, and friends' results in the set sheet, write a machine's weights and reps
+exactly the same way.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,
@@ -92,7 +95,7 @@ is written, the save button shows progress and takes no taps. The weight can als
 with a comma or a point; − and + step it by the machine's weight step.
 The weight stepper is the one place where the machine's own unit comes first: its value and step
 are in that unit, and when the profile's unit is "кг" or "lb" and differs from it, the converted
-value follows in brackets — under 90 on a pound machine, "lb (41кг) всего · ±5lb (2,3кг)", the
+value follows in brackets — under 90 on a pound machine, "lb (41кг) всего · ±5lb (2.3кг)", the
 weight to the nearest half unit and the step to one decimal. The sheet's other weights, the
 previous visit's sets included, follow the profile's unit. Tapping another account's chip
 switches to it: the shown history and the save button follow that person, and the set is
@@ -183,8 +186,8 @@ converted. The machine form keeps the machine's own unit, and body measures keep
 ## Body measures
 
 Alongside the gym, the user tracks their body: weight and girths, typically once a week on a day of
-their choice, and sees the body fat they imply. Measures are private: they sync between the account's devices like its
-visits, but friends never see them, whatever groups they share.
+their choice, and sees the body fat they imply. Measures are private: they sync between the
+account's devices like its visits, but friends never see them, whatever groups they share.
 
 Seven measures are ready from the start: Вес (кг), Талия, Грудь, Обхват бёдер, Бицепс, Окружность
 бедра and Шея (см). Their names and units are the app's own and cannot be changed. The user adds
@@ -196,24 +199,24 @@ the profile is not "Мужской". Body fat is only ever calculated: an accoun
 measure is removed with all its values.
 
 The "Замеры" row on the home screen lists the measures, each with its latest value and unit, the
-change since the value before it ("−0,4", omitted when there is only one) and how long ago it was
+change since the value before it ("−0.4", omitted when there is only one) and how long ago it was
 taken ("вчера", "7 дней назад"), and the tags of the formulas that read it. "Порядок" shows drag
 handles to reorder them. "Новый замер" opens
 the measurement form for today; "Добавить показатель" asks for a name and a unit.
 
 The measurement form ("Замер") is one day's values, one decimal field per measure with its unit,
 the previous value shown as a placeholder. Under each ready-made measure's name a line says how to
-take it, e.g. for Шея "Сразу под кадыком, лента чуть наклонена вперёд и вниз, шея расслаблена". The day at the top is today by default; tapping it
-opens a month calendar where days with values are marked and future days cannot be chosen.
-Choosing a day that has values loads them for editing. "Сохранить" writes the changed values,
-and an emptied field clears that value. "Удалить замер", on a day that has values, asks and then
-clears the whole day.
+take it, e.g. for Шея "Сразу под кадыком, лента чуть наклонена вперёд и вниз, шея расслаблена". The
+day at the top is today by default; tapping it opens a month calendar where days with values are
+marked and future days cannot be chosen. Choosing a day that has values loads them for editing.
+"Сохранить" writes the changed values, and an emptied field clears that value. "Удалить замер", on
+a day that has values, asks and then clears the whole day.
 
 Under the list, "Процент жира" estimates body fat by three standard formulas, each row headed by
 its tag: `NAVY` "ВМС США" (waist, neck and height, plus hips for a woman), `YMCA` (weight and
 waist) and `BMI` "Дойренберг" (weight, height and age). Each uses the latest value of every
 measure, and sex, birth date and height from the profile; age is counted in whole years to today.
-A row shows its result ("18,4 %") or what it lacks ("Нужно: шея, рост"). While sex, birth date or
+A row shows its result ("18.4 %") or what it lacks ("Нужно: шея, рост"). While sex, birth date or
 height is missing, a line under the rows leads to Settings.
 
 Tapping a measure in the list opens it: its latest value and the change over the chosen period,

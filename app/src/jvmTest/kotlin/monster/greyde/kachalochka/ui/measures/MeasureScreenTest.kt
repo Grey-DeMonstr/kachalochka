@@ -90,7 +90,7 @@ class MeasureScreenTest {
             onNodeWithTag("period-Month").assertIsSelected()
             onNodeWithTag("measure-chart").assertDoesNotExist()
             onNodeWithTag("measure-single-value", useUnmergedTree = true)
-                .assertTextEquals("82,4 кг")
+                .assertTextEquals("82.4 кг")
             onNodeWithTag("measure-change", useUnmergedTree = true).assertDoesNotExist()
         }
     }

@@ -113,10 +113,10 @@ class ShareTextTest {
         val row = machine("Гребная тяга", platform = 11.3).copy(weightMode = WeightMode.PerSide)
 
         assertEquals(
-            "Гребная тяга (+11,3кг) 15кг на каждую, 3x12",
+            "Гребная тяга (+11.3кг) 15кг на каждую, 3x12",
             line(row, 15.0 to 12, 15.0 to 12, 15.0 to 12),
         )
-        assertEquals("Гребная тяга (+11,3кг) 3x12", line(row, 0.0 to 12, 0.0 to 12, 0.0 to 12))
+        assertEquals("Гребная тяга (+11.3кг) 3x12", line(row, 0.0 to 12, 0.0 to 12, 0.0 to 12))
     }
 
     @Test
@@ -138,7 +138,7 @@ class ShareTextTest {
     @Test
     fun pounds_read_as_the_nearest_half_kilogram() {
         assertEquals(
-            "Тяга 20,5кг 2x10",
+            "Тяга 20.5кг 2x10",
             line(
                 machine("Тяга", WeightUnit.Lb),
                 45.0 to 10,
@@ -146,7 +146,7 @@ class ShareTextTest {
             ),
         )
         assertEquals(
-            "Жим ногами (+45,5кг) 20,5кг 1x10",
+            "Жим ногами (+45.5кг) 20.5кг 1x10",
             line(machine("Жим ногами", WeightUnit.Lb, platform = 100.0), 45.0 to 10),
         )
     }
@@ -243,7 +243,7 @@ class ShareTextTest {
             )
 
         assertEquals(
-            listOf("20-40кг 2x10", "20,5кг 10-8", "3 плитка 1x10", "2x10"),
+            listOf("20-40кг 2x10", "20.5кг 10-8", "3 плитка 1x10", "2x10"),
             cases.map { (machine, sets) -> setsSummary(machine, sets, kg) },
         )
         cases.forEach { (machine, sets) ->

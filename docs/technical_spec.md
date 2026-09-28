@@ -445,13 +445,13 @@ On every load "Замеры" applies `measureUpkeep` to the owner's predefined r
 (`MeasureRepository.predefined`). `missingDefaults` seeds the seven predefined measures for every
 kind the owner has no row of, so a deleted one stays deleted, unless `isLocked(kind, sex)`: a kind
 a body-fat method reads for the profile's sex is revived, dated now. A live `BodyFat` row is
-deleted with the values `MeasurementRepository.all` returns for it; the kind is never seeded. A predefined row shows `Measure.displayName` and
-`displayUnit`, the app's own for its kind, whatever the row stores, so a renamed default and an
-older name both read as today's. A signed-in
-owner's seeds take `derivedId(owner, kind)` — FNV-1a 64 of `"<owner>:<kind>"` under two offset
-bases, shaped as a v4 UUID — and `updated_at` at the epoch, so two devices seeding offline write
-the same rows. An anonymous owner's seeds take random ids; claimed by an account that already has
-predefined rows elsewhere, both sets show and the user deletes one.
+deleted with the values `MeasurementRepository.all` returns for it; the kind is never seeded. A
+predefined row shows `Measure.displayName` and `displayUnit`, the app's own for its kind, whatever
+the row stores, so a renamed default and an older name both read as today's. A signed-in owner's
+seeds take `derivedId(owner, kind)` — FNV-1a 64 of `"<owner>:<kind>"` under two offset bases,
+shaped as a v4 UUID — and `updated_at` at the epoch, so two devices seeding offline write the same
+rows. An anonymous owner's seeds take random ids; claimed by an account that already has predefined
+rows elsewhere, both sets show and the user deletes one.
 
 A seed is the one exception to outbox-wins (§4.2), on both sides. The trigger
 `measure_keeps_newer` ignores an update of `measure` dated at the epoch when the stored row is

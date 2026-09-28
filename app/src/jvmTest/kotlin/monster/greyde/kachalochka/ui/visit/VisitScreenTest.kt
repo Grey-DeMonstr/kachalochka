@@ -248,7 +248,7 @@ class VisitScreenTest {
         runScreenTest(gym, screen = { visitScreen(picked = cable.id) }) {
             waitForIdle()
             onNodeWithTag("weight-value").assertTextEquals("90")
-            onNodeWithText("lb (41кг) всего · ±5lb (2,3кг)").assertIsDisplayed()
+            onNodeWithText("lb (41кг) всего · ±5lb (2.3кг)").assertIsDisplayed()
         }
     }
 

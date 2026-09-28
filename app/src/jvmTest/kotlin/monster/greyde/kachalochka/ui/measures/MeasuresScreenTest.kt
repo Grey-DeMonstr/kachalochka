@@ -56,7 +56,7 @@ class MeasuresScreenTest {
             val id = weight.id.value
             onNodeWithTag("measure-value-$id", useUnmergedTree = true).assertTextEquals("82 кг")
             onNodeWithTag("measure-delta-$id", useUnmergedTree = true)
-                .assertTextEquals("−0,4")
+                .assertTextEquals("−0.4")
             onNodeWithTag("measure-ago-$id", useUnmergedTree = true).assertTextEquals("вчера")
             onNodeWithTag("measure-value-${waist.id.value}", useUnmergedTree = true)
                 .assertDoesNotExist()

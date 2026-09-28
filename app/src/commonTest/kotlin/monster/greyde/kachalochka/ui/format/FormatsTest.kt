@@ -18,15 +18,15 @@ class FormatsTest {
     private val kg = PreferredWeightUnit.Kg
 
     @Test
-    fun numbers_use_a_decimal_comma_and_drop_a_zero_fraction() {
-        assertEquals("72,5", formatNumber(72.5))
+    fun numbers_use_a_decimal_point_and_drop_a_zero_fraction() {
+        assertEquals("72.5", formatNumber(72.5))
         assertEquals("70", formatNumber(70.0))
-        assertEquals("2,25", formatNumber(2.25))
+        assertEquals("2.25", formatNumber(2.25))
     }
 
     @Test
     fun the_weight_caption_names_unit_mode_and_step() {
-        assertEquals("кг всего · ±2,5", weightCaption(press, kg))
+        assertEquals("кг всего · ±2.5", weightCaption(press, kg))
         assertEquals(
             "lb на сторону · ±5",
             weightCaption(
@@ -54,7 +54,7 @@ class FormatsTest {
     @Test
     fun sets_read_as_weight_times_reps() {
         assertEquals("70 кг × 10", setValue(70.0, 10, "кг"))
-        assertEquals("72,5×8", shortSet(72.5, 8, press, kg))
+        assertEquals("72.5×8", shortSet(72.5, 8, press, kg))
     }
 
     @Test

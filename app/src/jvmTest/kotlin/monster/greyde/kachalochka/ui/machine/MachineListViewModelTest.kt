@@ -86,7 +86,7 @@ class MachineListViewModelTest {
             val vm = viewModel().also { it.load() }
 
             assertEquals(
-                listOf("Жим ногами" to "кг на сторону · ±5", "Тяга" to "кг всего · ±2,5"),
+                listOf("Жим ногами" to "кг на сторону · ±5", "Тяга" to "кг всего · ±2.5"),
                 vm.state.value.own
                     ?.map { it.name to it.detail },
             )
@@ -101,7 +101,7 @@ class MachineListViewModelTest {
             val vm = viewModel().also { it.load() }
 
             assertEquals(
-                listOf("кг всего · ±2,3"),
+                listOf("кг всего · ±2.3"),
                 vm.state.value.own
                     ?.map { it.detail },
             )

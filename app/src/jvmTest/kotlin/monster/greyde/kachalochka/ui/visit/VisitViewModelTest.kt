@@ -251,7 +251,7 @@ class VisitViewModelTest {
         assertEquals("Сиденье на 4", sheet.caption)
         assertEquals("Вчера · 70×10 · 70×10 · 75×8", sheet.previous)
         assertEquals("70", sheet.weight)
-        assertEquals("кг всего · ±2,5", sheet.weightCaption)
+        assertEquals("кг всего · ±2.5", sheet.weightCaption)
         assertEquals("10", sheet.reps)
     }
 
@@ -263,7 +263,7 @@ class VisitViewModelTest {
         vm.changeReps(-1)
 
         val sheet = assertNotNull(vm.state.value?.sheet)
-        assertEquals("72,5", sheet.weight)
+        assertEquals("72.5", sheet.weight)
         assertEquals("9", sheet.reps)
     }
 
@@ -289,7 +289,7 @@ class VisitViewModelTest {
         vm.typeWeight("22.75")
         vm.changeWeight(-1)
         assertEquals(
-            "20,25",
+            "20.25",
             vm.state.value
                 ?.sheet
                 ?.weight,
@@ -332,7 +332,7 @@ class VisitViewModelTest {
                     .weight,
             )
             val sheet = assertNotNull(vm.state.value?.sheet)
-            assertEquals("22,5", sheet.weight)
+            assertEquals("22.5", sheet.weight)
             assertEquals(true, sheet.canSave)
         }
 
@@ -362,7 +362,7 @@ class VisitViewModelTest {
         vm.refresh()
 
         val sheet = assertNotNull(vm.state.value?.sheet)
-        assertEquals("72,5", sheet.weight)
+        assertEquals("72.5", sheet.weight)
         assertEquals("9", sheet.reps)
     }
 
@@ -380,9 +380,9 @@ class VisitViewModelTest {
             val state = assertNotNull(vm.state.value)
             assertEquals("1 подход", state.setCountLabel)
             assertEquals("подход 2", state.sheet?.setNumberLabel)
-            assertEquals("67,5", state.sheet?.weight)
+            assertEquals("67.5", state.sheet?.weight)
             assertEquals(
-                listOf("Жим ногами (+20 кг)" to "67,5кг 1x10"),
+                listOf("Жим ногами (+20 кг)" to "67.5кг 1x10"),
                 state.groups.map { it.title to it.summary },
             )
         }
@@ -453,9 +453,9 @@ class VisitViewModelTest {
             vm.share()
 
             val summaries = assertNotNull(vm.state.value).groups.map { it.summary }
-            assertEquals(listOf("60-70кг 2x10", "20,5кг 10-8"), summaries)
+            assertEquals(listOf("60-70кг 2x10", "20.5кг 10-8"), summaries)
             assertEquals(
-                listOf("Жим ногами (+20кг) 60-70кг 2x10", "Кроссовер 20,5кг 10-8"),
+                listOf("Жим ногами (+20кг) 60-70кг 2x10", "Кроссовер 20.5кг 10-8"),
                 gym.texts.shared
                     .single()
                     .lines()
@@ -514,11 +514,11 @@ class VisitViewModelTest {
             )
             assertEquals("Вчера · 41кг×8", sheet.previous)
             assertEquals("90", sheet.weight)
-            assertEquals("lb (41кг) всего · ±5lb (2,3кг)", sheet.weightCaption)
+            assertEquals("lb (41кг) всего · ±5lb (2.3кг)", sheet.weightCaption)
 
             vm.typeWeight("100")
             assertEquals(
-                "lb (45,5кг) всего · ±5lb (2,3кг)",
+                "lb (45.5кг) всего · ±5lb (2.3кг)",
                 vm.state.value
                     ?.sheet
                     ?.weightCaption,
@@ -572,9 +572,9 @@ class VisitViewModelTest {
                     .value,
             )
             assertEquals("(+44 lb)", sheet.platformSuffix)
-            assertEquals("Вчера · 154,5lb×10 · 154,5lb×10 · 165,5lb×8", sheet.previous)
+            assertEquals("Вчера · 154.5lb×10 · 154.5lb×10 · 165.5lb×8", sheet.previous)
             assertEquals("70", sheet.weight)
-            assertEquals("кг (154,5lb) всего · ±2,5кг (5,5lb)", sheet.weightCaption)
+            assertEquals("кг (154.5lb) всего · ±2.5кг (5.5lb)", sheet.weightCaption)
 
             vm.share()
 
@@ -698,7 +698,7 @@ class VisitViewModelTest {
 
         val expanded = assertNotNull(vm.state.value?.sheet)
         assertEquals(true, expanded.expanded)
-        assertEquals("72,5", expanded.weight)
+        assertEquals("72.5", expanded.weight)
     }
 
     @Test
@@ -1348,7 +1348,7 @@ class VisitViewModelTest {
             val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 
             assertEquals(
-                listOf("Олег · вчера · 176,5-187,5lb 8-6"),
+                listOf("Олег · вчера · 176.5-187.5lb 8-6"),
                 vm.state.value
                     ?.sheet
                     ?.friends,
@@ -1374,9 +1374,9 @@ class VisitViewModelTest {
 
         val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 
-        assertEquals("Жим ногами 36,5-38,5кг 8-6", shared.lines().last())
+        assertEquals("Жим ногами 36.5-38.5кг 8-6", shared.lines().last())
         assertEquals(
-            listOf("Олег · вчера · 36,5-38,5кг 8-6"),
+            listOf("Олег · вчера · 36.5-38.5кг 8-6"),
             vm.state.value
                 ?.sheet
                 ?.friends,

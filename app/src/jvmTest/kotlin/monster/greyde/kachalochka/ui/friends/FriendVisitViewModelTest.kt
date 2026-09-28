@@ -63,7 +63,7 @@ class FriendVisitViewModelTest {
         assertEquals("Олег · 13 ноября", state.title)
         assertEquals("3 подхода", state.setCountLabel)
         assertEquals(
-            listOf("Жим ногами" to "80-85кг 8-6", "Тяга" to "45,5кг 1x10"),
+            listOf("Жим ногами" to "80-85кг 8-6", "Тяга" to "45.5кг 1x10"),
             state.groups.map { it.title to it.summary },
         )
         assertEquals(
@@ -87,11 +87,11 @@ class FriendVisitViewModelTest {
             val state = assertNotNull(viewModel().state.value)
 
             assertEquals(
-                listOf("176,5-187,5lb 8-6", "100lb 1x10"),
+                listOf("176.5-187.5lb 8-6", "100lb 1x10"),
                 state.groups.map { it.summary },
             )
             assertEquals(
-                listOf("176,5 lb × 8", "187,5 lb × 6", "100 lb × 10"),
+                listOf("176.5 lb × 8", "187.5 lb × 6", "100 lb × 10"),
                 state.groups.flatMap { group -> group.sets.map { it.value } },
             )
         }

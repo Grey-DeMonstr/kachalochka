@@ -86,7 +86,7 @@ class MachineFormViewModelTest {
         assertEquals(false, MachineFormState(name = " ").canSave)
         assertEquals(false, MachineFormState(name = "Гакк", platformWeight = "-5").canSave)
         assertEquals(false, MachineFormState(name = "Гакк", platformWeight = "abc").canSave)
-        assertEquals(25.5, MachineFormState(platformWeight = "25,5").platformWeightValue)
+        assertEquals(25.5, MachineFormState(platformWeight = "25.5").platformWeightValue)
         assertEquals(0.0, MachineFormState(platformWeight = "").platformWeightValue)
     }
 
@@ -245,7 +245,7 @@ class MachineFormViewModelTest {
 
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
-            assertEquals("1,25", vm.state.value.weightStep)
+            assertEquals("1.25", vm.state.value.weightStep)
         }
 
     /** Иван's press, linked by Иван to a friend's machine. */

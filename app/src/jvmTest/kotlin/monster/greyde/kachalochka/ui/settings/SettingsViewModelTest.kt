@@ -77,7 +77,7 @@ class SettingsViewModelTest {
             val vm = viewModel()
 
             assertEquals(
-                ProfileUi("Ванёк", "Иван", Sex.Male, "05.06.1990", "180,5", true, true, false),
+                ProfileUi("Ванёк", "Иван", Sex.Male, "05.06.1990", "180.5", true, true, false),
                 vm.ui,
             )
         }
