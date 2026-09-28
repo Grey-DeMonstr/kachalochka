@@ -37,7 +37,7 @@ class SqlOwnerlessRows(
                 database.visitQueries.claimOwnerless(owner.value, now)
                 database.machineQueries.claimOwnerless(owner.value, now)
                 database.workoutSetQueries.claimOwnerless(owner.value, now)
-                database.profileQueries.claimOwnerless(owner.value, now)
+                database.profileQueries.claimOwnerless(owner.value)
                 database.machineLinkQueries.claimOwnerless(owner.value, now)
                 database.measureQueries.claimOwnerless(owner.value, now)
                 database.measurementQueries.claimOwnerless(owner.value, now)

@@ -34,5 +34,6 @@ LIMIT 1;
 ownerlessIds:
 SELECT id FROM profile WHERE user_id IS NULL;
 
+-- Keeps updated_at: a fresh stamp would rank an anonymous profile above the account's own.
 claimOwnerless:
-UPDATE profile SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;
+UPDATE profile SET user_id = :owner WHERE user_id IS NULL;

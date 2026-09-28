@@ -256,7 +256,8 @@ already reached the server, `ServerSyncTrigger` emits on every request instead.
 
 Android works without an account: rows are created with a null `user_id` and never pushed. On the
 first successful sign-in, every row with null `user_id`, the anonymous profile included, is
-stamped with that user's id and enqueued in the outbox. Accounts added afterwards claim nothing
+stamped with that user's id and enqueued in the outbox. The profile keeps its `updated_at`, so
+the account's own newer profile still wins `forOwner`. Accounts added afterwards claim nothing
 and start empty.
 
 Several accounts are signed in at once and one of them is active; the active one owns whatever is

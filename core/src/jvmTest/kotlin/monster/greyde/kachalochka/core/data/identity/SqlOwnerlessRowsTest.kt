@@ -134,6 +134,25 @@ class SqlOwnerlessRowsTest {
         }
 
     @Test
+    fun an_older_anonymous_profile_stays_older_than_the_account_s_pulled_one() =
+        runTest {
+            val anonymous = Profile.new(null, t0).copy(displayName = "Аноним")
+            val pulled = Profile.new(owner, t0 + 0.5.hours).copy(displayName = "Ванёк")
+            profiles.upsert(anonymous)
+            profiles.upsert(pulled)
+
+            rows.claim(owner)
+
+            assertEquals(t0, profiles.byId(anonymous.id)?.updatedAt)
+            assertEquals(pulled, profiles.forOwner(owner))
+            assertTrue(
+                outbox.pending().any {
+                    it.tableName == PROFILE_TABLE && it.rowId == anonymous.id.value
+                },
+            )
+        }
+
+    @Test
     fun claiming_stamps_an_anonymous_link_and_enqueues_it() =
         runTest {
             val anonymous =
