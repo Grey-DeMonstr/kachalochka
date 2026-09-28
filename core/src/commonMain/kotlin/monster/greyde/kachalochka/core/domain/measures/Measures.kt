@@ -157,8 +157,33 @@ fun measureUpkeep(
         predefined
             .filter { !it.deleted && it.kind == MeasureKind.BodyFat }
             .map { it.copy(deleted = true, updatedAt = now) }
-    return missingDefaults(owner, predefined.mapNotNull { it.kind }.toSet()) + revived + typedFat
+    val duplicates = measureDuplicates(owner, predefined).keys
+    val extra =
+        predefined
+            .filter { it.id in duplicates }
+            .map { it.copy(deleted = true, updatedAt = now) }
+    return missingDefaults(owner, predefined.mapNotNull { it.kind }.toSet()) + revived + typedFat +
+        extra
 }
+
+/**
+ * Each extra live row of a predefined kind, mapped to the row of that kind that stays. A first
+ * sign-in claims the measures seeded without an account beside the account's own, so a kind can
+ * have two. The derived row stays, so every device keeps the same one; else the smallest id.
+ */
+fun measureDuplicates(
+    owner: UserId?,
+    predefined: List<Measure>,
+): Map<MeasureId, MeasureId> =
+    predefined
+        .filter { !it.deleted && it.kind != null && it.kind != MeasureKind.BodyFat }
+        .groupBy { it.kind!! }
+        .filterValues { it.size > 1 }
+        .flatMap { (kind, rows) ->
+            val derived = owner?.let { derivedId(it, kind) }
+            val kept = rows.firstOrNull { it.id.value == derived } ?: rows.minBy { it.id.value }
+            rows.filter { it != kept }.map { it.id to kept.id }
+        }.toMap()
 
 /** The predefined measures [owner] lacks, dated at the epoch so a real edit always wins. */
 fun missingDefaults(

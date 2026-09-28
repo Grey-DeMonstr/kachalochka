@@ -476,8 +476,10 @@ predefined row shows `Measure.displayName` and `displayUnit`, the app's own for 
 the row stores, so a renamed default and an older name both read as today's. A signed-in owner's
 seeds take `derivedId(owner, kind)` — FNV-1a 64 of `"<owner>:<kind>"` under two offset bases,
 shaped as a v4 UUID — and `updated_at` at the epoch, so two devices seeding offline write the same
-rows. An anonymous owner's seeds take random ids; claimed by an account that already has predefined
-rows elsewhere, both sets show and the user deletes one.
+rows. An anonymous owner's seeds take random ids, and a first sign-in claims them beside the
+account's own, so a kind can have two live rows. measureDuplicates maps each extra one to the
+row that stays — the derived one, so every device keeps the same, else the smallest id — and the
+upkeep moves the extra rows' values to it before deleting them.
 
 A seed is the one exception to outbox-wins (§4.2), on both sides. The trigger
 `measure_keeps_newer` ignores an update of `measure` dated at the epoch when the stored row is

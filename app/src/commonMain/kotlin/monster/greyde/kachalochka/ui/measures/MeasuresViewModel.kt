@@ -22,6 +22,7 @@ import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.measures.bodyFat
+import monster.greyde.kachalochka.core.domain.measures.measureDuplicates
 import monster.greyde.kachalochka.core.domain.measures.measureUpkeep
 import monster.greyde.kachalochka.core.domain.measures.methodsReading
 import monster.greyde.kachalochka.core.domain.measures.missingInputs
@@ -110,10 +111,20 @@ class MeasuresViewModel(
     private suspend fun upkeep(owner: UserId?) =
         seeding.withLock {
             val now = clock.now()
-            val writes = measureUpkeep(owner, measures.predefined(owner), profile?.sex, now)
+            val predefined = measures.predefined(owner)
+            val writes = measureUpkeep(owner, predefined, profile?.sex, now)
+            val merged = measureDuplicates(owner, predefined)
+            // A merged duplicate's values move to the row that stays, before it goes.
+            measurements
+                .all(owner)
+                .forEach { value ->
+                    merged[value.measureId]?.let {
+                        measurements.upsert(value.copy(measureId = it, updatedAt = now))
+                    }
+                }
             writes.forEach { measures.upsert(it) }
-            // A deleted measure's values go with it, as when the user deletes one.
-            val gone = writes.filter { it.deleted }.map { it.id }.toSet()
+            // Any other deleted measure's values go with it, as when the user deletes one.
+            val gone = writes.filter { it.deleted && it.id !in merged }.map { it.id }.toSet()
             measurements
                 .all(owner)
                 .filter { it.measureId in gone }

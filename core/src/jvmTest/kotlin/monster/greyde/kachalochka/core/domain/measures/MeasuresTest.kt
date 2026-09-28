@@ -11,6 +11,9 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 
+private const val LOW_ID = "0a000000-0000-4000-8000-00000000000a"
+private const val HIGH_ID = "0b000000-0000-4000-8000-00000000000b"
+
 class MeasuresTest {
     private val ivan = UserId("11111111-1111-4111-8111-111111111111")
     private val misha = UserId("22222222-2222-4222-8222-222222222222")
@@ -160,6 +163,37 @@ class MeasuresTest {
     }
 
     private fun everyPredefined() = missingDefaults(ivan, emptySet())
+
+    @Test
+    fun a_claimed_second_set_of_a_kind_yields_to_the_derived_row() {
+        val neck = predefined(MeasureKind.Neck)
+        val claimed = neck.copy(id = MeasureId.random(), updatedAt = now)
+        val stored = missingDefaults(ivan, emptySet()).filter { it.kind != MeasureKind.Neck }
+
+        val writes = measureUpkeep(ivan, stored + neck + claimed, Sex.Male, now)
+
+        assertEquals(
+            mapOf(claimed.id to neck.id),
+            measureDuplicates(ivan, stored + neck + claimed),
+        )
+        assertEquals(listOf(claimed.copy(deleted = true, updatedAt = now)), writes)
+    }
+
+    @Test
+    fun without_a_derived_row_the_smallest_id_stays() {
+        val first = predefined(MeasureKind.Chest).copy(id = MeasureId(LOW_ID), userId = null)
+        val second = first.copy(id = MeasureId(HIGH_ID))
+
+        assertEquals(mapOf(second.id to first.id), measureDuplicates(null, listOf(second, first)))
+    }
+
+    @Test
+    fun deleted_rows_are_no_duplicates() {
+        val neck = predefined(MeasureKind.Neck)
+        val gone = neck.copy(id = MeasureId.random(), deleted = true)
+
+        assertEquals(emptyMap(), measureDuplicates(ivan, listOf(neck, gone)))
+    }
 
     private fun predefined(kind: MeasureKind) =
         everyPredefined().firstOrNull { it.kind == kind }

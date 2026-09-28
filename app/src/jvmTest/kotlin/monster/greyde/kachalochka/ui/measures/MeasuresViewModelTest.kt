@@ -91,6 +91,45 @@ class MeasuresViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
+    fun a_second_claimed_set_merges_into_the_account_s_own_with_its_values() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val owner = ivan.account.userId
+            val own = missingDefaults(owner, emptySet())
+            val claimed =
+                missingDefaults(null, emptySet()).map { it.copy(userId = owner, updatedAt = t0) }
+            (own + claimed).forEach { gym.measures.upsert(it) }
+            val claimedNeck = claimed.first { it.kind == MeasureKind.Neck }
+            val monday = CalendarDay(2026, 9, 21)
+            gym.measurements.upsert(
+                Measurement(
+                    MeasurementId.random(),
+                    owner,
+                    claimedNeck.id,
+                    monday,
+                    38.5,
+                    t0,
+                    false,
+                ),
+            )
+
+            val vm = viewModel().also { it.load() }
+
+            assertEquals(
+                defaults,
+                vm.state.value.rows
+                    .map { it.name },
+            )
+            val neck = own.first { it.kind == MeasureKind.Neck }
+            assertEquals(
+                "38.5 см",
+                vm.state.value.rows
+                    .first { it.id == neck.id }
+                    .value,
+            )
+        }
+
+    @Test
     fun opening_seeds_the_seven_predefined_measures_once() =
         runTest {
             val vm = viewModel().also { it.load() }
