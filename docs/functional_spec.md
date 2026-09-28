@@ -184,9 +184,9 @@ The Жир field has a "Рассчитать" button that estimates body fat by 
 field is empty, from the value its placeholder shows; the ready-made measures are recognised
 whatever the user renamed them to. Sex, year of birth and height belong to the user's profile:
 the first time, the calculator asks for them and saves them, and "Изменить" corrects them later.
-Age is counted at the form's day. Each formula shows its result ("18,4 %") or the measures it
-lacks ("Нужно: шея"); tapping a result puts it into the Жир field, which is saved only with the
-form.
+Age is the year of the form's day minus the year of birth. Each formula shows its result
+("18,4 %") or the measures it lacks ("Нужно: шея"); tapping a result puts it into the Жир field,
+which is saved only with the form.
 
 Tapping a measure in the list opens it: its latest value and the change over the chosen period,
 a line chart of its values over 1 мес, 3 мес (the default), 6 мес, Год or Всё, then every value

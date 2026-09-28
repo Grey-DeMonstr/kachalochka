@@ -296,8 +296,8 @@ The "Жир" field in the measurement form has a "Рассчитать" button o
     450`.
   - **YMCA** (lb, in): `(−98.42 [men] or −76.76 [women] + 4.15·waist − 0.082·weight) / weight ·
     100`.
-  - **Deurenberg**: `1.20·BMI + 0.23·age − 10.8·[male] − 5.4`, age in whole years at the form's
-    day.
+  - **Deurenberg**: `1.20·BMI + 0.23·age − 10.8·[male] − 5.4`, age being the form day's year
+    minus the birth year.
 - The sheet lists each method with its result (`"18,4 %"`, one decimal) or the missing inputs.
   Tapping a result fills the field; nothing is saved until the form is.
 
