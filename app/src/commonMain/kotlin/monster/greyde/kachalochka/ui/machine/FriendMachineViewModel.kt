@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -34,6 +35,7 @@ data class FriendMachineUi(
     val note: String,
     val caption: String,
     val platform: String?,
+    val canTake: Boolean,
 )
 
 /** A group mate's machine, read online, that the account can take as its own linked copy. */
@@ -74,11 +76,11 @@ class FriendMachineViewModel(
                 val viewer = currentUser.id() ?: return@launch
                 reading {
                     val found = friends.groupMachines(viewer).firstOrNull(::isShown)
-                    found to profiles.preferredUnit(viewer)
-                }.onSuccess { (found, preferred) ->
-                    shown = found?.machine
+                    Triple(found, profiles.preferredUnit(viewer), alreadyHas(viewer))
+                }.onSuccess { (found, preferred, had) ->
+                    shown = found?.machine?.takeUnless { had }
                     shownFor = viewer
-                    mutableState.value = found?.let { uiOf(it, preferred) }
+                    mutableState.value = found?.let { uiOf(it, preferred, canTake = !had) }
                     mutableOffline.value = false
                 }.onFailure { mutableOffline.value = true }
             }
@@ -86,6 +88,13 @@ class FriendMachineViewModel(
 
     private fun isShown(friend: FriendMachine) =
         friend.machine.id == machineId && friend.owner.userId == owner
+
+    /** Another copy would duplicate an own machine already linked to this one. */
+    private suspend fun alreadyHas(viewer: UserId): Boolean {
+        val clusters = MachineClusters(visibleLinks(viewer, friends, machineLinks))
+        val own = machines.all(viewer).map { it.id }.toSet()
+        return clusters.of(machineId).any { it in own }
+    }
 
     /** Saves the account's copy of the shown machine, linked to it, and hands on the copy. */
     fun take(onTaken: (MachineId) -> Unit) {
@@ -105,6 +114,7 @@ class FriendMachineViewModel(
     private fun uiOf(
         friend: FriendMachine,
         preferred: PreferredWeightUnit,
+        canTake: Boolean,
     ): FriendMachineUi {
         val machine = friend.machine
         return FriendMachineUi(
@@ -113,6 +123,7 @@ class FriendMachineViewModel(
             note = machine.setupNote,
             caption = weightCaption(machine, preferred),
             platform = platformText(machine, preferred),
+            canTake = canTake,
         )
     }
 

@@ -68,13 +68,15 @@ fun FriendMachineScreen(
                 Setting("Как считается вес", current.caption, "friend-machine-caption")
                 current.platform?.let { Setting("Вес платформы", it, "friend-machine-platform") }
             }
-            Box(Modifier.padding(16.dp)) {
-                AccentButton(
-                    "Взять себе",
-                    PhosphorIcons.Copy,
-                    { viewModel.take(onTaken) },
-                    Modifier.testTag("take-machine"),
-                )
+            if (current.canTake) {
+                Box(Modifier.padding(16.dp)) {
+                    AccentButton(
+                        "Взять себе",
+                        PhosphorIcons.Copy,
+                        { viewModel.take(onTaken) },
+                        Modifier.testTag("take-machine"),
+                    )
+                }
             }
         }
     }

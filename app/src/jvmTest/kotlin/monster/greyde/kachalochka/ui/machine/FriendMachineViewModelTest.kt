@@ -10,6 +10,8 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -18,6 +20,7 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -80,6 +83,7 @@ class FriendMachineViewModelTest {
                 note = "Спинка на 4",
                 caption = "кг на сторону · ±5",
                 platform = "25 кг · рядом с названием",
+                canTake = true,
             ),
             vm.state.value,
         )
@@ -128,6 +132,45 @@ class FriendMachineViewModelTest {
                 Triple(link.userId, link.machineId, link.linkedMachineId),
             )
             assertEquals(1, on.sync.requests)
+        }
+
+    @Test
+    fun a_machine_the_account_already_has_linked_cannot_be_taken_again() =
+        runTest {
+            val mine = Machine.new("Жим", ME.userId, t0)
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(
+                MachineLink(MachineLinkId.random(), ME.userId, mine.id, olegPress.id, t0, false),
+            )
+            val vm = viewModel()
+
+            assertEquals(false, vm.state.value?.canTake)
+            vm.take {}
+            assertEquals(listOf(mine), on.machines.all(ME.userId))
+        }
+
+    @Test
+    fun a_machine_linked_to_the_account_s_through_a_friend_cannot_be_taken_either() =
+        runTest {
+            val mine = Machine.new("Жим", ME.userId, t0)
+            val pashaPress = Machine.new("Жим ногами", PASHA.userId, t0)
+            on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+            on.friends.machines += pashaPress
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(
+                MachineLink(MachineLinkId.random(), ME.userId, mine.id, pashaPress.id, t0, false),
+            )
+            on.friends.links +=
+                MachineLink(
+                    MachineLinkId.random(),
+                    PASHA.userId,
+                    pashaPress.id,
+                    olegPress.id,
+                    t0,
+                    false,
+                )
+
+            assertEquals(false, viewModel().state.value?.canTake)
         }
 
     @Test
