@@ -64,10 +64,14 @@ effective date. Sections:
 2. **What we collect.**
    - From Google sign-in: e-mail address, name, profile picture link and Google account
      identifier; the authentication service records sign-in times and IP addresses.
-   - What the user records: machines (name, setup note, weight settings, unit), visits (their
-     day and when recorded) and sets (weight, repetitions, time recorded).
-   - Groups: group names, invite codes, membership, and the display name taken from the Google
-     name.
+   - Profile: nickname friends see; sex, year of birth and height for the body-fat calculator;
+     the colours picked for friends.
+   - What the user records: machines (name, setup note, weight settings, unit) and their links
+     to friends' machines, visits (their day and when recorded) and sets (weight, repetitions,
+     time recorded).
+   - Body measures: weight, girths, body fat and own measures, per day.
+   - Groups: group names, invite codes, membership, and the name members see: the nickname, else
+     the Google name.
    - Technical: sign-in tokens; request logs the hosting providers keep.
 3. **Where it is stored.**
    - Android: on the device. Without an account nothing reaches the backend; the first sign-in
@@ -75,8 +79,10 @@ effective date. Sections:
      Several accounts on one device each keep their own data. Android's own backup may copy
      the app's data, sign-in included, to the user's Google account.
    - Web: in the backend only; the browser keeps the sign-in session and the theme choice.
-4. **Who can see it.** The user, and members of groups the user joins: they see the display
-   name, visits and machines, read-only. Leaving a group stops it. No public profile.
+4. **Who can see it.** The user, and members of groups the user joins: they see the nickname,
+   visits, machines and machine links, read-only, never body measures or profile details.
+   Leaving a group stops it. No public profile. A visit shared as text goes where the user
+   sends it.
 5. **Service providers.** Supabase (database and authentication), Google (sign-in), GitHub
    (hosting of the web app and the APK). Each processes data under its own privacy policy,
    linked. Use of information received from Google APIs adheres to the Google API Services User

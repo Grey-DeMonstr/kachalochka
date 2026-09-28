@@ -81,6 +81,31 @@ class LegalPagesTest {
     }
 
     @Test
+    fun privacyPolicyKeepsBodyMeasuresPrivate() {
+        val html = page("privacy.html")
+        assertTrue("<strong>Body measures:</strong>" in html)
+        assertTrue("never see your body measures or your profile details" in html)
+    }
+
+    @Test
+    fun privacyPolicyListsTheProfile() {
+        val html = page("privacy.html")
+        assertTrue("your nickname" in html)
+        assertTrue("sex, year of birth and height" in html)
+        assertTrue("the colours you pick for friends" in html)
+    }
+
+    @Test
+    fun privacyPolicyCoversSharingAVisitAsText() {
+        assertTrue("When you share a visit as text" in page("privacy.html"))
+    }
+
+    @Test
+    fun termsSayBodyFatIsAnEstimate() {
+        assertTrue("estimates, not measurements" in page("terms.html"))
+    }
+
+    @Test
     fun termsSayTheInviteCodeCannotBeChanged() {
         val html = page("terms.html")
         assertTrue("The code cannot be changed and members cannot be removed" in html)

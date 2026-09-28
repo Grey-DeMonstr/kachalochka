@@ -54,9 +54,10 @@
 
     <h2>Summary</h2>
     <p>
-        Kachalochka keeps a log of your gym workouts. When you sign in, we store your workouts
-        so they sync between your devices and so the members of groups you join can see them.
-        We use your data only to provide that service.
+        Kachalochka keeps a log of your gym workouts and body measures. When you sign in, we
+        store them so they sync between your devices, and show your workouts, never your
+        measures, to the members of groups you join. We use your data only to provide that
+        service.
     </p>
     <p>
         There are no ads, no analytics and no crash reporting, and we never sell your data or
@@ -69,17 +70,28 @@
             <strong>From Google sign-in:</strong> your e-mail address, your name, your profile
             picture link and your Google account identifier. The e-mail address tells your
             accounts apart in the app’s account menu; the name is shown to members of your
-            groups. The authentication service also records when you sign in and from which IP
-            address.
+            groups until you set a nickname. The authentication service also records when you
+            sign in and from which IP address.
+        </li>
+        <li>
+            <strong>Your profile:</strong> your nickname, which friends see instead of your
+            Google name; your sex, year of birth and height, if you enter them for the body-fat
+            calculator; and the colours you pick for friends.
         </li>
         <li>
             <strong>What you record:</strong> your machines (name, setup note, weight settings
-            and unit), your visits (the day of each and when it was recorded) and your sets
-            (weight, repetitions and the time each was recorded).
+            and unit) and their links to friends’ machines, your visits (the day of each and
+            when it was recorded) and your sets (weight, repetitions and the time each was
+            recorded).
+        </li>
+        <li>
+            <strong>Body measures:</strong> your weight, girths, body fat and any measures you
+            add, with the day of each value.
         </li>
         <li>
             <strong>Groups:</strong> the groups you create or join, their names and invite
-            codes, who belongs to each, and the display name taken from your Google name.
+            codes, who belongs to each, and the name its members see: your nickname, or your
+            Google name if you set none.
         </li>
         <li>
             <strong>Technical data:</strong> the sign-in tokens that keep you signed in, and
@@ -106,10 +118,15 @@
 
     <h2>Who can see it</h2>
     <p>
-        You see your own data. When you join a group, its members see your display name, your
-        visits and your machines, read-only; nobody but you can change your data. Leaving a
-        group, or its owner deleting it, stops the sharing. There is no public profile, and
-        nothing is shared outside the groups you join.
+        You see your own data. When you join a group, its members see your nickname, your
+        visits, your machines and how your machines are linked to theirs, read-only; they never
+        see your body measures or your profile details, and nobody but you can change your
+        data. Leaving a group, or its owner deleting it, stops the sharing. There is no public
+        profile, and nothing is shared outside the groups you join.
+    </p>
+    <p>
+        When you share a visit as text, the app hands it, headed by your nickname, to the app or
+        clipboard you choose; where it goes from there is up to you.
     </p>
 
     <h2>Service providers</h2>
@@ -138,9 +155,9 @@
     <ul>
         <li>We keep your data for as long as your account exists.</li>
         <li>
-            When you delete a visit or a set in the app, it disappears from the app, but the
-            record stays on our servers, marked deleted, until your account is deleted. The same
-            goes for groups you delete or leave.
+            When you delete a visit, a set, a measure or a day’s values in the app, it
+            disappears from the app, but the record stays on our servers, marked deleted, until
+            your account is deleted. The same goes for groups you delete or leave.
         </li>
         <li>
             Signing out removes the account from that device’s account list. Its data stays on
