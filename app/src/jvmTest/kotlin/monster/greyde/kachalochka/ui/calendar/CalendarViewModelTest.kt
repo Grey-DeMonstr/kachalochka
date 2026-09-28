@@ -639,6 +639,7 @@ class CalendarViewModelTest {
         runTest {
             val signed = signedInGym()
             signed.friends.group("Зал на Лесной", owner = PASHA, OLEG, ME)
+            signed.profiles.upsert(Profile.new(ME.userId, t0))
             signed.friendVisit(PASHA, twelfth, t0 - 2.days, press)
             signed.friendVisit(OLEG, twelfth, t0 - 2.days, press)
             signed.friendVisit(OLEG, null, t0 - 2.days + 1.hours, row)

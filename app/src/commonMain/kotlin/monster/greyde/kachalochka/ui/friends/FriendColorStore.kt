@@ -14,7 +14,11 @@ class FriendColorStore(
     private val clock: Clock,
     private val random: Random,
 ) {
-    /** Colours for [friends] as [owner] sees them, saving any newly drawn ones. */
+    /**
+     * Colours for [friends] as [owner] sees them, saving newly drawn ones into an existing
+     * profile. It never creates one: a profile the device has not pulled yet would win over the
+     * server's on push, wiping the nickname and colours chosen elsewhere.
+     */
     suspend fun colorsFor(
         owner: UserId,
         friends: List<UserId>,
@@ -22,7 +26,7 @@ class FriendColorStore(
         val profile = profiles.forOwner(owner)
         val stored = profile?.friendColors.orEmpty()
         val colors = assignedColors(stored, friends, FRIEND_PALETTE_SIZE, random)
-        if (colors != stored) save(owner, profile, colors)
+        if (profile != null && colors != stored) save(owner, profile, colors)
         return colors.filterKeys { it in friends }
     }
 

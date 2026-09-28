@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -17,6 +18,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -93,6 +95,21 @@ class FriendVisitViewModelTest {
         assertEquals(2, state.groups.size)
         // The visits, each visit's sets once, the machines.
         assertEquals(4, gym.friends.reads)
+    }
+
+    @Test
+    fun a_visit_no_client_has_dated_shows_on_the_day_it_was_recorded_on() {
+        val recorded = gym.clock.current - 3.days
+        val undated = Visit(VisitId.random(), OLEG.userId, null, recorded, recorded, false)
+        gym.friends.visits += undated
+        gym.friends.sets +=
+            fixture.sets
+                .first()
+                .copy(id = WorkoutSetId.random(), visitId = undated.id, recordedAt = recorded)
+
+        val state = assertNotNull(viewModel(day = gym.today.plusDays(-3)).state.value)
+
+        assertEquals("1 подход", state.setCountLabel)
     }
 
     @Test

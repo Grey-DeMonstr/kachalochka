@@ -263,7 +263,10 @@ so signing back in finds them again.
 Friends' calendar colours belong to the account, not the device: they live in its profile's
 `friend_colors` (§4.1), keyed by friend, so each account sees its own and they sync to its other
 devices. `FriendColorStore` draws a colour for a friend without one with the pure
-`assignedColors` and writes the profile only when it drew something or the user picked a colour.
+`assignedColors` and saves it only into a profile that already exists. It never creates one on
+its own: a device that has not pulled the account's profile yet would push the new row over the
+server's under outbox-wins (§4.2), wiping the nickname and colours chosen elsewhere. Only a colour
+the user picks creates the profile.
 
 The avatar sits in every screen's top bar, so the active account can change under any screen. No
 screen-scoped view model carries a row across that change: each observes the store's active id and

@@ -51,7 +51,7 @@ private val DarkColors =
         error = Color(0xFFFFB4AB),
     )
 
-// Teal, amber, coral, lime, sky, magenta, sand, green: hues kept clear of the violet primary.
+// Teal, amber, coral, lime, sky, magenta, sand, brown: hues kept clear of the violet primary.
 private val LightFriendColors =
     listOf(
         Color(0xFF00897B),
@@ -61,7 +61,7 @@ private val LightFriendColors =
         Color(0xFF1E88E5),
         Color(0xFFC2187A),
         Color(0xFFA0825A),
-        Color(0xFF2E8B57),
+        Color(0xFF7A4A2A),
     )
 
 private val DarkFriendColors =
@@ -73,7 +73,7 @@ private val DarkFriendColors =
         Color(0xFF64B5F6),
         Color(0xFFF06AB4),
         Color(0xFFD9BE8F),
-        Color(0xFF5FCB85),
+        Color(0xFFB5764A),
     )
 
 private val LocalFriendColors = staticCompositionLocalOf { LightFriendColors }

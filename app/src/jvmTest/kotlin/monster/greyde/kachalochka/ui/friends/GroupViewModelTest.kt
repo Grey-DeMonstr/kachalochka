@@ -6,9 +6,15 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.friends.FRIEND_PALETTE_SIZE
+import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.fakes.FakeGym
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -23,16 +29,74 @@ import kotlin.test.assertTrue
 class GroupViewModelTest {
     private val gym = signedInGym()
 
-    private fun viewModel(group: FriendGroup) =
-        GroupViewModel(
-            group.id,
-            gym.friends,
-            gym.invites,
-            gym.currentUser,
-            gym.accounts,
-            FriendColorStore(gym.profiles, gym.clock, Random(1)),
-            gym.sync,
-        )
+    private fun viewModel(
+        group: FriendGroup,
+        gym: FakeGym = this.gym,
+        profiles: ProfileRepository = gym.profiles,
+    ) = GroupViewModel(
+        group.id,
+        gym.friends,
+        gym.invites,
+        gym.currentUser,
+        gym.accounts,
+        FriendColorStore(profiles, gym.clock, Random(1)),
+        gym.sync,
+    )
+
+    /** [profiles] that fail every read while [failing] is set. */
+    private class FlakyProfiles(
+        private val profiles: ProfileRepository,
+    ) : ProfileRepository by profiles {
+        var failing = false
+
+        override suspend fun forOwner(owner: UserId?): Profile? {
+            if (failing) error("no connection")
+            return profiles.forOwner(owner)
+        }
+    }
+
+    @Test
+    fun a_failed_colour_read_after_a_switch_shows_none_of_the_previous_account_s() =
+        runTest {
+            val misha =
+                AccountSession(
+                    Account(
+                        UserId("22222222-2222-4222-8222-222222222222"),
+                        "m@example.test",
+                        "Миша",
+                    ),
+                    "access",
+                    "refresh",
+                    gym.clock.current,
+                )
+            val two = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
+            val mishaFriend = Friend(misha.account.userId, "Миша")
+            val group = two.friends.group("Зал на Лесной", owner = OLEG, ME, mishaFriend)
+            two.profiles.upsert(
+                Profile
+                    .new(ME.userId, two.clock.current)
+                    .copy(friendColors = mapOf(OLEG.userId to 4)),
+            )
+            val profiles = FlakyProfiles(two.profiles)
+            val vm = viewModel(group, two, profiles)
+            assertEquals(
+                4,
+                vm.state.value
+                    ?.members
+                    ?.single { it.friend == OLEG }
+                    ?.color,
+            )
+            profiles.failing = true
+
+            two.accounts.switchTo(misha.account.userId)
+
+            assertNull(
+                vm.state.value
+                    ?.members
+                    ?.single { it.friend == OLEG }
+                    ?.color,
+            )
+        }
 
     @BeforeTest
     fun setUp() {

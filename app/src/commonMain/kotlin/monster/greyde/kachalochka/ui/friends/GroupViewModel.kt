@@ -61,6 +61,9 @@ class GroupViewModel(
     private var confirming = false
     private var notice: String? = null
     private var colors: Map<UserId, Int> = emptyMap()
+
+    /** Whose palette [colors] is; another account's is never kept when a read fails. */
+    private var colorsFor: UserId? = null
     private var colorPicker: UserId? = null
 
     init {
@@ -140,7 +143,10 @@ class GroupViewModel(
                 } else {
                     group = found.first
                     members = found.second
-                    colors = reading { colorsOf(found.second) }.getOrDefault(colors)
+                    val owner = currentUser.id()
+                    val kept = if (owner == colorsFor) colors else emptyMap()
+                    colors = reading { colorsOf(owner, found.second) }.getOrDefault(kept)
+                    colorsFor = owner
                     publish()
                 }
                 mutableOffline.value = false
@@ -149,8 +155,11 @@ class GroupViewModel(
             }
     }
 
-    private suspend fun colorsOf(members: List<GroupMember>): Map<UserId, Int> {
-        val owner = currentUser.id() ?: return emptyMap()
+    private suspend fun colorsOf(
+        owner: UserId?,
+        members: List<GroupMember>,
+    ): Map<UserId, Int> {
+        if (owner == null) return emptyMap()
         return colorStore.colorsFor(owner, members.map { it.userId }.filter { it != owner })
     }
 

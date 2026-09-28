@@ -9,6 +9,7 @@ import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.time.Duration.Companion.hours
 
 class FriendColorStoreTest {
@@ -16,22 +17,50 @@ class FriendColorStoreTest {
     private val store = FriendColorStore(gym.profiles, gym.clock, Random(1))
     private val owner = ME.userId
 
+    private suspend fun storedProfile() =
+        Profile.new(owner, gym.clock.current).copy(displayName = "Ванёк").also {
+            gym.profiles.upsert(it)
+        }
+
     @Test
-    fun the_first_colours_create_the_owner_s_profile() =
+    fun without_a_profile_colours_are_drawn_but_nothing_is_written() =
         runTest {
             val colors = store.colorsFor(owner, listOf(OLEG.userId, PASHA.userId))
 
-            val profile = assertNotNull(gym.profiles.forOwner(owner))
-            assertEquals(ProfileId(owner.value), profile.id)
-            assertEquals(colors, profile.friendColors)
+            assertNull(gym.profiles.forOwner(owner))
             assertEquals(setOf(OLEG.userId, PASHA.userId), colors.keys)
             assertEquals(2, colors.values.toSet().size)
             colors.values.forEach { assertEquals(true, it in 0 until FRIEND_PALETTE_SIZE) }
         }
 
     @Test
+    fun colours_drawn_for_an_existing_profile_are_saved_into_it() =
+        runTest {
+            storedProfile()
+            gym.clock.current += 1.hours
+
+            val colors = store.colorsFor(owner, listOf(OLEG.userId, PASHA.userId))
+
+            val profile = assertNotNull(gym.profiles.forOwner(owner))
+            assertEquals(colors, profile.friendColors)
+            assertEquals("Ванёк", profile.displayName)
+            assertEquals(gym.clock.current, profile.updatedAt)
+        }
+
+    @Test
+    fun a_chosen_colour_creates_the_profile_when_there_is_none() =
+        runTest {
+            store.set(owner, OLEG.userId, 2)
+
+            val profile = assertNotNull(gym.profiles.forOwner(owner))
+            assertEquals(ProfileId(owner.value), profile.id)
+            assertEquals(mapOf(OLEG.userId to 2), profile.friendColors)
+        }
+
+    @Test
     fun known_friends_write_nothing() =
         runTest {
+            storedProfile()
             val first = store.colorsFor(owner, listOf(OLEG.userId))
             val written = assertNotNull(gym.profiles.forOwner(owner)).updatedAt
             gym.clock.current += 1.hours

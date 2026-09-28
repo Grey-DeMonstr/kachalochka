@@ -116,14 +116,15 @@ with its sets in visit order:
   `assignedColors(existing, friends, paletteSize, random)`: the existing map plus an index for
   every friend without one, chosen at random among the least-used indices. `FriendColorStore`
   in `app` reads the active profile, assigns, and writes the profile back only when something
-  was added. The palette is eight colours declared in `ui/theme` (both schemes), the only place
+  was added; without a profile it draws but writes nothing, and only a colour the user picks
+  creates one. The palette is eight colours declared in `ui/theme` (both schemes), the only place
   colours live.
 - `DayUi` carries `friendDots: List<Int>` (palette indices of friends who trained that day, one per
   friend, ordered by name). The cell draws the own dot (`primary`) and then friend dots, at most
   four in total, in one centred row.
-- Below the own day card, the chosen day lists one card per friend visit: a colour dot, the
-  friend's name, and the machine and set counts once that visit's sets are read. Tapping it
-  opens the existing read-only friend visit.
+- Below the own day card, the chosen day lists one card per friend who trained that day: a
+  colour dot, the friend's name, and the machine and set counts once the sets of the visit
+  `keptVisit` picks are read. Tapping it opens the existing read-only friend visit.
 - The group screen shows each member's colour dot (not the viewer's own); tapping it opens a
   palette dialog, and choosing writes the profile.
 
