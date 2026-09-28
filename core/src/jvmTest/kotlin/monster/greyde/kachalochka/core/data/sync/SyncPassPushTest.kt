@@ -5,6 +5,8 @@ import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -60,6 +62,36 @@ class SyncPassPushTest {
                     PROFILE_TABLE,
                     MACHINE_LINK_TABLE,
                     WORKOUT_SET_TABLE,
+                ),
+                h.gateway.pushed.map { it.substringBefore(':') },
+            )
+        }
+
+    @Test
+    fun a_measure_follows_profiles_and_its_values_go_last() =
+        runTest {
+            val visit = ownedVisit(IVAN)
+            val press = ownedPress(IVAN)
+            val neck = ownedMeasure(IVAN)
+            h.measurements.upsert(ownedMeasurement(IVAN, neck))
+            h.sets.upsert(ownedSet(IVAN, visit, press))
+            h.links.upsert(ownedLink(IVAN))
+            h.measures.upsert(neck)
+            h.profiles.upsert(ownedProfile(IVAN))
+            h.visits.upsert(visit)
+            h.machines.upsert(press)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(
+                listOf(
+                    MACHINE_TABLE,
+                    VISIT_TABLE,
+                    PROFILE_TABLE,
+                    MEASURE_TABLE,
+                    MACHINE_LINK_TABLE,
+                    WORKOUT_SET_TABLE,
+                    MEASUREMENT_TABLE,
                 ),
                 h.gateway.pushed.map { it.substringBefore(':') },
             )

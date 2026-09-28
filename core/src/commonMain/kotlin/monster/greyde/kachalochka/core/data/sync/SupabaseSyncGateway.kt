@@ -12,6 +12,10 @@ import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.gym.WorkoutSetRow
 import monster.greyde.kachalochka.core.data.gym.owned
+import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
+import monster.greyde.kachalochka.core.data.measures.MeasureRow
+import monster.greyde.kachalochka.core.data.measures.MeasurementRow
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.data.profile.ProfileRow
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -19,6 +23,8 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import kotlin.time.Instant
 
@@ -62,6 +68,18 @@ class SupabaseSyncGateway(
             .upsert(MachineLinkRow.of(link))
     }
 
+    override suspend fun pushMeasure(measure: Measure) {
+        client.value.postgrest
+            .from(MEASURE_TABLE)
+            .upsert(MeasureRow.of(measure))
+    }
+
+    override suspend fun pushMeasurement(measurement: Measurement) {
+        client.value.postgrest
+            .from(MEASUREMENT_TABLE)
+            .upsert(MeasurementRow.of(measurement))
+    }
+
     override suspend fun pullMachines(
         owner: UserId,
         since: Instant?,
@@ -96,6 +114,20 @@ class SupabaseSyncGateway(
     ): List<MachineLink> =
         pullAll<MachineLinkRow>(MACHINE_LINK_TABLE, owner, since) { it.updatedAt to it.id }
             .map { it.toMachineLink() }
+
+    override suspend fun pullMeasures(
+        owner: UserId,
+        since: Instant?,
+    ): List<Measure> =
+        pullAll<MeasureRow>(MEASURE_TABLE, owner, since) { it.updatedAt to it.id }
+            .map { it.toMeasure() }
+
+    override suspend fun pullMeasurements(
+        owner: UserId,
+        since: Instant?,
+    ): List<Measurement> =
+        pullAll<MeasurementRow>(MEASUREMENT_TABLE, owner, since) { it.updatedAt to it.id }
+            .map { it.toMeasurement() }
 
     // Each page starts after the previous page's last (updated_at, id), so a row another device
     // edits between two fetches only moves later in the order and never makes the pull skip one.

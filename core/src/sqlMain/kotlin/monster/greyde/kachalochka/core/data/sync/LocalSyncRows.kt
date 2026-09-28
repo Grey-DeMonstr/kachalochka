@@ -7,12 +7,17 @@ import monster.greyde.kachalochka.core.data.gym.visitOf
 import monster.greyde.kachalochka.core.data.gym.wireName
 import monster.greyde.kachalochka.core.data.gym.workoutSetOf
 import monster.greyde.kachalochka.core.data.gym.write
+import monster.greyde.kachalochka.core.data.measures.measureOf
+import monster.greyde.kachalochka.core.data.measures.measurementOf
+import monster.greyde.kachalochka.core.data.measures.write
 import monster.greyde.kachalochka.core.data.profile.profileOf
 import monster.greyde.kachalochka.core.data.profile.write
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.profile.Profile
 
 /** Rows as the sync pass sees them: read and written without ever touching the outbox. */
@@ -32,6 +37,12 @@ class LocalSyncRows(
 
     fun machineLink(id: String): MachineLink? =
         database.machineLinkQueries.byId(id, ::machineLinkOf).executeAsOneOrNull()
+
+    fun measure(id: String): Measure? =
+        database.measureQueries.byId(id, ::measureOf).executeAsOneOrNull()
+
+    fun measurement(id: String): Measurement? =
+        database.measurementQueries.byId(id, ::measurementOf).executeAsOneOrNull()
 
     fun writeMachine(machine: Machine) =
         database.machineQueries.upsert(
@@ -76,6 +87,10 @@ class LocalSyncRows(
     fun writeProfile(profile: Profile) = database.profileQueries.write(profile)
 
     fun writeMachineLink(link: MachineLink) = database.machineLinkQueries.write(link)
+
+    fun writeMeasure(measure: Measure) = database.measureQueries.write(measure)
+
+    fun writeMeasurement(measurement: Measurement) = database.measurementQueries.write(measurement)
 
     fun transaction(body: () -> Unit) = database.transaction { body() }
 }

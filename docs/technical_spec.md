@@ -205,10 +205,11 @@ failing a pull.
   table and the row, not its owner. A pass reads each row to learn who owns it: an entry for
   another account's row waits for that account's own turn, and an entry whose row is gone or
   unowned is dropped. A pass pushes entries by table rank: `machine`, `visit`, `profile`,
-  `machine_link`, then `workout_set`, because the server checks a set's visit and machine, which
-  the local SQLite does not. The server checks nothing a link names, but links follow machines so
-  a friend never reads a link before the machine it names. An entry is removed after a successful
-  push only if nothing re-enqueued it in the meantime.
+  `measure`, `machine_link`, `workout_set`, then `measurement`, because the server checks a set's
+  visit and machine, which the local SQLite does not. The server checks nothing a link or a
+  measure's value names, but each follows the rows it names, so a reader never meets it before
+  them. An entry is removed after a successful push only if nothing re-enqueued it in the
+  meantime.
 - **Pull.** The sync pass fetches every row of every table newer than the account's pull
   watermark, keyset-paged on `(updated_at, id)` using the values the server returned for the last
   row of the previous page, and stops once a page comes back empty. It writes nothing, and leaves
@@ -217,6 +218,7 @@ failing a pull.
 - **Conflicts.** A row waiting in the device's outbox wins over the server's copy: the pull skips
   it and its push overwrites the server's. Otherwise the server's copy wins on pull. Every row
   belongs to one person and edits are rare, so a merge strategy would be cost without benefit.
+  The one exception is a `measure` older than the server's copy (§4.6).
 - **Triggers.** A pass runs whenever the app comes to the foreground (a `ProcessLifecycleOwner`
   `ON_START` observer, which also fires at launch), when the app goes to the background, after an
   account is added, after a visit is moved, replaced or removed on the calendar, and after any
@@ -408,6 +410,34 @@ Android while nobody has signed in (§4.3). On the web a write with no owner is 
 row-level security (§5.2), which is why the web build requires an account before any route is
 reachable.
 
+### 4.6 Body measures
+
+Two synced tables, private to their owner: `measure` (name, free-text unit, `kind`, `position`)
+and `measurement` (`measure_id`, `day`, `value`). `kind` names a predefined measure by the wire
+names `weight`, `waist`, `chest`, `hips`, `biceps`, `thigh`, `neck` and `body_fat`, mapped in
+`domain/measures` because derived ids hash them; it is null for the user's own measure, and a
+name this version does not know reads as null. `measurement.measure_id` is no foreign key, since
+a seeded measure may reach the server after its first value. `measurement.day` is a Postgres
+`date`, the same ISO text as `visit.day`.
+
+A measure has one value per day. Two devices may still write one day offline, so
+`MeasurementRepository.all` keeps the live row with the newest `(updated_at, id)` of each measure
+and day (`newestPerDay`), newest day first. `MeasureRepository.all` orders live measures by
+`measureOrder` — position, then name — in Kotlin on both platforms.
+
+The eight predefined measures are seeded by `missingDefaults` for every kind the owner has no
+row of, live or deleted (`MeasureRepository.kinds`), so a deleted one stays deleted. A signed-in
+owner's seeds take `derivedId(owner, kind)` — FNV-1a 64 of `"<owner>:<kind>"` under two offset
+bases, shaped as a v4 UUID — and `updated_at` at the epoch, so two devices seeding offline write
+the same rows. An anonymous owner's seeds take random ids; claimed by an account that already has
+predefined rows elsewhere, both sets show and the user deletes one.
+
+A seed pushed after a rename on another device must not undo it, so the trigger
+`measure_keeps_newer` ignores an update of `measure` whose `updated_at` is older than the stored
+one. It is the one exception to outbox-wins (§4.2). The pull after the push brings the rename to
+the device, unless a pull that skipped the pending seed already moved the watermark past it; then
+the device shows its seed until the row changes on the server again.
+
 ---
 
 ## 5. Backend
@@ -439,7 +469,8 @@ Row-level security enforces every visibility rule from the functional spec:
   their own machine.
 - A user reads their own rows and the live `machine`, `visit`, `workout_set` and `machine_link`
   rows of everyone who shares a live group with them, through the security-definer function
-  `shares_group_with`. `profile` stays readable by its owner alone.
+  `shares_group_with`. `profile`, `measure` and `measurement` stay readable by their owner alone:
+  each has one owner-only policy and no group policy.
 - A friend's link into one's own machine is changed only through two security-definer
   functions, called by `FriendsRepository.breakLinks` and `repointLinks`.
   `break_machine_links(machine)` soft-deletes the live links pointing at `machine`

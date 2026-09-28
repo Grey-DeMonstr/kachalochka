@@ -240,7 +240,7 @@ measurement(id, user_id, measure_id, day, value, updated_at, deleted)
 - Both tables exist in SQLDelight (`7.sqm`) and Postgres, sync like the gym tables and are claimed
   on sign-in. `measurement.measure_id` has no foreign key, since a seeded measure may reach the
   server after its first value.
-- Repositories: `MeasureRepository` (`upsert`, `all(owner)` live by position, `anyFor(owner)`
+- Repositories: `MeasureRepository` (`upsert`, `all(owner)` live by position, `kinds(owner)`
   including deleted) and `MeasurementRepository` (`upsert`, `all(owner)` live, newest first),
   Local and Remote.
 

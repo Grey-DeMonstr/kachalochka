@@ -1,0 +1,36 @@
+import kotlin.Boolean;
+import kotlin.time.Instant;
+
+CREATE TABLE measure (
+    id         TEXT NOT NULL PRIMARY KEY,
+    user_id    TEXT,
+    name       TEXT NOT NULL,
+    unit       TEXT NOT NULL DEFAULT '',
+    kind       TEXT,
+    position   INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER AS Instant NOT NULL,
+    deleted    INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+CREATE INDEX measure_updated_at_idx ON measure (updated_at);
+
+upsert:
+INSERT OR REPLACE INTO measure(id, user_id, name, unit, kind, position, updated_at, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+byId:
+SELECT * FROM measure WHERE id = ?;
+
+live:
+SELECT * FROM measure
+WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
+
+kinds:
+SELECT DISTINCT kind FROM measure
+WHERE kind IS NOT NULL AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
+
+ownerlessIds:
+SELECT id FROM measure WHERE user_id IS NULL;
+
+claimOwnerless:
+UPDATE measure SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;

@@ -7,6 +7,8 @@ import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
+import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
+import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -20,6 +22,10 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.identity.newUuidV4
+import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.MeasureId
+import monster.greyde.kachalochka.core.domain.measures.Measurement
+import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import kotlin.time.Clock
@@ -75,6 +81,25 @@ internal fun ownedLink(
     false,
 )
 
+internal fun ownedMeasure(
+    owner: UserId,
+    updatedAt: Instant = T0,
+) = Measure(MeasureId.random(), owner, "Шея", "см", null, 0, updatedAt, false)
+
+internal fun ownedMeasurement(
+    owner: UserId,
+    measure: Measure,
+    updatedAt: Instant = T0,
+) = Measurement(
+    MeasurementId.random(),
+    owner,
+    measure.id,
+    CalendarDay.of(T0, Duration.ZERO),
+    38.5,
+    updatedAt,
+    false,
+)
+
 internal class SyncHarness {
     val database = inMemoryDatabase()
     val outbox = OutboxDao(database)
@@ -83,6 +108,8 @@ internal class SyncHarness {
     val sets = LocalWorkoutSetRepository(database, outbox, Dispatchers.Unconfined)
     val profiles = LocalProfileRepository(database, outbox, Dispatchers.Unconfined)
     val links = LocalMachineLinkRepository(database, outbox, Dispatchers.Unconfined)
+    val measures = LocalMeasureRepository(database, outbox, Dispatchers.Unconfined)
+    val measurements = LocalMeasurementRepository(database, outbox, Dispatchers.Unconfined)
     val watermarks = SyncWatermarks(database)
     val session = SyncSession()
     val gateway = FakeSyncGateway(session)

@@ -7,6 +7,8 @@ import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -29,18 +31,24 @@ class SqlOwnerlessRows(
                 val setIds = database.workoutSetQueries.ownerlessIds().executeAsList()
                 val profileIds = database.profileQueries.ownerlessIds().executeAsList()
                 val linkIds = database.machineLinkQueries.ownerlessIds().executeAsList()
+                val measureIds = database.measureQueries.ownerlessIds().executeAsList()
+                val measurementIds = database.measurementQueries.ownerlessIds().executeAsList()
 
                 database.visitQueries.claimOwnerless(owner.value, now)
                 database.machineQueries.claimOwnerless(owner.value, now)
                 database.workoutSetQueries.claimOwnerless(owner.value, now)
                 database.profileQueries.claimOwnerless(owner.value, now)
                 database.machineLinkQueries.claimOwnerless(owner.value, now)
+                database.measureQueries.claimOwnerless(owner.value, now)
+                database.measurementQueries.claimOwnerless(owner.value, now)
 
                 enqueue(VISIT_TABLE, visitIds, now)
                 enqueue(MACHINE_TABLE, machineIds, now)
                 enqueue(WORKOUT_SET_TABLE, setIds, now)
                 enqueue(PROFILE_TABLE, profileIds, now)
                 enqueue(MACHINE_LINK_TABLE, linkIds, now)
+                enqueue(MEASURE_TABLE, measureIds, now)
+                enqueue(MEASUREMENT_TABLE, measurementIds, now)
             }
         }
 

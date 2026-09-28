@@ -7,12 +7,16 @@ import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
 import kotlin.time.Instant
@@ -71,6 +75,19 @@ class SyncPass(
                             { it.userId },
                         ) { gateway.pushMachineLink(it) }
 
+                    MEASURE_TABLE ->
+                        pushRow(entry, owner, db { rows.measure(entry.rowId) }, { it.userId }) {
+                            gateway.pushMeasure(it)
+                        }
+
+                    MEASUREMENT_TABLE ->
+                        pushRow(
+                            entry,
+                            owner,
+                            db { rows.measurement(entry.rowId) },
+                            { it.userId },
+                        ) { gateway.pushMeasurement(it) }
+
                     else -> true
                 }
             }.all { it }
@@ -87,6 +104,8 @@ class SyncPass(
                     gateway.pullSets(owner, since),
                     gateway.pullProfiles(owner, since),
                     gateway.pullMachineLinks(owner, since),
+                    gateway.pullMeasures(owner, since),
+                    gateway.pullMeasurements(owner, since),
                 )
         }
         val rowsPulled = pulled ?: return false
@@ -108,6 +127,12 @@ class SyncPass(
                 rowsPulled.links.forEach {
                     if ((MACHINE_LINK_TABLE to it.id.value) !in pending) rows.writeMachineLink(it)
                 }
+                rowsPulled.measures.forEach {
+                    if ((MEASURE_TABLE to it.id.value) !in pending) rows.writeMeasure(it)
+                }
+                rowsPulled.measurements.forEach {
+                    if ((MEASUREMENT_TABLE to it.id.value) !in pending) rows.writeMeasurement(it)
+                }
                 rowsPulled.newestUpdatedAt?.let { watermarks.advance(owner, it) }
             }
         }
@@ -120,12 +145,15 @@ class SyncPass(
         val sets: List<WorkoutSet>,
         val profiles: List<Profile>,
         val links: List<MachineLink>,
+        val measures: List<Measure>,
+        val measurements: List<Measurement>,
     ) {
         val newestUpdatedAt: Instant? =
             (
                 machines.map { it.updatedAt } + visits.map { it.updatedAt } +
                     sets.map { it.updatedAt } + profiles.map { it.updatedAt } +
-                    links.map { it.updatedAt }
+                    links.map { it.updatedAt } + measures.map { it.updatedAt } +
+                    measurements.map { it.updatedAt }
             ).maxOrNull()
     }
 
@@ -166,15 +194,17 @@ class SyncPass(
     private suspend fun <T> db(read: () -> T): T = withContext(dispatcher) { read() }
 
     private companion object {
-        // The server checks a set's visit and machine. It checks nothing a link names, but a
-        // link follows the machines so a friend never reads one before its machine.
+        // The server checks a set's visit and machine. It checks nothing a link or a value
+        // names, but each follows the rows it names, so a reader never meets it before them.
         val PUSH_RANK =
             listOf(
                 MACHINE_TABLE,
                 VISIT_TABLE,
                 PROFILE_TABLE,
+                MEASURE_TABLE,
                 MACHINE_LINK_TABLE,
                 WORKOUT_SET_TABLE,
+                MEASUREMENT_TABLE,
             )
     }
 }

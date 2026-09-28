@@ -5,6 +5,8 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import kotlin.time.Instant
 
@@ -19,6 +21,10 @@ interface SyncGateway {
     suspend fun pushProfile(profile: Profile)
 
     suspend fun pushMachineLink(link: MachineLink)
+
+    suspend fun pushMeasure(measure: Measure)
+
+    suspend fun pushMeasurement(measurement: Measurement)
 
     suspend fun pullMachines(
         owner: UserId,
@@ -44,4 +50,14 @@ interface SyncGateway {
         owner: UserId,
         since: Instant?,
     ): List<MachineLink>
+
+    suspend fun pullMeasures(
+        owner: UserId,
+        since: Instant?,
+    ): List<Measure>
+
+    suspend fun pullMeasurements(
+        owner: UserId,
+        since: Instant?,
+    ): List<Measurement>
 }

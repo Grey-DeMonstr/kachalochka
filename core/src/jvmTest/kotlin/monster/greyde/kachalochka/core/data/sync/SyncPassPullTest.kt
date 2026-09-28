@@ -3,6 +3,8 @@ package monster.greyde.kachalochka.core.data.sync
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import kotlin.test.Test
@@ -86,6 +88,59 @@ class SyncPassPullTest {
         runTest {
             h.gateway.visitsToPull = listOf(ownedVisit(IVAN, updatedAt = T0 + 1.hours))
             h.gateway.linksToPull = listOf(ownedLink(IVAN, updatedAt = T0 + 2.hours))
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(T0 + 2.hours, h.watermarks.lastPullAt(IVAN))
+        }
+
+    @Test
+    fun a_pulled_measure_and_its_value_are_written_locally() =
+        runTest {
+            val neck = ownedMeasure(IVAN)
+            val monday = ownedMeasurement(IVAN, neck)
+            h.gateway.measuresToPull = listOf(neck)
+            h.gateway.measurementsToPull = listOf(monday)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(listOf(neck), h.measures.all(IVAN))
+            assertEquals(listOf(monday), h.measurements.all(IVAN))
+        }
+
+    @Test
+    fun a_measure_waiting_in_the_outbox_survives_the_pull_that_would_overwrite_it() =
+        runTest {
+            val neck = ownedMeasure(IVAN)
+            h.measures.upsert(neck)
+            h.gateway.failing = MEASURE_TABLE
+            h.gateway.measuresToPull = listOf(neck.copy(name = "Шея сзади"))
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(listOf(neck), h.measures.all(IVAN))
+        }
+
+    @Test
+    fun a_value_waiting_in_the_outbox_survives_the_pull_that_would_overwrite_it() =
+        runTest {
+            val monday = ownedMeasurement(IVAN, ownedMeasure(IVAN))
+            h.measurements.upsert(monday)
+            h.gateway.failing = MEASUREMENT_TABLE
+            h.gateway.measurementsToPull = listOf(monday.copy(value = 40.0))
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(listOf(monday), h.measurements.all(IVAN))
+        }
+
+    @Test
+    fun the_watermark_counts_pulled_measures_and_values() =
+        runTest {
+            val neck = ownedMeasure(IVAN, updatedAt = T0 + 1.hours)
+            h.gateway.measuresToPull = listOf(neck)
+            h.gateway.measurementsToPull =
+                listOf(ownedMeasurement(IVAN, neck, updatedAt = T0 + 2.hours))
 
             h.pass.run(listOf(IVAN))
 

@@ -4,12 +4,16 @@ import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import kotlin.time.Instant
 
@@ -28,6 +32,8 @@ class FakeSyncGateway(
     var setsToPull: List<WorkoutSet> = emptyList()
     var profilesToPull: List<Profile> = emptyList()
     var linksToPull: List<MachineLink> = emptyList()
+    var measuresToPull: List<Measure> = emptyList()
+    var measurementsToPull: List<Measurement> = emptyList()
 
     /** Makes every push to that table fail, as a lost connection would. */
     var failing: String? = null
@@ -44,6 +50,11 @@ class FakeSyncGateway(
 
     override suspend fun pushMachineLink(link: MachineLink) =
         record(MACHINE_LINK_TABLE, link.id.value)
+
+    override suspend fun pushMeasure(measure: Measure) = record(MEASURE_TABLE, measure.id.value)
+
+    override suspend fun pushMeasurement(measurement: Measurement) =
+        record(MEASUREMENT_TABLE, measurement.id.value)
 
     override suspend fun pullMachines(
         owner: UserId,
@@ -69,6 +80,16 @@ class FakeSyncGateway(
         owner: UserId,
         since: Instant?,
     ) = pull(owner, since) { linksToPull.filter { it.userId == owner } }
+
+    override suspend fun pullMeasures(
+        owner: UserId,
+        since: Instant?,
+    ) = pull(owner, since) { measuresToPull.filter { it.userId == owner } }
+
+    override suspend fun pullMeasurements(
+        owner: UserId,
+        since: Instant?,
+    ) = pull(owner, since) { measurementsToPull.filter { it.userId == owner } }
 
     private fun <T> pull(
         owner: UserId,

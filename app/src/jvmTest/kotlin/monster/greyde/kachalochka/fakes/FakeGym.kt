@@ -30,6 +30,15 @@ import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.MeasureId
+import monster.greyde.kachalochka.core.domain.measures.MeasureKind
+import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
+import monster.greyde.kachalochka.core.domain.measures.Measurement
+import monster.greyde.kachalochka.core.domain.measures.MeasurementId
+import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
+import monster.greyde.kachalochka.core.domain.measures.measureOrder
+import monster.greyde.kachalochka.core.domain.measures.newestPerDay
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
@@ -170,6 +179,34 @@ class InMemoryMachineLinkRepository : MachineLinkRepository {
         rows.values.filter { !it.deleted && it.userId == owner }
 }
 
+class InMemoryMeasureRepository : MeasureRepository {
+    val rows = linkedMapOf<MeasureId, Measure>()
+
+    override suspend fun upsert(measure: Measure) {
+        rows[measure.id] = measure
+    }
+
+    override suspend fun all(owner: UserId?): List<Measure> =
+        rows.values.filter { !it.deleted && it.userId == owner }.sortedWith(measureOrder)
+
+    override suspend fun kinds(owner: UserId?): Set<MeasureKind> =
+        rows.values
+            .filter { it.userId == owner }
+            .mapNotNull { it.kind }
+            .toSet()
+}
+
+class InMemoryMeasurementRepository : MeasurementRepository {
+    val rows = linkedMapOf<MeasurementId, Measurement>()
+
+    override suspend fun upsert(measurement: Measurement) {
+        rows[measurement.id] = measurement
+    }
+
+    override suspend fun all(owner: UserId?): List<Measurement> =
+        newestPerDay(rows.values.filter { !it.deleted && it.userId == owner })
+}
+
 private class QueuedGoogleSignIn : GoogleSignIn {
     val queue = ArrayDeque<AccountSession>()
 
@@ -233,6 +270,8 @@ class FakeGym(
     val sets = InMemoryWorkoutSetRepository()
     val profiles = InMemoryProfileRepository()
     val machineLinks = InMemoryMachineLinkRepository()
+    val measures = InMemoryMeasureRepository()
+    val measurements = InMemoryMeasurementRepository()
     private val signIn = QueuedGoogleSignIn()
     val accounts =
         Accounts(

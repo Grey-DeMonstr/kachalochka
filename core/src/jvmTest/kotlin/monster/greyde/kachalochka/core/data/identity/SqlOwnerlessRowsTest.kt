@@ -8,6 +8,10 @@ import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
+import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
+import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
+import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
@@ -21,6 +25,10 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.MeasureId
+import monster.greyde.kachalochka.core.domain.measures.Measurement
+import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,6 +46,8 @@ class SqlOwnerlessRowsTest {
     private val sets = LocalWorkoutSetRepository(database, outbox, Dispatchers.Unconfined)
     private val profiles = LocalProfileRepository(database, outbox, Dispatchers.Unconfined)
     private val links = LocalMachineLinkRepository(database, outbox, Dispatchers.Unconfined)
+    private val measures = LocalMeasureRepository(database, outbox, Dispatchers.Unconfined)
+    private val values = LocalMeasurementRepository(database, outbox, Dispatchers.Unconfined)
 
     private val owner = UserId("11111111-1111-4111-8111-111111111111")
     private val stranger = UserId("22222222-2222-4222-8222-222222222222")
@@ -147,6 +157,43 @@ class SqlOwnerlessRowsTest {
                 outbox.pending().any {
                     it.tableName == MACHINE_LINK_TABLE && it.rowId == anonymous.id.value
                 },
+            )
+        }
+
+    @Test
+    fun claiming_stamps_anonymous_measures_and_their_values_and_enqueues_them() =
+        runTest {
+            val neck = Measure(MeasureId.random(), null, "Шея", "см", null, 0, t0, false)
+            val monday =
+                Measurement(
+                    MeasurementId.random(),
+                    null,
+                    neck.id,
+                    CalendarDay(2026, 9, 21),
+                    38.5,
+                    t0,
+                    false,
+                )
+            measures.upsert(neck)
+            values.upsert(monday)
+
+            rows.claim(owner)
+
+            assertEquals(
+                listOf(neck.copy(userId = owner, updatedAt = clock.now())),
+                measures.all(owner),
+            )
+            assertEquals(
+                listOf(monday.copy(userId = owner, updatedAt = clock.now())),
+                values.all(owner),
+            )
+            assertEquals(
+                setOf(MEASURE_TABLE to neck.id.value, MEASUREMENT_TABLE to monday.id.value),
+                outbox
+                    .pending()
+                    .map { it.tableName to it.rowId }
+                    .filter { it.first == MEASURE_TABLE || it.first == MEASUREMENT_TABLE }
+                    .toSet(),
             )
         }
 }

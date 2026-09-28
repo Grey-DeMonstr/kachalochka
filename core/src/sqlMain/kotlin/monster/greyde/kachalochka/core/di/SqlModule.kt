@@ -14,6 +14,8 @@ import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.SessionRefresh
 import monster.greyde.kachalochka.core.data.identity.SqlOwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.SupabaseSessions
+import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
+import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.supabase.activeAccountSupabaseClient
@@ -30,6 +32,8 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
+import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -45,6 +49,10 @@ internal fun sqlModule(): Module =
         single<VisitRepository> { LocalVisitRepository(get(), get(), Dispatchers.IO) }
         single<WorkoutSetRepository> { LocalWorkoutSetRepository(get(), get(), Dispatchers.IO) }
         single<MachineLinkRepository> { LocalMachineLinkRepository(get(), get(), Dispatchers.IO) }
+        single<MeasureRepository> { LocalMeasureRepository(get(), get(), Dispatchers.IO) }
+        single<MeasurementRepository> {
+            LocalMeasurementRepository(get(), get(), Dispatchers.IO)
+        }
         single<OwnerlessRows> { SqlOwnerlessRows(get(), get(), Clock.System, Dispatchers.IO) }
         single { SyncWatermarks(get()) }
         single { LocalSyncRows(get()) }

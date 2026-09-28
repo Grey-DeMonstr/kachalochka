@@ -156,6 +156,8 @@ class SchemaMigrationTest {
         )
         version5ProfileTable()
         exec("DROP TABLE machine_link")
+        exec("DROP TABLE measure")
+        exec("DROP TABLE measurement")
     }
 
     /** Every version before 6 declares the profile table this way. */
@@ -322,6 +324,41 @@ class SchemaMigrationTest {
                 "SELECT name FROM sqlite_master " +
                     "WHERE type = 'index' AND name = 'machine_link_updated_at_idx'",
             ),
+        )
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
+    @Test
+    fun version_7_gains_the_measure_tables_and_every_row_is_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        exec("DROP TABLE measure")
+        exec("DROP TABLE measurement")
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 7, 8)
+
+        exec(
+            "INSERT INTO measure(id, user_id, name, updated_at) " +
+                "VALUES ('neck', 'ivan', 'Шея', 7)",
+        )
+        exec(
+            "INSERT INTO measurement(id, user_id, measure_id, day, value, updated_at) " +
+                "VALUES ('monday', 'ivan', 'neck', '2026-09-21', 38.5, 7)",
+        )
+        assertEquals("", text("SELECT unit FROM measure WHERE id = 'neck'"))
+        assertEquals(null, text("SELECT kind FROM measure WHERE id = 'neck'"))
+        assertEquals(0L, number("SELECT position FROM measure WHERE id = 'neck'"))
+        assertEquals(0L, number("SELECT deleted FROM measure WHERE id = 'neck'"))
+        assertEquals("2026-09-21", text("SELECT day FROM measurement WHERE id = 'monday'"))
+        assertEquals(0L, number("SELECT deleted FROM measurement WHERE id = 'monday'"))
+        assertEquals(
+            listOf("measure_updated_at_idx", "measurement_updated_at_idx"),
+            listOf("measure", "measurement").map {
+                text(
+                    "SELECT name FROM sqlite_master " +
+                        "WHERE type = 'index' AND name = '${it}_updated_at_idx'",
+                )
+            },
         )
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }

@@ -7,6 +7,12 @@ internal fun kachalochkaDatabase(driver: SqlDriver): KachalochkaDatabase =
         driver = driver,
         machineAdapter = Machine.Adapter(updated_atAdapter = InstantColumnAdapter),
         machine_linkAdapter = Machine_link.Adapter(updated_atAdapter = InstantColumnAdapter),
+        measureAdapter = Measure.Adapter(updated_atAdapter = InstantColumnAdapter),
+        measurementAdapter =
+            Measurement.Adapter(
+                dayAdapter = CalendarDayColumnAdapter,
+                updated_atAdapter = InstantColumnAdapter,
+            ),
         outboxAdapter = Outbox.Adapter(enqueuedAtAdapter = InstantColumnAdapter),
         profileAdapter = Profile.Adapter(updated_atAdapter = InstantColumnAdapter),
         syncStateAdapter = SyncState.Adapter(lastPullAtAdapter = InstantColumnAdapter),

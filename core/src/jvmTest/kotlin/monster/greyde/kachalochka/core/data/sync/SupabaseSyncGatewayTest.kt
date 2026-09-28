@@ -20,6 +20,11 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.MeasureId
+import monster.greyde.kachalochka.core.domain.measures.MeasureKind
+import monster.greyde.kachalochka.core.domain.measures.Measurement
+import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -221,6 +226,67 @@ class SupabaseSyncGatewayTest {
                 engine.requestHistory.all { it.url.encodedPath.endsWith("/machine_link") },
             )
             assertEquals(listOf(link), pulled)
+        }
+
+    @Test
+    fun a_measure_and_its_value_are_pushed_to_and_pulled_from_their_own_tables() =
+        runTest {
+            val neck =
+                Measure(
+                    MeasureId("55555555-5555-4555-8555-555555555555"),
+                    OWNER,
+                    "Шея",
+                    "см",
+                    MeasureKind.Neck,
+                    6,
+                    Instant.parse("2024-01-01T00:00:00Z"),
+                    false,
+                )
+            val monday =
+                Measurement(
+                    MeasurementId("66666666-6666-4666-8666-666666666666"),
+                    OWNER,
+                    neck.id,
+                    CalendarDay(2024, 1, 1),
+                    38.5,
+                    Instant.parse("2024-01-01T00:00:00Z"),
+                    false,
+                )
+            val measureRow =
+                """[{"id":"${neck.id.value}","user_id":"${OWNER.value}","name":"Шея",""" +
+                    """"unit":"см","kind":"neck","position":6,""" +
+                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false}]"""
+            val measurementRow =
+                """[{"id":"${monday.id.value}","user_id":"${OWNER.value}",""" +
+                    """"measure_id":"${neck.id.value}","day":"2024-01-01","value":38.5,""" +
+                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false}]"""
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
+            engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
+            engine.enqueue { respond(measureRow, HttpStatusCode.OK, jsonHeaders()) }
+            engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }
+            engine.enqueue { respond(measurementRow, HttpStatusCode.OK, jsonHeaders()) }
+            engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }
+            val gateway = gatewayOn(engine, pageSize = 10)
+
+            gateway.pushMeasure(neck)
+            gateway.pushMeasurement(monday)
+            val measures = gateway.pullMeasures(OWNER, since = null)
+            val measurements = gateway.pullMeasurements(OWNER, since = null)
+
+            assertEquals(
+                listOf(
+                    "measure",
+                    "measurement",
+                    "measure",
+                    "measure",
+                    "measurement",
+                    "measurement",
+                ),
+                engine.requestHistory.map { it.url.encodedPath.substringAfterLast('/') },
+            )
+            assertEquals(listOf(neck), measures)
+            assertEquals(listOf(monday), measurements)
         }
 
     @Test
