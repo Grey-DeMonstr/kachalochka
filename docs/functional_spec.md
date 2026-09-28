@@ -84,7 +84,9 @@ way.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,
-and weight and reps steppers seeded from the previous visit's set. Saving records the set. The
+and weight and reps steppers. The first set on a machine starts from the previous visit's first
+set; each later one keeps the weight of the set just recorded and takes its reps from the previous
+visit's set of the same number, so a changed weight carries on. Saving records the set. The
 weight can also be typed, with a comma or a point; − and + step it by the machine's weight step.
 The weight stepper is the one place where the machine's own unit comes first: its value and step
 are in that unit, and when the profile's unit is "кг" or "lb" and differs from it, the converted

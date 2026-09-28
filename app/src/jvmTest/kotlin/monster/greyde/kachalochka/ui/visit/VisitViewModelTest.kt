@@ -317,7 +317,7 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun the_typed_weight_is_saved_and_the_next_set_is_suggested_again() =
+    fun the_typed_weight_is_saved_and_carries_on_to_the_next_set() =
         runTest {
             val vm = viewModel().also { it.selectMachine(press.id) }
             vm.typeWeight("22,5")
@@ -332,7 +332,7 @@ class VisitViewModelTest {
                     .weight,
             )
             val sheet = assertNotNull(vm.state.value?.sheet)
-            assertEquals("70", sheet.weight)
+            assertEquals("22,5", sheet.weight)
             assertEquals(true, sheet.canSave)
         }
 
@@ -380,7 +380,7 @@ class VisitViewModelTest {
             val state = assertNotNull(vm.state.value)
             assertEquals("1 подход", state.setCountLabel)
             assertEquals("подход 2", state.sheet?.setNumberLabel)
-            assertEquals("70", state.sheet?.weight)
+            assertEquals("67,5", state.sheet?.weight)
             assertEquals(
                 listOf("Жим ногами (+20 кг)" to "67,5кг 1x10"),
                 state.groups.map { it.title to it.summary },
