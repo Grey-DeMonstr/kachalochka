@@ -358,10 +358,10 @@ Row-level security enforces every visibility rule from the functional spec:
 
 - A user writes only rows with their own `user_id`, and a set only into their own visit and on
   their own machine.
-- A user reads their own rows and the live `machine`, `visit`, `workout_set` and `profile`
-  rows of everyone who shares a live group with them, through the security-definer function
-  `shares_group_with`.
-- Group membership is readable by the group's members and changes only through the
+- A user reads their own rows and the live `machine`, `visit` and `workout_set` rows of
+  everyone who shares a live group with them, through the security-definer function
+  `shares_group_with`. `profile` stays readable by its owner alone.
+- A group's current members are readable by its members. Membership changes only through the
   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
   and soft-deletes the group directly, and a deleted group stays deleted.
 

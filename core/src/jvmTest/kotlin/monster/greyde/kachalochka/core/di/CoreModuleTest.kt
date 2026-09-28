@@ -44,7 +44,7 @@ class CoreModuleTest {
         assertNotNull(koin.get<CurrentUser>())
     }
 
-    /** A clone with no `local.properties` has to reach the screens and work anonymously (§5.4). */
+    /** A clone with no `local.properties` has to reach the screens and work anonymously (§5.3). */
     @Test
     fun the_account_graph_is_built_without_supabase_credentials() {
         val koin =

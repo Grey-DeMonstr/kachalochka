@@ -127,10 +127,10 @@ Each decision, then why.
   the UI client, and never reach SQLite.** The functional spec shares data, it does not sync it;
   the pull stays `owned(owner)`, so widened policies cannot leak rows into the local database.
 - **Row-level security, not the client, decides who reads whom: a security-definer
-  `shares_group_with(other)` widens only the `select` policies of `machine`, `visit`,
-  `workout_set` and `profile`, and only to rows not deleted.** Insert and update policies stay
-  owner-only, and a set may point only at its owner's own visit and machine, so friends read and
-  never write, not even into each other's visits.
+  `shares_group_with(other)` widens only the `select` policies of `machine`, `visit` and
+  `workout_set`, and only to rows not deleted.** Insert and update policies stay owner-only, and
+  a set may point only at its owner's own visit and machine, so friends read and never write, not
+  even into each other's visits. `profile` stays owner-only: no screen reads a friend's profile.
 - **Membership changes only through security-definer functions: `create_group`, `join_group`
   (takes the code), `leave_group`.** A plain insert policy would let anyone add themselves to any
   group whose id they learned.
@@ -146,6 +146,9 @@ Each decision, then why.
   `localStorage` before sign-in and removes it from the address.** Sign-in returns to the page
   address without its query (tech spec §5.3), so the code has to survive the Google round trip
   elsewhere.
+- **A stored code is offered, not joined: once an account is active the app asks, and "Отмена"
+  forgets the code.** The code goes to whichever account signs in next in that browser, and
+  joining shows that account's visits and machines to the group.
 - **Android builds the link from a `WEB_APP_URL` build setting and shares the code alone when it
   is unset; Android has "Вступить по коду".** Android has no page address of its own, and a fresh
   clone must still build.
@@ -156,8 +159,10 @@ Each decision, then why.
   after a confirmation, and writes at once.** It detaches only that machine; the others keep
   their shared key. The confirmation is the deliberate step, so the form's save is not a second
   one.
-- **The ⋮ menu shows whenever an account is signed in.** A machine can be a link root without
-  its owner knowing, and breaking an unlinked machine's link is harmless.
+- **The ⋮ menu shows on an existing machine of the active account that has a `link_id` or,
+  checked online, whose key a group-mate's machine shares.** A machine can be a link root
+  without its owner knowing, so the original's side asks the group; a `link_id` on hand needs no
+  network.
 
 ---
 
@@ -442,9 +447,12 @@ one, as today.
   if any, must still be there when the Auth plugin starts.
 - With no account the sign-in screen shows; Google returns to the plain page address, and the
   code waits in storage.
-- Once an account is active, `App` hands a stored code to `join_group`; success opens the group
-  and clears the code, "unknown code" shows "Приглашение не найдено" and clears it, a network
-  failure keeps it for the next start.
+- Once an account is active and a code is stored, `App` asks "Вступить в группу по
+  приглашению?" — "Участники группы увидят ваши визиты и тренажёры." — "Вступить"
+  (`invite-confirm`) / "Отмена" (`invite-cancel`). "Отмена" clears the code and joins nothing.
+  "Вступить" hands the code to `join_group`: success opens the group and clears the code,
+  "unknown code" shows "Приглашение не найдено" and clears it, a network failure keeps it for
+  the next start.
 - The sign-in redirect allowlist is untouched: the return address never carries `join`.
 - Android: `inviteLink(WEB_APP_URL, code)`. `WEB_APP_URL` comes from `local.properties` or the
   environment like the Supabase settings, and on CI from a repository variable in `ci.yml` and
@@ -454,8 +462,9 @@ one, as today.
 
 - `Machine` gains `linkId: MachineId?`; `Machine.linkKey = linkId ?: id`.
 - **Picker**: under the own machines, a section "Тренажёры друзей": group-mates' live machines
-  whose key matches none of the own keys, each with "у Миши" (`friend-machine-<id>`), one row per
-  key with the original preferred over a copy when several friends share it. Picking one saves
+  whose key matches none of the own keys, each captioned with its owner and the settings the
+  copy takes, "Миша · кг всего · ±2,5" (`friend-machine-<id>`), one row per key with the
+  original preferred over a copy when several friends share it. Picking one saves
   `linkedCopy(friend, owner, now)` — the friend's settings, a new id, `linkId = friend.linkKey`
   — and returns it to the visit like any pick. Offline, the section is absent.
 - **Set sheet**: under the previous-visit line, "Друзья:" and, for up to three friends with sets
@@ -464,19 +473,25 @@ one, as today.
 - **A friend's visit**: their sets on a machine whose key matches one of the viewer's machines
   are grouped under the viewer's machine name; others under the friend's name for it.
 - **Breaking**: the machine form's top bar gets a ⋮ (`machine-menu`, Phosphor
-  `DotsThreeVertical`) with "Отвязать от друзей" (`unlink-machine`), shown when the machine has
-  a `link_id` or, checked online, a group-mate owns a machine sharing its key — so either side of
-  a link can break it; the dialog "Отвязать тренажёр?" — "Результаты друзей на этом тренажёре
-  перестанут показываться у вас." — "Отвязать" / "Отмена". It writes `linkId =
-  MachineId.random()` at once.
+  `DotsThreeVertical`) with "Отвязать от друзей" (`unlink-machine`), shown on an existing
+  machine of the active account when it has a `link_id` or, checked online, a group-mate owns a
+  machine sharing its key — so either side of a link can break it; the dialog "Отвязать
+  тренажёр?" — "Результаты друзей на этом тренажёре перестанут показываться у вас." —
+  "Отвязать" / "Отмена". It writes `linkId = MachineId.random()` at once.
 
 ### 5.4 Domain and data
 
 - `domain/friends`: `GroupId`, `FriendGroup(id, name, ownerId, inviteCode, memberCount)`,
-  `GroupMember(userId, displayName, isOwner)`, `FriendResult(member, sets)`, and
-  `FriendsRepository`: `groups()`, `create(name)`, `join(code)`, `leave(group)`,
-  `delete(group)`, `members(group)`, `visits(member)`, `sets(visit)`, `machines(member)`,
-  `groupMachines()`, `latestOn(linkKey)`.
+  `GroupMember(userId, displayName, isOwner)`, `Friend(userId, displayName)`,
+  `FriendMachine(machine, owner: Friend)`, `FriendResult(friend: Friend, sets)`, and
+  `FriendsRepository`: `groups()`, `group(id)`, `create(name)`, `join(code)`, `leave(group)`,
+  `delete(group)`, `members(group: FriendGroup)`, `visits(member)`, `sets(visit)`,
+  `machines(member)`, `groupMachines(viewer)`, `latestOn(viewer, linkKey)`.
+- `join` answers null for an unknown code: `join_group` raises `PT404`, which PostgREST answers
+  with a 404, and the client reads either the code or the status.
+- `latestOn` reads each friend's newest set on the key in a request of its own, so one friend's
+  long history never crowds another out; the three newest of those name the visits it then
+  reads whole.
 - One implementation, `SupabaseFriendsRepository` in `core/src/commonMain/.../data/friends`,
   bound per platform. It is the exception to "two implementations per repository" (tech spec
   §3), because both platforms read friends online: the web binds it on the UI `SupabaseClient`,
@@ -488,7 +503,13 @@ one, as today.
 
 ```sql
 ALTER TABLE machine ADD COLUMN link_id TEXT;
+-- Rows pulled before this version lack the columns other clients have since written to them.
+UPDATE syncState SET lastPullAt = NULL;
 ```
+
+Clearing the watermark makes the next pass pull every row once: a device upgraded from 1.0.1
+never saw the `link_id`, `day` or `position` other clients wrote, and an edit would push the
+missing link as null. The pull still skips rows waiting in the outbox.
 
 `supabase/migrations/0007_groups.sql`:
 
@@ -585,7 +606,8 @@ begin
     select id into target from public.friend_group
     where invite_code = upper(regexp_replace(code, '^\s+|\s+$', '', 'g')) and not deleted;
     if target is null then
-        raise exception 'unknown invite code' using errcode = 'P0002';
+        -- PostgREST answers a PTxyz code with HTTP status xyz.
+        raise exception 'unknown invite code' using errcode = 'PT404';
     end if;
     insert into public.group_member (group_id, user_id, display_name)
     values (target, (select auth.uid()), public.my_display_name())
@@ -616,7 +638,7 @@ create policy friend_group_update_owner on public.friend_group
     for update using (owner_id = (select auth.uid()) and not deleted)
     with check (owner_id = (select auth.uid()));
 create policy group_member_select_member on public.group_member
-    for select using (public.is_group_member(group_id));
+    for select using (not deleted and public.is_group_member(group_id));
 
 grant select on public.friend_group to authenticated;
 grant update (name, deleted, updated_at) on public.friend_group to authenticated;
@@ -634,11 +656,6 @@ create policy visit_select_own_or_group on public.visit
     );
 drop policy if exists workout_set_select_own on public.workout_set;
 create policy workout_set_select_own_or_group on public.workout_set
-    for select using (
-        (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
-    );
-drop policy if exists profile_select_own on public.profile;
-create policy profile_select_own_or_group on public.profile
     for select using (
         (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
     );
@@ -835,17 +852,17 @@ Replace the section "## Group sharing" with:
 > ## Group sharing
 >
 > Signed-in users form groups. The creator owns the group and invites others with a link to the
-> web app or with its eight-character code; the Android app joins by code. Every member sees the
-> other members' calendars and visits, read-only, and nothing is shared outside a group. A member
-> can leave; the owner deletes the group instead. Friends' data is read online and never stored
-> on the device.
+> web app or with its eight-character code; the Android app joins by code. An invite link asks
+> before joining, warning that the group's members will see the user's visits and machines; a
+> link opened while signed out is offered to whichever account signs in next in that browser.
+> Every member sees the other members' calendars and visits, read-only, and nothing is shared
+> outside a group. A member can leave; the owner deletes the group instead. Friends' data is read
+> online and never stored on the device.
 >
 > A machine can be taken from a friend's list: the copy keeps the friend's settings and stays
 > linked to the friend's machine as one physical machine. The set sheet then shows friends'
 > latest results on it, and a friend's visit shows their sets on it under the user's own machine
 > name. A link can be broken from the machine form.
->
-> A newsfeed of ended visits is not built yet.
 
 #### `docs/technical_spec.md`
 
@@ -858,10 +875,10 @@ Replace the section "## Group sharing" with:
 
 > - A user writes only rows with their own `user_id`, and a set only into their own visit and on
 >   their own machine.
-> - A user reads their own rows and the live `machine`, `visit`, `workout_set` and `profile`
->   rows of everyone who shares a live group with them, through the security-definer function
->   `shares_group_with`.
-> - Group membership is readable by the group's members and changes only through the
+> - A user reads their own rows and the live `machine`, `visit` and `workout_set` rows of
+>   everyone who shares a live group with them, through the security-definer function
+>   `shares_group_with`. `profile` stays readable by its owner alone.
+> - A group's current members are readable by its members. Membership changes only through the
 >   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
 >   and soft-deletes the group directly, and a deleted group stays deleted.
 

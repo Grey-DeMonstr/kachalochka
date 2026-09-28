@@ -139,5 +139,3 @@ A machine can be taken from a friend's list: the copy keeps the friend's setting
 linked to the friend's machine as one physical machine. The set sheet then shows friends'
 latest results on it, and a friend's visit shows their sets on it under the user's own machine
 name. A link can be broken from the machine form.
-
-A newsfeed of ended visits is not built yet.

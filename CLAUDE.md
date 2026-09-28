@@ -66,7 +66,7 @@ app/                  Compose Multiplatform library (android, jvm, wasmJs)
   src/wasmJsMain/     browser entry point
   src/jvmTest/        Compose desktop UI tests with fake repositories
 androidApp/           Android application: manifest, MainActivity, signing, versioning
-supabase/migrations/  Postgres schema, RLS policies, newsfeed view
+supabase/migrations/  Postgres schema and RLS policies
 gradle/libs.versions.toml   the only place library versions are declared
 ```
 
