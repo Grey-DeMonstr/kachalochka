@@ -1,5 +1,7 @@
 package monster.greyde.kachalochka
 
+import androidx.compose.foundation.background
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -8,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,7 +37,10 @@ import monster.greyde.kachalochka.navigation.MeasureRoute
 import monster.greyde.kachalochka.navigation.MeasurementFormRoute
 import monster.greyde.kachalochka.navigation.MeasuresRoute
 import monster.greyde.kachalochka.navigation.SettingsRoute
+import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.navigation.VisitRoute
+import monster.greyde.kachalochka.navigation.screenEnter
+import monster.greyde.kachalochka.navigation.screenExit
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.SignInScreen
@@ -75,6 +81,8 @@ private fun NavController.returnMachineToVisit(id: MachineId) {
 fun App() {
     val preference: ThemePreference = koinInject()
     val mode by preference.mode.collectAsState()
+    val transitions: TransitionPreference = koinInject()
+    val transitionMillis by transitions.millis.collectAsState()
     val scope = rememberCoroutineScope()
     val signInRequired: SignInRequired = koinInject()
     val accountsViewModel: AccountsViewModel = koinViewModel()
@@ -88,7 +96,15 @@ fun App() {
             )
         } else {
             val navController = rememberNavController()
-            NavHost(navController = navController, startDestination = HomeRoute) {
+            NavHost(
+                navController = navController,
+                startDestination = HomeRoute,
+                modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                enterTransition = { screenEnter(transitionMillis) },
+                exitTransition = { screenExit(transitionMillis) },
+                popEnterTransition = { screenEnter(transitionMillis) },
+                popExitTransition = { screenExit(transitionMillis) },
+            ) {
                 composable<HomeRoute> {
                     HomeScreen(
                         onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
@@ -172,6 +188,8 @@ fun App() {
                     SettingsScreen(
                         mode = mode,
                         onModeChange = { scope.launch { preference.set(it) } },
+                        transitionMillis = transitionMillis,
+                        onTransitionMillisChange = { scope.launch { transitions.set(it) } },
                         onBack = { navController.popBackStack() },
                     )
                 }

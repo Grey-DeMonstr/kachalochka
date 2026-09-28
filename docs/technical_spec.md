@@ -635,6 +635,11 @@ whose value is already the stored one when the graph is built, so the first fram
 the chosen scheme. A store that cannot be read or written falls back to `System` instead of
 failing the launch.
 
+The screen transition length is a device setting stored the same way, as `TransitionPreference`.
+`NavHost` fades by it, or switches instantly at 0, over a box painted with the scheme's
+`background`: the Android window theme is light, and a fade over a bare window shows it through
+both half-transparent screens.
+
 Vico charts and any Compose `Canvas` drawing take their colours from the same scheme, so the
 chart surfaces follow the theme along with everything else.
 

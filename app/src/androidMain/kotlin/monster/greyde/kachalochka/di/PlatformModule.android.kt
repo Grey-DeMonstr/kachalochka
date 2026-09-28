@@ -13,6 +13,8 @@ import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.supabase.webAppUrlFromBuild
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.navigation.DataStoreTransitionPreference
+import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.sync.WorkManagerSyncTrigger
 import monster.greyde.kachalochka.ui.account.ActivityHolder
@@ -51,6 +53,12 @@ actual fun platformModule(): Module =
         // Built while Koin starts, so the stored mode is in hand before the first Activity.
         single<ThemePreference>(createdAtStart = true) {
             DataStoreThemePreference(get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        }
+        single<TransitionPreference>(createdAtStart = true) {
+            DataStoreTransitionPreference(
+                get(),
+                CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            )
         }
         single { ActivityHolder() }
         single { WorkManagerSyncTrigger(androidContext()) } bind SyncTrigger::class

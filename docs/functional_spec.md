@@ -20,6 +20,10 @@ Both apps must support a dark and a light theme. By default the theme follows th
 the user can override it and pick light or dark explicitly. The choice is remembered between
 launches.
 
+Moving between screens is a short fade that never flashes a colour outside the theme. Settings
+has an "Анимация переходов" field for its length in milliseconds, 0 to 1000, 150 by default;
+0 switches screens instantly. Like the theme, it is remembered on the device and not synced.
+
 # Use cases
 
 ## Regular gym visit

@@ -86,7 +86,15 @@ class AccountMenuTest {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
         runScreenTest(
             gym,
-            screen = { SettingsScreen(mode = ThemeMode.Dark, onModeChange = {}, onBack = {}) },
+            screen = {
+                SettingsScreen(
+                    mode = ThemeMode.Dark,
+                    onModeChange = {},
+                    transitionMillis = 150,
+                    onTransitionMillisChange = {},
+                    onBack = {},
+                )
+            },
         ) {
             onNodeWithTag("account-avatar").assertExists()
             onNodeWithTag("account-avatar").performClick()

@@ -4,6 +4,8 @@ import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
+import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
@@ -23,6 +25,7 @@ import org.koin.dsl.module
 actual fun platformModule(): Module =
     module {
         single<ThemePreference> { InMemoryThemePreference() }
+        single<TransitionPreference> { InMemoryTransitionPreference() }
         single<GoogleSignIn> { UnavailableGoogleSignIn }
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
