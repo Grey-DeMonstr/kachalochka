@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,7 +45,16 @@ class SystemPhotoCapture(
         val target = remember { captureTarget() }
         val shrink = { uri: Uri ->
             scope.launch {
-                val jpeg = withContext(Dispatchers.IO) { shrunkJpeg(context.contentResolver, uri) }
+                // A cloud-only picture offline, or one revoked meanwhile, cannot be opened.
+                val jpeg =
+                    try {
+                        withContext(Dispatchers.IO) { shrunkJpeg(context.contentResolver, uri) }
+                    } catch (stopped: CancellationException) {
+                        throw stopped
+                    } catch (unreadable: Exception) {
+                        Log.w(LOG_TAG, "Could not read the photo", unreadable)
+                        null
+                    }
                 jpeg?.let(deliver)
             }
             Unit

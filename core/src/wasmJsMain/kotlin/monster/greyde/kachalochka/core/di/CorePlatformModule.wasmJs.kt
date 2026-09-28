@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.core.di
 
+import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
 import monster.greyde.kachalochka.core.data.gym.NoPhotoFiles
@@ -51,5 +52,6 @@ actual fun corePlatformModule(): Module =
         single<AccountStorage> { LocalStorageAccountStorage() }
         single<OwnerlessRows> { NoOwnerlessRows }
         single<OwnedRowsPurge> { NoOwnedRowsPurge }
-        single<AccountServer> { SupabaseAccountServer(inject()) }
+        // The web's client holds one session, the active account's, which is the one deleted.
+        single<AccountServer> { SupabaseAccountServer { get<SupabaseClient>() } }
     }

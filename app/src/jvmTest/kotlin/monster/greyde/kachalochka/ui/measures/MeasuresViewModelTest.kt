@@ -31,6 +31,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 private class CountingMeasures(
@@ -127,6 +128,54 @@ class MeasuresViewModelTest {
                     .first { it.id == neck.id }
                     .value,
             )
+        }
+
+    @Test
+    fun of_two_merged_values_on_one_day_the_later_entered_stays() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val owner = ivan.account.userId
+            val own = missingDefaults(owner, emptySet())
+            val claimed =
+                missingDefaults(null, emptySet()).map { it.copy(userId = owner, updatedAt = t0) }
+            (own + claimed).forEach { gym.measures.upsert(it) }
+            val neck = own.first { it.kind == MeasureKind.Neck }
+            val claimedNeck = claimed.first { it.kind == MeasureKind.Neck }
+            val monday = CalendarDay(2026, 9, 21)
+            val tuesday = CalendarDay(2026, 9, 22)
+
+            fun value(
+                measure: Measure,
+                day: CalendarDay,
+                cm: Double,
+                minutes: Int,
+            ) = Measurement(
+                MeasurementId.random(),
+                owner,
+                measure.id,
+                day,
+                cm,
+                t0 + minutes.minutes,
+                false,
+            )
+            listOf(
+                value(neck, monday, 39.0, 5),
+                value(claimedNeck, monday, 38.0, 1),
+                value(neck, tuesday, 39.5, 1),
+                value(claimedNeck, tuesday, 38.5, 5),
+            ).forEach { gym.measurements.upsert(it) }
+            gym.clock.current = t0 + 1.hours
+
+            viewModel().also { it.load() }
+
+            val byDay =
+                gym.measurements
+                    .all(
+                        owner,
+                    ).filter { it.measureId == neck.id }
+                    .associateBy { it.day }
+            assertEquals(39.0, byDay[monday]?.value)
+            assertEquals(38.5, byDay[tuesday]?.value)
         }
 
     @Test

@@ -9,6 +9,7 @@ import io.github.jan.supabase.storage.Storage
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.AccountTokens
 import monster.greyde.kachalochka.core.data.sync.SyncSession
+import monster.greyde.kachalochka.core.domain.identity.UserId
 
 // A build without credentials is normal, so the failure has to wait until something actually
 // asks for a client and then say which two settings are missing.
@@ -62,6 +63,20 @@ fun activeAccountSupabaseClient(
     requireConfigured(credentials)
     return createSupabaseClient(credentials.url, credentials.anonKey) {
         accessToken = { store.activeId.value?.let { tokens.tokenFor(it) } }
+        install(Postgrest)
+        install(Storage)
+    }
+}
+
+// Deleting an account must act as that account to the end, whoever becomes active meanwhile.
+fun ownerSupabaseClient(
+    credentials: SupabaseCredentials,
+    tokens: AccountTokens,
+    owner: UserId,
+): SupabaseClient {
+    requireConfigured(credentials)
+    return createSupabaseClient(credentials.url, credentials.anonKey) {
+        accessToken = { tokens.tokenFor(owner) }
         install(Postgrest)
         install(Storage)
     }

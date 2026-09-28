@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.ui.friends
 
 import monster.greyde.kachalochka.core.domain.friends.FRIEND_PALETTE_SIZE
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.assignedColors
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -15,18 +16,21 @@ private const val FNV_PRIME = 0x01000193
 class FriendColorStore(
     private val profiles: ProfileRepository,
     private val clock: Clock,
+    private val mates: FriendsRepository,
 ) {
     /**
      * Colours for [friends] as [owner] sees them. Friends without a stored colour get one drawn
-     * from the owner alone, so every screen and platform shows the same colour without writing
-     * it: a profile the device has not pulled yet would win over the server's on push.
+     * from the owner and all of their group mates, so every screen and platform shows the same
+     * colour without writing it: a profile the device has not pulled yet would win over the
+     * server's on push. Reads the group mates online.
      */
     suspend fun colorsFor(
         owner: UserId,
         friends: List<UserId>,
     ): Map<UserId, Int> {
         val stored = profiles.forOwner(owner)?.friendColors.orEmpty()
-        val sorted = friends.distinct().sortedBy { it.value }
+        val everyone = mates.mates(owner).map { it.userId } + friends
+        val sorted = everyone.distinct().sortedBy { it.value }
         val colors = assignedColors(stored, sorted, FRIEND_PALETTE_SIZE, Random(seedOf(owner)))
         return colors.filterKeys { it in friends }
     }

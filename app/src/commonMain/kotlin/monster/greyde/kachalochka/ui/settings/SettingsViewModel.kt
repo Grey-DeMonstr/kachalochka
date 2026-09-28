@@ -2,9 +2,11 @@ package monster.greyde.kachalochka.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -155,13 +157,16 @@ class SettingsViewModel(
         mutableDeletion.value = mutableDeletion.value.copy(confirming = false)
     }
 
-    /** Signing the account out on success reloads the screen for whoever is active next. */
+    /**
+     * Signing the account out on success reloads the screen for whoever is active next. Leaving the
+     * screen must not stop it halfway, between the server forgetting the account and the device.
+     */
     fun confirmDelete() {
         mutableDeletion.value = mutableDeletion.value.copy(confirming = false)
         viewModelScope.launch {
             val owner = currentUser.id() ?: return@launch
             mutableDeletion.value = mutableDeletion.value.copy(running = true)
-            reading { accountDeletion.delete(owner) }.onFailure {
+            reading { withContext(NonCancellable) { accountDeletion.delete(owner) } }.onFailure {
                 mutableDeletion.value =
                     DeletionUi(available = true, error = "Нет связи с сервером")
             }

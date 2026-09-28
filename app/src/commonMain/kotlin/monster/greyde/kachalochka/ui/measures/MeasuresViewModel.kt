@@ -114,14 +114,21 @@ class MeasuresViewModel(
             val predefined = measures.predefined(owner)
             val writes = measureUpkeep(owner, predefined, profile?.sex, now)
             val merged = measureDuplicates(owner, predefined)
-            // A merged duplicate's values move to the row that stays, before it goes.
-            measurements
-                .all(owner)
-                .forEach { value ->
-                    merged[value.measureId]?.let {
-                        measurements.upsert(value.copy(measureId = it, updatedAt = now))
+            // A merged duplicate's values move to the row that stays, before it goes; where both
+            // hold a day, the later entered value stays.
+            val values = measurements.all(owner)
+            val keptDays = values.associateBy { it.measureId to it.day }
+            values.forEach { value ->
+                val kept = merged[value.measureId] ?: return@forEach
+                val there = keptDays[kept to value.day]
+                val moved =
+                    if (there != null && there.updatedAt >= value.updatedAt) {
+                        value.copy(deleted = true, updatedAt = now)
+                    } else {
+                        value.copy(measureId = kept, updatedAt = now)
                     }
-                }
+                measurements.upsert(moved)
+            }
             writes.forEach { measures.upsert(it) }
             // Any other deleted measure's values go with it, as when the user deletes one.
             val gone = writes.filter { it.deleted && it.id !in merged }.map { it.id }.toSet()

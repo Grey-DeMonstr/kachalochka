@@ -29,8 +29,9 @@ class FriendCalendarScreenTest {
             onNodeWithTag("top-bar-title").assertTextEquals("Олег")
             onNodeWithTag("calendar-empty").assertTextEquals("Нет визита")
             onNodeWithTag("add-visit").assertDoesNotExist()
-            // One load on mount: visits, machines and links; today has no visit's sets to read.
-            assertEquals(3, gym.friends.reads)
+            // One load on mount: visits, machines, links and the group mates for the friend's colour;
+            // today has no visit's sets to read.
+            assertEquals(4, gym.friends.reads)
             onNodeWithTag("day-2023-11-13").performClick()
             waitForIdle()
             onNodeWithTag("friend-day-visit").performScrollTo().performClick()

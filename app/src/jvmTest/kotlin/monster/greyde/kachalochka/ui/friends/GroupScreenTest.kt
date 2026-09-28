@@ -30,8 +30,9 @@ class GroupScreenTest {
             onNodeWithTag("member-${OLEG.userId.value}").performClick()
             onNodeWithTag("member-${ME.userId.value}").performClick()
             waitForIdle()
-            // One load on mount: the group and its members, each a would-be network round trip.
-            assertEquals(2, gym.friends.reads)
+            // One load on mount: the group, its members and the group mates the colours are drawn
+            // among, each a would-be network round trip.
+            assertEquals(3, gym.friends.reads)
         }
         assertEquals(listOf(OLEG), opened)
     }

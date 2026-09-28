@@ -38,7 +38,7 @@ class GroupViewModelTest {
         gym.invites,
         gym.currentUser,
         gym.accounts,
-        FriendColorStore(profiles, gym.clock),
+        FriendColorStore(profiles, gym.clock, gym.friends),
         gym.sync,
     )
 

@@ -79,7 +79,7 @@ class CalendarViewModelTest {
             gym.utcOffset,
             gym.sync,
             gym.friends,
-            FriendColorStore(gym.profiles, gym.clock),
+            FriendColorStore(gym.profiles, gym.clock, gym.friends),
         )
 
     private fun FakeGym.friendVisit(
@@ -647,7 +647,7 @@ class CalendarViewModelTest {
 
             val state = assertNotNull(vm.state.value)
             val colors =
-                FriendColorStore(signed.profiles, signed.clock)
+                FriendColorStore(signed.profiles, signed.clock, signed.friends)
                     .colorsFor(ME.userId, listOf(OLEG.userId, PASHA.userId))
             assertEquals(
                 listOf(colors.getValue(OLEG.userId), colors.getValue(PASHA.userId)),

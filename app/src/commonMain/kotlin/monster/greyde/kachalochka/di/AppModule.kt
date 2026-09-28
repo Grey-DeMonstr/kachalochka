@@ -59,7 +59,7 @@ val appModule =
         single { VisitNormalization(get(), get(), get(), get(), get()) }
         single { PendingJoin(get(), get()) }
         single { Nickname(get(), get()) }
-        single { FriendColorStore(get(), get()) }
+        single { FriendColorStore(get(), get(), get()) }
         single { PhotoLoaders(get()) }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))

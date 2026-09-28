@@ -76,7 +76,7 @@ class FakeFriends(
 
     private fun visible(id: GroupId) = members[id].orEmpty().any { it.userId == me()?.userId }
 
-    private fun mates(viewer: UserId): Map<UserId, Friend> =
+    private fun matesById(viewer: UserId): Map<UserId, Friend> =
         members.values
             .filter { list -> list.any { it.userId == viewer } }
             .flatten()
@@ -86,7 +86,7 @@ class FakeFriends(
     /** [member]'s own rows, or a group-mate's: what `shares_group_with` widens the server to. */
     private fun visibleMember(member: UserId): Boolean {
         val myId = me()?.userId ?: return false
-        return member == myId || member in mates(myId).keys
+        return member == myId || member in matesById(myId).keys
     }
 
     override suspend fun groups() =
@@ -165,15 +165,17 @@ class FakeFriends(
                 .sortedWith(photoOrder)
         }
 
+    override suspend fun mates(viewer: UserId) = online { matesById(viewer).values.toList() }
+
     override suspend fun groupPhotos(viewer: UserId) =
         online {
-            val mates = mates(viewer)
+            val mates = matesById(viewer)
             photos.filter { !it.deleted && it.userId in mates.keys }
         }
 
     override suspend fun groupMachines(viewer: UserId) =
         online {
-            val mates = mates(viewer)
+            val mates = matesById(viewer)
             machines
                 .filterNot { it.deleted }
                 .mapNotNull { m -> m.userId?.let(mates::get)?.let { FriendMachine(m, it) } }
@@ -187,7 +189,7 @@ class FakeFriends(
     ): List<FriendVisit> {
         visitWindows += from to to
         return online {
-            val mates = mates(viewer).filterKeys(::visibleMember)
+            val mates = matesById(viewer).filterKeys(::visibleMember)
             val earliest = from.plusDays(-1).at(0L, Duration.ZERO)
             val latest = to.plusDays(2).at(0L, Duration.ZERO)
             visits
@@ -201,7 +203,7 @@ class FakeFriends(
 
     override suspend fun groupLinks(viewer: UserId) =
         online {
-            val mates = mates(viewer)
+            val mates = matesById(viewer)
             links.filter { !it.deleted && it.userId in mates.keys }
         }
 
@@ -238,7 +240,7 @@ class FakeFriends(
     ): List<FriendResult> {
         latestOnAsked += machines
         return online {
-            val mates = mates(viewer)
+            val mates = matesById(viewer)
             val ids =
                 this.machines
                     .filter { !it.deleted && it.id in machines && it.userId in mates.keys }

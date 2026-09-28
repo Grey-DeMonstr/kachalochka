@@ -92,9 +92,10 @@ Settings, for a signed-in account, ends with "Удалить аккаунт".
 - It asks "Удалить аккаунт?": everything the account recorded is deleted from the server and from
   this device, and it cannot be undone. Confirming deletes; without a network the screen says
   "Нет связи с сервером" and nothing changes.
-- The deletion removes the account's photos from Storage, then calls the security-definer
-  function `delete_my_account()`, which deletes the caller from `auth.users`; every owned table
-  cascades from it, groups the account owns go with their members. Then, on Android, the
+- The deletion calls the security-definer function `delete_my_account()`, which deletes the
+  caller from `auth.users`; every owned table cascades from it, groups the account owns go with
+  their members. Then it removes the account's photos from Storage on the same token, so a failed
+  call never leaves rows naming photos that are gone. Then, on Android, the
   account's rows, photo files and pull watermark are deleted from the device. Finally the account
   is signed out, as "Выйти" does.
 - `AccountDeletion` (`core/data/identity`) does the three steps against a client that acts as the

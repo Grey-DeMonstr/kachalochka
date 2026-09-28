@@ -94,6 +94,9 @@ interface FriendsRepository {
     /** A group mate's live photos of [machine], in [photoOrder]. */
     suspend fun photos(machine: MachineId): List<Photo>
 
+    /** Everyone sharing a live group with [viewer]. */
+    suspend fun mates(viewer: UserId): List<Friend>
+
     /** The live photos of everyone sharing a group with [viewer]. */
     suspend fun groupPhotos(viewer: UserId): List<Photo>
 

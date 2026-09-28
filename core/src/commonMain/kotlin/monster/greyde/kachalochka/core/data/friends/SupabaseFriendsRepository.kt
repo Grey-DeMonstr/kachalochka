@@ -166,8 +166,10 @@ class SupabaseFriendsRepository(
             .map { it.toPhoto() }
             .sortedWith(photoOrder)
 
+    override suspend fun mates(viewer: UserId): List<Friend> = matesById(viewer).values.toList()
+
     override suspend fun groupPhotos(viewer: UserId): List<Photo> {
-        val mates = mates(viewer)
+        val mates = matesById(viewer)
         if (mates.isEmpty()) return emptyList()
         return postgrest
             .from(PHOTO_TABLE)
@@ -181,7 +183,7 @@ class SupabaseFriendsRepository(
     }
 
     override suspend fun groupMachines(viewer: UserId): List<FriendMachine> {
-        val mates = mates(viewer)
+        val mates = matesById(viewer)
         if (mates.isEmpty()) return emptyList()
         return liveMachines { isIn("user_id", mates.keys.map { it.value }) }
             .mapNotNull { machine ->
@@ -194,7 +196,7 @@ class SupabaseFriendsRepository(
         from: CalendarDay,
         to: CalendarDay,
     ): List<FriendVisit> {
-        val mates = mates(viewer)
+        val mates = matesById(viewer)
         if (mates.isEmpty()) return emptyList()
         // Whatever the viewer's offset, a day's instants fall within a day either side of it.
         val earliest = from.plusDays(-1).at(0L, Duration.ZERO)
@@ -223,7 +225,7 @@ class SupabaseFriendsRepository(
     }
 
     override suspend fun groupLinks(viewer: UserId): List<MachineLink> {
-        val mates = mates(viewer)
+        val mates = matesById(viewer)
         if (mates.isEmpty()) return emptyList()
         return postgrest
             .from(MACHINE_LINK_TABLE)
@@ -259,7 +261,7 @@ class SupabaseFriendsRepository(
         machines: Set<MachineId>,
     ): List<FriendResult> {
         if (machines.isEmpty()) return emptyList()
-        val mates = mates(viewer)
+        val mates = matesById(viewer)
         if (mates.isEmpty()) return emptyList()
         val mateIds = mates.keys.map { it.value }
         val candidates =
@@ -306,7 +308,7 @@ class SupabaseFriendsRepository(
                 }
             }.decodeList<GroupMemberRow>()
 
-    private suspend fun mates(viewer: UserId): Map<UserId, Friend> =
+    private suspend fun matesById(viewer: UserId): Map<UserId, Friend> =
         memberships()
             .filter { it.userId != viewer.value }
             .associate { UserId(it.userId) to Friend(UserId(it.userId), it.displayName) }

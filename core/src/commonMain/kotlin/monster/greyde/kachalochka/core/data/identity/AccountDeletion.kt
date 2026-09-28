@@ -35,14 +35,18 @@ class AccountDeletion(
 private const val LIST_PAGE = 100
 
 /**
- * Storage keeps its objects apart from the rows, so the photos go through its API first; then
- * `delete_my_account` removes the user, and every owned row cascades from it.
+ * `delete_my_account` removes the user, and every owned row cascades from it. Storage keeps its
+ * objects apart from the rows, so the photos go through its API afterwards, on the token issued
+ * before: a failed call never leaves rows naming photos that are gone. [clientFor] acts as the
+ * given account, whoever becomes active meanwhile.
  */
 class SupabaseAccountServer(
-    private val client: Lazy<SupabaseClient>,
+    private val clientFor: (UserId) -> SupabaseClient,
 ) : AccountServer {
     override suspend fun deleteEverything(owner: UserId) {
-        val bucket = client.value.storage.from(PHOTO_BUCKET)
+        val client = clientFor(owner)
+        client.postgrest.rpc("delete_my_account")
+        val bucket = client.storage.from(PHOTO_BUCKET)
         var previous: List<String>? = null
         while (true) {
             val paths =
@@ -54,6 +58,5 @@ class SupabaseAccountServer(
             bucket.delete(paths)
             previous = paths
         }
-        client.value.postgrest.rpc("delete_my_account")
     }
 }

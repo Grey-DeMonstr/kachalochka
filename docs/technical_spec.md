@@ -277,8 +277,8 @@ so signing back in finds them again.
 Friends' calendar colours belong to the account, not the device: they live in its profile's
 `friend_colors` (§4.1), keyed by friend, so each account sees its own and they sync to its other
 devices. `FriendColorStore.colorsFor` only reads: a friend without a stored colour gets one from
-the pure `assignedColors` over the stored map (empty without a profile) and the friends sorted by
-id, seeded by an FNV-1a hash of the owner's id. The same owner, stored map and friends so give the
+the pure `assignedColors` over the stored map (empty without a profile) and the owner's group
+mates with the friends asked about, sorted by id, seeded by an FNV-1a hash of the owner's id. The same owner, stored map and friends so give the
 same colours on every screen and platform, and a drawn colour needs no write: a device that has
 not pulled the account's profile yet would push its row over the server's under outbox-wins
 (§4.2), wiping the nickname and colours chosen elsewhere. Only a colour the user picks is saved,
@@ -543,8 +543,8 @@ cannot map, such as the unit `custom`, fails their pull.
 
 Row-level security enforces every visibility rule from the functional spec:
 
-- A user writes only rows with their own `user_id`, and a set only into their own visit and on
-  their own machine.
+- A user writes only rows with their own `user_id`, a set only into their own visit and on
+  their own machine, and a photo only of their own machine.
 - A user reads their own rows and the live `machine`, `visit`, `workout_set`, `machine_link` and
   `photo` rows of everyone who shares a live group with them, through the security-definer
   function `shares_group_with`; the `photos` bucket's read policy applies it to the first folder
@@ -558,9 +558,10 @@ Row-level security enforces every visibility rule from the functional spec:
   `kept`; `kept` need not exist yet, since it may have been created offline.
 - An account deletes itself through the security-definer `delete_my_account`, which deletes the
   caller from `auth.users`; every owned table cascades from it. Storage objects are not among
-  them, so `AccountDeletion` removes the caller's photos through the Storage API first, and
-  only once the server has answered removes the owner's rows from the device
-  (`OwnedRowsPurge`) and signs the account out.
+  them, so `SupabaseAccountServer` removes the caller's photos through the Storage API right
+  after, on the same token; its client acts as that account whoever becomes active meanwhile. Only
+  once the server has answered does `AccountDeletion` remove the owner's rows from the device
+  (`OwnedRowsPurge`) and sign the account out, and leaving Settings does not stop it halfway.
 - A group's current members are readable by its members. Membership changes only through the
   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
   and soft-deletes the group directly, and a deleted group stays deleted.

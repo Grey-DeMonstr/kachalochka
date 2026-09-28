@@ -22,7 +22,7 @@ class SupabaseAccountServerTest {
             """"metadata":{}}"""
 
     @Test
-    fun the_photos_go_first_and_the_account_last() =
+    fun the_account_goes_first_and_its_photos_after_it() =
         runTest {
             val calls = mutableListOf<String>()
             var listed = 0
@@ -49,14 +49,14 @@ class SupabaseAccountServerTest {
                     install(Storage)
                 }
 
-            SupabaseAccountServer(lazyOf(client)).deleteEverything(ivan)
+            SupabaseAccountServer { client }.deleteEverything(ivan)
 
             assertEquals(
                 listOf(
+                    "POST rpc/delete_my_account",
                     "POST object/list/photos",
                     "DELETE object/photos",
                     "POST object/list/photos",
-                    "POST rpc/delete_my_account",
                 ),
                 calls,
             )

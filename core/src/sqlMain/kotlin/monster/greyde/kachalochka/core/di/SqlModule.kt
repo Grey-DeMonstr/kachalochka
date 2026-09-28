@@ -26,6 +26,7 @@ import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.supabase.activeAccountSupabaseClient
+import monster.greyde.kachalochka.core.data.supabase.ownerSupabaseClient
 import monster.greyde.kachalochka.core.data.supabase.syncSupabaseClient
 import monster.greyde.kachalochka.core.data.sync.LocalSyncRows
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
@@ -88,8 +89,7 @@ internal fun sqlModule(): Module =
         single<AccountServer> {
             val credentials: SupabaseCredentials = get()
             val tokens: AccountTokens = get()
-            val store: AccountStore = get()
-            SupabaseAccountServer(lazy { activeAccountSupabaseClient(credentials, tokens, store) })
+            SupabaseAccountServer { owner -> ownerSupabaseClient(credentials, tokens, owner) }
         }
         single<PhotoImages> {
             val credentials: SupabaseCredentials = get()

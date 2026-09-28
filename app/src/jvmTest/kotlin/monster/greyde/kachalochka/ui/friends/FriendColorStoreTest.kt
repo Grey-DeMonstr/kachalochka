@@ -14,7 +14,7 @@ import kotlin.time.Duration.Companion.hours
 
 class FriendColorStoreTest {
     private val gym = FakeGym()
-    private val store = FriendColorStore(gym.profiles, gym.clock)
+    private val store = FriendColorStore(gym.profiles, gym.clock, gym.friends)
     private val owner = ME.userId
     private val vova = UserId("55555555-5555-4555-8555-555555555555")
 
@@ -43,14 +43,31 @@ class FriendColorStoreTest {
     fun without_a_profile_every_screen_draws_the_same_colours() =
         runTest {
             val friends = listOf(OLEG.userId, PASHA.userId)
-            val first = FriendColorStore(gym.profiles, gym.clock)
-            val second = FriendColorStore(gym.profiles, gym.clock)
+            val first = FriendColorStore(gym.profiles, gym.clock, gym.friends)
+            val second = FriendColorStore(gym.profiles, gym.clock, gym.friends)
 
             val colors = first.colorsFor(owner, friends)
 
             assertEquals(colors, first.colorsFor(owner, friends))
             assertEquals(colors, second.colorsFor(owner, friends.reversed()))
             assertNull(gym.profiles.forOwner(owner))
+        }
+
+    @Test
+    fun a_friend_s_drawn_colour_is_the_same_whichever_friends_a_screen_asks_about() =
+        runTest {
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+
+            val everyone = store.colorsFor(owner, listOf(OLEG.userId, PASHA.userId))
+
+            assertEquals(
+                everyone[PASHA.userId],
+                store.colorsFor(owner, listOf(PASHA.userId))[PASHA.userId],
+            )
+            assertEquals(
+                everyone[OLEG.userId],
+                store.colorsFor(owner, listOf(OLEG.userId))[OLEG.userId],
+            )
         }
 
     @Test
@@ -74,8 +91,8 @@ class FriendColorStoreTest {
                     .copy(friendColors = mapOf(OLEG.userId to 3)),
             )
             val friends = listOf(OLEG.userId, PASHA.userId, vova)
-            val first = FriendColorStore(gym.profiles, gym.clock)
-            val second = FriendColorStore(gym.profiles, gym.clock)
+            val first = FriendColorStore(gym.profiles, gym.clock, gym.friends)
+            val second = FriendColorStore(gym.profiles, gym.clock, gym.friends)
 
             val colors = first.colorsFor(owner, friends)
 

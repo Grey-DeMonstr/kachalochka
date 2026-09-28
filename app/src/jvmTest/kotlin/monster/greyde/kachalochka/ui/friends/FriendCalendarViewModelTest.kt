@@ -36,7 +36,7 @@ class FriendCalendarViewModelTest {
             gym.clock,
             gym.utcOffset,
             gym.machineLinks,
-            FriendColorStore(gym.profiles, gym.clock),
+            FriendColorStore(gym.profiles, gym.clock, gym.friends),
         )
 
     @BeforeTest
@@ -53,7 +53,7 @@ class FriendCalendarViewModelTest {
     @Test
     fun the_friend_s_visits_are_marked_in_the_colour_chosen_for_them() =
         runTest {
-            FriendColorStore(gym.profiles, gym.clock).set(ME.userId, OLEG.userId, 5)
+            FriendColorStore(gym.profiles, gym.clock, gym.friends).set(ME.userId, OLEG.userId, 5)
 
             val days = assertNotNull(viewModel().state.value).weeks.flatten().filterNotNull()
 
