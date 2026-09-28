@@ -1,5 +1,18 @@
 Kachalochka - Changelog
 
+1.0.3
+
+- Body measures on the home screen: record them for any day and follow each one on a chart.
+- A body fat calculator in the measures form, with three standard formulas.
+- Friends' visits appear in your calendar as dots, in a colour you pick for each friend.
+- Share a visit as text from the visit screen.
+- A nickname in the settings, shown to your friends and in shared visits.
+- The machine list shows your friends' machines too, and you can take one for yourself.
+- Link your machine to a friend's, or merge two duplicates of yours, from the machine form.
+- Machines and sets are reordered by dragging a handle.
+- Fixed: your groups now appear right away on the friends screen.
+
+
 1.0.2
 
 - Groups of friends: create a group, invite friends with a link or a code, and see each other's
