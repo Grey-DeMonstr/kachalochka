@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.friends
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -12,7 +13,6 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
-import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
@@ -62,33 +62,33 @@ class FriendVisitViewModel(
     private val mutableOffline = MutableStateFlow(false)
     val offline: StateFlow<Boolean> = mutableOffline
 
+    private var loading: Job? = null
+
     init {
         viewModelScope.launch {
-            accounts.activeId.collect { load() }
+            accounts.activeId.collect { refresh() }
         }
     }
 
+    /** Cancels the load in flight, so one for a previous account never lands last. */
     fun refresh() {
-        viewModelScope.launch { load() }
+        loading?.cancel()
+        loading = viewModelScope.launch { load() }
     }
 
-    /** Of the day's visits, the one [keptVisit] would show: the newest with live sets, else all. */
-    private suspend fun visitOn(day: CalendarDay): Visit? {
+    /** The sets of the day's visit [keptVisit] would show: the newest with live sets, else all. */
+    private suspend fun setsOn(day: CalendarDay): List<WorkoutSet> {
         val sameDay = friends.visits(member).filter { it.day == day }
-        if (sameDay.isEmpty()) return null
-        val withSets =
-            if (sameDay.size > 1) {
-                sameDay.filter { friends.sets(it).isNotEmpty() }.map { it.id }.toSet()
-            } else {
-                emptySet()
-            }
-        return keptVisit(sameDay) { it in withSets }
+        if (sameDay.isEmpty()) return emptyList()
+        val setsByVisit =
+            if (sameDay.size > 1) sameDay.associate { it.id to friends.sets(it) } else emptyMap()
+        val visit = keptVisit(sameDay) { setsByVisit[it]?.isNotEmpty() == true }
+        return setsByVisit[visit.id] ?: friends.sets(visit)
     }
 
     private suspend fun load() {
         reading {
-            val visit = visitOn(day)
-            val visitSets = visit?.let { friends.sets(it) }.orEmpty()
+            val visitSets = setsOn(day)
             val theirs = friends.machines(member)
             val names = namesForViewer(theirs, machines.all(currentUser.id()))
             stateOf(visitSets, theirs.associateBy { it.id }, names)

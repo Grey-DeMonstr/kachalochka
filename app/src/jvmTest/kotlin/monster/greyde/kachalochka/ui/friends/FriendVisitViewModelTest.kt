@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.friends
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -90,6 +91,23 @@ class FriendVisitViewModelTest {
 
         assertEquals("3 подхода", state.setCountLabel)
         assertEquals(2, state.groups.size)
+        // The visits, each visit's sets once, the machines.
+        assertEquals(4, gym.friends.reads)
+    }
+
+    @Test
+    fun a_refresh_drops_the_load_it_replaces() {
+        val first = CompletableDeferred<Unit>()
+        gym.friends.gate = first
+        val vm = viewModel()
+        gym.friends.gate = null
+        vm.refresh()
+
+        gym.friends.offline = true
+        first.complete(Unit)
+
+        assertFalse(vm.offline.value)
+        assertEquals("3 подхода", vm.state.value?.setCountLabel)
     }
 
     @Test
