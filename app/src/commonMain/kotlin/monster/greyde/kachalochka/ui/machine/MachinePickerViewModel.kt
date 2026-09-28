@@ -117,7 +117,13 @@ class MachinePickerViewModel(
         val friendRows =
             friendMachines
                 .filter { it.machine.linkKey !in ownKeys }
+                .sortedWith(
+                    compareByDescending<FriendMachine> { it.machine.id == it.machine.linkKey }
+                        .thenBy { it.owner.displayName }
+                        .thenBy { it.machine.id.value },
+                ).distinctBy { it.machine.linkKey }
                 .filter { it.machine.name.contains(needle, ignoreCase = true) }
+                .sortedBy { it.machine.name.lowercase() }
                 .map {
                     PickerRowUi(
                         it.machine.id,

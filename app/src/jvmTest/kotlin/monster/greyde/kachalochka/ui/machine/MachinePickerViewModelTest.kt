@@ -19,10 +19,12 @@ import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -108,6 +110,16 @@ class MachinePickerViewModelTest {
                 .new("Жим ногами", OLEG.userId, t0)
                 .copy(weightMode = WeightMode.PerSide, weightStep = 5.0)
         on.friends.machines += olegPress
+        return on to olegPress
+    }
+
+    /** Oleg's original machine and Pasha's copy of it, linked to the same physical machine. */
+    private fun sharedLinkGym(): Pair<FakeGym, Machine> {
+        val on = signedInGym()
+        on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        val olegPress = Machine.new("Жим ногами", OLEG.userId, t0)
+        val pashaCopy = linkedCopy(olegPress, PASHA.userId, t0)
+        on.friends.machines += listOf(olegPress, pashaCopy)
         return on to olegPress
     }
 
@@ -345,4 +357,29 @@ class MachinePickerViewModelTest {
 
         assertEquals(0, gym.friends.reads)
     }
+
+    @Test
+    fun a_link_key_shared_by_two_friends_is_offered_once() {
+        val (on, olegPress) = sharedLinkGym()
+
+        val vm = pickerOn(on).also { it.load() }
+
+        assertEquals(
+            listOf(PickerRowUi(olegPress.id, "Жим ногами", "Олег · кг всего · ±2,5")),
+            vm.state.value.friendRows,
+        )
+    }
+
+    @Test
+    fun picking_the_shared_row_links_to_the_shared_key() =
+        runTest {
+            val (on, olegPress) = sharedLinkGym()
+            val vm = pickerOn(on).also { it.load() }
+            var picked: MachineId? = null
+
+            vm.pickFriend(olegPress.id) { picked = it }
+
+            val copy = assertNotNull(on.machines.byId(assertNotNull(picked)))
+            assertEquals(olegPress.id, copy.linkId)
+        }
 }
