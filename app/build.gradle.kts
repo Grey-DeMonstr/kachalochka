@@ -9,6 +9,39 @@ plugins {
     alias(libs.plugins.ktlint)
 }
 
+// A release build names its version; every other build, the web deployed from master among them,
+// shows the newest one in the changelog, which a release commit puts on top before its tag.
+val appVersion: Provider<String> =
+    providers.gradleProperty("versionName").orElse(
+        providers
+            .fileContents(rootProject.layout.projectDirectory.file("changelog.txt"))
+            .asText
+            .map { text -> text.lines().first { Regex("""\d+\.\d+\.\d+""").matches(it) } },
+    )
+
+val generateAppVersion =
+    tasks.register("generateAppVersion") {
+        val outputDir = layout.buildDirectory.dir("generated/appVersion")
+        val version = appVersion
+        inputs.property("version", version)
+        outputs.dir(outputDir)
+
+        doLast {
+            val packageDir = outputDir.get().asFile.resolve("monster/greyde/kachalochka")
+            packageDir.mkdirs()
+            packageDir.resolve("AppVersion.kt").writeText(
+                """
+                package monster.greyde.kachalochka
+
+                object AppVersion {
+                    const val NAME: String = "${version.get()}"
+                }
+
+                """.trimIndent(),
+            )
+        }
+    }
+
 kotlin {
     jvmToolchain(21)
 
@@ -32,6 +65,9 @@ kotlin {
     }
 
     sourceSets {
+        commonMain {
+            kotlin.srcDir(generateAppVersion)
+        }
         commonMain.dependencies {
             implementation(project(":core"))
             implementation(compose.runtime)

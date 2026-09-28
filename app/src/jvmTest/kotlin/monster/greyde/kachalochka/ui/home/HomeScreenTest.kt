@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.AppVersion
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
@@ -19,6 +20,7 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 private fun session(
@@ -34,6 +36,14 @@ private fun session(
 @OptIn(ExperimentalTestApi::class)
 class HomeScreenTest {
     private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan")
+
+    @Test
+    fun the_home_screen_names_the_app_version() {
+        assertTrue(Regex("""\d+\.\d+\.\d+""").matches(AppVersion.NAME), AppVersion.NAME)
+        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}, {}) }) {
+            onNodeWithTag("app-version").assertTextEquals("Версия ${AppVersion.NAME}")
+        }
+    }
 
     @Test
     fun friends_stay_locked_until_an_account_is_signed_in() =

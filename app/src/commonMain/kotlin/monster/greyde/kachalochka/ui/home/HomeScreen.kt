@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.AppVersion
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInAvailable
@@ -100,6 +102,13 @@ fun HomeScreen(
             }
         }
         accounts.failure?.let { SignInFailure(it, Modifier.padding(horizontal = 16.dp)) }
+        Spacer(Modifier.weight(1f))
+        Text(
+            "Версия ${AppVersion.NAME}",
+            modifier = Modifier.padding(16.dp).testTag("app-version"),
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+        )
     }
 }
 

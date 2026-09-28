@@ -656,6 +656,10 @@ repositories, a fixed clock and a ticker that only advances when the test tells 
   from it as `major * 10000 + minor * 100 + patch`, so rebuilding a tag reproduces the number it
   shipped; the release notes are that version's section of `changelog.txt`, and a tag whose
   version has no section fails before the build.
+- The home screen shows `AppVersion.NAME`, which `app` generates at build time: the
+  `versionName` property a release build passes, else the newest version heading in
+  `changelog.txt`. The web deploys from `master` without a tag, so the changelog is what both
+  platforms can read, and a release commit puts its version on top before the tag goes out.
 - `changelog.txt` in the repo root is the user-facing history, newest version at the top, plain
   ASCII. One release is one commit adding a section, one annotated `vX.Y.Z` tag, and a push —
   `master` first, then the tag.

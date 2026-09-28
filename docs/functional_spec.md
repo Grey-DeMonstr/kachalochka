@@ -58,7 +58,7 @@ last set, or "Подходов пока нет", and a button opening today's vi
 day; it has no start or end and comes into being with its first set. Below the card are rows for
 visits, machines, plans, statistics, friends and body measures; plans and statistics are shown
 but not yet available. On Android with nobody signed in, "Войти через Google" sits at the bottom
-of the screen.
+of the screen. The very bottom names the app's version, "Версия 1.1.0".
 
 The visit screen lists the day's sets grouped by machine, machines in the order of their first
 set, and ends with "Новый тренажёр", which opens the machine picker. Tapping a machine's row
