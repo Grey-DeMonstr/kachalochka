@@ -49,8 +49,8 @@ account, the settings and signing out. With nobody signed in the avatar is an em
 The home screen shows today's card: how many machines and sets were recorded today and the
 last set, or "Подходов пока нет", and a button opening today's visit. A visit is one calendar
 day; it has no start or end and comes into being with its first set. Below the card are rows for
-visits, machines, plans, statistics and friends; plans, statistics and friends are shown but not
-yet available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
+visits, machines, plans, statistics and friends; plans and statistics are shown but not yet
+available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
 screen.
 
 The visit screen lists the day's sets grouped by machine, machines in the order of their first
@@ -127,7 +127,15 @@ User should be able to import or export data in some predefined hardcoded format
 
 ## Group sharing
 
-Users should be able to form a group (party), where everyone sees others' results. There should be
-a party newsfeed, populated automatically when someone ends the visit. Data should be dynamic, so
-if a user modifies his visit history (updates or changes something), newsfeed should be updated as
-well.
+Signed-in users form groups. The creator owns the group and invites others with a link to the
+web app or with its eight-character code; the Android app joins by code. Every member sees the
+other members' calendars and visits, read-only, and nothing is shared outside a group. A member
+can leave; the owner deletes the group instead. Friends' data is read online and never stored
+on the device.
+
+A machine can be taken from a friend's list: the copy keeps the friend's settings and stays
+linked to the friend's machine as one physical machine. The set sheet then shows friends'
+latest results on it, and a friend's visit shows their sets on it under the user's own machine
+name. A link can be broken from the machine form.
+
+A newsfeed of ended visits is not built yet.

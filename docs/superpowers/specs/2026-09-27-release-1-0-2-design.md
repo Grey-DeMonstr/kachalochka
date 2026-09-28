@@ -144,7 +144,7 @@ Each decision, then why.
   delete it.
 - **The invite link is the web app's own address with `?join=CODE`. The page stores the code in
   `localStorage` before sign-in and removes it from the address.** Sign-in returns to the page
-  address without its query (tech spec §5.4), so the code has to survive the Google round trip
+  address without its query (tech spec §5.3), so the code has to survive the Google round trip
   elsewhere.
 - **Android builds the link from a `WEB_APP_URL` build setting and shares the code alone when it
   is unset; Android has "Вступить по коду".** Android has no page address of its own, and a fresh
@@ -427,7 +427,9 @@ one, as today.
 - **A member** opens a read-only calendar titled with their name, in the same month grid, with no
   add, move or remove; a day opens their visit read-only: groups and sets, no sheet, no
   "Порядок", no "Новый тренажёр".
-- Every friends screen reads online. On failure: "Нет связи с сервером" and "Повторить".
+- Every friends screen reads online. On failure: "Нет связи с сервером" and "Повторить". A screen
+  loads once when it opens and reloads on an account switch or a retry; the groups list also
+  reloads on returning to it from a group.
 
 ### 5.2 The invite link
 
@@ -452,18 +454,21 @@ one, as today.
 
 - `Machine` gains `linkId: MachineId?`; `Machine.linkKey = linkId ?: id`.
 - **Picker**: under the own machines, a section "Тренажёры друзей": group-mates' live machines
-  whose key matches none of the own keys, each with "у Миши" (`friend-machine-<id>`). Picking
-  one saves `linkedCopy(friend, owner, now)` — the friend's settings, a new id, `linkId =
-  friend.linkKey` — and returns it to the visit like any pick. Offline, the section is absent.
+  whose key matches none of the own keys, each with "у Миши" (`friend-machine-<id>`), one row per
+  key with the original preferred over a copy when several friends share it. Picking one saves
+  `linkedCopy(friend, owner, now)` — the friend's settings, a new id, `linkId = friend.linkKey`
+  — and returns it to the visit like any pick. Offline, the section is absent.
 - **Set sheet**: under the previous-visit line, "Друзья:" and, for up to three friends with sets
   on a machine sharing the key, "Миша · вчера · 80×8, 85×6" from their latest visit on it
   (`sheet-friends`). Absent offline or when there are none.
 - **A friend's visit**: their sets on a machine whose key matches one of the viewer's machines
   are grouped under the viewer's machine name; others under the friend's name for it.
 - **Breaking**: the machine form's top bar gets a ⋮ (`machine-menu`, Phosphor
-  `DotsThreeVertical`) with "Отвязать от друзей" (`unlink-machine`); the dialog "Отвязать
-  тренажёр?" — "Результаты друзей на этом тренажёре перестанут показываться у вас." — "Отвязать"
-  / "Отмена". It writes `linkId = MachineId.random()` at once.
+  `DotsThreeVertical`) with "Отвязать от друзей" (`unlink-machine`), shown when the machine has
+  a `link_id` or, checked online, a group-mate owns a machine sharing its key — so either side of
+  a link can break it; the dialog "Отвязать тренажёр?" — "Результаты друзей на этом тренажёре
+  перестанут показываться у вас." — "Отвязать" / "Отмена". It writes `linkId =
+  MachineId.random()` at once.
 
 ### 5.4 Domain and data
 
@@ -472,9 +477,12 @@ one, as today.
   `FriendsRepository`: `groups()`, `create(name)`, `join(code)`, `leave(group)`,
   `delete(group)`, `members(group)`, `visits(member)`, `sets(visit)`, `machines(member)`,
   `groupMachines()`, `latestOn(linkKey)`.
-- One implementation, `SupabaseFriendsRepository` in `core/src/commonMain/.../data/friends`, on
-  the UI `SupabaseClient`, bound in `coreModule` for both platforms. It is the exception to "two
-  implementations per repository" (tech spec §3), because both platforms read friends online.
+- One implementation, `SupabaseFriendsRepository` in `core/src/commonMain/.../data/friends`,
+  bound per platform. It is the exception to "two implementations per repository" (tech spec
+  §3), because both platforms read friends online: the web binds it on the UI `SupabaseClient`,
+  Android on a client that asks `AccountTokens` for the active account's token per request, like
+  the sync client (§4.2), since its UI client only holds a session after a sign-in or a switch in
+  the same process.
 - `MachineRow` gains `@SerialName("link_id") val linkId: String?`, no default.
 - Local: `link_id TEXT` appended last in `Machine.sq`; `4.sqm` (schema version 5):
 
@@ -857,7 +865,10 @@ Replace the section "## Group sharing" with:
 >   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
 >   and soft-deletes the group directly, and a deleted group stays deleted.
 
-§5.4, append:
+§5.3 ("Group newsfeed" in the section that predates this plan) has no code behind it: no view,
+no Realtime subscription. Remove it and renumber "Configuration and secrets" from §5.4 to §5.3.
+
+§5.3 (renumbered), append:
 
 > `WEB_APP_URL`, the web app's address, travels the same way. Android builds invite links from
 > it and shares only the code without it; the web builds them from its own address.

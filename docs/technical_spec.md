@@ -1,6 +1,6 @@
 # Kachalochka — Technical Specification
 
-**Last reviewed:** 2026-09-27
+**Last reviewed:** 2026-09-28
 
 The architectural decisions and invariants new work must respect. It is not a description of the
 current code — read the code for that. What is written here is what the code cannot tell you: why
@@ -105,6 +105,12 @@ Three rules:
 3. **Logic that can be a pure function must be one.** Weight totals, per-limb doubling, negative
    machines, suggested next set, period statistics — all are functions in `domain/` with their own
    tests. `app` renders results; it does not compute them.
+
+Friends' data is the exception: both platforms read it online, so `FriendsRepository` has one
+implementation in `commonMain`, and nothing it returns is written to SQLite. The web runs it on
+the UI client. Android runs it on a client that, like the sync client (§4.2), asks
+`AccountTokens` for the active account's token on every request, because its UI client holds a
+session only after a sign-in or a switch in the same process.
 
 ---
 
@@ -350,9 +356,14 @@ cannot map, such as the unit `custom`, fails their pull.
 
 Row-level security enforces every visibility rule from the functional spec:
 
-- A user reads and writes only rows with their own `user_id`.
-- A group member reads visits, exercises and photos of every other member of the same group.
-- Group membership itself is readable by members and writable by the group owner.
+- A user writes only rows with their own `user_id`, and a set only into their own visit and on
+  their own machine.
+- A user reads their own rows and the live `machine`, `visit`, `workout_set` and `profile`
+  rows of everyone who shares a live group with them, through the security-definer function
+  `shares_group_with`.
+- Group membership is readable by the group's members and changes only through the
+  security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
+  and soft-deletes the group directly, and a deleted group stays deleted.
 
 Because visibility is enforced in Postgres, no client code path can leak data by omission.
 
@@ -364,14 +375,7 @@ privileges granted to its roles, and the project grants none by default. Every s
 grants `select`, `insert` and `update` to `authenticated` in the migration that creates it —
 never `delete`, since clients soft-delete, and nothing to `anon`, which no policy matches.
 
-### 5.3 Group newsfeed
-
-The feed is a Postgres view over ended visits joined with group memberships, ordered by visit
-end time. A view is dynamic by construction: when a user edits an old visit, every member's feed
-reflects it on the next read with no fan-out or denormalised feed table. Live updates come from a
-Realtime subscription on the `visit` table filtered by the viewer's groups.
-
-### 5.4 Configuration and secrets
+### 5.3 Configuration and secrets
 
 The Supabase project URL and anon key are read from `local.properties` on developer machines and
 from repository secrets on CI. They are never committed. The anon key is safe to ship inside the
@@ -386,6 +390,10 @@ attempt made anyway fails and is reported instead of resolving a client that can
 Web sign-in asks Supabase to return to the page's own address rather than its origin, because
 GitHub Pages serves the app under a path. That address must match the project's redirect
 allowlist, alongside the local development server's.
+
+`WEB_APP_URL`, the web app's address, travels the same way, as a repository variable rather than
+a secret on CI. Android builds invite links from it and shares only the code without it; the web
+builds them from its own address.
 
 ---
 
