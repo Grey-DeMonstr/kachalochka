@@ -556,6 +556,11 @@ Row-level security enforces every visibility rule from the functional spec:
   when the caller owns it on the server. `repoint_machine_links(removed, kept)` moves friends'
   live links pointing at `removed` to `kept` when the caller owns `removed` and nobody else owns
   `kept`; `kept` need not exist yet, since it may have been created offline.
+- An account deletes itself through the security-definer `delete_my_account`, which deletes the
+  caller from `auth.users`; every owned table cascades from it. Storage objects are not among
+  them, so `AccountDeletion` removes the caller's photos through the Storage API first, and
+  only once the server has answered removes the owner's rows from the device
+  (`OwnedRowsPurge`) and signs the account out.
 - A group's current members are readable by its members. Membership changes only through the
   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
   and soft-deletes the group directly, and a deleted group stays deleted.

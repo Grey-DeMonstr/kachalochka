@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
+import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.AccountStorage
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
@@ -61,6 +62,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<PhotoCapture> { gym.photoCapture }
         single<CurrentUser> { gym.currentUser }
         single<Accounts> { gym.accounts }
+        single<AccountDeletion> { gym.deletion }
         single<FriendsRepository> { gym.friends }
         single<SupabaseCredentials> { gym.credentials }
         single<SyncTrigger> { gym.sync }

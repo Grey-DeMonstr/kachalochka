@@ -150,4 +150,31 @@ class SettingsScreenTest {
             onNodeWithTag("save-profile").assertIsNotEnabled()
         }
     }
+
+    @Test
+    fun a_signed_in_account_is_deleted_after_a_confirmation() {
+        val gym = FakeGym().withAccounts(ivan, active = ivan)
+        runScreenTest(gym, screen = { settings() }) {
+            onNodeWithTag("delete-account").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("cancel-delete-account").performClick()
+            waitForIdle()
+            assertEquals(emptyList(), gym.accountServer.deleted)
+
+            onNodeWithTag("delete-account").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("confirm-delete-account").performClick()
+            waitForIdle()
+
+            onNodeWithTag("delete-account").assertDoesNotExist()
+        }
+        assertEquals(listOf(ivan.account.userId), gym.accountServer.deleted)
+    }
+
+    @Test
+    fun without_an_account_nothing_can_be_deleted() {
+        runScreenTest(FakeGym(), screen = { settings() }) {
+            onNodeWithTag("delete-account").assertDoesNotExist()
+        }
+    }
 }

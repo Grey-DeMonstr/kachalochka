@@ -45,6 +45,7 @@ class LegalPagesTest {
     @Test
     fun privacyPolicyExplainsHowToDeleteAnAccount() {
         val html = page("privacy.html")
+        assertTrue("“Удалить аккаунт” (Delete account) in the app’s settings" in html)
         assertTrue("$ISSUES/new" in html)
         assertTrue("within 30 days" in html)
     }

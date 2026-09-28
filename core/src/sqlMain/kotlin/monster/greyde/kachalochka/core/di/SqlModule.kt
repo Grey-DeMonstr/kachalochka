@@ -10,12 +10,16 @@ import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
 import monster.greyde.kachalochka.core.data.gym.StoragePhotoImages
+import monster.greyde.kachalochka.core.data.identity.AccountServer
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.AccountTokens
 import monster.greyde.kachalochka.core.data.identity.LiveSession
+import monster.greyde.kachalochka.core.data.identity.OwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.SessionRefresh
+import monster.greyde.kachalochka.core.data.identity.SqlOwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.SqlOwnerlessRows
+import monster.greyde.kachalochka.core.data.identity.SupabaseAccountServer
 import monster.greyde.kachalochka.core.data.identity.SupabaseSessions
 import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
@@ -79,6 +83,13 @@ internal fun sqlModule(): Module =
                 lazy { activeAccountSupabaseClient(credentials, tokens, store) },
                 Clock.System,
             )
+        }
+        single<OwnedRowsPurge> { SqlOwnedRowsPurge(get(), get(), Dispatchers.IO) }
+        single<AccountServer> {
+            val credentials: SupabaseCredentials = get()
+            val tokens: AccountTokens = get()
+            val store: AccountStore = get()
+            SupabaseAccountServer(lazy { activeAccountSupabaseClient(credentials, tokens, store) })
         }
         single<PhotoImages> {
             val credentials: SupabaseCredentials = get()

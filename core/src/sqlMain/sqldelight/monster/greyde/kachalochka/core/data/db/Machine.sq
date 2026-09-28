@@ -44,3 +44,6 @@ SELECT id FROM machine WHERE user_id IS NULL;
 
 claimOwnerless:
 UPDATE machine SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;
+
+purgeOwner:
+DELETE FROM machine WHERE user_id = ?;

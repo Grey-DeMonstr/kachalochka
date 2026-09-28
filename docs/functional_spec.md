@@ -181,6 +181,11 @@ Signing out of an account removes it from the device but keeps what it recorded,
 in finds it again. On Android, signing out of the last account returns the app to working without
 one. Friends stay locked until an account is signed in.
 
+Settings ends with "Удалить аккаунт" for the active account. After "Удалить аккаунт?" it deletes
+the account and everything it recorded — visits, machines with their photos, measures, profile and
+the groups it owns — from the server and, on Android, from the device, then signs it out as
+signing out does. Without a network it says "Нет связи с сервером" and changes nothing.
+
 Settings has a "Профиль" section saved by one "Сохранить". Its "Ник" field, for the signed-in
 account, takes up to 40 characters; the Google account name is shown as a placeholder and used
 when the field is left blank. Friends see this nickname instead of the Google name, and it heads a
@@ -282,5 +287,5 @@ need the network: without it the app says "Нет связи с сервером
 ## Privacy and terms
 
 The Privacy Policy and the Terms of Service are separate pages published beside the web app
-and linked from its entry page, readable without signing in. Account deletion is requested
-through the repository's issues.
+and linked from its entry page, readable without signing in. Someone who can no longer sign in asks
+for their account's deletion through the repository's issues.

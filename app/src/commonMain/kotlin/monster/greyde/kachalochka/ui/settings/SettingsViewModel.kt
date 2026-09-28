@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
@@ -16,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
+import monster.greyde.kachalochka.ui.friends.reading
 import kotlin.time.Clock
 
 const val NICKNAME_LENGTH = 40
@@ -38,6 +40,14 @@ data class ProfileUi(
     val weightUnit: PreferredWeightUnit = PreferredWeightUnit.Kg,
 )
 
+/** "Удалить аккаунт": offered while an account is signed in. */
+data class DeletionUi(
+    val available: Boolean = false,
+    val confirming: Boolean = false,
+    val running: Boolean = false,
+    val error: String? = null,
+)
+
 class SettingsViewModel(
     private val profiles: ProfileRepository,
     private val accounts: Accounts,
@@ -45,11 +55,14 @@ class SettingsViewModel(
     private val clock: Clock,
     private val utcOffset: UtcOffset,
     private val sync: SyncTrigger,
+    private val accountDeletion: AccountDeletion,
 ) : ViewModel() {
     private val mutableProfile = MutableStateFlow<ProfileUi?>(null)
     val profile: StateFlow<ProfileUi?> = mutableProfile
 
     private var saved: ProfileUi? = null
+    private val mutableDeletion = MutableStateFlow(DeletionUi())
+    val deletion: StateFlow<DeletionUi> = mutableDeletion
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -58,6 +71,7 @@ class SettingsViewModel(
 
     private suspend fun load() {
         val owner = currentUser.id()
+        mutableDeletion.value = DeletionUi(available = owner != null)
         val stored = profiles.forOwner(owner)
         val placeholder =
             accounts.accounts.value
@@ -129,6 +143,28 @@ class SettingsViewModel(
             saved = settled
             mutableProfile.value = settled
             sync.request()
+        }
+    }
+
+    fun askToDelete() {
+        if (!mutableDeletion.value.available || mutableDeletion.value.running) return
+        mutableDeletion.value = mutableDeletion.value.copy(confirming = true, error = null)
+    }
+
+    fun cancelDelete() {
+        mutableDeletion.value = mutableDeletion.value.copy(confirming = false)
+    }
+
+    /** Signing the account out on success reloads the screen for whoever is active next. */
+    fun confirmDelete() {
+        mutableDeletion.value = mutableDeletion.value.copy(confirming = false)
+        viewModelScope.launch {
+            val owner = currentUser.id() ?: return@launch
+            mutableDeletion.value = mutableDeletion.value.copy(running = true)
+            reading { accountDeletion.delete(owner) }.onFailure {
+                mutableDeletion.value =
+                    DeletionUi(available = true, error = "Нет связи с сервером")
+            }
         }
     }
 

@@ -10,10 +10,14 @@ import monster.greyde.kachalochka.core.data.gym.RemotePhotoRepository
 import monster.greyde.kachalochka.core.data.gym.RemoteVisitRepository
 import monster.greyde.kachalochka.core.data.gym.RemoteWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.StoragePhotoImages
+import monster.greyde.kachalochka.core.data.identity.AccountServer
 import monster.greyde.kachalochka.core.data.identity.AccountStorage
 import monster.greyde.kachalochka.core.data.identity.LocalStorageAccountStorage
+import monster.greyde.kachalochka.core.data.identity.NoOwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.NoOwnerlessRows
+import monster.greyde.kachalochka.core.data.identity.OwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
+import monster.greyde.kachalochka.core.data.identity.SupabaseAccountServer
 import monster.greyde.kachalochka.core.data.measures.RemoteMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.RemoteMeasurementRepository
 import monster.greyde.kachalochka.core.data.profile.RemoteProfileRepository
@@ -46,4 +50,6 @@ actual fun corePlatformModule(): Module =
         single<FriendsRepository> { SupabaseFriendsRepository(inject(), Clock.System) }
         single<AccountStorage> { LocalStorageAccountStorage() }
         single<OwnerlessRows> { NoOwnerlessRows }
+        single<OwnedRowsPurge> { NoOwnedRowsPurge }
+        single<AccountServer> { SupabaseAccountServer(inject()) }
     }

@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.ActiveAccountUser
@@ -34,6 +35,7 @@ val coreModule =
         single<SessionActivation> { get<LiveSession>() }
         single<CurrentUser> { ActiveAccountUser(get()) }
         single { Accounts(get(), get(), get(), get()) }
+        single { AccountDeletion(get(), get(), get()) }
     }
 
 /** A build without credentials has no live session to follow, and must not build a client. */

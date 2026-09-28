@@ -29,3 +29,6 @@ SELECT lastPullAt FROM syncState WHERE user_id = ?;
 
 setLastPullAt:
 INSERT OR REPLACE INTO syncState(user_id, lastPullAt) VALUES (?, ?);
+
+forgetWatermark:
+DELETE FROM syncState WHERE user_id = ?;

@@ -30,3 +30,6 @@ SELECT id FROM measurement WHERE user_id IS NULL;
 
 claimOwnerless:
 UPDATE measurement SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;
+
+purgeOwner:
+DELETE FROM measurement WHERE user_id = ?;

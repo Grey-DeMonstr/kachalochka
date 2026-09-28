@@ -44,6 +44,7 @@ class SettingsViewModelTest {
             gym.clock,
             gym.utcOffset,
             gym.sync,
+            gym.deletion,
         )
 
     private val SettingsViewModel.ui: ProfileUi get() = profile.value!!
@@ -235,5 +236,63 @@ class SettingsViewModelTest {
 
             assertEquals("Мишка", vm.ui.nickname)
             assertEquals("Миша", vm.ui.placeholder)
+        }
+
+    @Test
+    fun deleting_is_offered_only_to_a_signed_in_account() =
+        runTest {
+            assertFalse(viewModel().deletion.value.available)
+
+            gym.withAccounts(ivan, active = ivan)
+
+            assertTrue(viewModel().deletion.value.available)
+        }
+
+    @Test
+    fun a_confirmed_deletion_deletes_the_account_and_signs_it_out() =
+        runTest {
+            gym.withAccounts(ivan, misha, active = ivan)
+            val vm = viewModel()
+
+            vm.askToDelete()
+            assertTrue(vm.deletion.value.confirming)
+            vm.confirmDelete()
+
+            assertEquals(listOf(ivan.account.userId), gym.accountServer.deleted)
+            assertEquals(
+                listOf(misha.account.userId),
+                gym.accounts.accounts.value
+                    .map { it.userId },
+            )
+            assertFalse(vm.deletion.value.confirming)
+            assertNull(vm.deletion.value.error)
+        }
+
+    @Test
+    fun offline_a_deletion_says_so_and_keeps_the_account() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            gym.accountServer.offline = true
+            val vm = viewModel()
+
+            vm.askToDelete()
+            vm.confirmDelete()
+
+            assertEquals("Нет связи с сервером", vm.deletion.value.error)
+            assertEquals(ivan.account.userId, gym.accounts.activeId.value)
+            assertFalse(vm.deletion.value.running)
+        }
+
+    @Test
+    fun cancelling_keeps_the_account() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val vm = viewModel()
+
+            vm.askToDelete()
+            vm.cancelDelete()
+
+            assertFalse(vm.deletion.value.confirming)
+            assertEquals(emptyList(), gym.accountServer.deleted)
         }
 }

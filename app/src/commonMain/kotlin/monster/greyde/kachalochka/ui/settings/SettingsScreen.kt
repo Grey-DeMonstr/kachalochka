@@ -37,6 +37,8 @@ import monster.greyde.kachalochka.navigation.transitionMillisOrNull
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Choice
 import monster.greyde.kachalochka.ui.components.ChoiceRow
+import monster.greyde.kachalochka.ui.components.ConfirmDialog
+import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.theme.ThemeMode
@@ -52,6 +54,7 @@ fun SettingsScreen(
 ) {
     val viewModel: SettingsViewModel = koinViewModel()
     val profile by viewModel.profile.collectAsState()
+    val deletion by viewModel.deletion.collectAsState()
     Screen("Настройки", onBack = onBack, onOpenSettings = null) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
@@ -72,7 +75,44 @@ fun SettingsScreen(
                 )
             }
             TransitionSection(transitionMillis, onTransitionMillisChange)
+            if (deletion.available) AccountSection(deletion, viewModel)
         }
+    }
+    if (deletion.confirming) {
+        ConfirmDialog(
+            title = "Удалить аккаунт?",
+            text =
+                "Ваши визиты, тренажёры с фото, замеры, профиль и группы будут удалены " +
+                    "с сервера и с этого устройства. Это нельзя отменить.",
+            confirmLabel = "Удалить",
+            confirmTag = "confirm-delete-account",
+            cancelTag = "cancel-delete-account",
+            onConfirm = viewModel::confirmDelete,
+            onCancel = viewModel::cancelDelete,
+        )
+    }
+}
+
+@Composable
+private fun AccountSection(
+    deletion: DeletionUi,
+    viewModel: SettingsViewModel,
+) {
+    Text(text = "Аккаунт", style = MaterialTheme.typography.headlineSmall)
+    OutlineButton(
+        "Удалить аккаунт",
+        PhosphorIcons.Trash,
+        viewModel::askToDelete,
+        Modifier.fillMaxWidth().testTag("delete-account"),
+        enabled = !deletion.running,
+    )
+    deletion.error?.let {
+        Text(
+            it,
+            modifier = Modifier.testTag("delete-account-error"),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+        )
     }
 }
 

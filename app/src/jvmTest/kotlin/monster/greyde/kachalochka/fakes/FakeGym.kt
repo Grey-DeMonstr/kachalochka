@@ -6,6 +6,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
+import monster.greyde.kachalochka.core.data.identity.AccountDeletion
+import monster.greyde.kachalochka.core.data.identity.AccountServer
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
@@ -243,6 +245,17 @@ class InstantPhotoCapture(
         PhotoLaunchers(takePhoto = { onPhoto(jpeg) }, pickPhoto = { onPhoto(jpeg) })
 }
 
+/** The server's side of deleting an account; fails while [offline], as a lost connection would. */
+class RecordingAccountServer : AccountServer {
+    var offline = false
+    val deleted = mutableListOf<UserId>()
+
+    override suspend fun deleteEverything(owner: UserId) {
+        if (offline) error("no connection")
+        deleted += owner
+    }
+}
+
 private class QueuedGoogleSignIn : GoogleSignIn {
     val queue = ArrayDeque<AccountSession>()
 
@@ -332,6 +345,8 @@ class FakeGym(
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()
     val joinCodes = InMemoryJoinCodeStore()
+    val accountServer = RecordingAccountServer()
+    val deletion = AccountDeletion(accountServer, {}, accounts)
     val today: CalendarDay get() = CalendarDay.of(clock.current, utcOffset.at(clock.current))
 
     /** Signs [sessions] in through [accounts] in order, then makes [active] the live one. */
