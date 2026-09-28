@@ -123,8 +123,9 @@ Each decision, then why.
 
 ### 2.3 Part C
 
-- **Friends' rows are read online on both platforms through one `commonMain` implementation on
-  the UI client, and never reach SQLite.** The functional spec shares data, it does not sync it;
+- **Friends' rows are read online on both platforms through one `commonMain` implementation —
+  on the web through the UI client, on Android through a client carrying the active account's
+  token per request — and never reach SQLite.** The functional spec shares data, it does not sync it;
   the pull stays `owned(owner)`, so widened policies cannot leak rows into the local database.
 - **Row-level security, not the client, decides who reads whom: a security-definer
   `shares_group_with(other)` widens only the `select` policies of `machine`, `visit` and
@@ -869,7 +870,8 @@ Replace the section "## Group sharing" with:
 §3, append:
 
 > Friends' data is the exception: both platforms read it online, so `FriendsRepository` has one
-> implementation in `commonMain`, on the UI client, and nothing it returns is written to SQLite.
+> implementation in `commonMain` (the UI client on the web, a client carrying the active account's
+> token on Android), and nothing it returns is written to SQLite.
 
 §5.2, replace the three bullets with:
 

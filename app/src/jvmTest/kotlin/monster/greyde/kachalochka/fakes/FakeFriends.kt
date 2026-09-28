@@ -31,7 +31,7 @@ class FakeFriends(
     var reads = 0
         private set
 
-    /** While set, a read started now waits for it, keeping it in flight as long as a test needs. */
+    /** While set, a read started now waits for it, keeping it in flight while a test needs. */
     var gate: CompletableDeferred<Unit>? = null
 
     /** A group [owner] made, with [others] in it. */
