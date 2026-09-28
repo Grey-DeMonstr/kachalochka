@@ -67,10 +67,10 @@ the sync pass, and is unused so far.
 - `display_name` is the nickname. Settings shows a "Ник" field for the active account when one is
   signed in, with the account's Google name as the placeholder; blank means "use the Google
   name". At most 40 characters.
-- Friends see the nickname. A `security definer` trigger on `profile` insert or update of
-  `display_name` rewrites the owner's `group_member.display_name` rows (clients may only read
-  that table). Both it and `my_display_name()` use one rule: the nickname of the owner's newest
-  live profile when not blank, else the Google name, read by a separate helper
+- Friends see the nickname. A `security definer` trigger on any `profile` insert or update
+  rewrites the owner's `group_member.display_name` rows whose name differs (clients may only
+  read that table). Both it and `my_display_name()` use one rule: the nickname of the owner's
+  newest live profile when not blank, else the Google name, read by a separate helper
   `google_display_name(user)` split out of `my_display_name()`.
 - `Nickname` in `app` resolves the name to show: the profile's nickname, else the account's
   display name, else empty (Android without an account).

@@ -20,7 +20,7 @@ language sql stable security definer set search_path = '' as $$
     select left(coalesce(
         (select nullif(trim(p.display_name), '') from public.profile p
          where p.user_id = target and not p.deleted
-         order by p.updated_at desc limit 1),
+         order by p.updated_at desc, p.id desc limit 1),
         public.google_display_name(target)
     ), 40);
 $$;
@@ -33,11 +33,13 @@ $$;
 -- Clients may only read group_member, so the rename runs with the owner's rights.
 create or replace function public.profile_renames_member() returns trigger
 language plpgsql security definer set search_path = '' as $$
+declare
+    resolved text := public.member_display_name(new.user_id);
 begin
     update public.group_member
-    set display_name = public.member_display_name(new.user_id), updated_at = now()
+    set display_name = resolved, updated_at = now()
     where user_id = new.user_id
-      and display_name is distinct from public.member_display_name(new.user_id);
+      and display_name is distinct from resolved;
     return null;
 end;
 $$;

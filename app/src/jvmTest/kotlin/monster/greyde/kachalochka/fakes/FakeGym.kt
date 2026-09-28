@@ -150,7 +150,9 @@ class InMemoryProfileRepository : ProfileRepository {
     override suspend fun byId(id: ProfileId): Profile? = rows[id]
 
     override suspend fun forOwner(owner: UserId?): Profile? =
-        rows.values.filter { !it.deleted && it.userId == owner }.maxByOrNull { it.updatedAt }
+        rows.values
+            .filter { !it.deleted && it.userId == owner }
+            .maxWithOrNull(compareBy<Profile> { it.updatedAt }.thenBy { it.id.value })
 }
 
 private class QueuedGoogleSignIn : GoogleSignIn {

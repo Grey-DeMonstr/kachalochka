@@ -32,6 +32,7 @@ class RemoteProfileRepository(
                     owned(owner)
                 }
                 order("updated_at", Order.DESCENDING)
+                order("id", Order.DESCENDING)
                 limit(1)
             }.decodeSingleOrNull<ProfileRow>()
             ?.toProfile()

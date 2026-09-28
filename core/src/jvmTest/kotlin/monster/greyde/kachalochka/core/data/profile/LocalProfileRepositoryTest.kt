@@ -138,6 +138,18 @@ class LocalProfileRepositoryTest {
         }
 
     @Test
+    fun of_two_profiles_written_at_once_the_greater_id_wins() =
+        runTest {
+            val repository = koin.get<ProfileRepository>()
+            val greater = profile.copy(id = ProfileId("9b1f0c3e-0000-4000-8000-00000000000e"))
+            val lesser = profile.copy(id = ProfileId("9b1f0c3e-0000-4000-8000-00000000000a"))
+            repository.upsert(greater)
+            repository.upsert(lesser)
+
+            assertEquals(greater, repository.forOwner(profile.userId))
+        }
+
+    @Test
     fun the_anonymous_profile_belongs_to_no_owner() =
         runTest {
             val repository = koin.get<ProfileRepository>()

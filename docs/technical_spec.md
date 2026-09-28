@@ -179,10 +179,12 @@ just another update that travels the same path.
 
 Each account keeps one `profile` row. A signed-in owner's new profile takes the owner's own id as
 its `id` (`Profile.new`), so two devices creating it offline converge on one row; an anonymous one
-takes a random id. Readers take the owner's live profile with the newest `updated_at`
-(`ProfileRepository.forOwner`) and every profile write updates the row it returned, so an owner
-who ends up with two after a claim (§4.3) still reads one. `friend_colors` is a JSON object in a
-text column, `'{}'` when empty; an entry that cannot be read is dropped rather than failing a pull.
+takes a random id. Readers take the owner's live profile with the newest `updated_at`, the
+greatest `id` breaking a tie (`ProfileRepository.forOwner`, and `member_display_name` on the
+server), and every profile write updates the row it returned, so an owner who ends up with two
+after a claim (§4.3) still reads one, the same one on every client. `friend_colors` is a JSON
+object in a text column, `'{}'` when empty; an entry that cannot be read is dropped rather than
+failing a pull.
 
 ### 4.2 Sync algorithm (Android only)
 

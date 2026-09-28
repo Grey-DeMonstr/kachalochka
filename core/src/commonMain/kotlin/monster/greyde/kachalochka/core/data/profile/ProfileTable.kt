@@ -30,7 +30,12 @@ internal fun friendColorsOf(text: String): Map<UserId, Int> {
         } ?: return emptyMap()
     return entries
         .mapNotNull { (key, value) ->
-            val user = runCatching { UserId(key) }.getOrNull()
+            val user =
+                try {
+                    UserId(key)
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
             val color = (value as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull
             if (user != null && color != null) user to color else null
         }.toMap()
