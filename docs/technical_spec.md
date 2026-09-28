@@ -453,6 +453,13 @@ values instead of Vico's default from zero, which would flatten a body weight. D
 also soft-deletes the values `MeasurementRepository.all` returns for it; older rows of those days
 stay hidden behind them through `newestPerDay`.
 
+The body-fat formulas are pure functions in `domain/measures/BodyFat.kt` (`bodyFat`,
+`missingInputs`); a result outside 2–70 % is treated as none. The form finds its inputs by
+`MeasureKind`, never by name: a field's typed value, else the value its placeholder shows (the
+latest before the form's day). Sex, birth year and height live in the profile; the user's save
+re-reads `forOwner` and updates that row, or creates one with `Profile.new` when there is none,
+as a picked friend colour does (§4.3), so the nickname and colours survive.
+
 ---
 
 ## 5. Backend

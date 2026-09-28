@@ -178,6 +178,16 @@ Choosing a day that has values loads them for editing. "Сохранить" writ
 and an emptied field clears that value. "Удалить замер", on a day that has values, asks and then
 clears the whole day.
 
+The Жир field has a "Рассчитать" button that estimates body fat by three standard formulas:
+"ВМС США" (US Navy: waist, neck and height, plus hips for a woman), "YMCA" (weight and waist) and
+"Дойренберг (ИМТ)" (weight, height and age). The measures come from the form's fields, or, where a
+field is empty, from the value its placeholder shows; the ready-made measures are recognised
+whatever the user renamed them to. Sex, year of birth and height belong to the user's profile:
+the first time, the calculator asks for them and saves them, and "Изменить" corrects them later.
+Age is counted at the form's day. Each formula shows its result ("18,4 %") or the measures it
+lacks ("Нужно: шея"); tapping a result puts it into the Жир field, which is saved only with the
+form.
+
 Tapping a measure in the list opens it: its latest value and the change over the chosen period,
 a line chart of its values over 1 мес, 3 мес (the default), 6 мес, Год or Всё, then every value
 it ever had, newest first. A period with a single value shows that value instead of a line.

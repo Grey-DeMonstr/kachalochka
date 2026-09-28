@@ -12,6 +12,8 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
+import monster.greyde.kachalochka.core.domain.measures.BodyInputs
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
@@ -19,6 +21,11 @@ import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
+import monster.greyde.kachalochka.core.domain.measures.bodyFat
+import monster.greyde.kachalochka.core.domain.measures.missingInputs
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.calendar.monthRank
 import monster.greyde.kachalochka.ui.calendar.monthWeeks
@@ -30,6 +37,10 @@ import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.weekdayName
 import kotlin.time.Clock
 import kotlin.time.Instant
+
+// A typo such as 18 cm or 1800 would otherwise yield a confident nonsense percent.
+private const val EARLIEST_BIRTH_YEAR = 1900
+private val heightRange = 50.0..250.0
 
 /** [hint] is the measure's latest value before the form's day. */
 data class MeasureFieldUi(
@@ -50,6 +61,7 @@ data class MeasurementFormUi(
     val canDelete: Boolean,
     val picker: DayPickerUi?,
     val deleting: Boolean,
+    val calculator: BodyFatSheetUi?,
 ) {
     val picking: Boolean get() = picker != null
 }
@@ -58,6 +70,7 @@ class MeasurementFormViewModel(
     initialDay: CalendarDay?,
     private val measures: MeasureRepository,
     private val measurements: MeasurementRepository,
+    private val profiles: ProfileRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
@@ -78,6 +91,11 @@ class MeasurementFormViewModel(
     private var pickerMonth: CalendarMonth? = null
     private var deleting = false
     private var loading: Job? = null
+    private var calculating = false
+    private var profile: Profile? = null
+
+    /** The body parameters being entered; while set the sheet asks for them. */
+    private var draft: BodyParamsUi? = null
 
     /** Another account has other measures, so a switch starts the form over. */
     init {
@@ -101,6 +119,8 @@ class MeasurementFormViewModel(
         onDay = values.filter { it.day == day }.associateBy { it.measureId }
         texts = onDay.mapValues { formatNumber(it.value.value) }
         deleting = false
+        calculating = false
+        draft = null
         publish()
     }
 
@@ -180,6 +200,143 @@ class MeasurementFormViewModel(
         }
     }
 
+    fun openCalculator() {
+        viewModelScope.launch {
+            val stored = profiles.forOwner(currentUser.id())
+            profile = stored
+            draft = if (stored.hasBody()) null else paramsOf(stored)
+            calculating = true
+            publish()
+        }
+    }
+
+    fun closeCalculator() {
+        calculating = false
+        draft = null
+        publish()
+    }
+
+    fun editBodyParams() {
+        draft = paramsOf(profile)
+        publish()
+    }
+
+    fun chooseSex(sex: Sex) = editDraft { it.copy(sex = sex) }
+
+    fun typeBirthYear(text: String) = editDraft { it.copy(birthYear = text) }
+
+    fun typeHeight(text: String) = editDraft { it.copy(height = text) }
+
+    fun saveBodyParams() {
+        val params = draft ?: return
+        val sex = params.sex ?: return
+        val birthYear = birthYearOf(params.birthYear) ?: return
+        val height = heightOf(params.height) ?: return
+        writes.launch {
+            val owner = currentUser.id()
+            val now = clock.now()
+            // Read afresh so a nickname or friend colour saved meanwhile survives.
+            val saved =
+                (profiles.forOwner(owner) ?: Profile.new(owner, now)).copy(
+                    sex = sex,
+                    birthYear = birthYear,
+                    heightCm = height,
+                    updatedAt = now,
+                )
+            profiles.upsert(saved)
+            profile = saved
+            draft = null
+            publish()
+            sync.request()
+        }
+    }
+
+    /** Fills the fat field only; the form's own save writes it. */
+    fun useResult(method: BodyFatMethod) {
+        val field = shown.firstOrNull { it.kind == MeasureKind.BodyFat } ?: return
+        val percent = bodyFat(method, bodyInputs()) ?: return
+        texts = texts + (field.id to oneDecimal(percent))
+        calculating = false
+        publish()
+    }
+
+    private fun editDraft(change: (BodyParamsUi) -> BodyParamsUi) {
+        val edited = change(draft ?: return)
+        draft = edited.copy(canSave = paramsValid(edited))
+        publish()
+    }
+
+    private fun paramsOf(stored: Profile?): BodyParamsUi {
+        val params =
+            BodyParamsUi(
+                sex = stored?.sex,
+                birthYear = stored?.birthYear?.toString().orEmpty(),
+                height = stored?.heightCm?.let(::formatNumber).orEmpty(),
+                canSave = false,
+            )
+        return params.copy(canSave = paramsValid(params))
+    }
+
+    private fun paramsValid(params: BodyParamsUi): Boolean =
+        params.sex != null &&
+            birthYearOf(params.birthYear) != null &&
+            heightOf(params.height) != null
+
+    private fun birthYearOf(text: String): Int? =
+        text.trim().toIntOrNull()?.takeIf { it in EARLIEST_BIRTH_YEAR..today().year }
+
+    private fun heightOf(text: String): Double? = parseDecimal(text)?.takeIf { it in heightRange }
+
+    private fun Profile?.hasBody(): Boolean =
+        this?.sex != null && birthYear != null && heightCm != null
+
+    private fun bodyInputs(): BodyInputs =
+        BodyInputs(
+            sex = profile?.sex,
+            age = profile?.birthYear?.let { day.year - it },
+            heightCm = profile?.heightCm,
+            weightKg = measured(MeasureKind.Weight),
+            waistCm = measured(MeasureKind.Waist),
+            neckCm = measured(MeasureKind.Neck),
+            hipsCm = measured(MeasureKind.Hips),
+        )
+
+    /** The form's value of [kind], else the one its placeholder shows. */
+    private fun measured(kind: MeasureKind): Double? {
+        val ids = shown.filter { it.kind == kind }.map { it.id }
+        return ids.firstNotNullOfOrNull(::typedValue)
+            ?: values.firstOrNull { it.measureId in ids && it.day < day }?.value
+    }
+
+    private fun calculator(): BodyFatSheetUi {
+        val params = draft
+        if (params != null) return BodyFatSheetUi(params, body = null, methods = emptyList())
+        val inputs = bodyInputs()
+        return BodyFatSheetUi(
+            params = null,
+            body =
+                profile?.let { stored ->
+                    val sex = stored.sex ?: return@let null
+                    val year = stored.birthYear ?: return@let null
+                    val height = stored.heightCm ?: return@let null
+                    "${sexName(sex)}, $year г. р., ${formatNumber(height)} см"
+                },
+            methods =
+                BodyFatMethod.entries.map { method ->
+                    val missing = missingInputs(method, inputs)
+                    FatMethodUi(
+                        method = method,
+                        name = methodName(method),
+                        result = bodyFat(method, inputs)?.let { "${oneDecimal(it)} %" },
+                        missing =
+                            missing
+                                .takeIf { it.isNotEmpty() }
+                                ?.joinToString(", ", prefix = "Нужно: ", transform = ::inputName),
+                    )
+                },
+        )
+    }
+
     /** A past day's edit is a one-off, so it is pushed at once, as a past visit's is. */
     private fun requestSyncIfPast() {
         if (day != today()) sync.request()
@@ -237,6 +394,7 @@ class MeasurementFormViewModel(
                         )
                     },
                 deleting = deleting,
+                calculator = if (calculating) calculator() else null,
             )
     }
 

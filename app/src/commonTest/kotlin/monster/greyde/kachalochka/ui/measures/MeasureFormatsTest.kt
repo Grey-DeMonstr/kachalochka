@@ -21,6 +21,13 @@ class MeasureFormatsTest {
     }
 
     @Test
+    fun a_calculated_percent_keeps_exactly_one_decimal() {
+        assertEquals("18,0", oneDecimal(18.0))
+        assertEquals("14,7", oneDecimal(14.7392))
+        assertEquals("20,1", oneDecimal(20.0996))
+    }
+
+    @Test
     fun an_unchanged_value_has_no_change_to_show() {
         assertNull(measureDelta(82.4, 82.4))
         assertNull(measureDelta(0.1 + 0.2, 0.3))

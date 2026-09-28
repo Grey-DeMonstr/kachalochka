@@ -285,8 +285,9 @@ labels months, and a period with fewer than two points shows the value instead o
 The "Жир" field in the measurement form has a "Рассчитать" button opening a sheet.
 
 - Inputs: weight, waist, neck and hips from the form, or the owner's latest value of that kind
-  when the field is empty; sex, birth year and height from the profile. When one of these three is
-  missing the sheet asks for it first and saves it to the profile.
+  before the form's day (the field's placeholder) when the field is empty; sex, birth year and
+  height from the profile. When one of these three is missing the sheet asks for it first and
+  saves it to the profile; "Изменить" in the sheet corrects them later.
 - Methods, pure functions in `domain/measures/BodyFat.kt` returning null without their inputs,
   tested against published reference values:
   - **US Navy** (cm): men `495 / (1.0324 − 0.19077·log10(waist − neck) + 0.15456·log10(height)) −

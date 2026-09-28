@@ -71,7 +71,7 @@ val appModule =
         viewModelOf(::SettingsViewModel)
         viewModelOf(::MeasuresViewModel)
         viewModel { (day: CalendarDay?) ->
-            MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get())
+            MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (measure: MeasureId) ->
             MeasureViewModel(measure, get(), get(), get(), get(), get(), get(), get())
