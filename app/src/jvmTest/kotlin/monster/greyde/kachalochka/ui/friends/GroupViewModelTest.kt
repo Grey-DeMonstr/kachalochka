@@ -15,7 +15,6 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.fakes.FakeGym
-import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -39,7 +38,7 @@ class GroupViewModelTest {
         gym.invites,
         gym.currentUser,
         gym.accounts,
-        FriendColorStore(profiles, gym.clock, Random(1)),
+        FriendColorStore(profiles, gym.clock),
         gym.sync,
     )
 
@@ -143,7 +142,7 @@ class GroupViewModelTest {
             val pasha = assertNotNull(colors[PASHA.userId])
             assertTrue(pasha in 0 until FRIEND_PALETTE_SIZE && pasha != 4)
             assertEquals(
-                mapOf(OLEG.userId to 4, PASHA.userId to pasha),
+                mapOf(OLEG.userId to 4),
                 gym.profiles.forOwner(ME.userId)?.friendColors,
             )
         }

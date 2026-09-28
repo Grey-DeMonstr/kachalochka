@@ -15,29 +15,19 @@ private const val FNV_PRIME = 0x01000193
 class FriendColorStore(
     private val profiles: ProfileRepository,
     private val clock: Clock,
-    private val random: Random,
 ) {
     /**
-     * Colours for [friends] as [owner] sees them, saving newly drawn ones into an existing
-     * profile. It never creates one: a profile the device has not pulled yet would win over the
-     * server's on push, wiping the nickname and colours chosen elsewhere.
+     * Colours for [friends] as [owner] sees them. Friends without a stored colour get one drawn
+     * from the owner alone, so every screen and platform shows the same colour without writing
+     * it: a profile the device has not pulled yet would win over the server's on push.
      */
     suspend fun colorsFor(
         owner: UserId,
         friends: List<UserId>,
     ): Map<UserId, Int> {
-        val profile = profiles.forOwner(owner)
-        val colors =
-            if (profile == null) {
-                // Nothing keeps these, so every screen and platform must draw them alike.
-                val sorted = friends.distinct().sortedBy { it.value }
-                assignedColors(emptyMap(), sorted, FRIEND_PALETTE_SIZE, Random(seedOf(owner)))
-            } else {
-                val stored = profile.friendColors
-                assignedColors(stored, friends, FRIEND_PALETTE_SIZE, random).also {
-                    if (it != stored) save(owner, profile, it)
-                }
-            }
+        val stored = profiles.forOwner(owner)?.friendColors.orEmpty()
+        val sorted = friends.distinct().sortedBy { it.value }
+        val colors = assignedColors(stored, sorted, FRIEND_PALETTE_SIZE, Random(seedOf(owner)))
         return colors.filterKeys { it in friends }
     }
 

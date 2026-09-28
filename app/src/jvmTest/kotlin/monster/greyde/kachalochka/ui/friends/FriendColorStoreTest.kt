@@ -2,10 +2,10 @@ package monster.greyde.kachalochka.ui.friends
 
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.domain.friends.FRIEND_PALETTE_SIZE
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.fakes.FakeGym
-import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -14,8 +14,9 @@ import kotlin.time.Duration.Companion.hours
 
 class FriendColorStoreTest {
     private val gym = FakeGym()
-    private val store = FriendColorStore(gym.profiles, gym.clock, Random(1))
+    private val store = FriendColorStore(gym.profiles, gym.clock)
     private val owner = ME.userId
+    private val vova = UserId("55555555-5555-4555-8555-555555555555")
 
     private suspend fun storedProfile() =
         Profile.new(owner, gym.clock.current).copy(displayName = "Ванёк").also {
@@ -42,8 +43,8 @@ class FriendColorStoreTest {
     fun without_a_profile_every_screen_draws_the_same_colours() =
         runTest {
             val friends = listOf(OLEG.userId, PASHA.userId)
-            val first = FriendColorStore(gym.profiles, gym.clock, Random(1))
-            val second = FriendColorStore(gym.profiles, gym.clock, Random(2))
+            val first = FriendColorStore(gym.profiles, gym.clock)
+            val second = FriendColorStore(gym.profiles, gym.clock)
 
             val colors = first.colorsFor(owner, friends)
 
@@ -53,17 +54,34 @@ class FriendColorStoreTest {
         }
 
     @Test
-    fun colours_drawn_for_an_existing_profile_are_saved_into_it() =
+    fun colours_drawn_beside_an_existing_profile_are_not_written_into_it() =
         runTest {
-            storedProfile()
+            val profile = storedProfile()
             gym.clock.current += 1.hours
 
             val colors = store.colorsFor(owner, listOf(OLEG.userId, PASHA.userId))
 
-            val profile = assertNotNull(gym.profiles.forOwner(owner))
-            assertEquals(colors, profile.friendColors)
-            assertEquals("Ванёк", profile.displayName)
-            assertEquals(gym.clock.current, profile.updatedAt)
+            assertEquals(setOf(OLEG.userId, PASHA.userId), colors.keys)
+            assertEquals(profile, gym.profiles.forOwner(owner))
+        }
+
+    @Test
+    fun a_new_friend_beside_stored_colours_gets_the_same_colour_on_every_screen() =
+        runTest {
+            gym.profiles.upsert(
+                Profile
+                    .new(owner, gym.clock.current)
+                    .copy(friendColors = mapOf(OLEG.userId to 3)),
+            )
+            val friends = listOf(OLEG.userId, PASHA.userId, vova)
+            val first = FriendColorStore(gym.profiles, gym.clock)
+            val second = FriendColorStore(gym.profiles, gym.clock)
+
+            val colors = first.colorsFor(owner, friends)
+
+            assertEquals(3, colors[OLEG.userId])
+            assertEquals(colors, second.colorsFor(owner, friends.reversed()))
+            assertEquals(mapOf(OLEG.userId to 3), gym.profiles.forOwner(owner)?.friendColors)
         }
 
     @Test
@@ -74,18 +92,6 @@ class FriendColorStoreTest {
             val profile = assertNotNull(gym.profiles.forOwner(owner))
             assertEquals(ProfileId(owner.value), profile.id)
             assertEquals(mapOf(OLEG.userId to 2), profile.friendColors)
-        }
-
-    @Test
-    fun known_friends_write_nothing() =
-        runTest {
-            storedProfile()
-            val first = store.colorsFor(owner, listOf(OLEG.userId))
-            val written = assertNotNull(gym.profiles.forOwner(owner)).updatedAt
-            gym.clock.current += 1.hours
-
-            assertEquals(first, store.colorsFor(owner, listOf(OLEG.userId)))
-            assertEquals(written, gym.profiles.forOwner(owner)?.updatedAt)
         }
 
     @Test

@@ -26,7 +26,6 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
-import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -80,7 +79,7 @@ class CalendarViewModelTest {
             gym.utcOffset,
             gym.sync,
             gym.friends,
-            FriendColorStore(gym.profiles, gym.clock, Random(1)),
+            FriendColorStore(gym.profiles, gym.clock),
         )
 
     private fun FakeGym.friendVisit(
@@ -647,7 +646,9 @@ class CalendarViewModelTest {
             val vm = viewModel(signed).also { it.selectDay(twelfth) }
 
             val state = assertNotNull(vm.state.value)
-            val colors = assertNotNull(signed.profiles.forOwner(ME.userId)).friendColors
+            val colors =
+                FriendColorStore(signed.profiles, signed.clock)
+                    .colorsFor(ME.userId, listOf(OLEG.userId, PASHA.userId))
             assertEquals(
                 listOf(colors.getValue(OLEG.userId), colors.getValue(PASHA.userId)),
                 state.day(12).friendDots,

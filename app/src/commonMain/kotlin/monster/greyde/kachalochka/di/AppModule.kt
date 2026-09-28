@@ -41,7 +41,6 @@ import monster.greyde.kachalochka.ui.visit.VisitViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
-import kotlin.random.Random
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
@@ -59,7 +58,7 @@ val appModule =
         single { VisitNormalization(get(), get(), get(), get(), get()) }
         single { PendingJoin(get(), get()) }
         single { Nickname(get(), get()) }
-        single { FriendColorStore(get(), get(), Random.Default) }
+        single { FriendColorStore(get(), get()) }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }
