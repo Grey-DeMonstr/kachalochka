@@ -50,3 +50,6 @@ data class FriendCalendarRoute(
 data class GroupRoute(
     val groupId: String,
 )
+
+@Serializable
+object FriendsRoute

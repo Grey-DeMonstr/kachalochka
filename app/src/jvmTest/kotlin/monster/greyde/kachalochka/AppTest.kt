@@ -17,6 +17,9 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
+import monster.greyde.kachalochka.ui.friends.ME
+import monster.greyde.kachalochka.ui.friends.OLEG
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days
@@ -196,6 +199,42 @@ class AppTest {
 
             onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
             assertEquals(10.0, runBlocking { gym.machines.byId(press.id) }?.weightStep)
+        }
+    }
+
+    @Test
+    fun a_signed_in_account_creates_a_group_from_home() {
+        gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+        runApp {
+            onNodeWithTag("section-friends").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Друзья")
+            onNodeWithTag("create-group").performClick()
+            waitForIdle()
+            onNodeWithTag("group-dialog-field").performTextInput("Зал на Лесной")
+            onNodeWithTag("group-dialog-confirm").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Зал на Лесной")
+        }
+    }
+
+    @Test
+    fun leaving_a_group_updates_the_list_on_return() {
+        gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        runApp {
+            onNodeWithTag("section-friends").performClick()
+            waitForIdle()
+            onNodeWithTag("group-row-${group.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("leave-group").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("group-confirm").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Друзья")
+            onNodeWithTag("groups-empty").assertTextEquals("Групп пока нет")
         }
     }
 }

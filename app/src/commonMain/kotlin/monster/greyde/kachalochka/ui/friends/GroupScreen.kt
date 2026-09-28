@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -23,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.GroupId
+import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
@@ -99,6 +98,8 @@ fun GroupScreen(
                 confirm.title,
                 confirm.text,
                 confirm.confirmLabel,
+                "group-confirm",
+                "group-cancel",
                 onConfirm = viewModel::confirm,
                 onCancel = viewModel::cancel,
             )
@@ -131,29 +132,4 @@ private fun MemberRow(
             )
         }
     }
-}
-
-@Composable
-private fun ConfirmDialog(
-    title: String,
-    text: String,
-    confirmLabel: String,
-    onConfirm: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onCancel,
-        title = { Text(title) },
-        text = { Text(text) },
-        confirmButton = {
-            TextButton(onClick = onConfirm, modifier = Modifier.testTag("group-confirm")) {
-                Text(confirmLabel, color = MaterialTheme.colorScheme.error)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onCancel, modifier = Modifier.testTag("group-cancel")) {
-                Text("Отмена")
-            }
-        },
-    )
 }

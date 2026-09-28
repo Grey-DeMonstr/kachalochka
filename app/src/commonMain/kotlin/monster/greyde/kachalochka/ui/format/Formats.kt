@@ -106,6 +106,8 @@ fun setCount(n: Int): String = "$n ${pluralRu(n, "подход", "подхода
 
 fun machineCount(n: Int): String = "$n ${pluralRu(n, "тренажёр", "тренажёра", "тренажёров")}"
 
+fun memberCount(n: Int): String = "$n ${pluralRu(n, "участник", "участника", "участников")}"
+
 fun daysAgoLabel(days: Int): String =
     when (days) {
         0 -> "сегодня"

@@ -46,6 +46,7 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenCalendar: () -> Unit,
     onOpenMachines: () -> Unit,
+    onOpenFriends: () -> Unit,
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -73,7 +74,13 @@ fun HomeScreen(
         )
         SectionRow(PhosphorIcons.ListChecks, "Планы", "section-plans")
         SectionRow(PhosphorIcons.ChartLineUp, "Статистика", "section-stats")
-        SectionRow(PhosphorIcons.UsersThree, "Друзья", "section-friends", locked = !signedIn)
+        SectionRow(
+            PhosphorIcons.UsersThree,
+            "Друзья",
+            "section-friends",
+            locked = !signedIn,
+            onClick = onOpenFriends.takeIf { signedIn },
+        )
         Rule()
         if (!signedIn && signInAvailable.value) {
             Box(Modifier.padding(16.dp)) {

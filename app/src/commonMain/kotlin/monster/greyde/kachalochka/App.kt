@@ -17,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.navigation.CalendarRoute
 import monster.greyde.kachalochka.navigation.FriendCalendarRoute
 import monster.greyde.kachalochka.navigation.FriendVisitRoute
+import monster.greyde.kachalochka.navigation.FriendsRoute
 import monster.greyde.kachalochka.navigation.GroupRoute
 import monster.greyde.kachalochka.navigation.HomeRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
@@ -31,6 +32,7 @@ import monster.greyde.kachalochka.ui.calendar.CalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendCalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
 import monster.greyde.kachalochka.ui.friends.GroupScreen
+import monster.greyde.kachalochka.ui.friends.GroupsScreen
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
@@ -74,6 +76,7 @@ fun App() {
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenCalendar = { navController.navigate(CalendarRoute) },
                         onOpenMachines = { navController.navigate(MachineListRoute) },
+                        onOpenFriends = { navController.navigate(FriendsRoute) },
                     )
                 }
                 composable<MachineListRoute> {
@@ -202,6 +205,13 @@ fun App() {
                             )
                         },
                         onGone = { navController.popBackStack() },
+                    )
+                }
+                composable<FriendsRoute> {
+                    GroupsScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenGroup = { navController.navigate(GroupRoute(it.value)) },
                     )
                 }
             }

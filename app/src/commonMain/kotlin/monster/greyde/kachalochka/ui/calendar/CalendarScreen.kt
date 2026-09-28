@@ -10,10 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -30,6 +28,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.ui.components.AccentButton
+import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
@@ -207,31 +206,4 @@ private fun VisitCard(
             }
         }
     }
-}
-
-@Composable
-private fun ConfirmDialog(
-    title: String,
-    text: String,
-    confirmLabel: String,
-    confirmTag: String,
-    cancelTag: String,
-    onConfirm: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onCancel,
-        title = { Text(title) },
-        text = { Text(text) },
-        confirmButton = {
-            TextButton(onClick = onConfirm, modifier = Modifier.testTag(confirmTag)) {
-                Text(confirmLabel, color = MaterialTheme.colorScheme.error)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onCancel, modifier = Modifier.testTag(cancelTag)) {
-                Text("Отмена")
-            }
-        },
-    )
 }

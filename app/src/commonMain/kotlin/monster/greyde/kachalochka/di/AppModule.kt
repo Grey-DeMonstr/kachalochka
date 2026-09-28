@@ -14,6 +14,7 @@ import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendCalendarViewModel
 import monster.greyde.kachalochka.ui.friends.FriendVisitViewModel
 import monster.greyde.kachalochka.ui.friends.GroupViewModel
+import monster.greyde.kachalochka.ui.friends.GroupsViewModel
 import monster.greyde.kachalochka.ui.home.HomeViewModel
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
@@ -41,6 +42,7 @@ val appModule =
         }
         single { VisitNormalization(get(), get(), get(), get(), get()) }
         viewModelOf(::HomeViewModel)
+        viewModelOf(::GroupsViewModel)
         viewModelOf(::AccountsViewModel)
         viewModelOf(::CalendarViewModel)
         viewModelOf(::MachineListViewModel)

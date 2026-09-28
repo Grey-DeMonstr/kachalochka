@@ -111,6 +111,13 @@ class FormatsTest {
     }
 
     @Test
+    fun members_are_counted_in_russian() {
+        assertEquals("1 участник", memberCount(1))
+        assertEquals("3 участника", memberCount(3))
+        assertEquals("11 участников", memberCount(11))
+    }
+
+    @Test
     fun days_ago_read_naturally() {
         assertEquals("сегодня", daysAgoLabel(0))
         assertEquals("вчера", daysAgoLabel(1))
