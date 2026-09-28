@@ -62,7 +62,7 @@ the sync pass, and is unused so far.
   (text holding a JSON object, `'{}'` when empty), `sex` (`male` / `female`), `birth_year` and
   `height_cm`. SQLDelight `5.sqm` adds them at the end of the table and sets every
   `syncState.lastPullAt` to null, as `4.sqm` did: rows pulled before the upgrade lack the new
-  columns, and migration 0008 writes `machine_link` rows older than a 1.0.2 device's watermark.
+  columns, and later migrations write rows older than a 1.0.2 device's watermark.
   `SchemaMigrationTest` covers the reset.
 - `display_name` is the nickname. Settings shows a "Ник" field for the active account when one is
   signed in, with the account's Google name as the placeholder; blank means "use the Google
@@ -109,8 +109,8 @@ with its sets in visit order:
   the bounds or, for a visit without a day, `recorded_at` within a day of them), which stays far
   under PostgREST's 1000-row cap; `FriendVisit(friend, visit)`.
 - `CalendarViewModel` loads them after its own rows, online, and again on entering the screen,
-  on changing the month and after an account switch. A failed read leaves friends out silently; the own calendar never
-  waits for it.
+  on changing the month and after an account switch. A failed read leaves friends out silently;
+  the own calendar never waits for it.
 - Each friend gets a palette index. `domain/friends/FriendColors.kt` holds
   `assignedColors(existing, friends, paletteSize, random)`: the existing map plus an index for
   every friend without one, chosen at random among the least-used indices. `FriendColors` in
@@ -145,13 +145,13 @@ reader asks it instead of comparing `linkKey`s. `Machine.linkId` and `linkKey` a
 - RLS: a user reads their own links and the live links of anyone sharing a group; inserts and
   updates only their own. No foreign keys on either machine column and no ownership check
   against `machine` in the policy: a link may be written before its machine reaches the server.
-- Both schemas carry the table (SQLDelight `5.sqm`); the sync pass pushes and pulls it and
+- Both schemas carry the table (SQLDelight `6.sqm`); the sync pass pushes and pulls it and
   claims it on sign-in. `MachineLinkRepository` has Local and Remote implementations; friends'
   links come from `FriendsRepository.groupLinks(viewer)` online.
 - `machine.link_id` stays in both schemas for clients before 1.0.3 and is no longer read or
   written by new clients: `MachineRow` drops the field, so an upsert leaves it untouched, and the
   SQLite column stays in `Machine.sq`, written as null and ignored by `machineOf`.
-- Migration `0008` converts 1.0.2 links once. 1.0.2 links by key: a copy stores the friend's
+- Migration `0009` converts 1.0.2 links once. 1.0.2 links by key: a copy stores the friend's
   `coalesce(link_id, id)`, and unlinking either side writes a random key. So live machines are
   grouped by `coalesce(link_id, id)`; for every key shared by machines of two or more users, a
   `machine_link` row is written from each other machine of the group to one representative — the
@@ -235,7 +235,7 @@ measurement(id, user_id, measure_id, day, value, updated_at, deleted)
 - A measure has at most one value per day. Writing a day's value updates the day's live row for
   that measure if there is one; clearing it soft-deletes the row. Where two devices wrote the same
   day, readers take the newest `updated_at`.
-- Both tables exist in SQLDelight (`5.sqm`) and Postgres, sync like the gym tables and are claimed
+- Both tables exist in SQLDelight (`7.sqm`) and Postgres, sync like the gym tables and are claimed
   on sign-in. `measurement.measure_id` has no foreign key, since a seeded measure may reach the
   server after its first value.
 - Repositories: `MeasureRepository` (`upsert`, `all(owner)` live by position, `anyFor(owner)`
@@ -299,7 +299,7 @@ The "Жир" field in the measurement form has a "Рассчитать" button o
 
 ## 10. Plumbing every new synced table needs
 
-For `machine_link`, `measure` and `measurement`: a `.sq` file and its part of `5.sqm`; the wire row
+For `machine_link`, `measure` and `measurement`: a `.sq` file and its `.sqm`; the wire row
 (no Kotlin defaults); `SyncGateway` push and pull, `SupabaseSyncGateway`, `FakeSyncGateway`;
 `LocalSyncRows` read and write; `SyncPass` push branch, `PulledRows`, the pending-skip and the
 watermark; `SqlOwnerlessRows.claim`; column adapters in `DatabaseFactory`; Local and Remote
@@ -313,8 +313,14 @@ New routes: `FriendMachineRoute(machineId)`, `LinkChooserRoute(machineId)`, `Mea
 
 ## 11. Server migration and release
 
-`supabase/migrations/0008_links_profile_measures.sql` holds everything server-side: `machine_link`
-with its RLS and the one-time conversion; `repoint_machine_links` and `break_machine_links`; the
-profile columns, `google_display_name` and the display-name trigger; `measure` and `measurement`
-with RLS and the stale-update trigger; grants as in §5.2 of the technical spec. It is applied
-with `supabase db push` before the release. Then 1.0.3 is cut with the `release` skill.
+Each issue that changes a schema ships its own migrations, so every commit stands alone:
+
+- `0008_profile.sql` and SQLDelight `5.sqm`: profile columns, `google_display_name`, the
+  display-name trigger;
+- `0009_machine_links.sql` and `6.sqm`: `machine_link`, its RLS, the one-time conversion,
+  `repoint_machine_links`, `break_machine_links`;
+- `0010_measures.sql` and `7.sqm`: `measure`, `measurement`, their RLS and the stale-update
+  trigger.
+
+Grants follow §5.2 of the technical spec, and every `.sqm` resets `syncState.lastPullAt`. They
+are applied with `supabase db push` as each issue lands. Then 1.0.3 is cut with the `release` skill.
