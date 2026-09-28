@@ -24,7 +24,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -140,7 +139,6 @@ fun MachineFormScreen(
             WeightStepRow(state, onChange = { step ->
                 viewModel.update { it.copy(weightStep = step) }
             })
-            PerLimbCard()
             if (linking.canLink) {
                 OutlineButton(
                     "Привязать к…",
@@ -431,45 +429,6 @@ private fun WeightStepRow(
             unitLabel(state.unit, state.unitLabel),
             "weight-step",
         )
-    }
-}
-
-@Composable
-private fun PerLimbCard() {
-    val colors = MaterialTheme.colorScheme
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .alpha(DISABLED_ALPHA)
-            .clip(ControlShape)
-            .background(colors.surface)
-            .border(1.dp, colors.onBackground.copy(alpha = 0.12f), ControlShape)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(
-                    "Считать левую и правую отдельно",
-                    fontSize = 16.sp,
-                    color = colors.onBackground,
-                )
-                Text(
-                    "Для односторонних тренажёров — в подходе два числа",
-                    fontSize = 12.sp,
-                    color = colors.onBackground.copy(alpha = 0.50f),
-                )
-            }
-            Switch(
-                checked = false,
-                onCheckedChange = {},
-                enabled = false,
-                modifier = Modifier.testTag("per-limb"),
-            )
-        }
     }
 }
 

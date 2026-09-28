@@ -149,8 +149,7 @@ calendar shows only the account's own visits. Each friend gets a colour at rando
 the account can change it on the group screen. The colours are personal to the account: friends
 never see them, and they follow the account to its other devices.
 
-Photos, comments on a set and counting left and right separately are shown on these screens but
-not yet available.
+Photos and comments on a set are shown on these screens but not yet available.
 
 ## Sign-in and accounts
 

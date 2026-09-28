@@ -49,7 +49,7 @@ class MachineFormScreenTest {
         }) {
             onNodeWithTag("save-machine").assertIsNotEnabled()
             onNodeWithTag("machine-photo").assertIsNotEnabled()
-            onNodeWithTag("per-limb").assertIsNotEnabled()
+            onNodeWithTag("per-limb").assertDoesNotExist()
             onNodeWithTag("mode-total").assertIsSelected()
             onNodeWithTag("mode-counterweight").assertDoesNotExist()
             onNodeWithTag("weight-step").assertTextEquals("2,5")
