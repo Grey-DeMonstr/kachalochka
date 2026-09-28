@@ -167,9 +167,10 @@ chooser (search field, like the picker) with two sections:
 
 - **"Мои тренажёры"** — the owner's other machines. Choosing one asks "Объединить тренажёры?" and
   merges (6.3).
-- **"Тренажёры друзей"** — one row per friends' cluster that does not already contain this machine,
-  as in the picker. Shown when signed in and online. Choosing one writes a link from this machine
-  to it and returns to the form.
+- **"Тренажёры друзей"** — one row per friends' cluster that contains none of the owner's
+  machines, as in the picker: a cluster holding any own machine is already one machine with that
+  own one. Shown when signed in and online. Choosing one writes a link from this machine to it
+  and returns to the form.
 
 The form shows "Связан с: <names of friends in the cluster>" under the name when the cluster has
 friends' machines. The menu's "Отвязать от друзей" keeps its confirmation and breaks every
