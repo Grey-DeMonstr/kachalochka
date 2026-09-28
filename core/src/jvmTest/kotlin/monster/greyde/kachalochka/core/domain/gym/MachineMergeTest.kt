@@ -83,4 +83,13 @@ class MachineMergeTest {
 
         assertEquals(listOf(duplicate.copy(deleted = true, updatedAt = now)), rows.links)
     }
+
+    @Test
+    fun a_link_from_the_removed_machine_into_the_kept_one_is_deleted() {
+        val intoKept = link(other, edited.id)
+
+        val rows = mergedMachines(edited, other, emptyList(), listOf(intoKept), now)
+
+        assertEquals(listOf(intoKept.copy(deleted = true, updatedAt = now)), rows.links)
+    }
 }

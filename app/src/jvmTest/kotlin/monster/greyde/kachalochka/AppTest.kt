@@ -206,8 +206,8 @@ class AppTest {
         }
     }
 
-    @Test
-    fun a_merge_lands_on_the_kept_machine_s_form_which_returns_to_the_list() {
+    /** A new "Жим ногами" and its duplicate "Жим ногами старый", which has a set already. */
+    private fun duplicatePresses(): Pair<Machine, Machine> {
         val now = gym.clock.current
         val press = Machine.new("Жим ногами", null, now)
         val older = Machine.new("Жим ногами старый", null, now)
@@ -229,6 +229,40 @@ class AppTest {
             gym.machines.upsert(older)
             gym.sets.upsert(used)
         }
+        return press to older
+    }
+
+    @Test
+    fun a_merge_from_the_visit_leaves_the_kept_machine_in_the_sheet() {
+        val (press, older) = duplicatePresses()
+        runApp {
+            onNodeWithTag("open-today").performClick()
+            waitForIdle()
+            onNodeWithTag("pick-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-row-${press.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-settings").performClick()
+            waitForIdle()
+            onNodeWithTag("link-machine").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("chooser-own-${older.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("confirm-merge").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+
+            onNodeWithTag(
+                "sheet-machine-name",
+                useUnmergedTree = true,
+            ).assertTextEquals("Жим ногами старый")
+        }
+    }
+
+    @Test
+    fun a_merge_lands_on_the_kept_machine_s_form_which_returns_to_the_list() {
+        val (press, older) = duplicatePresses()
         runApp {
             onNodeWithTag("section-machines").performClick()
             waitForIdle()

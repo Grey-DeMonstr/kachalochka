@@ -11,9 +11,12 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
+import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
@@ -62,18 +65,22 @@ class LinkChooserViewModelTest {
         false,
     )
 
-    private fun viewModel(machine: MachineId = press.id) =
-        LinkChooserViewModel(
-            machine,
-            gym.machines,
-            gym.sets,
-            gym.machineLinks,
-            gym.friends,
-            gym.currentUser,
-            gym.accounts,
-            gym.clock,
-            gym.sync,
-        ).also { it.load() }
+    private fun viewModel(
+        machine: MachineId = press.id,
+        machines: MachineRepository = gym.machines,
+        sets: WorkoutSetRepository = gym.sets,
+        links: MachineLinkRepository = gym.machineLinks,
+    ) = LinkChooserViewModel(
+        machine,
+        machines,
+        sets,
+        links,
+        gym.friends,
+        gym.currentUser,
+        gym.accounts,
+        gym.clock,
+        gym.sync,
+    ).also { it.load() }
 
     /** Олег's machines: his copy of [press], linked to it, and one of his own. */
     private fun olegsMachines(): Pair<Machine, Machine> {
@@ -243,6 +250,81 @@ class LinkChooserViewModelTest {
                 .linkedMachineId,
         )
         assertTrue(
+            gym.machines.rows
+                .getValue(press.id)
+                .deleted,
+        )
+    }
+
+    @Test
+    fun a_merge_writes_the_sets_then_the_links_and_the_machine_last() {
+        runBlocking {
+            gym.sets.upsert(set(duplicate, 0))
+            gym.sets.upsert(set(press, 10))
+            gym.machineLinks.upsert(
+                MachineLink(MachineLinkId.random(), me, press.id, MachineId.random(), t0, false),
+            )
+        }
+        val order = mutableListOf<String>()
+        val machines =
+            object : MachineRepository by gym.machines {
+                override suspend fun upsert(machine: Machine) {
+                    order += "machine"
+                    gym.machines.upsert(machine)
+                }
+            }
+        val sets =
+            object : WorkoutSetRepository by gym.sets {
+                override suspend fun upsert(set: WorkoutSet) {
+                    order += "set"
+                    gym.sets.upsert(set)
+                }
+            }
+        val links =
+            object : MachineLinkRepository by gym.machineLinks {
+                override suspend fun upsert(link: MachineLink) {
+                    order += "link"
+                    gym.machineLinks.upsert(link)
+                }
+            }
+        val vm = viewModel(machines = machines, sets = sets, links = links)
+
+        vm.chooseOwn(duplicate.id)
+        vm.confirmMerge {}
+
+        assertEquals(listOf("set", "link", "machine"), order)
+    }
+
+    @Test
+    fun a_mate_s_link_into_the_kept_machine_needs_no_repointing() {
+        olegsMachines()
+        runBlocking { gym.sets.upsert(set(press, 0)) }
+        val vm = viewModel()
+
+        vm.chooseOwn(duplicate.id)
+        vm.confirmMerge {}
+
+        assertEquals(emptyList(), gym.friends.repointed)
+        assertTrue(
+            gym.machines.rows
+                .getValue(duplicate.id)
+                .deleted,
+        )
+    }
+
+    @Test
+    fun a_merge_whose_machine_went_meanwhile_closes_the_dialog() {
+        val vm = viewModel()
+        vm.chooseOwn(duplicate.id)
+        runBlocking { gym.machines.upsert(duplicate.copy(deleted = true)) }
+        var done = false
+
+        vm.confirmMerge { done = true }
+
+        assertNull(vm.state.value.merge)
+        assertEquals(false, done)
+        assertEquals(
+            false,
             gym.machines.rows
                 .getValue(press.id)
                 .deleted,

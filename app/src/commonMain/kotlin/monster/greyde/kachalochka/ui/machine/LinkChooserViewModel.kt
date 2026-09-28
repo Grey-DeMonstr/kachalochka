@@ -3,9 +3,11 @@ package monster.greyde.kachalochka.ui.machine
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
@@ -128,23 +130,29 @@ class LinkChooserViewModel(
         }
     }
 
-    fun cancelMerge() {
+    fun cancelMerge() = closeMerge(error = null)
+
+    private fun closeMerge(error: String?) {
         pending = null
-        mutableState.value = mutableState.value.copy(merge = null)
+        mutableState.value = mutableState.value.copy(merge = null, error = error)
     }
 
     /**
      * Friends' links into the removed machine can move only on the server, so a signed-in merge
-     * waits for it and writes nothing when it does not answer.
+     * waits for it and writes nothing when it does not answer. Once it has answered, leaving the
+     * screen must not stop the local rows halfway.
      */
     fun confirmMerge(onDone: (kept: MachineId) -> Unit) {
         val (keptId, removedId) = pending ?: return
         val mergedFor = shownFor
         writes.launch {
             val owner = currentUser.id()
-            if (owner != mergedFor) return@launch
-            val kept = liveOwn(keptId, owner) ?: return@launch
-            val removed = liveOwn(removedId, owner) ?: return@launch
+            val kept = liveOwn(keptId, owner)
+            val removed = liveOwn(removedId, owner)
+            if (owner != mergedFor || kept == null || removed == null) {
+                closeMerge(error = null)
+                return@launch
+            }
             if (owner != null) {
                 val repointed =
                     reading {
@@ -153,25 +161,25 @@ class LinkChooserViewModel(
                         if (intoRemoved) friends.repointLinks(removed.id, kept.id)
                     }
                 if (repointed.isFailure) {
-                    pending = null
-                    mutableState.value = mutableState.value.copy(merge = null, error = OFFLINE)
+                    closeMerge(error = OFFLINE)
                     return@launch
                 }
             }
-            val rows =
-                mergedMachines(
-                    kept,
-                    removed,
-                    sets.forMachine(removed.id).filter { it.userId == owner },
-                    machineLinks.all(owner),
-                    clock.now(),
-                )
-            rows.sets.forEach { sets.upsert(it) }
-            rows.links.forEach { machineLinks.upsert(it) }
-            machines.upsert(rows.removed)
-            sync.request()
-            pending = null
-            mutableState.value = mutableState.value.copy(merge = null)
+            withContext(NonCancellable) {
+                val rows =
+                    mergedMachines(
+                        kept,
+                        removed,
+                        sets.forMachine(removed.id).filter { it.userId == owner },
+                        machineLinks.all(owner),
+                        clock.now(),
+                    )
+                rows.sets.forEach { sets.upsert(it) }
+                rows.links.forEach { machineLinks.upsert(it) }
+                machines.upsert(rows.removed)
+                sync.request()
+            }
+            closeMerge(error = null)
             onDone(kept.id)
         }
     }

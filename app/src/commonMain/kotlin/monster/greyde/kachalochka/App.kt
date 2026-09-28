@@ -194,6 +194,12 @@ fun App() {
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onMerged = { kept ->
+                            // The visit's sheet may be on the removed machine, saved or not.
+                            if (!route.fromList) {
+                                navController
+                                    .getBackStackEntry<VisitRoute>()
+                                    .savedStateHandle[PICKED_MACHINE] = kept.value
+                            }
                             navController.navigate(
                                 MachineFormRoute(
                                     machineId = kept.value,

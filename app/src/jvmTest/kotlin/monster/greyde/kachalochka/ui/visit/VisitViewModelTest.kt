@@ -1187,6 +1187,37 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun a_selected_machine_deleted_elsewhere_closes_the_sheet_and_takes_no_set() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            val before = gym.sets.rows.size
+
+            gym.machines.upsert(press.copy(deleted = true))
+            vm.refresh()
+            vm.save()
+
+            assertNull(vm.state.value?.sheet)
+            assertEquals(before, gym.sets.rows.size)
+        }
+
+    @Test
+    fun a_failed_re_read_keeps_the_friends_already_shown() {
+        val two = twoAccountGym()
+        two.olegTrainedOn(ivanPress, ivanFriend)
+        val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+        two.friends.offline = true
+        vm.refresh()
+
+        assertEquals(
+            listOf("Олег · вчера · 80×8, 85×6"),
+            vm.state.value
+                ?.sheet
+                ?.friends,
+        )
+    }
+
+    @Test
     fun a_link_made_elsewhere_shows_its_friends_when_the_visit_is_shown_again() {
         val two = twoAccountGym()
         two.olegTrainedOn(ivanPress, ivanFriend)

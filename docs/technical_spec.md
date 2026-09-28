@@ -345,7 +345,9 @@ answer nothing is written. The rows are then written sets first and the machine 
 is requested. "Отвязать от друзей" breaks every direct link of the machine the same way round:
 `FriendsRepository.breakLinks` first, then the own links touching it soft-deleted locally. The
 form reads the links again whenever it is shown, and the set sheet reads friends' results again on
-`refresh()` and after a sync pass, because the chooser changes links on another screen.
+`refresh()` and after a sync pass, because the chooser changes links on another screen. A merge
+started from a visit hands the kept machine to the visit's sheet, and the sheet closes on an own
+machine that has been deleted rather than record a set on it.
 
 1.0.2 linked machines by a shared key, `machine.link_id`, which stays in both schemas for its
 clients. It is never written or read: `MachineRow` has no such field, so an upsert leaves the

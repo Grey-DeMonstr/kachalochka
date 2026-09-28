@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.visit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -142,6 +143,7 @@ class VisitViewModel(
     private var ordering = false
     private var friendLines: List<String> = emptyList()
     private var friendsFor: Pair<UserId, MachineId>? = null
+    private var loadingFriends: Job? = null
 
     /** Links may have changed on another screen or in a sync, so the next reload reads again. */
     private var friendsStale = false
@@ -389,6 +391,11 @@ class VisitViewModel(
         val requested = selected ?: return null
         machinesById[requested]?.let { return it }
         val shown = open ?: return null
+        // Merged away or deleted on another screen: a set must not land on it.
+        if (shown.userId == owner && machines.byId(shown.id)?.deleted == true) {
+            selected = null
+            return null
+        }
         return machines.named(owner, shown.name) ?: shown
     }
 
@@ -444,7 +451,10 @@ class VisitViewModel(
         // Only an own machine has links worth asking about; a switch drops the old answer.
         val asked =
             owner?.let { me -> machine?.takeIf { it.userId == me }?.let { me to it.id } }
-        if (asked != friendsFor) friendLines = emptyList()
+        if (asked != friendsFor) {
+            friendLines = emptyList()
+            loadingFriends?.cancel()
+        }
         if (asked != friendsFor || friendsStale) {
             friendsFor = asked
             friendsStale = false
@@ -458,17 +468,22 @@ class VisitViewModel(
         own: Set<MachineId>,
     ) {
         val (owner, machine) = asked
-        viewModelScope.launch {
-            val results =
-                reading {
-                    val links = visibleLinks(owner, friends, machineLinks)
-                    val theirs = MachineClusters(links).of(machine) - own
-                    if (theirs.isEmpty()) emptyList() else friends.latestOn(owner, theirs)
-                }.getOrDefault(emptyList())
-            if (friendsFor != asked) return@launch
-            friendLines = results.map(::friendLine)
-            publish()
-        }
+        loadingFriends?.cancel()
+        loadingFriends =
+            viewModelScope.launch {
+                val results =
+                    reading {
+                        val links = visibleLinks(owner, friends, machineLinks)
+                        val theirs = MachineClusters(links).of(machine) - own
+                        if (theirs.isEmpty()) emptyList() else friends.latestOn(owner, theirs)
+                    }
+                if (friendsFor != asked) return@launch
+                // A failed re-read keeps what an earlier read of the same machine showed.
+                results.onSuccess { found ->
+                    friendLines = found.map(::friendLine)
+                    publish()
+                }
+            }
     }
 
     private fun friendLine(result: FriendResult): String {
