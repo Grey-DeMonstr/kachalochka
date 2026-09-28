@@ -20,6 +20,7 @@ import monster.greyde.kachalochka.ui.account.restoreSession
 import monster.greyde.kachalochka.ui.account.sessionFromRedirect
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.joinCodeOf
+import monster.greyde.kachalochka.ui.friends.warmGroups
 import monster.greyde.kachalochka.ui.friends.withoutJoinCode
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
@@ -45,6 +46,7 @@ fun main() {
         }
         // After the restore, so the refresh the restore itself may trigger is written back.
         koin.followLiveSession()
+        koin.warmGroups()
         // The active account, reached through its id, is the only owner the web reads.
         koin.startVisitNormalization(emptyList())
         ComposeViewport(document.body!!) { App() }

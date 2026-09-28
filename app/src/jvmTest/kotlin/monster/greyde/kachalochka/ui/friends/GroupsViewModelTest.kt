@@ -1,9 +1,12 @@
 package monster.greyde.kachalochka.ui.friends
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import kotlin.test.AfterTest
@@ -18,8 +21,9 @@ import kotlin.test.fail
 @OptIn(ExperimentalCoroutinesApi::class)
 class GroupsViewModelTest {
     private val gym = signedInGym()
+    private val cache = GroupsCache(gym.friends, gym.accounts, TestScope())
 
-    private fun viewModel() = GroupsViewModel(gym.friends, gym.accounts)
+    private fun viewModel() = GroupsViewModel(gym.friends, gym.accounts, cache)
 
     @BeforeTest
     fun setUp() {
@@ -42,6 +46,31 @@ class GroupsViewModelTest {
             groups?.map { it.name to it.members },
         )
     }
+
+    @Test
+    fun groups_read_ahead_show_while_the_fresh_read_is_in_flight() =
+        runTest {
+            gym.friends.group("Зал на Лесной", owner = ME)
+            cache.refresh(ME.userId)
+            gym.friends.group("Бассейн", owner = ME)
+            val gate = CompletableDeferred<Unit>()
+            gym.friends.gate = gate
+
+            val vm = viewModel()
+            assertEquals(
+                listOf("Зал на Лесной"),
+                vm.state.value.groups
+                    ?.map { it.name },
+            )
+
+            gate.complete(Unit)
+            assertEquals(
+                listOf("Бассейн", "Зал на Лесной"),
+                vm.state.value.groups
+                    ?.map { it.name },
+            )
+            assertEquals(2, cache.cached(ME.userId)?.size)
+        }
 
     @Test
     fun creating_a_group_opens_it() {

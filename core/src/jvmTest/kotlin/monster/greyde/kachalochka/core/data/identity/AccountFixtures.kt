@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.core.data.identity
 
+import kotlinx.coroutines.CompletableDeferred
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -29,11 +30,15 @@ internal class FakeLiveTokens(
 ) : LiveTokens {
     var refreshes = 0
 
+    /** While set, a refresh started now waits for it, keeping it in flight while a test needs. */
+    var gate: CompletableDeferred<Unit>? = null
+
     override fun liveSessionOf(owner: UserId): AccountSession? =
         session?.takeIf { it.account.userId == owner }
 
     override suspend fun refreshLive(owner: UserId): String? {
         refreshes++
+        gate?.await()
         return renewed
     }
 }

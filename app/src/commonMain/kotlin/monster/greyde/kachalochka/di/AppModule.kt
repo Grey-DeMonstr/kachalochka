@@ -1,5 +1,8 @@
 package monster.greyde.kachalochka.di
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.di.coreModule
@@ -14,6 +17,7 @@ import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendCalendarViewModel
 import monster.greyde.kachalochka.ui.friends.FriendVisitViewModel
 import monster.greyde.kachalochka.ui.friends.GroupViewModel
+import monster.greyde.kachalochka.ui.friends.GroupsCache
 import monster.greyde.kachalochka.ui.friends.GroupsViewModel
 import monster.greyde.kachalochka.ui.friends.PendingJoin
 import monster.greyde.kachalochka.ui.home.HomeViewModel
@@ -43,6 +47,9 @@ val appModule =
         }
         single { VisitNormalization(get(), get(), get(), get(), get()) }
         single { PendingJoin(get(), get()) }
+        single {
+            GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        }
         viewModelOf(::HomeViewModel)
         viewModelOf(::GroupsViewModel)
         viewModelOf(::AccountsViewModel)

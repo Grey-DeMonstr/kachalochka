@@ -110,7 +110,9 @@ Friends' data is the exception: both platforms read it online, so `FriendsReposi
 implementation in `commonMain`, and nothing it returns is written to SQLite. The web runs it on
 the UI client. Android runs it on a client that, like the sync client (§4.2), asks
 `AccountTokens` for the active account's token on every request, because its UI client holds a
-session only after a sign-in or a switch in the same process.
+session only after a sign-in or a switch in the same process. Concurrent refreshes of one
+account's token share one request. The active account's groups are read ahead into a
+process-wide `GroupsCache` whenever it becomes active, so the friends screen opens with them.
 
 ---
 

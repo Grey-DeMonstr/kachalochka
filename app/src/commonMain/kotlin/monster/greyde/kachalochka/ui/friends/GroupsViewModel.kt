@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.friends.inviteCodeOf
@@ -40,6 +41,7 @@ data class GroupsDialogUi(
 class GroupsViewModel(
     private val friends: FriendsRepository,
     private val accounts: Accounts,
+    private val cache: GroupsCache,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(GroupsUiState(null, false, null))
     val state: StateFlow<GroupsUiState> = mutableState
@@ -147,21 +149,26 @@ class GroupsViewModel(
     }
 
     private suspend fun doLoad() {
-        if (accounts.activeId.value == null) {
+        val owner = accounts.activeId.value
+        if (owner == null) {
             groups = emptyList()
             offline = false
             publish()
             return
         }
-        reading { friends.groups() }
-            .onSuccess { found ->
-                groups = found.map { GroupRowUi(it.id, it.name, memberCount(it.memberCount)) }
-                offline = false
-                publish()
-            }.onFailure {
+        cache.cached(owner)?.let(::show)
+        reading { cache.refresh(owner) }
+            .onSuccess(::show)
+            .onFailure {
                 offline = true
                 publish()
             }
+    }
+
+    private fun show(found: List<FriendGroup>) {
+        groups = found.map { GroupRowUi(it.id, it.name, memberCount(it.memberCount)) }
+        offline = false
+        publish()
     }
 
     private fun publish() {
