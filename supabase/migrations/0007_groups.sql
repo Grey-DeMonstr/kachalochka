@@ -122,7 +122,7 @@ create policy friend_group_update_owner on public.friend_group
     for update using (owner_id = (select auth.uid()) and not deleted)
     with check (owner_id = (select auth.uid()));
 create policy group_member_select_member on public.group_member
-    for select using (public.is_group_member(group_id));
+    for select using (not deleted and public.is_group_member(group_id));
 
 grant select on public.friend_group to authenticated;
 grant update (name, deleted, updated_at) on public.friend_group to authenticated;
@@ -140,11 +140,6 @@ create policy visit_select_own_or_group on public.visit
     );
 drop policy if exists workout_set_select_own on public.workout_set;
 create policy workout_set_select_own_or_group on public.workout_set
-    for select using (
-        (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
-    );
-drop policy if exists profile_select_own on public.profile;
-create policy profile_select_own_or_group on public.profile
     for select using (
         (select auth.uid()) = user_id or (not deleted and public.shares_group_with(user_id))
     );
