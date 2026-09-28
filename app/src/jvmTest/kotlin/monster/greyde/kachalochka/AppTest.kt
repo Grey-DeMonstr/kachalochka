@@ -17,6 +17,8 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
@@ -201,6 +203,49 @@ class AppTest {
 
             onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
             assertEquals(10.0, runBlocking { gym.machines.byId(press.id) }?.weightStep)
+        }
+    }
+
+    @Test
+    fun a_merge_lands_on_the_kept_machine_s_form_which_returns_to_the_list() {
+        val now = gym.clock.current
+        val press = Machine.new("Жим ногами", null, now)
+        val older = Machine.new("Жим ногами старый", null, now)
+        val used =
+            WorkoutSet(
+                WorkoutSetId.random(),
+                null,
+                VisitId.random(),
+                older.id,
+                70.0,
+                10,
+                0,
+                now,
+                now,
+                false,
+            )
+        runBlocking {
+            gym.machines.upsert(press)
+            gym.machines.upsert(older)
+            gym.sets.upsert(used)
+        }
+        runApp {
+            onNodeWithTag("section-machines").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-list-row-${press.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("link-machine").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("chooser-own-${older.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("confirm-merge").performClick()
+            waitForIdle()
+
+            onNodeWithTag("machine-name").assertTextContains("Жим ногами старый")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
+            onNodeWithTag("machine-list-row-${press.id.value}").assertDoesNotExist()
         }
     }
 

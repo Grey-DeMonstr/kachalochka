@@ -1,5 +1,7 @@
 package monster.greyde.kachalochka.ui.machine
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineClusters
@@ -21,9 +23,12 @@ suspend fun loadGroupMachines(
     ownLinks: MachineLinkRepository,
 ): GroupMachines? =
     reading {
-        val machines = friends.groupMachines(owner)
-        val links = visibleLinks(owner, friends, ownLinks)
-        GroupMachines(machines, links, MachineClusters(links))
+        coroutineScope {
+            val machines = async { friends.groupMachines(owner) }
+            val links = async { visibleLinks(owner, friends, ownLinks) }
+            val all = links.await()
+            GroupMachines(machines.await(), all, MachineClusters(all))
+        }
     }.getOrNull()
 
 /** [owner]'s live links and their group mates', the latter read online. */

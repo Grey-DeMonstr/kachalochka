@@ -24,6 +24,7 @@ import monster.greyde.kachalochka.navigation.FriendVisitRoute
 import monster.greyde.kachalochka.navigation.FriendsRoute
 import monster.greyde.kachalochka.navigation.GroupRoute
 import monster.greyde.kachalochka.navigation.HomeRoute
+import monster.greyde.kachalochka.navigation.LinkChooserRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
 import monster.greyde.kachalochka.navigation.MachineListRoute
 import monster.greyde.kachalochka.navigation.MachinePickerRoute
@@ -42,6 +43,7 @@ import monster.greyde.kachalochka.ui.friends.InviteMissingDialog
 import monster.greyde.kachalochka.ui.friends.JoinOutcome
 import monster.greyde.kachalochka.ui.friends.PendingJoin
 import monster.greyde.kachalochka.ui.home.HomeScreen
+import monster.greyde.kachalochka.ui.machine.LinkChooserScreen
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
 import monster.greyde.kachalochka.ui.machine.MachineListScreen
@@ -178,6 +180,28 @@ fun App() {
                             }
                         },
                         inVisit = !route.fromList,
+                        onLink = {
+                            route.machineId?.let {
+                                navController.navigate(LinkChooserRoute(it, route.fromList))
+                            }
+                        },
+                    )
+                }
+                composable<LinkChooserRoute> { entry ->
+                    val route = entry.toRoute<LinkChooserRoute>()
+                    LinkChooserScreen(
+                        machineId = MachineId(route.machineId),
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onMerged = { kept ->
+                            navController.navigate(
+                                MachineFormRoute(
+                                    machineId = kept.value,
+                                    fromList = route.fromList,
+                                ),
+                            ) { popUpTo<MachineFormRoute> { inclusive = true } }
+                        },
+                        onLinked = { navController.popBackStack() },
                     )
                 }
                 composable<FriendVisitRoute> { entry ->

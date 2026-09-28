@@ -206,6 +206,24 @@ class SupabaseFriendsRepository(
             .map { it.toMachineLink() }
     }
 
+    // Friends' rows can be written only by the definer functions of 0009_machine_links.sql.
+    override suspend fun breakLinks(machine: MachineId) {
+        postgrest.rpc("break_machine_links", buildJsonObject { put("target", machine.value) })
+    }
+
+    override suspend fun repointLinks(
+        removed: MachineId,
+        kept: MachineId,
+    ) {
+        postgrest.rpc(
+            "repoint_machine_links",
+            buildJsonObject {
+                put("removed", removed.value)
+                put("kept", kept.value)
+            },
+        )
+    }
+
     override suspend fun latestOn(
         viewer: UserId,
         machines: Set<MachineId>,

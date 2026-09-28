@@ -2,10 +2,12 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -28,9 +30,12 @@ data class MachineFormArgs(
     val name: String,
 )
 
-data class UnlinkUi(
-    val available: Boolean,
-    val confirming: Boolean,
+data class LinkingUi(
+    val canLink: Boolean = false,
+    val linkedWith: List<String> = emptyList(),
+    val canUnlink: Boolean = false,
+    val confirmingUnlink: Boolean = false,
+    val error: String? = null,
 )
 
 data class MachineFormState(
@@ -76,6 +81,8 @@ data class MachineFormState(
     }
 }
 
+private const val OFFLINE = "Нет связи с сервером"
+
 class MachineFormViewModel(
     private val args: MachineFormArgs,
     private val machines: MachineRepository,
@@ -84,29 +91,37 @@ class MachineFormViewModel(
     private val clock: Clock,
     private val friends: FriendsRepository,
     private val machineLinks: MachineLinkRepository,
+    private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineFormState(name = args.name))
     val state: StateFlow<MachineFormState> = mutableState
-    private val mutableUnlink = MutableStateFlow(UnlinkUi(available = false, confirming = false))
-    val unlink: StateFlow<UnlinkUi> = mutableUnlink
+    private val mutableLinking = MutableStateFlow(LinkingUi())
+    val linking: StateFlow<LinkingUi> = mutableLinking
     private val writes = WriteGuard(viewModelScope)
 
     private var existing: Machine? = null
     private var loaded = false
+    private var readingLinks: Job? = null
 
     /** A switch keeps the typed edits and drops the row under them, which it no longer owns. */
     init {
         viewModelScope.launch {
             accounts.activeId.collect { active ->
                 existing = existing?.takeIf { it.userId == active }
-                refreshUnlink()
+                refreshLinks()
             }
         }
     }
 
-    // The screen asks again whenever it re-enters composition; the form keeps its edits then.
+    /**
+     * The screen asks again whenever it re-enters composition: the form keeps its edits then, and
+     * the links are read again, since the chooser may have changed them.
+     */
     fun load() {
-        if (loaded) return
+        if (loaded) {
+            refreshLinks()
+            return
+        }
         loaded = true
         viewModelScope.launch {
             val current = args.machineId?.let { machines.byId(it) }
@@ -118,63 +133,89 @@ class MachineFormViewModel(
                     source != null -> MachineFormState.of(source, name = args.name)
                     else -> MachineFormState(name = args.name)
                 }
-            refreshUnlink()
+            refreshLinks()
         }
     }
 
+    private fun refreshLinks() {
+        readingLinks?.cancel()
+        readingLinks = viewModelScope.launch { readLinks() }
+    }
+
     /**
-     * An own link is on hand and works offline. Whether a friend linked to the machine — and the
-     * link can be broken from either side — needs asking the group online; a failed read just
-     * leaves the menu off.
+     * Own links are on hand offline; friends' links and machines need the network, and without
+     * it the form names no friends.
      */
-    private suspend fun refreshUnlink() {
+    private suspend fun readLinks() {
         val shown = existing
-        if (shown == null || shown.userId != accounts.activeId.value) {
-            mutableUnlink.value = mutableUnlink.value.copy(available = false)
+        val owner = accounts.activeId.value
+        if (shown == null || shown.userId != owner) {
+            mutableLinking.value = LinkingUi(error = mutableLinking.value.error)
             return
         }
-        val owner = shown.userId
-        if (machineLinks.all(owner).any { it.touches(shown.id) }) {
-            mutableUnlink.value = mutableUnlink.value.copy(available = true)
-            return
-        }
-        mutableUnlink.value = mutableUnlink.value.copy(available = false)
-        if (owner == null) return
-        val linkedByAFriend =
-            reading { friends.groupLinks(owner) }
-                .getOrDefault(emptyList())
-                .any { it.touches(shown.id) }
-        if (existing?.id == shown.id) {
-            mutableUnlink.value = mutableUnlink.value.copy(available = linkedByAFriend)
-        }
+        val ownLinks = machineLinks.all(owner)
+        val ownTouch = ownLinks.any { it.touches(shown.id) }
+        mutableLinking.value =
+            mutableLinking.value.let {
+                it.copy(
+                    canLink = true,
+                    canUnlink = it.canUnlink || ownTouch,
+                )
+            }
+        val group = owner?.let { loadGroupMachines(it, friends, machineLinks) }
+        if (accounts.activeId.value != owner || existing?.id != shown.id) return
+        val cluster = group?.clusters?.of(shown.id).orEmpty()
+        mutableLinking.value =
+            mutableLinking.value.copy(
+                linkedWith =
+                    group
+                        ?.friends
+                        .orEmpty()
+                        .filter { it.machine.id in cluster }
+                        .map { it.owner.displayName }
+                        .distinct()
+                        .sortedBy { it.lowercase() },
+                canUnlink = (group?.links ?: ownLinks).any { it.touches(shown.id) },
+            )
     }
 
     private fun MachineLink.touches(machine: MachineId) =
         machineId == machine || linkedMachineId == machine
 
     fun askToUnlink() {
-        if (mutableUnlink.value.available) {
-            mutableUnlink.value = mutableUnlink.value.copy(confirming = true)
+        if (mutableLinking.value.canUnlink) {
+            mutableLinking.value = mutableLinking.value.copy(confirmingUnlink = true, error = null)
         }
     }
 
     fun cancelUnlink() {
-        mutableUnlink.value = mutableUnlink.value.copy(confirming = false)
+        mutableLinking.value = mutableLinking.value.copy(confirmingUnlink = false)
     }
 
-    /** The confirmation is the deliberate step, so the own links are deleted at once. */
+    /**
+     * Friends' links into the machine can be broken only on the server, so they go first and
+     * nothing is written when it does not answer.
+     */
     fun confirmUnlink() {
         val shown = existing ?: return
         writes.launch {
             val owner = currentUser.id()
             machines.byId(shown.id)?.takeIf { it.userId == owner } ?: return@launch
+            val broken = owner?.let { reading { friends.breakLinks(shown.id) } }
+            if (broken?.isFailure == true) {
+                mutableLinking.value =
+                    mutableLinking.value.copy(confirmingUnlink = false, error = OFFLINE)
+                return@launch
+            }
             val now = clock.now()
             machineLinks
                 .all(owner)
                 .filter { it.touches(shown.id) }
                 .forEach { machineLinks.upsert(it.copy(deleted = true, updatedAt = now)) }
-            mutableUnlink.value = mutableUnlink.value.copy(confirming = false)
-            refreshUnlink()
+            sync.request()
+            mutableLinking.value =
+                mutableLinking.value.copy(confirmingUnlink = false, error = null)
+            refreshLinks()
         }
     }
 

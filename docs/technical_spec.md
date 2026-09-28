@@ -333,6 +333,20 @@ cluster, and a friend's visit names each machine after the viewer's own in its c
 mates' live links, read online through `FriendsRepository.groupLinks`. Picking a friend's machine
 writes the own copy (`linkedCopy`) and the link from it to the friend's machine.
 
+The machine form's "Привязать к…" chooser (`LinkChooserViewModel`) links an own machine to a
+friend's by writing one own link, and merges two own machines. A merge removes a duplicate and
+writes no link: `olderMachine` keeps the machine whose earliest live set is earlier, one without
+sets counting as newest and a tie keeping the edited one, and `mergedMachines` returns the rows to
+write — the removed machine's sets and own links moved to the kept one (a link the kept one
+already has, or one into it, is soft-deleted instead) and the removed machine soft-deleted.
+Signed in, friends' links into the removed machine are moved first through
+`FriendsRepository.repointLinks`, called only when `groupLinks` shows one; if the server does not
+answer nothing is written. The rows are then written sets first and the machine last, and a sync
+is requested. "Отвязать от друзей" breaks every direct link of the machine the same way round:
+`FriendsRepository.breakLinks` first, then the own links touching it soft-deleted locally. The
+form reads the links again whenever it is shown, and the set sheet reads friends' results again on
+`refresh()` and after a sync pass, because the chooser changes links on another screen.
+
 1.0.2 linked machines by a shared key, `machine.link_id`, which stays in both schemas for its
 clients. It is never written or read: `MachineRow` has no such field, so an upsert leaves the
 server column as it is, and the SQLite column is left null by the upsert and ignored by the
@@ -423,7 +437,8 @@ Row-level security enforces every visibility rule from the functional spec:
   rows of everyone who shares a live group with them, through the security-definer function
   `shares_group_with`. `profile` stays readable by its owner alone.
 - A friend's link into one's own machine is changed only through two security-definer
-  functions. `break_machine_links(machine)` soft-deletes the live links pointing at `machine`
+  functions, called by `FriendsRepository.breakLinks` and `repointLinks`.
+  `break_machine_links(machine)` soft-deletes the live links pointing at `machine`
   when the caller owns it on the server. `repoint_machine_links(removed, kept)` moves friends'
   live links pointing at `removed` to `kept` when the caller owns `removed` and nobody else owns
   `kept`; `kept` need not exist yet, since it may have been created offline.

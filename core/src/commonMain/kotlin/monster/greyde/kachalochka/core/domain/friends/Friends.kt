@@ -99,6 +99,15 @@ interface FriendsRepository {
     /** The live links of everyone sharing a group with [viewer]. */
     suspend fun groupLinks(viewer: UserId): List<MachineLink>
 
+    /** Deletes friends' links into the account's own [machine]. */
+    suspend fun breakLinks(machine: MachineId)
+
+    /** Moves friends' links into the account's own [removed] over to [kept]. */
+    suspend fun repointLinks(
+        removed: MachineId,
+        kept: MachineId,
+    )
+
     /** Up to three friends' latest visits on any of [machines], newest first. */
     suspend fun latestOn(
         viewer: UserId,

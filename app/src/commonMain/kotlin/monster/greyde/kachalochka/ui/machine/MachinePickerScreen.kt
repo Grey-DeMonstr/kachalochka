@@ -113,7 +113,7 @@ fun MachinePickerScreen(
 }
 
 @Composable
-private fun SearchBar(
+internal fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
 ) {

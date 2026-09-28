@@ -56,6 +56,7 @@ import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
+import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
@@ -72,16 +73,17 @@ fun MachineFormScreen(
     onOpenSettings: () -> Unit,
     onSaved: (MachineId) -> Unit,
     inVisit: Boolean = true,
+    onLink: () -> Unit = {},
 ) {
     val viewModel: MachineFormViewModel = koinViewModel { parametersOf(args) }
     val state by viewModel.state.collectAsState()
-    val unlink by viewModel.unlink.collectAsState()
+    val linking by viewModel.linking.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(
         "Тренажёр",
         onBack = onBack,
         onOpenSettings = onOpenSettings,
-        actions = { if (unlink.available) MachineMenu(viewModel::askToUnlink) },
+        actions = { if (linking.canUnlink) MachineMenu(viewModel::askToUnlink) },
     ) {
         Column(
             Modifier
@@ -93,6 +95,14 @@ fun MachineFormScreen(
             PhotoAndName(state.name, onChange = { name ->
                 viewModel.update { it.copy(name = name) }
             })
+            if (linking.linkedWith.isNotEmpty()) {
+                Text(
+                    "Связан с: ${linking.linkedWith.joinToString(", ")}",
+                    modifier = Modifier.testTag("machine-linked-with"),
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.60f),
+                )
+            }
             FieldLabel("Заметка о настройке")
             FormField(
                 value = state.setupNote,
@@ -133,6 +143,22 @@ fun MachineFormScreen(
                 viewModel.update { it.copy(weightStep = step) }
             })
             PerLimbCard()
+            if (linking.canLink) {
+                OutlineButton(
+                    "Привязать к…",
+                    PhosphorIcons.LinkSimple,
+                    onLink,
+                    Modifier.fillMaxWidth().testTag("link-machine"),
+                )
+            }
+            linking.error?.let {
+                Text(
+                    it,
+                    modifier = Modifier.testTag("machine-link-error"),
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             if (inVisit) HintRow()
         }
         Column(
@@ -149,7 +175,7 @@ fun MachineFormScreen(
             )
         }
     }
-    if (unlink.confirming) {
+    if (linking.confirmingUnlink) {
         ConfirmDialog(
             title = "Отвязать тренажёр?",
             text = "Результаты друзей на этом тренажёре перестанут показываться у вас.",

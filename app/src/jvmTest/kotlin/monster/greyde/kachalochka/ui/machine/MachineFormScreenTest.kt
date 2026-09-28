@@ -20,6 +20,9 @@ import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.ui.friends.ME
+import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -174,5 +177,35 @@ class MachineFormScreenTest {
             MachineFormScreen(MachineFormArgs(null, null, "Гакк"), {}, {}, onSaved = {})
         }) {
             onNodeWithTag("machine-menu").assertDoesNotExist()
+            onNodeWithTag("link-machine").assertDoesNotExist()
         }
+
+    @Test
+    fun a_saved_machine_offers_linking_and_names_the_friends_it_is_linked_with() {
+        val signedIn = signedInGym()
+        val now = signedIn.clock.current
+        val olegs = Machine.new("Жим ногами", OLEG.userId, now)
+        val (press, link) = linkedCopy(olegs, ME.userId, now)
+        signedIn.friends.group("Зал на Лесной", owner = OLEG, ME)
+        signedIn.friends.machines += olegs
+        runBlocking {
+            signedIn.machines.upsert(press)
+            signedIn.machineLinks.upsert(link)
+        }
+        var linking = 0
+        runScreenTest(signedIn, screen = {
+            MachineFormScreen(
+                MachineFormArgs(press.id, null, ""),
+                {},
+                {},
+                onSaved = {},
+                onLink = { linking++ },
+            )
+        }) {
+            onNodeWithTag("machine-linked-with").assertTextEquals("Связан с: Олег")
+            onNodeWithTag("link-machine").performScrollTo().performClick()
+            waitForIdle()
+        }
+        assertEquals(1, linking)
+    }
 }

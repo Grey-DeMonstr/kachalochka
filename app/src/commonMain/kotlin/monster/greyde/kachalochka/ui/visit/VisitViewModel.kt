@@ -142,6 +142,9 @@ class VisitViewModel(
     private var ordering = false
     private var friendLines: List<String> = emptyList()
     private var friendsFor: Pair<UserId, MachineId>? = null
+
+    /** Links may have changed on another screen or in a sync, so the next reload reads again. */
+    private var friendsStale = false
     private var notice: String? = null
 
     /**
@@ -168,13 +171,21 @@ class VisitViewModel(
         }
         // The weight and reps the user is choosing stay as they are.
         viewModelScope.launch {
-            sync.completed.collect { reload(reseed = false) }
+            sync.completed.collect {
+                friendsStale = true
+                reload(reseed = false)
+            }
         }
     }
 
     val selectedMachineId: MachineId? get() = selected
 
     fun refresh() {
+        friendsStale = true
+        reloadShown()
+    }
+
+    private fun reloadShown() {
         loadSharer(accounts.activeId.value)
         viewModelScope.launch { reload(reseed = false) }
     }
@@ -328,7 +339,7 @@ class VisitViewModel(
         values = SetValues(set.weight, set.reps)
         weightText = null
         sheetExpanded = true
-        refresh()
+        reloadShown()
     }
 
     fun collapseSheet(): Boolean {
@@ -433,9 +444,10 @@ class VisitViewModel(
         // Only an own machine has links worth asking about; a switch drops the old answer.
         val asked =
             owner?.let { me -> machine?.takeIf { it.userId == me }?.let { me to it.id } }
-        if (asked != friendsFor) {
+        if (asked != friendsFor) friendLines = emptyList()
+        if (asked != friendsFor || friendsStale) {
             friendsFor = asked
-            friendLines = emptyList()
+            friendsStale = false
             asked?.let { loadFriends(it, machinesById.keys) }
         }
         publish()

@@ -33,6 +33,13 @@ data class MachineFormRoute(
     val fromList: Boolean = false,
 )
 
+/** [fromList] is the form's own, handed on to the kept machine's form after a merge. */
+@Serializable
+data class LinkChooserRoute(
+    val machineId: String,
+    val fromList: Boolean,
+)
+
 @Serializable
 data class FriendVisitRoute(
     val userId: String,

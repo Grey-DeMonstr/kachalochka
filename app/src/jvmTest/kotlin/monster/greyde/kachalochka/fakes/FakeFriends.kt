@@ -188,6 +188,33 @@ class FakeFriends(
             links.filter { !it.deleted && it.userId in mates.keys }
         }
 
+    /** The machines every [breakLinks] call named, in order. */
+    val broken = mutableListOf<MachineId>()
+
+    /** The (removed, kept) pairs every [repointLinks] call named, in order. */
+    val repointed = mutableListOf<Pair<MachineId, MachineId>>()
+
+    override suspend fun breakLinks(machine: MachineId) =
+        online {
+            broken += machine
+            links.replaceAll { if (it.linkedMachineId == machine) it.copy(deleted = true) else it }
+        }
+
+    override suspend fun repointLinks(
+        removed: MachineId,
+        kept: MachineId,
+    ) = online {
+        repointed += removed to kept
+        val me = me()?.userId
+        links.replaceAll {
+            if (it.linkedMachineId == removed && it.userId != me) {
+                it.copy(linkedMachineId = kept)
+            } else {
+                it
+            }
+        }
+    }
+
     override suspend fun latestOn(
         viewer: UserId,
         machines: Set<MachineId>,

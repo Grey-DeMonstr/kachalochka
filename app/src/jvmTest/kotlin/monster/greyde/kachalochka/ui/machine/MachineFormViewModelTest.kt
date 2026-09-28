@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.machine
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -12,6 +13,7 @@ import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
@@ -50,6 +52,7 @@ class MachineFormViewModelTest {
             gym.clock,
             gym.friends,
             gym.machineLinks,
+            gym.sync,
         )
 
     @BeforeTest
@@ -255,23 +258,78 @@ class MachineFormViewModelTest {
     }
 
     @Test
-    fun unlinking_deletes_the_machine_s_own_links_at_once() =
+    fun only_an_own_saved_machine_can_be_linked() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val press = Machine.new("Жим ногами", ivan.account.userId, t0)
+            gym.machines.upsert(press)
+
+            val saved = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            val fresh = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+            val copy = viewModel(MachineFormArgs(null, press.id, "Гакк")).also { it.load() }
+
+            assertTrue(saved.linking.value.canLink)
+            assertFalse(fresh.linking.value.canLink)
+            assertFalse(copy.linking.value.canLink)
+        }
+
+    @Test
+    fun the_form_names_every_friend_whose_machine_is_the_same() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val oleg = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Олег")
+            gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend, oleg)
+            val hers = Machine.new("Жим ногами", misha.account.userId, t0)
+            val (press, link) = linkedCopy(hers, ivan.account.userId, t0)
+            val (his, hisLink) = linkedCopy(hers, oleg.userId, t0)
+            gym.machines.upsert(press)
+            gym.machineLinks.upsert(link)
+            gym.friends.machines += listOf(hers, his)
+            gym.friends.links += hisLink
+
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            assertEquals(listOf("Миша", "Олег"), vm.linking.value.linkedWith)
+        }
+
+    @Test
+    fun unlinking_breaks_friends_links_then_deletes_the_own_ones() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
             val (linked, link) = linkedPress()
             val vm = viewModel(MachineFormArgs(linked.id, null, "")).also { it.load() }
-            assertTrue(vm.unlink.value.available)
+            assertTrue(vm.linking.value.canUnlink)
 
             vm.askToUnlink()
-            assertTrue(vm.unlink.value.confirming)
+            assertTrue(vm.linking.value.confirmingUnlink)
             gym.clock.current += 1.minutes
             vm.confirmUnlink()
 
+            assertEquals(listOf(linked.id), gym.friends.broken)
             assertEquals(
                 link.copy(deleted = true, updatedAt = gym.clock.current),
                 gym.machineLinks.rows[link.id],
             )
-            assertFalse(vm.unlink.value.confirming)
+            assertFalse(vm.linking.value.confirmingUnlink)
+            assertFalse(vm.linking.value.canUnlink)
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun offline_unlinking_says_so_and_writes_nothing() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val (linked, link) = linkedPress()
+            val vm = viewModel(MachineFormArgs(linked.id, null, "")).also { it.load() }
+            gym.friends.offline = true
+
+            vm.askToUnlink()
+            vm.confirmUnlink()
+
+            assertEquals("Нет связи с сервером", vm.linking.value.error)
+            assertEquals(link, gym.machineLinks.rows[link.id])
+            assertFalse(vm.linking.value.confirmingUnlink)
+            assertEquals(0, gym.sync.requests)
         }
 
     @Test
@@ -285,7 +343,8 @@ class MachineFormViewModelTest {
             vm.cancelUnlink()
 
             assertEquals(link, gym.machineLinks.rows[link.id])
-            assertFalse(vm.unlink.value.confirming)
+            assertEquals(emptyList(), gym.friends.broken)
+            assertFalse(vm.linking.value.confirmingUnlink)
         }
 
     @Test
@@ -297,8 +356,8 @@ class MachineFormViewModelTest {
             val existing = viewModel(MachineFormArgs(anonymous.id, null, "")).also { it.load() }
             val fresh = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
 
-            assertFalse(existing.unlink.value.available)
-            assertFalse(fresh.unlink.value.available)
+            assertFalse(existing.linking.value.canUnlink)
+            assertFalse(fresh.linking.value.canUnlink)
         }
 
     /** Иван's original, which Миша linked her copy to. */
@@ -320,7 +379,28 @@ class MachineFormViewModelTest {
 
             val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
 
-            assertTrue(vm.unlink.value.available)
+            assertTrue(vm.linking.value.canUnlink)
+            assertEquals(listOf("Миша"), vm.linking.value.linkedWith)
+        }
+
+    @Test
+    fun unlinking_an_original_breaks_the_friend_s_link_and_ends_the_offer() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val original = copiedOriginal()
+            val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
+
+            vm.askToUnlink()
+            vm.confirmUnlink()
+
+            assertEquals(listOf(original.id), gym.friends.broken)
+            assertTrue(
+                gym.friends.links
+                    .single()
+                    .deleted,
+            )
+            assertFalse(vm.linking.value.canUnlink)
+            assertEquals(emptyList(), vm.linking.value.linkedWith)
         }
 
     @Test
@@ -332,7 +412,7 @@ class MachineFormViewModelTest {
 
             val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
 
-            assertFalse(vm.unlink.value.available)
+            assertFalse(vm.linking.value.canUnlink)
         }
 
     @Test
@@ -344,6 +424,53 @@ class MachineFormViewModelTest {
 
             val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
 
-            assertFalse(vm.unlink.value.available)
+            assertFalse(vm.linking.value.canUnlink)
+            assertEquals(emptyList(), vm.linking.value.linkedWith)
+        }
+
+    @Test
+    fun links_read_for_an_account_no_longer_active_never_show() =
+        runTest {
+            gym.withAccounts(ivan, misha, active = ivan)
+            val original = copiedOriginal()
+            val ivansRead = CompletableDeferred<Unit>()
+            gym.friends.gate = ivansRead
+            val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
+
+            gym.friends.gate = null
+            gym.accounts.switchTo(misha.account.userId)
+            ivansRead.complete(Unit)
+
+            assertFalse(vm.linking.value.canUnlink)
+            assertFalse(vm.linking.value.canLink)
+            assertEquals(emptyList(), vm.linking.value.linkedWith)
+        }
+
+    @Test
+    fun coming_back_to_the_form_reads_the_links_again() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val original = Machine.new("Жим ногами", ivan.account.userId, t0)
+            gym.machines.upsert(original)
+            gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
+            val hers = Machine.new("Жим ногами", misha.account.userId, t0)
+            gym.friends.machines += hers
+            val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
+            vm.update { it.copy(setupNote = "Сиденье на 4") }
+
+            gym.machineLinks.upsert(
+                MachineLink(
+                    MachineLinkId.random(),
+                    ivan.account.userId,
+                    original.id,
+                    hers.id,
+                    t0,
+                    false,
+                ),
+            )
+            vm.load()
+
+            assertEquals(listOf("Миша"), vm.linking.value.linkedWith)
+            assertEquals("Сиденье на 4", vm.state.value.setupNote)
         }
 }

@@ -1187,6 +1187,48 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun a_link_made_elsewhere_shows_its_friends_when_the_visit_is_shown_again() {
+        val two = twoAccountGym()
+        two.olegTrainedOn(ivanPress, ivanFriend)
+        val link = two.friends.links.removeAt(0)
+        val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+        assertEquals(
+            emptyList(),
+            vm.state.value
+                ?.sheet
+                ?.friends,
+        )
+
+        two.friends.links += link
+        vm.refresh()
+
+        assertEquals(
+            listOf("Олег · вчера · 80×8, 85×6"),
+            vm.state.value
+                ?.sheet
+                ?.friends,
+        )
+    }
+
+    @Test
+    fun a_finished_sync_reads_the_friends_again() {
+        val two = twoAccountGym()
+        two.olegTrainedOn(ivanPress, ivanFriend)
+        val link = two.friends.links.removeAt(0)
+        val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+        two.friends.links += link
+        two.sync.completePass()
+
+        assertEquals(
+            listOf("Олег · вчера · 80×8, 85×6"),
+            vm.state.value
+                ?.sheet
+                ?.friends,
+        )
+    }
+
+    @Test
     fun offline_the_sheet_shows_no_friends() {
         val two = twoAccountGym()
         two.olegTrainedOn(ivanPress, ivanFriend)

@@ -491,6 +491,40 @@ class SupabaseFriendsRepositoryTest {
         }
 
     @Test
+    fun breaking_links_names_the_machine() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer("", HttpStatusCode.NoContent)
+            val machine = MachineId.random()
+
+            repositoryOn(engine).breakLinks(machine)
+
+            val request = engine.requestHistory.single()
+            val path = request.url.encodedPath
+            assertTrue(path.endsWith("/rpc/break_machine_links"), path)
+            val body = request.bodyText()
+            assertTrue("\"target\":\"${machine.value}\"" in body, body)
+        }
+
+    @Test
+    fun repointing_links_names_both_machines() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer("", HttpStatusCode.NoContent)
+            val removed = MachineId.random()
+            val kept = MachineId.random()
+
+            repositoryOn(engine).repointLinks(removed, kept)
+
+            val request = engine.requestHistory.single()
+            val path = request.url.encodedPath
+            assertTrue(path.endsWith("/rpc/repoint_machine_links"), path)
+            val body = request.bodyText()
+            assertTrue("\"removed\":\"${removed.value}\"" in body, body)
+            assertTrue("\"kept\":\"${kept.value}\"" in body, body)
+        }
+
+    @Test
     fun deleting_a_group_marks_it_deleted() =
         runTest {
             val engine = MockEngine.Queue()

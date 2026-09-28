@@ -96,6 +96,16 @@ step. The unit is kg, lb or an own unit such as "плитка", whose name is th
 every weight on that machine, with no conversion. The weight step is any positive number, with
 1, 2,5, 5 and 10 one tap away.
 
+The form of a saved machine of the active account has "Привязать к…". It opens a list with a
+search field: "Мои тренажёры", the account's other machines, and, signed in and online,
+"Тренажёры друзей", one row per friends' machine that is not yet the same machine as one of the
+account's. Choosing an own machine removes a duplicate: after "Объединить тренажёры?" the machine
+used first stays (a machine with no sets counts as the newest, and of two equal ones the edited
+one stays), the other one's sets move to it, and the other one disappears. Friends who linked to
+the removed machine are linked to the one that stays. The form of the machine that stays then
+replaces the list, and unsaved edits in the old form are dropped. Choosing a friend's machine
+links the two as one physical machine (see Group sharing) and returns to the form.
+
 The "Тренажёры" row lists the active account's machines by name, each with its unit, how its
 weight is counted and its step. Tapping one opens it in the machine form; "Новый тренажёр"
 adds one. Saving returns to the list.
@@ -169,6 +179,13 @@ opens a palette of eight colours; the chosen one marks that friend's visits in t
 calendar.
 
 A machine can be taken from a friend's list: the copy keeps the friend's settings and stays
-linked to the friend's machine as one physical machine. The set sheet then shows friends'
-latest results on it, and a friend's visit shows their sets on it under the user's own machine
-name. A link can be broken from the machine form.
+linked to the friend's machine as one physical machine. An own machine can also be linked to a
+friend's with "Привязать к…". Machines linked directly or through other friends' links are one
+machine: the picker no longer offers the friend's machine beside the user's own, the set sheet
+shows friends' latest results on it, a friend's visit shows their sets on it under the user's own
+machine name, and the machine form names the friends it is linked with ("Связан с: …").
+"Отвязать от друзей" in the form's menu, after a confirmation, breaks every link between the
+machine and friends' machines, whichever side made it.
+
+Unlinking and, when signed in, merging duplicates change friends' links on the server, so they
+need the network: without it the app says "Нет связи с сервером" and changes nothing.

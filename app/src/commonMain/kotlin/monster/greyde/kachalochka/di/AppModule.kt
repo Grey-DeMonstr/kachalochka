@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
@@ -23,6 +24,7 @@ import monster.greyde.kachalochka.ui.friends.GroupsCache
 import monster.greyde.kachalochka.ui.friends.GroupsViewModel
 import monster.greyde.kachalochka.ui.friends.PendingJoin
 import monster.greyde.kachalochka.ui.home.HomeViewModel
+import monster.greyde.kachalochka.ui.machine.LinkChooserViewModel
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
 import monster.greyde.kachalochka.ui.machine.MachineListViewModel
@@ -96,7 +98,10 @@ val appModule =
             )
         }
         viewModel { (args: MachineFormArgs) ->
-            MachineFormViewModel(args, get(), get(), get(), get(), get(), get())
+            MachineFormViewModel(args, get(), get(), get(), get(), get(), get(), get())
+        }
+        viewModel { (machine: MachineId) ->
+            LinkChooserViewModel(machine, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (member: UserId, name: String, day: CalendarDay) ->
             FriendVisitViewModel(
