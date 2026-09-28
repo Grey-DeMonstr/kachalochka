@@ -20,6 +20,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.navigation.CalendarRoute
 import monster.greyde.kachalochka.navigation.FriendCalendarRoute
+import monster.greyde.kachalochka.navigation.FriendMachineRoute
 import monster.greyde.kachalochka.navigation.FriendVisitRoute
 import monster.greyde.kachalochka.navigation.FriendsRoute
 import monster.greyde.kachalochka.navigation.GroupRoute
@@ -43,6 +44,7 @@ import monster.greyde.kachalochka.ui.friends.InviteMissingDialog
 import monster.greyde.kachalochka.ui.friends.JoinOutcome
 import monster.greyde.kachalochka.ui.friends.PendingJoin
 import monster.greyde.kachalochka.ui.home.HomeScreen
+import monster.greyde.kachalochka.ui.machine.FriendMachineScreen
 import monster.greyde.kachalochka.ui.machine.LinkChooserScreen
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
@@ -100,6 +102,23 @@ fun App() {
                         },
                         onNewMachine = {
                             navController.navigate(MachineFormRoute(fromList = true))
+                        },
+                        onOpenFriendMachine = { machine, owner ->
+                            navController.navigate(FriendMachineRoute(machine.value, owner.value))
+                        },
+                    )
+                }
+                composable<FriendMachineRoute> { entry ->
+                    val route = entry.toRoute<FriendMachineRoute>()
+                    FriendMachineScreen(
+                        machineId = MachineId(route.machineId),
+                        ownerId = UserId(route.ownerId),
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onTaken = { copy ->
+                            navController.navigate(
+                                MachineFormRoute(machineId = copy.value, fromList = true),
+                            ) { popUpTo<FriendMachineRoute> { inclusive = true } }
                         },
                     )
                 }

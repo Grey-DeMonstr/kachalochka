@@ -284,6 +284,30 @@ class AppTest {
     }
 
     @Test
+    fun a_friend_s_machine_taken_from_the_list_opens_as_the_own_copy() {
+        gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val olegPress = Machine.new("Жим ногами", OLEG.userId, gym.clock.current)
+        gym.friends.machines += olegPress
+        runApp {
+            onNodeWithTag("section-machines").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-list-friend-${olegPress.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("take-machine").performClick()
+            waitForIdle()
+
+            onNodeWithTag("machine-name").assertTextContains("Жим ногами")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
+            val copy = runBlocking { gym.machines.all(ME.userId) }.single()
+            onNodeWithTag("machine-list-row-${copy.id.value}").assertIsDisplayed()
+            onNodeWithTag("machine-list-friend-${olegPress.id.value}").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun a_signed_in_account_creates_a_group_from_home() {
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
         runApp {

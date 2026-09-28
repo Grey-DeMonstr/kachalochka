@@ -1,0 +1,99 @@
+package monster.greyde.kachalochka.ui.machine
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.components.AccentButton
+import monster.greyde.kachalochka.ui.components.Screen
+import monster.greyde.kachalochka.ui.friends.OfflineNotice
+import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+
+@Composable
+fun FriendMachineScreen(
+    machineId: MachineId,
+    ownerId: UserId,
+    onBack: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onTaken: (MachineId) -> Unit,
+) {
+    val viewModel: FriendMachineViewModel = koinViewModel { parametersOf(machineId, ownerId) }
+    val state by viewModel.state.collectAsState()
+    val offline by viewModel.offline.collectAsState()
+    // The view model already loads once created: it follows accounts.activeId from init.
+    Screen("Тренажёр друга", onBack = onBack, onOpenSettings = onOpenSettings) {
+        val current = state
+        if (offline) {
+            OfflineNotice(onRetry = viewModel::refresh)
+        } else if (current != null) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column {
+                    Text(
+                        current.name,
+                        modifier = Modifier.testTag("friend-machine-name"),
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Text(
+                        current.owner,
+                        modifier = Modifier.testTag("friend-machine-owner"),
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+                if (current.note.isNotBlank()) {
+                    Setting("Заметка о настройке", current.note, "friend-machine-note")
+                }
+                Setting("Как считается вес", current.caption, "friend-machine-caption")
+                current.platform?.let { Setting("Вес платформы", it, "friend-machine-platform") }
+            }
+            Box(Modifier.padding(16.dp)) {
+                AccentButton(
+                    "Взять себе",
+                    PhosphorIcons.Copy,
+                    { viewModel.take(onTaken) },
+                    Modifier.testTag("take-machine"),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun Setting(
+    label: String,
+    value: String,
+    tag: String,
+) {
+    val colors = MaterialTheme.colorScheme
+    Column {
+        Text(label, fontSize = 12.sp, color = colors.onBackground.copy(alpha = 0.48f))
+        Text(
+            value,
+            modifier = Modifier.testTag(tag),
+            fontSize = 16.sp,
+            color = colors.onBackground,
+        )
+    }
+}

@@ -16,8 +16,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Screen
+import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -27,6 +29,7 @@ fun MachineListScreen(
     onOpenSettings: () -> Unit,
     onOpenMachine: (MachineId) -> Unit,
     onNewMachine: () -> Unit,
+    onOpenFriendMachine: (MachineId, owner: UserId) -> Unit,
 ) {
     val viewModel: MachineListViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -37,7 +40,7 @@ fun MachineListScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState()),
         ) {
-            val rows = state
+            val rows = state.own
             when {
                 rows == null -> Unit
                 rows.isEmpty() ->
@@ -53,6 +56,20 @@ fun MachineListScreen(
                             onOpenMachine(row.id)
                         }
                     }
+            }
+            if (state.friends.isNotEmpty()) {
+                SectionLabel(
+                    "Тренажёры друзей",
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                            .testTag("machine-list-friends"),
+                )
+                state.friends.forEach { row ->
+                    MachineRow(row.name, row.detail, "machine-list-friend-${row.id.value}") {
+                        row.friend?.let { onOpenFriendMachine(row.id, it) }
+                    }
+                }
             }
         }
         Box(Modifier.padding(16.dp)) {

@@ -310,8 +310,8 @@ repositories and their Koin bindings; `FakeGym` / `FakeFriends` fakes for app te
 `SyncPass` orders pushes by rank instead of the current boolean sort: `machine`, `visit`,
 `profile`, `measure` first, then `machine_link`, `workout_set`, `measurement`.
 
-New routes: `FriendMachineRoute(machineId)`, `LinkChooserRoute(machineId)`, `MeasuresRoute`,
-`MeasurementFormRoute(day)`, `MeasureRoute(measureId)`.
+New routes: `FriendMachineRoute(machineId, ownerId)`, `LinkChooserRoute(machineId)`,
+`MeasuresRoute`, `MeasurementFormRoute(day)`, `MeasureRoute(measureId)`.
 
 ## 11. Server migration and release
 

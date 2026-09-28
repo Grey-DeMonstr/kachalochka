@@ -12,7 +12,6 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
-import monster.greyde.kachalochka.core.domain.friends.friendMachineRows
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -77,7 +76,7 @@ class LinkChooserViewModel(
     private val offeredFriends: List<FriendMachine>?
         get() {
             val read = group ?: return null
-            return friendMachineRows(read.friends, own, read.clusters, read.links)
+            return read.offered(own)
         }
 
     /** The screen follows whoever is active, wherever the switch came from. */
@@ -221,11 +220,7 @@ class LinkChooserViewModel(
                     offeredFriends
                         ?.filter { matches(it.machine.name) }
                         ?.map {
-                            ChooserRowUi(
-                                it.machine.id,
-                                it.machine.name,
-                                "${it.owner.displayName} · ${weightCaption(it.machine)}",
-                            )
+                            ChooserRowUi(it.machine.id, it.machine.name, friendMachineDetail(it))
                         },
             )
     }

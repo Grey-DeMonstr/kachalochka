@@ -1,0 +1,166 @@
+package monster.greyde.kachalochka.ui.machine
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.WeightMode
+import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
+import monster.greyde.kachalochka.ui.friends.ME
+import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.signedInGym
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class FriendMachineViewModelTest {
+    private val on = signedInGym()
+    private val t0 = on.clock.current
+    private val olegPress =
+        Machine
+            .new("Жим ногами", OLEG.userId, t0)
+            .copy(
+                setupNote = "Спинка на 4",
+                weightMode = WeightMode.PerSide,
+                weightStep = 5.0,
+                platformWeight = 25.0,
+            )
+
+    init {
+        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        on.friends.machines += olegPress
+    }
+
+    private fun viewModel(gym: FakeGym = on) =
+        FriendMachineViewModel(
+            olegPress.id,
+            OLEG.userId,
+            gym.friends,
+            gym.machines,
+            gym.machineLinks,
+            gym.currentUser,
+            gym.accounts,
+            gym.clock,
+        )
+
+    @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+    }
+
+    @AfterTest
+    fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun the_friend_s_settings_are_shown() {
+        val vm = viewModel()
+
+        assertEquals(
+            FriendMachineUi(
+                name = "Жим ногами",
+                owner = "Олег",
+                note = "Спинка на 4",
+                caption = "кг на сторону · ±5",
+                platform = "25 кг · рядом с названием",
+            ),
+            vm.state.value,
+        )
+        assertFalse(vm.offline.value)
+    }
+
+    @Test
+    fun a_platform_added_to_the_record_says_so_and_none_shows_nothing() {
+        on.friends.machines.clear()
+        on.friends.machines += olegPress.copy(platformIncluded = true)
+        assertEquals("25 кг · прибавляется к записи", viewModel().state.value?.platform)
+
+        on.friends.machines.clear()
+        on.friends.machines += olegPress.copy(platformWeight = 0.0)
+        assertNull(viewModel().state.value?.platform)
+    }
+
+    @Test
+    fun taking_it_saves_a_linked_copy_and_hands_it_on() =
+        runTest {
+            val vm = viewModel()
+            var taken: MachineId? = null
+
+            vm.take { taken = it }
+
+            val copy = assertNotNull(on.machines.byId(assertNotNull(taken)))
+            assertEquals(ME.userId to 5.0, copy.userId to copy.weightStep)
+            val link =
+                on.machineLinks.rows.values
+                    .single()
+            assertEquals(
+                Triple(ME.userId, copy.id, olegPress.id),
+                Triple(link.userId, link.machineId, link.linkedMachineId),
+            )
+        }
+
+    @Test
+    fun offline_it_says_so_and_takes_nothing() {
+        on.friends.offline = true
+        val vm = viewModel()
+        var taken: MachineId? = null
+
+        vm.take { taken = it }
+
+        assertTrue(vm.offline.value)
+        assertNull(vm.state.value)
+        assertNull(taken)
+        assertTrue(on.machineLinks.rows.isEmpty())
+    }
+
+    @Test
+    fun a_retry_shows_it_once_the_network_answers() {
+        on.friends.offline = true
+        val vm = viewModel()
+
+        on.friends.offline = false
+        vm.refresh()
+
+        assertFalse(vm.offline.value)
+        assertEquals("Жим ногами", vm.state.value?.name)
+    }
+
+    @Test
+    fun a_switch_to_an_account_outside_the_group_takes_nothing() =
+        runTest {
+            val misha =
+                AccountSession(
+                    Account(
+                        UserId("22222222-2222-4222-8222-222222222222"),
+                        "misha@example.test",
+                        "Миша",
+                    ),
+                    "access",
+                    "refresh",
+                    t0,
+                )
+            val gym = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.machines += olegPress
+            val vm = viewModel(gym)
+
+            gym.accounts.switchTo(misha.account.userId)
+            vm.take {}
+
+            assertNull(vm.state.value)
+            assertEquals(emptyList(), gym.machines.all(misha.account.userId))
+        }
+}

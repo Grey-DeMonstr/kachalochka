@@ -41,6 +41,12 @@ data class LinkChooserRoute(
 )
 
 @Serializable
+data class FriendMachineRoute(
+    val machineId: String,
+    val ownerId: String,
+)
+
+@Serializable
 data class FriendVisitRoute(
     val userId: String,
     val name: String,

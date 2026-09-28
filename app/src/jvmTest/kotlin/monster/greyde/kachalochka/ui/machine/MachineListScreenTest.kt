@@ -1,14 +1,20 @@
 package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.ui.friends.ME
+import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -23,7 +29,13 @@ class MachineListScreenTest {
         val opened = mutableListOf<MachineId>()
         var added = 0
         runScreenTest(gym, screen = {
-            MachineListScreen({}, {}, onOpenMachine = { opened += it }, onNewMachine = { added++ })
+            MachineListScreen(
+                {},
+                {},
+                onOpenMachine = { opened += it },
+                onNewMachine = { added++ },
+                onOpenFriendMachine = { _, _ -> },
+            )
         }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
             onNodeWithTag("machine-list-row-${press.id.value}").performClick()
@@ -37,7 +49,33 @@ class MachineListScreenTest {
 
     @Test
     fun without_machines_the_list_says_so() =
-        runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}) }) {
+        runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
             onNodeWithTag("machine-list-empty").assertTextEquals("Тренажёров пока нет")
+            onNodeWithTag("machine-list-friends").assertDoesNotExist()
         }
+
+    @Test
+    fun a_friend_s_machine_is_listed_under_its_own_title_and_opens_with_its_owner() {
+        val on = signedInGym()
+        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val olegPress = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
+        on.friends.machines += olegPress
+        val opened = mutableListOf<Pair<MachineId, UserId>>()
+        runScreenTest(on, screen = {
+            MachineListScreen({}, {}, {}, {}, onOpenFriendMachine = { id, owner ->
+                opened += id to owner
+            })
+        }) {
+            onNodeWithTag("machine-list-friends")
+                .performScrollTo()
+                .assertTextEquals("ТРЕНАЖЁРЫ ДРУЗЕЙ")
+            onNodeWithTag("machine-list-friend-${olegPress.id.value}")
+                .performScrollTo()
+                .assertIsDisplayed()
+                .performClick()
+            waitForIdle()
+
+            assertEquals(listOf(olegPress.id to OLEG.userId), opened)
+        }
+    }
 }

@@ -108,7 +108,13 @@ links the two as one physical machine (see Group sharing) and returns to the for
 
 The "Тренажёры" row lists the active account's machines by name, each with its unit, how its
 weight is counted and its step. Tapping one opens it in the machine form; "Новый тренажёр"
-adds one. Saving returns to the list.
+adds one. Saving returns to the list. Signed in and online, "Тренажёры друзей" follows once the
+server answers: the machines of everyone sharing a group, one row per physical machine that is
+not yet the same machine as one of the account's, each with its owner and weight setup. Tapping
+one opens "Тренажёр друга", its settings to read — name, owner, setup note, how its weight is
+counted and its platform — with "Взять себе", which saves the account's own copy linked to it
+(see Group sharing) and opens that copy in the machine form. Offline that view says "Нет связи с
+сервером" and offers a retry.
 
 The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
 visit are marked, today and the chosen day are highlighted, and future days cannot be chosen.

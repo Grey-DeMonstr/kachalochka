@@ -24,6 +24,7 @@ import monster.greyde.kachalochka.ui.friends.GroupsCache
 import monster.greyde.kachalochka.ui.friends.GroupsViewModel
 import monster.greyde.kachalochka.ui.friends.PendingJoin
 import monster.greyde.kachalochka.ui.home.HomeViewModel
+import monster.greyde.kachalochka.ui.machine.FriendMachineViewModel
 import monster.greyde.kachalochka.ui.machine.LinkChooserViewModel
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
@@ -102,6 +103,9 @@ val appModule =
         }
         viewModel { (machine: MachineId) ->
             LinkChooserViewModel(machine, get(), get(), get(), get(), get(), get(), get(), get())
+        }
+        viewModel { (machine: MachineId, owner: UserId) ->
+            FriendMachineViewModel(machine, owner, get(), get(), get(), get(), get(), get())
         }
         viewModel { (member: UserId, name: String, day: CalendarDay) ->
             FriendVisitViewModel(

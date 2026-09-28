@@ -10,7 +10,6 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
-import monster.greyde.kachalochka.core.domain.friends.friendMachineRows
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -31,7 +30,6 @@ import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.unitLabel
-import monster.greyde.kachalochka.ui.format.weightCaption
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -81,7 +79,7 @@ class MachinePickerViewModel(
             val read =
                 group?.takeIf { friendsFor != null && friendsFor == shownFor }
                     ?: return emptyList()
-            return friendMachineRows(read.friends, all, read.clusters, read.links)
+            return read.offered(all)
         }
 
     /** The screen follows whoever is active, wherever the switch came from. */
@@ -149,13 +147,7 @@ class MachinePickerViewModel(
         val friendRows =
             offeredFriends
                 .filter { it.machine.name.contains(needle, ignoreCase = true) }
-                .map {
-                    PickerRowUi(
-                        it.machine.id,
-                        it.machine.name,
-                        "${it.owner.displayName} · ${weightCaption(it.machine)}",
-                    )
-                }
+                .map { PickerRowUi(it.machine.id, it.machine.name, friendMachineDetail(it)) }
         mutableState.value =
             PickerUiState(
                 query = query,

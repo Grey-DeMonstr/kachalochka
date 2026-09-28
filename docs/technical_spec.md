@@ -325,13 +325,15 @@ member's `linked_machine_id`. Neither column is a foreign key and no policy chec
 someone else's. Links are undirected for reading: machines joined by live links, in either
 direction and through any number of hops, form a cluster that counts as one physical machine.
 `MachineClusters` in `domain/gym` builds the clusters from a list of links by union-find, and
-every reader asks it: the picker offers one friend's machine per cluster without an own machine
-(`friendMachineRows`, the machine with the fewest outgoing links, then by owner name and id), the
-set sheet asks `FriendsRepository.latestOn` for the friends' machines of the open machine's
-cluster, and a friend's visit names each machine after the viewer's own in its cluster
-(`namesForViewer`). The clusters combine the account's own links, read locally, with its group
-mates' live links, read online through `FriendsRepository.groupLinks`. Picking a friend's machine
-writes the own copy (`linkedCopy`) and the link from it to the friend's machine.
+every reader asks it: the picker and the machine list offer one friend's machine per cluster
+without an own machine (`friendMachineRows`, the machine with the fewest outgoing links, then by
+owner name and id), the set sheet asks `FriendsRepository.latestOn` for the friends' machines of
+the open machine's cluster, and a friend's visit names each machine after the viewer's own in its
+cluster (`namesForViewer`). The clusters combine the account's own links, read locally, with its
+group mates' live links, read online through `FriendsRepository.groupLinks`. Picking a friend's
+machine, or "Взять себе" on one opened from the machine list, writes the own copy (`linkedCopy`)
+and the link from it to the friend's machine. Friends' rows read for one account are never shown
+or copied once another is active: each screen remembers whom it read them for.
 
 The machine form's "Привязать к…" chooser (`LinkChooserViewModel`) links an own machine to a
 friend's by writing one own link, and merges two own machines. A merge removes a duplicate and
