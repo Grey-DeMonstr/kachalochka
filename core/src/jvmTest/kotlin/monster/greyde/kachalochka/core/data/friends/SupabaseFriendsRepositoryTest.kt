@@ -130,16 +130,31 @@ class SupabaseFriendsRepositoryTest {
     @Test
     fun an_unknown_invite_code_answers_null_whatever_the_status() =
         runTest {
-            for (status in listOf(HttpStatusCode.BadRequest, HttpStatusCode.NotFound)) {
+            val statuses =
+                listOf(
+                    HttpStatusCode.BadRequest,
+                    HttpStatusCode.NotFound,
+                    HttpStatusCode.InternalServerError,
+                )
+            for (status in statuses) {
                 val engine = MockEngine.Queue()
                 engine.answer(
-                    """{"code":"P0002","details":null,"hint":null,""" +
+                    """{"code":"PT404","details":null,"hint":null,""" +
                         """"message":"unknown invite code"}""",
                     status,
                 )
 
                 assertNull(repositoryOn(engine).join("ZZZZ2345"), status.toString())
             }
+        }
+
+    @Test
+    fun a_not_found_answer_to_joining_is_an_unknown_code_whatever_the_body() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer("""{"message":"unknown invite code"}""", HttpStatusCode.NotFound)
+
+            assertNull(repositoryOn(engine).join("ZZZZ2345"))
         }
 
     @Test

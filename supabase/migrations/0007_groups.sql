@@ -90,7 +90,8 @@ begin
     select id into target from public.friend_group
     where invite_code = upper(regexp_replace(code, '^\s+|\s+$', '', 'g')) and not deleted;
     if target is null then
-        raise exception 'unknown invite code' using errcode = 'P0002';
+        -- PostgREST answers a PTxyz code with HTTP status xyz.
+        raise exception 'unknown invite code' using errcode = 'PT404';
     end if;
     insert into public.group_member (group_id, user_id, display_name)
     values (target, (select auth.uid()), public.my_display_name())

@@ -31,8 +31,10 @@ import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Clock
 
-// join_group raises it for a code no live group has; see 0007_groups.sql.
-private const val UNKNOWN_INVITE_CODE = "P0002"
+// join_group raises it for a code no live group has, and PostgREST answers it with a 404; see
+// 0007_groups.sql.
+private const val UNKNOWN_INVITE_CODE = "PT404"
+private const val NOT_FOUND = 404
 
 // Enough to reach each friend's latest visit on one machine; that visit is then read whole.
 private const val RECENT_SETS = 50L
@@ -85,7 +87,9 @@ class SupabaseFriendsRepository(
             try {
                 postgrest.rpc("join_group", buildJsonObject { put("code", code) })
             } catch (refused: PostgrestRestException) {
-                if (refused.code == UNKNOWN_INVITE_CODE) return null
+                if (refused.code == UNKNOWN_INVITE_CODE || refused.statusCode == NOT_FOUND) {
+                    return null
+                }
                 throw refused
             }
         return GroupId(joined.decodeAs<String>())
