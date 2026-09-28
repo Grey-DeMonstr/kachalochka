@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.format
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -60,11 +61,12 @@ fun setsSummary(
     val unit = sharedUnit(machine, preferred)
     val weights = sets.map { shownWeight(it.weight, machine, preferred) }
     val reps = sets.map { it.reps }
+    val side = if (machine.weightMode == WeightMode.PerSide) " на каждую," else ""
     val weightPart =
         when {
             weights.all { it == 0.0 } -> null
-            weights.distinct().size == 1 -> formatNumber(weights.first()) + unit
-            else -> weights.joinToString("-") { formatNumber(it) } + unit
+            weights.distinct().size == 1 -> formatNumber(weights.first()) + unit + side
+            else -> weights.joinToString("-") { formatNumber(it) } + unit + side
         }
     val repsPart =
         if (reps.distinct().size == 1) "${reps.size}x${reps.first()}" else reps.joinToString("-")

@@ -78,7 +78,8 @@ unit chosen in the profile: with "кг", the default, pounds are converted to th
 kilogram; with "lb", kilograms are converted to the nearest half pound ("Тяга 99lb 2x10"); with
 "Смешанные", every machine's weights stay in its own unit. An own unit is never converted and is
 written as is with its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zero shows
-only its reps ("Подтягивания 3x10"). The machine rows of the visit screen and of a friend's
+only its reps ("Подтягивания 3x10"). A machine whose weight is counted per side says so after the
+weights ("Гребная тяга (+11,3кг) 15кг на каждую, 3x12"). The machine rows of the visit screen and of a friend's
 visit, and friends' results in the set sheet, write a machine's weights and reps exactly the same
 way.
 

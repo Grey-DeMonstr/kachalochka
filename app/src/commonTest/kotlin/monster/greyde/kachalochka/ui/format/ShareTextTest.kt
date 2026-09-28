@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.ui.format
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -105,6 +106,17 @@ class ShareTextTest {
                 40.0 to 10,
             ),
         )
+    }
+
+    @Test
+    fun a_per_side_weight_says_it_is_on_each_side() {
+        val row = machine("Гребная тяга", platform = 11.3).copy(weightMode = WeightMode.PerSide)
+
+        assertEquals(
+            "Гребная тяга (+11,3кг) 15кг на каждую, 3x12",
+            line(row, 15.0 to 12, 15.0 to 12, 15.0 to 12),
+        )
+        assertEquals("Гребная тяга (+11,3кг) 3x12", line(row, 0.0 to 12, 0.0 to 12, 0.0 to 12))
     }
 
     @Test
