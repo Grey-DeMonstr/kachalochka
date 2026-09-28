@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.MEASURE_SEEDED_AT
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -128,7 +129,13 @@ class SyncPass(
                     if ((MACHINE_LINK_TABLE to it.id.value) !in pending) rows.writeMachineLink(it)
                 }
                 rowsPulled.measures.forEach {
-                    if ((MEASURE_TABLE to it.id.value) !in pending) rows.writeMeasure(it)
+                    if ((MEASURE_TABLE to it.id.value) !in pending) {
+                        rows.writeMeasure(it)
+                    } else if (rows.measure(it.id.value)?.updatedAt == MEASURE_SEEDED_AT) {
+                        // The server ignores a seed pushed over a newer row, so the seed yields.
+                        rows.writeMeasure(it)
+                        outbox.remove(MEASURE_TABLE, it.id.value)
+                    }
                 }
                 rowsPulled.measurements.forEach {
                     if ((MEASUREMENT_TABLE to it.id.value) !in pending) rows.writeMeasurement(it)

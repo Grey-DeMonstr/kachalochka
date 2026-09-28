@@ -7,6 +7,8 @@ import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.measures.MeasureKind
+import monster.greyde.kachalochka.core.domain.measures.missingDefaults
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -119,6 +121,22 @@ class SyncPassPullTest {
             h.pass.run(listOf(IVAN))
 
             assertEquals(listOf(neck), h.measures.all(IVAN))
+        }
+
+    @Test
+    fun a_rename_pulled_from_another_device_replaces_a_seed_still_waiting_to_be_pushed() =
+        runTest {
+            val seed =
+                missingDefaults(IVAN, MeasureKind.entries.toSet() - MeasureKind.Neck).single()
+            val renamed = seed.copy(name = "Шея сзади", updatedAt = T0)
+            h.measures.upsert(seed)
+            h.gateway.failing = MEASURE_TABLE
+            h.gateway.measuresToPull = listOf(renamed)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(listOf(renamed), h.measures.all(IVAN))
+            assertTrue(h.outbox.pending().none { it.tableName == MEASURE_TABLE })
         }
 
     @Test

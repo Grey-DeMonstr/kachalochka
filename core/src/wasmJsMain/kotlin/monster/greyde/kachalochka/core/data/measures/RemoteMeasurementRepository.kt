@@ -19,12 +19,8 @@ class RemoteMeasurementRepository(
         newestPerDay(
             client.postgrest
                 .from(MEASUREMENT_TABLE)
-                .select {
-                    filter {
-                        eq("deleted", false)
-                        owned(owner)
-                    }
-                }.decodeList<MeasurementRow>()
+                .select { filter { owned(owner) } }
+                .decodeList<MeasurementRow>()
                 .map { it.toMeasurement() },
         )
 }

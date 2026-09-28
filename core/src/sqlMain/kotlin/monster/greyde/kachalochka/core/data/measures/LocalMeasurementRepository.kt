@@ -40,7 +40,7 @@ class LocalMeasurementRepository(
 
     override suspend fun all(owner: UserId?): List<Measurement> =
         withContext(dispatcher) {
-            newestPerDay(queries.live(owner?.value, ::measurementOf).executeAsList())
+            newestPerDay(queries.everyRowOf(owner?.value, ::measurementOf).executeAsList())
         }
 }
 

@@ -87,19 +87,24 @@ interface MeasureRepository {
 interface MeasurementRepository {
     suspend fun upsert(measurement: Measurement)
 
-    /** The owner's live values, newest day first; of two on one day and measure, the newest. */
+    /**
+     * The owner's values, newest day first: of the rows of one day and measure the newest, left
+     * out when it was deleted.
+     */
     suspend fun all(owner: UserId?): List<Measurement>
 }
 
 val measureOrder: Comparator<Measure> =
     compareBy<Measure> { it.position }.thenBy { it.name }.thenBy { it.id.value }
 
-// Two devices may each write a value for one day offline.
-fun newestPerDay(values: List<Measurement>): List<Measurement> =
-    values
+// Two devices may each write a value for one day offline. [rows] includes deleted ones, so a
+// cleared day stays cleared whatever an older row of it says.
+fun newestPerDay(rows: List<Measurement>): List<Measurement> =
+    rows
         .groupBy { it.measureId to it.day }
         .values
         .map { sameDay -> sameDay.maxWith(compareBy({ it.updatedAt }, { it.id.value })) }
+        .filterNot { it.deleted }
         .sortedWith(compareByDescending<Measurement> { it.day }.thenBy { it.measureId.value })
 
 private class Predefined(
@@ -120,6 +125,9 @@ private val defaultMeasures =
         Predefined(MeasureKind.BodyFat, "Жир", "%"),
     )
 
+/** The `updatedAt` of every seeded predefined measure, older than any real edit. */
+val MEASURE_SEEDED_AT: Instant = Instant.fromEpochSeconds(0)
+
 /** The predefined measures [owner] lacks, dated at the epoch so a real edit always wins. */
 fun missingDefaults(
     owner: UserId?,
@@ -133,7 +141,7 @@ fun missingDefaults(
             unit = default.unit,
             kind = default.kind,
             position = position,
-            updatedAt = Instant.fromEpochSeconds(0),
+            updatedAt = MEASURE_SEEDED_AT,
             deleted = false,
         )
     }

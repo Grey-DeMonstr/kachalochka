@@ -68,6 +68,16 @@ class LocalMeasurementRepositoryTest {
         }
 
     @Test
+    fun a_day_cleared_on_its_newest_row_stays_cleared_though_an_older_row_is_live() =
+        runTest {
+            repository.upsert(value(ivan, value = 80.0))
+            val cleared = value(ivan, value = 81.0, updatedAt = now + 1.hours).copy(deleted = true)
+            repository.upsert(cleared)
+
+            assertEquals(emptyList(), repository.all(ivan))
+        }
+
+    @Test
     fun the_anonymous_owner_sees_only_unowned_values() =
         runTest {
             val anonymous = value(null)

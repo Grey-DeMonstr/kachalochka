@@ -416,14 +416,16 @@ Two synced tables, private to their owner: `measure` (name, free-text unit, `kin
 and `measurement` (`measure_id`, `day`, `value`). `kind` names a predefined measure by the wire
 names `weight`, `waist`, `chest`, `hips`, `biceps`, `thigh`, `neck` and `body_fat`, mapped in
 `domain/measures` because derived ids hash them; it is null for the user's own measure, and a
-name this version does not know reads as null. `measurement.measure_id` is no foreign key, since
-a seeded measure may reach the server after its first value. `measurement.day` is a Postgres
+name this version does not know reads as null. `measurement.measure_id` is not a foreign key,
+since a seeded measure may reach the server after its first value. `measurement.day` is a Postgres
 `date`, the same ISO text as `visit.day`.
 
 A measure has one value per day. Two devices may still write one day offline, so
-`MeasurementRepository.all` keeps the live row with the newest `(updated_at, id)` of each measure
-and day (`newestPerDay`), newest day first. `MeasureRepository.all` orders live measures by
-`measureOrder` — position, then name — in Kotlin on both platforms.
+`MeasurementRepository.all` reads every row of the owner, deleted ones included, keeps the one
+with the newest `(updated_at, id)` of each measure and day (`newestPerDay`) and leaves the day out
+when that row is deleted, so a cleared day stays cleared; newest day first.
+`MeasureRepository.all` orders live measures by `measureOrder` — position, then name — in Kotlin
+on both platforms.
 
 The eight predefined measures are seeded by `missingDefaults` for every kind the owner has no
 row of, live or deleted (`MeasureRepository.kinds`), so a deleted one stays deleted. A signed-in
@@ -432,11 +434,12 @@ bases, shaped as a v4 UUID — and `updated_at` at the epoch, so two devices see
 the same rows. An anonymous owner's seeds take random ids; claimed by an account that already has
 predefined rows elsewhere, both sets show and the user deletes one.
 
-A seed pushed after a rename on another device must not undo it, so the trigger
-`measure_keeps_newer` ignores an update of `measure` whose `updated_at` is older than the stored
-one. It is the one exception to outbox-wins (§4.2). The pull after the push brings the rename to
-the device, unless a pull that skipped the pending seed already moved the watermark past it; then
-the device shows its seed until the row changes on the server again.
+A seed is the one exception to outbox-wins (§4.2), on both sides. The trigger
+`measure_keeps_newer` ignores an update of `measure` dated at the epoch when the stored row is
+newer, so a late seed never undoes a rename made on another device; every other update applies.
+On the device, a pulled `measure` replaces a pending local row dated at the epoch
+(`MEASURE_SEEDED_AT`) and drops its outbox entry, so the rename lands even when the seed's push
+failed in the same pass.
 
 ---
 

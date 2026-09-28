@@ -21,9 +21,9 @@ VALUES (?, ?, ?, ?, ?, ?, ?);
 byId:
 SELECT * FROM measurement WHERE id = ?;
 
-live:
+everyRowOf:
 SELECT * FROM measurement
-WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
+WHERE (:owner IS NULL AND user_id IS NULL) OR user_id = :owner;
 
 ownerlessIds:
 SELECT id FROM measurement WHERE user_id IS NULL;

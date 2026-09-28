@@ -204,7 +204,7 @@ class InMemoryMeasurementRepository : MeasurementRepository {
     }
 
     override suspend fun all(owner: UserId?): List<Measurement> =
-        newestPerDay(rows.values.filter { !it.deleted && it.userId == owner })
+        newestPerDay(rows.values.filter { it.userId == owner })
 }
 
 private class QueuedGoogleSignIn : GoogleSignIn {

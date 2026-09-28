@@ -9,7 +9,8 @@ create table public.measure (
     deleted    boolean     not null default false
 );
 
--- A seeded measure may reach the server after its first value, so measure_id is no foreign key.
+-- A seeded measure may reach the server after its first value, so measure_id is not a foreign
+-- key.
 create table public.measurement (
     id         uuid             primary key,
     user_id    uuid             not null references auth.users (id) on delete cascade,
@@ -37,10 +38,11 @@ create policy measurement_own on public.measurement
 grant select, insert, update on public.measure, public.measurement to authenticated;
 
 -- Predefined measures are seeded at the epoch on every device; a seed must not undo an edit.
+-- Every other update applies, older or not: the outbox wins, as on every table.
 create or replace function public.keep_newer_measure() returns trigger
 language plpgsql set search_path = '' as $$
 begin
-    if new.updated_at < old.updated_at then
+    if new.updated_at = to_timestamp(0) and new.updated_at < old.updated_at then
         return null;
     end if;
     return new;

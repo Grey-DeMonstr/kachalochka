@@ -103,6 +103,20 @@ class MeasuresTest {
     }
 
     @Test
+    fun a_day_whose_newest_value_was_cleared_is_left_out_whatever_older_rows_say() {
+        val weight = MeasureId.random()
+        val monday = CalendarDay(2026, 9, 21)
+        val older = value(weight, monday, 80.0, at = 1)
+        val cleared = value(weight, monday, 81.0, at = 2).copy(deleted = true)
+        val clearedEarlier = value(weight, monday.plusDays(7), 79.0, at = 1).copy(deleted = true)
+        val rewritten = value(weight, monday.plusDays(7), 78.0, at = 2)
+
+        val kept = newestPerDay(listOf(older, cleared, clearedEarlier, rewritten))
+
+        assertEquals(listOf(rewritten), kept)
+    }
+
+    @Test
     fun ids_are_random_and_reject_anything_but_a_uuid_v4() {
         assertNotEquals(MeasureId.random(), MeasureId.random())
         assertNotEquals(MeasurementId.random(), MeasurementId.random())
