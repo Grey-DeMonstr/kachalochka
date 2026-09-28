@@ -22,6 +22,7 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 
@@ -235,6 +236,31 @@ class AppTest {
 
             onNodeWithTag("top-bar-title").assertTextEquals("Друзья")
             onNodeWithTag("groups-empty").assertTextEquals("Групп пока нет")
+        }
+    }
+
+    @Test
+    fun a_stored_invite_opens_its_group_once_an_account_is_active() {
+        gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+        gym.friends.group("Зал на Лесной", owner = OLEG, code = "ABCD2345")
+        gym.joinCodes.save("ABCD2345")
+        runApp {
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Зал на Лесной")
+        }
+        assertNull(gym.joinCodes.code())
+    }
+
+    @Test
+    fun a_stored_invite_nobody_has_says_so() {
+        gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+        gym.joinCodes.save("ZZZZ2345")
+        runApp {
+            waitForIdle()
+            onNodeWithTag("invite-missing").assertIsDisplayed()
+            onNodeWithTag("invite-missing-ok").performClick()
+            waitForIdle()
+            onNodeWithTag("invite-missing").assertDoesNotExist()
         }
     }
 }

@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -35,4 +37,18 @@ internal fun OfflineNotice(onRetry: () -> Unit) {
             Modifier.fillMaxWidth().testTag("friends-retry"),
         )
     }
+}
+
+@Composable
+fun InviteMissingDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("invite-missing"),
+        title = { Text("Приглашение не найдено") },
+        confirmButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag("invite-missing-ok")) {
+                Text("Понятно")
+            }
+        },
+    )
 }

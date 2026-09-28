@@ -28,6 +28,7 @@ import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.Invite
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.timer.Ticker
@@ -206,6 +207,7 @@ class FakeGym(
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
     val invites = RecordingInviteSharing()
+    val joinCodes = InMemoryJoinCodeStore()
     val today: CalendarDay get() = CalendarDay.of(clock.current, utcOffset.at(clock.current))
 
     /** Signs [sessions] in through [accounts] in order, then makes [active] the live one. */

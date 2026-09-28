@@ -8,7 +8,9 @@ import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.UnavailableGoogleSignIn
+import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
+import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.UnavailableInviteSharing
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
@@ -24,6 +26,7 @@ actual fun platformModule(): Module =
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
         single<SyncTrigger> { SyncTrigger {} }
         single<InviteSharing> { UnavailableInviteSharing }
+        single<JoinCodeStore> { InMemoryJoinCodeStore() }
         single { VisitStore.Device }
         single<FailureLog> { FailureLog {} }
     }

@@ -24,6 +24,7 @@ import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InviteSharing
+import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.timer.Ticker
@@ -49,6 +50,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<SupabaseCredentials> { gym.credentials }
         single<SyncTrigger> { gym.sync }
         single<InviteSharing> { gym.invites }
+        single<JoinCodeStore> { gym.joinCodes }
         viewModelOf(::AccountsViewModel)
     }
 

@@ -4,6 +4,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -17,6 +18,9 @@ import monster.greyde.kachalochka.sync.startVisitNormalization
 import monster.greyde.kachalochka.ui.account.disownActiveAccount
 import monster.greyde.kachalochka.ui.account.restoreSession
 import monster.greyde.kachalochka.ui.account.sessionFromRedirect
+import monster.greyde.kachalochka.ui.friends.JoinCodeStore
+import monster.greyde.kachalochka.ui.friends.joinCodeOf
+import monster.greyde.kachalochka.ui.friends.withoutJoinCode
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import kotlin.time.Duration.Companion.seconds
@@ -30,6 +34,7 @@ private val SESSION_RESTORE_LIMIT = 10.seconds
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     val koin = startKoin { modules(appModule, corePlatformModule(), platformModule()) }.koin
+    keepJoinCode(koin.get())
     MainScope().launch {
         // The net under the reporting in restoreSession, not a substitute for it: a start-up
         // that goes wrong in a way nobody foresaw still owes the user a page to look at.
@@ -44,6 +49,16 @@ fun main() {
         koin.startVisitNormalization(emptyList())
         ComposeViewport(document.body!!) { App() }
     }
+}
+
+// Google returns to the page without its query, so an invite's code waits in storage; the
+// address loses only `join`, before the Auth plugin reads its own parameters.
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun keepJoinCode(store: JoinCodeStore) {
+    val href = window.location.href
+    joinCodeOf(href)?.let(store::save)
+    val cleaned = withoutJoinCode(href)
+    if (cleaned != href) window.history.replaceState(null, "", cleaned)
 }
 
 // The bound is what stops a Supabase that never answers from costing the user the page.

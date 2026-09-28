@@ -1,9 +1,13 @@
 package monster.greyde.kachalochka
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,6 +37,9 @@ import monster.greyde.kachalochka.ui.friends.FriendCalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
 import monster.greyde.kachalochka.ui.friends.GroupScreen
 import monster.greyde.kachalochka.ui.friends.GroupsScreen
+import monster.greyde.kachalochka.ui.friends.InviteMissingDialog
+import monster.greyde.kachalochka.ui.friends.JoinOutcome
+import monster.greyde.kachalochka.ui.friends.PendingJoin
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
@@ -215,6 +222,18 @@ fun App() {
                     )
                 }
             }
+            val pendingJoin: PendingJoin = koinInject()
+            var inviteMissing by remember { mutableStateOf(false) }
+            LaunchedEffect(accounts.activeId) {
+                if (accounts.activeId == null) return@LaunchedEffect
+                when (val outcome = pendingJoin.consume()) {
+                    is JoinOutcome.Joined ->
+                        navController.navigate(GroupRoute(outcome.group.value))
+                    JoinOutcome.NotFound -> inviteMissing = true
+                    null -> Unit
+                }
+            }
+            if (inviteMissing) InviteMissingDialog(onDismiss = { inviteMissing = false })
         }
     }
 }
