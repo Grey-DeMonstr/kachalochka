@@ -12,15 +12,30 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 @OptIn(ExperimentalTestApi::class)
 class MachineFormScreenTest {
     private val gym = FakeGym()
+
+    private fun session(
+        id: String,
+        name: String,
+    ) = AccountSession(
+        Account(UserId(id), "$name@example.test", name),
+        "access",
+        "refresh",
+        gym.clock.current,
+    )
 
     @Test
     fun the_form_saves_with_defaults_and_shows_unbuilt_controls_disabled() {
@@ -111,5 +126,41 @@ class MachineFormScreenTest {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, {}, inVisit = false)
         }) {
             onNodeWithTag("machine-visit-hint").assertDoesNotExist()
+        }
+
+    @Test
+    fun the_menu_unlinks_only_after_a_confirmation() {
+        val ivanSession = session("11111111-1111-4111-8111-111111111111", "Иван")
+        val signedIn = FakeGym().withAccounts(ivanSession, active = ivanSession)
+        val linked =
+            Machine
+                .new("Жим ногами", ivanSession.account.userId, signedIn.clock.current)
+                .copy(linkId = MachineId.random())
+        runBlocking { signedIn.machines.upsert(linked) }
+        runScreenTest(signedIn, screen = {
+            MachineFormScreen(MachineFormArgs(linked.id, null, ""), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("unlink-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("cancel-unlink").performClick()
+            waitForIdle()
+            assertEquals(linked.linkId, runBlocking { signedIn.machines.byId(linked.id) }?.linkId)
+
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("unlink-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("confirm-unlink").performClick()
+            waitForIdle()
+        }
+        assertNotEquals(linked.linkId, runBlocking { signedIn.machines.byId(linked.id) }?.linkId)
+    }
+
+    @Test
+    fun a_new_machine_has_no_menu() =
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, "Гакк"), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("machine-menu").assertDoesNotExist()
         }
 }

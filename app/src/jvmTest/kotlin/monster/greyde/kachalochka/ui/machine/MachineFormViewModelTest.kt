@@ -18,8 +18,10 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -228,5 +230,76 @@ class MachineFormViewModelTest {
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
             assertEquals("1,25", vm.state.value.weightStep)
+        }
+
+    private fun linkedPress(): Machine =
+        Machine
+            .new("Жим ногами", ivan.account.userId, t0)
+            .copy(linkId = MachineId.random())
+
+    @Test
+    fun unlinking_gives_the_machine_a_key_of_its_own_at_once() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val linked = linkedPress()
+            gym.machines.upsert(linked)
+            val vm = viewModel(MachineFormArgs(linked.id, null, "")).also { it.load() }
+            assertTrue(vm.unlink.value.available)
+
+            vm.askToUnlink()
+            assertTrue(vm.unlink.value.confirming)
+            gym.clock.current += 1.minutes
+            vm.confirmUnlink()
+
+            val stored = assertNotNull(gym.machines.byId(linked.id))
+            assertNotNull(stored.linkId)
+            assertNotEquals(linked.linkKey, stored.linkKey)
+            assertEquals(gym.clock.current, stored.updatedAt)
+            assertFalse(vm.unlink.value.confirming)
+        }
+
+    @Test
+    fun cancelling_keeps_the_link() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val linked = linkedPress()
+            gym.machines.upsert(linked)
+            val vm = viewModel(MachineFormArgs(linked.id, null, "")).also { it.load() }
+
+            vm.askToUnlink()
+            vm.cancelUnlink()
+
+            assertEquals(linked, gym.machines.byId(linked.id))
+            assertFalse(vm.unlink.value.confirming)
+        }
+
+    @Test
+    fun saving_after_unlinking_keeps_the_new_key() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val linked = linkedPress()
+            gym.machines.upsert(linked)
+            val vm = viewModel(MachineFormArgs(linked.id, null, "")).also { it.load() }
+            vm.askToUnlink()
+            vm.confirmUnlink()
+            val unlinked = assertNotNull(gym.machines.byId(linked.id)).linkId
+
+            vm.update { it.copy(setupNote = "Сиденье на 4") }
+            vm.save {}
+
+            assertEquals(unlinked, gym.machines.byId(linked.id)?.linkId)
+        }
+
+    @Test
+    fun a_new_machine_or_one_without_an_account_offers_no_unlinking() =
+        runTest {
+            val anonymous = Machine.new("Жим ногами", null, t0)
+            gym.machines.upsert(anonymous)
+
+            val existing = viewModel(MachineFormArgs(anonymous.id, null, "")).also { it.load() }
+            val fresh = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+
+            assertFalse(existing.unlink.value.available)
+            assertFalse(fresh.unlink.value.available)
         }
 }

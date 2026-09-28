@@ -24,6 +24,11 @@ data class MachineFormArgs(
     val name: String,
 )
 
+data class UnlinkUi(
+    val available: Boolean,
+    val confirming: Boolean,
+)
+
 data class MachineFormState(
     val name: String = "",
     val setupNote: String = "",
@@ -76,6 +81,8 @@ class MachineFormViewModel(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineFormState(name = args.name))
     val state: StateFlow<MachineFormState> = mutableState
+    private val mutableUnlink = MutableStateFlow(UnlinkUi(available = false, confirming = false))
+    val unlink: StateFlow<UnlinkUi> = mutableUnlink
     private val writes = WriteGuard(viewModelScope)
 
     private var existing: Machine? = null
@@ -86,6 +93,7 @@ class MachineFormViewModel(
         viewModelScope.launch {
             accounts.activeId.collect { active ->
                 existing = existing?.takeIf { it.userId == active }
+                refreshUnlink()
             }
         }
     }
@@ -104,6 +112,37 @@ class MachineFormViewModel(
                     source != null -> MachineFormState.of(source, name = args.name)
                     else -> MachineFormState(name = args.name)
                 }
+            refreshUnlink()
+        }
+    }
+
+    // The linkId already on hand is proof enough, so this works offline without a friends lookup.
+    private fun refreshUnlink() {
+        val shown = existing
+        val owned = shown != null && shown.userId == accounts.activeId.value
+        mutableUnlink.value = mutableUnlink.value.copy(available = owned && shown.linkId != null)
+    }
+
+    fun askToUnlink() {
+        if (mutableUnlink.value.available) {
+            mutableUnlink.value = mutableUnlink.value.copy(confirming = true)
+        }
+    }
+
+    fun cancelUnlink() {
+        mutableUnlink.value = mutableUnlink.value.copy(confirming = false)
+    }
+
+    /** The confirmation is the deliberate step, so the key is written at once (spec §2.3). */
+    fun confirmUnlink() {
+        val shown = existing ?: return
+        writes.launch {
+            val owner = currentUser.id()
+            val stored = machines.byId(shown.id)?.takeIf { it.userId == owner } ?: return@launch
+            val unlinked = stored.copy(linkId = MachineId.random(), updatedAt = clock.now())
+            machines.upsert(unlinked)
+            existing = unlinked
+            mutableUnlink.value = mutableUnlink.value.copy(confirming = false)
         }
     }
 

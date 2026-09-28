@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -27,6 +30,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -47,10 +53,12 @@ import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Choice
 import monster.greyde.kachalochka.ui.components.ChoiceRow
+import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
+import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
@@ -67,8 +75,14 @@ fun MachineFormScreen(
 ) {
     val viewModel: MachineFormViewModel = koinViewModel { parametersOf(args) }
     val state by viewModel.state.collectAsState()
+    val unlink by viewModel.unlink.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
-    Screen("Тренажёр", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(
+        "Тренажёр",
+        onBack = onBack,
+        onOpenSettings = onOpenSettings,
+        actions = { if (unlink.available) MachineMenu(viewModel::askToUnlink) },
+    ) {
         Column(
             Modifier
                 .weight(1f)
@@ -134,6 +148,17 @@ fun MachineFormScreen(
                 enabled = state.canSave,
             )
         }
+    }
+    if (unlink.confirming) {
+        ConfirmDialog(
+            title = "Отвязать тренажёр?",
+            text = "Результаты друзей на этом тренажёре перестанут показываться у вас.",
+            confirmLabel = "Отвязать",
+            confirmTag = "confirm-unlink",
+            cancelTag = "cancel-unlink",
+            onConfirm = viewModel::confirmUnlink,
+            onCancel = viewModel::cancelUnlink,
+        )
     }
 }
 
@@ -453,5 +478,28 @@ private fun HintRow() {
             fontSize = 13.sp,
             color = colors.onBackground.copy(alpha = 0.50f),
         )
+    }
+}
+
+@Composable
+private fun MachineMenu(onUnlink: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        SquareIconButton(
+            PhosphorIcons.DotsThreeVertical,
+            "Ещё",
+            { expanded = true },
+            Modifier.testTag("machine-menu"),
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text("Отвязать от друзей") },
+                onClick = {
+                    expanded = false
+                    onUnlink()
+                },
+                modifier = Modifier.testTag("unlink-machine"),
+            )
+        }
     }
 }

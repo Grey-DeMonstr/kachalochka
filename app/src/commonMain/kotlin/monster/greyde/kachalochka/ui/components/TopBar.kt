@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,6 +58,7 @@ fun Screen(
     title: String,
     onBack: (() -> Unit)?,
     onOpenSettings: (() -> Unit)?,
+    actions: @Composable RowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -84,6 +86,7 @@ fun Screen(
                     overflow = TextOverflow.Ellipsis,
                     color = colors.onBackground,
                 )
+                actions()
                 RestTimerChip(Modifier.testTag("rest-timer"))
                 AccountMenu(onOpenSettings, Modifier.testTag("account-avatar"))
             }
