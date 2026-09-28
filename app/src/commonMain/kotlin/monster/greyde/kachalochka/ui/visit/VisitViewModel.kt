@@ -39,10 +39,13 @@ import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountUi
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.accountsUi
+import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.clockLabel
@@ -52,14 +55,13 @@ import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.machineTitle
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.platformSuffix
+import monster.greyde.kachalochka.ui.format.recordingCaption
 import monster.greyde.kachalochka.ui.format.saveLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.shortSet
-import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.visitShareText
-import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.machine.visibleLinks
 import monster.greyde.kachalochka.ui.share.TextSharing
@@ -125,6 +127,7 @@ class VisitViewModel(
     private val sharing: TextSharing,
     private val nickname: Nickname,
     private val machineLinks: MachineLinkRepository,
+    private val profiles: ProfileRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
@@ -141,13 +144,14 @@ class VisitViewModel(
     private var values = SetValues(0.0, DEFAULT_REPS)
     private var sheetExpanded = true
     private var ordering = false
-    private var friendLines: List<String> = emptyList()
+    private var friendResults: List<FriendResult> = emptyList()
     private var friendsFor: Pair<UserId, MachineId>? = null
     private var loadingFriends: Job? = null
 
     /** Links may have changed on another screen or in a sync, so the next reload reads again. */
     private var friendsStale = false
     private var notice: String? = null
+    private var preferred = PreferredWeightUnit.Kg
 
     /**
      * Read ahead of the tap: a browser lets the clipboard be written only while a tap is recent,
@@ -200,7 +204,7 @@ class VisitViewModel(
             groupByMachine(visitSets).mapNotNull { group ->
                 machinesById[group.machineId]?.let { SharedMachine(it, group.sets) }
             }
-        val text = visitShareText(name, day, shared)
+        val text = visitShareText(name, day, shared, preferred)
         writes.launch {
             notice = reading { sharing.share(text) }.getOrNull()
             publish()
@@ -423,6 +427,7 @@ class VisitViewModel(
     private suspend fun reload(reseed: Boolean) {
         val owner = currentUser.id()
         val shown = visits.shownOn(owner, day, sets, utcOffset::at)
+        preferred = profiles.preferredUnit(owner)
         visit = shown
         machinesById = machines.all(owner).associateBy { it.id }
         visitSets = shown?.let { sets.forVisit(it.id) }.orEmpty()
@@ -452,7 +457,7 @@ class VisitViewModel(
         val asked =
             owner?.let { me -> machine?.takeIf { it.userId == me }?.let { me to it.id } }
         if (asked != friendsFor) {
-            friendLines = emptyList()
+            friendResults = emptyList()
             loadingFriends?.cancel()
         }
         if (asked != friendsFor || friendsStale) {
@@ -480,7 +485,7 @@ class VisitViewModel(
                 if (friendsFor != asked) return@launch
                 // A failed re-read keeps what an earlier read of the same machine showed.
                 results.onSuccess { found ->
-                    friendLines = found.map(::friendLine)
+                    friendResults = found
                     publish()
                 }
             }
@@ -489,7 +494,7 @@ class VisitViewModel(
     private fun friendLine(result: FriendResult): String {
         val now = clock.now()
         val days = calendarDaysBetween(result.sets.last().recordedAt, now, utcOffset.at(now))
-        val sets = setsSummary(result.machine, result.sets)
+        val sets = setsSummary(result.machine, result.sets, preferred)
         return "${result.friend.displayName} · ${daysAgoLabel(days)} · $sets"
     }
 
@@ -518,12 +523,11 @@ class VisitViewModel(
         machineSets: List<WorkoutSet>,
     ): SetGroupUi {
         val machine = machinesById[machineId]
-        val title = machine?.let(::machineTitle).orEmpty()
-        val unit = machine?.let(::unitLabel) ?: "кг"
+        val title = machine?.let { machineTitle(it, preferred) }.orEmpty()
         return SetGroupUi(
             machineId = machineId,
             title = title,
-            summary = machine?.let { setsSummary(it, machineSets) }.orEmpty(),
+            summary = machine?.let { setsSummary(it, machineSets, preferred) }.orEmpty(),
             expanded =
                 ordering || machineId in expanded || machineSets.any { it.id == editing?.id },
             sets =
@@ -531,7 +535,8 @@ class VisitViewModel(
                     SetRowUi(
                         set.id,
                         "$title · подход ${setIndex + 1}",
-                        setValue(set.weight, set.reps, unit),
+                        machine?.let { setValue(set.weight, set.reps, it, preferred) }
+                            ?: setValue(set.weight, set.reps, "кг"),
                         set.id == editing?.id,
                     )
                 },
@@ -554,23 +559,24 @@ class VisitViewModel(
                 machine.setupNote.ifBlank { null }
             } else {
                 "Правка · записано ${clockLabel(minuteOfDay(edited.recordedAt, offset))}, " +
-                    "было ${setValue(edited.weight, edited.reps, unitLabel(machine))}"
+                    "было ${setValue(edited.weight, edited.reps, machine, preferred)}"
             }
         val previous =
             previousSets.takeIf { edited == null && it.isNotEmpty() }?.let { previous ->
                 val until = if (isToday) clock.now() else day.at(0L, offset)
                 val days = calendarDaysBetween(previous.last().recordedAt, until, offset)
                 val ago = daysAgoLabel(days).replaceFirstChar { it.uppercase() }
-                (listOf(ago) + previous.map { shortSet(it.weight, it.reps) }).joinToString(" · ")
+                val shortSets = previous.map { shortSet(it.weight, it.reps, machine, preferred) }
+                (listOf(ago) + shortSets).joinToString(" · ")
             }
         return SheetUi(
             name = machine.name,
-            platformSuffix = platformSuffix(machine),
+            platformSuffix = platformSuffix(machine, preferred),
             setNumberLabel = "подход $number",
             caption = caption,
             previous = previous,
             weight = weightText ?: formatNumber(values.weight),
-            weightCaption = weightCaption(machine),
+            weightCaption = recordingCaption(machine, values.weight, preferred),
             reps = values.reps.toString(),
             editing = edited != null,
             people = people,
@@ -581,7 +587,7 @@ class VisitViewModel(
                 ),
             expanded = sheetExpanded,
             canSave = weightValid,
-            friends = if (edited == null) friendLines else emptyList(),
+            friends = if (edited == null) friendResults.map(::friendLine) else emptyList(),
         )
     }
 }

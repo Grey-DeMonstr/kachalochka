@@ -7,20 +7,22 @@ CREATE TABLE profile (
     display_name  TEXT,
     updated_at    INTEGER AS Instant NOT NULL,
     deleted       INTEGER AS Boolean NOT NULL DEFAULT 0,
-    -- In the order 8.sqm rebuilds the table with.
+    -- In the order 8.sqm rebuilds the table with, then the columns later migrations add.
     friend_colors TEXT    NOT NULL DEFAULT '{}',
     sex           TEXT,
     birth_date    TEXT,
-    height_cm     REAL
+    height_cm     REAL,
+    weight_unit   TEXT    NOT NULL DEFAULT 'kg'
 );
 
 CREATE INDEX profile_updated_at_idx ON profile (updated_at);
 
 upsert:
 INSERT OR REPLACE INTO profile(
-    id, user_id, display_name, updated_at, deleted, friend_colors, sex, birth_date, height_cm
+    id, user_id, display_name, updated_at, deleted, friend_colors, sex, birth_date, height_cm,
+    weight_unit
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 byId:
 SELECT * FROM profile WHERE id = ?;

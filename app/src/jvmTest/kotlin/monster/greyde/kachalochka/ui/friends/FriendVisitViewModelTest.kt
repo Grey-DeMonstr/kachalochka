@@ -14,6 +14,8 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -41,6 +43,7 @@ class FriendVisitViewModelTest {
             gym.clock,
             gym.utcOffset,
             gym.machineLinks,
+            gym.profiles,
         )
 
     @BeforeTest
@@ -71,6 +74,27 @@ class FriendVisitViewModelTest {
                 .map { it.title to it.value },
         )
     }
+
+    @Test
+    fun a_friend_s_sets_read_in_the_viewer_s_unit() =
+        runTest {
+            gym.profiles.upsert(
+                Profile
+                    .new(ME.userId, gym.clock.current)
+                    .copy(weightUnit = PreferredWeightUnit.Lb),
+            )
+
+            val state = assertNotNull(viewModel().state.value)
+
+            assertEquals(
+                listOf("176,5-187,5lb 8-6", "100lb 1x10"),
+                state.groups.map { it.summary },
+            )
+            assertEquals(
+                listOf("176,5 lb × 8", "187,5 lb × 6", "100 lb × 10"),
+                state.groups.flatMap { group -> group.sets.map { it.value } },
+            )
+        }
 
     @Test
     fun a_friend_s_machine_the_viewer_linked_to_reads_under_the_viewer_s_name() =

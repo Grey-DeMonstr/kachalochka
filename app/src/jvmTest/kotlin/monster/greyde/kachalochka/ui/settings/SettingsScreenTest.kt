@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
@@ -104,6 +105,20 @@ class SettingsScreenTest {
         assertEquals(Sex.Female, profile?.sex)
         assertEquals(CalendarDay(1990, 6, 15), profile?.birthDate)
         assertEquals(165.0, profile?.heightCm)
+    }
+
+    @Test
+    fun choosing_a_weight_unit_saves_it_to_the_profile() {
+        val gym = FakeGym()
+        runScreenTest(gym, screen = { settings() }) {
+            onNodeWithTag("weight-unit-kg").assertExists()
+            onNodeWithTag("weight-unit-mixed").assertExists()
+            onNodeWithTag("weight-unit-lb").performScrollTo().performClick()
+            onNodeWithTag("save-profile").performScrollTo().performClick()
+            waitForIdle()
+        }
+        val profile = runBlocking { gym.profiles.forOwner(null) }
+        assertEquals(PreferredWeightUnit.Lb, profile?.weightUnit)
     }
 
     @Test

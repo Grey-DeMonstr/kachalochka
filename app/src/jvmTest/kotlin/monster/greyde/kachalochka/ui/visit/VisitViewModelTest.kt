@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.Nickname
@@ -126,6 +127,7 @@ class VisitViewModelTest {
         gym.texts,
         Nickname(gym.profiles, gym.accounts),
         gym.machineLinks,
+        gym.profiles,
     )
 
     @BeforeTest
@@ -458,6 +460,130 @@ class VisitViewModelTest {
             val state = assertNotNull(vm.state.value)
             assertEquals("7 плитка 1x10", state.groups.single().summary)
             assertEquals("плитка всего · ±1", state.sheet?.weightCaption)
+        }
+
+    private val cable =
+        Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb, weightStep = 5.0)
+
+    private suspend fun prefer(
+        unit: PreferredWeightUnit,
+        on: FakeGym = gym,
+        owner: UserId? = null,
+    ) = on.profiles.upsert(Profile.new(owner, t0).copy(weightUnit = unit))
+
+    /** Кроссовер in pounds: 90×8 yesterday and today. */
+    private suspend fun cableSets() {
+        gym.machines.upsert(cable)
+        gym.sets.upsert(set(yesterday, cable, 90.0, 8, -(1.days.inWholeMinutes.toInt())))
+        gym.sets.upsert(set(visit.id, cable, 90.0, 8, 0))
+    }
+
+    @Test
+    fun a_pound_machine_reads_in_kilograms_but_records_in_pounds() =
+        runTest {
+            cableSets()
+            val vm = viewModel().also { it.selectMachine(cable.id) }
+
+            val state = assertNotNull(vm.state.value)
+            val sheet = assertNotNull(state.sheet)
+            assertEquals(
+                "41 кг × 8",
+                state.groups
+                    .single()
+                    .sets
+                    .single()
+                    .value,
+            )
+            assertEquals("Вчера · 41кг×8", sheet.previous)
+            assertEquals("90", sheet.weight)
+            assertEquals("lb (41кг) всего · ±5lb (2,3кг)", sheet.weightCaption)
+
+            vm.typeWeight("100")
+            assertEquals(
+                "lb (45,5кг) всего · ±5lb (2,3кг)",
+                vm.state.value
+                    ?.sheet
+                    ?.weightCaption,
+            )
+            vm.save()
+
+            assertEquals(
+                listOf(90.0, 100.0),
+                gym.sets.forVisit(visit.id).map { it.weight },
+            )
+        }
+
+    @Test
+    fun with_mixed_units_a_pound_machine_reads_in_pounds_everywhere() =
+        runTest {
+            prefer(PreferredWeightUnit.Mixed)
+            cableSets()
+            val vm = viewModel().also { it.selectMachine(cable.id) }
+
+            val state = assertNotNull(vm.state.value)
+            val sheet = assertNotNull(state.sheet)
+            assertEquals(
+                "90 lb × 8",
+                state.groups
+                    .single()
+                    .sets
+                    .single()
+                    .value,
+            )
+            assertEquals("90lb 1x8", state.groups.single().summary)
+            assertEquals("Вчера · 90×8", sheet.previous)
+            assertEquals("lb всего · ±5", sheet.weightCaption)
+        }
+
+    @Test
+    fun with_pounds_chosen_a_kilogram_machine_records_with_pounds_in_brackets() =
+        runTest {
+            prefer(PreferredWeightUnit.Lb)
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 0))
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            val state = assertNotNull(vm.state.value)
+            val sheet = assertNotNull(state.sheet)
+            assertEquals("99lb 1x12", state.groups.single().summary)
+            assertEquals(
+                "99 lb × 12",
+                state.groups
+                    .single()
+                    .sets
+                    .single()
+                    .value,
+            )
+            assertEquals("(+44 lb)", sheet.platformSuffix)
+            assertEquals("Вчера · 154,5lb×10 · 154,5lb×10 · 165,5lb×8", sheet.previous)
+            assertEquals("70", sheet.weight)
+            assertEquals("кг (154,5lb) всего · ±2,5кг (5,5lb)", sheet.weightCaption)
+
+            vm.share()
+
+            assertEquals(
+                "Тяга верхнего блока 99lb 1x12",
+                gym.texts.shared
+                    .single()
+                    .lines()
+                    .last(),
+            )
+        }
+
+    @Test
+    fun a_unit_chosen_on_another_screen_shows_after_a_sync() =
+        runTest {
+            cableSets()
+            val vm = viewModel().also { it.selectMachine(cable.id) }
+
+            prefer(PreferredWeightUnit.Lb)
+            gym.sync.completePass()
+
+            assertEquals(
+                "lb всего · ±5",
+                vm.state.value
+                    ?.sheet
+                    ?.weightCaption,
+            )
         }
 
     @Test
@@ -1195,6 +1321,23 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun friends_results_read_in_the_viewer_s_unit() =
+        runTest {
+            val two = twoAccountGym()
+            two.olegTrainedOn(ivanPress, ivanFriend)
+            prefer(PreferredWeightUnit.Lb, two, ivan.account.userId)
+
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+            assertEquals(
+                listOf("Олег · вчера · 176,5-187,5lb 8-6"),
+                vm.state.value
+                    ?.sheet
+                    ?.friends,
+            )
+        }
+
+    @Test
     fun a_friend_s_result_reads_like_their_machine_s_line_in_a_shared_visit() {
         val two = twoAccountGym()
         two.olegTrainedOn(ivanPress, ivanFriend)
@@ -1204,7 +1347,12 @@ class VisitViewModelTest {
                 .copy(unit = WeightUnit.Lb)
         two.friends.machines[0] = olegPress
         val shared =
-            visitShareText("", two.today, listOf(SharedMachine(olegPress, two.friends.sets)))
+            visitShareText(
+                "",
+                two.today,
+                listOf(SharedMachine(olegPress, two.friends.sets)),
+                PreferredWeightUnit.Kg,
+            )
 
         val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 

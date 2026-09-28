@@ -17,9 +17,13 @@ import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.formatNumber
-import monster.greyde.kachalochka.ui.format.unitLabel
+import monster.greyde.kachalochka.ui.format.shownLabel
+import monster.greyde.kachalochka.ui.format.shownWeight
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
 import kotlin.time.Clock
@@ -43,6 +47,7 @@ class FriendMachineViewModel(
     private val accounts: Accounts,
     private val clock: Clock,
     private val sync: SyncTrigger,
+    private val profiles: ProfileRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FriendMachineUi?>(null)
     val state: StateFlow<FriendMachineUi?> = mutableState
@@ -67,13 +72,15 @@ class FriendMachineViewModel(
         loading =
             viewModelScope.launch {
                 val viewer = currentUser.id() ?: return@launch
-                reading { friends.groupMachines(viewer).firstOrNull(::isShown) }
-                    .onSuccess { found ->
-                        shown = found?.machine
-                        shownFor = viewer
-                        mutableState.value = found?.let(::uiOf)
-                        mutableOffline.value = false
-                    }.onFailure { mutableOffline.value = true }
+                reading {
+                    val found = friends.groupMachines(viewer).firstOrNull(::isShown)
+                    found to profiles.preferredUnit(viewer)
+                }.onSuccess { (found, preferred) ->
+                    shown = found?.machine
+                    shownFor = viewer
+                    mutableState.value = found?.let { uiOf(it, preferred) }
+                    mutableOffline.value = false
+                }.onFailure { mutableOffline.value = true }
             }
     }
 
@@ -95,20 +102,27 @@ class FriendMachineViewModel(
         }
     }
 
-    private fun uiOf(friend: FriendMachine): FriendMachineUi {
+    private fun uiOf(
+        friend: FriendMachine,
+        preferred: PreferredWeightUnit,
+    ): FriendMachineUi {
         val machine = friend.machine
         return FriendMachineUi(
             name = machine.name,
             owner = friend.owner.displayName,
             note = machine.setupNote,
-            caption = weightCaption(machine),
-            platform = platformText(machine),
+            caption = weightCaption(machine, preferred),
+            platform = platformText(machine, preferred),
         )
     }
 
-    private fun platformText(machine: Machine): String? {
+    private fun platformText(
+        machine: Machine,
+        preferred: PreferredWeightUnit,
+    ): String? {
         if (machine.platformWeight <= 0) return null
         val added = if (machine.platformIncluded) "прибавляется к записи" else "рядом с названием"
-        return "${formatNumber(machine.platformWeight)} ${unitLabel(machine)} · $added"
+        val weight = formatNumber(shownWeight(machine.platformWeight, machine, preferred))
+        return "$weight ${shownLabel(machine, preferred)} · $added"
     }
 }

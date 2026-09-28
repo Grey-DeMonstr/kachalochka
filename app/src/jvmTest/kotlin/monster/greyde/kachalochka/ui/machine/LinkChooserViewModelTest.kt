@@ -19,6 +19,8 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.ME
@@ -80,6 +82,7 @@ class LinkChooserViewModelTest {
         gym.accounts,
         gym.clock,
         gym.sync,
+        gym.profiles,
     ).also { it.load() }
 
     /** Олег's machines: his copy of [press], linked to it, and one of his own. */
@@ -107,9 +110,24 @@ class LinkChooserViewModelTest {
 
         assertEquals(listOf(duplicate.id, smith.id), state.own.map { it.id })
         assertEquals(
-            ChooserRowUi(duplicate.id, "Жим ногами 2", weightCaption(duplicate)),
+            ChooserRowUi(
+                duplicate.id,
+                "Жим ногами 2",
+                weightCaption(duplicate, PreferredWeightUnit.Kg),
+            ),
             state.own.first(),
         )
+    }
+
+    @Test
+    fun a_machine_s_step_reads_in_the_unit_chosen_in_the_profile() {
+        runBlocking {
+            gym.profiles.upsert(Profile.new(me, t0).copy(weightUnit = PreferredWeightUnit.Lb))
+        }
+
+        val state = viewModel().state.value
+
+        assertEquals("lb всего · ±5,5", state.own.first().detail)
     }
 
     @Test
@@ -119,7 +137,13 @@ class LinkChooserViewModelTest {
         val friends = viewModel().state.value.friends
 
         assertEquals(
-            listOf(ChooserRowUi(bench.id, "Жим лёжа", "Олег · ${weightCaption(bench)}")),
+            listOf(
+                ChooserRowUi(
+                    bench.id,
+                    "Жим лёжа",
+                    "Олег · ${weightCaption(bench, PreferredWeightUnit.Kg)}",
+                ),
+            ),
             friends,
         )
     }

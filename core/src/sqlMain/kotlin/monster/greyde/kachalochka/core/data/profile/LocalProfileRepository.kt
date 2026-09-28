@@ -53,6 +53,7 @@ internal fun ProfileQueries.write(profile: Profile) =
         profile.sex?.wireName(),
         profile.birthDate?.iso,
         profile.heightCm,
+        profile.weightUnit.wireName(),
     )
 
 internal fun profileOf(
@@ -65,6 +66,7 @@ internal fun profileOf(
     sex: String?,
     birthDate: String?,
     heightCm: Double?,
+    weightUnit: String,
 ) = Profile(
     id = ProfileId(id),
     userId = userId?.let(::UserId),
@@ -75,4 +77,5 @@ internal fun profileOf(
     sex = sexOf(sex),
     birthDate = birthDateOf(birthDate),
     heightCm = heightCm,
+    weightUnit = weightUnitOf(weightUnit),
 )

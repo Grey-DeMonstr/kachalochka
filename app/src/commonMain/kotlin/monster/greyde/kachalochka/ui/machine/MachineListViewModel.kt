@@ -15,6 +15,9 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.weightCaption
 
 data class MachineListUiState(
@@ -37,11 +40,13 @@ class MachineListViewModel(
     private val sync: SyncTrigger,
     private val friends: FriendsRepository,
     private val machineLinks: MachineLinkRepository,
+    private val profiles: ProfileRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineListUiState())
     val state: StateFlow<MachineListUiState> = mutableState
 
     private var own: List<Machine>? = null
+    private var preferred = PreferredWeightUnit.Kg
     private var shownFor: UserId? = null
     private var group: GroupMachines? = null
     private var friendsFor: UserId? = null
@@ -62,6 +67,7 @@ class MachineListViewModel(
             viewModelScope.launch {
                 val owner = currentUser.id()
                 own = machines.all(owner)
+                preferred = profiles.preferredUnit(owner)
                 shownFor = owner
                 publish()
                 owner?.let(::loadFriends)
@@ -85,13 +91,13 @@ class MachineListViewModel(
         val read = group?.takeIf { friendsFor != null && friendsFor == shownFor }
         mutableState.value =
             MachineListUiState(
-                own = mine?.map { MachineListRowUi(it.id, it.name, weightCaption(it)) },
+                own = mine?.map { MachineListRowUi(it.id, it.name, weightCaption(it, preferred)) },
                 friends =
                     read?.offered(mine.orEmpty()).orEmpty().map {
                         MachineListRowUi(
                             it.machine.id,
                             it.machine.name,
-                            friendMachineDetail(it),
+                            friendMachineDetail(it, preferred),
                             it.owner.userId,
                         )
                     },

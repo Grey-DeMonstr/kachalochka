@@ -22,12 +22,14 @@ import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.keptVisit
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
-import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.machine.visibleLinks
 import kotlin.time.Clock
 
@@ -61,6 +63,7 @@ class FriendVisitViewModel(
     private val clock: Clock,
     private val utcOffset: UtcOffset,
     private val machineLinks: MachineLinkRepository,
+    private val profiles: ProfileRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FriendVisitUiState?>(null)
     val state: StateFlow<FriendVisitUiState?> = mutableState
@@ -98,7 +101,7 @@ class FriendVisitViewModel(
             val me = currentUser.id()
             val links = me?.let { visibleLinks(it, friends, machineLinks) }.orEmpty()
             val names = namesForViewer(theirs, machines.all(me), MachineClusters(links))
-            stateOf(visitSets, theirs.associateBy { it.id }, names)
+            stateOf(visitSets, theirs.associateBy { it.id }, names, profiles.preferredUnit(me))
         }.onSuccess {
             mutableState.value = it
             mutableOffline.value = false
@@ -111,6 +114,7 @@ class FriendVisitViewModel(
         visitSets: List<WorkoutSet>,
         machinesById: Map<MachineId, Machine>,
         names: Map<MachineId, String>,
+        preferred: PreferredWeightUnit,
     ): FriendVisitUiState {
         val now = clock.now()
         val today = CalendarDay.of(now, utcOffset.at(now))
@@ -119,7 +123,7 @@ class FriendVisitViewModel(
             setCountLabel = setCount(visitSets.size),
             groups =
                 groupByMachine(visitSets).map {
-                    groupUi(it.machineId, it.sets, names, machinesById)
+                    groupUi(it.machineId, it.sets, names, machinesById, preferred)
                 },
         )
     }
@@ -129,20 +133,21 @@ class FriendVisitViewModel(
         machineSets: List<WorkoutSet>,
         names: Map<MachineId, String>,
         machinesById: Map<MachineId, Machine>,
+        preferred: PreferredWeightUnit,
     ): FriendSetGroupUi {
         val title = names[machineId].orEmpty()
         val machine = machinesById[machineId]
-        val unit = machine?.let(::unitLabel) ?: "кг"
         return FriendSetGroupUi(
             machineId = machineId,
             title = title,
-            summary = machine?.let { setsSummary(it, machineSets) }.orEmpty(),
+            summary = machine?.let { setsSummary(it, machineSets, preferred) }.orEmpty(),
             sets =
                 machineSets.mapIndexed { index, set ->
                     FriendSetRowUi(
                         set.id,
                         "$title · подход ${index + 1}",
-                        setValue(set.weight, set.reps, unit),
+                        machine?.let { setValue(set.weight, set.reps, it, preferred) }
+                            ?: setValue(set.weight, set.reps, "кг"),
                     )
                 },
         )

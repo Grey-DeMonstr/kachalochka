@@ -30,6 +30,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.navigation.MAX_TRANSITION_MILLIS
 import monster.greyde.kachalochka.navigation.transitionMillisOrNull
@@ -146,6 +147,22 @@ private fun ProfileSection(
     )
     Text(
         text = "Пол, дата рождения и рост нужны для расчёта процента жира.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = muted,
+    )
+    FieldLabel("Единицы веса")
+    val units = listOf(PreferredWeightUnit.Kg, PreferredWeightUnit.Lb, PreferredWeightUnit.Mixed)
+    ChoiceRow(
+        listOf(
+            Choice("кг", "weight-unit-kg"),
+            Choice("lb", "weight-unit-lb"),
+            Choice("Смешанные", "weight-unit-mixed", weight = 1.6f),
+        ),
+        selected = units.indexOf(profile.weightUnit),
+        onSelect = { viewModel.chooseWeightUnit(units[it]) },
+    )
+    Text(
+        text = "Смешанные — у каждого тренажёра свои единицы.",
         style = MaterialTheme.typography.bodyMedium,
         color = muted,
     )

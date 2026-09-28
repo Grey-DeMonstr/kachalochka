@@ -5,6 +5,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -14,6 +15,7 @@ import kotlin.time.Instant
 class FormatsTest {
     private val t0 = Instant.fromEpochSeconds(1_700_000_000)
     private val press = Machine.new("Жим ногами", null, t0)
+    private val kg = PreferredWeightUnit.Kg
 
     @Test
     fun numbers_use_a_decimal_comma_and_drop_a_zero_fraction() {
@@ -24,7 +26,7 @@ class FormatsTest {
 
     @Test
     fun the_weight_caption_names_unit_mode_and_step() {
-        assertEquals("кг всего · ±2,5", weightCaption(press))
+        assertEquals("кг всего · ±2,5", weightCaption(press, kg))
         assertEquals(
             "lb на сторону · ±5",
             weightCaption(
@@ -33,6 +35,7 @@ class FormatsTest {
                     weightMode = WeightMode.PerSide,
                     weightStep = 5.0,
                 ),
+                PreferredWeightUnit.Mixed,
             ),
         )
     }
@@ -41,17 +44,17 @@ class FormatsTest {
     fun a_platform_outside_the_record_is_named_after_the_machine() {
         val sled = press.copy(platformWeight = 20.0)
 
-        assertEquals("(+20 кг)", platformSuffix(sled))
-        assertEquals("Жим ногами (+20 кг)", machineTitle(sled))
-        assertNull(platformSuffix(sled.copy(platformIncluded = true)))
-        assertNull(platformSuffix(press))
-        assertEquals("Жим ногами", machineTitle(press))
+        assertEquals("(+20 кг)", platformSuffix(sled, kg))
+        assertEquals("Жим ногами (+20 кг)", machineTitle(sled, kg))
+        assertNull(platformSuffix(sled.copy(platformIncluded = true), kg))
+        assertNull(platformSuffix(press, kg))
+        assertEquals("Жим ногами", machineTitle(press, kg))
     }
 
     @Test
     fun sets_read_as_weight_times_reps() {
         assertEquals("70 кг × 10", setValue(70.0, 10, "кг"))
-        assertEquals("72,5×8", shortSet(72.5, 8))
+        assertEquals("72,5×8", shortSet(72.5, 8, press, kg))
     }
 
     @Test
@@ -65,8 +68,8 @@ class FormatsTest {
             )
 
         assertEquals("плитка", unitLabel(gravitron))
-        assertEquals("плитка всего · ±1", weightCaption(gravitron))
-        assertEquals("(+2 плитка)", platformSuffix(gravitron))
+        assertEquals("плитка всего · ±1", weightCaption(gravitron, kg))
+        assertEquals("(+2 плитка)", platformSuffix(gravitron, kg))
         assertEquals("ед.", unitLabel(press.copy(unit = WeightUnit.Custom)))
         assertEquals("lb", unitLabel(press.copy(unit = WeightUnit.Lb, unitLabel = "плитка")))
     }

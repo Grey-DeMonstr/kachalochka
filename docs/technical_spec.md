@@ -129,6 +129,13 @@ sums up a machine's sets calls it, so they read exactly like the shared text. `V
 reads the nickname ahead of the tap, because a browser accepts a clipboard write only shortly
 after the user's gesture.
 
+Every gym weight shown passes through `app/ui/format/WeightUnits.kt`: `shownUnit` picks the unit
+for a machine's unit and the profile's `PreferredWeightUnit`, `shownWeight` converts to the
+nearest half unit and `shownStep` to one decimal. The formatters that write a machine's weights
+(`setsSummary`, `setValue`, `shortSet`, `weightCaption`, `platformSuffix`, `machineTitle`) take
+the preference, and only the set sheet's `recordingCaption` puts the machine's own unit first.
+View models read the preference with `ProfileRepository.preferredUnit` wherever they reload.
+
 ---
 
 ## 3. Repositories: one interface, two implementations
@@ -474,6 +481,10 @@ Without an account the profile stays on the device, as every ownerless row does.
 `Profile.birthDate` travels as an ISO date: a Postgres `date` in `profile.birth_date`, TEXT in
 SQLite. Migration `0011` and `8.sqm` replaced the birth year with 1 January of that year; `8.sqm`
 rebuilds the table, since Android 10's SQLite cannot drop a column, and resets `lastPullAt`.
+
+`Profile.weightUnit` travels as `kg` / `lb` / `mixed` in `profile.weight_unit`, added by migration
+`0012` (not null, default `kg`) and `9.sqm`, which also resets `lastPullAt`; a missing or unknown
+name reads as `Kg`. Settings saves it with the body fields, with or without an account.
 
 ---
 

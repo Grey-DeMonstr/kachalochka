@@ -12,6 +12,8 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -38,6 +40,7 @@ class HomeViewModelTest {
             gym.clock,
             gym.utcOffset,
             gym.sync,
+            gym.profiles,
         )
 
     @Test
@@ -109,6 +112,47 @@ class HomeViewModelTest {
 
             assertEquals(
                 "Гравитрон 7 плитка × 10",
+                vm.state.value
+                    ?.today
+                    ?.lastSet,
+            )
+        }
+
+    @Test
+    fun the_last_set_reads_in_the_unit_chosen_in_the_profile() =
+        runTest {
+            val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
+            val cable = Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb)
+            gym.visits.upsert(visit)
+            gym.machines.upsert(cable)
+            gym.sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    visit.id,
+                    cable.id,
+                    90.0,
+                    8,
+                    0,
+                    t0,
+                    t0,
+                    false,
+                ),
+            )
+            val vm = viewModel().also { it.refresh() }
+
+            assertEquals(
+                "Кроссовер 41 кг × 8",
+                vm.state.value
+                    ?.today
+                    ?.lastSet,
+            )
+
+            gym.profiles.upsert(Profile.new(null, t0).copy(weightUnit = PreferredWeightUnit.Mixed))
+            vm.refresh()
+
+            assertEquals(
+                "Кроссовер 90 lb × 8",
                 vm.state.value
                     ?.today
                     ?.lastSet,

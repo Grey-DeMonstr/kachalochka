@@ -32,6 +32,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -205,6 +206,25 @@ class VisitScreenTest {
             onNodeWithTag("weight-value").performTextReplacement("abc")
             waitForIdle()
             onNodeWithTag("save-set").assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun a_pound_machine_is_recorded_in_pounds_with_kilograms_in_brackets() {
+        val cable =
+            Machine
+                .new("Кроссовер", null, gym.clock.current)
+                .copy(unit = WeightUnit.Lb, weightStep = 5.0)
+        runBlocking {
+            gym.machines.upsert(cable)
+            gym.sets.upsert(
+                recorded.copy(id = WorkoutSetId.random(), machineId = cable.id, weight = 90.0),
+            )
+        }
+        runScreenTest(gym, screen = { visitScreen(picked = cable.id) }) {
+            waitForIdle()
+            onNodeWithTag("weight-value").assertTextEquals("90")
+            onNodeWithText("lb (41кг) всего · ±5lb (2,3кг)").assertIsDisplayed()
         }
     }
 

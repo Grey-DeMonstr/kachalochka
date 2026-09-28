@@ -9,6 +9,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.Sex
@@ -50,6 +51,16 @@ internal fun Sex.wireName(): String =
 
 internal fun sexOf(wire: String?): Sex? = Sex.entries.firstOrNull { it.wireName() == wire }
 
+internal fun PreferredWeightUnit.wireName(): String =
+    when (this) {
+        PreferredWeightUnit.Kg -> "kg"
+        PreferredWeightUnit.Lb -> "lb"
+        PreferredWeightUnit.Mixed -> "mixed"
+    }
+
+internal fun weightUnitOf(wire: String?): PreferredWeightUnit =
+    PreferredWeightUnit.entries.firstOrNull { it.wireName() == wire } ?: PreferredWeightUnit.Kg
+
 internal fun birthDateOf(iso: String?): CalendarDay? =
     iso?.let {
         try {
@@ -72,6 +83,7 @@ internal data class ProfileRow(
     val sex: String?,
     @SerialName("birth_date") val birthDate: String?,
     @SerialName("height_cm") val heightCm: Double?,
+    @SerialName("weight_unit") val weightUnit: String?,
 ) {
     fun toProfile(): Profile =
         Profile(
@@ -84,6 +96,7 @@ internal data class ProfileRow(
             sex = sexOf(sex),
             birthDate = birthDateOf(birthDate),
             heightCm = heightCm,
+            weightUnit = weightUnitOf(weightUnit),
         )
 
     companion object {
@@ -98,6 +111,7 @@ internal data class ProfileRow(
                 sex = profile.sex?.wireName(),
                 birthDate = profile.birthDate?.iso,
                 heightCm = profile.heightCm,
+                weightUnit = profile.weightUnit.wireName(),
             )
     }
 }

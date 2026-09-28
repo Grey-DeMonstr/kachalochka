@@ -73,22 +73,29 @@ nickname), then an empty line, then one line per machine in visit order: the nam
 weight in brackets when it is not included in the record, the weights and the reps, for example
 "Жим ногами (+76кг) 20-20-30-40-40кг 5x10". Equal weights are written once ("Пресс сидя 41кг
 10-15-15-15"), different ones joined with dashes; equal reps are written as sets x reps,
-different ones joined with dashes ("Жим от груди 30° 35-35-30кг 10-10-15"). Weights are in
-kilograms: pounds are converted to the nearest half kilogram, and an own unit is written as is
-with its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zero shows only its reps
-("Подтягивания 3x10"). The machine rows of the visit screen and of a friend's visit, and friends'
-results in the set sheet, write a machine's weights and reps exactly the same way.
+different ones joined with dashes ("Жим от груди 30° 35-35-30кг 10-10-15"). Weights are in the
+unit chosen in the profile: with "кг", the default, pounds are converted to the nearest half
+kilogram; with "lb", kilograms are converted to the nearest half pound ("Тяга 99lb 2x10"); with
+"Смешанные", every machine's weights stay in its own unit. An own unit is never converted and is
+written as is with its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zero shows
+only its reps ("Подтягивания 3x10"). The machine rows of the visit screen and of a friend's
+visit, and friends' results in the set sheet, write a machine's weights and reps exactly the same
+way.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,
 and weight and reps steppers seeded from the previous visit's set. Saving records the set. The
 weight can also be typed, with a comma or a point; − and + step it by the machine's weight step.
-Tapping another account's chip switches to it: the shown history and the save button follow that
-person, and the set is recorded into their own visit. Swiping the sheet down, or pressing back on
-the phone or in the top bar, collapses it to a bar naming the machine and the next set; tapping
-the bar or swiping it up opens the sheet again. Pressing back while a set is being edited leaves
-the edit and collapses the sheet. The machine's name is not a button: another machine is chosen
-with "Новый тренажёр".
+The weight stepper is the one place where the machine's own unit comes first: its value and step
+are in that unit, and when the profile's unit is "кг" or "lb" and differs from it, the converted
+value follows in brackets — under 90 on a pound machine, "lb (41кг) всего · ±5lb (2,3кг)", the
+weight to the nearest half unit and the step to one decimal. The sheet's other weights, the
+previous visit's sets included, follow the profile's unit. Tapping another account's chip
+switches to it: the shown history and the save button follow that person, and the set is
+recorded into their own visit. Swiping the sheet down, or pressing back on the phone or in the
+top bar, collapses it to a bar naming the machine and the next set; tapping the bar or swiping it
+up opens the sheet again. Pressing back while a set is being edited leaves the edit and collapses
+the sheet. The machine's name is not a button: another machine is chosen with "Новый тренажёр".
 
 The machine picker lets the user search machines by name; "Создать «…»" opens the machine form
 pre-filled with the typed name. When a machine is already chosen for the visit, "Скопировать
@@ -111,15 +118,15 @@ the removed machine are linked to the one that stays. The form of the machine th
 replaces the list, and unsaved edits in the old form are dropped. Choosing a friend's machine
 links the two as one physical machine (see Group sharing) and returns to the form.
 
-The "Тренажёры" row lists the active account's machines by name, each with its unit, how its
-weight is counted and its step. Tapping one opens it in the machine form; "Новый тренажёр"
-adds one. Saving returns to the list. Signed in and online, "Тренажёры друзей" follows once the
-server answers: the machines of everyone sharing a group, one row per physical machine that is
-not yet the same machine as one of the account's, each with its owner and weight setup. Tapping
-one opens "Тренажёр друга", its settings to read — name, owner, setup note, how its weight is
-counted and its platform — with "Взять себе", which saves the account's own copy linked to it
-(see Group sharing) and opens that copy in the machine form. Offline that view says "Нет связи с
-сервером" and offers a retry.
+The "Тренажёры" row lists the active account's machines by name, each with the unit its weights
+are shown in, how its weight is counted and its step. Tapping one opens it in the machine form;
+"Новый тренажёр" adds one. Saving returns to the list. Signed in and online, "Тренажёры друзей"
+follows once the server answers: the machines of everyone sharing a group, one row per physical
+machine that is not yet the same machine as one of the account's, each with its owner and weight
+setup. Tapping one opens "Тренажёр друга", its settings to read — name, owner, setup note, how its
+weight is counted and its platform — with "Взять себе", which saves the account's own copy linked
+to it (see Group sharing) and opens that copy in the machine form. Offline that view says "Нет
+связи с сервером" and offers a retry.
 
 The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
 visit are marked, today and the chosen day are highlighted, and future days cannot be chosen.
@@ -163,6 +170,12 @@ when the field is left blank. Friends see this nickname instead of the Google na
 visit shared as text. Пол (Мужской / Женский), Дата рождения (ДД.ММ.ГГГГ, from 1900 to today) and
 Рост, см (50 to 250) feed the body fat formulas; they are there without an account too, and an
 emptied field clears its value. Nobody else sees them.
+
+"Единицы веса" in the same section, also there without an account, chooses how gym weights are
+shown: "кг" (the default), "lb" or "Смешанные", where each machine shows its own unit. With "кг"
+or "lb" every set, platform, step and last result on every screen, a friend's included, is shown
+in that unit, converted as in a shared visit; a step converts to one decimal. An own unit is never
+converted. The machine form keeps the machine's own unit, and body measures keep theirs.
 
 ## Body measures
 

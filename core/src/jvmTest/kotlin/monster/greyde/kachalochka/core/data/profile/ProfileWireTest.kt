@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.data.profile
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.Sex
@@ -26,10 +27,27 @@ class ProfileWireTest {
                 sex = Sex.Female,
                 birthDate = CalendarDay(1990, 6, 15),
                 heightCm = 172.5,
+                weightUnit = PreferredWeightUnit.Mixed,
             )
 
         assertEquals("1990-06-15", ProfileRow.of(profile).birthDate)
+        assertEquals("mixed", ProfileRow.of(profile).weightUnit)
         assertEquals(profile, ProfileRow.of(profile).toProfile())
+    }
+
+    @Test
+    fun the_weight_unit_travels_by_its_wire_name() {
+        assertEquals(
+            listOf("kg", "lb", "mixed"),
+            PreferredWeightUnit.entries.map { it.wireName() },
+        )
+        assertEquals(PreferredWeightUnit.Lb, weightUnitOf("lb"))
+    }
+
+    @Test
+    fun a_missing_or_unknown_weight_unit_reads_as_kilograms() {
+        assertEquals(PreferredWeightUnit.Kg, weightUnitOf("stone"))
+        assertEquals(PreferredWeightUnit.Kg, weightUnitOf(null))
     }
 
     @Test

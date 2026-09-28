@@ -23,7 +23,10 @@ import monster.greyde.kachalochka.core.domain.gym.mergedMachines
 import monster.greyde.kachalochka.core.domain.gym.olderMachine
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
 import kotlin.time.Clock
@@ -60,12 +63,14 @@ class LinkChooserViewModel(
     private val accounts: Accounts,
     private val clock: Clock,
     private val sync: SyncTrigger,
+    private val profiles: ProfileRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(LinkChooserUiState())
     val state: StateFlow<LinkChooserUiState> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
     private var own: List<Machine> = emptyList()
+    private var preferred = PreferredWeightUnit.Kg
     private var shownFor: UserId? = null
     private var group: GroupMachines? = null
     private var loading: Job? = null
@@ -92,6 +97,7 @@ class LinkChooserViewModel(
                 val owner = currentUser.id()
                 val mine = machines.all(owner)
                 own = mine
+                preferred = profiles.preferredUnit(owner)
                 shownFor = owner
                 group = null
                 publish()
@@ -215,12 +221,16 @@ class LinkChooserViewModel(
                 own =
                     own
                         .filter { it.id != machineId && matches(it.name) }
-                        .map { ChooserRowUi(it.id, it.name, weightCaption(it)) },
+                        .map { ChooserRowUi(it.id, it.name, weightCaption(it, preferred)) },
                 friends =
                     offeredFriends
                         ?.filter { matches(it.machine.name) }
                         ?.map {
-                            ChooserRowUi(it.machine.id, it.machine.name, friendMachineDetail(it))
+                            ChooserRowUi(
+                                it.machine.id,
+                                it.machine.name,
+                                friendMachineDetail(it, preferred),
+                            )
                         },
             )
     }

@@ -5,6 +5,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
@@ -46,21 +47,50 @@ private fun modeLabel(mode: WeightMode): String =
         WeightMode.PerSide -> "на сторону"
     }
 
-fun weightCaption(machine: Machine): String {
-    val unit = unitLabel(machine)
-    val mode = modeLabel(machine.weightMode)
-    return "$unit $mode · ±${formatNumber(machine.weightStep)}"
+fun weightCaption(
+    machine: Machine,
+    preferred: PreferredWeightUnit,
+): String {
+    val step = shownStep(machine.weightStep, machine.unit, shownUnit(machine, preferred))
+    return "${shownLabel(machine, preferred)} ${modeLabel(machine.weightMode)} · " +
+        "±${formatNumber(step)}"
 }
 
-fun platformSuffix(machine: Machine): String? =
+/**
+ * The weight being recorded is typed and stepped in the machine's own unit, so that unit comes
+ * first and the chosen one follows in brackets.
+ */
+fun recordingCaption(
+    machine: Machine,
+    weight: Double,
+    preferred: PreferredWeightUnit,
+): String {
+    val shown = shownUnit(machine, preferred)
+    if (shown == machine.unit) return weightCaption(machine, preferred)
+    val own = unitLabel(machine)
+    val chosen = unitLabel(shown, machine.unitLabel)
+    val inChosen = formatNumber(shownWeight(weight, machine.unit, shown))
+    val step = formatNumber(machine.weightStep)
+    val stepInChosen = formatNumber(shownStep(machine.weightStep, machine.unit, shown))
+    return "$own ($inChosen$chosen) ${modeLabel(machine.weightMode)} · " +
+        "±$step$own ($stepInChosen$chosen)"
+}
+
+fun platformSuffix(
+    machine: Machine,
+    preferred: PreferredWeightUnit,
+): String? =
     if (machine.platformWeight > 0 && !machine.platformIncluded) {
-        "(+${formatNumber(machine.platformWeight)} ${unitLabel(machine)})"
+        val weight = formatNumber(shownWeight(machine.platformWeight, machine, preferred))
+        "(+$weight ${shownLabel(machine, preferred)})"
     } else {
         null
     }
 
-fun machineTitle(machine: Machine): String =
-    platformSuffix(machine)?.let { "${machine.name} $it" } ?: machine.name
+fun machineTitle(
+    machine: Machine,
+    preferred: PreferredWeightUnit,
+): String = platformSuffix(machine, preferred)?.let { "${machine.name} $it" } ?: machine.name
 
 fun setValue(
     weight: Double,
@@ -68,10 +98,24 @@ fun setValue(
     unit: String,
 ): String = "${formatNumber(weight)} $unit × $reps"
 
+fun setValue(
+    weight: Double,
+    reps: Int,
+    machine: Machine,
+    preferred: PreferredWeightUnit,
+): String = setValue(shownWeight(weight, machine, preferred), reps, shownLabel(machine, preferred))
+
+/** Unit-less beside the stepper, which names the machine's unit, unless converted from it. */
 fun shortSet(
     weight: Double,
     reps: Int,
-): String = "${formatNumber(weight)}×$reps"
+    machine: Machine,
+    preferred: PreferredWeightUnit,
+): String {
+    val shown = shownUnit(machine, preferred)
+    val unit = if (shown == machine.unit) "" else unitLabel(shown, machine.unitLabel)
+    return "${formatNumber(shownWeight(weight, machine.unit, shown))}$unit×$reps"
+}
 
 fun pluralRu(
     n: Int,

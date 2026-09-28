@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -47,31 +48,37 @@ class ShareTextTest {
             )
         }
 
+    private val kg = PreferredWeightUnit.Kg
+
     private fun line(
         machine: Machine,
         vararg weightReps: Pair<Double, Int>,
+        preferred: PreferredWeightUnit = kg,
     ): String =
-        visitShareText("", thursday, listOf(SharedMachine(machine, sets(*weightReps))))
+        visitShareText("", thursday, listOf(SharedMachine(machine, sets(*weightReps))), preferred)
             .removePrefix("чт\n\n")
 
     private val oneMachine = listOf(SharedMachine(machine("Тяга"), sets(50.0 to 8)))
 
     @Test
     fun the_header_names_the_nickname_and_the_weekday_then_a_blank_line() {
-        assertEquals("ГДМ, чт\n\nТяга 50кг 1x8", visitShareText("ГДМ", thursday, oneMachine))
+        assertEquals(
+            "ГДМ, чт\n\nТяга 50кг 1x8",
+            visitShareText("ГДМ", thursday, oneMachine, kg),
+        )
     }
 
     @Test
     fun without_a_nickname_the_header_is_the_weekday_alone() {
-        assertEquals("чт\n\nТяга 50кг 1x8", visitShareText("", thursday, oneMachine))
-        assertEquals("чт\n\nТяга 50кг 1x8", visitShareText("  ", thursday, oneMachine))
+        assertEquals("чт\n\nТяга 50кг 1x8", visitShareText("", thursday, oneMachine, kg))
+        assertEquals("чт\n\nТяга 50кг 1x8", visitShareText("  ", thursday, oneMachine, kg))
     }
 
     @Test
     fun every_weekday_has_a_short_label() {
         val labels =
             (0L until 7L).map {
-                visitShareText("", monday.plusDays(it), oneMachine).substringBefore("\n")
+                visitShareText("", monday.plusDays(it), oneMachine, kg).substringBefore("\n")
             }
 
         assertEquals(listOf("пн", "вт", "ср", "чт", "пт", "сб", "вс"), labels)
@@ -133,6 +140,50 @@ class ShareTextTest {
     }
 
     @Test
+    fun with_pounds_chosen_kilograms_read_as_the_nearest_half_pound() {
+        assertEquals(
+            "Жим ногами (+44lb) 99lb 2x10",
+            line(
+                machine("Жим ногами", platform = 20.0),
+                45.0 to 10,
+                45.0 to 10,
+                preferred = PreferredWeightUnit.Lb,
+            ),
+        )
+        assertEquals(
+            "Тяга 45lb 1x10",
+            line(machine("Тяга", WeightUnit.Lb), 45.0 to 10, preferred = PreferredWeightUnit.Lb),
+        )
+    }
+
+    @Test
+    fun with_mixed_units_every_machine_keeps_its_own() {
+        val mixed = PreferredWeightUnit.Mixed
+        assertEquals(
+            "Тяга (+100lb) 45-50lb 10-8",
+            line(
+                machine("Тяга", WeightUnit.Lb, platform = 100.0),
+                45.0 to 10,
+                50.0 to 8,
+                preferred = mixed,
+            ),
+        )
+        assertEquals("Тяга 50кг 1x8", line(machine("Тяга"), 50.0 to 8, preferred = mixed))
+    }
+
+    @Test
+    fun a_custom_unit_is_never_converted() {
+        assertEquals(
+            "Блок 3 плитка 1x10",
+            line(
+                machine("Блок", WeightUnit.Custom, label = "плитка"),
+                3.0 to 10,
+                preferred = PreferredWeightUnit.Lb,
+            ),
+        )
+    }
+
+    @Test
     fun a_custom_unit_is_written_as_is_after_a_space() {
         assertEquals(
             "Блок 3-4 плитка 2x10",
@@ -181,11 +232,11 @@ class ShareTextTest {
 
         assertEquals(
             listOf("20-40кг 2x10", "20,5кг 10-8", "3 плитка 1x10", "2x10"),
-            cases.map { (machine, sets) -> setsSummary(machine, sets) },
+            cases.map { (machine, sets) -> setsSummary(machine, sets, kg) },
         )
         cases.forEach { (machine, sets) ->
-            val line = visitShareText("", thursday, listOf(SharedMachine(machine, sets)))
-            assertTrue(line.endsWith(" " + setsSummary(machine, sets)), line)
+            val line = visitShareText("", thursday, listOf(SharedMachine(machine, sets)), kg)
+            assertTrue(line.endsWith(" " + setsSummary(machine, sets, kg)), line)
         }
     }
 
@@ -200,6 +251,7 @@ class ShareTextTest {
                     SharedMachine(machine("Пустой"), emptyList()),
                     SharedMachine(machine("Пресс сидя"), sets(41.0 to 10, 41.0 to 15)),
                 ),
+                kg,
             )
 
         assertEquals("ГДМ, чт\n\nГиперэкстензия 14кг 1x12\nПресс сидя 41кг 10-15", text)

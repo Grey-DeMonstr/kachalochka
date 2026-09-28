@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.di.corePlatformModule
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
@@ -103,6 +104,7 @@ class LocalProfileRepositoryTest {
                     sex = Sex.Male,
                     birthDate = CalendarDay(1985, 3, 9),
                     heightCm = 181.5,
+                    weightUnit = PreferredWeightUnit.Lb,
                 )
 
             repository.upsert(full)

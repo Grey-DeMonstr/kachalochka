@@ -14,8 +14,11 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
@@ -47,6 +50,7 @@ class MachineListViewModelTest {
             on.sync,
             on.friends,
             on.machineLinks,
+            on.profiles,
         )
 
     private fun olegsGym(): Pair<FakeGym, Machine> {
@@ -85,6 +89,47 @@ class MachineListViewModelTest {
                 listOf("Жим ногами" to "кг на сторону · ±5", "Тяга" to "кг всего · ±2,5"),
                 vm.state.value.own
                     ?.map { it.name to it.detail },
+            )
+        }
+
+    @Test
+    fun a_machine_s_step_reads_in_the_unit_chosen_in_the_profile() =
+        runTest {
+            gym.machines.upsert(
+                Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb, weightStep = 5.0),
+            )
+            val vm = viewModel().also { it.load() }
+
+            assertEquals(
+                listOf("кг всего · ±2,3"),
+                vm.state.value.own
+                    ?.map { it.detail },
+            )
+
+            gym.profiles.upsert(Profile.new(null, t0).copy(weightUnit = PreferredWeightUnit.Mixed))
+            vm.load()
+
+            assertEquals(
+                listOf("lb всего · ±5"),
+                vm.state.value.own
+                    ?.map { it.detail },
+            )
+        }
+
+    @Test
+    fun a_friend_s_machine_reads_in_the_viewer_s_unit() =
+        runTest {
+            val (on, _) = olegsGym()
+            on.profiles.upsert(
+                Profile.new(ME.userId, t0).copy(weightUnit = PreferredWeightUnit.Lb),
+            )
+
+            val vm = viewModel(on).also { it.load() }
+
+            assertEquals(
+                listOf("Олег · lb на сторону · ±11"),
+                vm.state.value.friends
+                    .map { it.detail },
             )
         }
 

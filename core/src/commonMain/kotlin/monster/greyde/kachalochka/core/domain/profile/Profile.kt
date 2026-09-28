@@ -6,6 +6,9 @@ import kotlin.time.Instant
 
 enum class Sex { Male, Female }
 
+/** The unit gym weights are shown in; [Mixed] keeps each machine's own. */
+enum class PreferredWeightUnit { Kg, Lb, Mixed }
+
 data class Profile(
     val id: ProfileId,
     val userId: UserId?,
@@ -16,6 +19,7 @@ data class Profile(
     val sex: Sex? = null,
     val birthDate: CalendarDay? = null,
     val heightCm: Double? = null,
+    val weightUnit: PreferredWeightUnit = PreferredWeightUnit.Kg,
 ) {
     companion object {
         /** A signed-in owner's profile id is the owner's own, so devices converge on one row. */

@@ -24,12 +24,14 @@ import monster.greyde.kachalochka.core.domain.gym.rankMachines
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
-import monster.greyde.kachalochka.ui.format.unitLabel
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -59,6 +61,7 @@ class MachinePickerViewModel(
     private val sync: SyncTrigger,
     private val friends: FriendsRepository,
     private val machineLinks: MachineLinkRepository,
+    private val profiles: ProfileRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PickerUiState())
     val state: StateFlow<PickerUiState> = mutableState
@@ -67,6 +70,7 @@ class MachinePickerViewModel(
     private var all: List<Machine> = emptyList()
     private var latest: Map<MachineId, WorkoutSet> = emptyMap()
     private var inVisit: Map<MachineId, Int> = emptyMap()
+    private var preferred = PreferredWeightUnit.Kg
     private var shownFor: UserId? = null
     private var group: GroupMachines? = null
     private var friendsFor: UserId? = null
@@ -104,6 +108,7 @@ class MachinePickerViewModel(
                         .orEmpty()
                         .groupingBy { it.machineId }
                         .eachCount()
+                preferred = profiles.preferredUnit(owner)
                 shownFor = owner
                 publish(mutableState.value.query)
                 owner?.let(::loadFriends)
@@ -148,7 +153,9 @@ class MachinePickerViewModel(
         val friendRows =
             offeredFriends
                 .filter { it.machine.name.contains(needle, ignoreCase = true) }
-                .map { PickerRowUi(it.machine.id, it.machine.name, friendMachineDetail(it)) }
+                .map {
+                    PickerRowUi(it.machine.id, it.machine.name, friendMachineDetail(it, preferred))
+                }
         mutableState.value =
             PickerUiState(
                 query = query,
@@ -170,7 +177,7 @@ class MachinePickerViewModel(
         }
         val last = latest[machine.id] ?: return null
         val days = calendarDaysBetween(last.recordedAt, now, offset)
-        val value = setValue(last.weight, last.reps, unitLabel(machine))
+        val value = setValue(last.weight, last.reps, machine, preferred)
         return "Было $value · ${daysAgoLabel(days)}"
     }
 }

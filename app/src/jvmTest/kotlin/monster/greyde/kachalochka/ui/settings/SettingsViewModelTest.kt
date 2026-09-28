@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
@@ -151,6 +152,38 @@ class SettingsViewModelTest {
             vm.save()
 
             assertEquals(Sex.Male, gym.profiles.forOwner(null)?.sex)
+        }
+
+    @Test
+    fun weights_show_in_kilograms_until_another_unit_is_chosen_and_saved() =
+        runTest {
+            val vm = viewModel()
+            assertEquals(PreferredWeightUnit.Kg, vm.ui.weightUnit)
+
+            vm.chooseWeightUnit(PreferredWeightUnit.Lb)
+            assertTrue(vm.ui.canSave)
+            vm.chooseWeightUnit(PreferredWeightUnit.Kg)
+            assertFalse(vm.ui.canSave)
+
+            vm.chooseWeightUnit(PreferredWeightUnit.Mixed)
+            vm.save()
+
+            assertEquals(PreferredWeightUnit.Mixed, gym.profiles.forOwner(null)?.weightUnit)
+            assertFalse(vm.ui.canSave)
+        }
+
+    @Test
+    fun the_stored_weight_unit_is_shown_for_the_active_account() =
+        runTest {
+            gym.withAccounts(ivan, misha, active = ivan)
+            gym.profiles.upsert(
+                Profile.new(misha.account.userId, t0).copy(weightUnit = PreferredWeightUnit.Lb),
+            )
+            val vm = viewModel()
+
+            gym.accounts.switchTo(misha.account.userId)
+
+            assertEquals(PreferredWeightUnit.Lb, vm.ui.weightUnit)
         }
 
     @Test

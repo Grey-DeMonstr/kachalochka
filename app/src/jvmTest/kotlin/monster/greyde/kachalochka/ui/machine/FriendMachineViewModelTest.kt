@@ -12,6 +12,8 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
@@ -56,6 +58,7 @@ class FriendMachineViewModelTest {
             gym.accounts,
             gym.clock,
             gym.sync,
+            gym.profiles,
         )
 
     @BeforeTest
@@ -82,6 +85,19 @@ class FriendMachineViewModelTest {
         )
         assertFalse(vm.offline.value)
     }
+
+    @Test
+    fun the_friend_s_weights_read_in_the_viewer_s_unit() =
+        runTest {
+            on.profiles.upsert(
+                Profile.new(ME.userId, t0).copy(weightUnit = PreferredWeightUnit.Lb),
+            )
+
+            val state = assertNotNull(viewModel().state.value)
+
+            assertEquals("lb на сторону · ±11", state.caption)
+            assertEquals("55 lb · рядом с названием", state.platform)
+        }
 
     @Test
     fun a_platform_added_to_the_record_says_so_and_none_shows_nothing() {

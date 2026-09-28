@@ -14,11 +14,13 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.summarize
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
-import monster.greyde.kachalochka.ui.format.unitLabel
 import kotlin.time.Clock
 
 data class HomeUiState(
@@ -40,6 +42,7 @@ class HomeViewModel(
     private val clock: Clock,
     private val utcOffset: UtcOffset,
     private val sync: SyncTrigger,
+    private val profiles: ProfileRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<HomeUiState?>(null)
     val state: StateFlow<HomeUiState?> = mutableState
@@ -52,27 +55,29 @@ class HomeViewModel(
         viewModelScope.launch {
             val now = clock.now()
             val today = CalendarDay.of(now, utcOffset.at(now))
+            val owner = currentUser.id()
             val daySets =
                 visits
-                    .shownOn(currentUser.id(), today, sets, utcOffset::at)
+                    .shownOn(owner, today, sets, utcOffset::at)
                     ?.let { sets.forVisit(it.id) }
                     .orEmpty()
-            mutableState.value = HomeUiState(todayUi(today, daySets))
+            mutableState.value =
+                HomeUiState(todayUi(today, daySets, profiles.preferredUnit(owner)))
         }
     }
 
     private suspend fun todayUi(
         day: CalendarDay,
         daySets: List<WorkoutSet>,
+        preferred: PreferredWeightUnit,
     ): TodayUi {
         if (daySets.isEmpty()) return TodayUi(day, null, null)
         val summary = summarize(daySets)
         val lastSet =
             summary.lastSet?.let { set ->
                 machines
-                    .byId(
-                        set.machineId,
-                    )?.let { "${it.name} ${setValue(set.weight, set.reps, unitLabel(it))}" }
+                    .byId(set.machineId)
+                    ?.let { "${it.name} ${setValue(set.weight, set.reps, it, preferred)}" }
             }
         return TodayUi(
             day = day,

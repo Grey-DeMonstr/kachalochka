@@ -9,6 +9,7 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.core.domain.profile.Sex
@@ -34,6 +35,7 @@ data class ProfileUi(
     val birthDateValid: Boolean,
     val heightValid: Boolean,
     val canSave: Boolean,
+    val weightUnit: PreferredWeightUnit = PreferredWeightUnit.Kg,
 )
 
 class SettingsViewModel(
@@ -72,6 +74,7 @@ class SettingsViewModel(
                 birthDateValid = true,
                 heightValid = true,
                 canSave = false,
+                weightUnit = stored?.weightUnit ?: PreferredWeightUnit.Kg,
             )
         saved = shown
         mutableProfile.value = shown
@@ -81,6 +84,8 @@ class SettingsViewModel(
         edit { shown -> shown.copy(nickname = shown.nickname?.let { text.take(NICKNAME_LENGTH) }) }
 
     fun chooseSex(sex: Sex) = edit { it.copy(sex = sex) }
+
+    fun chooseWeightUnit(unit: PreferredWeightUnit) = edit { it.copy(weightUnit = unit) }
 
     fun typeBirthDate(text: String) = edit { it.copy(birthDate = text) }
 
@@ -116,6 +121,7 @@ class SettingsViewModel(
                     sex = shown.sex,
                     birthDate = birthDateOf(shown.birthDate),
                     heightCm = heightOf(shown.height),
+                    weightUnit = shown.weightUnit,
                     updatedAt = now,
                 ),
             )

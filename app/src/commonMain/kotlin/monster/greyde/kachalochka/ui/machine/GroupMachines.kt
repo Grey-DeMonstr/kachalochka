@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
 
@@ -23,8 +24,10 @@ data class GroupMachines(
         friendMachineRows(friends, own, clusters, links)
 }
 
-fun friendMachineDetail(friend: FriendMachine): String =
-    "${friend.owner.displayName} · ${weightCaption(friend.machine)}"
+fun friendMachineDetail(
+    friend: FriendMachine,
+    preferred: PreferredWeightUnit,
+): String = "${friend.owner.displayName} · ${weightCaption(friend.machine, preferred)}"
 
 /** Friends' machines and every visible link, or null when the network does not answer. */
 suspend fun loadGroupMachines(

@@ -91,11 +91,13 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
             )
         }
         viewModel { (day: CalendarDay) ->
             MachinePickerViewModel(
                 day,
+                get(),
                 get(),
                 get(),
                 get(),
@@ -112,16 +114,39 @@ val appModule =
             MachineFormViewModel(args, get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (machine: MachineId) ->
-            LinkChooserViewModel(machine, get(), get(), get(), get(), get(), get(), get(), get())
+            LinkChooserViewModel(
+                machine,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
         }
         viewModel { (machine: MachineId, owner: UserId) ->
-            FriendMachineViewModel(machine, owner, get(), get(), get(), get(), get(), get(), get())
+            FriendMachineViewModel(
+                machine,
+                owner,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
         }
         viewModel { (member: UserId, name: String, day: CalendarDay) ->
             FriendVisitViewModel(
                 member,
                 name,
                 day,
+                get(),
                 get(),
                 get(),
                 get(),

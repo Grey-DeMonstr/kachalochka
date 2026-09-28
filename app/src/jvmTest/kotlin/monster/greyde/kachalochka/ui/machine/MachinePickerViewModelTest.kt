@@ -24,6 +24,8 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
@@ -91,6 +93,7 @@ class MachinePickerViewModelTest {
             gym.sync,
             gym.friends,
             gym.machineLinks,
+            gym.profiles,
         )
 
     private fun pickerOn(on: FakeGym) =
@@ -106,6 +109,7 @@ class MachinePickerViewModelTest {
             on.sync,
             on.friends,
             on.machineLinks,
+            on.profiles,
         )
 
     private fun olegsGym(): Pair<FakeGym, Machine> {
@@ -194,6 +198,26 @@ class MachinePickerViewModelTest {
                     .single { it.id == gravitron.id }
                     .detail,
             )
+        }
+
+    @Test
+    fun a_last_result_reads_in_the_unit_chosen_in_the_profile() =
+        runTest {
+            val cable = Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb)
+            gym.machines.upsert(cable)
+            gym.sets.upsert(set(otherVisit, cable, 90.0, 8, t0 - 1.days))
+            val vm = viewModel().also { it.load() }
+
+            fun details() =
+                vm.state.value.rows
+                    .associate { it.name to it.detail }
+            assertEquals("Было 41 кг × 8 · вчера", details()["Кроссовер"])
+
+            gym.profiles.upsert(Profile.new(null, t0).copy(weightUnit = PreferredWeightUnit.Lb))
+            vm.load()
+
+            assertEquals("Было 90 lb × 8 · вчера", details()["Кроссовер"])
+            assertEquals("Было 176,5 lb × 8 · 4 дня назад", details()["Приседания в Смите"])
         }
 
     @Test
@@ -293,6 +317,7 @@ class MachinePickerViewModelTest {
                     shared.sync,
                     shared.friends,
                     shared.machineLinks,
+                    shared.profiles,
                 ).also { it.load() }
             assertEquals(
                 listOf("Жим ногами" to "3 подхода сегодня"),

@@ -12,6 +12,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.Sex
@@ -410,6 +411,62 @@ class SchemaMigrationTest {
             ),
         )
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
+    @Test
+    fun version_9_profiles_show_weights_in_kilograms_and_are_pulled_again() {
+        val owner = UserId("11111111-1111-4111-8111-111111111111")
+        version9ProfileTable()
+        exec(
+            "INSERT INTO profile(id, user_id, display_name, updated_at, friend_colors, sex, " +
+                "birth_date, height_cm) VALUES ('${owner.value}', '${owner.value}', 'Иван', 7, " +
+                "'{}', 'male', '1990-06-15', 180.5)",
+        )
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 9, KachalochkaDatabase.Schema.version)
+
+        assertEquals("kg", text("SELECT weight_unit FROM profile WHERE id = '${owner.value}'"))
+        assertEquals(
+            Profile(
+                ProfileId(owner.value),
+                owner,
+                "Иван",
+                at(7),
+                false,
+                sex = Sex.Male,
+                birthDate = CalendarDay(1990, 6, 15),
+                heightCm = 180.5,
+                weightUnit = PreferredWeightUnit.Kg,
+            ),
+            kachalochkaDatabase(driver)
+                .profileQueries
+                .byId(owner.value, ::profileOf)
+                .executeAsOne(),
+        )
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
+    /** Version 9 declares the profile table as 8.sqm rebuilds it. */
+    private fun version9ProfileTable() {
+        KachalochkaDatabase.Schema.create(driver)
+        exec("DROP TABLE profile")
+        exec(
+            """
+            CREATE TABLE profile (
+                id TEXT NOT NULL PRIMARY KEY,
+                user_id TEXT,
+                display_name TEXT,
+                updated_at INTEGER NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0,
+                friend_colors TEXT NOT NULL DEFAULT '{}',
+                sex TEXT,
+                birth_date TEXT,
+                height_cm REAL
+            )
+            """.trimIndent(),
+        )
+        exec("CREATE INDEX profile_updated_at_idx ON profile (updated_at)")
     }
 
     /** Versions 6 to 8 declare the profile table this way. */
