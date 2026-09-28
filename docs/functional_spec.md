@@ -55,9 +55,10 @@ screen.
 
 The visit screen lists the day's sets grouped by machine, machines in the order of their first
 set, and ends with "Новый тренажёр", which opens the machine picker. Tapping a machine's row
-expands it to show its sets; tapping a set opens it for editing or deletion. "Порядок" shows
-arrows that move a machine or a set up or down. Today's visit is titled "Сегодня", any other
-day's with its date.
+expands it to show its sets; tapping a set opens it for editing or deletion. «Порядок» shows a
+handle at the left of every machine and set; dragging a machine's handle moves the machine with
+its sets, dragging a set's handle moves it among its machine's sets. «Готово» hides the handles.
+Today's visit is titled "Сегодня", any other day's with its date.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,

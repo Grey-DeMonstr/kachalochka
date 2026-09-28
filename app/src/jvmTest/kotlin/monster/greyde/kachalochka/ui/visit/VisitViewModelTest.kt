@@ -851,46 +851,46 @@ class VisitViewModelTest {
             assertEquals(true, state.ordering)
             assertEquals(false, state.sheet?.expanded)
             assertEquals(listOf(true, true), state.groups.map { it.expanded })
+        }
+
+    @Test
+    fun the_last_machine_dragged_to_the_top_goes_first_and_order_mode_stays() =
+        runTest {
+            val curl = Machine.new("Сгибание рук", null, t0)
+            gym.machines.upsert(curl)
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))
+            gym.sets.upsert(set(visit.id, curl, 20.0, 12, 2))
+            val vm = viewModel().also { it.refresh() }
+            vm.toggleOrdering()
+
+            vm.moveMachine(curl.id, 0)
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(listOf(curl.id, press.id, row.id), state.groups.map { it.machineId })
+            assertEquals(true, state.ordering)
+            assertEquals(0, gym.sync.requests)
+            val reopened = viewModel().also { it.refresh() }
             assertEquals(
-                listOf(false to true, true to false),
-                state.groups.map { it.canMoveUp to it.canMoveDown },
+                listOf(curl.id, press.id, row.id),
+                assertNotNull(reopened.state.value).groups.map { it.machineId },
             )
         }
 
     @Test
-    fun moving_a_machine_up_puts_it_first_and_keeps_order_mode() =
-        runTest {
-            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
-            gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))
-            val vm = viewModel().also { it.refresh() }
-            vm.toggleOrdering()
-
-            vm.moveMachine(row.id, -1)
-
-            val state = assertNotNull(vm.state.value)
-            assertEquals(listOf(row.id, press.id), state.groups.map { it.machineId })
-            assertEquals(true, state.ordering)
-            assertEquals(0, gym.sync.requests)
-        }
-
-    @Test
-    fun moving_a_set_down_swaps_it_with_the_next_one() =
+    fun the_last_set_dragged_to_the_top_of_its_machine_goes_first() =
         runTest {
             val first = set(visit.id, press, 60.0, 10, 0)
             val second = set(visit.id, press, 70.0, 10, 1)
-            gym.sets.upsert(first)
-            gym.sets.upsert(second)
+            val third = set(visit.id, press, 80.0, 8, 2)
+            listOf(first, second, third).forEach { gym.sets.upsert(it) }
             val vm = viewModel().also { it.refresh() }
             vm.toggleOrdering()
 
-            vm.moveSet(first.id, +1)
+            vm.moveSet(third.id, 0)
 
             val rows = assertNotNull(vm.state.value).groups.single().sets
-            assertEquals(listOf(second.id, first.id), rows.map { it.id })
-            assertEquals(
-                listOf(false to true, true to false),
-                rows.map { it.canMoveUp to it.canMoveDown },
-            )
+            assertEquals(listOf(third.id, first.id, second.id), rows.map { it.id })
         }
 
     @Test
@@ -903,9 +903,26 @@ class VisitViewModelTest {
             val vm = viewModel(day = seventh).also { it.refresh() }
             vm.toggleOrdering()
 
-            vm.moveMachine(row.id, -1)
+            vm.moveMachine(row.id, 0)
 
             assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_machine_dropped_where_it_started_writes_nothing() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+            val base = -(7.days.inWholeMinutes.toInt())
+            gym.sets.upsert(set(lastWeek.id, press, 70.0, 10, base))
+            gym.sets.upsert(set(lastWeek.id, row, 45.0, 12, base + 1))
+            val before = gym.sets.rows.toMap()
+            val vm = viewModel(day = seventh).also { it.refresh() }
+            vm.toggleOrdering()
+
+            vm.moveMachine(press.id, 0)
+
+            assertEquals(before, gym.sets.rows.toMap())
+            assertEquals(0, gym.sync.requests)
         }
 
     @Test
@@ -1008,7 +1025,7 @@ class VisitViewModelTest {
             gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))
             val vm = viewModel().also { it.refresh() }
             vm.toggleOrdering()
-            vm.moveMachine(row.id, -1)
+            vm.moveMachine(row.id, 0)
 
             gym.sync.completePass()
 

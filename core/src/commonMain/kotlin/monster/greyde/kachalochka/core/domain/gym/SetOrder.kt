@@ -5,53 +5,37 @@ import kotlin.time.Instant
 fun nextPosition(visitSets: List<WorkoutSet>): Int =
     (visitSets.maxOfOrNull { it.position } ?: 0) + 1
 
-/** The sets whose position changes when [machine] trades places with its neighbour. */
-fun machineMoved(
+/** The sets whose position changes when [machine]'s block moves to [index] among the machines. */
+fun machineMovedTo(
     visitSets: List<WorkoutSet>,
     machine: MachineId,
-    direction: Int,
+    index: Int,
     now: Instant,
 ): List<WorkoutSet> {
     val order = groupByMachine(visitSets).map { it.machineId }.toMutableList()
     val from = order.indexOf(machine)
-    val to = from + direction
-    if (from < 0 || to !in order.indices) return emptyList()
-    order.add(to, order.removeAt(from))
+    if (from < 0 || index !in order.indices || index == from) return emptyList()
+    order.add(index, order.removeAt(from))
     return changed(visitSets, renumbered(visitSets, order), now)
 }
 
-/** The sets whose position changes when [set] trades places with its neighbour on its machine. */
-fun setMoved(
+/** The sets whose position changes when [set] moves to [index] among its machine's sets. */
+fun setMovedTo(
     visitSets: List<WorkoutSet>,
     set: WorkoutSetId,
-    direction: Int,
+    index: Int,
     now: Instant,
 ): List<WorkoutSet> {
     val groups = groupByMachine(visitSets)
-    val onMachine =
-        groups.firstOrNull { g -> g.sets.any { it.id == set } }?.sets ?: return emptyList()
-    val from = onMachine.indexOfFirst { it.id == set }
-    val to = from + direction
-    if (to !in onMachine.indices) return emptyList()
-    // A swap keeps every other set in place only when no two sets share a position; old rows
-    // and a reorder written halfway get distinct numbers first.
-    val numbered =
-        if (visitSets.distinctBy { it.position }.size < visitSets.size) {
-            renumbered(visitSets, groups.map { it.machineId })
-        } else {
-            visitSets
-        }
-    val a = numbered.first { it.id == onMachine[from].id }
-    val b = numbered.first { it.id == onMachine[to].id }
-    val swapped =
-        numbered.map {
-            when (it.id) {
-                a.id -> it.copy(position = b.position)
-                b.id -> it.copy(position = a.position)
-                else -> it
-            }
-        }
-    return changed(visitSets, swapped, now)
+    val group = groups.firstOrNull { g -> g.sets.any { it.id == set } } ?: return emptyList()
+    val from = group.sets.indexOfFirst { it.id == set }
+    if (index !in group.sets.indices || index == from) return emptyList()
+    val moved = group.sets.toMutableList().apply { add(index, removeAt(from)) }
+    val renumbered =
+        groups
+            .flatMap { if (it.machineId == group.machineId) moved else it.sets }
+            .mapIndexed { i, s -> s.copy(position = i + 1) }
+    return changed(visitSets, renumbered, now)
 }
 
 private fun renumbered(

@@ -2,9 +2,13 @@ package monster.greyde.kachalochka.ui.visit
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
@@ -37,6 +41,7 @@ import monster.greyde.kachalochka.ui.friends.olegTrainedOn
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalTestApi::class)
@@ -336,39 +341,58 @@ class VisitScreenTest {
     }
 
     @Test
-    fun order_mode_moves_a_machine_with_its_arrows_and_opens_no_set() {
+    fun order_mode_drags_a_machine_by_its_handle_and_opens_no_set() {
         val row = Machine.new("Тяга", null, gym.clock.current)
-        val pulled =
-            recorded.copy(
-                id = WorkoutSetId.random(),
-                machineId = row.id,
-                recordedAt = gym.clock.current + 1.minutes,
-            )
+        val curl = Machine.new("Сгибание рук", null, gym.clock.current)
+        val pulled = recorded.copy(id = WorkoutSetId.random(), machineId = row.id)
+        val curled = recorded.copy(id = WorkoutSetId.random(), machineId = curl.id)
         runBlocking {
             gym.machines.upsert(row)
-            gym.sets.upsert(pulled)
+            gym.machines.upsert(curl)
+            gym.sets.upsert(pulled.copy(recordedAt = gym.clock.current + 1.minutes))
+            gym.sets.upsert(curled.copy(recordedAt = gym.clock.current + 2.minutes))
         }
         runScreenTest(gym, screen = { visitScreen() }) {
             onNodeWithTag("reorder-toggle").assertTextEquals("Порядок").performClick()
             waitForIdle()
-            onNodeWithTag("reorder-toggle").assertTextEquals("Готово")
-            onNodeWithTag("machine-up-${press.id.value}").assertIsNotEnabled()
-            onNodeWithTag("machine-down-${row.id.value}").assertIsNotEnabled()
-            onNodeWithTag("set-up-${recorded.id.value}").assertIsNotEnabled()
+            onNodeWithText("Готово").assertExists()
+            listOf(press, row, curl).forEach {
+                onNodeWithTag("drag-machine-${it.id.value}").assertExists()
+            }
+            onNodeWithTag("drag-set-${recorded.id.value}").assertExists()
+            onAllNodes(hasTestTagStartingWith("machine-up-")).assertCountEquals(0)
+            onAllNodes(hasTestTagStartingWith("set-up-")).assertCountEquals(0)
 
-            onNodeWithTag("machine-up-${row.id.value}").performClick()
+            onNodeWithTag("drag-machine-${curl.id.value}").performTouchInput {
+                down(center)
+                repeat(20) { moveBy(Offset(0f, -30f)) }
+                up()
+            }
             waitForIdle()
-            onNodeWithTag("machine-up-${press.id.value}").assertIsEnabled()
+            assertTrue(
+                onNodeWithTag("group-${curl.id.value}").fetchSemanticsNode().positionInRoot.y <
+                    onNodeWithTag("group-${press.id.value}").fetchSemanticsNode().positionInRoot.y,
+            )
             onNodeWithTag("set-row-${recorded.id.value}").performClick()
             waitForIdle()
             onNodeWithTag("delete-set").assertDoesNotExist()
+
+            onNodeWithTag("reorder-toggle").performClick()
+            waitForIdle()
+            onNodeWithTag("reorder-toggle").assertTextEquals("Порядок")
+            onNodeWithTag("drag-machine-${curl.id.value}").assertDoesNotExist()
         }
         assertEquals(
-            mapOf(row.id to 1, press.id to 2),
+            mapOf(curl.id to 1, press.id to 2, row.id to 3),
             gym.sets.rows.values
                 .associate { it.machineId to it.position },
         )
     }
+
+    private fun hasTestTagStartingWith(prefix: String) =
+        SemanticsMatcher("test tag starts with $prefix") { node ->
+            node.config.getOrNull(SemanticsProperties.TestTag)?.startsWith(prefix) == true
+        }
 
     @Test
     fun friends_results_show_under_the_previous_visit() {

@@ -2,13 +2,23 @@ package monster.greyde.kachalochka.core.domain.gym
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 
 class SetOrderTest {
     private val now = T0 + 1.hours
+    private val curl = MachineId("0f000000-0000-4000-8000-00000000000f")
 
     private fun List<WorkoutSet>.after(changed: List<WorkoutSet>) =
         map { set -> changed.firstOrNull { it.id == set.id } ?: set }
+
+    private fun threeMachines(): List<WorkoutSet> =
+        listOf(
+            set(VISIT_A, 60.0, atSeconds = 0, position = 1),
+            set(VISIT_A, 45.0, atSeconds = 1, machine = ROW, position = 2),
+            set(VISIT_A, 20.0, atSeconds = 2, machine = curl, position = 3),
+            set(VISIT_A, 22.0, atSeconds = 3, machine = curl, position = 4),
+        )
 
     @Test
     fun a_new_set_goes_after_every_set_of_the_visit() {
@@ -20,86 +30,85 @@ class SetOrderTest {
     }
 
     @Test
-    fun moving_a_machine_up_renumbers_the_visit_in_the_new_order() {
-        val press1 = set(VISIT_A, 60.0, atSeconds = 0)
-        val row1 = set(VISIT_A, 45.0, atSeconds = 1, machine = ROW)
-        val press2 = set(VISIT_A, 70.0, atSeconds = 2)
-        val sets = listOf(press1, row1, press2)
+    fun the_last_machine_moved_to_the_top_goes_first_with_its_sets() {
+        val sets = threeMachines()
 
-        val changed = machineMoved(sets, ROW, -1, now)
+        val changed = machineMovedTo(sets, curl, 0, now)
 
         assertEquals(
-            listOf(1, 2, 3),
-            listOf(row1, press1, press2).map { s -> changed.single { it.id == s.id }.position },
+            listOf(curl, PRESS, ROW),
+            groupByMachine(sets.after(changed)).map { it.machineId },
         )
-        assertEquals(listOf(now, now, now), changed.map { it.updatedAt })
-        assertEquals(listOf(ROW, PRESS), groupByMachine(sets.after(changed)).map { it.machineId })
+        assertEquals(
+            listOf(sets[2].id, sets[3].id),
+            groupByMachine(sets.after(changed)).first().sets.map { it.id },
+        )
     }
 
     @Test
-    fun the_first_machine_does_not_move_up_nor_the_last_down() {
-        val sets =
-            listOf(
-                set(VISIT_A, 60.0, atSeconds = 0),
-                set(VISIT_A, 45.0, atSeconds = 1, machine = ROW),
-            )
+    fun a_machine_moved_to_its_own_place_an_unknown_place_or_unknown_writes_nothing() {
+        val sets = threeMachines()
 
-        assertEquals(emptyList(), machineMoved(sets, PRESS, -1, now))
-        assertEquals(emptyList(), machineMoved(sets, ROW, +1, now))
+        assertEquals(emptyList(), machineMovedTo(sets, ROW, 1, now))
+        assertEquals(emptyList(), machineMovedTo(sets, ROW, -1, now))
+        assertEquals(emptyList(), machineMovedTo(sets, ROW, 3, now))
+        assertEquals(emptyList(), machineMovedTo(sets, MachineId.random(), 0, now))
     }
 
     @Test
-    fun a_set_swaps_places_with_its_neighbour_on_the_same_machine() {
-        val first = set(VISIT_A, 60.0, atSeconds = 0, position = 1)
+    fun a_set_moved_to_the_end_of_its_machine_leaves_other_machines_in_order() {
+        val s1 = set(VISIT_A, 60.0, atSeconds = 0, position = 1)
         val row = set(VISIT_A, 45.0, atSeconds = 1, machine = ROW, position = 2)
-        val second = set(VISIT_A, 70.0, atSeconds = 2, position = 3)
+        val s2 = set(VISIT_A, 70.0, atSeconds = 2, position = 3)
+        val s3 = set(VISIT_A, 80.0, atSeconds = 3, position = 4)
+        val row2 = set(VISIT_A, 50.0, atSeconds = 4, machine = ROW, position = 5)
+        val sets = listOf(s1, row, s2, s3, row2)
 
-        val changed = setMoved(listOf(first, row, second), second.id, -1, now)
-
-        assertEquals(
-            setOf(first.id to 3, second.id to 1),
-            changed.map { it.id to it.position }.toSet(),
-        )
-    }
-
-    @Test
-    fun a_set_among_sets_at_one_position_renumbers_the_visit_first() {
-        val first = set(VISIT_A, 60.0, atSeconds = 0)
-        val second = set(VISIT_A, 70.0, atSeconds = 1)
-        val third = set(VISIT_A, 80.0, atSeconds = 2)
-        val sets = listOf(first, second, third)
-
-        val changed = setMoved(sets, first.id, +1, now)
+        val groups = groupByMachine(sets.after(setMovedTo(sets, s1.id, 2, now)))
 
         assertEquals(
-            listOf(second.id, first.id, third.id),
-            groupByMachine(sets.after(changed)).single().sets.map { it.id },
-        )
-        assertEquals(
-            setOf(first.id to 2, second.id to 1, third.id to 3),
-            changed.map { it.id to it.position }.toSet(),
-        )
-    }
-
-    @Test
-    fun a_set_moved_after_a_half_written_reorder_keeps_the_machine_order() {
-        val first = set(VISIT_A, 60.0, atSeconds = 0, position = 2)
-        val row = set(VISIT_A, 45.0, atSeconds = 1, machine = ROW, position = 2)
-        val second = set(VISIT_A, 70.0, atSeconds = 2, position = 5)
-        val sets = listOf(first, row, second)
-
-        val groups = groupByMachine(sets.after(setMoved(sets, second.id, -1, now)))
-
-        assertEquals(
-            listOf(PRESS to listOf(second.id, first.id), ROW to listOf(row.id)),
+            listOf(PRESS to listOf(s2.id, s3.id, s1.id), ROW to listOf(row.id, row2.id)),
             groups.map { group -> group.machineId to group.sets.map { it.id } },
         )
     }
 
     @Test
-    fun a_machine_s_first_set_does_not_move_up() {
+    fun sets_sharing_one_position_end_in_the_requested_order() {
         val first = set(VISIT_A, 60.0, atSeconds = 0)
+        val second = set(VISIT_A, 70.0, atSeconds = 1)
+        val third = set(VISIT_A, 80.0, atSeconds = 2)
+        val sets = listOf(first, second, third)
 
-        assertEquals(emptyList(), setMoved(listOf(first), first.id, -1, now))
+        val changed = setMovedTo(sets, third.id, 0, now)
+
+        assertEquals(
+            listOf(third.id, first.id, second.id),
+            groupByMachine(sets.after(changed)).single().sets.map { it.id },
+        )
+    }
+
+    @Test
+    fun a_set_moved_to_its_own_place_an_unknown_place_or_unknown_writes_nothing() {
+        val first = set(VISIT_A, 60.0, atSeconds = 0, position = 1)
+        val second = set(VISIT_A, 70.0, atSeconds = 1, position = 2)
+        val sets = listOf(first, second)
+
+        assertEquals(emptyList(), setMovedTo(sets, first.id, 0, now))
+        assertEquals(emptyList(), setMovedTo(sets, first.id, 2, now))
+        assertEquals(emptyList(), setMovedTo(sets, first.id, -1, now))
+        assertEquals(emptyList(), setMovedTo(sets, WorkoutSetId.random(), 0, now))
+    }
+
+    @Test
+    fun only_the_sets_whose_position_changed_are_written_stamped_now() {
+        val sets = threeMachines()
+
+        val changed = machineMovedTo(sets, ROW, 0, now)
+
+        assertEquals(
+            setOf(sets[0].id to 2, sets[1].id to 1),
+            changed.map { it.id to it.position }.toSet(),
+        )
+        assertTrue(changed.all { it.updatedAt == now })
     }
 }

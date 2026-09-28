@@ -320,7 +320,9 @@ day's visit on the calendar removes every live visit on that day (`allOn`), so n
 never weighs another against the moved one. A set added to a visit of another day is stamped one
 second after the visit's last set, which keeps a late correction on the visit's day and in order.
 Within a visit, sets sort by `(position, recorded_at, id)`; `position` defaults to 0, so rows
-written before it keep their recording order.
+written before it keep their recording order. A reorder (`machineMovedTo`, `setMovedTo`)
+renumbers the visit's sets 1..n in the new order and writes only those whose position changed, so
+sets sharing a position still land in the dropped order.
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

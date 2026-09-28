@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -60,13 +61,16 @@ import monster.greyde.kachalochka.ui.account.MonogramBadge
 import monster.greyde.kachalochka.ui.account.dashedCircle
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ControlShape
-import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
+import monster.greyde.kachalochka.ui.components.DragHandle
 import monster.greyde.kachalochka.ui.components.OutlineButton
+import monster.greyde.kachalochka.ui.components.ReorderState
 import monster.greyde.kachalochka.ui.components.RestTimerChip
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.Stepper
 import monster.greyde.kachalochka.ui.components.Thumbnail
+import monster.greyde.kachalochka.ui.components.rememberReorderState
+import monster.greyde.kachalochka.ui.components.reorderItem
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -173,42 +177,20 @@ private fun VisitList(
                 color = colors.tertiary,
             )
         }
-        state.groups.forEach { group ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = !state.ordering) { onToggle(group.machineId) }
-                    .padding(vertical = 12.dp)
-                    .testTag("group-${group.machineId.value}"),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    group.title,
-                    fontSize = 16.sp,
-                    color = colors.onBackground,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    group.summary,
-                    fontSize = 15.sp,
-                    color = colors.onBackground.copy(alpha = 0.6f),
-                )
-                if (state.ordering) {
-                    MoveArrows(
-                        "machine-up-${group.machineId.value}",
-                        "machine-down-${group.machineId.value}",
-                        group.canMoveUp,
-                        group.canMoveDown,
-                    ) { onMoveMachine(group.machineId, it) }
-                }
-            }
-            if (group.expanded) {
-                group.sets.forEach { row ->
-                    SetRow(row, state.ordering, onEdit) { onMoveSet(row.id, it) }
-                }
-            }
-            Rule()
+        val machineOrder = rememberReorderState()
+        SideEffect { machineOrder.retain(state.groups.size) }
+        // Items compose by position, without keys, so each index keeps its measured height.
+        state.groups.forEachIndexed { index, group ->
+            MachineBlock(
+                group = group,
+                index = index,
+                order = machineOrder,
+                ordering = state.ordering,
+                onToggle = onToggle,
+                onEdit = onEdit,
+                onDropMachine = { from, to -> onMoveMachine(state.groups[from].machineId, to) },
+                onMoveSet = onMoveSet,
+            )
         }
         OutlineButton(
             "Новый тренажёр",
@@ -220,42 +202,79 @@ private fun VisitList(
 }
 
 @Composable
-private fun MoveArrows(
-    upTag: String,
-    downTag: String,
-    canUp: Boolean,
-    canDown: Boolean,
-    onMove: (Int) -> Unit,
+private fun MachineBlock(
+    group: SetGroupUi,
+    index: Int,
+    order: ReorderState,
+    ordering: Boolean,
+    onToggle: (MachineId) -> Unit,
+    onEdit: (WorkoutSetId) -> Unit,
+    onDropMachine: (from: Int, to: Int) -> Unit,
+    onMoveSet: (WorkoutSetId, Int) -> Unit,
 ) {
-    Row {
-        MoveArrow("Выше", -90f, upTag, canUp) { onMove(-1) }
-        MoveArrow("Ниже", 90f, downTag, canDown) { onMove(+1) }
+    val colors = MaterialTheme.colorScheme
+    val setOrder = rememberReorderState()
+    SideEffect { setOrder.retain(group.sets.size) }
+    Column(Modifier.reorderItem(order, index).dragOutline(order.dragging == index)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickableUnless(ordering) { onToggle(group.machineId) }
+                .padding(vertical = 12.dp)
+                .padding(end = if (ordering) 12.dp else 0.dp)
+                .testTag("group-${group.machineId.value}"),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (ordering) {
+                DragHandle(order, index, "drag-machine-${group.machineId.value}", onDropMachine)
+            }
+            Text(
+                group.title,
+                fontSize = 16.sp,
+                color = colors.onBackground,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                group.summary,
+                fontSize = 15.sp,
+                color = colors.onBackground.copy(alpha = 0.6f),
+            )
+        }
+        if (group.expanded) {
+            group.sets.forEachIndexed { setIndex, row ->
+                SetRow(
+                    row,
+                    ordering,
+                    onEdit,
+                    Modifier.reorderItem(setOrder, setIndex),
+                    handle = {
+                        DragHandle(setOrder, setIndex, "drag-set-${row.id.value}") { from, to ->
+                            onMoveSet(group.sets[from].id, to)
+                        }
+                    },
+                    dragged = setOrder.dragging == setIndex,
+                )
+            }
+        }
+        Rule()
     }
 }
 
-@Composable
-private fun MoveArrow(
-    description: String,
-    rotation: Float,
-    tag: String,
-    enabled: Boolean,
+/** A disabled click would still merge the row's drag handle into the row's semantics. */
+private fun Modifier.clickableUnless(
+    ordering: Boolean,
     onClick: () -> Unit,
-) {
-    Box(
-        Modifier
-            .size(40.dp)
-            .clip(ControlShape)
-            .alpha(if (enabled) 1f else DISABLED_ALPHA)
-            .clickable(enabled = enabled, onClick = onClick)
-            .testTag(tag),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            PhosphorIcons.CaretRight,
-            description,
-            modifier = Modifier.size(20.dp).rotate(rotation),
-            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
-        )
+): Modifier = if (ordering) this else clickable(onClick = onClick)
+
+/** The dragged item stands out from the rows sliding under it. */
+@Composable
+private fun Modifier.dragOutline(dragged: Boolean): Modifier {
+    val colors = MaterialTheme.colorScheme
+    return if (dragged) {
+        border(1.dp, colors.onBackground, ControlShape).background(colors.surface, ControlShape)
+    } else {
+        this
     }
 }
 
@@ -264,14 +283,17 @@ private fun SetRow(
     row: SetRowUi,
     ordering: Boolean,
     onEdit: (WorkoutSetId) -> Unit,
-    onMove: (Int) -> Unit,
+    modifier: Modifier,
+    handle: @Composable () -> Unit,
+    dragged: Boolean,
 ) {
     val colors = MaterialTheme.colorScheme
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clip(ControlShape)
+            .dragOutline(dragged)
             .then(
                 if (row.selected) {
                     Modifier
@@ -280,12 +302,13 @@ private fun SetRow(
                 } else {
                     Modifier
                 },
-            ).clickable(enabled = !ordering) { onEdit(row.id) }
+            ).clickableUnless(ordering) { onEdit(row.id) }
             .padding(horizontal = 12.dp, vertical = if (ordering) 0.dp else 10.dp)
             .testTag("set-row-${row.id.value}"),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (ordering) handle()
         Text(
             row.title,
             fontSize = 16.sp,
@@ -297,15 +320,6 @@ private fun SetRow(
             fontSize = 15.sp,
             color = if (row.selected) colors.tertiary else colors.onBackground.copy(alpha = 0.6f),
         )
-        if (ordering) {
-            MoveArrows(
-                "set-up-${row.id.value}",
-                "set-down-${row.id.value}",
-                row.canMoveUp,
-                row.canMoveDown,
-                onMove,
-            )
-        }
     }
 }
 

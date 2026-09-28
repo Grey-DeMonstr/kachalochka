@@ -40,7 +40,7 @@ off. The arrow buttons and their code are removed.
   `setMovedTo(visitSets, set, index, now)`, both returning only the sets whose position changed,
   renumbering first when positions collide, as today.
 - The target index is computed from measured item heights by a pure helper in `app`
-  (`dropIndex(offsets, heights, from, dragY)`), unit-tested apart from the gesture.
+  (`dropIndex(heights, from, dragY)`), unit-tested apart from the gesture.
 
 Tests: domain tests for the two functions; a Compose test drags a handle with
 `performTouchInput` and asserts the new order; a test asserts no arrow tags exist.
