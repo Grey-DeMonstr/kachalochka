@@ -1,5 +1,18 @@
 Kachalochka - Changelog
 
+1.1.0
+
+- Machine photos: take one with the camera or pick one from the gallery in the machine form,
+  on Android and on the web.
+- Machines in the list and the picker show their photo, or a linked friend's when yours has none.
+- A friend's machine shows its photos.
+- Delete your account and everything you recorded from the settings.
+- The home screen shows the app version.
+- Fixed: measures no longer appear twice in the measures list.
+- Fixed: a friend's colour now shows the same everywhere, their own calendar included.
+- Fixed: a friend's machine already linked to one of yours no longer offers to take it.
+
+
 1.0.5
 
 - Linked machines are listed by name and owner in the machine form, and each one opens.
