@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -240,11 +241,16 @@ class AppTest {
     }
 
     @Test
-    fun a_stored_invite_opens_its_group_once_an_account_is_active() {
+    fun a_stored_invite_asks_first_then_opens_its_group() {
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
         gym.friends.group("Зал на Лесной", owner = OLEG, code = "ABCD2345")
         gym.joinCodes.save("ABCD2345")
         runApp {
+            waitForIdle()
+            onNodeWithText("Вступить в группу по приглашению?").assertIsDisplayed()
+            onNodeWithText("Участники группы увидят ваши визиты и тренажёры.").assertIsDisplayed()
+            assertEquals(0, gym.friends.reads)
+            onNodeWithTag("invite-confirm").assertTextEquals("Вступить").performClick()
             waitForIdle()
             onNodeWithTag("top-bar-title").assertTextEquals("Зал на Лесной")
         }
@@ -252,10 +258,40 @@ class AppTest {
     }
 
     @Test
+    fun a_declined_invite_joins_nothing_and_is_forgotten() {
+        gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+        val group = gym.friends.group("Зал на Лесной", owner = OLEG, code = "ABCD2345")
+        gym.joinCodes.save("ABCD2345")
+        runApp {
+            waitForIdle()
+            onNodeWithTag("invite-cancel").assertTextEquals("Отмена").performClick()
+            waitForIdle()
+            onNodeWithTag("invite-confirm").assertDoesNotExist()
+            onNodeWithTag("top-bar-title").assertTextEquals("Качалочка")
+        }
+        assertNull(gym.joinCodes.code())
+        assertEquals(listOf(OLEG), gym.friends.members.getValue(group.id))
+        assertEquals(0, gym.friends.reads)
+    }
+
+    @Test
+    fun without_an_active_account_a_stored_invite_waits_unasked() {
+        gym.joinCodes.save("ABCD2345")
+        runApp {
+            waitForIdle()
+            onNodeWithTag("invite-confirm").assertDoesNotExist()
+        }
+        assertEquals("ABCD2345", gym.joinCodes.code())
+        assertEquals(0, gym.friends.reads)
+    }
+
+    @Test
     fun a_stored_invite_nobody_has_says_so() {
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
         gym.joinCodes.save("ZZZZ2345")
         runApp {
+            waitForIdle()
+            onNodeWithTag("invite-confirm").performClick()
             waitForIdle()
             onNodeWithTag("invite-missing").assertIsDisplayed()
             onNodeWithTag("invite-missing-ok").performClick()

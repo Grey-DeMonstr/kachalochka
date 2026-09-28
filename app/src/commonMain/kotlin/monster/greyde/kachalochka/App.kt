@@ -37,6 +37,7 @@ import monster.greyde.kachalochka.ui.friends.FriendCalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
 import monster.greyde.kachalochka.ui.friends.GroupScreen
 import monster.greyde.kachalochka.ui.friends.GroupsScreen
+import monster.greyde.kachalochka.ui.friends.InviteConfirmDialog
 import monster.greyde.kachalochka.ui.friends.InviteMissingDialog
 import monster.greyde.kachalochka.ui.friends.JoinOutcome
 import monster.greyde.kachalochka.ui.friends.PendingJoin
@@ -223,15 +224,30 @@ fun App() {
                 }
             }
             val pendingJoin: PendingJoin = koinInject()
+            var inviteOffered by remember { mutableStateOf(false) }
             var inviteMissing by remember { mutableStateOf(false) }
+            // A code saved while signed out goes to whichever account signs in next, so it asks.
             LaunchedEffect(accounts.activeId) {
-                if (accounts.activeId == null) return@LaunchedEffect
-                when (val outcome = pendingJoin.consume()) {
-                    is JoinOutcome.Joined ->
-                        navController.navigate(GroupRoute(outcome.group.value))
-                    JoinOutcome.NotFound -> inviteMissing = true
-                    null -> Unit
-                }
+                inviteOffered = accounts.activeId != null && pendingJoin.waiting
+            }
+            if (inviteOffered) {
+                InviteConfirmDialog(
+                    onJoin = {
+                        inviteOffered = false
+                        scope.launch {
+                            when (val outcome = pendingJoin.consume()) {
+                                is JoinOutcome.Joined ->
+                                    navController.navigate(GroupRoute(outcome.group.value))
+                                JoinOutcome.NotFound -> inviteMissing = true
+                                null -> Unit
+                            }
+                        }
+                    },
+                    onCancel = {
+                        inviteOffered = false
+                        pendingJoin.decline()
+                    },
+                )
             }
             if (inviteMissing) InviteMissingDialog(onDismiss = { inviteMissing = false })
         }

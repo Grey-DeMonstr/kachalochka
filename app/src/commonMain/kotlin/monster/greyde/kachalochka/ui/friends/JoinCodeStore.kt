@@ -1,6 +1,6 @@
 package monster.greyde.kachalochka.ui.friends
 
-/** Holds an invite's code across the Google round trip, which returns without the query. */
+/** An invite's code, kept until an active account answers it. */
 interface JoinCodeStore {
     fun code(): String?
 

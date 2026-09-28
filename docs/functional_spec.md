@@ -128,10 +128,12 @@ User should be able to import or export data in some predefined hardcoded format
 ## Group sharing
 
 Signed-in users form groups. The creator owns the group and invites others with a link to the
-web app or with its eight-character code; the Android app joins by code. Every member sees the
-other members' calendars and visits, read-only, and nothing is shared outside a group. A member
-can leave; the owner deletes the group instead. Friends' data is read online and never stored
-on the device.
+web app or with its eight-character code; the Android app joins by code. An invite link asks
+before joining, warning that the group's members will see the user's visits and machines; a
+link opened while signed out is offered to whichever account signs in next in that browser.
+Every member sees the other members' calendars and visits, read-only, and nothing is shared
+outside a group. A member can leave; the owner deletes the group instead. Friends' data is read
+online and never stored on the device.
 
 A machine can be taken from a friend's list: the copy keeps the friend's settings and stays
 linked to the friend's machine as one physical machine. The set sheet then shows friends'

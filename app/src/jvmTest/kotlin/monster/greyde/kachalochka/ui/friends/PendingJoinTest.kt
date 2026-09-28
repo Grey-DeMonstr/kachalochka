@@ -3,7 +3,9 @@ package monster.greyde.kachalochka.ui.friends
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class PendingJoinTest {
     private val gym = signedInGym()
@@ -21,9 +23,24 @@ class PendingJoinTest {
         runTest {
             val group = gym.friends.group("Зал на Лесной", owner = OLEG, code = "ABCD2345")
             gym.joinCodes.save("ABCD2345")
+            assertTrue(pending.waiting)
 
             assertEquals(JoinOutcome.Joined(group.id), pending.consume())
-            assertNull(gym.joinCodes.code())
+            assertNull(pending.consume())
+            assertEquals(listOf(OLEG, ME), gym.friends.members.getValue(group.id))
+            assertFalse(pending.waiting)
+        }
+
+    @Test
+    fun a_declined_code_is_forgotten_without_asking_the_server() =
+        runTest {
+            gym.joinCodes.save("ABCD2345")
+
+            pending.decline()
+
+            assertFalse(pending.waiting)
+            assertNull(pending.consume())
+            assertEquals(0, gym.friends.reads)
         }
 
     @Test

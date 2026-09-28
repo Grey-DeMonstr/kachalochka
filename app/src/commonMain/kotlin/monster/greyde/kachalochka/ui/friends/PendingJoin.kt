@@ -16,6 +16,10 @@ class PendingJoin(
     private val store: JoinCodeStore,
     private val friends: FriendsRepository,
 ) {
+    val waiting: Boolean get() = store.code() != null
+
+    fun decline() = store.clear()
+
     suspend fun consume(): JoinOutcome? {
         val code = store.code() ?: return null
         val joined = reading { friends.join(code) }.getOrElse { return null }

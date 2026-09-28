@@ -40,7 +40,29 @@ internal fun OfflineNotice(onRetry: () -> Unit) {
 }
 
 @Composable
-fun InviteMissingDialog(onDismiss: () -> Unit) {
+internal fun InviteConfirmDialog(
+    onJoin: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text("Вступить в группу по приглашению?") },
+        text = { Text("Участники группы увидят ваши визиты и тренажёры.") },
+        confirmButton = {
+            TextButton(onClick = onJoin, modifier = Modifier.testTag("invite-confirm")) {
+                Text("Вступить")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel, modifier = Modifier.testTag("invite-cancel")) {
+                Text("Отмена")
+            }
+        },
+    )
+}
+
+@Composable
+internal fun InviteMissingDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.testTag("invite-missing"),
