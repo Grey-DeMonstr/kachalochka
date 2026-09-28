@@ -20,7 +20,9 @@ import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.friends.olegTrainedOn
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.AfterTest
@@ -117,6 +119,8 @@ class VisitViewModelTest {
         gym.utcOffset,
         gym.sync,
         gym.friends,
+        gym.texts,
+        Nickname(gym.profiles, gym.accounts),
     )
 
     @BeforeTest
@@ -133,6 +137,64 @@ class VisitViewModelTest {
 
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun a_visit_without_sets_cannot_be_shared() {
+        val vm = viewModel().also { it.refresh() }
+
+        assertFalse(assertNotNull(vm.state.value).canShare)
+        vm.share()
+        assertTrue(gym.texts.shared.isEmpty())
+    }
+
+    @Test
+    fun sharing_hands_the_visit_as_text_under_the_stored_nickname() =
+        runTest {
+            val gym = twoAccountGym()
+            val owner = ivan.account.userId
+            gym.profiles.upsert(Profile.new(owner, t0).copy(displayName = "Ванёк"))
+            gym.sets.upsert(set(ivanVisit.id, ivanPress, 80.0, 8, 0, owner))
+            gym.sets.upsert(set(ivanVisit.id, ivanPress, 85.0, 8, 1, owner))
+            val vm = viewModel(gym)
+
+            assertTrue(assertNotNull(vm.state.value).canShare)
+            vm.share()
+
+            assertEquals(listOf("Ванёк, вт\n\nЖим ногами 80-85кг 2x8"), gym.texts.shared)
+        }
+
+    @Test
+    fun a_nickname_saved_while_the_visit_is_open_is_shared_after_a_refresh() =
+        runTest {
+            val gym = twoAccountGym()
+            val owner = ivan.account.userId
+            gym.sets.upsert(set(ivanVisit.id, ivanPress, 80.0, 8, 0, owner))
+            val vm = viewModel(gym)
+
+            gym.profiles.upsert(Profile.new(owner, t0).copy(displayName = "Ванёк"))
+            vm.refresh()
+            vm.share()
+
+            assertEquals(
+                "Ванёк, вт",
+                gym.texts.shared
+                    .single()
+                    .substringBefore("\n"),
+            )
+        }
+
+    @Test
+    fun the_platform_s_notice_shows_until_it_is_dismissed() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 80.0, 8, 0))
+            val vm = viewModel()
+
+            vm.share()
+            assertEquals("Скопировано", vm.state.value?.notice)
+
+            vm.dismissNotice()
+            assertNull(vm.state.value?.notice)
+        }
 
     @Test
     fun a_finished_sync_shows_the_sets_it_pulled() =

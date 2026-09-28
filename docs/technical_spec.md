@@ -114,6 +114,13 @@ session only after a sign-in or a switch in the same process. Concurrent refresh
 account's token share one request. The active account's groups are read ahead into a
 process-wide `GroupsCache` whenever it becomes active, so the friends screen opens with them.
 
+Text leaves the app through `TextSharing`, bound per platform in `platformModule()`: Android's
+`ShareSheetTextSharing` opens the system share sheet and returns no notice; the web's
+`ClipboardTextSharing` writes the clipboard and returns the notice the screen shows. Invites use
+the same platform call. A shared visit's text comes from the pure `visitShareText` in
+`app/ui/format`. `VisitViewModel` reads the nickname ahead of the tap, because a browser accepts
+a clipboard write only shortly after the user's gesture.
+
 ---
 
 ## 3. Repositories: one interface, two implementations

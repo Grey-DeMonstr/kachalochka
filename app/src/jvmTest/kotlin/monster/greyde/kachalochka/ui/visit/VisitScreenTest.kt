@@ -103,6 +103,30 @@ class VisitScreenTest {
     }
 
     @Test
+    fun sharing_the_visit_hands_its_text_over_and_shows_the_notice_until_tapped() {
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("share-visit").performClick()
+            waitForIdle()
+
+            assertEquals(1, gym.texts.shared.size)
+            onNodeWithTag("visit-notice").assertTextEquals("Скопировано")
+
+            onNodeWithTag("visit-notice").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-notice").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun a_visit_without_sets_offers_no_share() {
+        runScreenTest(gym, screen = { visitScreen(day = CalendarDay(2023, 11, 12)) }) {
+            waitForIdle()
+            onNodeWithTag("share-visit").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun the_list_offers_a_new_machine_while_one_is_open() {
         val picks = mutableListOf<MachineId?>()
         runScreenTest(

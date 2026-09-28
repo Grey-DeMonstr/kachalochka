@@ -34,6 +34,7 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.Invite
 import monster.greyde.kachalochka.ui.friends.InviteSharing
+import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.timer.Ticker
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -196,6 +197,16 @@ class RecordingInviteSharing : InviteSharing {
     }
 }
 
+class RecordingTextSharing : TextSharing {
+    var notice: String? = "Скопировано"
+    val shared = mutableListOf<String>()
+
+    override suspend fun share(text: String): String? {
+        shared += text
+        return notice
+    }
+}
+
 class FakeGym(
     now: Instant = Instant.fromEpochSeconds(1_700_000_000),
     val credentials: SupabaseCredentials =
@@ -226,6 +237,7 @@ class FakeGym(
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
     val invites = RecordingInviteSharing()
+    val texts = RecordingTextSharing()
     val joinCodes = InMemoryJoinCodeStore()
     val today: CalendarDay get() = CalendarDay.of(clock.current, utcOffset.at(clock.current))
 

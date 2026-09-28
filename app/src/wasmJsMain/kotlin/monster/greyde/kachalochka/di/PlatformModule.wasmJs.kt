@@ -14,6 +14,8 @@ import monster.greyde.kachalochka.ui.friends.ClipboardInviteSharing
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.LocalStorageJoinCodeStore
+import monster.greyde.kachalochka.ui.share.ClipboardTextSharing
+import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.theme.LocalStorageThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import org.koin.core.module.Module
@@ -27,6 +29,7 @@ actual fun platformModule(): Module =
         single { SignInAvailable(get<SupabaseCredentials>().isConfigured) }
         single<SyncTrigger> { ServerSyncTrigger() }
         single<InviteSharing> { ClipboardInviteSharing() }
+        single<TextSharing> { ClipboardTextSharing() }
         single<JoinCodeStore> { LocalStorageJoinCodeStore() }
         single { VisitStore.Server }
         single<FailureLog> { FailureLog { report(it.toString()) } }

@@ -60,6 +60,18 @@ handle at the left of every machine and set; dragging a machine's handle moves t
 its sets, dragging a set's handle moves it among its machine's sets. «Готово» hides the handles.
 Today's visit is titled "Сегодня", any other day's with its date.
 
+A visit with sets has a "Поделиться" button in the top bar that hands the visit over as text:
+Android opens its share sheet, the web copies the text and says "Скопировано" (or "Не удалось
+скопировать"), until the notice is tapped. The text starts with the nickname and the short
+weekday ("ГДМ, чт", or only "чт" without a nickname), then an empty line, then one line per
+machine in visit order: the name, the platform weight in brackets when it is not included in the
+record, the weights and the reps, for example "Жим ногами (+76кг) 20-20-30-40-40кг 5x10". Equal
+weights are written once ("Пресс сидя 41кг 10-15-15-15"), different ones joined with dashes;
+equal reps are written as sets x reps, different ones joined with dashes ("Жим от груди 30°
+35-35-30кг 10-10-15"). Weights are in kilograms: pounds are converted to the nearest half
+kilogram, and an own unit is written as is with its name ("Блок 3-4 плитка 2x10"). A machine
+whose weights are all zero shows only its reps ("Подтягивания 3x10").
+
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,
 and weight and reps steppers seeded from the previous visit's set. Saving records the set. The
@@ -114,7 +126,7 @@ one. Friends stay locked until an account is signed in.
 
 Settings has a "Ник" field for the signed-in account, up to 40 characters; the Google account
 name is shown as a placeholder and used when the field is left blank. Friends see this nickname
-instead of the Google name.
+instead of the Google name, and it heads a visit shared as text.
 
 ## Custom exercsies
 

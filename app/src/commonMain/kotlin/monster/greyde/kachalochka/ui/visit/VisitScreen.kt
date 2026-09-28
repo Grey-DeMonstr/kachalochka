@@ -68,6 +68,7 @@ import monster.greyde.kachalochka.ui.components.ReorderState
 import monster.greyde.kachalochka.ui.components.RestTimerChip
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
+import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.Stepper
 import monster.greyde.kachalochka.ui.components.Thumbnail
 import monster.greyde.kachalochka.ui.components.rememberReorderState
@@ -107,10 +108,21 @@ fun VisitScreen(
         current?.title ?: "Визит",
         onBack = { if (!viewModel.collapseSheet()) onBack() },
         onOpenSettings = onOpenSettings,
+        actions = {
+            if (current?.canShare == true) {
+                SquareIconButton(
+                    PhosphorIcons.ShareNetwork,
+                    "Поделиться",
+                    viewModel::share,
+                    Modifier.testTag("share-visit"),
+                )
+            }
+        },
     ) {
         if (current == null) return@Screen
         VisitList(
             state = current,
+            onDismissNotice = viewModel::dismissNotice,
             onToggle = viewModel::toggleGroup,
             onEdit = viewModel::editSet,
             onToggleOrdering = viewModel::toggleOrdering,
@@ -140,6 +152,7 @@ fun VisitScreen(
 @Composable
 private fun VisitList(
     state: VisitUiState,
+    onDismissNotice: () -> Unit,
     onToggle: (MachineId) -> Unit,
     onEdit: (WorkoutSetId) -> Unit,
     onToggleOrdering: () -> Unit,
@@ -176,6 +189,19 @@ private fun VisitList(
                     .testTag("reorder-toggle"),
                 fontSize = 14.sp,
                 color = colors.tertiary,
+            )
+        }
+        state.notice?.let {
+            Text(
+                it,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onDismissNotice)
+                        .padding(vertical = 8.dp)
+                        .testTag("visit-notice"),
+                fontSize = 15.sp,
+                color = colors.onBackground.copy(alpha = 0.6f),
             )
         }
         val machineOrder = rememberReorderState()

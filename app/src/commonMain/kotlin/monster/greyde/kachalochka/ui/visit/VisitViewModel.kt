@@ -38,7 +38,9 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountUi
+import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.accountsUi
+import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.clockLabel
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
@@ -53,8 +55,10 @@ import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.shortSet
 import monster.greyde.kachalochka.ui.format.unitLabel
+import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -66,6 +70,8 @@ data class VisitUiState(
     val groups: List<SetGroupUi>,
     val sheet: SheetUi?,
     val ordering: Boolean,
+    val canShare: Boolean,
+    val notice: String?,
 )
 
 data class SetGroupUi(
@@ -112,6 +118,8 @@ class VisitViewModel(
     private val utcOffset: UtcOffset,
     private val sync: SyncTrigger,
     private val friends: FriendsRepository,
+    private val sharing: TextSharing,
+    private val nickname: Nickname,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
@@ -130,6 +138,13 @@ class VisitViewModel(
     private var ordering = false
     private var friendLines: List<String> = emptyList()
     private var friendsFor: Pair<UserId, MachineId>? = null
+    private var notice: String? = null
+
+    /**
+     * Read ahead of the tap: a browser lets the clipboard be written only while a tap is recent,
+     * which a network read of the profile could outlast.
+     */
+    private var sharer: Pair<UserId?, String>? = null
 
     /** The text as typed; null while the weight shows the stepped, formatted value. */
     private var weightText: String? = null
@@ -141,7 +156,10 @@ class VisitViewModel(
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
         viewModelScope.launch {
-            accounts.activeId.collect { reload(reseed = true) }
+            accounts.activeId.collect {
+                loadSharer(it)
+                reload(reseed = true)
+            }
         }
         // The weight and reps the user is choosing stay as they are.
         viewModelScope.launch {
@@ -152,7 +170,34 @@ class VisitViewModel(
     val selectedMachineId: MachineId? get() = selected
 
     fun refresh() {
+        loadSharer(accounts.activeId.value)
         viewModelScope.launch { reload(reseed = false) }
+    }
+
+    fun share() {
+        if (visitSets.isEmpty()) return
+        val owner = accounts.activeId.value
+        val name = sharer?.takeIf { it.first == owner }?.second.orEmpty()
+        val shared =
+            groupByMachine(visitSets).mapNotNull { group ->
+                machinesById[group.machineId]?.let { SharedMachine(it, group.sets) }
+            }
+        val text = visitShareText(name, day, shared)
+        writes.launch {
+            notice = reading { sharing.share(text) }.getOrNull()
+            publish()
+        }
+    }
+
+    fun dismissNotice() {
+        notice = null
+        publish()
+    }
+
+    private fun loadSharer(owner: UserId?) {
+        viewModelScope.launch {
+            reading { nickname.of(owner) }.onSuccess { sharer = owner to it }
+        }
     }
 
     fun selectMachine(id: MachineId) {
@@ -423,6 +468,8 @@ class VisitViewModel(
                 groups = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) },
                 sheet = sheetUi(offset),
                 ordering = ordering,
+                canShare = visitSets.isNotEmpty(),
+                notice = notice,
             )
     }
 

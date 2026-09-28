@@ -12,6 +12,8 @@ import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.UnavailableInviteSharing
+import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.share.UnavailableTextSharing
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import org.koin.core.module.Module
@@ -26,6 +28,7 @@ actual fun platformModule(): Module =
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
         single<SyncTrigger> { SyncTrigger {} }
         single<InviteSharing> { UnavailableInviteSharing }
+        single<TextSharing> { UnavailableTextSharing }
         single<JoinCodeStore> { InMemoryJoinCodeStore() }
         single { VisitStore.Device }
         single<FailureLog> { FailureLog {} }

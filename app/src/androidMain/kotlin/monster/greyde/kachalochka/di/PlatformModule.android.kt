@@ -23,6 +23,8 @@ import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.ShareSheetInviteSharing
+import monster.greyde.kachalochka.ui.share.ShareSheetTextSharing
+import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.theme.DataStoreThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import okio.Path.Companion.toPath
@@ -56,8 +58,9 @@ actual fun platformModule(): Module =
         single<FailureLog> { FailureLog { Log.w(LOG_TAG, "Background work failed", it) } }
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
+        single<TextSharing> { ShareSheetTextSharing(androidContext()) }
         single<InviteSharing> {
-            ShareSheetInviteSharing(androidContext(), webAppUrlFromBuild().ifBlank { null })
+            ShareSheetInviteSharing(get(), webAppUrlFromBuild().ifBlank { null })
         }
         single<JoinCodeStore> { InMemoryJoinCodeStore() }
         single<GoogleSignIn> {
