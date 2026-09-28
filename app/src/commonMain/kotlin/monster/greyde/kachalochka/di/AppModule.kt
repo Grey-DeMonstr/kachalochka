@@ -78,7 +78,7 @@ val appModule =
             )
         }
         viewModel { (args: MachineFormArgs) ->
-            MachineFormViewModel(args, get(), get(), get(), get())
+            MachineFormViewModel(args, get(), get(), get(), get(), get())
         }
         viewModel { (member: UserId, name: String, day: CalendarDay) ->
             FriendVisitViewModel(member, name, day, get(), get(), get(), get(), get(), get())

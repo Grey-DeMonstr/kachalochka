@@ -8,10 +8,12 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import kotlin.test.AfterTest
@@ -30,6 +32,8 @@ class MachineFormViewModelTest {
     private val t0 = gym.clock.current
     private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
     private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+    private val ivanFriend = Friend(ivan.account.userId, "Иван")
+    private val mishaFriend = Friend(misha.account.userId, "Миша")
 
     private fun session(
         id: String,
@@ -37,7 +41,14 @@ class MachineFormViewModelTest {
     ) = AccountSession(Account(UserId(id), "$name@example.test", name), "access", "refresh", t0)
 
     private fun viewModel(args: MachineFormArgs) =
-        MachineFormViewModel(args, gym.machines, gym.currentUser, gym.accounts, gym.clock)
+        MachineFormViewModel(
+            args,
+            gym.machines,
+            gym.currentUser,
+            gym.accounts,
+            gym.clock,
+            gym.friends,
+        )
 
     @BeforeTest
     fun setUp() {
@@ -301,5 +312,53 @@ class MachineFormViewModelTest {
 
             assertFalse(existing.unlink.value.available)
             assertFalse(fresh.unlink.value.available)
+        }
+
+    @Test
+    fun an_original_a_friend_copied_can_still_be_unlinked_by_its_owner() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val original = Machine.new("Жим ногами", ivan.account.userId, t0)
+            gym.machines.upsert(original)
+            gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
+            gym.friends.machines += linkedCopy(original, misha.account.userId, t0)
+
+            val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
+            assertTrue(vm.unlink.value.available)
+
+            vm.askToUnlink()
+            gym.clock.current += 1.minutes
+            vm.confirmUnlink()
+
+            val stored = assertNotNull(gym.machines.byId(original.id))
+            assertNotNull(stored.linkId)
+            assertNotEquals(original.linkKey, stored.linkKey)
+        }
+
+    @Test
+    fun an_original_with_no_copies_offers_no_unlinking() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val original = Machine.new("Жим ногами", ivan.account.userId, t0)
+            gym.machines.upsert(original)
+
+            val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
+
+            assertFalse(vm.unlink.value.available)
+        }
+
+    @Test
+    fun offline_an_unlinked_original_offers_no_unlinking() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val original = Machine.new("Жим ногами", ivan.account.userId, t0)
+            gym.machines.upsert(original)
+            gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
+            gym.friends.machines += linkedCopy(original, misha.account.userId, t0)
+            gym.friends.offline = true
+
+            val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
+
+            assertFalse(vm.unlink.value.available)
         }
 }

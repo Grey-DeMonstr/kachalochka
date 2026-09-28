@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -16,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
+import monster.greyde.kachalochka.ui.friends.reading
 import kotlin.time.Clock
 
 data class MachineFormArgs(
@@ -78,6 +80,7 @@ class MachineFormViewModel(
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
+    private val friends: FriendsRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineFormState(name = args.name))
     val state: StateFlow<MachineFormState> = mutableState
@@ -116,11 +119,31 @@ class MachineFormViewModel(
         }
     }
 
-    // The linkId already on hand is proof enough, so this works offline without a friends lookup.
-    private fun refreshUnlink() {
+    /**
+     * A linkId already on hand is proof enough and works offline. An original itself keeps none,
+     * so whether a friend copied it — and the link can be broken from either side — needs asking
+     * the group online; a failed read just leaves the menu off.
+     */
+    private suspend fun refreshUnlink() {
         val shown = existing
-        val owned = shown != null && shown.userId == accounts.activeId.value
-        mutableUnlink.value = mutableUnlink.value.copy(available = owned && shown.linkId != null)
+        if (shown == null || shown.userId != accounts.activeId.value) {
+            mutableUnlink.value = mutableUnlink.value.copy(available = false)
+            return
+        }
+        if (shown.linkId != null) {
+            mutableUnlink.value = mutableUnlink.value.copy(available = true)
+            return
+        }
+        val owner = shown.userId
+        mutableUnlink.value = mutableUnlink.value.copy(available = false)
+        if (owner == null) return
+        val copiedByAFriend =
+            reading { friends.groupMachines(owner) }
+                .getOrDefault(emptyList())
+                .any { it.machine.linkKey == shown.linkKey }
+        if (existing?.id == shown.id) {
+            mutableUnlink.value = mutableUnlink.value.copy(available = copiedByAFriend)
+        }
     }
 
     fun askToUnlink() {
