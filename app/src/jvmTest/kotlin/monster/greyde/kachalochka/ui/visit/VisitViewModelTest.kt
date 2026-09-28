@@ -1060,6 +1060,27 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun friends_results_read_for_the_previous_account_never_show() =
+        runTest {
+            val two = twoAccountGym()
+            two.olegTrainedOn(ivanPress, ivanFriend)
+            val ivansRead = CompletableDeferred<Unit>()
+            two.friends.gate = ivansRead
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+            two.friends.gate = null
+            two.accounts.switchTo(misha.account.userId)
+            ivansRead.complete(Unit)
+
+            assertEquals(
+                emptyList(),
+                vm.state.value
+                    ?.sheet
+                    ?.friends,
+            )
+        }
+
+    @Test
     fun an_anonymous_sheet_asks_no_friends() {
         val vm = viewModel().also { it.selectMachine(press.id) }
 

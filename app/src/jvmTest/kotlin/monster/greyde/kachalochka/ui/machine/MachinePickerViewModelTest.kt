@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.machine
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -22,6 +23,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
@@ -350,6 +352,42 @@ class MachinePickerViewModelTest {
 
         assertEquals(emptyList(), vm.state.value.friendRows)
     }
+
+    @Test
+    fun own_machines_show_while_the_friends_read_is_still_in_flight() {
+        val (on, _) = olegsGym()
+        val press = Machine.new("Жим ногами", ME.userId, t0)
+        runBlocking { on.machines.upsert(press) }
+        on.friends.gate = CompletableDeferred()
+
+        val vm = pickerOn(on).also { it.load() }
+
+        assertEquals(
+            listOf("Жим ногами"),
+            vm.state.value.rows
+                .map { it.name },
+        )
+    }
+
+    @Test
+    fun friends_read_for_the_previous_account_never_show_or_get_picked() =
+        runTest {
+            val on = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val olegPress = Machine.new("Жим ногами", OLEG.userId, t0)
+            on.friends.machines += olegPress
+            val ivansRead = CompletableDeferred<Unit>()
+            on.friends.gate = ivansRead
+            val vm = pickerOn(on).also { it.load() }
+
+            on.friends.gate = CompletableDeferred()
+            on.accounts.switchTo(misha.account.userId)
+            ivansRead.complete(Unit)
+            vm.pickFriend(olegPress.id) {}
+
+            assertEquals(emptyList(), vm.state.value.friendRows)
+            assertEquals(emptyList(), on.machines.all(misha.account.userId))
+        }
 
     @Test
     fun without_an_account_no_friends_are_asked_for() {

@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -21,6 +22,7 @@ import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
@@ -65,7 +67,15 @@ class MachinePickerViewModel(
     private var all: List<Machine> = emptyList()
     private var latest: Map<MachineId, WorkoutSet> = emptyMap()
     private var inVisit: Map<MachineId, Int> = emptyMap()
+    private var shownFor: UserId? = null
     private var friendMachines: List<FriendMachine> = emptyList()
+    private var friendsFor: UserId? = null
+    private var loading: Job? = null
+    private var loadingFriends: Job? = null
+
+    /** Friends' machines read for any account but the one shown are never offered or cloned. */
+    private val offeredFriends: List<FriendMachine>
+        get() = friendMachines.takeIf { friendsFor != null && friendsFor == shownFor }.orEmpty()
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -73,24 +83,38 @@ class MachinePickerViewModel(
         viewModelScope.launch { sync.completed.collect { load() } }
     }
 
+    /** Own machines show at once; friends' follow from the network, if it answers. */
     fun load() {
-        viewModelScope.launch {
-            val owner = currentUser.id()
-            all = machines.all(owner)
-            latest = sets.latestPerMachine(owner).associateBy { it.machineId }
-            inVisit =
-                visits
-                    .shownOn(owner, day, sets, utcOffset::at)
-                    ?.let { sets.forVisit(it.id) }
-                    .orEmpty()
-                    .groupingBy { it.machineId }
-                    .eachCount()
-            friendMachines =
-                owner
-                    ?.let { reading { friends.groupMachines(it) }.getOrDefault(emptyList()) }
-                    .orEmpty()
-            publish(mutableState.value.query)
-        }
+        loading?.cancel()
+        loadingFriends?.cancel()
+        loading =
+            viewModelScope.launch {
+                val owner = currentUser.id()
+                all = machines.all(owner)
+                latest = sets.latestPerMachine(owner).associateBy { it.machineId }
+                inVisit =
+                    visits
+                        .shownOn(owner, day, sets, utcOffset::at)
+                        ?.let { sets.forVisit(it.id) }
+                        .orEmpty()
+                        .groupingBy { it.machineId }
+                        .eachCount()
+                shownFor = owner
+                publish(mutableState.value.query)
+                owner?.let(::loadFriends)
+            }
+    }
+
+    private fun loadFriends(owner: UserId) {
+        loadingFriends =
+            viewModelScope.launch {
+                val found =
+                    reading { friends.groupMachines(owner) }.getOrDefault(emptyList())
+                if (currentUser.id() != owner) return@launch
+                friendMachines = found
+                friendsFor = owner
+                publish(mutableState.value.query)
+            }
     }
 
     fun onQueryChange(query: String) = publish(query)
@@ -100,9 +124,11 @@ class MachinePickerViewModel(
         id: MachineId,
         onPicked: (MachineId) -> Unit,
     ) {
-        val friend = friendMachines.firstOrNull { it.machine.id == id } ?: return
+        val friend = offeredFriends.firstOrNull { it.machine.id == id } ?: return
+        val offeredTo = friendsFor
         writes.launch {
             val owner = currentUser.id() ?: return@launch
+            if (owner != offeredTo) return@launch
             val copy = linkedCopy(friend.machine, owner, clock.now())
             machines.upsert(copy)
             onPicked(copy.id)
@@ -115,7 +141,7 @@ class MachinePickerViewModel(
         val ownKeys = all.map { it.linkKey }.toSet()
         val needle = query.trim()
         val friendRows =
-            friendMachines
+            offeredFriends
                 .filter { it.machine.linkKey !in ownKeys }
                 .sortedWith(
                     compareByDescending<FriendMachine> { it.machine.id == it.machine.linkKey }

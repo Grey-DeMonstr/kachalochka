@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.fakes
 
+import kotlinx.coroutines.CompletableDeferred
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
@@ -30,6 +31,9 @@ class FakeFriends(
     var reads = 0
         private set
 
+    /** While set, a read started now waits for it, keeping it in flight as long as a test needs. */
+    var gate: CompletableDeferred<Unit>? = null
+
     /** A group [owner] made, with [others] in it. */
     fun group(
         name: String,
@@ -45,8 +49,9 @@ class FakeFriends(
 
     private fun me(): Friend? = active()?.let { Friend(it.userId, it.displayName) }
 
-    private fun <T> online(read: () -> T): T {
+    private suspend fun <T> online(read: () -> T): T {
         reads++
+        gate?.await()
         if (offline) error("no connection")
         return read()
     }
