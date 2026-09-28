@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.data.friends
 
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
@@ -51,7 +52,7 @@ private fun MockEngine.Queue.answer(
     status: HttpStatusCode = HttpStatusCode.OK,
 ) = enqueue { respond(body, status, jsonHeaders()) }
 
-private fun repositoryOn(engine: MockEngine.Queue): SupabaseFriendsRepository {
+private fun repositoryOn(engine: HttpClientEngine): SupabaseFriendsRepository {
     val client =
         createSupabaseClient("https://example.test", "anon-key") {
             httpEngine = engine
@@ -208,7 +209,6 @@ class SupabaseFriendsRepositoryTest {
         runTest {
             val key = MachineId.random()
             val press = Machine.new("Жим ногами", OLEG, NOW).copy(linkId = key)
-            val older = VisitId.random()
             val latest = VisitId.random()
 
             fun set(
@@ -221,11 +221,7 @@ class SupabaseFriendsRepositoryTest {
             val engine = MockEngine.Queue()
             engine.answer(MEMBERSHIPS)
             engine.answer(Json.encodeToString(listOf(MachineRow.of(press))))
-            engine.answer(
-                Json.encodeToString(
-                    listOf(second, first, set(older, 70.0, 0)).map(WorkoutSetRow::of),
-                ),
-            )
+            engine.answer(Json.encodeToString(listOf(WorkoutSetRow.of(second))))
             engine.answer(Json.encodeToString(listOf(second, first).map(WorkoutSetRow::of)))
 
             val results = repositoryOn(engine).latestOn(IVAN, key)
@@ -234,17 +230,76 @@ class SupabaseFriendsRepositoryTest {
                 listOf(FriendResult(Friend(OLEG, "Олег"), listOf(first, second))),
                 results,
             )
-            val (_, machineRequest, recentRequest, visitRequest) = engine.requestHistory
+            val (_, machineRequest, newestRequest, visitRequest) = engine.requestHistory
             assertEquals(
                 "(id.eq.${key.value},link_id.eq.${key.value})",
                 machineRequest.url.parameters["or"],
             )
-            val order = recentRequest.url.parameters["order"].orEmpty()
+            val order = newestRequest.url.parameters["order"].orEmpty()
             assertTrue(order.startsWith("recorded_at.desc"), order)
-            assertEquals("50", recentRequest.url.parameters["limit"])
+            assertEquals("1", newestRequest.url.parameters["limit"])
+            assertEquals("eq.${OLEG.value}", newestRequest.url.parameters["user_id"])
             assertEquals("in.(${latest.value})", visitRequest.url.parameters["visit_id"])
-            assertEquals("in.(${OLEG.value})", recentRequest.url.parameters["user_id"])
             assertEquals("in.(${OLEG.value})", visitRequest.url.parameters["user_id"])
+        }
+
+    /** Answers as PostgREST would from these rows, filtering, ordering and limiting them. */
+    private fun serverWith(
+        memberships: String,
+        machines: List<Machine>,
+        sets: List<WorkoutSet>,
+    ) = MockEngine { request ->
+        val params = request.url.parameters
+
+        fun matches(
+            column: String,
+            value: String,
+        ): Boolean {
+            val filter = params[column] ?: return true
+            return filter == "eq.$value" ||
+                value in filter.removePrefix("in.(").removeSuffix(")").split(",")
+        }
+        val body =
+            when (request.url.encodedPath.substringAfterLast('/')) {
+                "group_member" -> memberships
+                "machine" -> Json.encodeToString(machines.map(MachineRow::of))
+                else ->
+                    sets
+                        .filter {
+                            matches("user_id", it.userId?.value.orEmpty()) &&
+                                matches("visit_id", it.visitId.value) &&
+                                matches("machine_id", it.machineId.value)
+                        }.sortedByDescending { it.recordedAt }
+                        .take(params["limit"]?.toInt() ?: Int.MAX_VALUE)
+                        .let { rows -> Json.encodeToString(rows.map(WorkoutSetRow::of)) }
+            }
+        respond(body, HttpStatusCode.OK, jsonHeaders())
+    }
+
+    @Test
+    fun a_friend_with_many_newer_sets_never_crowds_another_out() =
+        runTest {
+            val anna = UserId("44444444-4444-4444-8444-444444444444")
+            val key = MachineId.random()
+            val olegPress = Machine.new("Жим ногами", OLEG, NOW).copy(linkId = key)
+            val annaPress = Machine.new("Платформа", anna, NOW).copy(linkId = key)
+            val annaSet = olegSet(VisitId.random(), annaPress.id, 60.0, 0).copy(userId = anna)
+            val olegSets = (1..60).map { olegSet(VisitId.random(), olegPress.id, 80.0, it) }
+            val memberships =
+                MEMBERSHIPS.dropLast(1) +
+                    """,{"group_id":"$GROUP","user_id":"${anna.value}",""" +
+                    """"display_name":"Анна","deleted":false}]"""
+            val server = serverWith(memberships, listOf(olegPress, annaPress), olegSets + annaSet)
+
+            val results = repositoryOn(server).latestOn(IVAN, key)
+
+            assertEquals(
+                listOf(
+                    FriendResult(Friend(OLEG, "Олег"), listOf(olegSets.last())),
+                    FriendResult(Friend(anna, "Анна"), listOf(annaSet)),
+                ),
+                results,
+            )
         }
 
     @Test

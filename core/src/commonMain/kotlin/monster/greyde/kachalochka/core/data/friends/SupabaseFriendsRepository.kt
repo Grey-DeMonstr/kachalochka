@@ -6,6 +6,9 @@ import io.github.jan.supabase.postgrest.exception.PostgrestRestException
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
@@ -36,8 +39,6 @@ import kotlin.time.Clock
 private const val UNKNOWN_INVITE_CODE = "PT404"
 private const val NOT_FOUND = 404
 
-// Enough to reach each friend's latest visit on one machine; that visit is then read whole.
-private const val RECENT_SETS = 50L
 private const val FRIEND_RESULTS = 3
 
 /**
@@ -164,14 +165,26 @@ class SupabaseFriendsRepository(
                     eq("link_id", linkKey.value)
                 }
             }
-        val machineIds = candidates.filter { it.linkKey == linkKey }.map { it.id.value }
-        if (machineIds.isEmpty()) return emptyList()
-        val recent =
-            liveSets(newestFirst = RECENT_SETS) {
-                isIn("machine_id", machineIds)
-                isIn("user_id", mateIds)
+        val onKey = candidates.filter { it.linkKey == linkKey }
+        if (onKey.isEmpty()) return emptyList()
+        val machineIds = onKey.map { it.id.value }
+        // One request per friend, so a friend's long history never crowds another's out.
+        val newest =
+            coroutineScope {
+                onKey
+                    .mapNotNull { it.userId }
+                    .distinct()
+                    .map { owner ->
+                        async {
+                            liveSets(newestFirst = 1) {
+                                isIn("machine_id", machineIds)
+                                eq("user_id", owner.value)
+                            }
+                        }
+                    }.awaitAll()
+                    .flatten()
             }
-        val visits = latestVisitsByMember(recent, FRIEND_RESULTS)
+        val visits = latestVisitsByMember(newest, FRIEND_RESULTS)
         if (visits.isEmpty()) return emptyList()
         val visitSets =
             liveSets {
