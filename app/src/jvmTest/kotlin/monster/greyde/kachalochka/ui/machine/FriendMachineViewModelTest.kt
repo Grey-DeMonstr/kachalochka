@@ -55,6 +55,7 @@ class FriendMachineViewModelTest {
             gym.currentUser,
             gym.accounts,
             gym.clock,
+            gym.sync,
         )
 
     @BeforeTest
@@ -110,6 +111,7 @@ class FriendMachineViewModelTest {
                 Triple(ME.userId, copy.id, olegPress.id),
                 Triple(link.userId, link.machineId, link.linkedMachineId),
             )
+            assertEquals(1, on.sync.requests)
         }
 
     @Test

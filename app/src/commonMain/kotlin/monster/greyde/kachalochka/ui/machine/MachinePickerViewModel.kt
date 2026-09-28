@@ -136,6 +136,7 @@ class MachinePickerViewModel(
             val (copy, link) = linkedCopy(friend.machine, owner, clock.now())
             machines.upsert(copy)
             machineLinks.upsert(link)
+            sync.request()
             onPicked(copy.id)
         }
     }

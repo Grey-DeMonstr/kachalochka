@@ -115,7 +115,7 @@ val appModule =
             LinkChooserViewModel(machine, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (machine: MachineId, owner: UserId) ->
-            FriendMachineViewModel(machine, owner, get(), get(), get(), get(), get(), get())
+            FriendMachineViewModel(machine, owner, get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (member: UserId, name: String, day: CalendarDay) ->
             FriendVisitViewModel(

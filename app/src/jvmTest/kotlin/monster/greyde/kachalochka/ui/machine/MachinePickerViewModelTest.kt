@@ -341,6 +341,7 @@ class MachinePickerViewModelTest {
                 Triple(ME.userId, copy.id, olegPress.id),
                 Triple(link.userId, link.machineId, link.linkedMachineId),
             )
+            assertEquals(1, on.sync.requests)
             vm.load()
             assertEquals(emptyList(), vm.state.value.friendRows)
         }

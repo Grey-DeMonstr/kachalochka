@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -41,6 +42,7 @@ class FriendMachineViewModel(
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
+    private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FriendMachineUi?>(null)
     val state: StateFlow<FriendMachineUi?> = mutableState
@@ -88,6 +90,7 @@ class FriendMachineViewModel(
             val (copy, link) = linkedCopy(friend, viewer, clock.now())
             machines.upsert(copy)
             machineLinks.upsert(link)
+            sync.request()
             onTaken(copy.id)
         }
     }
