@@ -29,11 +29,28 @@ class FriendCalendarScreenTest {
             onNodeWithTag("top-bar-title").assertTextEquals("Олег")
             onNodeWithTag("calendar-empty").assertTextEquals("Нет визита")
             onNodeWithTag("add-visit").assertDoesNotExist()
+            // One load on mount: visits and machines; today has no visit whose sets to read.
+            assertEquals(2, gym.friends.reads)
             onNodeWithTag("day-2023-11-13").performClick()
             waitForIdle()
             onNodeWithTag("friend-day-visit").performScrollTo().performClick()
             waitForIdle()
         }
         assertEquals(CalendarDay(2023, 11, 13), opened)
+    }
+
+    @Test
+    fun offline_it_offers_a_retry() {
+        gym.friends.offline = true
+        runScreenTest(gym, screen = {
+            FriendCalendarScreen(OLEG.userId, "Олег", {}, {}, {})
+        }) {
+            onNodeWithTag("friends-offline").assertTextEquals("Нет связи с сервером")
+            gym.friends.offline = false
+            onNodeWithTag("friends-retry").performClick()
+            waitForIdle()
+            onNodeWithTag("friends-offline").assertDoesNotExist()
+            onNodeWithTag("calendar-empty").assertTextEquals("Нет визита")
+        }
     }
 }

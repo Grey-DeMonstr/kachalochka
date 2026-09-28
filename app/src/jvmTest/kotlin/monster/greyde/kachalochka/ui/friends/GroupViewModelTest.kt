@@ -167,13 +167,10 @@ class GroupViewModelTest {
         gym.invites.pageAddress = null
         gym.invites.notice = null
 
-        viewModel(group).invite()
+        val vm = viewModel(group).also { it.invite() }
 
-        assertEquals(
-            null,
-            gym.invites.shared
-                .single()
-                .link,
-        )
+        assertEquals(listOf(Invite("Зал на Лесной", "ABCD2345", null)), gym.invites.shared)
+        // The share sheet speaks for itself, so the screen adds no notice.
+        assertNull(assertNotNull(vm.state.value).notice)
     }
 }
