@@ -260,6 +260,10 @@ class VisitViewModel(
     private fun reorder(moved: (Instant) -> List<WorkoutSet>) {
         writes.launch {
             val changed = moved(clock.now())
+            // Shown before the write, so the dropped item stays where the finger left it.
+            val byId = changed.associateBy { it.id }
+            visitSets = visitSets.map { byId[it.id] ?: it }
+            publish()
             changed.forEach { sets.upsert(it) }
             if (changed.isNotEmpty()) requestSyncIfPast()
             reload(reseed = false)

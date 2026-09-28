@@ -121,7 +121,7 @@ fun DragHandle(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            PhosphorIcons.DotsSixVertical,
+            PhosphorIcons.Equals,
             "Перетащить",
             modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),

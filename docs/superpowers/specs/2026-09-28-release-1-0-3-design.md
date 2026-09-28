@@ -28,9 +28,9 @@ asserts no empty text while loading.
 "Порядок" on the visit screen switches ordering on and turns into "Готово"; "Готово" switches it
 off. The arrow buttons and their code are removed.
 
-- In ordering mode every machine header and every set row shows a drag handle (≡,
-  `PhosphorIcons.DotsSixVertical` vendored if missing) at its left edge. Only the handle starts a
-  drag; rows keep their normal look otherwise.
+- In ordering mode every machine header and every set row shows a drag handle (=,
+  `PhosphorIcons.Equals`) at its left edge. Only the handle starts a drag; rows keep their normal
+  look otherwise.
 - Dragging a machine header moves the machine's whole block (header and its sets); dragging a set
   moves it among its own machine's sets. The dragged item follows the finger, drawn above the
   others with a 1 dp outline in `onBackground` and the surface colour, as in the reference

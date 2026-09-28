@@ -98,6 +98,10 @@ class VisitViewModelTest {
         false,
     )
 
+    private fun todaySets() =
+        gym.sets.rows.values
+            .filter { it.visitId == visit.id }
+
     private fun viewModel(
         gym: FakeGym = this.gym,
         day: CalendarDay = today,
@@ -874,6 +878,31 @@ class VisitViewModelTest {
             assertEquals(
                 listOf(curl.id, press.id, row.id),
                 assertNotNull(reopened.state.value).groups.map { it.machineId },
+            )
+        }
+
+    @Test
+    fun a_dropped_machine_shows_in_its_new_place_before_the_write_finishes() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))
+            val vm = viewModel().also { it.refresh() }
+            vm.toggleOrdering()
+            val gate = CompletableDeferred<Unit>().also { gym.sets.gate = it }
+
+            vm.moveMachine(row.id, 0)
+
+            val shown = assertNotNull(vm.state.value).groups.map { it.machineId }
+            assertEquals(listOf(row.id, press.id), shown)
+            assertEquals(listOf(0, 0), todaySets().map { it.position })
+            gate.complete(Unit)
+            assertEquals(
+                mapOf(row.id to 1, press.id to 2),
+                todaySets().associate { it.machineId to it.position },
+            )
+            assertEquals(
+                listOf(row.id, press.id),
+                assertNotNull(vm.state.value).groups.map { it.machineId },
             )
         }
 

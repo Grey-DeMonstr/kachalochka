@@ -46,7 +46,7 @@ class SetOrderTest {
     }
 
     @Test
-    fun a_machine_moved_to_its_own_place_an_unknown_place_or_unknown_writes_nothing() {
+    fun an_unknown_machine_or_one_moved_to_its_own_or_a_missing_place_writes_nothing() {
         val sets = threeMachines()
 
         assertEquals(emptyList(), machineMovedTo(sets, ROW, 1, now))
@@ -88,7 +88,7 @@ class SetOrderTest {
     }
 
     @Test
-    fun a_set_moved_to_its_own_place_an_unknown_place_or_unknown_writes_nothing() {
+    fun an_unknown_set_or_one_moved_to_its_own_or_a_missing_place_writes_nothing() {
         val first = set(VISIT_A, 60.0, atSeconds = 0, position = 1)
         val second = set(VISIT_A, 70.0, atSeconds = 1, position = 2)
         val sets = listOf(first, second)

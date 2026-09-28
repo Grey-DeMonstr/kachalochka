@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -179,7 +180,6 @@ private fun VisitList(
         }
         val machineOrder = rememberReorderState()
         SideEffect { machineOrder.retain(state.groups.size) }
-        // Items compose by position, without keys, so each index keeps its measured height.
         state.groups.forEachIndexed { index, group ->
             MachineBlock(
                 group = group,
@@ -215,7 +215,13 @@ private fun MachineBlock(
     val colors = MaterialTheme.colorScheme
     val setOrder = rememberReorderState()
     SideEffect { setOrder.retain(group.sets.size) }
-    Column(Modifier.reorderItem(order, index).dragOutline(order.dragging == index)) {
+    // A dragged set floats over the machine blocks below its own.
+    Column(
+        Modifier
+            .reorderItem(order, index)
+            .zIndex(if (setOrder.dragging != null) 1f else 0f)
+            .dragOutline(order.dragging == index),
+    ) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -261,7 +267,7 @@ private fun MachineBlock(
     }
 }
 
-/** A disabled click would still merge the row's drag handle into the row's semantics. */
+/** Keeps the drag handle its own node for tests and accessibility. */
 private fun Modifier.clickableUnless(
     ordering: Boolean,
     onClick: () -> Unit,
