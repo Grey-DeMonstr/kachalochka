@@ -34,7 +34,6 @@ class LocalMachineRepository(
                     machine.updatedAt,
                     machine.deleted,
                     machine.unitLabel,
-                    machine.linkId?.value,
                 )
                 if (machine.userId != null) {
                     outbox.enqueue(OutboxEntry(MACHINE_TABLE, machine.id.value, machine.updatedAt))
@@ -63,6 +62,8 @@ class LocalMachineRepository(
         }
 }
 
+// The mapper takes every column of `SELECT *`, the legacy `link_id` included.
+@Suppress("UNUSED_PARAMETER")
 internal fun machineOf(
     id: String,
     userId: String?,
@@ -90,5 +91,4 @@ internal fun machineOf(
     weightStep = weightStep,
     updatedAt = updatedAt,
     deleted = deleted,
-    linkId = linkId?.let(::MachineId),
 )

@@ -9,6 +9,8 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
@@ -81,6 +83,7 @@ class MachineFormViewModel(
     private val accounts: Accounts,
     private val clock: Clock,
     private val friends: FriendsRepository,
+    private val machineLinks: MachineLinkRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineFormState(name = args.name))
     val state: StateFlow<MachineFormState> = mutableState
@@ -120,9 +123,9 @@ class MachineFormViewModel(
     }
 
     /**
-     * A linkId already on hand is proof enough and works offline. An original itself keeps none,
-     * so whether a friend copied it — and the link can be broken from either side — needs asking
-     * the group online; a failed read just leaves the menu off.
+     * An own link is on hand and works offline. Whether a friend linked to the machine — and the
+     * link can be broken from either side — needs asking the group online; a failed read just
+     * leaves the menu off.
      */
     private suspend fun refreshUnlink() {
         val shown = existing
@@ -130,21 +133,24 @@ class MachineFormViewModel(
             mutableUnlink.value = mutableUnlink.value.copy(available = false)
             return
         }
-        if (shown.linkId != null) {
+        val owner = shown.userId
+        if (machineLinks.all(owner).any { it.touches(shown.id) }) {
             mutableUnlink.value = mutableUnlink.value.copy(available = true)
             return
         }
-        val owner = shown.userId
         mutableUnlink.value = mutableUnlink.value.copy(available = false)
         if (owner == null) return
-        val copiedByAFriend =
-            reading { friends.groupMachines(owner) }
+        val linkedByAFriend =
+            reading { friends.groupLinks(owner) }
                 .getOrDefault(emptyList())
-                .any { it.machine.linkKey == shown.linkKey }
+                .any { it.touches(shown.id) }
         if (existing?.id == shown.id) {
-            mutableUnlink.value = mutableUnlink.value.copy(available = copiedByAFriend)
+            mutableUnlink.value = mutableUnlink.value.copy(available = linkedByAFriend)
         }
     }
+
+    private fun MachineLink.touches(machine: MachineId) =
+        machineId == machine || linkedMachineId == machine
 
     fun askToUnlink() {
         if (mutableUnlink.value.available) {
@@ -156,16 +162,19 @@ class MachineFormViewModel(
         mutableUnlink.value = mutableUnlink.value.copy(confirming = false)
     }
 
-    /** The confirmation is the deliberate step, so the key is written at once (spec §2.3). */
+    /** The confirmation is the deliberate step, so the own links are deleted at once. */
     fun confirmUnlink() {
         val shown = existing ?: return
         writes.launch {
             val owner = currentUser.id()
-            val stored = machines.byId(shown.id)?.takeIf { it.userId == owner } ?: return@launch
-            val unlinked = stored.copy(linkId = MachineId.random(), updatedAt = clock.now())
-            machines.upsert(unlinked)
-            existing = unlinked
+            machines.byId(shown.id)?.takeIf { it.userId == owner } ?: return@launch
+            val now = clock.now()
+            machineLinks
+                .all(owner)
+                .filter { it.touches(shown.id) }
+                .forEach { machineLinks.upsert(it.copy(deleted = true, updatedAt = now)) }
             mutableUnlink.value = mutableUnlink.value.copy(confirming = false)
+            refreshUnlink()
         }
     }
 

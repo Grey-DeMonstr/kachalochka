@@ -77,6 +77,7 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
             )
         }
         viewModel { (day: CalendarDay) ->
@@ -91,16 +92,28 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
             )
         }
         viewModel { (args: MachineFormArgs) ->
-            MachineFormViewModel(args, get(), get(), get(), get(), get())
+            MachineFormViewModel(args, get(), get(), get(), get(), get(), get())
         }
         viewModel { (member: UserId, name: String, day: CalendarDay) ->
-            FriendVisitViewModel(member, name, day, get(), get(), get(), get(), get(), get())
+            FriendVisitViewModel(
+                member,
+                name,
+                day,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
         }
         viewModel { (member: UserId) ->
-            FriendCalendarViewModel(member, get(), get(), get(), get(), get(), get())
+            FriendCalendarViewModel(member, get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (group: GroupId) ->
             GroupViewModel(group, get(), get(), get(), get(), get(), get())

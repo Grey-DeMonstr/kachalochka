@@ -11,7 +11,9 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.MachineLinkRow
 import monster.greyde.kachalochka.core.data.gym.MachineRow
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.VisitRow
@@ -30,6 +32,7 @@ import monster.greyde.kachalochka.core.domain.friends.latestVisitsByMember
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
@@ -189,29 +192,39 @@ class SupabaseFriendsRepository(
             .mapNotNull { visit -> visit.userId?.let(mates::get)?.let { FriendVisit(it, visit) } }
     }
 
+    override suspend fun groupLinks(viewer: UserId): List<MachineLink> {
+        val mates = mates(viewer)
+        if (mates.isEmpty()) return emptyList()
+        return postgrest
+            .from(MACHINE_LINK_TABLE)
+            .select {
+                filter {
+                    isIn("user_id", mates.keys.map { it.value })
+                    eq("deleted", false)
+                }
+            }.decodeList<MachineLinkRow>()
+            .map { it.toMachineLink() }
+    }
+
     override suspend fun latestOn(
         viewer: UserId,
-        linkKey: MachineId,
+        machines: Set<MachineId>,
     ): List<FriendResult> {
+        if (machines.isEmpty()) return emptyList()
         val mates = mates(viewer)
         if (mates.isEmpty()) return emptyList()
         val mateIds = mates.keys.map { it.value }
-        // The server narrows by either column; a machine linked elsewhere still has the key as id.
         val candidates =
             liveMachines {
+                isIn("id", machines.map { it.value })
                 isIn("user_id", mateIds)
-                or {
-                    eq("id", linkKey.value)
-                    eq("link_id", linkKey.value)
-                }
             }
-        val onKey = candidates.filter { it.linkKey == linkKey }
-        if (onKey.isEmpty()) return emptyList()
-        val machineIds = onKey.map { it.id.value }
+        if (candidates.isEmpty()) return emptyList()
+        val machineIds = candidates.map { it.id.value }
         // One request per friend, so a friend's long history never crowds another's out.
         val newest =
             coroutineScope {
-                onKey
+                candidates
                     .mapNotNull { it.userId }
                     .distinct()
                     .map { owner ->

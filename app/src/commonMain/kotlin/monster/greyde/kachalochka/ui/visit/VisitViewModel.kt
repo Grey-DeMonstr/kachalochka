@@ -12,7 +12,9 @@ import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.DEFAULT_REPS
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -58,6 +60,7 @@ import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.machine.visibleLinks
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Clock
@@ -120,6 +123,7 @@ class VisitViewModel(
     private val friends: FriendsRepository,
     private val sharing: TextSharing,
     private val nickname: Nickname,
+    private val machineLinks: MachineLinkRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
@@ -426,21 +430,29 @@ class VisitViewModel(
                 )
             weightText = null
         }
-        // Only an own machine has a key worth asking about; a switch drops the old answer.
+        // Only an own machine has links worth asking about; a switch drops the old answer.
         val asked =
-            owner?.let { me -> machine?.takeIf { it.userId == me }?.let { me to it.linkKey } }
+            owner?.let { me -> machine?.takeIf { it.userId == me }?.let { me to it.id } }
         if (asked != friendsFor) {
             friendsFor = asked
             friendLines = emptyList()
-            asked?.let(::loadFriends)
+            asked?.let { loadFriends(it, machinesById.keys) }
         }
         publish()
     }
 
-    private fun loadFriends(asked: Pair<UserId, MachineId>) {
+    private fun loadFriends(
+        asked: Pair<UserId, MachineId>,
+        own: Set<MachineId>,
+    ) {
+        val (owner, machine) = asked
         viewModelScope.launch {
             val results =
-                reading { friends.latestOn(asked.first, asked.second) }.getOrDefault(emptyList())
+                reading {
+                    val links = visibleLinks(owner, friends, machineLinks)
+                    val theirs = MachineClusters(links).of(machine) - own
+                    if (theirs.isEmpty()) emptyList() else friends.latestOn(owner, theirs)
+                }.getOrDefault(emptyList())
             if (friendsFor != asked) return@launch
             friendLines = results.map(::friendLine)
             publish()

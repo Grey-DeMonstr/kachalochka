@@ -1,5 +1,9 @@
 package monster.greyde.kachalochka.core.domain.friends
 
+import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineClusters
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.PRESS
 import monster.greyde.kachalochka.core.domain.gym.ROW
 import monster.greyde.kachalochka.core.domain.gym.T0
@@ -16,6 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FriendResultsTest {
+    private val me = UserId("11111111-1111-4111-8111-111111111111")
     private val oleg = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Олег")
     private val pasha = Friend(UserId("44444444-4444-4444-8444-444444444444"), "Паша")
 
@@ -70,12 +75,83 @@ class FriendResultsTest {
     @Test
     fun a_friend_s_machine_linked_to_one_of_the_viewer_s_reads_under_the_viewer_s_name() {
         val mine = machine(PRESS, "Жим ногами")
-        val theirLinked = linkedCopy(mine, oleg.userId, T0).copy(name = "Платформа")
+        val (copy, link) = linkedCopy(mine, oleg.userId, T0)
+        val theirLinked = copy.copy(name = "Платформа")
         val theirOwn = machine(ROW, "Тяга").copy(userId = oleg.userId)
 
         assertEquals(
             mapOf(theirLinked.id to "Жим ногами", theirOwn.id to "Тяга"),
-            namesForViewer(listOf(theirLinked, theirOwn), listOf(mine)),
+            namesForViewer(
+                listOf(theirLinked, theirOwn),
+                listOf(mine),
+                MachineClusters(listOf(link)),
+            ),
         )
+    }
+
+    @Test
+    fun a_friend_s_machine_linked_to_the_viewer_s_through_another_friend_reads_under_its_name() {
+        val mine = machine(PRESS, "Жим ногами")
+        val (olegs, olegLink) = linkedCopy(mine, oleg.userId, T0)
+        val (pashas, pashaLink) = linkedCopy(olegs, pasha.userId, T0)
+
+        assertEquals(
+            mapOf(pashas.id to "Жим ногами"),
+            namesForViewer(
+                listOf(pashas.copy(name = "Платформа")),
+                listOf(mine),
+                MachineClusters(listOf(olegLink, pashaLink)),
+            ),
+        )
+    }
+
+    private fun Friend.owns(name: String) = FriendMachine(Machine.new(name, userId, T0), this)
+
+    private fun FriendMachine.linkedTo(other: FriendMachine) =
+        MachineLink(MachineLinkId.random(), owner.userId, machine.id, other.machine.id, T0, false)
+
+    private fun rowsOf(
+        friendMachines: List<FriendMachine>,
+        own: List<Machine>,
+        links: List<MachineLink>,
+    ) = friendMachineRows(friendMachines, own, MachineClusters(links), links)
+
+    @Test
+    fun a_cluster_holding_an_own_machine_offers_no_friend_row() {
+        val mine = Machine.new("Жим ногами", me, T0)
+        val (olegs, link) = linkedCopy(mine, oleg.userId, T0)
+
+        assertEquals(
+            emptyList(),
+            rowsOf(listOf(FriendMachine(olegs, oleg)), listOf(mine), listOf(link)),
+        )
+    }
+
+    @Test
+    fun a_cluster_of_friends_machines_offers_the_one_without_links_of_its_own() {
+        val pashas = pasha.owns("Жим ногами")
+        val (olegs, link) = linkedCopy(pashas.machine, oleg.userId, T0)
+
+        assertEquals(
+            listOf(pashas),
+            rowsOf(listOf(FriendMachine(olegs, oleg), pashas), emptyList(), listOf(link)),
+        )
+    }
+
+    @Test
+    fun equally_original_machines_are_offered_by_owner_name() {
+        val olegs = oleg.owns("Жим ногами")
+        val pashas = pasha.owns("Платформа")
+        val links = listOf(pashas.linkedTo(olegs), olegs.linkedTo(pashas))
+
+        assertEquals(listOf(olegs), rowsOf(listOf(pashas, olegs), emptyList(), links))
+    }
+
+    @Test
+    fun unlinked_friends_machines_are_each_offered_by_name() {
+        val row = oleg.owns("тяга")
+        val press = pasha.owns("Жим ногами")
+
+        assertEquals(listOf(press, row), rowsOf(listOf(row, press), emptyList(), emptyList()))
     }
 }

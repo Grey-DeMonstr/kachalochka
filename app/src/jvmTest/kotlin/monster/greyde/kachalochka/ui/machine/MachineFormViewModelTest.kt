@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
@@ -48,6 +49,7 @@ class MachineFormViewModelTest {
             gym.accounts,
             gym.clock,
             gym.friends,
+            gym.machineLinks,
         )
 
     @BeforeTest
@@ -243,17 +245,20 @@ class MachineFormViewModelTest {
             assertEquals("1,25", vm.state.value.weightStep)
         }
 
-    private fun linkedPress(): Machine =
-        Machine
-            .new("Жим ногами", ivan.account.userId, t0)
-            .copy(linkId = MachineId.random())
+    /** Иван's press, linked by Иван to a friend's machine. */
+    private suspend fun linkedPress(): Pair<Machine, MachineLink> {
+        val hers = Machine.new("Жим ногами", misha.account.userId, t0)
+        val (press, link) = linkedCopy(hers, ivan.account.userId, t0)
+        gym.machines.upsert(press)
+        gym.machineLinks.upsert(link)
+        return press to link
+    }
 
     @Test
-    fun unlinking_gives_the_machine_a_key_of_its_own_at_once() =
+    fun unlinking_deletes_the_machine_s_own_links_at_once() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            val linked = linkedPress()
-            gym.machines.upsert(linked)
+            val (linked, link) = linkedPress()
             val vm = viewModel(MachineFormArgs(linked.id, null, "")).also { it.load() }
             assertTrue(vm.unlink.value.available)
 
@@ -262,10 +267,10 @@ class MachineFormViewModelTest {
             gym.clock.current += 1.minutes
             vm.confirmUnlink()
 
-            val stored = assertNotNull(gym.machines.byId(linked.id))
-            assertNotNull(stored.linkId)
-            assertNotEquals(linked.linkKey, stored.linkKey)
-            assertEquals(gym.clock.current, stored.updatedAt)
+            assertEquals(
+                link.copy(deleted = true, updatedAt = gym.clock.current),
+                gym.machineLinks.rows[link.id],
+            )
             assertFalse(vm.unlink.value.confirming)
         }
 
@@ -273,32 +278,14 @@ class MachineFormViewModelTest {
     fun cancelling_keeps_the_link() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            val linked = linkedPress()
-            gym.machines.upsert(linked)
+            val (linked, link) = linkedPress()
             val vm = viewModel(MachineFormArgs(linked.id, null, "")).also { it.load() }
 
             vm.askToUnlink()
             vm.cancelUnlink()
 
-            assertEquals(linked, gym.machines.byId(linked.id))
+            assertEquals(link, gym.machineLinks.rows[link.id])
             assertFalse(vm.unlink.value.confirming)
-        }
-
-    @Test
-    fun saving_after_unlinking_keeps_the_new_key() =
-        runTest {
-            gym.withAccounts(ivan, active = ivan)
-            val linked = linkedPress()
-            gym.machines.upsert(linked)
-            val vm = viewModel(MachineFormArgs(linked.id, null, "")).also { it.load() }
-            vm.askToUnlink()
-            vm.confirmUnlink()
-            val unlinked = assertNotNull(gym.machines.byId(linked.id)).linkId
-
-            vm.update { it.copy(setupNote = "Сиденье на 4") }
-            vm.save {}
-
-            assertEquals(unlinked, gym.machines.byId(linked.id)?.linkId)
         }
 
     @Test
@@ -314,25 +301,26 @@ class MachineFormViewModelTest {
             assertFalse(fresh.unlink.value.available)
         }
 
+    /** Иван's original, which Миша linked her copy to. */
+    private suspend fun copiedOriginal(): Machine {
+        val original = Machine.new("Жим ногами", ivan.account.userId, t0)
+        gym.machines.upsert(original)
+        gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
+        val (copy, link) = linkedCopy(original, misha.account.userId, t0)
+        gym.friends.machines += copy
+        gym.friends.links += link
+        return original
+    }
+
     @Test
-    fun an_original_a_friend_copied_can_still_be_unlinked_by_its_owner() =
+    fun an_original_a_friend_linked_to_offers_unlinking_to_its_owner() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            val original = Machine.new("Жим ногами", ivan.account.userId, t0)
-            gym.machines.upsert(original)
-            gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
-            gym.friends.machines += linkedCopy(original, misha.account.userId, t0)
+            val original = copiedOriginal()
 
             val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
+
             assertTrue(vm.unlink.value.available)
-
-            vm.askToUnlink()
-            gym.clock.current += 1.minutes
-            vm.confirmUnlink()
-
-            val stored = assertNotNull(gym.machines.byId(original.id))
-            assertNotNull(stored.linkId)
-            assertNotEquals(original.linkKey, stored.linkKey)
         }
 
     @Test
@@ -351,10 +339,7 @@ class MachineFormViewModelTest {
     fun offline_an_unlinked_original_offers_no_unlinking() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            val original = Machine.new("Жим ногами", ivan.account.userId, t0)
-            gym.machines.upsert(original)
-            gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
-            gym.friends.machines += linkedCopy(original, misha.account.userId, t0)
+            val original = copiedOriginal()
             gym.friends.offline = true
 
             val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }

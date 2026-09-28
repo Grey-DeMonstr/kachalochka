@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.domain.friends
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -95,9 +96,12 @@ interface FriendsRepository {
         to: CalendarDay,
     ): List<FriendVisit>
 
-    /** Up to three friends' latest visits on a machine sharing [linkKey], newest first. */
+    /** The live links of everyone sharing a group with [viewer]. */
+    suspend fun groupLinks(viewer: UserId): List<MachineLink>
+
+    /** Up to three friends' latest visits on any of [machines], newest first. */
     suspend fun latestOn(
         viewer: UserId,
-        linkKey: MachineId,
+        machines: Set<MachineId>,
     ): List<FriendResult>
 }

@@ -14,6 +14,7 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import monster.greyde.kachalochka.core.data.gym.MachineLinkRow
 import monster.greyde.kachalochka.core.data.gym.MachineRow
 import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.data.gym.WorkoutSetRow
@@ -27,6 +28,8 @@ import monster.greyde.kachalochka.core.domain.friends.GroupMember
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -253,10 +256,33 @@ class SupabaseFriendsRepositoryTest {
         }
 
     @Test
-    fun the_latest_results_on_a_link_key_come_from_each_friend_s_latest_visit() =
+    fun group_links_are_the_mates_live_ones() =
         runTest {
-            val key = MachineId.random()
-            val press = Machine.new("Жим ногами", OLEG, NOW).copy(linkId = key)
+            val link =
+                MachineLink(
+                    MachineLinkId.random(),
+                    OLEG,
+                    MachineId.random(),
+                    MachineId.random(),
+                    NOW,
+                    deleted = false,
+                )
+            val engine = MockEngine.Queue()
+            engine.answer(MEMBERSHIPS)
+            engine.answer(Json.encodeToString(listOf(MachineLinkRow.of(link))))
+
+            assertEquals(listOf(link), repositoryOn(engine).groupLinks(IVAN))
+
+            val request = engine.requestHistory[1]
+            assertTrue(request.url.encodedPath.endsWith("/machine_link"), request.url.encodedPath)
+            assertEquals("in.(${OLEG.value})", request.url.parameters["user_id"])
+            assertEquals("eq.false", request.url.parameters["deleted"])
+        }
+
+    @Test
+    fun the_latest_results_on_a_cluster_come_from_each_friend_s_latest_visit() =
+        runTest {
+            val press = Machine.new("Жим ногами", OLEG, NOW)
             val latest = VisitId.random()
 
             fun set(
@@ -272,17 +298,15 @@ class SupabaseFriendsRepositoryTest {
             engine.answer(Json.encodeToString(listOf(WorkoutSetRow.of(second))))
             engine.answer(Json.encodeToString(listOf(second, first).map(WorkoutSetRow::of)))
 
-            val results = repositoryOn(engine).latestOn(IVAN, key)
+            val results = repositoryOn(engine).latestOn(IVAN, setOf(press.id))
 
             assertEquals(
                 listOf(FriendResult(Friend(OLEG, "Олег"), listOf(first, second))),
                 results,
             )
             val (_, machineRequest, newestRequest, visitRequest) = engine.requestHistory
-            assertEquals(
-                "(id.eq.${key.value},link_id.eq.${key.value})",
-                machineRequest.url.parameters["or"],
-            )
+            assertEquals("in.(${press.id.value})", machineRequest.url.parameters["id"])
+            assertEquals("in.(${OLEG.value})", machineRequest.url.parameters["user_id"])
             val order = newestRequest.url.parameters["order"].orEmpty()
             assertTrue(order.startsWith("recorded_at.desc"), order)
             assertEquals("1", newestRequest.url.parameters["limit"])
@@ -328,9 +352,8 @@ class SupabaseFriendsRepositoryTest {
     fun a_friend_with_many_newer_sets_never_crowds_another_out() =
         runTest {
             val anna = UserId("44444444-4444-4444-8444-444444444444")
-            val key = MachineId.random()
-            val olegPress = Machine.new("Жим ногами", OLEG, NOW).copy(linkId = key)
-            val annaPress = Machine.new("Платформа", anna, NOW).copy(linkId = key)
+            val olegPress = Machine.new("Жим ногами", OLEG, NOW)
+            val annaPress = Machine.new("Платформа", anna, NOW)
             val annaSet = olegSet(VisitId.random(), annaPress.id, 60.0, 0).copy(userId = anna)
             val olegSets = (1..60).map { olegSet(VisitId.random(), olegPress.id, 80.0, it) }
             val memberships =
@@ -339,7 +362,7 @@ class SupabaseFriendsRepositoryTest {
                     """"display_name":"Анна","deleted":false}]"""
             val server = serverWith(memberships, listOf(olegPress, annaPress), olegSets + annaSet)
 
-            val results = repositoryOn(server).latestOn(IVAN, key)
+            val results = repositoryOn(server).latestOn(IVAN, setOf(olegPress.id, annaPress.id))
 
             assertEquals(
                 listOf(
@@ -351,20 +374,12 @@ class SupabaseFriendsRepositoryTest {
         }
 
     @Test
-    fun a_machine_whose_own_id_is_the_key_but_linked_elsewhere_is_not_on_that_key() =
+    fun a_cluster_without_friends_machines_asks_for_nothing() =
         runTest {
-            val key = MachineId.random()
-            val elsewhere =
-                Machine.new("Жим ногами", OLEG, NOW).copy(id = key, linkId = MachineId.random())
-            val set = olegSet(VisitId.random(), elsewhere.id, 80.0, 0)
             val engine = MockEngine.Queue()
-            engine.answer(MEMBERSHIPS)
-            engine.answer(Json.encodeToString(listOf(MachineRow.of(elsewhere))))
-            engine.answer(Json.encodeToString(listOf(WorkoutSetRow.of(set))))
-            engine.answer(Json.encodeToString(listOf(WorkoutSetRow.of(set))))
 
-            assertEquals(emptyList(), repositoryOn(engine).latestOn(IVAN, key))
-            assertEquals(2, engine.requestHistory.size)
+            assertEquals(emptyList(), repositoryOn(engine).latestOn(IVAN, emptySet()))
+            assertEquals(0, engine.requestHistory.size)
         }
 
     @Test

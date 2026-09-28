@@ -14,6 +14,8 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -88,6 +90,7 @@ class MachinePickerViewModelTest {
             gym.utcOffset,
             gym.sync,
             gym.friends,
+            gym.machineLinks,
         )
 
     private fun pickerOn(on: FakeGym) =
@@ -102,6 +105,7 @@ class MachinePickerViewModelTest {
             on.utcOffset,
             on.sync,
             on.friends,
+            on.machineLinks,
         )
 
     private fun olegsGym(): Pair<FakeGym, Machine> {
@@ -120,8 +124,9 @@ class MachinePickerViewModelTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         val olegPress = Machine.new("Жим ногами", OLEG.userId, t0)
-        val pashaCopy = linkedCopy(olegPress, PASHA.userId, t0)
-        on.friends.machines += listOf(olegPress, pashaCopy)
+        val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0)
+        on.friends.machines += listOf(pashaCopy, olegPress)
+        on.friends.links += link
         return on to olegPress
     }
 
@@ -287,6 +292,7 @@ class MachinePickerViewModelTest {
                     shared.utcOffset,
                     shared.sync,
                     shared.friends,
+                    shared.machineLinks,
                 ).also { it.load() }
             assertEquals(
                 listOf("Жим ногами" to "3 подхода сегодня"),
@@ -327,9 +333,29 @@ class MachinePickerViewModelTest {
 
             val copy = assertNotNull(on.machines.byId(assertNotNull(picked)))
             assertEquals(ME.userId, copy.userId)
-            assertEquals(olegPress.id, copy.linkId)
             assertEquals(5.0, copy.weightStep)
+            val link =
+                on.machineLinks.rows.values
+                    .single()
+            assertEquals(
+                Triple(ME.userId, copy.id, olegPress.id),
+                Triple(link.userId, link.machineId, link.linkedMachineId),
+            )
             vm.load()
+            assertEquals(emptyList(), vm.state.value.friendRows)
+        }
+
+    @Test
+    fun a_friend_s_machine_linked_to_an_own_one_is_not_offered() =
+        runTest {
+            val (on, olegPress) = olegsGym()
+            val mine = Machine.new("Жим", ME.userId, t0)
+            on.machines.upsert(mine)
+            on.friends.links +=
+                MachineLink(MachineLinkId.random(), OLEG.userId, olegPress.id, mine.id, t0, false)
+
+            val vm = pickerOn(on).also { it.load() }
+
             assertEquals(emptyList(), vm.state.value.friendRows)
         }
 
@@ -397,7 +423,7 @@ class MachinePickerViewModelTest {
     }
 
     @Test
-    fun a_link_key_shared_by_two_friends_is_offered_once() {
+    fun a_machine_two_friends_linked_is_offered_once_as_the_original() {
         val (on, olegPress) = sharedLinkGym()
 
         val vm = pickerOn(on).also { it.load() }
@@ -409,7 +435,7 @@ class MachinePickerViewModelTest {
     }
 
     @Test
-    fun picking_the_shared_row_links_to_the_shared_key() =
+    fun picking_the_shared_row_links_to_the_original() =
         runTest {
             val (on, olegPress) = sharedLinkGym()
             val vm = pickerOn(on).also { it.load() }
@@ -417,7 +443,12 @@ class MachinePickerViewModelTest {
 
             vm.pickFriend(olegPress.id) { picked = it }
 
-            val copy = assertNotNull(on.machines.byId(assertNotNull(picked)))
-            assertEquals(olegPress.id, copy.linkId)
+            val link =
+                on.machineLinks.rows.values
+                    .single()
+            assertEquals(
+                assertNotNull(picked) to olegPress.id,
+                link.machineId to link.linkedMachineId,
+            )
         }
 }

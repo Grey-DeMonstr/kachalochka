@@ -19,10 +19,12 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.Nickname
+import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.olegTrainedOn
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.AfterTest
@@ -121,6 +123,7 @@ class VisitViewModelTest {
         gym.friends,
         gym.texts,
         Nickname(gym.profiles, gym.accounts),
+        gym.machineLinks,
     )
 
     @BeforeTest
@@ -1163,6 +1166,24 @@ class VisitViewModelTest {
                 ?.sheet
                 ?.friends,
         )
+    }
+
+    @Test
+    fun the_sheet_asks_about_every_friends_machine_linked_to_the_open_one_through_any_hops() {
+        val two = twoAccountGym()
+        two.olegTrainedOn(ivanPress, ivanFriend)
+        val olegCopy =
+            two.friends.links
+                .single()
+                .machineId
+        two.friends.group("Спортзал", owner = PASHA, ivanFriend)
+        val (pashaCopy, pashaLink) = linkedCopy(two.friends.machines.single(), PASHA.userId, t0)
+        two.friends.machines += pashaCopy
+        two.friends.links += pashaLink
+
+        viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+        assertEquals(listOf(setOf(olegCopy, pashaCopy.id)), two.friends.latestOnAsked)
     }
 
     @Test

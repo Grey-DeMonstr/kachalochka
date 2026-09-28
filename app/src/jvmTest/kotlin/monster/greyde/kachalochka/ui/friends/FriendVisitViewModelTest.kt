@@ -8,6 +8,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -37,6 +40,7 @@ class FriendVisitViewModelTest {
             gym.accounts,
             gym.clock,
             gym.utcOffset,
+            gym.machineLinks,
         )
 
     @BeforeTest
@@ -69,6 +73,30 @@ class FriendVisitViewModelTest {
     }
 
     @Test
+    fun a_friend_s_machine_the_viewer_linked_to_reads_under_the_viewer_s_name() =
+        runTest {
+            val myRow = Machine.new("Тяга верхнего блока", ME.userId, gym.clock.current)
+            gym.machines.upsert(myRow)
+            gym.machineLinks.upsert(
+                MachineLink(
+                    MachineLinkId.random(),
+                    ME.userId,
+                    myRow.id,
+                    fixture.olegRow.id,
+                    gym.clock.current,
+                    deleted = false,
+                ),
+            )
+
+            val state = assertNotNull(viewModel().state.value)
+
+            assertEquals(
+                listOf("Жим ногами", "Тяга верхнего блока"),
+                state.groups.map { it.title },
+            )
+        }
+
+    @Test
     fun a_day_without_their_visit_shows_no_sets() {
         val state = assertNotNull(viewModel(day = gym.today).state.value)
 
@@ -93,8 +121,8 @@ class FriendVisitViewModelTest {
 
         assertEquals("3 подхода", state.setCountLabel)
         assertEquals(2, state.groups.size)
-        // The visits, each visit's sets once, the machines.
-        assertEquals(4, gym.friends.reads)
+        // The visits, each visit's sets once, the machines, the links.
+        assertEquals(5, gym.friends.reads)
     }
 
     @Test

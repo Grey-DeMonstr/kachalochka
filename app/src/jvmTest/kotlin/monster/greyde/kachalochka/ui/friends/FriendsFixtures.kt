@@ -23,10 +23,11 @@ internal fun FakeGym.olegTrainedOn(
 ) {
     val t0 = clock.current
     friends.group("Зал на Лесной", owner = OLEG, viewer)
-    val olegPress = linkedCopy(machine, OLEG.userId, t0)
+    val (olegPress, link) = linkedCopy(machine, OLEG.userId, t0)
     val olegVisit =
         Visit(VisitId.random(), OLEG.userId, today.plusDays(-1), t0 - 1.days, t0, false)
     friends.machines += olegPress
+    friends.links += link
     friends.visits += olegVisit
     friends.sets +=
         listOf(80.0 to 8, 85.0 to 6).mapIndexed { i, (weight, reps) ->
@@ -69,7 +70,8 @@ internal class OlegVisitFixture(
     private val t0 = gym.clock.current
     val yesterday = gym.today.plusDays(-1)
     val myPress = Machine.new("Жим ногами", ME.userId, t0)
-    val olegPress = linkedCopy(myPress, OLEG.userId, t0).copy(name = "Платформа")
+    private val olegCopy = linkedCopy(myPress, OLEG.userId, t0)
+    val olegPress = olegCopy.first.copy(name = "Платформа")
     val olegRow = Machine.new("Тяга", OLEG.userId, t0).copy(unit = WeightUnit.Lb)
     val olegVisit = Visit(VisitId.random(), OLEG.userId, yesterday, t0 - 1.days, t0, false)
 
@@ -102,6 +104,7 @@ internal class OlegVisitFixture(
     suspend fun install() {
         gym.friends.group("Зал на Лесной", owner = OLEG, ME)
         gym.friends.machines += listOf(olegPress, olegRow)
+        gym.friends.links += olegCopy.second
         gym.friends.visits += olegVisit
         gym.friends.sets += sets
         gym.machines.upsert(myPress)

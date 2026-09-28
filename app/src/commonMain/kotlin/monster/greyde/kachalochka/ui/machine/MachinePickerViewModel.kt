@@ -10,9 +10,11 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
+import monster.greyde.kachalochka.core.domain.friends.friendMachineRows
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -30,7 +32,6 @@ import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
-import monster.greyde.kachalochka.ui.friends.reading
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -59,6 +60,7 @@ class MachinePickerViewModel(
     private val utcOffset: UtcOffset,
     private val sync: SyncTrigger,
     private val friends: FriendsRepository,
+    private val machineLinks: MachineLinkRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PickerUiState())
     val state: StateFlow<PickerUiState> = mutableState
@@ -68,14 +70,19 @@ class MachinePickerViewModel(
     private var latest: Map<MachineId, WorkoutSet> = emptyMap()
     private var inVisit: Map<MachineId, Int> = emptyMap()
     private var shownFor: UserId? = null
-    private var friendMachines: List<FriendMachine> = emptyList()
+    private var group: GroupMachines? = null
     private var friendsFor: UserId? = null
     private var loading: Job? = null
     private var loadingFriends: Job? = null
 
     /** Friends' machines read for any account but the one shown are never offered or cloned. */
     private val offeredFriends: List<FriendMachine>
-        get() = friendMachines.takeIf { friendsFor != null && friendsFor == shownFor }.orEmpty()
+        get() {
+            val read =
+                group?.takeIf { friendsFor != null && friendsFor == shownFor }
+                    ?: return emptyList()
+            return friendMachineRows(read.friends, all, read.clusters, read.links)
+        }
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -108,10 +115,9 @@ class MachinePickerViewModel(
     private fun loadFriends(owner: UserId) {
         loadingFriends =
             viewModelScope.launch {
-                val found =
-                    reading { friends.groupMachines(owner) }.getOrDefault(emptyList())
+                val found = loadGroupMachines(owner, friends, machineLinks)
                 if (currentUser.id() != owner) return@launch
-                friendMachines = found
+                group = found
                 friendsFor = owner
                 publish(mutableState.value.query)
             }
@@ -129,8 +135,9 @@ class MachinePickerViewModel(
         writes.launch {
             val owner = currentUser.id() ?: return@launch
             if (owner != offeredTo) return@launch
-            val copy = linkedCopy(friend.machine, owner, clock.now())
+            val (copy, link) = linkedCopy(friend.machine, owner, clock.now())
             machines.upsert(copy)
+            machineLinks.upsert(link)
             onPicked(copy.id)
         }
     }
@@ -138,18 +145,10 @@ class MachinePickerViewModel(
     private fun publish(query: String) {
         val ranking = rankMachines(query, all, latest.mapValues { it.value.recordedAt })
         val now = clock.now()
-        val ownKeys = all.map { it.linkKey }.toSet()
         val needle = query.trim()
         val friendRows =
             offeredFriends
-                .filter { it.machine.linkKey !in ownKeys }
-                .sortedWith(
-                    compareByDescending<FriendMachine> { it.machine.id == it.machine.linkKey }
-                        .thenBy { it.owner.displayName }
-                        .thenBy { it.machine.id.value },
-                ).distinctBy { it.machine.linkKey }
                 .filter { it.machine.name.contains(needle, ignoreCase = true) }
-                .sortedBy { it.machine.name.lowercase() }
                 .map {
                     PickerRowUi(
                         it.machine.id,

@@ -322,8 +322,21 @@ name the mapping does not know reads as `total` or `kg`: clients before 1.0.2 st
 A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
 member's `linked_machine_id`. Neither column is a foreign key and no policy checks either against
 `machine`: a link may reach the server before its own machine does, and the linked machine is
-someone else's. 1.0.2 linked machines by a shared key, `machine.link_id`, which stays in both
-schemas for its clients. Migration `0009` converted those keys once: live machines are grouped by
+someone else's. Links are undirected for reading: machines joined by live links, in either
+direction and through any number of hops, form a cluster that counts as one physical machine.
+`MachineClusters` in `domain/gym` builds the clusters from a list of links by union-find, and
+every reader asks it: the picker offers one friend's machine per cluster without an own machine
+(`friendMachineRows`, the machine with the fewest outgoing links, then by owner name and id), the
+set sheet asks `FriendsRepository.latestOn` for the friends' machines of the open machine's
+cluster, and a friend's visit names each machine after the viewer's own in its cluster
+(`namesForViewer`). The clusters combine the account's own links, read locally, with its group
+mates' live links, read online through `FriendsRepository.groupLinks`. Picking a friend's machine
+writes the own copy (`linkedCopy`) and the link from it to the friend's machine.
+
+1.0.2 linked machines by a shared key, `machine.link_id`, which stays in both schemas for its
+clients. It is never written or read: `MachineRow` has no such field, so an upsert leaves the
+server column as it is, and the SQLite column is left null by the upsert and ignored by the
+mapper. Migration `0009` converted those keys once: live machines are grouped by
 `coalesce(link_id, id)`, and in every group spanning two or more users, each machine of a user
 other than the representative's links to the representative — the machine whose id is the key,
 else the oldest by `updated_at`. Keys a 1.0.2 client writes later are not converted.

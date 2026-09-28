@@ -35,6 +35,7 @@ class FriendCalendarViewModelTest {
             gym.accounts,
             gym.clock,
             gym.utcOffset,
+            gym.machineLinks,
         )
 
     @BeforeTest

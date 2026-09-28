@@ -11,7 +11,9 @@ import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.namesForViewer
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -26,6 +28,7 @@ import monster.greyde.kachalochka.ui.format.groupSummary
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.unitLabel
+import monster.greyde.kachalochka.ui.machine.visibleLinks
 import kotlin.time.Clock
 
 data class FriendVisitUiState(
@@ -57,6 +60,7 @@ class FriendVisitViewModel(
     private val accounts: Accounts,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
+    private val machineLinks: MachineLinkRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FriendVisitUiState?>(null)
     val state: StateFlow<FriendVisitUiState?> = mutableState
@@ -91,7 +95,9 @@ class FriendVisitViewModel(
         reading {
             val visitSets = setsOn(day)
             val theirs = friends.machines(member)
-            val names = namesForViewer(theirs, machines.all(currentUser.id()))
+            val me = currentUser.id()
+            val links = me?.let { visibleLinks(it, friends, machineLinks) }.orEmpty()
+            val names = namesForViewer(theirs, machines.all(me), MachineClusters(links))
             stateOf(visitSets, theirs.associateBy { it.id }, names)
         }.onSuccess {
             mutableState.value = it

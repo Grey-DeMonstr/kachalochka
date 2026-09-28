@@ -5,6 +5,7 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
+import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupId
@@ -14,6 +15,7 @@ import monster.greyde.kachalochka.core.domain.friends.latestVisitsByMember
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
@@ -30,12 +32,16 @@ class FakeFriends(
     val visits = mutableListOf<Visit>()
     val sets = mutableListOf<WorkoutSet>()
     val machines = mutableListOf<Machine>()
+    val links = mutableListOf<MachineLink>()
     var offline = false
     var reads = 0
         private set
 
     /** The days every [groupVisits] call asked for, in order. */
     val visitWindows = mutableListOf<Pair<CalendarDay, CalendarDay>>()
+
+    /** The machines every [latestOn] call asked about, in order. */
+    val latestOnAsked = mutableListOf<Set<MachineId>>()
 
     /** While set, a read started now waits for it, keeping it in flight while a test needs. */
     var gate: CompletableDeferred<Unit>? = null
@@ -176,17 +182,26 @@ class FakeFriends(
         }
     }
 
+    override suspend fun groupLinks(viewer: UserId) =
+        online {
+            val mates = mates(viewer)
+            links.filter { !it.deleted && it.userId in mates.keys }
+        }
+
     override suspend fun latestOn(
         viewer: UserId,
-        linkKey: MachineId,
-    ) = online {
-        val mates = mates(viewer)
-        val ids =
-            machines
-                .filter { !it.deleted && it.linkKey == linkKey && it.userId in mates.keys }
-                .map { it.id }
-                .toSet()
-        val onThem = sets.filter { !it.deleted && it.machineId in ids }
-        friendResults(mates.values.toList(), latestVisitsByMember(onThem, 3), onThem)
+        machines: Set<MachineId>,
+    ): List<FriendResult> {
+        latestOnAsked += machines
+        return online {
+            val mates = mates(viewer)
+            val ids =
+                this.machines
+                    .filter { !it.deleted && it.id in machines && it.userId in mates.keys }
+                    .map { it.id }
+                    .toSet()
+            val onThem = sets.filter { !it.deleted && it.machineId in ids }
+            friendResults(mates.values.toList(), latestVisitsByMember(onThem, 3), onThem)
+        }
     }
 }

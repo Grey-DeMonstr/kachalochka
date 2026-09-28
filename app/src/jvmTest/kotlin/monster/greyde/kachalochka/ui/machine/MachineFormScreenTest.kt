@@ -16,12 +16,14 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class MachineFormScreenTest {
@@ -132,11 +134,13 @@ class MachineFormScreenTest {
     fun the_menu_unlinks_only_after_a_confirmation() {
         val ivanSession = session("11111111-1111-4111-8111-111111111111", "Иван")
         val signedIn = FakeGym().withAccounts(ivanSession, active = ivanSession)
-        val linked =
-            Machine
-                .new("Жим ногами", ivanSession.account.userId, signedIn.clock.current)
-                .copy(linkId = MachineId.random())
-        runBlocking { signedIn.machines.upsert(linked) }
+        val now = signedIn.clock.current
+        val (linked, link) =
+            linkedCopy(Machine.new("Жим ногами", null, now), ivanSession.account.userId, now)
+        runBlocking {
+            signedIn.machines.upsert(linked)
+            signedIn.machineLinks.upsert(link)
+        }
         runScreenTest(signedIn, screen = {
             MachineFormScreen(MachineFormArgs(linked.id, null, ""), {}, {}, onSaved = {})
         }) {
@@ -145,7 +149,11 @@ class MachineFormScreenTest {
             waitForIdle()
             onNodeWithTag("cancel-unlink").performClick()
             waitForIdle()
-            assertEquals(linked.linkId, runBlocking { signedIn.machines.byId(linked.id) }?.linkId)
+            assertFalse(
+                signedIn.machineLinks.rows
+                    .getValue(link.id)
+                    .deleted,
+            )
 
             onNodeWithTag("machine-menu").performClick()
             onNodeWithTag("unlink-machine").performClick()
@@ -153,7 +161,11 @@ class MachineFormScreenTest {
             onNodeWithTag("confirm-unlink").performClick()
             waitForIdle()
         }
-        assertNotEquals(linked.linkId, runBlocking { signedIn.machines.byId(linked.id) }?.linkId)
+        assertTrue(
+            signedIn.machineLinks.rows
+                .getValue(link.id)
+                .deleted,
+        )
     }
 
     @Test

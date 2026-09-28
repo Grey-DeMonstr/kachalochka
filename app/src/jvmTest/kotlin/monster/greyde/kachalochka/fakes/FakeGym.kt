@@ -232,7 +232,7 @@ class FakeGym(
     val visits = InMemoryVisitRepository()
     val sets = InMemoryWorkoutSetRepository()
     val profiles = InMemoryProfileRepository()
-    val links = InMemoryMachineLinkRepository()
+    val machineLinks = InMemoryMachineLinkRepository()
     private val signIn = QueuedGoogleSignIn()
     val accounts =
         Accounts(

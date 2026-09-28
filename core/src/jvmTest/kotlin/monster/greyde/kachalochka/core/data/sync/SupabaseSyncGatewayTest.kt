@@ -22,6 +22,7 @@ import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
@@ -173,29 +174,7 @@ class SupabaseSyncGatewayTest {
         }
 
     @Test
-    fun a_pulled_machine_keeps_its_link() =
-        runTest {
-            val row =
-                """[{"id":"33333333-3333-4333-8333-333333333333","user_id":"${OWNER.value}",""" +
-                    """"name":"Жим ногами","setup_note":"","weight_mode":"total",""" +
-                    """"platform_weight":0.0,"platform_included":false,"unit":"kg",""" +
-                    """"unit_label":"","weight_step":2.5,""" +
-                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false,""" +
-                    """"link_id":"44444444-4444-4444-8444-444444444444"}]"""
-            val engine = MockEngine.Queue()
-            engine.enqueue { respond(row, HttpStatusCode.OK, jsonHeaders()) }
-            engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }
-
-            val pulled = gatewayOn(engine, pageSize = 10).pullMachines(OWNER, since = null)
-
-            assertEquals(
-                MachineId("44444444-4444-4444-8444-444444444444"),
-                pulled.single().linkId,
-            )
-        }
-
-    @Test
-    fun a_pushed_machine_always_sends_its_link() =
+    fun a_pushed_machine_leaves_the_legacy_link_key_to_the_server() =
         runTest {
             val engine = MockEngine.Queue()
             engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
@@ -209,7 +188,7 @@ class SupabaseSyncGatewayTest {
                     .body
                     .toByteArray()
                     .decodeToString()
-            assertTrue("\"link_id\":null" in body, body)
+            assertFalse("link_id" in body, body)
         }
 
     @Test

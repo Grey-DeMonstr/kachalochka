@@ -87,7 +87,9 @@ class MachinePickerScreenTest {
             onNodeWithTag("friend-machine-${olegPress.id.value}").performScrollTo().performClick()
             waitForIdle()
         }
-        val copy = runBlocking { on.machines.byId(picked.single()) }
-        assertEquals(olegPress.id, copy?.linkId)
+        val link =
+            on.machineLinks.rows.values
+                .single()
+        assertEquals(picked.single() to olegPress.id, link.machineId to link.linkedMachineId)
     }
 }

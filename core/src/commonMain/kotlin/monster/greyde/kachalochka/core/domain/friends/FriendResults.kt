@@ -1,7 +1,9 @@
 package monster.greyde.kachalochka.core.domain.friends
 
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
@@ -31,11 +33,34 @@ fun friendResults(
     }
 }
 
-/** Each of [theirs] by the name of the viewer's machine sharing its key, or by its own. */
+/** Each of [theirs] by the name of the viewer's machine in its cluster, or by its own. */
 fun namesForViewer(
     theirs: List<Machine>,
     mine: List<Machine>,
-): Map<MachineId, String> {
-    val byKey = mine.associate { it.linkKey to it.name }
-    return theirs.associate { it.id to (byKey[it.linkKey] ?: it.name) }
+    clusters: MachineClusters,
+): Map<MachineId, String> =
+    theirs.associate { machine ->
+        val own = mine.firstOrNull { clusters.sameMachine(it.id, machine.id) }
+        machine.id to (own ?: machine).name
+    }
+
+/** One row per friends' cluster without an own machine: the original-most machine. */
+fun friendMachineRows(
+    friendMachines: List<FriendMachine>,
+    own: List<Machine>,
+    clusters: MachineClusters,
+    links: List<MachineLink>,
+): List<FriendMachine> {
+    val ownClusters = own.flatMap { clusters.of(it.id) }.toSet()
+    val outgoing = links.filterNot { it.deleted }.groupingBy { it.machineId }.eachCount()
+    val originalFirst =
+        compareBy<FriendMachine> { outgoing[it.machine.id] ?: 0 }
+            .thenBy { it.owner.displayName }
+            .thenBy { it.machine.id.value }
+    return friendMachines
+        .filter { it.machine.id !in ownClusters }
+        .groupBy { clusters.of(it.machine.id) }
+        .values
+        .map { cluster -> cluster.minWith(originalFirst) }
+        .sortedBy { it.machine.name.lowercase() }
 }

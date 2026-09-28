@@ -48,7 +48,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<VisitRepository> { gym.visits }
         single<WorkoutSetRepository> { gym.sets }
         single<ProfileRepository> { gym.profiles }
-        single<MachineLinkRepository> { gym.links }
+        single<MachineLinkRepository> { gym.machineLinks }
         single<CurrentUser> { gym.currentUser }
         single<Accounts> { gym.accounts }
         single<FriendsRepository> { gym.friends }
