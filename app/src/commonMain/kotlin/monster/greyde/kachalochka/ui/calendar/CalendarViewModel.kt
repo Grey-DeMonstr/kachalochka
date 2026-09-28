@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.friends.Friend
+import monster.greyde.kachalochka.core.domain.friends.FriendVisit
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -28,6 +31,7 @@ import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.summarize
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
@@ -35,6 +39,8 @@ import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.weekdayName
+import monster.greyde.kachalochka.ui.friends.FriendColorStore
+import monster.greyde.kachalochka.ui.friends.reading
 import kotlin.time.Clock
 
 data class CalendarUiState(
@@ -48,6 +54,16 @@ data class CalendarUiState(
     val moving: Boolean,
     val removal: RemovalUi?,
     val replacement: ReplacementUi?,
+    val friendVisits: List<FriendDayVisitUi>,
+)
+
+/** A friend's visit on the chosen day; [counts] stays null until their sets are read. */
+data class FriendDayVisitUi(
+    val userId: UserId,
+    val name: String,
+    val color: Int,
+    val day: CalendarDay,
+    val counts: String?,
 )
 
 data class CalendarVisitUi(
@@ -75,6 +91,8 @@ class CalendarViewModel(
     private val clock: Clock,
     private val utcOffset: UtcOffset,
     private val sync: SyncTrigger,
+    private val friends: FriendsRepository,
+    private val colors: FriendColorStore,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<CalendarUiState?>(null)
     val state: StateFlow<CalendarUiState?> = mutableState
@@ -94,6 +112,19 @@ class CalendarViewModel(
     private var replacing: Visit? = null
     private var replacingSets: Int = 0
     private var reloading: Job? = null
+    private var shownFor: UserId? = null
+
+    /** Friends' visits around [friendsFor]'s month, each carrying the day it shows on. */
+    private var friendVisits: List<FriendVisit> = emptyList()
+    private var friendColors: Map<UserId, Int> = emptyMap()
+    private var friendCounts: Map<Pair<UserId, CalendarDay>, String> = emptyMap()
+    private var friendsFor: Pair<UserId, CalendarMonth>? = null
+    private var loadingFriends: Job? = null
+    private var countingFriends: Job? = null
+
+    /** Friends read for another account or month than the one shown are never drawn. */
+    private val shownFriends: List<FriendVisit>
+        get() = friendVisits.takeIf { friendsFor != null && friendsFor == shownKey() }.orEmpty()
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -115,6 +146,7 @@ class CalendarViewModel(
         if (monthRank(next) > monthRank(CalendarMonth.of(today()))) return
         month = next
         publish()
+        loadFriends()
     }
 
     fun selectDay(day: CalendarDay) {
@@ -127,6 +159,7 @@ class CalendarViewModel(
             dayCard = null
             publish()
             reload(everything = false)
+            countFriends()
             return
         }
         // A day holds one visit; moving onto an occupied one asks before replacing it.
@@ -260,7 +293,9 @@ class CalendarViewModel(
             val owner = currentUser.id()
             all = visits.all(owner).map { it.copy(day = it.dayAt(utcOffset::at)) }
             machinesById = machines.all(owner).associateBy { it.id }
+            shownFor = owner
             stale = false
+            loadFriends()
         }
         val day = selected
         val sameDay = all.filter { it.day == day }
@@ -290,15 +325,87 @@ class CalendarViewModel(
         publish()
     }
 
+    private fun shownKey(): Pair<UserId, CalendarMonth>? = shownFor?.let { it to month }
+
+    /** Online and never stored; the own calendar never waits for it, and a failure shows none. */
+    private fun loadFriends() {
+        loadingFriends?.cancel()
+        countingFriends?.cancel()
+        val key = shownKey() ?: return
+        val (owner, shownMonth) = key
+        loadingFriends =
+            viewModelScope.launch {
+                val lastDay = CalendarDay(shownMonth.year, shownMonth.month, shownMonth.length)
+                val found =
+                    reading {
+                        val placed =
+                            friends.groupVisits(owner, shownMonth.first(), lastDay).map {
+                                it.copy(visit = it.visit.copy(day = it.visit.dayAt(utcOffset::at)))
+                            }
+                        placed to colors.colorsFor(owner, placed.map { it.friend.userId })
+                    }.getOrDefault(emptyList<FriendVisit>() to emptyMap())
+                if (currentUser.id() != owner || shownKey() != key) return@launch
+                friendCounts =
+                    friendCounts.filterKeys { friendsFor == key && it.second == selected }
+                friendVisits = found.first
+                friendColors = found.second
+                friendsFor = key
+                publish()
+                count(key, selected)
+            }
+    }
+
+    private fun countFriends() {
+        countingFriends?.cancel()
+        val key = friendsFor?.takeIf { it == shownKey() } ?: return
+        val day = selected
+        countingFriends = viewModelScope.launch { count(key, day) }
+    }
+
+    /** Reads the sets of each friend's visit on [day], the one [keptVisit] would show. */
+    private suspend fun count(
+        key: Pair<UserId, CalendarMonth>,
+        day: CalendarDay,
+    ) {
+        val byFriend = friendVisits.filter { it.visit.day == day }.groupBy { it.friend.userId }
+        for ((friend, theirs) in byFriend) {
+            val counts = reading { countsOf(theirs.map { it.visit }) }.getOrNull() ?: continue
+            if (friendsFor != key) return
+            friendCounts = friendCounts + ((friend to day) to counts)
+            publish()
+        }
+    }
+
+    private suspend fun countsOf(sameDay: List<Visit>): String {
+        val setsByVisit =
+            if (sameDay.size > 1) sameDay.associate { it.id to friends.sets(it) } else emptyMap()
+        val visit = keptVisit(sameDay) { setsByVisit[it]?.isNotEmpty() == true }
+        val summary = summarize(setsByVisit[visit.id] ?: friends.sets(visit))
+        return "${machineCount(summary.machineCount)} · ${setCount(summary.setCount)}"
+    }
+
+    private fun friendsOn(day: CalendarDay): List<Friend> =
+        shownFriends
+            .filter { it.visit.day == day }
+            .map { it.friend }
+            .distinctBy { it.userId }
+            .sortedWith(
+                compareBy<Friend> { it.displayName.lowercase() }.thenBy { it.userId.value },
+            )
+
     private fun publish() {
         val today = today()
         val day = selected
         val marked = visitDays
+        val dots =
+            shownFriends.mapNotNull { it.visit.day }.toSet().associateWith { friendDay ->
+                friendsOn(friendDay).mapNotNull { friendColors[it.userId] }
+            }
         mutableState.value =
             CalendarUiState(
                 monthTitle = monthTitle(month),
                 canShowNextMonth = monthRank(month) < monthRank(CalendarMonth.of(today)),
-                weeks = monthWeeks(month, marked, today, day),
+                weeks = monthWeeks(month, marked, today, day, dots),
                 day = day,
                 dayTitle = "${weekdayName(day.dayOfWeek)}, ${dayMonthLabel(day, today.year)}",
                 visit = dayCard,
@@ -307,6 +414,12 @@ class CalendarViewModel(
                 moving = moving != null,
                 removal = removing?.let { removalUi(it, today) },
                 replacement = replacing?.let { replacementUi(it, today) },
+                friendVisits =
+                    friendsOn(day).mapNotNull { friend ->
+                        val color = friendColors[friend.userId] ?: return@mapNotNull null
+                        val counts = friendCounts[friend.userId to day]
+                        FriendDayVisitUi(friend.userId, friend.displayName, color, day, counts)
+                    },
             )
     }
 

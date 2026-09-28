@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendResult
+import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.friends.GroupMember
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
@@ -185,6 +186,53 @@ class SupabaseFriendsRepositoryTest {
                     .url.parameters
             assertEquals("eq.${OLEG.value}", params["user_id"])
             assertEquals("eq.false", params["deleted"])
+        }
+
+    @Test
+    fun group_visits_are_asked_for_by_mates_around_the_days_and_paired_with_their_friend() =
+        runTest {
+            val dated = Visit(VisitId.random(), OLEG, CalendarDay(2023, 11, 14), NOW, NOW, false)
+            val undated = Visit(VisitId.random(), OLEG, null, NOW, NOW, false)
+            val engine = MockEngine.Queue()
+            engine.answer(MEMBERSHIPS)
+            engine.answer(Json.encodeToString(listOf(dated, undated).map(VisitRow::of)))
+
+            val visits =
+                repositoryOn(engine).groupVisits(
+                    IVAN,
+                    CalendarDay(2023, 11, 1),
+                    CalendarDay(2023, 11, 30),
+                )
+
+            val oleg = Friend(OLEG, "Олег")
+            assertEquals(listOf(FriendVisit(oleg, dated), FriendVisit(oleg, undated)), visits)
+            val params = engine.requestHistory[1].url.parameters
+            assertEquals("in.(${OLEG.value})", params["user_id"])
+            assertEquals("eq.false", params["deleted"])
+            val either = params["or"].orEmpty()
+            assertTrue("and(day.gte.2023-11-01,day.lte.2023-11-30)" in either, either)
+            assertTrue(
+                "and(day.is.null,recorded_at.gte.\"2023-10-31T00:00:00Z\"," +
+                    "recorded_at.lt.\"2023-12-02T00:00:00Z\")" in either,
+                either,
+            )
+        }
+
+    @Test
+    fun without_mates_group_visits_ask_for_nothing_more() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer(MEMBERSHIPS.substringBefore(",{") + "]")
+
+            val visits =
+                repositoryOn(engine).groupVisits(
+                    IVAN,
+                    CalendarDay(2023, 11, 1),
+                    CalendarDay(2023, 11, 30),
+                )
+
+            assertEquals(emptyList(), visits)
+            assertEquals(1, engine.requestHistory.size)
         }
 
     @Test

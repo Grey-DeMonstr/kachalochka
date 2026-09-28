@@ -14,11 +14,17 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.ui.friends.ME
+import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.PASHA
+import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -40,7 +46,77 @@ class CalendarScreenTest {
     private fun calendar(
         onBack: () -> Unit = {},
         onOpenVisit: (CalendarDay) -> Unit = {},
-    ) = CalendarScreen(onBack = onBack, onOpenSettings = {}, onOpenVisit = onOpenVisit)
+        onOpenFriendVisit: (UserId, String, CalendarDay) -> Unit = { _, _, _ -> },
+    ) = CalendarScreen(
+        onBack = onBack,
+        onOpenSettings = {},
+        onOpenVisit = onOpenVisit,
+        onOpenFriendVisit = onOpenFriendVisit,
+    )
+
+    /** Иван signed in, with [trained] in his group each having a visit on the 12th. */
+    private fun friendsGym(vararg trained: Friend): FakeGym {
+        val signed = signedInGym()
+        signed.friends.group("Зал на Лесной", owner = ME, *trained)
+        trained.forEach {
+            signed.friends.visits +=
+                Visit(
+                    VisitId.random(),
+                    it.userId,
+                    CalendarDay(2023, 11, 12),
+                    t0 - 2.days,
+                    t0,
+                    false,
+                )
+        }
+        return signed
+    }
+
+    @Test
+    fun a_day_shows_a_dot_per_friend_and_a_friend_s_card_opens_their_visit() {
+        val signed = friendsGym(OLEG, PASHA)
+        var opened: Triple<UserId, String, CalendarDay>? = null
+        runScreenTest(signed, screen = {
+            calendar(onOpenFriendVisit = { id, name, day -> opened = Triple(id, name, day) })
+        }) {
+            onNodeWithTag("day-dot-friend-2023-11-12-0", useUnmergedTree = true).assertExists()
+            onNodeWithTag("day-dot-friend-2023-11-12-1", useUnmergedTree = true).assertExists()
+            onNodeWithTag("day-dot-friend-2023-11-12-2", useUnmergedTree = true)
+                .assertDoesNotExist()
+            onNodeWithTag("day-dot-friend-2023-11-11-0", useUnmergedTree = true)
+                .assertDoesNotExist()
+
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("friend-visit-${OLEG.userId.value}").performScrollTo().performClick()
+            waitForIdle()
+        }
+        assertEquals(Triple(OLEG.userId, "Олег", CalendarDay(2023, 11, 12)), opened)
+    }
+
+    @Test
+    fun a_day_draws_at_most_four_dots_the_own_one_first() {
+        val anna = Friend(UserId("55555555-5555-4555-8555-555555555555"), "Анна")
+        val misha = Friend(UserId("66666666-6666-4666-8666-666666666666"), "Миша")
+        val signed = friendsGym(OLEG, PASHA, anna, misha)
+        runBlocking {
+            signed.visits.upsert(
+                Visit(
+                    VisitId.random(),
+                    ME.userId,
+                    CalendarDay(2023, 11, 12),
+                    t0 - 2.days,
+                    t0,
+                    false,
+                ),
+            )
+        }
+        runScreenTest(signed, screen = { calendar() }) {
+            onNodeWithTag("day-dot-friend-2023-11-12-2", useUnmergedTree = true).assertExists()
+            onNodeWithTag("day-dot-friend-2023-11-12-3", useUnmergedTree = true)
+                .assertDoesNotExist()
+        }
+    }
 
     @Test
     fun a_marked_day_lists_its_visit_and_opens_it() {

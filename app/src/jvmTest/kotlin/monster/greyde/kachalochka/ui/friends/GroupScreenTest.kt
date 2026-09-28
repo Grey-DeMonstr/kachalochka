@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.ui.friends
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
@@ -33,6 +34,25 @@ class GroupScreenTest {
             assertEquals(2, gym.friends.reads)
         }
         assertEquals(listOf(OLEG), opened)
+    }
+
+    @Test
+    fun a_member_s_colour_is_picked_from_the_palette() {
+        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        runScreenTest(gym, screen = { GroupScreen(group.id, {}, {}, {}, {}) }) {
+            onNodeWithTag("member-color-${ME.userId.value}").assertDoesNotExist()
+            onNodeWithTag("member-color-${OLEG.userId.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("color-picker").assertIsDisplayed()
+            (0 until 8).forEach { onNodeWithTag("color-option-$it").assertIsDisplayed() }
+
+            onNodeWithTag("color-option-6").performClick()
+            waitForIdle()
+
+            onNodeWithTag("color-picker").assertDoesNotExist()
+            onNodeWithTag("member-color-${OLEG.userId.value}")
+                .assertContentDescriptionEquals("Цвет 7")
+        }
     }
 
     @Test

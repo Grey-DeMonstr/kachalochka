@@ -34,6 +34,7 @@ import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.format.WEEKDAY_LABELS
 import monster.greyde.kachalochka.ui.format.isoDate
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.theme.friendColor
 
 data class DayUi(
     val day: CalendarDay,
@@ -41,7 +42,11 @@ data class DayUi(
     val today: Boolean,
     val selected: Boolean,
     val enabled: Boolean,
+    /** Palette indices of the friends who trained that day, one each. */
+    val friendDots: List<Int> = emptyList(),
 )
+
+private const val MAX_DOTS = 4
 
 /** The month as the grid draws it; days after [today] cannot be chosen. */
 internal fun monthWeeks(
@@ -49,6 +54,7 @@ internal fun monthWeeks(
     visitDays: Set<CalendarDay>,
     today: CalendarDay,
     selected: CalendarDay,
+    friendDots: Map<CalendarDay, List<Int>> = emptyMap(),
 ): List<List<DayUi?>> =
     month.weeks().map { week ->
         week.map { day ->
@@ -59,6 +65,7 @@ internal fun monthWeeks(
                     today = it == today,
                     selected = it == selected,
                     enabled = it <= today,
+                    friendDots = friendDots[it].orEmpty(),
                 )
             }
         }
@@ -164,13 +171,24 @@ private fun RowScope.DayCell(
                 color = if (day.today) colors.secondary else colors.onBackground,
             )
             // Drawn on every day, so a visit mark never shifts the number.
-            Box(
-                Modifier
-                    .padding(top = 2.dp)
-                    .size(5.dp)
-                    .clip(CircleShape)
-                    .background(if (day.hasVisit) colors.primary else Color.Transparent),
-            )
+            Row(
+                Modifier.padding(top = 2.dp).height(5.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                if (day.hasVisit) Dot(colors.primary)
+                val iso = isoDate(day.day)
+                day.friendDots.take(MAX_DOTS - if (day.hasVisit) 1 else 0).forEachIndexed { n, i ->
+                    Dot(friendColor(i), Modifier.testTag("day-dot-friend-$iso-$n"))
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun Dot(
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier.size(5.dp).clip(CircleShape).background(color))
 }

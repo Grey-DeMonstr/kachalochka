@@ -21,11 +21,13 @@ import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendResult
+import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.friends.GroupMember
 import monster.greyde.kachalochka.core.domain.friends.friendResults
 import monster.greyde.kachalochka.core.domain.friends.latestVisitsByMember
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -33,6 +35,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Clock
+import kotlin.time.Duration
 
 // join_group raises it for a code no live group has, and PostgREST answers it with a 404; see
 // 0007_groups.sql.
@@ -151,6 +154,39 @@ class SupabaseFriendsRepository(
             .mapNotNull { machine ->
                 machine.userId?.let(mates::get)?.let { FriendMachine(machine, it) }
             }.sortedBy { it.machine.name.lowercase() }
+    }
+
+    override suspend fun groupVisits(
+        viewer: UserId,
+        from: CalendarDay,
+        to: CalendarDay,
+    ): List<FriendVisit> {
+        val mates = mates(viewer)
+        if (mates.isEmpty()) return emptyList()
+        // Whatever the viewer's offset, a day's instants fall within a day either side of it.
+        val earliest = from.plusDays(-1).at(0L, Duration.ZERO)
+        val latest = to.plusDays(2).at(0L, Duration.ZERO)
+        return postgrest
+            .from(VISIT_TABLE)
+            .select {
+                filter {
+                    isIn("user_id", mates.keys.map { it.value })
+                    eq("deleted", false)
+                    or {
+                        and {
+                            gte("day", from.iso)
+                            lte("day", to.iso)
+                        }
+                        and {
+                            exact("day", null)
+                            gte("recorded_at", earliest.toString())
+                            lt("recorded_at", latest.toString())
+                        }
+                    }
+                }
+            }.decodeList<VisitRow>()
+            .map { it.toVisit() }
+            .mapNotNull { visit -> visit.userId?.let(mates::get)?.let { FriendVisit(it, visit) } }
     }
 
     override suspend fun latestOn(

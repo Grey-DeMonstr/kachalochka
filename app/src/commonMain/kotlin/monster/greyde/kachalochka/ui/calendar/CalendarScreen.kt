@@ -1,13 +1,17 @@
 package monster.greyde.kachalochka.ui.calendar
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +31,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.ControlShape
@@ -34,6 +39,7 @@ import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.theme.friendColor
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -41,6 +47,7 @@ fun CalendarScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenVisit: (CalendarDay) -> Unit,
+    onOpenFriendVisit: (UserId, String, CalendarDay) -> Unit,
 ) {
     val viewModel: CalendarViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -103,6 +110,12 @@ fun CalendarScreen(
                     Modifier.testTag("add-visit"),
                 )
             }
+            current.friendVisits.forEach { friend ->
+                FriendVisitCard(
+                    friend,
+                    onOpen = { onOpenFriendVisit(friend.userId, friend.name, friend.day) },
+                )
+            }
         }
         current.removal?.let {
             ConfirmDialog(
@@ -148,6 +161,39 @@ private fun MoveBanner(onCancel: () -> Unit) {
             fontSize = 15.sp,
             color = colors.onBackground,
         )
+    }
+}
+
+@Composable
+private fun FriendVisitCard(
+    visit: FriendDayVisitUi,
+    onOpen: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .border(1.dp, colors.onBackground.copy(alpha = 0.16f), shape)
+            .clickable(onClick = onOpen)
+            .padding(16.dp)
+            .testTag("friend-visit-${visit.userId.value}"),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(10.dp).clip(CircleShape).background(friendColor(visit.color)))
+        Text(
+            visit.name,
+            modifier = Modifier.weight(1f),
+            fontSize = 15.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = colors.onBackground,
+        )
+        visit.counts?.let {
+            Text(it, fontSize = 13.sp, color = colors.onBackground.copy(alpha = 0.6f))
+        }
     }
 }
 

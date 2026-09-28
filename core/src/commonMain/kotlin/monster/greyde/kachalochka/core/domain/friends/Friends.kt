@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.core.domain.friends
 
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -42,6 +43,11 @@ data class FriendMachine(
     val owner: Friend,
 )
 
+data class FriendVisit(
+    val friend: Friend,
+    val visit: Visit,
+)
+
 /** A friend's sets on a linked machine from their latest visit on it, in visit order. */
 data class FriendResult(
     val friend: Friend,
@@ -81,6 +87,13 @@ interface FriendsRepository {
 
     /** The live machines of everyone sharing a group with [viewer], by name. */
     suspend fun groupMachines(viewer: UserId): List<FriendMachine>
+
+    /** Group mates' live visits on days [from]..[to], or recorded within a day of them. */
+    suspend fun groupVisits(
+        viewer: UserId,
+        from: CalendarDay,
+        to: CalendarDay,
+    ): List<FriendVisit>
 
     /** Up to three friends' latest visits on a machine sharing [linkKey], newest first. */
     suspend fun latestOn(

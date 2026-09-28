@@ -3,12 +3,14 @@ package monster.greyde.kachalochka.ui.calendar
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -16,7 +18,15 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.FriendColorStore
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
+import monster.greyde.kachalochka.ui.friends.ME
+import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.PASHA
+import monster.greyde.kachalochka.ui.friends.signedInGym
+import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -29,6 +39,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalendarViewModelTest {
@@ -68,7 +79,28 @@ class CalendarViewModelTest {
             gym.clock,
             gym.utcOffset,
             gym.sync,
+            gym.friends,
+            FriendColorStore(gym.profiles, gym.clock, Random(1)),
         )
+
+    private fun FakeGym.friendVisit(
+        friend: Friend,
+        day: CalendarDay?,
+        recordedAt: Instant,
+        vararg machines: Machine,
+    ): Visit {
+        val visit = Visit(VisitId.random(), friend.userId, day, recordedAt, t0, false)
+        friends.visits += visit
+        friends.sets += machines.mapIndexed { i, machine -> set(visit, machine, i) }
+        return visit
+    }
+
+    private fun FakeGym.olegColored(index: Int) =
+        runBlocking {
+            profiles.upsert(
+                Profile.new(ME.userId, t0).copy(friendColors = mapOf(OLEG.userId to index)),
+            )
+        }
 
     private fun CalendarUiState.day(n: Int): DayUi =
         weeks.flatten().filterNotNull().single { it.day.day == n }
@@ -553,6 +585,202 @@ class CalendarViewModelTest {
                     .count { it.deleted },
             )
             assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_friend_s_visit_on_the_chosen_day_shows_in_their_colour_with_its_counts() =
+        runTest {
+            val signed = signedInGym()
+            signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+            signed.olegColored(5)
+            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press, press, row)
+
+            val vm = viewModel(signed).also { it.selectDay(twelfth) }
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(listOf(5), state.day(12).friendDots)
+            assertEquals(
+                listOf(
+                    FriendDayVisitUi(OLEG.userId, "Олег", 5, twelfth, "2 тренажёра · 3 подхода"),
+                ),
+                state.friendVisits,
+            )
+        }
+
+    @Test
+    fun a_friend_s_counts_follow_once_their_sets_are_read() =
+        runTest {
+            val signed = signedInGym()
+            signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+            signed.olegColored(5)
+            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press)
+            val vm = viewModel(signed)
+            val setsRead = CompletableDeferred<Unit>()
+            signed.friends.gate = setsRead
+
+            vm.selectDay(twelfth)
+
+            assertEquals(
+                listOf(FriendDayVisitUi(OLEG.userId, "Олег", 5, twelfth, null)),
+                vm.state.value?.friendVisits,
+            )
+            setsRead.complete(Unit)
+            assertEquals(
+                "1 тренажёр · 1 подход",
+                vm.state.value
+                    ?.friendVisits
+                    ?.single()
+                    ?.counts,
+            )
+        }
+
+    @Test
+    fun each_friend_shows_once_a_day_by_name_those_without_a_day_placed_by_their_time() =
+        runTest {
+            val signed = signedInGym()
+            signed.friends.group("Зал на Лесной", owner = PASHA, OLEG, ME)
+            signed.friendVisit(PASHA, twelfth, t0 - 2.days, press)
+            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press)
+            signed.friendVisit(OLEG, null, t0 - 2.days + 1.hours, row)
+
+            val vm = viewModel(signed).also { it.selectDay(twelfth) }
+
+            val state = assertNotNull(vm.state.value)
+            val colors = assertNotNull(signed.profiles.forOwner(ME.userId)).friendColors
+            assertEquals(
+                listOf(colors.getValue(OLEG.userId), colors.getValue(PASHA.userId)),
+                state.day(12).friendDots,
+            )
+            assertEquals(listOf("Олег", "Паша"), state.friendVisits.map { it.name })
+        }
+
+    @Test
+    fun own_visits_show_while_friends_are_still_read() =
+        runTest {
+            val signed = signedInGym()
+            signed.visits.upsert(sunday.copy(userId = ME.userId))
+            signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press)
+            val friendsRead = CompletableDeferred<Unit>()
+            signed.friends.gate = friendsRead
+
+            val vm = viewModel(signed).also { it.refresh() }
+
+            val waiting = assertNotNull(vm.state.value).day(12)
+            assertTrue(waiting.hasVisit)
+            assertEquals(emptyList(), waiting.friendDots)
+            friendsRead.complete(Unit)
+            assertEquals(
+                1,
+                vm.state.value
+                    ?.day(12)
+                    ?.friendDots
+                    ?.size,
+            )
+        }
+
+    @Test
+    fun offline_the_calendar_shows_no_friends_and_no_failure() =
+        runTest {
+            val signed = signedInGym()
+            signed.visits.upsert(sunday.copy(userId = ME.userId))
+            signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press)
+            signed.friends.offline = true
+
+            val vm = viewModel(signed).also { it.selectDay(twelfth) }
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(sunday.id, state.visit?.id)
+            assertEquals(emptyList(), state.day(12).friendDots)
+            assertEquals(emptyList(), state.friendVisits)
+        }
+
+    @Test
+    fun switching_accounts_drops_the_previous_account_s_friends() =
+        runTest {
+            val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+            val two = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
+            two.friends.group("Зал на Лесной", owner = OLEG, ME)
+            two.friendVisit(OLEG, twelfth, t0 - 2.days, press)
+            val vm = viewModel(two).also { it.selectDay(twelfth) }
+            assertEquals(
+                1,
+                vm.state.value
+                    ?.friendVisits
+                    ?.size,
+            )
+            val mishasFriends = CompletableDeferred<Unit>()
+            two.friends.gate = mishasFriends
+
+            two.accounts.switchTo(misha.account.userId)
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(emptyList(), state.day(12).friendDots)
+            assertEquals(emptyList(), state.friendVisits)
+            mishasFriends.complete(Unit)
+            assertEquals(emptyList(), vm.state.value?.friendVisits)
+        }
+
+    @Test
+    fun another_month_reads_friends_within_its_own_days() =
+        runTest {
+            val signed = signedInGym()
+            signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+            signed.friendVisit(OLEG, CalendarDay(2023, 10, 20), t0 - 25.days, press)
+            val vm = viewModel(signed).also { it.refresh() }
+            assertEquals(
+                CalendarDay(2023, 11, 1) to CalendarDay(2023, 11, 30),
+                signed.friends.visitWindows.last(),
+            )
+
+            vm.showMonth(-1)
+
+            assertEquals(
+                CalendarDay(2023, 10, 1) to CalendarDay(2023, 10, 31),
+                signed.friends.visitWindows.last(),
+            )
+            assertEquals(
+                1,
+                vm.state.value
+                    ?.day(20)
+                    ?.friendDots
+                    ?.size,
+            )
+        }
+
+    @Test
+    fun entering_again_or_a_sync_reads_friends_again() =
+        runTest {
+            val signed = signedInGym()
+            signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val vm = viewModel(signed).also { it.refresh() }
+            assertEquals(
+                emptyList(),
+                vm.state.value
+                    ?.day(13)
+                    ?.friendDots,
+            )
+
+            signed.friendVisit(OLEG, CalendarDay(2023, 11, 13), t0 - 1.days, press)
+            vm.refresh()
+            assertEquals(
+                1,
+                vm.state.value
+                    ?.day(13)
+                    ?.friendDots
+                    ?.size,
+            )
+
+            signed.friendVisit(OLEG, CalendarDay(2023, 11, 10), t0 - 4.days, press)
+            signed.sync.completePass()
+            assertEquals(
+                1,
+                vm.state.value
+                    ?.day(10)
+                    ?.friendDots
+                    ?.size,
+            )
         }
 
     private fun session(

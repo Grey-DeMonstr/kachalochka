@@ -6,12 +6,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.friends.GroupMember
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
 
 data class GroupUiState(
@@ -21,12 +23,14 @@ data class GroupUiState(
     val isOwner: Boolean,
     val confirming: GroupConfirmUi?,
     val notice: String?,
+    val colorPicker: UserId?,
 )
 
 data class MemberRowUi(
     val friend: Friend,
     val owner: Boolean,
     val opens: Boolean,
+    val color: Int?,
 )
 
 data class GroupConfirmUi(
@@ -41,6 +45,8 @@ class GroupViewModel(
     private val invites: InviteSharing,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
+    private val colorStore: FriendColorStore,
+    private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<GroupUiState?>(null)
     val state: StateFlow<GroupUiState?> = mutableState
@@ -54,6 +60,8 @@ class GroupViewModel(
     private var members: List<GroupMember> = emptyList()
     private var confirming = false
     private var notice: String? = null
+    private var colors: Map<UserId, Int> = emptyMap()
+    private var colorPicker: UserId? = null
 
     init {
         viewModelScope.launch {
@@ -89,6 +97,31 @@ class GroupViewModel(
         }
     }
 
+    fun pickColor(member: UserId) {
+        colorPicker = member
+        publish()
+    }
+
+    fun dismissColor() {
+        colorPicker = null
+        publish()
+    }
+
+    fun chooseColor(index: Int) {
+        val member = colorPicker ?: return
+        colorPicker = null
+        publish()
+        writes.launch {
+            val owner = currentUser.id() ?: return@launch
+            reading { colorStore.set(owner, member, index) }
+                .onSuccess {
+                    colors = colors + (member to index)
+                    sync.request()
+                }.onFailure { notice = "Нет связи с сервером" }
+            publish()
+        }
+    }
+
     fun invite() {
         val shown = group ?: return
         writes.launch {
@@ -107,12 +140,18 @@ class GroupViewModel(
                 } else {
                     group = found.first
                     members = found.second
+                    colors = reading { colorsOf(found.second) }.getOrDefault(colors)
                     publish()
                 }
                 mutableOffline.value = false
             }.onFailure {
                 mutableOffline.value = true
             }
+    }
+
+    private suspend fun colorsOf(members: List<GroupMember>): Map<UserId, Int> {
+        val owner = currentUser.id() ?: return emptyMap()
+        return colorStore.colorsFor(owner, members.map { it.userId }.filter { it != owner })
     }
 
     private fun publish() {
@@ -126,11 +165,18 @@ class GroupViewModel(
                 members =
                     members.map {
                         val friend = Friend(it.userId, it.displayName)
-                        MemberRowUi(friend, it.isOwner, it.userId != viewer)
+                        val mate = it.userId != viewer
+                        MemberRowUi(
+                            friend,
+                            it.isOwner,
+                            mate,
+                            if (mate) colors[it.userId] else null,
+                        )
                     },
                 isOwner = isOwner,
                 confirming = if (confirming) confirmUi(isOwner) else null,
                 notice = notice,
+                colorPicker = colorPicker,
             )
     }
 

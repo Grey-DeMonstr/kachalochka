@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendCalendarViewModel
+import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.FriendVisitViewModel
 import monster.greyde.kachalochka.ui.friends.GroupViewModel
 import monster.greyde.kachalochka.ui.friends.GroupsCache
@@ -33,6 +34,7 @@ import monster.greyde.kachalochka.ui.visit.VisitViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
+import kotlin.random.Random
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
@@ -50,6 +52,7 @@ val appModule =
         single { VisitNormalization(get(), get(), get(), get(), get()) }
         single { PendingJoin(get(), get()) }
         single { Nickname(get(), get()) }
+        single { FriendColorStore(get(), get(), Random.Default) }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }
@@ -99,5 +102,7 @@ val appModule =
         viewModel { (member: UserId) ->
             FriendCalendarViewModel(member, get(), get(), get(), get(), get(), get())
         }
-        viewModel { (group: GroupId) -> GroupViewModel(group, get(), get(), get(), get()) }
+        viewModel { (group: GroupId) ->
+            GroupViewModel(group, get(), get(), get(), get(), get(), get())
+        }
     }

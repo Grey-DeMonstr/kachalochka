@@ -4,8 +4,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.domain.friends.FRIEND_PALETTE_SIZE
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -20,7 +24,15 @@ class GroupViewModelTest {
     private val gym = signedInGym()
 
     private fun viewModel(group: FriendGroup) =
-        GroupViewModel(group.id, gym.friends, gym.invites, gym.currentUser, gym.accounts)
+        GroupViewModel(
+            group.id,
+            gym.friends,
+            gym.invites,
+            gym.currentUser,
+            gym.accounts,
+            FriendColorStore(gym.profiles, gym.clock, Random(1)),
+            gym.sync,
+        )
 
     @BeforeTest
     fun setUp() {
@@ -48,6 +60,72 @@ class GroupViewModelTest {
         )
         assertFalse(state.isOwner)
     }
+
+    @Test
+    fun every_member_but_the_viewer_shows_their_stored_colour() =
+        runTest {
+            gym.profiles.upsert(
+                Profile
+                    .new(ME.userId, gym.clock.current)
+                    .copy(friendColors = mapOf(OLEG.userId to 4)),
+            )
+            val group = gym.friends.group("Зал на Лесной", owner = OLEG, PASHA, ME)
+
+            val state = assertNotNull(viewModel(group).state.value)
+
+            val colors = state.members.associate { it.friend.userId to it.color }
+            assertEquals(4, colors[OLEG.userId])
+            assertNull(colors[ME.userId])
+            val pasha = assertNotNull(colors[PASHA.userId])
+            assertTrue(pasha in 0 until FRIEND_PALETTE_SIZE && pasha != 4)
+            assertEquals(
+                mapOf(OLEG.userId to 4, PASHA.userId to pasha),
+                gym.profiles.forOwner(ME.userId)?.friendColors,
+            )
+        }
+
+    @Test
+    fun a_chosen_colour_is_stored_and_shown() =
+        runTest {
+            val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val vm = viewModel(group)
+
+            vm.pickColor(OLEG.userId)
+            assertEquals(OLEG.userId, vm.state.value?.colorPicker)
+            vm.chooseColor(6)
+
+            val state = assertNotNull(vm.state.value)
+            assertNull(state.colorPicker)
+            assertEquals(6, state.members.single { it.friend == OLEG }.color)
+            assertEquals(
+                6,
+                gym.profiles
+                    .forOwner(ME.userId)
+                    ?.friendColors
+                    ?.get(OLEG.userId),
+            )
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun dismissing_the_palette_keeps_the_colour() =
+        runTest {
+            val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val vm = viewModel(group)
+            val before =
+                vm.state.value
+                    ?.members
+                    ?.single { it.friend == OLEG }
+                    ?.color
+
+            vm.pickColor(OLEG.userId)
+            vm.dismissColor()
+
+            val state = assertNotNull(vm.state.value)
+            assertNull(state.colorPicker)
+            assertEquals(before, state.members.single { it.friend == OLEG }.color)
+            assertEquals(0, gym.sync.requests)
+        }
 
     @Test
     fun a_member_leaves_once_they_confirm() {

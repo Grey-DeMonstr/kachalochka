@@ -114,9 +114,9 @@ with its sets in visit order:
   the own calendar never waits for it.
 - Each friend gets a palette index. `domain/friends/FriendColors.kt` holds
   `assignedColors(existing, friends, paletteSize, random)`: the existing map plus an index for
-  every friend without one, chosen at random among the least-used indices. `FriendColors` in
-  `app` reads the active profile, assigns, and writes the profile back only when something was
-  added. The palette is eight colours declared in `ui/theme` (both schemes), the only place
+  every friend without one, chosen at random among the least-used indices. `FriendColorStore`
+  in `app` reads the active profile, assigns, and writes the profile back only when something
+  was added. The palette is eight colours declared in `ui/theme` (both schemes), the only place
   colours live.
 - `DayUi` carries `friendDots: List<Int>` (palette indices of friends who trained that day, one per
   friend, ordered by name). The cell draws the own dot (`primary`) and then friend dots, at most

@@ -114,6 +114,12 @@ session only after a sign-in or a switch in the same process. Concurrent refresh
 account's token share one request. The active account's groups are read ahead into a
 process-wide `GroupsCache` whenever it becomes active, so the friends screen opens with them.
 
+The calendar reads group mates' visits for the shown month with one `groupVisits` request, far
+under PostgREST's row cap. It reads them after its own rows, again on entering the screen, after
+a sync, after an account switch and on a month change, and never stores them. A read in flight
+is cancelled by the next one, and a result that lands for another account or month than the one
+shown is dropped. A failed read leaves friends out; the own calendar never waits for it.
+
 Text leaves the app through `TextSharing`, bound per platform in `platformModule()`: Android's
 `ShareSheetTextSharing` opens the system share sheet and returns no notice; the web's
 `ClipboardTextSharing` writes the clipboard and returns the notice the screen shows. Invites use
@@ -253,6 +259,11 @@ Several accounts are signed in at once and one of them is active; the active one
 recorded now. Their rows share one local database, which is why reads are scoped by owner (§3)
 and why a pull watermark is per account (§4.2). Signing out drops the session and keeps the rows,
 so signing back in finds them again.
+
+Friends' calendar colours belong to the account, not the device: they live in its profile's
+`friend_colors` (§4.1), keyed by friend, so each account sees its own and they sync to its other
+devices. `FriendColorStore` draws a colour for a friend without one with the pure
+`assignedColors` and writes the profile only when it drew something or the user picked a colour.
 
 The avatar sits in every screen's top bar, so the active account can change under any screen. No
 screen-scoped view model carries a row across that change: each observes the store's active id and
@@ -513,6 +524,10 @@ failing the launch.
 
 Vico charts and any Compose `Canvas` drawing take their colours from the same scheme, so the
 chart surfaces follow the theme along with everything else.
+
+Friends' calendar colours are the one palette outside `ColorScheme`: eight hues per scheme,
+declared in the same file, kept clear of `primary`, and handed out by index through
+`friendColor(index)`, which reads the palette `KachalochkaTheme` provides for the active scheme.
 
 The colour schemes themselves are the Nocturne design system's ramps: dark is drawn by the
 design, light is derived from the same tonal ramps. Icons are Phosphor Regular, vendored as

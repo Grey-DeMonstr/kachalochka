@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 private val LightColors =
@@ -49,11 +51,49 @@ private val DarkColors =
         error = Color(0xFFFFB4AB),
     )
 
+// Teal, amber, coral, lime, sky, magenta, sand, green: hues kept clear of the violet primary.
+private val LightFriendColors =
+    listOf(
+        Color(0xFF00897B),
+        Color(0xFFD99100),
+        Color(0xFFE0603F),
+        Color(0xFF7FA000),
+        Color(0xFF1E88E5),
+        Color(0xFFC2187A),
+        Color(0xFFA0825A),
+        Color(0xFF2E8B57),
+    )
+
+private val DarkFriendColors =
+    listOf(
+        Color(0xFF4DD0BE),
+        Color(0xFFFFC247),
+        Color(0xFFFF8A6B),
+        Color(0xFFC6E05A),
+        Color(0xFF64B5F6),
+        Color(0xFFF06AB4),
+        Color(0xFFD9BE8F),
+        Color(0xFF5FCB85),
+    )
+
+private val LocalFriendColors = staticCompositionLocalOf { LightFriendColors }
+
+/** Eight hues readable on both schemes; friends' calendar dots take them by index. */
+@Composable
+fun friendColor(index: Int): Color {
+    val palette = LocalFriendColors.current
+    return palette[index.mod(palette.size)]
+}
+
 @Composable
 fun KachalochkaTheme(
     mode: ThemeMode,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (mode.resolvesToDark(isSystemInDarkTheme())) DarkColors else LightColors
-    MaterialTheme(colorScheme = colorScheme, content = content)
+    val dark = mode.resolvesToDark(isSystemInDarkTheme())
+    CompositionLocalProvider(
+        LocalFriendColors provides if (dark) DarkFriendColors else LightFriendColors,
+    ) {
+        MaterialTheme(colorScheme = if (dark) DarkColors else LightColors, content = content)
+    }
 }

@@ -106,6 +106,9 @@ fun App() {
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
+                        onOpenFriendVisit = { userId, name, day ->
+                            navController.navigate(FriendVisitRoute(userId.value, name, day.iso))
+                        },
                     )
                 }
                 composable<SettingsRoute> {

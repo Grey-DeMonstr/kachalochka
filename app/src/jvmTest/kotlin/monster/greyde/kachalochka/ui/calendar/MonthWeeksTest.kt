@@ -23,5 +23,22 @@ class MonthWeeksTest {
         assertTrue(days.getValue(14).today)
         assertTrue(days.getValue(10).selected)
         assertEquals(true to false, days.getValue(14).enabled to days.getValue(15).enabled)
+        assertEquals(emptyList(), days.getValue(12).friendDots)
+    }
+
+    @Test
+    fun friends_dots_land_on_their_days() {
+        val weeks =
+            monthWeeks(
+                CalendarMonth(2023, 11),
+                visitDays = emptySet(),
+                today = CalendarDay(2023, 11, 14),
+                selected = CalendarDay(2023, 11, 14),
+                friendDots = mapOf(CalendarDay(2023, 11, 3) to listOf(2, 5)),
+            )
+        val days = weeks.flatten().filterNotNull().associateBy { it.day.day }
+
+        assertEquals(listOf(2, 5), days.getValue(3).friendDots)
+        assertEquals(emptyList(), days.getValue(4).friendDots)
     }
 }

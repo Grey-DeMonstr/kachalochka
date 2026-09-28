@@ -109,6 +109,16 @@ day tapped next; if that day already has a visit, the app asks whether to replac
 replacing removes it with its sets. "Удалить" asks for confirmation, then removes the visit
 and its sets from the history and the statistics.
 
+With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
+group with it: each friend who trained on a day adds a dot in that friend's colour after the
+account's own dot, at most four dots a day. Below the chosen day's own visit is one card per
+friend who trained that day, with the colour dot, the friend's name and, once read, their machine
+and set counts; tapping it opens that friend's visit, read-only. Friends are read again on
+entering the calendar, on changing the month and after switching accounts; without a network the
+calendar shows only the account's own visits. Each friend gets a colour at random at first, and
+the account can change it on the group screen. The colours are personal to the account: friends
+never see them, and they follow the account to its other devices.
+
 Photos, comments on a set and counting left and right separately are shown on these screens but
 not yet available.
 
@@ -153,6 +163,10 @@ link opened while signed out is offered to whichever account signs in next in th
 Every member sees the other members' calendars and visits, read-only, and nothing is shared
 outside a group. A member can leave; the owner deletes the group instead. Friends' data is read
 online and never stored on the device.
+
+The group screen shows a colour dot before every member's name but the user's own. Tapping it
+opens a palette of eight colours; the chosen one marks that friend's visits in the user's
+calendar.
 
 A machine can be taken from a friend's list: the copy keeps the friend's settings and stays
 linked to the friend's machine as one physical machine. The set sheet then shows friends'

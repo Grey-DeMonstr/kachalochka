@@ -5,17 +5,20 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
+import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.friends.GroupMember
 import monster.greyde.kachalochka.core.domain.friends.friendResults
 import monster.greyde.kachalochka.core.domain.friends.latestVisitsByMember
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 /** Friends as row-level security shows them to the active account; reads fail while [offline]. */
@@ -30,6 +33,9 @@ class FakeFriends(
     var offline = false
     var reads = 0
         private set
+
+    /** The days every [groupVisits] call asked for, in order. */
+    val visitWindows = mutableListOf<Pair<CalendarDay, CalendarDay>>()
 
     /** While set, a read started now waits for it, keeping it in flight while a test needs. */
     var gate: CompletableDeferred<Unit>? = null
@@ -150,6 +156,25 @@ class FakeFriends(
                 .mapNotNull { m -> m.userId?.let(mates::get)?.let { FriendMachine(m, it) } }
                 .sortedBy { it.machine.name.lowercase() }
         }
+
+    override suspend fun groupVisits(
+        viewer: UserId,
+        from: CalendarDay,
+        to: CalendarDay,
+    ): List<FriendVisit> {
+        visitWindows += from to to
+        return online {
+            val mates = mates(viewer).filterKeys(::visibleMember)
+            val earliest = from.plusDays(-1).at(0L, Duration.ZERO)
+            val latest = to.plusDays(2).at(0L, Duration.ZERO)
+            visits
+                .filter { !it.deleted }
+                .filter { visit ->
+                    val day = visit.day
+                    if (day != null) day in from..to else visit.recordedAt in earliest..<latest
+                }.mapNotNull { v -> v.userId?.let(mates::get)?.let { FriendVisit(it, v) } }
+        }
+    }
 
     override suspend fun latestOn(
         viewer: UserId,
