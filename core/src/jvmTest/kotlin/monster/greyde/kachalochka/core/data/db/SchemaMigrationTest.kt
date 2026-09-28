@@ -155,6 +155,7 @@ class SchemaMigrationTest {
             """.trimIndent(),
         )
         version5ProfileTable()
+        exec("DROP TABLE machine_link")
     }
 
     /** Every version before 6 declares the profile table this way. */
@@ -295,6 +296,33 @@ class SchemaMigrationTest {
         assertEquals(null, text("SELECT height_cm FROM profile WHERE id = 'ivan'"))
         assertEquals("Иван", text("SELECT display_name FROM profile WHERE id = 'ivan'"))
         assertEquals(7L, number("SELECT updated_at FROM profile WHERE id = 'ivan'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
+    @Test
+    fun version_6_gains_the_machine_link_table_and_every_row_is_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        exec("DROP TABLE machine_link")
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 6, 7)
+
+        exec(
+            "INSERT INTO machine_link(id, user_id, machine_id, linked_machine_id, updated_at) " +
+                "VALUES ('link', 'ivan', 'mine', 'theirs', 7)",
+        )
+        assertEquals(
+            "theirs",
+            text("SELECT linked_machine_id FROM machine_link WHERE id = 'link'"),
+        )
+        assertEquals(0L, number("SELECT deleted FROM machine_link WHERE id = 'link'"))
+        assertEquals(
+            "machine_link_updated_at_idx",
+            text(
+                "SELECT name FROM sqlite_master " +
+                    "WHERE type = 'index' AND name = 'machine_link_updated_at_idx'",
+            ),
+        )
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 

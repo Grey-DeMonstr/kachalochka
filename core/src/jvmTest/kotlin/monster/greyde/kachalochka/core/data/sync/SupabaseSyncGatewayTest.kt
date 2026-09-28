@@ -15,6 +15,8 @@ import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -208,6 +210,38 @@ class SupabaseSyncGatewayTest {
                     .toByteArray()
                     .decodeToString()
             assertTrue("\"link_id\":null" in body, body)
+        }
+
+    @Test
+    fun a_link_is_pushed_to_and_pulled_from_its_own_table() =
+        runTest {
+            val link =
+                MachineLink(
+                    MachineLinkId("55555555-5555-4555-8555-555555555555"),
+                    OWNER,
+                    MachineId("33333333-3333-4333-8333-333333333333"),
+                    MachineId("44444444-4444-4444-8444-444444444444"),
+                    Instant.parse("2024-01-01T00:00:00Z"),
+                    false,
+                )
+            val row =
+                """[{"id":"${link.id.value}","user_id":"${OWNER.value}",""" +
+                    """"machine_id":"${link.machineId.value}",""" +
+                    """"linked_machine_id":"${link.linkedMachineId.value}",""" +
+                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false}]"""
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
+            engine.enqueue { respond(row, HttpStatusCode.OK, jsonHeaders()) }
+            engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }
+            val gateway = gatewayOn(engine, pageSize = 10)
+
+            gateway.pushMachineLink(link)
+            val pulled = gateway.pullMachineLinks(OWNER, since = null)
+
+            assertTrue(
+                engine.requestHistory.all { it.url.encodedPath.endsWith("/machine_link") },
+            )
+            assertEquals(listOf(link), pulled)
         }
 
     @Test

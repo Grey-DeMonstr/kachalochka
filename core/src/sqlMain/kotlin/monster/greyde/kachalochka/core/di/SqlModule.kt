@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.di
 import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.db.kachalochkaDatabase
 import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
+import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
@@ -25,6 +26,7 @@ import monster.greyde.kachalochka.core.data.sync.SyncPass
 import monster.greyde.kachalochka.core.data.sync.SyncSession
 import monster.greyde.kachalochka.core.data.sync.SyncWatermarks
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
@@ -42,6 +44,7 @@ internal fun sqlModule(): Module =
         single<MachineRepository> { LocalMachineRepository(get(), get(), Dispatchers.IO) }
         single<VisitRepository> { LocalVisitRepository(get(), get(), Dispatchers.IO) }
         single<WorkoutSetRepository> { LocalWorkoutSetRepository(get(), get(), Dispatchers.IO) }
+        single<MachineLinkRepository> { LocalMachineLinkRepository(get(), get(), Dispatchers.IO) }
         single<OwnerlessRows> { SqlOwnerlessRows(get(), get(), Clock.System, Dispatchers.IO) }
         single { SyncWatermarks(get()) }
         single { LocalSyncRows(get()) }

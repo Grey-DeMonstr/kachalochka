@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.data.sync
 
 import kotlinx.coroutines.test.runTest
+import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
@@ -54,6 +55,41 @@ class SyncPassPullTest {
             h.pass.run(listOf(IVAN))
 
             assertEquals(profile, h.profiles.byId(profile.id))
+        }
+
+    @Test
+    fun a_pulled_link_is_written_locally() =
+        runTest {
+            val link = ownedLink(IVAN)
+            h.gateway.linksToPull = listOf(link)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(listOf(link), h.links.all(IVAN))
+        }
+
+    @Test
+    fun a_link_waiting_in_the_outbox_survives_the_pull_that_would_overwrite_it() =
+        runTest {
+            val mine = ownedLink(IVAN)
+            h.links.upsert(mine)
+            h.gateway.failing = MACHINE_LINK_TABLE
+            h.gateway.linksToPull = listOf(mine.copy(deleted = true))
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(listOf(mine), h.links.all(IVAN))
+        }
+
+    @Test
+    fun the_watermark_counts_pulled_links() =
+        runTest {
+            h.gateway.visitsToPull = listOf(ownedVisit(IVAN, updatedAt = T0 + 1.hours))
+            h.gateway.linksToPull = listOf(ownedLink(IVAN, updatedAt = T0 + 2.hours))
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(T0 + 2.hours, h.watermarks.lastPullAt(IVAN))
         }
 
     @Test

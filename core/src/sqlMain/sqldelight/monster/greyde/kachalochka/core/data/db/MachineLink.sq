@@ -1,0 +1,31 @@
+import kotlin.Boolean;
+import kotlin.time.Instant;
+
+CREATE TABLE machine_link (
+    id                TEXT NOT NULL PRIMARY KEY,
+    user_id           TEXT,
+    machine_id        TEXT NOT NULL,
+    linked_machine_id TEXT NOT NULL,
+    updated_at        INTEGER AS Instant NOT NULL,
+    deleted           INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+CREATE INDEX machine_link_updated_at_idx ON machine_link (updated_at);
+
+upsert:
+INSERT OR REPLACE INTO machine_link(id, user_id, machine_id, linked_machine_id, updated_at,
+    deleted)
+VALUES (?, ?, ?, ?, ?, ?);
+
+byId:
+SELECT * FROM machine_link WHERE id = ?;
+
+live:
+SELECT * FROM machine_link
+WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
+
+ownerlessIds:
+SELECT id FROM machine_link WHERE user_id IS NULL;
+
+claimOwnerless:
+UPDATE machine_link SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;

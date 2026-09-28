@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.data.sync
 
 import kotlinx.coroutines.test.runTest
+import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
@@ -37,6 +38,31 @@ class SyncPassPushTest {
                     .substringBefore(':'),
             )
             assertEquals(3, h.gateway.pushed.size)
+        }
+
+    @Test
+    fun a_link_is_pushed_after_machines_visits_and_profiles_and_before_sets() =
+        runTest {
+            val visit = ownedVisit(IVAN)
+            val press = ownedPress(IVAN)
+            h.sets.upsert(ownedSet(IVAN, visit, press))
+            h.links.upsert(ownedLink(IVAN))
+            h.profiles.upsert(ownedProfile(IVAN))
+            h.visits.upsert(visit)
+            h.machines.upsert(press)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(
+                listOf(
+                    MACHINE_TABLE,
+                    VISIT_TABLE,
+                    PROFILE_TABLE,
+                    MACHINE_LINK_TABLE,
+                    WORKOUT_SET_TABLE,
+                ),
+                h.gateway.pushed.map { it.substringBefore(':') },
+            )
         }
 
     @Test

@@ -35,7 +35,7 @@ class SyncAndNormalizeTest {
                 listOf("$VISIT_TABLE:${old.id.value}", "$WORKOUT_SET_TABLE:${oldSet.id.value}"),
                 h.gateway.pushed,
             )
-            assertEquals(8, h.gateway.pulledSince.size)
+            assertEquals(10, h.gateway.pulledSince.size)
             assertEquals(emptyList(), h.failures)
         }
 
@@ -62,7 +62,7 @@ class SyncAndNormalizeTest {
             assertTrue(h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.failures::add))
 
             assertEquals(emptyList(), h.gateway.pushed)
-            assertEquals(4, h.gateway.pulledSince.size)
+            assertEquals(5, h.gateway.pulledSince.size)
         }
 
     @Test

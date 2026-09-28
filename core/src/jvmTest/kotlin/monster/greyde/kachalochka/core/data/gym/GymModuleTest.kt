@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.data.gym
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.di.corePlatformModule
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
@@ -25,6 +26,7 @@ class GymModuleTest {
         assertIs<LocalMachineRepository>(koin.get<MachineRepository>())
         assertIs<LocalVisitRepository>(koin.get<VisitRepository>())
         assertIs<LocalWorkoutSetRepository>(koin.get<WorkoutSetRepository>())
+        assertIs<LocalMachineLinkRepository>(koin.get<MachineLinkRepository>())
     }
 
     @Test

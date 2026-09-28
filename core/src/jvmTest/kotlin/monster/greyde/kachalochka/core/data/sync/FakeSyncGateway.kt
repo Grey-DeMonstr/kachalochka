@@ -1,10 +1,12 @@
 package monster.greyde.kachalochka.core.data.sync
 
+import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -25,6 +27,7 @@ class FakeSyncGateway(
     var visitsToPull: List<Visit> = emptyList()
     var setsToPull: List<WorkoutSet> = emptyList()
     var profilesToPull: List<Profile> = emptyList()
+    var linksToPull: List<MachineLink> = emptyList()
 
     /** Makes every push to that table fail, as a lost connection would. */
     var failing: String? = null
@@ -38,6 +41,9 @@ class FakeSyncGateway(
     override suspend fun pushSet(set: WorkoutSet) = record(WORKOUT_SET_TABLE, set.id.value)
 
     override suspend fun pushProfile(profile: Profile) = record(PROFILE_TABLE, profile.id.value)
+
+    override suspend fun pushMachineLink(link: MachineLink) =
+        record(MACHINE_LINK_TABLE, link.id.value)
 
     override suspend fun pullMachines(
         owner: UserId,
@@ -58,6 +64,11 @@ class FakeSyncGateway(
         owner: UserId,
         since: Instant?,
     ) = pull(owner, since) { profilesToPull.filter { it.userId == owner } }
+
+    override suspend fun pullMachineLinks(
+        owner: UserId,
+        since: Instant?,
+    ) = pull(owner, since) { linksToPull.filter { it.userId == owner } }
 
     private fun <T> pull(
         owner: UserId,

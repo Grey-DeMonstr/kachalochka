@@ -204,9 +204,10 @@ failing a pull.
 - **Push.** Every local write appends the row's id and table to an `outbox`, which names only the
   table and the row, not its owner. A pass reads each row to learn who owns it: an entry for
   another account's row waits for that account's own turn, and an entry whose row is gone or
-  unowned is dropped. A pass pushes `machine`, `visit` and `profile` entries before `workout_set`
-  entries, because the server enforces foreign keys the local SQLite does not. An entry is removed
-  after a successful push only if nothing re-enqueued it in the meantime.
+  unowned is dropped. A pass pushes entries by table rank: `machine`, `visit`, `profile`,
+  `machine_link`, then `workout_set`, because the server checks a set's visit and machine, which
+  the local SQLite does not, and a link follows the machines it names. An entry is removed after a
+  successful push only if nothing re-enqueued it in the meantime.
 - **Pull.** The sync pass fetches every row of every table newer than the account's pull
   watermark, keyset-paged on `(updated_at, id)` using the values the server returned for the last
   row of the previous page, and stops once a page comes back empty. It writes nothing, and leaves
@@ -308,14 +309,23 @@ displayed photos from the local file on Android and from a signed Storage URL on
 
 ### 4.5 Gym data
 
-Three synced tables: `machine`, `visit` and `workout_set`. The last is not called `set` — a
-keyword in both SQLDelight's dialect and Postgres. Weights are `Double`; every step and every
-typed weight is rounded to three decimals so a running total never drifts. The weight-counting
-mode and the unit are enums, mapped to the wire names `total` / `per_side` and `kg` / `lb` /
-`custom` by one shared mapping in `core/data/gym`, used by both implementations. A name the
-mapping does not know reads as `total` or `kg`: clients before 1.0.2 still write `counterweight`,
-and one unreadable row must not stop a pull. A custom unit's name is `unit_label`, empty for kg
-and lb.
+Four synced tables: `machine`, `visit`, `workout_set` and `machine_link`. `workout_set` is not
+called `set` — a keyword in both SQLDelight's dialect and Postgres. Weights are `Double`; every
+step and every typed weight is rounded to three decimals so a running total never drifts. The
+weight-counting mode and the unit are enums, mapped to the wire names `total` / `per_side` and
+`kg` / `lb` / `custom` by one shared mapping in `core/data/gym`, used by both implementations. A
+name the mapping does not know reads as `total` or `kg`: clients before 1.0.2 still write
+`counterweight`, and one unreadable row must not stop a pull. A custom unit's name is
+`unit_label`, empty for kg and lb.
+
+A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
+member's `linked_machine_id`. Neither column is a foreign key and no policy checks either against
+`machine`: a link may reach the server before its own machine does, and the linked machine is
+someone else's. 1.0.2 linked machines by a shared key, `machine.link_id`, which stays in both
+schemas for its clients. Migration `0009` converted those keys once: live machines are grouped by
+`coalesce(link_id, id)`, and in every group spanning two or more users, each machine of a user
+other than the representative's links to the representative — the machine whose id is the key,
+else the oldest by `updated_at`. Keys a 1.0.2 client writes later are not converted.
 
 A visit is one account's calendar day: `visit.day`, with no start, end or duration, and the row
 is created with the day's first set. `day` is nullable and unconstrained, because clients before
@@ -395,9 +405,14 @@ Row-level security enforces every visibility rule from the functional spec:
 
 - A user writes only rows with their own `user_id`, and a set only into their own visit and on
   their own machine.
-- A user reads their own rows and the live `machine`, `visit` and `workout_set` rows of
-  everyone who shares a live group with them, through the security-definer function
+- A user reads their own rows and the live `machine`, `visit`, `workout_set` and `machine_link`
+  rows of everyone who shares a live group with them, through the security-definer function
   `shares_group_with`. `profile` stays readable by its owner alone.
+- A friend's link into one's own machine is changed only through two security-definer
+  functions. `break_machine_links(machine)` soft-deletes the live links pointing at `machine`
+  when the caller owns it on the server. `repoint_machine_links(removed, kept)` moves the live
+  links pointing at `removed` to `kept` when the caller owns `removed` and nobody else owns
+  `kept`; `kept` need not exist yet, since it may have been created offline.
 - A group's current members are readable by its members. Membership changes only through the
   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
   and soft-deletes the group directly, and a deleted group stays deleted.

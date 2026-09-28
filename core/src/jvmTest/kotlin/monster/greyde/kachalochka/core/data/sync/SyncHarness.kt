@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.data.sync
 
 import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
+import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
@@ -9,6 +10,9 @@ import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -59,6 +63,18 @@ internal fun ownedProfile(
     updatedAt: Instant = T0,
 ) = Profile(ProfileId(newUuidV4()), owner, "Иван", updatedAt, false)
 
+internal fun ownedLink(
+    owner: UserId,
+    updatedAt: Instant = T0,
+) = MachineLink(
+    MachineLinkId.random(),
+    owner,
+    MachineId.random(),
+    MachineId.random(),
+    updatedAt,
+    false,
+)
+
 internal class SyncHarness {
     val database = inMemoryDatabase()
     val outbox = OutboxDao(database)
@@ -66,6 +82,7 @@ internal class SyncHarness {
     val machines = LocalMachineRepository(database, outbox, Dispatchers.Unconfined)
     val sets = LocalWorkoutSetRepository(database, outbox, Dispatchers.Unconfined)
     val profiles = LocalProfileRepository(database, outbox, Dispatchers.Unconfined)
+    val links = LocalMachineLinkRepository(database, outbox, Dispatchers.Unconfined)
     val watermarks = SyncWatermarks(database)
     val session = SyncSession()
     val gateway = FakeSyncGateway(session)

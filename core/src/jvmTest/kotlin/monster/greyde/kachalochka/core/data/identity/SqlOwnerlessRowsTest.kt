@@ -3,14 +3,19 @@ package monster.greyde.kachalochka.core.data.identity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
+import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
+import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -32,6 +37,7 @@ class SqlOwnerlessRowsTest {
     private val machines = LocalMachineRepository(database, outbox, Dispatchers.Unconfined)
     private val sets = LocalWorkoutSetRepository(database, outbox, Dispatchers.Unconfined)
     private val profiles = LocalProfileRepository(database, outbox, Dispatchers.Unconfined)
+    private val links = LocalMachineLinkRepository(database, outbox, Dispatchers.Unconfined)
 
     private val owner = UserId("11111111-1111-4111-8111-111111111111")
     private val stranger = UserId("22222222-2222-4222-8222-222222222222")
@@ -113,6 +119,33 @@ class SqlOwnerlessRowsTest {
             assertTrue(
                 outbox.pending().any {
                     it.tableName == PROFILE_TABLE && it.rowId == anonymous.id.value
+                },
+            )
+        }
+
+    @Test
+    fun claiming_stamps_an_anonymous_link_and_enqueues_it() =
+        runTest {
+            val anonymous =
+                MachineLink(
+                    MachineLinkId.random(),
+                    null,
+                    MachineId.random(),
+                    MachineId.random(),
+                    t0,
+                    false,
+                )
+            links.upsert(anonymous)
+
+            rows.claim(owner)
+
+            assertEquals(
+                listOf(anonymous.copy(userId = owner, updatedAt = clock.now())),
+                links.all(owner),
+            )
+            assertTrue(
+                outbox.pending().any {
+                    it.tableName == MACHINE_LINK_TABLE && it.rowId == anonymous.id.value
                 },
             )
         }

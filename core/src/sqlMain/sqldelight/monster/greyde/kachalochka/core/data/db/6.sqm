@@ -1,0 +1,13 @@
+CREATE TABLE machine_link (
+    id                TEXT NOT NULL PRIMARY KEY,
+    user_id           TEXT,
+    machine_id        TEXT NOT NULL,
+    linked_machine_id TEXT NOT NULL,
+    updated_at        INTEGER NOT NULL,
+    deleted           INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX machine_link_updated_at_idx ON machine_link (updated_at);
+
+-- Links other devices wrote may be older than the watermark the other tables advanced.
+UPDATE syncState SET lastPullAt = NULL;

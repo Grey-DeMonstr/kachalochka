@@ -3,11 +3,13 @@ package monster.greyde.kachalochka.core.data.sync
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -36,9 +38,8 @@ class SyncPass(
                 }
             }.all { it }
 
-    // The server enforces a set's foreign keys to its visit and machine; SQLite does not.
     private suspend fun push(owner: UserId): Boolean {
-        val entries = db { outbox.pending() }.sortedBy { it.tableName == WORKOUT_SET_TABLE }
+        val entries = db { outbox.pending() }.sortedBy { rank(it.tableName) }
         return entries
             .map { entry ->
                 when (entry.tableName) {
@@ -62,6 +63,14 @@ class SyncPass(
                             gateway.pushProfile(it)
                         }
 
+                    MACHINE_LINK_TABLE ->
+                        pushRow(
+                            entry,
+                            owner,
+                            db { rows.machineLink(entry.rowId) },
+                            { it.userId },
+                        ) { gateway.pushMachineLink(it) }
+
                     else -> true
                 }
             }.all { it }
@@ -77,6 +86,7 @@ class SyncPass(
                     gateway.pullVisits(owner, since),
                     gateway.pullSets(owner, since),
                     gateway.pullProfiles(owner, since),
+                    gateway.pullMachineLinks(owner, since),
                 )
         }
         val rowsPulled = pulled ?: return false
@@ -95,6 +105,9 @@ class SyncPass(
                 rowsPulled.profiles.forEach {
                     if ((PROFILE_TABLE to it.id.value) !in pending) rows.writeProfile(it)
                 }
+                rowsPulled.links.forEach {
+                    if ((MACHINE_LINK_TABLE to it.id.value) !in pending) rows.writeMachineLink(it)
+                }
                 rowsPulled.newestUpdatedAt?.let { watermarks.advance(owner, it) }
             }
         }
@@ -106,13 +119,18 @@ class SyncPass(
         val visits: List<Visit>,
         val sets: List<WorkoutSet>,
         val profiles: List<Profile>,
+        val links: List<MachineLink>,
     ) {
         val newestUpdatedAt: Instant? =
             (
                 machines.map { it.updatedAt } + visits.map { it.updatedAt } +
-                    sets.map { it.updatedAt } + profiles.map { it.updatedAt }
+                    sets.map { it.updatedAt } + profiles.map { it.updatedAt } +
+                    links.map { it.updatedAt }
             ).maxOrNull()
     }
+
+    private fun rank(table: String): Int =
+        PUSH_RANK.indexOf(table).let { if (it < 0) PUSH_RANK.size else it }
 
     private suspend fun <T : Any> pushRow(
         entry: OutboxEntry,
@@ -146,4 +164,16 @@ class SyncPass(
         }
 
     private suspend fun <T> db(read: () -> T): T = withContext(dispatcher) { read() }
+
+    private companion object {
+        // The server checks a set's visit and machine; a link follows the machines it names.
+        val PUSH_RANK =
+            listOf(
+                MACHINE_TABLE,
+                VISIT_TABLE,
+                PROFILE_TABLE,
+                MACHINE_LINK_TABLE,
+                WORKOUT_SET_TABLE,
+            )
+    }
 }

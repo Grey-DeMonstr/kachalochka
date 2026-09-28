@@ -10,6 +10,7 @@ class GymIdsTest {
         assertNotEquals(MachineId.random(), MachineId.random())
         assertNotEquals(VisitId.random(), VisitId.random())
         assertNotEquals(WorkoutSetId.random(), WorkoutSetId.random())
+        assertNotEquals(MachineLinkId.random(), MachineLinkId.random())
     }
 
     @Test
@@ -21,5 +22,6 @@ class GymIdsTest {
             )
         }
         assertFailsWith<IllegalArgumentException> { WorkoutSetId("") }
+        assertFailsWith<IllegalArgumentException> { MachineLinkId("press-to-press") }
     }
 }

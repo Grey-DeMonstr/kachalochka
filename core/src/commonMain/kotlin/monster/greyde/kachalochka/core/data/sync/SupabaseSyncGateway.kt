@@ -3,7 +3,9 @@ package monster.greyde.kachalochka.core.data.sync
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.MachineLinkRow
 import monster.greyde.kachalochka.core.data.gym.MachineRow
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.VisitRow
@@ -13,6 +15,7 @@ import monster.greyde.kachalochka.core.data.gym.owned
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.data.profile.ProfileRow
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -53,6 +56,12 @@ class SupabaseSyncGateway(
             .upsert(ProfileRow.of(profile))
     }
 
+    override suspend fun pushMachineLink(link: MachineLink) {
+        client.value.postgrest
+            .from(MACHINE_LINK_TABLE)
+            .upsert(MachineLinkRow.of(link))
+    }
+
     override suspend fun pullMachines(
         owner: UserId,
         since: Instant?,
@@ -80,6 +89,13 @@ class SupabaseSyncGateway(
     ): List<Profile> =
         pullAll<ProfileRow>(PROFILE_TABLE, owner, since) { it.updatedAt to it.id }
             .map { it.toProfile() }
+
+    override suspend fun pullMachineLinks(
+        owner: UserId,
+        since: Instant?,
+    ): List<MachineLink> =
+        pullAll<MachineLinkRow>(MACHINE_LINK_TABLE, owner, since) { it.updatedAt to it.id }
+            .map { it.toMachineLink() }
 
     // Each page starts after the previous page's last (updated_at, id), so a row another device
     // edits between two fetches only moves later in the order and never makes the pull skip one.

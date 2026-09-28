@@ -1,13 +1,16 @@
 package monster.greyde.kachalochka.core.data.sync
 
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
+import monster.greyde.kachalochka.core.data.gym.machineLinkOf
 import monster.greyde.kachalochka.core.data.gym.machineOf
 import monster.greyde.kachalochka.core.data.gym.visitOf
 import monster.greyde.kachalochka.core.data.gym.wireName
 import monster.greyde.kachalochka.core.data.gym.workoutSetOf
+import monster.greyde.kachalochka.core.data.gym.write
 import monster.greyde.kachalochka.core.data.profile.profileOf
 import monster.greyde.kachalochka.core.data.profile.write
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -26,6 +29,9 @@ class LocalSyncRows(
 
     fun profile(id: String): Profile? =
         database.profileQueries.byId(id, ::profileOf).executeAsOneOrNull()
+
+    fun machineLink(id: String): MachineLink? =
+        database.machineLinkQueries.byId(id, ::machineLinkOf).executeAsOneOrNull()
 
     fun writeMachine(machine: Machine) =
         database.machineQueries.upsert(
@@ -69,6 +75,8 @@ class LocalSyncRows(
         )
 
     fun writeProfile(profile: Profile) = database.profileQueries.write(profile)
+
+    fun writeMachineLink(link: MachineLink) = database.machineLinkQueries.write(link)
 
     fun transaction(body: () -> Unit) = database.transaction { body() }
 }
