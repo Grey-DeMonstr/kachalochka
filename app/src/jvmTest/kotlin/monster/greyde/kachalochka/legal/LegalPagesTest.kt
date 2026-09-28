@@ -11,7 +11,7 @@ private val webResources = File("src/wasmJsMain/resources")
 
 private const val ISSUES = "https://github.com/Grey-DeMonstr/kachalochka/issues"
 
-private val DOCUMENTS = listOf("privacy.html")
+private val DOCUMENTS = listOf("privacy.html", "terms.html")
 private val PAGES = DOCUMENTS + "index.html"
 
 private fun page(name: String): String = File(webResources, name).readText()
@@ -45,6 +45,35 @@ class LegalPagesTest {
         val html = page("privacy.html")
         assertTrue("$ISSUES/new" in html)
         assertTrue("within 30 days" in html)
+    }
+
+    @Test
+    fun termsHaveEverySection() {
+        assertEquals(
+            listOf(
+                "Agreement",
+                "The service",
+                "Your account",
+                "Your content",
+                "Acceptable use",
+                "Groups",
+                "Health",
+                "No warranty",
+                "Limitation of liability",
+                "Ending use",
+                "Changes",
+                "Source code",
+                "Contact",
+            ),
+            headings(page("terms.html")),
+        )
+    }
+
+    @Test
+    fun termsLeaveTheGplRightsIntact() {
+        val html = page("terms.html")
+        assertTrue("https://www.gnu.org/licenses/gpl-3.0.html" in html)
+        assertTrue("do not limit the rights the GPL gives you" in html)
     }
 
     @Test
