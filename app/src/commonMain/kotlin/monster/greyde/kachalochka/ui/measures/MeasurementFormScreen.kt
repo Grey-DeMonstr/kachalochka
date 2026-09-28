@@ -30,14 +30,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
-import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -70,12 +68,7 @@ fun MeasurementFormScreen(
                 Modifier.fillMaxWidth().testTag("measurement-day"),
             )
             form.fields.forEach { field ->
-                MeasureField(
-                    field,
-                    onType = { viewModel.type(field.id, it) },
-                    onCalculate =
-                        viewModel::openCalculator.takeIf { field.kind == MeasureKind.BodyFat },
-                )
+                MeasureField(field, onType = { viewModel.type(field.id, it) })
             }
             if (form.canDelete) {
                 OutlineButton(
@@ -108,18 +101,6 @@ fun MeasurementFormScreen(
                 onDismiss = viewModel::dismissPick,
             )
         }
-        form.calculator?.let {
-            BodyFatSheet(
-                it,
-                onSex = viewModel::chooseSex,
-                onBirthYear = viewModel::typeBirthYear,
-                onHeight = viewModel::typeHeight,
-                onSaveParams = viewModel::saveBodyParams,
-                onEditParams = viewModel::editBodyParams,
-                onUse = viewModel::useResult,
-                onDismiss = viewModel::closeCalculator,
-            )
-        }
         if (form.deleting) {
             ConfirmDialog(
                 title = "Удалить замер?",
@@ -139,7 +120,6 @@ fun MeasurementFormScreen(
 private fun MeasureField(
     field: MeasureFieldUi,
     onType: (String) -> Unit,
-    onCalculate: (() -> Unit)?,
 ) {
     val colors = MaterialTheme.colorScheme
     val muted = colors.onBackground.copy(alpha = 0.45f)
@@ -149,14 +129,17 @@ private fun MeasureField(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(field.name, Modifier.weight(1f), fontSize = 16.sp, color = colors.onBackground)
-        onCalculate?.let {
-            SquareIconButton(
-                PhosphorIcons.Calculator,
-                "Рассчитать",
-                it,
-                Modifier.testTag("calculate-fat"),
-            )
+        Column(Modifier.weight(1f)) {
+            Text(field.name, fontSize = 16.sp, color = colors.onBackground)
+            field.howTo?.let {
+                Text(
+                    it,
+                    Modifier.padding(top = 2.dp).testTag("measure-how-to-$id"),
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
+                    color = colors.onBackground.copy(alpha = 0.55f),
+                )
+            }
         }
         Row(
             Modifier

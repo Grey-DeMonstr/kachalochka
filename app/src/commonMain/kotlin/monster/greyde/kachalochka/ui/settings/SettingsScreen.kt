@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,9 +30,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.navigation.MAX_TRANSITION_MILLIS
 import monster.greyde.kachalochka.navigation.transitionMillisOrNull
 import monster.greyde.kachalochka.ui.components.AccentButton
+import monster.greyde.kachalochka.ui.components.Choice
+import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.theme.ThemeMode
@@ -45,15 +50,13 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     val viewModel: SettingsViewModel = koinViewModel()
-    val nickname by viewModel.nickname.collectAsState()
+    val profile by viewModel.profile.collectAsState()
     Screen("Настройки", onBack = onBack, onOpenSettings = null) {
         Column(
-            Modifier.padding(16.dp),
+            Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            nickname?.let { ui ->
-                NicknameSection(ui, onType = viewModel::type, onSave = viewModel::save)
-            }
+            profile?.let { ProfileSection(it, viewModel) }
             Text(
                 text = "Тема",
                 style = MaterialTheme.typography.headlineSmall,
@@ -102,29 +105,62 @@ private fun TransitionSection(
 }
 
 @Composable
-private fun NicknameSection(
-    nickname: NicknameUi,
-    onType: (String) -> Unit,
-    onSave: () -> Unit,
+private fun ProfileSection(
+    profile: ProfileUi,
+    viewModel: SettingsViewModel,
 ) {
+    val muted = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.64f)
     Text(
-        text = "Ник",
+        text = "Профиль",
         style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.testTag("nickname-title"),
+        modifier = Modifier.testTag("profile-title"),
     )
+    profile.nickname?.let {
+        FieldLabel("Ник")
+        SettingsField(it, profile.placeholder, viewModel::type, Modifier.testTag("nickname"))
+    }
+    FieldLabel("Пол")
+    val sexes = listOf(Sex.Male, Sex.Female)
+    ChoiceRow(
+        listOf(Choice("Мужской", "sex-male"), Choice("Женский", "sex-female")),
+        selected = sexes.indexOf(profile.sex),
+        onSelect = { viewModel.chooseSex(sexes[it]) },
+    )
+    FieldLabel("Дата рождения")
     SettingsField(
-        nickname.text,
-        nickname.placeholder,
-        onType,
-        Modifier.testTag("nickname"),
+        profile.birthDate,
+        "ДД.ММ.ГГГГ",
+        viewModel::typeBirthDate,
+        Modifier.testTag("birth-date"),
+        KeyboardOptions(keyboardType = KeyboardType.Number),
+        valid = profile.birthDateValid,
+    )
+    FieldLabel("Рост, см")
+    SettingsField(
+        profile.height,
+        "",
+        viewModel::typeHeight,
+        Modifier.testTag("height"),
+        KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        valid = profile.heightValid,
+    )
+    Text(
+        text = "Пол, дата рождения и рост нужны для расчёта процента жира.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = muted,
     )
     AccentButton(
         "Сохранить",
         PhosphorIcons.Check,
-        onSave,
-        Modifier.testTag("save-nickname"),
-        enabled = nickname.canSave,
+        viewModel::save,
+        Modifier.testTag("save-profile"),
+        enabled = profile.canSave,
     )
+}
+
+@Composable
+private fun FieldLabel(text: String) {
+    Text(text, style = MaterialTheme.typography.labelLarge)
 }
 
 @Composable
@@ -134,6 +170,7 @@ private fun SettingsField(
     onValueChange: (String) -> Unit,
     modifier: Modifier,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    valid: Boolean = true,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(8.dp)
@@ -143,8 +180,11 @@ private fun SettingsField(
             .heightIn(min = 50.dp)
             .clip(shape)
             .background(colors.surfaceVariant)
-            .border(1.dp, colors.onBackground.copy(alpha = 0.16f), shape)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .border(
+                1.dp,
+                if (valid) colors.onBackground.copy(alpha = 0.16f) else colors.error,
+                shape,
+            ).padding(horizontal = 12.dp, vertical = 12.dp),
     ) {
         if (value.isEmpty()) {
             Text(placeholder, fontSize = 17.sp, color = colors.onBackground.copy(alpha = 0.48f))

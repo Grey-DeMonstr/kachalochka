@@ -429,8 +429,13 @@ when that row is deleted, so a cleared day stays cleared; newest day first.
 `MeasureRepository.all` orders live measures by `measureOrder` — position, then name — in Kotlin
 on both platforms.
 
-The eight predefined measures are seeded by `missingDefaults` for every kind the owner has no
-row of, live or deleted (`MeasureRepository.kinds`), so a deleted one stays deleted. A signed-in
+On every load "Замеры" applies `measureUpkeep` to the owner's predefined rows, live or deleted
+(`MeasureRepository.predefined`). `missingDefaults` seeds the seven predefined measures for every
+kind the owner has no row of, so a deleted one stays deleted, unless `isLocked(kind, sex)`: a kind
+a body-fat method reads for the profile's sex is revived, dated now. A live `BodyFat` row without
+values is deleted; the kind is no longer seeded. A predefined row shows `Measure.displayName` and
+`displayUnit`, the app's own for its kind, whatever the row stores, so a renamed default and an
+older name both read as today's. A signed-in
 owner's seeds take `derivedId(owner, kind)` — FNV-1a 64 of `"<owner>:<kind>"` under two offset
 bases, shaped as a v4 UUID — and `updated_at` at the epoch, so two devices seeding offline write
 the same rows. An anonymous owner's seeds take random ids; claimed by an account that already has
@@ -443,8 +448,8 @@ On the device, a pulled `measure` replaces a pending local row dated at the epoc
 (`MEASURE_SEEDED_AT`) and drops its outbox entry, so the rename lands even when the seed's push
 failed in the same pass.
 
-"Замеры" seeds on every load, one seeding at a time, since two concurrent seeds of an anonymous
-owner would each add a full set. The "Замер" form writes only the fields whose value changed: the
+The upkeep runs one at a time, since two concurrent seeds of an anonymous owner would each add a
+full set. The "Замер" form writes only the fields whose value changed: the
 day's newest row updated in place, or a new row; an emptied field soft-deletes that row, which
 `newestPerDay` then reads as a cleared day.
 
@@ -456,11 +461,16 @@ also soft-deletes the values `MeasurementRepository.all` returns for it; older r
 stay hidden behind them through `newestPerDay`.
 
 The body-fat formulas are pure functions in `domain/measures/BodyFat.kt` (`bodyFat`,
-`missingInputs`); a result outside 2–70 % is treated as none. The form finds its inputs by
-`MeasureKind`, never by name: a field's typed value, else the value its placeholder shows (the
-latest before the form's day). Sex, birth year and height live in the profile; the user's save
-re-reads `forOwner` and updates that row, or creates one with `Profile.new` when there is none,
-as a picked friend colour does (§4.3), so the nickname and colours survive.
+`missingInputs`, `methodsReading`); a result outside 2–70 % is treated as none. "Замеры" finds the
+inputs by `MeasureKind`, never by name: the latest value of each kind, and sex, `birthDate` and
+height from the profile, with `ageOn` counting whole years to today. Settings edits those fields
+with the nickname; its save re-reads `forOwner` and updates that row, or creates one with
+`Profile.new` when there is none, as a picked friend colour does (§4.3), so the colours survive.
+Without an account the profile stays on the device, as every ownerless row does.
+
+`Profile.birthDate` travels as an ISO date: a Postgres `date` in `profile.birth_date`, TEXT in
+SQLite. Migration `0011` and `8.sqm` replaced the birth year with 1 January of that year; `8.sqm`
+rebuilds the table, since Android 10's SQLite cannot drop a column, and resets `lastPullAt`.
 
 ---
 

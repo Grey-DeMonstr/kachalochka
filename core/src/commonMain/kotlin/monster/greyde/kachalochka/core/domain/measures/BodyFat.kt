@@ -59,6 +59,32 @@ fun missingInputs(
     return needed.filter { inputs.valueOf(it) == null }
 }
 
+/**
+ * The methods that read [kind] for [sex]. Hips count for an unknown sex too, so they are kept until
+ * the sex is known.
+ */
+fun methodsReading(
+    kind: MeasureKind,
+    sex: Sex?,
+): List<BodyFatMethod> =
+    when (kind) {
+        MeasureKind.Weight -> listOf(BodyFatMethod.Ymca, BodyFatMethod.Deurenberg)
+        MeasureKind.Waist -> listOf(BodyFatMethod.Navy, BodyFatMethod.Ymca)
+        MeasureKind.Neck -> listOf(BodyFatMethod.Navy)
+        MeasureKind.Hips -> if (sex == Sex.Male) emptyList() else listOf(BodyFatMethod.Navy)
+        MeasureKind.Chest,
+        MeasureKind.Biceps,
+        MeasureKind.Thigh,
+        MeasureKind.BodyFat,
+        -> emptyList()
+    }
+
+/** A measure a method reads for [sex] cannot be deleted. */
+fun isLocked(
+    kind: MeasureKind,
+    sex: Sex?,
+): Boolean = methodsReading(kind, sex).isNotEmpty()
+
 private fun BodyInputs.valueOf(input: BodyInput): Any? =
     when (input) {
         BodyInput.Sex -> sex

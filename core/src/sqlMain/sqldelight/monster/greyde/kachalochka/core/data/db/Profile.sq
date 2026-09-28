@@ -7,10 +7,10 @@ CREATE TABLE profile (
     display_name  TEXT,
     updated_at    INTEGER AS Instant NOT NULL,
     deleted       INTEGER AS Boolean NOT NULL DEFAULT 0,
-    -- Last, where 5.sqm's ALTER TABLE puts them.
+    -- In the order 8.sqm rebuilds the table with.
     friend_colors TEXT    NOT NULL DEFAULT '{}',
     sex           TEXT,
-    birth_year    INTEGER,
+    birth_date    TEXT,
     height_cm     REAL
 );
 
@@ -18,7 +18,7 @@ CREATE INDEX profile_updated_at_idx ON profile (updated_at);
 
 upsert:
 INSERT OR REPLACE INTO profile(
-    id, user_id, display_name, updated_at, deleted, friend_colors, sex, birth_year, height_cm
+    id, user_id, display_name, updated_at, deleted, friend_colors, sex, birth_date, height_cm
 )
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 

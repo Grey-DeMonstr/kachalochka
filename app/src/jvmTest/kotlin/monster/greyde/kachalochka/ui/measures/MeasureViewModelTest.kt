@@ -11,11 +11,14 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.missingDefaults
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -45,6 +48,10 @@ class MeasureViewModelTest {
             CalendarDay(2023, 11, 14) to 82.0,
         ).map { (day, value) -> record(weight, day, value) }
     private val waisted = record(waist, CalendarDay(2023, 11, 14), 90.0)
+    private val forearm = Measure(MeasureId.random(), null, "Предплечье", "см", null, 7, t0, false)
+    private val forearmed =
+        listOf(CalendarDay(2023, 11, 1) to 30.0, CalendarDay(2023, 11, 14) to 31.0)
+            .map { (day, value) -> record(forearm, day, value) }
     private val ivan =
         AccountSession(
             Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Иван"),
@@ -54,7 +61,7 @@ class MeasureViewModelTest {
         )
 
     init {
-        runBlocking { seeded.forEach { gym.measures.upsert(it) } }
+        runBlocking { (seeded + forearm).forEach { gym.measures.upsert(it) } }
     }
 
     private fun record(
@@ -66,11 +73,12 @@ class MeasureViewModelTest {
             runBlocking { gym.measurements.upsert(it) }
         }
 
-    private fun viewModel() =
+    private fun viewModel(id: MeasureId = weight.id) =
         MeasureViewModel(
-            weight.id,
+            id,
             gym.measures,
             gym.measurements,
+            gym.profiles,
             gym.currentUser,
             gym.accounts,
             gym.clock,
@@ -159,46 +167,82 @@ class MeasureViewModelTest {
     }
 
     @Test
-    fun editing_renames_the_measure_and_changes_its_unit() {
-        val vm = viewModel()
+    fun editing_renames_the_user_s_own_measure_and_changes_its_unit() {
+        val vm = viewModel(forearm.id)
         gym.clock.current = t0 + 5.minutes
 
+        assertTrue(vm.ui.canEdit)
         vm.openEdit()
-        assertEquals(EditMeasureUi("Вес", "кг", true), vm.ui.editing)
+        assertEquals(EditMeasureUi("Предплечье", "см", true), vm.ui.editing)
         vm.typeName("  ")
         assertFalse(vm.ui.editing!!.canSave)
         vm.confirmEdit()
         assertEquals(
-            "Вес",
+            "Предплечье",
             gym.measures.rows
-                .getValue(weight.id)
+                .getValue(forearm.id)
                 .name,
         )
 
-        vm.typeName("Масса тела ")
-        vm.typeUnit("lb")
+        vm.typeName("Запястье ")
+        vm.typeUnit("дюйм")
         vm.confirmEdit()
 
         assertEquals(
-            weight.copy(name = "Масса тела", unit = "lb", updatedAt = t0 + 5.minutes),
-            gym.measures.rows.getValue(weight.id),
+            forearm.copy(name = "Запястье", unit = "дюйм", updatedAt = t0 + 5.minutes),
+            gym.measures.rows.getValue(forearm.id),
         )
         assertNull(vm.ui.editing)
-        assertEquals("Масса тела", vm.ui.name)
-        assertEquals("82 lb", vm.ui.latest)
+        assertEquals("Запястье", vm.ui.name)
+        assertEquals("31 дюйм", vm.ui.latest)
         assertEquals(1, gym.sync.requests)
     }
 
     @Test
     fun a_dismissed_edit_writes_nothing() {
-        val vm = viewModel()
+        val vm = viewModel(forearm.id)
 
         vm.openEdit()
-        vm.typeName("Масса")
+        vm.typeName("Запястье")
         vm.dismissEdit()
 
         assertNull(vm.ui.editing)
-        assertEquals(weight, gym.measures.rows.getValue(weight.id))
+        assertEquals(forearm, gym.measures.rows.getValue(forearm.id))
+    }
+
+    @Test
+    fun a_predefined_measure_shows_the_app_s_name_and_cannot_be_renamed() {
+        runBlocking { gym.measures.upsert(weight.copy(name = "Масса", unit = "lb")) }
+        val vm = viewModel()
+
+        assertEquals("Вес" to "кг", vm.ui.name to vm.ui.unit)
+        assertFalse(vm.ui.canEdit)
+        vm.openEdit()
+        assertNull(vm.ui.editing)
+    }
+
+    @Test
+    fun a_measure_a_formula_reads_cannot_be_deleted_and_an_unread_one_can() {
+        val locked = viewModel()
+        val chest = viewModel(seeded.first { it.kind == MeasureKind.Chest }.id)
+
+        assertFalse(locked.ui.canDelete)
+        locked.askDelete()
+        assertFalse(locked.ui.deleting)
+        assertTrue(chest.ui.canDelete)
+        assertTrue(viewModel(forearm.id).ui.canDelete)
+    }
+
+    @Test
+    fun hips_can_be_deleted_by_a_man_only() {
+        val hips = seeded.first { it.kind == MeasureKind.Hips }.id
+        assertFalse(viewModel(hips).ui.canDelete)
+
+        runBlocking {
+            gym.profiles.upsert(Profile.new(null, t0).copy(sex = Sex.Male))
+        }
+
+        assertTrue(viewModel(hips).ui.canDelete)
     }
 
     @Test
@@ -213,14 +257,14 @@ class MeasureViewModelTest {
 
     @Test
     fun deleting_removes_the_measure_and_its_values_after_confirmation() {
-        val vm = viewModel()
+        val vm = viewModel(forearm.id)
         gym.clock.current = t0 + 5.minutes
 
         vm.askDelete()
         assertTrue(vm.ui.deleting)
         vm.cancelDelete()
         assertFalse(vm.ui.deleting)
-        assertEquals(weight, gym.measures.rows.getValue(weight.id))
+        assertEquals(forearm, gym.measures.rows.getValue(forearm.id))
         assertFalse(vm.gone.value)
         assertEquals(0, gym.sync.requests)
 
@@ -229,16 +273,19 @@ class MeasureViewModelTest {
 
         assertTrue(vm.gone.value)
         assertEquals(
-            weight.copy(deleted = true, updatedAt = t0 + 5.minutes),
-            gym.measures.rows.getValue(weight.id),
+            forearm.copy(deleted = true, updatedAt = t0 + 5.minutes),
+            gym.measures.rows.getValue(forearm.id),
         )
-        weighed.forEach {
+        forearmed.forEach {
             assertEquals(
                 it.copy(deleted = true, updatedAt = t0 + 5.minutes),
                 gym.measurements.rows.getValue(it.id),
             )
         }
-        assertEquals(listOf(waisted), runBlocking { gym.measurements.all(null) })
+        assertEquals(
+            (weighed + waisted).toSet(),
+            runBlocking { gym.measurements.all(null) }.toSet(),
+        )
         assertEquals(1, gym.sync.requests)
     }
 }

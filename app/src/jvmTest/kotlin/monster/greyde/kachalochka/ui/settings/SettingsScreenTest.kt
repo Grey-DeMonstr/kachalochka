@@ -7,11 +7,15 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.ui.theme.ThemeMode
@@ -74,14 +78,32 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun signed_out_shows_no_nickname_field() {
+    fun signed_out_shows_the_body_fields_but_no_nickname() {
         runScreenTest(
             FakeGym(),
             screen = { settings() },
         ) {
             onNodeWithTag("nickname").assertDoesNotExist()
-            onNodeWithTag("save-nickname").assertDoesNotExist()
+            onNodeWithTag("birth-date").assertExists()
+            onNodeWithTag("height").assertExists()
+            onNodeWithTag("save-profile").assertIsNotEnabled()
         }
+    }
+
+    @Test
+    fun choosing_the_body_fields_saves_them_to_the_profile() {
+        val gym = FakeGym()
+        runScreenTest(gym, screen = { settings() }) {
+            onNodeWithTag("sex-female").performClick()
+            onNodeWithTag("birth-date").performTextInput("15.06.1990")
+            onNodeWithTag("height").performTextInput("165")
+            onNodeWithTag("save-profile").performScrollTo().performClick()
+            waitForIdle()
+        }
+        val profile = runBlocking { gym.profiles.forOwner(null) }
+        assertEquals(Sex.Female, profile?.sex)
+        assertEquals(CalendarDay(1990, 6, 15), profile?.birthDate)
+        assertEquals(165.0, profile?.heightCm)
     }
 
     @Test
@@ -92,11 +114,11 @@ class SettingsScreenTest {
             screen = { settings() },
         ) {
             onNodeWithTag("nickname").assertExists()
-            onNodeWithTag("save-nickname").assertIsNotEnabled()
+            onNodeWithTag("save-profile").assertIsNotEnabled()
 
             onNodeWithTag("nickname").performTextInput("Ванёк")
 
-            onNodeWithTag("save-nickname").assertIsEnabled()
+            onNodeWithTag("save-profile").assertIsEnabled()
         }
     }
 
@@ -108,9 +130,9 @@ class SettingsScreenTest {
             screen = { settings() },
         ) {
             onNodeWithTag("nickname").performTextInput("Ванёк")
-            onNodeWithTag("save-nickname").performClick()
+            onNodeWithTag("save-profile").performClick()
 
-            onNodeWithTag("save-nickname").assertIsNotEnabled()
+            onNodeWithTag("save-profile").assertIsNotEnabled()
         }
     }
 }

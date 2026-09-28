@@ -85,30 +85,13 @@ class MeasurementFormScreenTest {
     }
 
     @Test
-    fun the_calculator_asks_for_the_body_and_fills_the_fat_field_with_a_result() {
-        val bodyFat = seeded.first { it.kind == MeasureKind.BodyFat }
+    fun each_predefined_field_says_how_to_measure_it() {
+        val neck = seeded.first { it.kind == MeasureKind.Neck }
         runScreenTest(gym, screen = { MeasurementFormScreen(null, {}, {}, {}, {}) }) {
-            onNodeWithTag("calculate-fat").performScrollTo().performClick()
-            waitForIdle()
-            onNodeWithTag("fat-sheet").assertExists()
-            onNodeWithTag("body-sex-male").performClick()
-            onNodeWithTag("body-birth-year").performTextInput("1993")
-            onNodeWithTag("body-height").performTextInput("180")
-            onNodeWithTag("save-body-params").performClick()
-            waitForIdle()
-
-            onNodeWithTag("fat-method-Navy").performClick()
-            waitForIdle()
-            onNodeWithTag("fat-sheet").assertExists()
-            // 82,4 kg at 180 cm is a BMI of 25,4; aged 30.
-            onNodeWithTag("fat-method-Deurenberg").performClick()
-            waitForIdle()
-
-            onNodeWithTag("fat-sheet").assertDoesNotExist()
-            onNodeWithTag("measure-field-${bodyFat.id.value}").assertTextEquals("21,2")
+            onNodeWithTag("measure-how-to-${neck.id.value}")
+                .performScrollTo()
+                .assertTextEquals(howToMeasure(MeasureKind.Neck))
         }
-        assertEquals(1993, runBlocking { gym.profiles.forOwner(null) }?.birthYear)
-        assertEquals(1, runBlocking { gym.measurements.all(null) }.size)
     }
 
     @Test

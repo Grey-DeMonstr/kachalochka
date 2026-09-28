@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
@@ -49,6 +50,15 @@ internal fun Sex.wireName(): String =
 
 internal fun sexOf(wire: String?): Sex? = Sex.entries.firstOrNull { it.wireName() == wire }
 
+internal fun birthDateOf(iso: String?): CalendarDay? =
+    iso?.let {
+        try {
+            CalendarDay.parse(it)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
+
 // Postgres names its columns with underscores and stores the instant as a timestamptz string,
 // so the wire shape is its own type and the domain entity stays serialization-neutral.
 @Serializable
@@ -60,7 +70,7 @@ internal data class ProfileRow(
     val deleted: Boolean,
     @SerialName("friend_colors") val friendColors: String,
     val sex: String?,
-    @SerialName("birth_year") val birthYear: Int?,
+    @SerialName("birth_date") val birthDate: String?,
     @SerialName("height_cm") val heightCm: Double?,
 ) {
     fun toProfile(): Profile =
@@ -72,7 +82,7 @@ internal data class ProfileRow(
             deleted = deleted,
             friendColors = friendColorsOf(friendColors),
             sex = sexOf(sex),
-            birthYear = birthYear,
+            birthDate = birthDateOf(birthDate),
             heightCm = heightCm,
         )
 
@@ -86,7 +96,7 @@ internal data class ProfileRow(
                 deleted = profile.deleted,
                 friendColors = friendColorsText(profile.friendColors),
                 sex = profile.sex?.wireName(),
-                birthYear = profile.birthYear,
+                birthDate = profile.birthDate?.iso,
                 heightCm = profile.heightCm,
             )
     }

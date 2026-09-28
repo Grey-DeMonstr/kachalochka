@@ -4,6 +4,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.identity.newUuidV4
 import monster.greyde.kachalochka.core.domain.identity.requireUuidV4
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import kotlin.jvm.JvmInline
 import kotlin.time.Instant
 
@@ -33,7 +34,7 @@ value class MeasurementId(
     }
 }
 
-/** A predefined measure, which calculators can find whatever the user renamed it to. */
+/** A predefined measure, named and measured in the app's terms rather than its stored ones. */
 enum class MeasureKind { Weight, Waist, Chest, Hips, Biceps, Thigh, Neck, BodyFat }
 
 fun MeasureKind.wireName(): String =
@@ -62,7 +63,11 @@ data class Measure(
     val position: Int,
     val updatedAt: Instant,
     val deleted: Boolean,
-)
+) {
+    val displayName: String get() = kind?.let { predefinedOf(it).name } ?: name
+
+    val displayUnit: String get() = kind?.let { predefinedOf(it).unit } ?: unit
+}
 
 data class Measurement(
     val id: MeasurementId,
@@ -80,8 +85,8 @@ interface MeasureRepository {
     /** The owner's live measures by position, then name. */
     suspend fun all(owner: UserId?): List<Measure>
 
-    /** Every kind the owner has a row of, deleted ones included. */
-    suspend fun kinds(owner: UserId?): Set<MeasureKind>
+    /** The owner's predefined measures, deleted ones included. */
+    suspend fun predefined(owner: UserId?): List<Measure>
 }
 
 interface MeasurementRepository {
@@ -118,15 +123,46 @@ private val defaultMeasures =
         Predefined(MeasureKind.Weight, "Вес", "кг"),
         Predefined(MeasureKind.Waist, "Талия", "см"),
         Predefined(MeasureKind.Chest, "Грудь", "см"),
-        Predefined(MeasureKind.Hips, "Бёдра", "см"),
+        Predefined(MeasureKind.Hips, "Обхват бёдер", "см"),
         Predefined(MeasureKind.Biceps, "Бицепс", "см"),
-        Predefined(MeasureKind.Thigh, "Бедро", "см"),
+        Predefined(MeasureKind.Thigh, "Окружность бедра", "см"),
         Predefined(MeasureKind.Neck, "Шея", "см"),
-        Predefined(MeasureKind.BodyFat, "Жир", "%"),
     )
+
+// Calculated now, so only accounts that typed values into it keep one.
+private val typedBodyFat = Predefined(MeasureKind.BodyFat, "Жир по весам или калиперу", "%")
+
+private fun predefinedOf(kind: MeasureKind): Predefined =
+    defaultMeasures.firstOrNull { it.kind == kind } ?: typedBodyFat
 
 /** The `updatedAt` of every seeded predefined measure, older than any real edit. */
 val MEASURE_SEEDED_AT: Instant = Instant.fromEpochSeconds(0)
+
+/**
+ * The writes that keep [owner]'s [predefined] measures, deleted ones included, as the formulas
+ * need them for [sex]: kinds never had are seeded, a deleted kind a formula reads comes back, and
+ * a fat measure outside [measured] goes.
+ */
+fun measureUpkeep(
+    owner: UserId?,
+    predefined: List<Measure>,
+    measured: Set<MeasureId>,
+    sex: Sex?,
+    now: Instant,
+): List<Measure> {
+    val live = predefined.filterNot { it.deleted }.mapNotNull { it.kind }.toSet()
+    val revived =
+        predefined
+            .filter { it.deleted && it.kind !in live && isLocked(it.kind!!, sex) }
+            .groupBy { it.kind }
+            .values
+            .map { rows -> rows.maxBy { it.updatedAt }.copy(deleted = false, updatedAt = now) }
+    val unusedFat =
+        predefined
+            .filter { !it.deleted && it.kind == MeasureKind.BodyFat && it.id !in measured }
+            .map { it.copy(deleted = true, updatedAt = now) }
+    return missingDefaults(owner, predefined.mapNotNull { it.kind }.toSet()) + revived + unusedFat
+}
 
 /** The predefined measures [owner] lacks, dated at the epoch so a real edit always wins. */
 fun missingDefaults(

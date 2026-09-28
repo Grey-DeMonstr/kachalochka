@@ -25,8 +25,8 @@ live:
 SELECT * FROM measure
 WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
 
-kinds:
-SELECT DISTINCT kind FROM measure
+predefined:
+SELECT * FROM measure
 WHERE kind IS NOT NULL AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
 
 ownerlessIds:

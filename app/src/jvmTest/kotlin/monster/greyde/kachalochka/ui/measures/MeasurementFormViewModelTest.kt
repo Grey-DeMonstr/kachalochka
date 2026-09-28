@@ -11,14 +11,12 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
-import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
 import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.missingDefaults
-import monster.greyde.kachalochka.core.domain.profile.Profile
-import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.calendar.DayUi
 import kotlin.test.AfterTest
@@ -57,7 +55,6 @@ class MeasurementFormViewModelTest {
             runBlocking { gym.measurements.upsert(it) }
         }
 
-    private val bodyFat = seeded.of(MeasureKind.BodyFat)
     private val ivan =
         AccountSession(
             Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Иван"),
@@ -73,30 +70,12 @@ class MeasurementFormViewModelTest {
         day,
         on.measures,
         on.measurements,
-        on.profiles,
         on.currentUser,
         on.accounts,
         on.clock,
         on.utcOffset,
         on.sync,
     )
-
-    private fun storeBody(
-        sex: Sex? = Sex.Male,
-        birthYear: Int? = 1993,
-        heightCm: Double? = 180.0,
-    ) = runBlocking {
-        gym.profiles.upsert(
-            Profile
-                .new(null, t0)
-                .copy(sex = sex, birthYear = birthYear, heightCm = heightCm),
-        )
-    }
-
-    private fun MeasurementFormViewModel.sheet() = state.value!!.calculator!!
-
-    private fun MeasurementFormViewModel.method(method: BodyFatMethod) =
-        sheet().methods.first { it.method == method }
 
     private fun MeasurementFormViewModel.field(measure: Measure) =
         state.value!!.fields.first { it.id == measure.id }
@@ -126,7 +105,15 @@ class MeasurementFormViewModelTest {
         assertEquals("Сегодня, 14 ноября", form.dayTitle)
         assertEquals(seeded.map { it.name }, form.fields.map { it.name })
         assertEquals(
-            MeasureFieldUi(weight.id, "Вес", "кг", "", null, true, MeasureKind.Weight),
+            MeasureFieldUi(
+                weight.id,
+                "Вес",
+                "кг",
+                "",
+                null,
+                true,
+                howToMeasure(MeasureKind.Weight),
+            ),
             form.fields.first(),
         )
         assertFalse(form.canSave)
@@ -325,149 +312,22 @@ class MeasurementFormViewModelTest {
     }
 
     @Test
-    fun the_calculator_asks_for_missing_body_parameters_and_saves_them_to_the_profile() {
-        val vm = viewModel()
-        assertNull(vm.state.value!!.calculator)
-
-        vm.openCalculator()
-        assertEquals(BodyParamsUi(null, "", "", canSave = false), vm.sheet().params)
-        vm.chooseSex(Sex.Male)
-        vm.typeBirthYear("1993")
-        vm.typeHeight("abc")
-        assertFalse(vm.sheet().params!!.canSave)
-        vm.typeHeight("180,5")
-        assertTrue(vm.sheet().params!!.canSave)
-        vm.saveBodyParams()
-
-        val profile = runBlocking { gym.profiles.forOwner(null) }!!
-        assertEquals(
-            Triple(Sex.Male, 1993, 180.5),
-            Triple(profile.sex, profile.birthYear, profile.heightCm),
-        )
-        assertNull(vm.sheet().params)
-        assertEquals("Мужчина, 1993 г. р., 180,5 см", vm.sheet().body)
-        assertEquals(
-            listOf("ВМС США", "YMCA", "Дойренберг (ИМТ)"),
-            vm.sheet().methods.map { it.name },
-        )
-    }
-
-    @Test
-    fun known_body_parameters_skip_straight_to_the_methods_and_can_be_edited() {
-        storeBody()
-        val vm = viewModel()
-
-        vm.openCalculator()
-        assertNull(vm.sheet().params)
-
-        vm.editBodyParams()
-        assertEquals(BodyParamsUi(Sex.Male, "1993", "180", canSave = true), vm.sheet().params)
-        vm.chooseSex(Sex.Female)
-        vm.typeBirthYear("1800")
-        assertFalse(vm.sheet().params!!.canSave)
-        vm.typeBirthYear("1995")
-        vm.saveBodyParams()
-
-        assertEquals(Sex.Female, runBlocking { gym.profiles.forOwner(null) }!!.sex)
-        assertEquals("Женщина, 1995 г. р., 180 см", vm.sheet().body)
-    }
-
-    @Test
-    fun saving_body_parameters_keeps_the_rest_of_the_profile() =
-        runTest {
-            val signedIn = FakeGym().withAccounts(ivan, active = ivan)
-            val owner = ivan.account.userId
-            missingDefaults(owner, emptySet()).forEach { signedIn.measures.upsert(it) }
-            val colors = mapOf(UserId("22222222-2222-4222-8222-222222222222") to 3)
-            val stored =
-                Profile.new(owner, t0).copy(displayName = "Ванёк", friendColors = colors)
-            signedIn.profiles.upsert(stored)
-            val vm = viewModel(on = signedIn)
-            signedIn.clock.current = t0 + 5.minutes
-
-            vm.openCalculator()
-            vm.chooseSex(Sex.Male)
-            vm.typeBirthYear("1993")
-            vm.typeHeight("180")
-            vm.saveBodyParams()
-
-            assertEquals(
-                stored.copy(
-                    sex = Sex.Male,
-                    birthYear = 1993,
-                    heightCm = 180.0,
-                    updatedAt = t0 + 5.minutes,
-                ),
-                signedIn.profiles.forOwner(owner),
-            )
-            assertEquals(1, signedIn.profiles.rows.size)
+    fun a_predefined_field_says_how_to_measure_and_shows_the_app_s_name() {
+        val forearm = Measure(MeasureId.random(), null, "Предплечье", "см", null, 7, t0, false)
+        runBlocking {
+            gym.measures.upsert(forearm)
+            gym.measures.upsert(waist.copy(name = "Пояс", unit = "дюйм"))
         }
 
-    @Test
-    fun inputs_come_from_the_form_else_from_the_latest_value_before_its_day() {
-        storeBody()
-        val day = CalendarDay(2022, 6, 1)
-        val earlier = CalendarDay(2022, 5, 1)
-        record(weight, earlier, 90.0)
-        record(waist, earlier, 85.0)
-        record(neck, earlier, 38.0)
-        record(waist, today, 100.0)
-        val vm = viewModel(day)
-
-        vm.type(weight.id, "80")
-        vm.openCalculator()
-
-        assertEquals("16,1 %", vm.method(BodyFatMethod.Navy).result)
-        assertEquals("14,7 %", vm.method(BodyFatMethod.Ymca).result)
-        // Aged 29 at the form's day: born 1993, measured in 2022.
-        assertEquals("20,1 %", vm.method(BodyFatMethod.Deurenberg).result)
-        assertNull(vm.method(BodyFatMethod.Ymca).missing)
-    }
-
-    @Test
-    fun a_method_without_its_inputs_lists_what_it_misses() {
-        storeBody(sex = Sex.Female, birthYear = 1998, heightCm = 165.0)
-        record(weight, saturday, 60.0)
         val vm = viewModel()
 
-        vm.openCalculator()
-
-        val navy = vm.method(BodyFatMethod.Navy)
-        assertNull(navy.result)
-        assertEquals("Нужно: талия, шея, бёдра", navy.missing)
-        assertEquals("Нужно: талия", vm.method(BodyFatMethod.Ymca).missing)
-        assertEquals(
-            "26,8 %",
-            vm.method(BodyFatMethod.Deurenberg).also { assertNull(it.missing) }.result,
+        assertEquals("Талия" to "см", vm.field(waist).let { it.name to it.unit })
+        assertTrue(
+            vm
+                .field(waist)
+                .howTo!!
+                .contains("пупка"),
         )
-    }
-
-    @Test
-    fun using_a_result_fills_the_fat_field_without_saving() {
-        storeBody()
-        record(weight, saturday, 80.0)
-        record(waist, saturday, 85.0)
-        val vm = viewModel()
-
-        vm.openCalculator()
-        vm.useResult(BodyFatMethod.Ymca)
-
-        assertNull(vm.state.value!!.calculator)
-        assertEquals("14,7", vm.field(bodyFat).text)
-        assertTrue(vm.state.value!!.canSave)
-        assertEquals(2, runBlocking { gym.measurements.all(null) }.size)
-    }
-
-    @Test
-    fun closing_the_calculator_changes_nothing() {
-        val vm = viewModel()
-
-        vm.openCalculator()
-        vm.chooseSex(Sex.Male)
-        vm.closeCalculator()
-
-        assertNull(vm.state.value!!.calculator)
-        assertNull(runBlocking { gym.profiles.forOwner(null) })
-        assertEquals("", vm.field(bodyFat).text)
+        assertNull(vm.field(forearm).howTo)
     }
 }

@@ -156,47 +156,55 @@ Signing out of an account removes it from the device but keeps what it recorded,
 in finds it again. On Android, signing out of the last account returns the app to working without
 one. Friends stay locked until an account is signed in.
 
-Settings has a "Ник" field for the signed-in account, up to 40 characters; the Google account
-name is shown as a placeholder and used when the field is left blank. Friends see this nickname
-instead of the Google name, and it heads a visit shared as text.
+Settings has a "Профиль" section saved by one "Сохранить". Its "Ник" field, for the signed-in
+account, takes up to 40 characters; the Google account name is shown as a placeholder and used
+when the field is left blank. Friends see this nickname instead of the Google name, and it heads a
+visit shared as text. Пол (Мужской / Женский), Дата рождения (ДД.ММ.ГГГГ, from 1900 to today) and
+Рост, см (50 to 250) feed the body fat formulas; they are there without an account too, and an
+emptied field clears its value. Nobody else sees them.
 
 ## Body measures
 
-Alongside the gym, the user tracks their body: weight, girths and body fat, typically once a week
-on a day of their choice. Measures are private: they sync between the account's devices like its
+Alongside the gym, the user tracks their body: weight and girths, typically once a week on a day of
+their choice, and sees the body fat they imply. Measures are private: they sync between the account's devices like its
 visits, but friends never see them, whatever groups they share.
 
-Eight measures are ready from the start: Вес (кг), Талия, Грудь, Бёдра, Бицепс, Бедро, Шея (см)
-and Жир (%). The user can rename any of them, change its unit, delete it or add their own with a
-name and a free-text unit. A deleted ready-made measure does not come back.
+Seven measures are ready from the start: Вес (кг), Талия, Грудь, Обхват бёдер, Бицепс, Окружность
+бедра and Шея (см). Their names and units are the app's own and cannot be changed. The user adds
+their own measures with a name and a free-text unit, and can rename them, change their unit or
+delete them. A ready-made measure a body fat formula reads is marked with that formula's tag and
+cannot be deleted; if it was deleted before, it comes back without its old values. Other
+ready-made measures can be deleted and do not come back. Hips count as read only while the sex in
+the profile is not "Мужской". An account that recorded values into the former "Жир" measure keeps
+it as "Жир по весам или калиперу" (%), which can be deleted; without values it is removed.
 
 The "Замеры" row on the home screen lists the measures, each with its latest value and unit, the
 change since the value before it ("−0,4", omitted when there is only one) and how long ago it was
-taken ("вчера", "7 дней назад"). "Порядок" shows drag handles to reorder them. "Новый замер" opens
+taken ("вчера", "7 дней назад"), and the tags of the formulas that read it. "Порядок" shows drag
+handles to reorder them. "Новый замер" opens
 the measurement form for today; "Добавить показатель" asks for a name and a unit.
 
 The measurement form ("Замер") is one day's values, one decimal field per measure with its unit,
-the previous value shown as a placeholder. The day at the top is today by default; tapping it
+the previous value shown as a placeholder. Under each ready-made measure's name a line says how to
+take it, e.g. for Шея "Сразу под кадыком, лента чуть наклонена вперёд и вниз, шея расслаблена". The day at the top is today by default; tapping it
 opens a month calendar where days with values are marked and future days cannot be chosen.
 Choosing a day that has values loads them for editing. "Сохранить" writes the changed values,
 and an emptied field clears that value. "Удалить замер", on a day that has values, asks and then
 clears the whole day.
 
-The Жир field has a "Рассчитать" button that estimates body fat by three standard formulas:
-"ВМС США" (US Navy: waist, neck and height, plus hips for a woman), "YMCA" (weight and waist) and
-"Дойренберг (ИМТ)" (weight, height and age). The measures come from the form's fields, or, where a
-field is empty, from the value its placeholder shows; the ready-made measures are recognised
-whatever the user renamed them to. Sex, year of birth and height belong to the user's profile:
-the first time, the calculator asks for them and saves them, and "Изменить" corrects them later.
-Age is the year of the form's day minus the year of birth. Each formula shows its result
-("18,4 %") or the measures it lacks ("Нужно: шея"); tapping a result puts it into the Жир field,
-which is saved only with the form.
+Under the list, "Процент жира" estimates body fat by three standard formulas, each row headed by
+its tag: `NAVY` "ВМС США" (waist, neck and height, plus hips for a woman), `YMCA` (weight and
+waist) and `BMI` "Дойренберг" (weight, height and age). Each uses the latest value of every
+measure, and sex, birth date and height from the profile; age is counted in whole years to today.
+A row shows its result ("18,4 %") or what it lacks ("Нужно: шея, рост"). While sex, birth date or
+height is missing, a line under the rows leads to Settings.
 
 Tapping a measure in the list opens it: its latest value and the change over the chosen period,
 a line chart of its values over 1 мес, 3 мес (the default), 6 мес, Год or Всё, then every value
 it ever had, newest first. A period with a single value shows that value instead of a line.
-Tapping a value opens that day's measurement form. The menu in the top bar edits the measure's
-name and unit, or deletes the measure with all its values after a confirmation.
+Tapping a value opens that day's measurement form. The menu in the top bar edits the name and unit
+of the user's own measure, and deletes a measure that can be deleted with all its values after a
+confirmation.
 
 ## Custom exercsies
 

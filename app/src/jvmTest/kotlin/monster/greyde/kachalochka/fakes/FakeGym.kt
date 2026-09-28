@@ -32,7 +32,6 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
-import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
@@ -189,11 +188,8 @@ class InMemoryMeasureRepository : MeasureRepository {
     override suspend fun all(owner: UserId?): List<Measure> =
         rows.values.filter { !it.deleted && it.userId == owner }.sortedWith(measureOrder)
 
-    override suspend fun kinds(owner: UserId?): Set<MeasureKind> =
-        rows.values
-            .filter { it.userId == owner }
-            .mapNotNull { it.kind }
-            .toSet()
+    override suspend fun predefined(owner: UserId?): List<Measure> =
+        rows.values.filter { it.userId == owner && it.kind != null }
 }
 
 class InMemoryMeasurementRepository : MeasurementRepository {

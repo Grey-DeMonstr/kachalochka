@@ -8,7 +8,6 @@ import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
-import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.measureKindOf
 import monster.greyde.kachalochka.core.domain.measures.measureOrder
@@ -39,13 +38,14 @@ class LocalMeasureRepository(
             queries.live(owner?.value, ::measureOf).executeAsList().sortedWith(measureOrder)
         }
 
-    override suspend fun kinds(owner: UserId?): Set<MeasureKind> =
+    override suspend fun predefined(owner: UserId?): List<Measure> =
         withContext(dispatcher) {
             queries
-                .kinds(owner?.value)
-                .executeAsList()
-                .mapNotNull(::measureKindOf)
-                .toSet()
+                .predefined(
+                    owner?.value,
+                    ::measureOf,
+                ).executeAsList()
+                .filter { it.kind != null }
         }
 }
 

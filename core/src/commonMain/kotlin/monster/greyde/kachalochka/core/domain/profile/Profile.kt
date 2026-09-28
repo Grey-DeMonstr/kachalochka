@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.core.domain.profile
 
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Instant
 
@@ -13,7 +14,7 @@ data class Profile(
     val deleted: Boolean,
     val friendColors: Map<UserId, Int> = emptyMap(),
     val sex: Sex? = null,
-    val birthYear: Int? = null,
+    val birthDate: CalendarDay? = null,
     val heightCm: Double? = null,
 ) {
     companion object {
@@ -30,4 +31,14 @@ data class Profile(
                 deleted = false,
             )
     }
+}
+
+/** Whole years from [birth] to [day]. */
+fun ageOn(
+    birth: CalendarDay,
+    day: CalendarDay,
+): Int {
+    val beforeBirthday =
+        day.month < birth.month || (day.month == birth.month && day.day < birth.day)
+    return day.year - birth.year - if (beforeBirthday) 1 else 0
 }

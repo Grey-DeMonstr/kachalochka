@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.core.data.profile
 
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
@@ -23,11 +24,19 @@ class ProfileWireTest {
                 deleted = false,
                 friendColors = mapOf(oleg to 0xFF4CAF50.toInt(), anna to 3),
                 sex = Sex.Female,
-                birthYear = 1990,
+                birthDate = CalendarDay(1990, 6, 15),
                 heightCm = 172.5,
             )
 
+        assertEquals("1990-06-15", ProfileRow.of(profile).birthDate)
         assertEquals(profile, ProfileRow.of(profile).toProfile())
+    }
+
+    @Test
+    fun an_unreadable_birth_date_reads_as_none() {
+        assertEquals(null, birthDateOf("15.06.1990"))
+        assertEquals(null, birthDateOf("1990-02-30"))
+        assertEquals(null, birthDateOf(null))
     }
 
     @Test

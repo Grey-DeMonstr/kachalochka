@@ -13,12 +13,22 @@ import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
+import monster.greyde.kachalochka.core.domain.measures.BodyInputs
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
+import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
-import monster.greyde.kachalochka.core.domain.measures.missingDefaults
+import monster.greyde.kachalochka.core.domain.measures.bodyFat
+import monster.greyde.kachalochka.core.domain.measures.measureUpkeep
+import monster.greyde.kachalochka.core.domain.measures.methodsReading
+import monster.greyde.kachalochka.core.domain.measures.missingInputs
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.core.domain.profile.Sex
+import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
@@ -30,12 +40,23 @@ data class MeasureRowUi(
     val value: String?,
     val delta: String?,
     val ago: String?,
+    val tags: List<String>,
+)
+
+/** [percent] when the inputs suffice, else [missing] names what they lack. */
+data class FatRowUi(
+    val tag: String,
+    val name: String,
+    val percent: String?,
+    val missing: String?,
 )
 
 data class MeasuresUiState(
     val rows: List<MeasureRowUi>,
     val ordering: Boolean,
     val adding: NewMeasureUi?,
+    val fat: List<FatRowUi> = emptyList(),
+    val profileIncomplete: Boolean = false,
 )
 
 data class NewMeasureUi(
@@ -47,6 +68,7 @@ data class NewMeasureUi(
 class MeasuresViewModel(
     private val measures: MeasureRepository,
     private val measurements: MeasurementRepository,
+    private val profiles: ProfileRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
@@ -62,6 +84,7 @@ class MeasuresViewModel(
     private val seeding = Mutex()
     private var shown: List<Measure> = emptyList()
     private var values: Map<MeasureId, List<Measurement>> = emptyMap()
+    private var profile: Profile? = null
     private var loading: Job? = null
 
     /** The list follows whoever is active, wherever the switch came from. */
@@ -70,22 +93,25 @@ class MeasuresViewModel(
         viewModelScope.launch { sync.completed.collect { load() } }
     }
 
-    /** Creates the predefined measures the owner has never had, then lists them all. */
+    /** Brings the predefined measures in line with the formulas, then lists them all. */
     fun load() {
         loading?.cancel()
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                seed(owner)
+                profile = profiles.forOwner(owner)
+                upkeep(owner)
                 shown = measures.all(owner)
                 values = measurements.all(owner).groupBy { it.measureId }
                 publish()
             }
     }
 
-    private suspend fun seed(owner: UserId?) =
+    private suspend fun upkeep(owner: UserId?) =
         seeding.withLock {
-            missingDefaults(owner, measures.kinds(owner)).forEach { measures.upsert(it) }
+            val measured = measurements.all(owner).map { it.measureId }.toSet()
+            measureUpkeep(owner, measures.predefined(owner), measured, profile?.sex, clock.now())
+                .forEach { measures.upsert(it) }
         }
 
     fun toggleOrdering() {
@@ -160,8 +186,50 @@ class MeasuresViewModel(
     private fun publish() {
         val now = clock.now()
         val today = CalendarDay.of(now, utcOffset.at(now))
+        val sex = profile?.sex
+        val inputs = bodyInputs(today)
         mutableState.value =
-            mutableState.value.copy(rows = shown.map { row(it, values[it.id].orEmpty(), today) })
+            mutableState.value.copy(
+                rows = shown.map { row(it, values[it.id].orEmpty(), today, sex) },
+                fat = BodyFatMethod.entries.map { fatRow(it, inputs) },
+                profileIncomplete =
+                    profile.let { it?.sex == null || it.birthDate == null || it.heightCm == null },
+            )
+    }
+
+    private fun bodyInputs(today: CalendarDay): BodyInputs =
+        BodyInputs(
+            sex = profile?.sex,
+            age = profile?.birthDate?.let { ageOn(it, today) },
+            heightCm = profile?.heightCm,
+            weightKg = latest(MeasureKind.Weight),
+            waistCm = latest(MeasureKind.Waist),
+            neckCm = latest(MeasureKind.Neck),
+            hipsCm = latest(MeasureKind.Hips),
+        )
+
+    private fun latest(kind: MeasureKind): Double? =
+        shown
+            .filter { it.kind == kind }
+            .firstNotNullOfOrNull { values[it.id]?.firstOrNull() }
+            ?.value
+
+    private fun fatRow(
+        method: BodyFatMethod,
+        inputs: BodyInputs,
+    ): FatRowUi {
+        val missing = missingInputs(method, inputs)
+        return FatRowUi(
+            tag = methodTag(method),
+            name = methodName(method),
+            percent = bodyFat(method, inputs)?.let { "${oneDecimal(it)} %" },
+            missing =
+                when {
+                    missing.isNotEmpty() ->
+                        missing.joinToString(", ", prefix = "Нужно: ", transform = ::inputName)
+                    else -> null
+                },
+        )
     }
 
     /** [newestFirst] holds one value per day, as the repository reads them. */
@@ -169,13 +237,14 @@ class MeasuresViewModel(
         measure: Measure,
         newestFirst: List<Measurement>,
         today: CalendarDay,
+        sex: Sex?,
     ): MeasureRowUi {
         val latest = newestFirst.firstOrNull()
         val previous = newestFirst.getOrNull(1)
         return MeasureRowUi(
             id = measure.id,
-            name = measure.name,
-            value = latest?.let { measureValue(it.value, measure.unit) },
+            name = measure.displayName,
+            value = latest?.let { measureValue(it.value, measure.displayUnit) },
             delta =
                 if (latest != null && previous != null) {
                     measureDelta(latest.value, previous.value)
@@ -186,6 +255,7 @@ class MeasuresViewModel(
                 latest?.let {
                     daysAgoLabel((today.epochDay - it.day.epochDay).toInt().coerceAtLeast(0))
                 },
+            tags = measure.kind?.let { methodsReading(it, sex).map(::methodTag) }.orEmpty(),
         )
     }
 }

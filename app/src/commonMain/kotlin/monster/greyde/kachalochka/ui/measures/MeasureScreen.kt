@@ -73,7 +73,12 @@ fun MeasureScreen(
         onBack = onBack,
         onOpenSettings = onOpenSettings,
         actions = {
-            if (measure != null) MeasureMenu(viewModel::openEdit, viewModel::askDelete)
+            if (measure != null && (measure.canEdit || measure.canDelete)) {
+                MeasureMenu(
+                    onEdit = viewModel::openEdit.takeIf { measure.canEdit },
+                    onDelete = viewModel::askDelete.takeIf { measure.canDelete },
+                )
+            }
         },
     ) {
         if (measure == null) return@Screen
@@ -186,8 +191,8 @@ private fun HistoryRow(
 
 @Composable
 private fun MeasureMenu(
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
+    onEdit: (() -> Unit)?,
+    onDelete: (() -> Unit)?,
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box {
@@ -198,22 +203,26 @@ private fun MeasureMenu(
             Modifier.testTag("measure-menu"),
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(
-                text = { Text("Название и единица") },
-                onClick = {
-                    expanded = false
-                    onEdit()
-                },
-                modifier = Modifier.testTag("edit-measure"),
-            )
-            DropdownMenuItem(
-                text = { Text("Удалить показатель") },
-                onClick = {
-                    expanded = false
-                    onDelete()
-                },
-                modifier = Modifier.testTag("delete-measure"),
-            )
+            onEdit?.let {
+                DropdownMenuItem(
+                    text = { Text("Название и единица") },
+                    onClick = {
+                        expanded = false
+                        it()
+                    },
+                    modifier = Modifier.testTag("edit-measure"),
+                )
+            }
+            onDelete?.let {
+                DropdownMenuItem(
+                    text = { Text("Удалить показатель") },
+                    onClick = {
+                        expanded = false
+                        it()
+                    },
+                    modifier = Modifier.testTag("delete-measure"),
+                )
+            }
         }
     }
 }

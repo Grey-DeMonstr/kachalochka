@@ -5,6 +5,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import monster.greyde.kachalochka.core.data.gym.visitOf
 import monster.greyde.kachalochka.core.data.gym.workoutSetOf
 import monster.greyde.kachalochka.core.data.profile.profileOf
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -13,6 +14,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -361,6 +363,75 @@ class SchemaMigrationTest {
             },
         )
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
+    @Test
+    fun version_8_profiles_trade_the_birth_year_for_its_first_day_and_are_pulled_again() {
+        val owner = UserId("11111111-1111-4111-8111-111111111111")
+        version8ProfileTable()
+        exec(
+            "INSERT INTO profile(id, user_id, display_name, updated_at, friend_colors, sex, " +
+                "birth_year, height_cm) VALUES ('${owner.value}', '${owner.value}', 'Иван', 7, " +
+                "'{}', 'male', 1990, 180.5)",
+        )
+        exec(
+            "INSERT INTO profile(id, updated_at) VALUES ('22222222-2222-4222-8222-222222222222', 8)",
+        )
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 8, KachalochkaDatabase.Schema.version)
+
+        val database = kachalochkaDatabase(driver)
+        assertEquals(
+            Profile(
+                ProfileId(owner.value),
+                owner,
+                "Иван",
+                at(7),
+                false,
+                sex = Sex.Male,
+                birthDate = CalendarDay(1990, 1, 1),
+                heightCm = 180.5,
+            ),
+            database.profileQueries.byId(owner.value, ::profileOf).executeAsOne(),
+        )
+        assertEquals(
+            null,
+            database.profileQueries
+                .byId("22222222-2222-4222-8222-222222222222", ::profileOf)
+                .executeAsOne()
+                .birthDate,
+        )
+        assertEquals(
+            "profile_updated_at_idx",
+            text(
+                "SELECT name FROM sqlite_master " +
+                    "WHERE type = 'index' AND name = 'profile_updated_at_idx'",
+            ),
+        )
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
+    /** Versions 6 to 8 declare the profile table this way. */
+    private fun version8ProfileTable() {
+        KachalochkaDatabase.Schema.create(driver)
+        exec("DROP TABLE profile")
+        exec(
+            """
+            CREATE TABLE profile (
+                id TEXT NOT NULL PRIMARY KEY,
+                user_id TEXT,
+                display_name TEXT,
+                updated_at INTEGER NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0,
+                friend_colors TEXT NOT NULL DEFAULT '{}',
+                sex TEXT,
+                birth_year INTEGER,
+                height_cm REAL
+            )
+            """.trimIndent(),
+        )
+        exec("CREATE INDEX profile_updated_at_idx ON profile (updated_at)")
     }
 
     private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)

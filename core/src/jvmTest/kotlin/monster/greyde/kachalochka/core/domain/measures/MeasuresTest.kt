@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.domain.measures
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -14,6 +15,7 @@ class MeasuresTest {
     private val ivan = UserId("11111111-1111-4111-8111-111111111111")
     private val misha = UserId("22222222-2222-4222-8222-222222222222")
     private val epoch = Instant.fromEpochSeconds(0)
+    private val now = Instant.fromEpochSeconds(1_800_000_000)
 
     @Test
     fun a_derived_id_is_the_same_on_every_device_and_a_valid_id() {
@@ -41,15 +43,14 @@ class MeasuresTest {
                 Triple("Вес", "кг", MeasureKind.Weight),
                 Triple("Талия", "см", MeasureKind.Waist),
                 Triple("Грудь", "см", MeasureKind.Chest),
-                Triple("Бёдра", "см", MeasureKind.Hips),
+                Triple("Обхват бёдер", "см", MeasureKind.Hips),
                 Triple("Бицепс", "см", MeasureKind.Biceps),
-                Triple("Бедро", "см", MeasureKind.Thigh),
+                Triple("Окружность бедра", "см", MeasureKind.Thigh),
                 Triple("Шея", "см", MeasureKind.Neck),
-                Triple("Жир", "%", MeasureKind.BodyFat),
             ),
             defaults.map { Triple(it.name, it.unit, it.kind) },
         )
-        assertEquals((0..7).toList(), defaults.map { it.position })
+        assertEquals((0..6).toList(), defaults.map { it.position })
         assertTrue(defaults.all { it.updatedAt == epoch && !it.deleted && it.userId == ivan })
         assertEquals(
             defaults.map { derivedId(ivan, it.kind!!) },
@@ -74,6 +75,101 @@ class MeasuresTest {
         assertTrue(first.all { it.userId == null })
         assertNotEquals(first.map { it.id }, second.map { it.id })
     }
+
+    @Test
+    fun a_predefined_measure_shows_the_app_s_name_and_unit_whatever_is_stored() {
+        val hips = predefined(MeasureKind.Hips).copy(name = "Бёдра", unit = "дюйм")
+        val own = hips.copy(kind = null, name = "Предплечье", unit = "см")
+
+        assertEquals("Обхват бёдер" to "см", hips.displayName to hips.displayUnit)
+        assertEquals("Предплечье" to "см", own.displayName to own.displayUnit)
+        assertEquals(
+            "Жир по весам или калиперу" to "%",
+            predefined(MeasureKind.BodyFat).let { it.displayName to it.displayUnit },
+        )
+    }
+
+    @Test
+    fun upkeep_seeds_the_kinds_the_owner_never_had() {
+        val stored = missingDefaults(ivan, emptySet()).filter { it.kind != MeasureKind.Neck }
+
+        val writes = measureUpkeep(ivan, stored, emptySet(), Sex.Male, now)
+
+        assertEquals(listOf(MeasureKind.Neck), writes.map { it.kind })
+        assertEquals(epoch, writes.single().updatedAt)
+    }
+
+    @Test
+    fun upkeep_revives_a_deleted_measure_a_formula_reads_and_dates_it_now() {
+        val neck = predefined(MeasureKind.Neck).copy(deleted = true)
+        val chest = predefined(MeasureKind.Chest).copy(deleted = true)
+        val stored =
+            everyPredefined() - predefined(MeasureKind.Neck) -
+                predefined(MeasureKind.Chest) + neck + chest
+
+        val writes = measureUpkeep(ivan, stored, emptySet(), Sex.Male, now)
+
+        assertEquals(listOf(neck.copy(deleted = false, updatedAt = now)), writes)
+    }
+
+    @Test
+    fun deleted_hips_come_back_unless_the_owner_is_a_man() {
+        val hips = predefined(MeasureKind.Hips).copy(deleted = true)
+        val stored = everyPredefined() - predefined(MeasureKind.Hips) + hips
+
+        assertEquals(emptyList(), measureUpkeep(ivan, stored, emptySet(), Sex.Male, now))
+        assertEquals(
+            listOf(MeasureKind.Hips),
+            measureUpkeep(ivan, stored, emptySet(), Sex.Female, now).map { it.kind },
+        )
+        assertEquals(
+            listOf(MeasureKind.Hips),
+            measureUpkeep(ivan, stored, emptySet(), null, now).map { it.kind },
+        )
+    }
+
+    @Test
+    fun upkeep_deletes_a_fat_measure_without_values_and_keeps_one_with_values() {
+        val fat = predefined(MeasureKind.BodyFat)
+        val stored = everyPredefined() + fat
+
+        assertEquals(
+            listOf(fat.copy(deleted = true, updatedAt = now)),
+            measureUpkeep(ivan, stored, emptySet(), Sex.Male, now),
+        )
+        assertEquals(emptyList(), measureUpkeep(ivan, stored, setOf(fat.id), Sex.Male, now))
+    }
+
+    @Test
+    fun formulas_read_weight_waist_neck_and_hips_only_for_a_woman_or_an_unknown_sex() {
+        val navy = listOf(BodyFatMethod.Navy)
+
+        assertEquals(
+            listOf(BodyFatMethod.Ymca, BodyFatMethod.Deurenberg),
+            methodsReading(MeasureKind.Weight, Sex.Male),
+        )
+        assertEquals(
+            listOf(BodyFatMethod.Navy, BodyFatMethod.Ymca),
+            methodsReading(MeasureKind.Waist, Sex.Male),
+        )
+        assertEquals(navy, methodsReading(MeasureKind.Neck, Sex.Male))
+        assertEquals(emptyList(), methodsReading(MeasureKind.Hips, Sex.Male))
+        assertEquals(navy, methodsReading(MeasureKind.Hips, Sex.Female))
+        assertEquals(navy, methodsReading(MeasureKind.Hips, null))
+        assertEquals(emptyList(), methodsReading(MeasureKind.Chest, Sex.Female))
+        assertEquals(emptyList(), methodsReading(MeasureKind.BodyFat, Sex.Female))
+    }
+
+    private fun everyPredefined() = missingDefaults(ivan, emptySet())
+
+    private fun predefined(kind: MeasureKind) =
+        everyPredefined().firstOrNull { it.kind == kind }
+            ?: everyPredefined().first().copy(
+                id = MeasureId(derivedId(ivan, kind)),
+                kind = kind,
+                name = "Жир",
+                unit = "%",
+            )
 
     @Test
     fun a_kind_reads_back_from_its_wire_name_and_an_unknown_name_reads_as_none() {

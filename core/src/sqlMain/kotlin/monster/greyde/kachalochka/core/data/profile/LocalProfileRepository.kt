@@ -51,7 +51,7 @@ internal fun ProfileQueries.write(profile: Profile) =
         profile.deleted,
         friendColorsText(profile.friendColors),
         profile.sex?.wireName(),
-        profile.birthYear?.toLong(),
+        profile.birthDate?.iso,
         profile.heightCm,
     )
 
@@ -63,7 +63,7 @@ internal fun profileOf(
     deleted: Boolean,
     friendColors: String,
     sex: String?,
-    birthYear: Long?,
+    birthDate: String?,
     heightCm: Double?,
 ) = Profile(
     id = ProfileId(id),
@@ -73,6 +73,6 @@ internal fun profileOf(
     deleted = deleted,
     friendColors = friendColorsOf(friendColors),
     sex = sexOf(sex),
-    birthYear = birthYear?.toInt(),
+    birthDate = birthDateOf(birthDate),
     heightCm = heightCm,
 )

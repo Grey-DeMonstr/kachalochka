@@ -74,14 +74,14 @@ class LocalMeasureRepositoryTest {
         }
 
     @Test
-    fun kinds_counts_deleted_measures_and_only_the_owner_s() =
+    fun predefined_includes_deleted_measures_and_only_the_owner_s() =
         runTest {
-            repository.upsert(measure(ivan, kind = MeasureKind.Weight))
-            repository.upsert(measure(ivan, kind = MeasureKind.Neck).copy(deleted = true))
-            repository.upsert(measure(ivan))
-            repository.upsert(measure(misha, kind = MeasureKind.Hips))
+            val weight = measure(ivan, kind = MeasureKind.Weight)
+            val neck = measure(ivan, kind = MeasureKind.Neck).copy(deleted = true)
+            listOf(weight, neck, measure(ivan), measure(misha, kind = MeasureKind.Hips))
+                .forEach { repository.upsert(it) }
 
-            assertEquals(setOf(MeasureKind.Weight, MeasureKind.Neck), repository.kinds(ivan))
-            assertEquals(emptySet(), repository.kinds(null))
+            assertEquals(setOf(weight, neck), repository.predefined(ivan).toSet())
+            assertEquals(emptyList(), repository.predefined(null))
         }
 }

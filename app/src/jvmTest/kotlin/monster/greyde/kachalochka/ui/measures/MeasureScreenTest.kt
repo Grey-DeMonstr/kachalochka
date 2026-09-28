@@ -12,6 +12,8 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.measures.Measure
+import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
@@ -28,12 +30,14 @@ class MeasureScreenTest {
     private val gym = FakeGym()
     private val seeded = missingDefaults(null, emptySet())
     private val weight = seeded.first { it.kind == MeasureKind.Weight }
+    private val forearm =
+        Measure(MeasureId.random(), null, "Предплечье", "см", null, 7, gym.clock.current, false)
     private val lastWeek = CalendarDay(2023, 11, 7)
     private val today = CalendarDay(2023, 11, 14)
 
     init {
         runBlocking {
-            seeded.forEach { gym.measures.upsert(it) }
+            (seeded + forearm).forEach { gym.measures.upsert(it) }
             listOf(CalendarDay(2023, 9, 1) to 83.0, lastWeek to 82.4, today to 82.0).forEach {
                 gym.measurements.upsert(
                     Measurement(
@@ -51,12 +55,13 @@ class MeasureScreenTest {
     }
 
     private fun runMeasure(
+        measure: MeasureId = weight.id,
         onOpenDay: (CalendarDay) -> Unit = {},
         onGone: () -> Unit = {},
         assertions: ComposeUiTest.() -> Unit,
     ) = runScreenTest(
         gym,
-        screen = { MeasureScreen(weight.id, {}, {}, onOpenDay, onGone) },
+        screen = { MeasureScreen(measure, {}, {}, onOpenDay, onGone) },
         assertions = assertions,
     )
 
@@ -101,8 +106,16 @@ class MeasureScreenTest {
     }
 
     @Test
-    fun the_menu_renames_the_measure() {
+    fun a_measure_a_formula_reads_has_no_menu() {
         runMeasure {
+            onNodeWithTag("top-bar-title").assertTextEquals("Вес")
+            onNodeWithTag("measure-menu").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun the_menu_renames_the_user_s_own_measure() {
+        runMeasure(forearm.id) {
             onNodeWithTag("measure-menu").performClick()
             onNodeWithTag("edit-measure").performClick()
             waitForIdle()
@@ -116,7 +129,7 @@ class MeasureScreenTest {
         assertEquals(
             "Масса",
             gym.measures.rows
-                .getValue(weight.id)
+                .getValue(forearm.id)
                 .name,
         )
     }
@@ -136,7 +149,7 @@ class MeasureScreenTest {
     @Test
     fun the_menu_deletes_the_measure_after_confirmation() {
         var deleted = 0
-        runMeasure(onGone = { deleted++ }) {
+        runMeasure(forearm.id, onGone = { deleted++ }) {
             onNodeWithTag("measure-menu").performClick()
             onNodeWithTag("delete-measure").performClick()
             waitForIdle()
@@ -146,7 +159,7 @@ class MeasureScreenTest {
         assertEquals(1, deleted)
         assertTrue(
             gym.measures.rows
-                .getValue(weight.id)
+                .getValue(forearm.id)
                 .deleted,
         )
     }

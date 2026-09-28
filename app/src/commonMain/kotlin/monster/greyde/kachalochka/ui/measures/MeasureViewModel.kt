@@ -17,6 +17,9 @@ import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.measures.inPeriod
+import monster.greyde.kachalochka.core.domain.measures.isLocked
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
@@ -33,6 +36,8 @@ data class MeasureUi(
     val history: List<HistoryRowUi>,
     val editing: EditMeasureUi?,
     val deleting: Boolean,
+    val canEdit: Boolean,
+    val canDelete: Boolean,
 )
 
 data class HistoryRowUi(
@@ -51,6 +56,7 @@ class MeasureViewModel(
     private val measureId: MeasureId,
     private val measures: MeasureRepository,
     private val measurements: MeasurementRepository,
+    private val profiles: ProfileRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
@@ -66,6 +72,7 @@ class MeasureViewModel(
     private val writes = WriteGuard(viewModelScope)
 
     private var measure: Measure? = null
+    private var sex: Sex? = null
 
     /** Newest day first, as the repository reads them. */
     private var values: List<Measurement> = emptyList()
@@ -86,6 +93,7 @@ class MeasureViewModel(
             viewModelScope.launch {
                 val owner = currentUser.id()
                 measure = measures.all(owner).firstOrNull { it.id == measureId }
+                sex = profiles.forOwner(owner)?.sex
                 values = measurements.all(owner).filter { it.measureId == measureId }
                 if (measure == null) mutableGone.value = true
                 publish()
@@ -98,7 +106,7 @@ class MeasureViewModel(
     }
 
     fun openEdit() {
-        val shown = measure ?: return
+        val shown = measure?.takeIf { it.kind == null } ?: return
         editing = EditMeasureUi(shown.name, shown.unit, true)
         publish()
     }
@@ -136,7 +144,7 @@ class MeasureViewModel(
     }
 
     fun askDelete() {
-        if (measure == null) return
+        if (measure?.let(::deletable) != true) return
         deleting = true
         publish()
     }
@@ -158,6 +166,8 @@ class MeasureViewModel(
         }
     }
 
+    private fun deletable(shown: Measure): Boolean = shown.kind?.let { !isLocked(it, sex) } ?: true
+
     private fun publish() {
         val shown = measure
         if (shown == null) {
@@ -170,11 +180,11 @@ class MeasureViewModel(
         val last = shownPeriod.lastOrNull()
         mutableState.value =
             MeasureUi(
-                name = shown.name,
-                unit = shown.unit,
+                name = shown.displayName,
+                unit = shown.displayUnit,
                 period = period,
                 points = shownPeriod.map { it.day to it.value },
-                latest = values.firstOrNull()?.let { measureValue(it.value, shown.unit) },
+                latest = values.firstOrNull()?.let { measureValue(it.value, shown.displayUnit) },
                 change =
                     if (first != null && last != null && first != last) {
                         measureDelta(last.value, first.value)
@@ -186,11 +196,13 @@ class MeasureViewModel(
                         HistoryRowUi(
                             it.day,
                             dayMonthLabel(it.day, today.year),
-                            measureValue(it.value, shown.unit),
+                            measureValue(it.value, shown.displayUnit),
                         )
                     },
                 editing = editing,
                 deleting = deleting,
+                canEdit = shown.kind == null,
+                canDelete = deletable(shown),
             )
     }
 

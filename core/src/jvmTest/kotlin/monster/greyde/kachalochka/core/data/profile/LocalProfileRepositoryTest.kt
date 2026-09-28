@@ -9,6 +9,7 @@ import monster.greyde.kachalochka.core.data.db.kachalochkaDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.di.corePlatformModule
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
@@ -100,7 +101,7 @@ class LocalProfileRepositoryTest {
                 profile.copy(
                     friendColors = mapOf(friend to 0xFF2196F3.toInt()),
                     sex = Sex.Male,
-                    birthYear = 1985,
+                    birthDate = CalendarDay(1985, 3, 9),
                     heightCm = 181.5,
                 )
 

@@ -1,0 +1,24 @@
+-- SQLite before 3.35, as on Android 10, cannot drop a column, so the table is rebuilt.
+CREATE TABLE profile_rebuilt (
+    id            TEXT    NOT NULL PRIMARY KEY,
+    user_id       TEXT,
+    display_name  TEXT,
+    updated_at    INTEGER NOT NULL,
+    deleted       INTEGER NOT NULL DEFAULT 0,
+    friend_colors TEXT    NOT NULL DEFAULT '{}',
+    sex           TEXT,
+    birth_date    TEXT,
+    height_cm     REAL
+);
+INSERT INTO profile_rebuilt(
+    id, user_id, display_name, updated_at, deleted, friend_colors, sex, birth_date, height_cm
+)
+SELECT id, user_id, display_name, updated_at, deleted, friend_colors, sex,
+       CASE WHEN birth_year IS NULL THEN NULL ELSE printf('%04d-01-01', birth_year) END,
+       height_cm
+FROM profile;
+DROP TABLE profile;
+ALTER TABLE profile_rebuilt RENAME TO profile;
+CREATE INDEX profile_updated_at_idx ON profile (updated_at);
+-- Rows pulled before this version lack the birth dates other clients have since written.
+UPDATE syncState SET lastPullAt = NULL;
