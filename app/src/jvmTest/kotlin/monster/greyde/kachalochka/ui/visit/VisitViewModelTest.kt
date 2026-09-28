@@ -401,6 +401,24 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun the_sheet_takes_no_save_until_the_set_is_written() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            val gate = CompletableDeferred<Unit>().also { gym.sets.gate = it }
+
+            vm.save()
+
+            val saving = assertNotNull(assertNotNull(vm.state.value).sheet)
+            assertTrue(saving.saving)
+            assertFalse(saving.canSave)
+            gate.complete(Unit)
+            val saved = assertNotNull(assertNotNull(vm.state.value).sheet)
+            assertFalse(saved.saving)
+            assertTrue(saved.canSave)
+            assertEquals("подход 2", saved.setNumberLabel)
+        }
+
+    @Test
     fun a_group_expands_into_its_sets() =
         runTest {
             gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))

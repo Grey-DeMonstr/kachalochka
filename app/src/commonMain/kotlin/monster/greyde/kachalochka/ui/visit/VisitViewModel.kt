@@ -109,6 +109,7 @@ data class SheetUi(
     val saveLabel: String,
     val expanded: Boolean,
     val canSave: Boolean,
+    val saving: Boolean,
     val friends: List<String>,
 )
 
@@ -144,6 +145,7 @@ class VisitViewModel(
     private var values = SetValues(0.0, DEFAULT_REPS)
     private var sheetExpanded = true
     private var ordering = false
+    private var saving = false
     private var friendResults: List<FriendResult> = emptyList()
     private var friendsFor: Pair<UserId, MachineId>? = null
     private var loadingFriends: Job? = null
@@ -261,40 +263,48 @@ class VisitViewModel(
         val machine = open ?: return
         if (!weightValid) return
         writes.launch {
-            val now = clock.now()
-            val edited = editing
-            if (edited == null) {
-                val owner = currentUser.id()
-                val offset = utcOffset.at(now)
-                val today = CalendarDay.of(now, offset)
-                val target =
-                    visits.shownOn(owner, day, sets, utcOffset::at)
-                        ?: dayVisit(day, owner, today, offset, now).also { visits.upsert(it) }
-                val targetSets =
-                    if (target.id == visit?.id) visitSets else sets.forVisit(target.id)
-                sets.upsert(
-                    WorkoutSet(
-                        WorkoutSetId.random(),
-                        owner,
-                        target.id,
-                        ownMachine(owner, machine).id,
-                        values.weight,
-                        values.reps,
-                        nextPosition(targetSets),
-                        recordingInstant(target, targetSets, today, now),
-                        now,
-                        false,
-                    ),
-                )
-                if (day == today) restTimer.start() else sync.request()
-            } else {
-                sets.upsert(
-                    edited.copy(weight = values.weight, reps = values.reps, updatedAt = now),
-                )
-                editing = null
-                requestSyncIfPast()
+            saving = true
+            publish()
+            try {
+                recordSet(machine)
+                reload(reseed = true)
+            } finally {
+                saving = false
+                publish()
             }
-            reload(reseed = true)
+        }
+    }
+
+    private suspend fun recordSet(machine: Machine) {
+        val now = clock.now()
+        val edited = editing
+        if (edited == null) {
+            val owner = currentUser.id()
+            val offset = utcOffset.at(now)
+            val today = CalendarDay.of(now, offset)
+            val target =
+                visits.shownOn(owner, day, sets, utcOffset::at)
+                    ?: dayVisit(day, owner, today, offset, now).also { visits.upsert(it) }
+            val targetSets = if (target.id == visit?.id) visitSets else sets.forVisit(target.id)
+            sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    owner,
+                    target.id,
+                    ownMachine(owner, machine).id,
+                    values.weight,
+                    values.reps,
+                    nextPosition(targetSets),
+                    recordingInstant(target, targetSets, today, now),
+                    now,
+                    false,
+                ),
+            )
+            if (day == today) restTimer.start() else sync.request()
+        } else {
+            sets.upsert(edited.copy(weight = values.weight, reps = values.reps, updatedAt = now))
+            editing = null
+            requestSyncIfPast()
         }
     }
 
@@ -586,7 +596,8 @@ class VisitViewModel(
                     edited != null,
                 ),
             expanded = sheetExpanded,
-            canSave = weightValid,
+            canSave = weightValid && !saving,
+            saving = saving,
             friends = if (edited == null) friendResults.map(::friendLine) else emptyList(),
         )
     }

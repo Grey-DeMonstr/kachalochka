@@ -14,6 +14,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -73,6 +74,7 @@ fun AccentButton(
     modifier: Modifier = Modifier,
     height: Dp = 64.dp,
     enabled: Boolean = true,
+    loading: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(10.dp)
@@ -81,15 +83,24 @@ fun AccentButton(
             modifier
                 .fillMaxWidth()
                 .height(height)
-                .alpha(if (enabled) 1f else DISABLED_ALPHA)
+                // Busy is not unavailable, so a loading button keeps its full colour.
+                .alpha(if (enabled || loading) 1f else DISABLED_ALPHA)
                 .clip(shape)
                 .border(1.dp, colors.primary, shape)
                 .background(colors.primary.copy(alpha = 0.12f))
-                .clickable(enabled = enabled, onClick = onClick),
+                .clickable(enabled = enabled && !loading, onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, tint = colors.onPrimaryContainer, modifier = Modifier.size(22.dp))
+        if (loading) {
+            CircularProgressIndicator(
+                Modifier.size(22.dp),
+                color = colors.onPrimaryContainer,
+                strokeWidth = 2.dp,
+            )
+        } else {
+            Icon(icon, null, tint = colors.onPrimaryContainer, modifier = Modifier.size(22.dp))
+        }
         Text(
             text,
             fontSize = if (height > 64.dp) 20.sp else 19.sp,

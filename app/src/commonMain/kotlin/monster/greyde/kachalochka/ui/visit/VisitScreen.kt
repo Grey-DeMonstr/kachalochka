@@ -641,6 +641,7 @@ private fun SetSheet(
             Modifier.testTag("save-set"),
             height = 72.dp,
             enabled = sheet.canSave,
+            loading = sheet.saving,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlineButton(

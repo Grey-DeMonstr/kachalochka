@@ -3,14 +3,19 @@ package monster.greyde.kachalochka.ui.visit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasProgressBarRangeInfo
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -23,6 +28,7 @@ import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
@@ -206,6 +212,24 @@ class VisitScreenTest {
             onNodeWithTag("weight-value").performTextReplacement("abc")
             waitForIdle()
             onNodeWithTag("save-set").assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun the_save_button_takes_no_taps_until_the_set_is_saved() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            val gate = CompletableDeferred<Unit>().also { gym.sets.gate = it }
+            onNodeWithTag("save-set").performClick()
+            waitForIdle()
+            onNodeWithTag("save-set").assertIsNotEnabled()
+            onNode(saveProgress, useUnmergedTree = true).assertExists()
+
+            gate.complete(Unit)
+            waitForIdle()
+            onNodeWithTag("save-set").assertIsEnabled()
+            onNode(saveProgress, useUnmergedTree = true).assertDoesNotExist()
+            onNodeWithTag("visit-set-count").assertTextEquals("2 ПОДХОДА")
         }
     }
 
@@ -473,6 +497,10 @@ class VisitScreenTest {
                 .associate { it.id to it.position },
         )
     }
+
+    private val saveProgress =
+        hasAnyAncestor(hasTestTag("save-set")) and
+            hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)
 
     private fun hasTestTagStartingWith(prefix: String) =
         SemanticsMatcher("test tag starts with $prefix") { node ->
