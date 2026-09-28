@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
+import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
@@ -25,6 +26,7 @@ import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
 import monster.greyde.kachalochka.ui.machine.MachineListViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
+import monster.greyde.kachalochka.ui.settings.SettingsViewModel
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
 import monster.greyde.kachalochka.ui.visit.VisitViewModel
@@ -47,6 +49,7 @@ val appModule =
         }
         single { VisitNormalization(get(), get(), get(), get(), get()) }
         single { PendingJoin(get(), get()) }
+        single { Nickname(get(), get()) }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }
@@ -55,6 +58,7 @@ val appModule =
         viewModelOf(::AccountsViewModel)
         viewModelOf(::CalendarViewModel)
         viewModelOf(::MachineListViewModel)
+        viewModelOf(::SettingsViewModel)
         viewModel { (day: CalendarDay) ->
             VisitViewModel(
                 day,

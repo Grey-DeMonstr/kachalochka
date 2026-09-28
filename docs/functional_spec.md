@@ -112,6 +112,10 @@ Signing out of an account removes it from the device but keeps what it recorded,
 in finds it again. On Android, signing out of the last account returns the app to working without
 one. Friends stay locked until an account is signed in.
 
+Settings has a "Ник" field for the signed-in account, up to 40 characters; the Google account
+name is shown as a placeholder and used when the field is left blank. Friends see this nickname
+instead of the Google name.
+
 ## Custom exercsies
 
 Someone may want to record non-machine exercises, like "Run 1km" where measure will be in minutes,
