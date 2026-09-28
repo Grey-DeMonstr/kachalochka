@@ -47,6 +47,7 @@ fun HomeScreen(
     onOpenCalendar: () -> Unit,
     onOpenMachines: () -> Unit,
     onOpenFriends: () -> Unit,
+    onOpenMeasures: () -> Unit,
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -71,6 +72,12 @@ fun HomeScreen(
             "Тренажёры",
             "section-machines",
             onClick = onOpenMachines,
+        )
+        SectionRow(
+            PhosphorIcons.Ruler,
+            "Замеры",
+            "section-measures",
+            onClick = onOpenMeasures,
         )
         SectionRow(PhosphorIcons.ListChecks, "Планы", "section-plans")
         SectionRow(PhosphorIcons.ChartLineUp, "Статистика", "section-stats")

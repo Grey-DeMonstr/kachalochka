@@ -29,6 +29,8 @@ import monster.greyde.kachalochka.navigation.LinkChooserRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
 import monster.greyde.kachalochka.navigation.MachineListRoute
 import monster.greyde.kachalochka.navigation.MachinePickerRoute
+import monster.greyde.kachalochka.navigation.MeasurementFormRoute
+import monster.greyde.kachalochka.navigation.MeasuresRoute
 import monster.greyde.kachalochka.navigation.SettingsRoute
 import monster.greyde.kachalochka.navigation.VisitRoute
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
@@ -50,6 +52,8 @@ import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
 import monster.greyde.kachalochka.ui.machine.MachineListScreen
 import monster.greyde.kachalochka.ui.machine.MachinePickerScreen
+import monster.greyde.kachalochka.ui.measures.MeasurementFormScreen
+import monster.greyde.kachalochka.ui.measures.MeasuresScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.ThemePreference
@@ -89,6 +93,24 @@ fun App() {
                         onOpenCalendar = { navController.navigate(CalendarRoute) },
                         onOpenMachines = { navController.navigate(MachineListRoute) },
                         onOpenFriends = { navController.navigate(FriendsRoute) },
+                        onOpenMeasures = { navController.navigate(MeasuresRoute) },
+                    )
+                }
+                composable<MeasuresRoute> {
+                    MeasuresScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onNewMeasurement = { navController.navigate(MeasurementFormRoute()) },
+                    )
+                }
+                composable<MeasurementFormRoute> { entry ->
+                    val route = entry.toRoute<MeasurementFormRoute>()
+                    MeasurementFormScreen(
+                        initialDay = route.day?.let(CalendarDay::parse),
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onSaved = { navController.popBackStack() },
+                        onDeleted = { navController.popBackStack() },
                     )
                 }
                 composable<MachineListRoute> {

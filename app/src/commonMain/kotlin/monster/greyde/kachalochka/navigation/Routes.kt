@@ -66,3 +66,17 @@ data class GroupRoute(
 
 @Serializable
 object FriendsRoute
+
+@Serializable
+object MeasuresRoute
+
+/** [day] is ISO; null opens today. */
+@Serializable
+data class MeasurementFormRoute(
+    val day: String? = null,
+)
+
+@Serializable
+data class MeasureRoute(
+    val measureId: String,
+)

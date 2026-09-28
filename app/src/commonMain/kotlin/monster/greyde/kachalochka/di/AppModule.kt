@@ -30,6 +30,8 @@ import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
 import monster.greyde.kachalochka.ui.machine.MachineListViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
+import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
+import monster.greyde.kachalochka.ui.measures.MeasuresViewModel
 import monster.greyde.kachalochka.ui.settings.SettingsViewModel
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
@@ -65,6 +67,10 @@ val appModule =
         viewModelOf(::CalendarViewModel)
         viewModelOf(::MachineListViewModel)
         viewModelOf(::SettingsViewModel)
+        viewModelOf(::MeasuresViewModel)
+        viewModel { (day: CalendarDay?) ->
+            MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get())
+        }
         viewModel { (day: CalendarDay) ->
             VisitViewModel(
                 day,

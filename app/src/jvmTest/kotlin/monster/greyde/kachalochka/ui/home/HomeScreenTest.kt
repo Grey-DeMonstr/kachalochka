@@ -37,14 +37,14 @@ class HomeScreenTest {
 
     @Test
     fun friends_stay_locked_until_an_account_is_signed_in() =
-        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}) }) {
+        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("section-friends-lock", useUnmergedTree = true).assertExists()
         }
 
     @Test
     fun friends_unlock_once_an_account_is_signed_in() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
-        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("section-friends-lock", useUnmergedTree = true).assertDoesNotExist()
         }
     }
@@ -52,7 +52,7 @@ class HomeScreenTest {
     @Test
     fun the_sign_in_button_stays_hidden_without_supabase_credentials() {
         val gym = FakeGym(credentials = SupabaseCredentials("", ""))
-        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("home-sign-in").assertDoesNotExist()
         }
     }
@@ -60,7 +60,7 @@ class HomeScreenTest {
     /** The fake sign-in has nothing queued to hand back, which is a refusal like any other. */
     @Test
     fun a_refused_sign_in_says_so_under_the_button() =
-        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}) }) {
+        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("sign-in-failure").assertDoesNotExist()
 
             onNodeWithTag("home-sign-in").performClick()
@@ -73,7 +73,7 @@ class HomeScreenTest {
     @Test
     fun the_sign_in_button_stays_hidden_without_a_google_web_client_id() {
         val gym = FakeGym(credentials = SupabaseCredentials("https://example.test", "anon-key"))
-        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("home-sign-in").assertDoesNotExist()
         }
     }
@@ -81,7 +81,7 @@ class HomeScreenTest {
     @Test
     fun the_today_card_offers_the_first_set_and_opens_today() {
         val opened = mutableListOf<CalendarDay>()
-        runScreenTest(FakeGym(), screen = { HomeScreen({ opened += it }, {}, {}, {}, {}) }) {
+        runScreenTest(FakeGym(), screen = { HomeScreen({ opened += it }, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("visit-counts").assertTextEquals("Подходов пока нет")
             onNodeWithTag("open-today").assertTextEquals("Записать подход")
             onNodeWithTag("open-today").performClick()
@@ -114,7 +114,7 @@ class HomeScreenTest {
                 ),
             )
         }
-        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("visit-counts").assertTextEquals("1 тренажёр · 1 подход")
             onNodeWithTag("open-today").assertTextEquals("Продолжить")
         }
@@ -125,9 +125,31 @@ class HomeScreenTest {
         var opened = 0
         runScreenTest(
             FakeGym(),
-            screen = { HomeScreen({}, {}, {}, onOpenMachines = { opened++ }, onOpenFriends = {}) },
+            screen = {
+                HomeScreen(
+                    {},
+                    {},
+                    {},
+                    onOpenMachines = { opened++ },
+                    onOpenFriends = {},
+                    onOpenMeasures = {},
+                )
+            },
         ) {
             onNodeWithTag("section-machines").performClick()
+            waitForIdle()
+        }
+        assertEquals(1, opened)
+    }
+
+    @Test
+    fun the_measures_row_opens_the_measures() {
+        var opened = 0
+        runScreenTest(
+            FakeGym(),
+            screen = { HomeScreen({}, {}, {}, {}, {}, onOpenMeasures = { opened++ }) },
+        ) {
+            onNodeWithTag("section-measures").assertTextEquals("Замеры").performClick()
             waitForIdle()
         }
         assertEquals(1, opened)
@@ -137,7 +159,7 @@ class HomeScreenTest {
     fun the_friends_row_opens_the_groups_once_signed_in() {
         var opened = 0
         val gym = FakeGym().withAccounts(ivan, active = ivan)
-        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, onOpenFriends = { opened++ }) }) {
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, { opened++ }, {}) }) {
             onNodeWithTag("section-friends").performClick()
             waitForIdle()
         }

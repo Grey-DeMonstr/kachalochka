@@ -1,5 +1,7 @@
 package monster.greyde.kachalochka.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -83,6 +85,17 @@ fun Modifier.reorderItem(
     onSizeChanged { state.heights[index] = it.height }
         .zIndex(if (state.dragging == index) 1f else 0f)
         .graphicsLayer { translationY = state.shift(index) }
+
+/** The dragged item stands out from the rows sliding under it. */
+@Composable
+fun Modifier.dragOutline(dragged: Boolean): Modifier {
+    val colors = MaterialTheme.colorScheme
+    return if (dragged) {
+        border(1.dp, colors.onBackground, ControlShape).background(colors.surface, ControlShape)
+    } else {
+        this
+    }
+}
 
 @Composable
 fun DragHandle(

@@ -45,6 +45,25 @@ class AppTest {
             onNodeWithTag("section-stats").assertIsNotEnabled()
             onNodeWithTag("section-friends").assertIsNotEnabled()
             onNodeWithTag("section-machines").assertIsEnabled()
+            onNodeWithTag("section-measures").assertIsEnabled()
+        }
+
+    @Test
+    fun a_measurement_saved_from_the_measures_screen_shows_up_in_it() =
+        runApp {
+            onNodeWithTag("section-measures").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+            val weight = runBlocking { gym.measures.all(null) }.first()
+            onNodeWithTag("new-measurement").performClick()
+            waitForIdle()
+            onNodeWithTag("measure-field-${weight.id.value}").performTextInput("82,4")
+            onNodeWithTag("save-measurement").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+            onNodeWithTag("measure-value-${weight.id.value}", useUnmergedTree = true)
+                .assertTextEquals("82,4 кг")
         }
 
     @Test

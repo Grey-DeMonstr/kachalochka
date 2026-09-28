@@ -71,6 +71,7 @@ import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.Stepper
 import monster.greyde.kachalochka.ui.components.Thumbnail
+import monster.greyde.kachalochka.ui.components.dragOutline
 import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
@@ -298,17 +299,6 @@ private fun Modifier.clickableUnless(
     ordering: Boolean,
     onClick: () -> Unit,
 ): Modifier = if (ordering) this else clickable(onClick = onClick)
-
-/** The dragged item stands out from the rows sliding under it. */
-@Composable
-private fun Modifier.dragOutline(dragged: Boolean): Modifier {
-    val colors = MaterialTheme.colorScheme
-    return if (dragged) {
-        border(1.dp, colors.onBackground, ControlShape).background(colors.surface, ControlShape)
-    } else {
-        this
-    }
-}
 
 @Composable
 private fun SetRow(

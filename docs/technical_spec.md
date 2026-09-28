@@ -222,7 +222,8 @@ failing a pull.
 - **Triggers.** A pass runs whenever the app comes to the foreground (a `ProcessLifecycleOwner`
   `ON_START` observer, which also fires at launch), when the app goes to the background, after an
   account is added, after a visit is moved, replaced or removed on the calendar, and after any
-  write to a visit of a day other than today, and after visit normalization wrote something. It
+  write to a visit or measurement of a day other than today, and after visit normalization wrote
+  something. It
   is a WorkManager job — unique work `"sync"` — with a network constraint, so a pass already
   queued waits for connectivity rather than failing outright. A pass reports whether every push
   and pull succeeded, and one that did not is retried with exponential backoff. A new request
@@ -440,6 +441,11 @@ newer, so a late seed never undoes a rename made on another device; every other 
 On the device, a pulled `measure` replaces a pending local row dated at the epoch
 (`MEASURE_SEEDED_AT`) and drops its outbox entry, so the rename lands even when the seed's push
 failed in the same pass.
+
+"Замеры" seeds on every load, one seeding at a time, since two concurrent seeds of an anonymous
+owner would each add a full set. The "Замер" form writes only the fields whose value changed: the
+day's newest row updated in place, or a new row; an emptied field soft-deletes that row, which
+`newestPerDay` then reads as a cleared day.
 
 ---
 
