@@ -14,7 +14,9 @@ private const val ISSUES = "https://github.com/Grey-DeMonstr/kachalochka/issues"
 private val DOCUMENTS = listOf("privacy.html", "terms.html")
 private val PAGES = DOCUMENTS + "index.html"
 
-private fun page(name: String): String = File(webResources, name).readText()
+// Whitespace collapsed, so wrapping the HTML source never breaks a phrase a test looks for.
+private fun page(name: String): String =
+    File(webResources, name).readText().replace(Regex("\\s+"), " ")
 
 private fun headings(html: String): List<String> =
     Regex("<h2>(.*?)</h2>").findAll(html).map { it.groupValues[1] }.toList()
@@ -45,6 +47,43 @@ class LegalPagesTest {
         val html = page("privacy.html")
         assertTrue("$ISSUES/new" in html)
         assertTrue("within 30 days" in html)
+    }
+
+    @Test
+    fun privacyPolicyTellsThatAndroidSignOutKeepsRecordsOnTheDevice() {
+        assertTrue("its records also stay on the device" in page("privacy.html"))
+    }
+
+    @Test
+    fun privacyPolicyDisclosesBackupAndTheFirstSignInUpload() {
+        val html = page("privacy.html")
+        assertTrue("Android’s own backup" in html)
+        assertTrue("When you first sign in, what you recorded without an account" in html)
+    }
+
+    @Test
+    fun privacyPolicyListsWhatGoogleSignInStores() {
+        val html = page("privacy.html")
+        assertTrue("profile picture link" in html)
+        assertTrue("records when you sign in and from which IP address" in html)
+    }
+
+    @Test
+    fun privacyPolicyStatesTheManifestPermissions() {
+        assertTrue("asks for no runtime permissions" in page("privacy.html"))
+    }
+
+    @Test
+    fun privacyPolicyKeepsDeletedGroupsAndFriendsCopiesInRetention() {
+        val html = page("privacy.html")
+        assertTrue("groups you delete or leave" in html)
+        assertTrue("copied from you belongs to their account" in html)
+    }
+
+    @Test
+    fun termsSayTheInviteCodeCannotBeChanged() {
+        val html = page("terms.html")
+        assertTrue("The code cannot be changed and members cannot be removed" in html)
     }
 
     @Test
@@ -83,6 +122,13 @@ class LegalPagesTest {
         assertTrue("<meta name=\"description\"" in html)
         assertTrue("<a href=\"privacy.html\">Privacy Policy</a>" in html)
         assertTrue("<a href=\"terms.html\">Terms of Service</a>" in html)
+    }
+
+    // Google's reviewer reads the homepage, not its meta tags.
+    @Test
+    fun entryPageFooterVisiblyDescribesTheApp() {
+        val footer = page("index.html").substringAfter("<footer").substringBefore("</footer>")
+        assertTrue("syncs between Android and the web" in footer)
     }
 
     @Test

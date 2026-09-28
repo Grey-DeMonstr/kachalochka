@@ -62,15 +62,18 @@ effective date. Sections:
 1. **Summary.** Workouts are stored to sync them between devices and to share them with groups
    the user joins. No ads, no analytics, no crash reporting, no selling or sharing for marketing.
 2. **What we collect.**
-   - From Google sign-in: e-mail address, name and Google account identifier.
+   - From Google sign-in: e-mail address, name, profile picture link and Google account
+     identifier; the authentication service records sign-in times and IP addresses.
    - What the user records: machines (name, setup note, weight settings, unit), visits (their
-     day) and sets (weight, repetitions, time recorded).
+     day and when recorded) and sets (weight, repetitions, time recorded).
    - Groups: group names, invite codes, membership, and the display name taken from the Google
      name.
    - Technical: sign-in tokens; request logs the hosting providers keep.
 3. **Where it is stored.**
-   - Android: on the device. Without an account nothing leaves it; with one, the data syncs to
-     the backend. Several accounts on one device each keep their own data.
+   - Android: on the device. Without an account nothing reaches the backend; the first sign-in
+     adds what was recorded without one to that account, and from then on the data syncs.
+     Several accounts on one device each keep their own data. Android's own backup may copy
+     the app's data, sign-in included, to the user's Google account.
    - Web: in the backend only; the browser keeps the sign-in session and the theme choice.
 4. **Who can see it.** The user, and members of groups the user joins: they see the display
    name, visits and machines, read-only. Leaving a group stops it. No public profile.
@@ -81,15 +84,17 @@ effective date. Sections:
 6. **Retention and deletion.**
    - Data is kept while the account exists.
    - Deleting a visit or set in the app hides it; the row stays on the server until the account
-     is deleted.
-   - Signing out removes the account from the device, not from the server.
+     is deleted. So do groups deleted or left.
+   - Signing out removes the account from the device's account list, not from the server; on
+     Android its rows also stay on the device.
    - To delete the account and all data tied to it, open a GitHub issue asking for deletion;
-     it is completed within 30 days.
+     it is completed within 30 days. A machine a group member copied belongs to their account.
    - On Android, data recorded without an account is removed by uninstalling the app or clearing
      its data.
 7. **Security.** HTTPS for every request; row-level security in the database lets an account
    read only its own rows and those of its groups.
-8. **Permissions.** Internet access.
+8. **Permissions.** No runtime permissions; the manifest declares network access and what the
+   libraries need for background sync and Google sign-in.
 9. **Children.** The app is not directed at children under 13. A child's use, including a child's
    account signed in beside a parent's, is set up and supervised by a parent or guardian.
 10. **Changes.** Published on this page with a new effective date; the history is public in the
@@ -114,8 +119,8 @@ Policy. Sections:
 5. **Acceptable use.** No disrupting or overloading the service, no attempts to reach others'
    data, no unlawful or abusive content in group names, machine names or notes, no automated
    access beyond the app's own.
-6. **Groups.** The owner controls the invite code and can delete the group; members can leave at
-   any time.
+6. **Groups.** The owner shares the invite code and can delete the group; the code cannot be
+   changed and members cannot be removed; members can leave at any time.
 7. **Health.** The app records numbers and gives no medical or training advice; exercise is at
    the user's own risk.
 8. **No warranty.** Provided "as is" and "as available"; the service may change, pause or end,
@@ -139,7 +144,8 @@ Policy. Sections:
 ```html
 <div id="app"></div>
 <footer class="legal">
-    Kachalochka — a gym workout log.
+    Kachalochka is a gym workout log that syncs between Android and the web and shares visits
+    with friends.
     <a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a>
 </footer>
 ```

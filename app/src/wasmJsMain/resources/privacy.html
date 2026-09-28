@@ -66,14 +66,16 @@
     <h2>What we collect</h2>
     <ul>
         <li>
-            <strong>From Google sign-in:</strong> your e-mail address, your name and your
-            Google account identifier. The e-mail address tells your accounts apart in the
-            app’s account menu; the name is shown to members of your groups.
+            <strong>From Google sign-in:</strong> your e-mail address, your name, your profile
+            picture link and your Google account identifier. The e-mail address tells your
+            accounts apart in the app’s account menu; the name is shown to members of your
+            groups. The authentication service also records when you sign in and from which IP
+            address.
         </li>
         <li>
             <strong>What you record:</strong> your machines (name, setup note, weight settings
-            and unit), your visits (the day of each) and your sets (weight, repetitions and the
-            time each was recorded).
+            and unit), your visits (the day of each and when it was recorded) and your sets
+            (weight, repetitions and the time each was recorded).
         </li>
         <li>
             <strong>Groups:</strong> the groups you create or join, their names and invite
@@ -89,9 +91,12 @@
     <h2>Where it is stored</h2>
     <ul>
         <li>
-            <strong>Android:</strong> on your device. Without an account nothing leaves the
-            device. Once you sign in, what you record is synced to our backend. When several
-            accounts are signed in on one device, each keeps its own data.
+            <strong>Android:</strong> on your device. Without an account nothing is sent to our
+            backend. When you first sign in, what you recorded without an account is added to
+            that account; from then on, what you record is synced to our backend. When several
+            accounts are signed in on one device, each keeps its own data. Android’s own backup
+            may copy the app’s data, including your sign-in, to your Google account and to a
+            new phone you transfer to.
         </li>
         <li>
             <strong>Web:</strong> in our backend only. Your browser keeps just your sign-in
@@ -134,18 +139,22 @@
         <li>We keep your data for as long as your account exists.</li>
         <li>
             When you delete a visit or a set in the app, it disappears from the app, but the
-            record stays on our servers, marked deleted, until your account is deleted.
+            record stays on our servers, marked deleted, until your account is deleted. The same
+            goes for groups you delete or leave.
         </li>
         <li>
-            Signing out removes the account from that device. Its data stays on our servers, so
-            signing back in finds it again.
+            Signing out removes the account from that device’s account list. Its data stays on
+            our servers, so signing back in finds it again. On Android its records also stay on
+            the device, hidden from the other accounts, until the app’s data is cleared or the
+            app is uninstalled.
         </li>
         <li>
             To delete your account and all the data tied to it,
             <a href="https://github.com/Grey-DeMonstr/kachalochka/issues/new">open an issue</a>
             asking for deletion. Do not put your e-mail address or any other personal data in
             the issue: we reply there and confirm the account with you privately before
-            deleting it. Deletion is completed within 30 days of the request.
+            deleting it. Deletion is completed within 30 days of the request. A machine a group
+            member copied from you belongs to their account and stays with it.
         </li>
         <li>
             On Android, data recorded without an account is removed by uninstalling the app or
@@ -161,7 +170,10 @@
     </p>
 
     <h2>Permissions</h2>
-    <p>The Android app uses internet access, to sign in and to sync.</p>
+    <p>
+        The Android app asks for no runtime permissions. Its manifest declares network access,
+        and the permissions its libraries need for background sync and Google sign-in.
+    </p>
 
     <h2>Children</h2>
     <p>
