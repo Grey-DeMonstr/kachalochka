@@ -263,7 +263,7 @@ class SupabaseFriendsRepository(
                 isIn("machine_id", machineIds)
                 isIn("user_id", mateIds)
             }
-        return friendResults(mates.values.toList(), visits, visitSets)
+        return friendResults(mates.values.toList(), visits, visitSets, candidates)
     }
 
     private suspend fun memberships(group: GroupId? = null): List<GroupMemberRow> =

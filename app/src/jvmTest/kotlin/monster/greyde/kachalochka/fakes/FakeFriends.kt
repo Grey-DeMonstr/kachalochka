@@ -228,7 +228,12 @@ class FakeFriends(
                     .map { it.id }
                     .toSet()
             val onThem = sets.filter { !it.deleted && it.machineId in ids }
-            friendResults(mates.values.toList(), latestVisitsByMember(onThem, 3), onThem)
+            friendResults(
+                mates.values.toList(),
+                latestVisitsByMember(onThem, 3),
+                onThem,
+                this.machines,
+            )
         }
     }
 }

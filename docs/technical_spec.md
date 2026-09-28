@@ -124,8 +124,10 @@ Text leaves the app through `TextSharing`, bound per platform in `platformModule
 `ShareSheetTextSharing` opens the system share sheet and returns no notice; the web's
 `ClipboardTextSharing` writes the clipboard and returns the notice the screen shows. Invites use
 the same platform call. A shared visit's text comes from the pure `visitShareText` in
-`app/ui/format`. `VisitViewModel` reads the nickname ahead of the tap, because a browser accepts
-a clipboard write only shortly after the user's gesture.
+`app/ui/format`. Its `setsSummary` writes one machine's weights and reps, and every screen that
+sums up a machine's sets calls it, so they read exactly like the shared text. `VisitViewModel`
+reads the nickname ahead of the tap, because a browser accepts a clipboard write only shortly
+after the user's gesture.
 
 ---
 
@@ -332,7 +334,8 @@ direction and through any number of hops, form a cluster that counts as one phys
 every reader asks it: the picker and the machine list offer one friend's machine per cluster
 without an own machine (`friendMachineRows`, the machine with the fewest outgoing links, then by
 owner name and id), the set sheet asks `FriendsRepository.latestOn` for the friends' machines of
-the open machine's cluster, and a friend's visit names each machine after the viewer's own in its
+the open machine's cluster (each `FriendResult` carries the friend's machine, whose unit its sets
+are written in), and a friend's visit names each machine after the viewer's own in its
 cluster (`namesForViewer`). The clusters combine the account's own links, read locally, with its
 group mates' live links, read online through `FriendsRepository.groupLinks`. Picking a friend's
 machine, or "Взять себе" on one opened from the machine list, writes the own copy (`linkedCopy`)

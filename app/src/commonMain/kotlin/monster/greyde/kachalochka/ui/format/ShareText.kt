@@ -34,17 +34,28 @@ fun visitShareText(
     return (listOf(header, "") + lines).joinToString("\n")
 }
 
+private fun sharedUnit(machine: Machine): String =
+    if (machine.unit == WeightUnit.Custom) " ${unitLabel(machine)}" else "кг"
+
 private fun shareLine(shared: SharedMachine): String {
     val machine = shared.machine
-    val unit = if (machine.unit == WeightUnit.Custom) " ${unitLabel(machine)}" else "кг"
-    val weights = shared.sets.map { inKg(it.weight, machine.unit) }
-    val reps = shared.sets.map { it.reps }
     val platform =
         if (machine.platformWeight > 0 && !machine.platformIncluded) {
-            " (+${formatNumber(inKg(machine.platformWeight, machine.unit))}$unit)"
+            " (+${formatNumber(inKg(machine.platformWeight, machine.unit))}${sharedUnit(machine)})"
         } else {
             ""
         }
+    return "${machine.name}$platform ${setsSummary(machine, shared.sets)}"
+}
+
+/** The weights and reps of [sets] on [machine], written as a shared visit writes them. */
+fun setsSummary(
+    machine: Machine,
+    sets: List<WorkoutSet>,
+): String {
+    val unit = sharedUnit(machine)
+    val weights = sets.map { inKg(it.weight, machine.unit) }
+    val reps = sets.map { it.reps }
     val weightPart =
         when {
             weights.all { it == 0.0 } -> null
@@ -53,5 +64,5 @@ private fun shareLine(shared: SharedMachine): String {
         }
     val repsPart =
         if (reps.distinct().size == 1) "${reps.size}x${reps.first()}" else reps.joinToString("-")
-    return listOfNotNull(machine.name + platform, weightPart, repsPart).joinToString(" ")
+    return listOfNotNull(weightPart, repsPart).joinToString(" ")
 }

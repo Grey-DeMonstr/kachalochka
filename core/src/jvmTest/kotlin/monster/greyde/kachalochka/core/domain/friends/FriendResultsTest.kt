@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.domain.gym.VISIT_A
 import monster.greyde.kachalochka.core.domain.gym.VISIT_B
 import monster.greyde.kachalochka.core.domain.gym.VISIT_C
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.gym.machine
@@ -44,21 +45,26 @@ class FriendResultsTest {
     }
 
     @Test
-    fun a_result_holds_the_visit_s_sets_in_visit_order_under_its_friend() {
+    fun a_result_holds_the_visit_s_sets_in_visit_order_under_its_friend_and_machine() {
         val later = oleg.trained(VISIT_B, 85.0, 120)
         val earlier = oleg.trained(VISIT_B, 80.0, 60)
         val older = oleg.trained(VISIT_A, 70.0, 0)
         val his = pasha.trained(VISIT_C, 60.0, 0)
+        val press = machine(PRESS, "Жим ногами").copy(unit = WeightUnit.Lb)
 
         val results =
             friendResults(
                 listOf(oleg, pasha),
                 listOf(VISIT_B, VISIT_C),
                 listOf(later, his, older, earlier),
+                listOf(machine(ROW, "Тяга"), press),
             )
 
         assertEquals(
-            listOf(FriendResult(oleg, listOf(earlier, later)), FriendResult(pasha, listOf(his))),
+            listOf(
+                FriendResult(oleg, press, listOf(earlier, later)),
+                FriendResult(pasha, press, listOf(his)),
+            ),
             results,
         )
     }
@@ -69,7 +75,15 @@ class FriendResultsTest {
             set(VISIT_A, 70.0, 8, 0)
                 .copy(userId = UserId("55555555-5555-4555-8555-555555555555"))
 
-        assertEquals(emptyList(), friendResults(listOf(oleg), listOf(VISIT_A), listOf(stranger)))
+        assertEquals(
+            emptyList(),
+            friendResults(
+                listOf(oleg),
+                listOf(VISIT_A),
+                listOf(stranger),
+                listOf(machine(PRESS, "Жим ногами")),
+            ),
+        )
     }
 
     @Test

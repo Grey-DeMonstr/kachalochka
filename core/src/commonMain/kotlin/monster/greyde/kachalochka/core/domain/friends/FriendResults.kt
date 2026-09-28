@@ -20,16 +20,21 @@ fun latestVisitsByMember(
         .take(limit)
         .map { it.visitId }
 
+/** [machines] holds the friends' machines the [sets] were recorded on. */
 fun friendResults(
     friends: List<Friend>,
     visits: List<VisitId>,
     sets: List<WorkoutSet>,
+    machines: List<Machine>,
 ): List<FriendResult> {
     val byId = friends.associateBy { it.userId }
+    val machinesById = machines.associateBy { it.id }
     return visits.mapNotNull { visit ->
         val visitSets = sets.filter { it.visitId == visit && !it.deleted }.sortedWith(visitOrder)
-        val friend = visitSets.firstOrNull()?.userId?.let(byId::get) ?: return@mapNotNull null
-        FriendResult(friend, visitSets)
+        val first = visitSets.firstOrNull() ?: return@mapNotNull null
+        val friend = first.userId?.let(byId::get) ?: return@mapNotNull null
+        val machine = machinesById[first.machineId] ?: return@mapNotNull null
+        FriendResult(friend, machine, visitSets)
     }
 }
 

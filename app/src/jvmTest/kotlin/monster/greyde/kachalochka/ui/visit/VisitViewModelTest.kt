@@ -24,6 +24,8 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.Nickname
+import monster.greyde.kachalochka.ui.format.SharedMachine
+import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.olegTrainedOn
 import monster.greyde.kachalochka.ui.timer.RestTimer
@@ -378,7 +380,7 @@ class VisitViewModelTest {
             assertEquals("подход 2", state.sheet?.setNumberLabel)
             assertEquals("70", state.sheet?.weight)
             assertEquals(
-                listOf("Жим ногами (+20 кг)" to "67,5 кг"),
+                listOf("Жим ногами (+20 кг)" to "67,5кг 1x10"),
                 state.groups.map { it.title to it.summary },
             )
         }
@@ -406,7 +408,7 @@ class VisitViewModelTest {
             vm.toggleGroup(row.id)
 
             val group = assertNotNull(vm.state.value).groups.single()
-            assertEquals("2 × 45 кг", group.summary)
+            assertEquals("45кг 12-10", group.summary)
             assertEquals(true, group.expanded)
             assertEquals(
                 listOf(
@@ -414,6 +416,30 @@ class VisitViewModelTest {
                     "Тяга верхнего блока · подход 2" to "45 кг × 10",
                 ),
                 group.sets.map { it.title to it.value },
+            )
+        }
+
+    @Test
+    fun every_machine_row_reads_like_its_line_in_the_shared_visit() =
+        runTest {
+            val cable = Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb)
+            gym.machines.upsert(cable)
+            gym.sets.upsert(set(visit.id, press, 60.0, 10, 0))
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 1))
+            gym.sets.upsert(set(visit.id, cable, 45.0, 10, 2))
+            gym.sets.upsert(set(visit.id, cable, 45.0, 8, 3))
+            val vm = viewModel().also { it.refresh() }
+
+            vm.share()
+
+            val summaries = assertNotNull(vm.state.value).groups.map { it.summary }
+            assertEquals(listOf("60-70кг 2x10", "20,5кг 10-8"), summaries)
+            assertEquals(
+                listOf("Жим ногами (+20кг) 60-70кг 2x10", "Кроссовер 20,5кг 10-8"),
+                gym.texts.shared
+                    .single()
+                    .lines()
+                    .drop(2),
             )
         }
 
@@ -430,7 +456,7 @@ class VisitViewModelTest {
             val vm = viewModel().also { it.selectMachine(gravitron.id) }
 
             val state = assertNotNull(vm.state.value)
-            assertEquals("7 плитка", state.groups.single().summary)
+            assertEquals("7 плитка 1x10", state.groups.single().summary)
             assertEquals("плитка всего · ±1", state.sheet?.weightCaption)
         }
 
@@ -1161,7 +1187,30 @@ class VisitViewModelTest {
         val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 
         assertEquals(
-            listOf("Олег · вчера · 80×8, 85×6"),
+            listOf("Олег · вчера · 80-85кг 8-6"),
+            vm.state.value
+                ?.sheet
+                ?.friends,
+        )
+    }
+
+    @Test
+    fun a_friend_s_result_reads_like_their_machine_s_line_in_a_shared_visit() {
+        val two = twoAccountGym()
+        two.olegTrainedOn(ivanPress, ivanFriend)
+        val olegPress =
+            two.friends.machines
+                .single()
+                .copy(unit = WeightUnit.Lb)
+        two.friends.machines[0] = olegPress
+        val shared =
+            visitShareText("", two.today, listOf(SharedMachine(olegPress, two.friends.sets)))
+
+        val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+        assertEquals("Жим ногами 36,5-38,5кг 8-6", shared.lines().last())
+        assertEquals(
+            listOf("Олег · вчера · 36,5-38,5кг 8-6"),
             vm.state.value
                 ?.sheet
                 ?.friends,
@@ -1210,7 +1259,7 @@ class VisitViewModelTest {
         vm.refresh()
 
         assertEquals(
-            listOf("Олег · вчера · 80×8, 85×6"),
+            listOf("Олег · вчера · 80-85кг 8-6"),
             vm.state.value
                 ?.sheet
                 ?.friends,
@@ -1234,7 +1283,7 @@ class VisitViewModelTest {
         vm.refresh()
 
         assertEquals(
-            listOf("Олег · вчера · 80×8, 85×6"),
+            listOf("Олег · вчера · 80-85кг 8-6"),
             vm.state.value
                 ?.sheet
                 ?.friends,
@@ -1252,7 +1301,7 @@ class VisitViewModelTest {
         two.sync.completePass()
 
         assertEquals(
-            listOf("Олег · вчера · 80×8, 85×6"),
+            listOf("Олег · вчера · 80-85кг 8-6"),
             vm.state.value
                 ?.sheet
                 ?.friends,

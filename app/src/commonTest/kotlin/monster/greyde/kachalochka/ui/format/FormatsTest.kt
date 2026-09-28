@@ -3,11 +3,8 @@ package monster.greyde.kachalochka.ui.format
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -17,20 +14,6 @@ import kotlin.time.Instant
 class FormatsTest {
     private val t0 = Instant.fromEpochSeconds(1_700_000_000)
     private val press = Machine.new("Жим ногами", null, t0)
-
-    private fun set(weight: Double) =
-        WorkoutSet(
-            WorkoutSetId.random(),
-            null,
-            VisitId.random(),
-            press.id,
-            weight,
-            10,
-            0,
-            t0,
-            t0,
-            false,
-        )
 
     @Test
     fun numbers_use_a_decimal_comma_and_drop_a_zero_fraction() {
@@ -69,16 +52,6 @@ class FormatsTest {
     fun sets_read_as_weight_times_reps() {
         assertEquals("70 кг × 10", setValue(70.0, 10, "кг"))
         assertEquals("72,5×8", shortSet(72.5, 8))
-    }
-
-    @Test
-    fun a_group_of_equal_weights_is_counted_and_others_are_listed() {
-        assertEquals("2 × 45 кг", groupSummary(listOf(set(45.0), set(45.0)), "кг"))
-        assertEquals(
-            "60, 70, 70 кг",
-            groupSummary(listOf(set(60.0), set(70.0), set(70.0)), "кг"),
-        )
-        assertEquals("45 кг", groupSummary(listOf(set(45.0)), "кг"))
     }
 
     @Test

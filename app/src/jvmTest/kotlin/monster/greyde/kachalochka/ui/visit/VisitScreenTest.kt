@@ -469,7 +469,7 @@ class VisitScreenTest {
         ) {
             waitForIdle()
             onNodeWithTag("sheet-friends").assertIsDisplayed()
-            onNodeWithText("Олег · вчера · 80×8, 85×6").assertIsDisplayed()
+            onNodeWithText("Олег · вчера · 80-85кг 8-6").assertIsDisplayed()
         }
     }
 

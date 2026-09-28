@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class ShareTextTest {
@@ -166,6 +167,26 @@ class ShareTextTest {
             "Жим ногами 50кг 1x10",
             line(machine("Жим ногами", platform = 76.0, included = true), 50.0 to 10),
         )
+    }
+
+    @Test
+    fun a_sets_summary_is_the_machine_s_shared_line_after_its_name() {
+        val cases =
+            listOf(
+                machine("Жим ногами", platform = 76.0) to sets(20.0 to 10, 40.0 to 10),
+                machine("Тяга", WeightUnit.Lb, platform = 100.0) to sets(45.0 to 10, 45.0 to 8),
+                machine("Блок", WeightUnit.Custom, label = "плитка") to sets(3.0 to 10),
+                machine("Подтягивания") to sets(0.0 to 10, 0.0 to 10),
+            )
+
+        assertEquals(
+            listOf("20-40кг 2x10", "20,5кг 10-8", "3 плитка 1x10", "2x10"),
+            cases.map { (machine, sets) -> setsSummary(machine, sets) },
+        )
+        cases.forEach { (machine, sets) ->
+            val line = visitShareText("", thursday, listOf(SharedMachine(machine, sets)))
+            assertTrue(line.endsWith(" " + setsSummary(machine, sets)), line)
+        }
     }
 
     @Test

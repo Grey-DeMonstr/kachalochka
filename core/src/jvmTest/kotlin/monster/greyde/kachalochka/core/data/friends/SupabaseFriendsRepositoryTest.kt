@@ -313,7 +313,7 @@ class SupabaseFriendsRepositoryTest {
             val results = repositoryOn(engine).latestOn(IVAN, setOf(press.id))
 
             assertEquals(
-                listOf(FriendResult(Friend(OLEG, "Олег"), listOf(first, second))),
+                listOf(FriendResult(Friend(OLEG, "Олег"), press, listOf(first, second))),
                 results,
             )
             val (_, machineRequest, newestRequest, visitRequest) = engine.requestHistory
@@ -378,8 +378,8 @@ class SupabaseFriendsRepositoryTest {
 
             assertEquals(
                 listOf(
-                    FriendResult(Friend(OLEG, "Олег"), listOf(olegSets.last())),
-                    FriendResult(Friend(anna, "Анна"), listOf(annaSet)),
+                    FriendResult(Friend(OLEG, "Олег"), olegPress, listOf(olegSets.last())),
+                    FriendResult(Friend(anna, "Анна"), annaPress, listOf(annaSet)),
                 ),
                 results,
             )

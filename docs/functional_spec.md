@@ -76,7 +76,8 @@ weight in brackets when it is not included in the record, the weights and the re
 different ones joined with dashes ("Жим от груди 30° 35-35-30кг 10-10-15"). Weights are in
 kilograms: pounds are converted to the nearest half kilogram, and an own unit is written as is
 with its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zero shows only its reps
-("Подтягивания 3x10").
+("Подтягивания 3x10"). The machine rows of the visit screen and of a friend's visit, and friends'
+results in the set sheet, write a machine's weights and reps exactly the same way.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,
@@ -238,8 +239,9 @@ A machine can be taken from a friend's list: the copy keeps the friend's setting
 linked to the friend's machine as one physical machine. An own machine can also be linked to a
 friend's with "Привязать к…". Machines linked directly or through other friends' links are one
 machine: the picker no longer offers the friend's machine beside the user's own, the set sheet
-shows friends' latest results on it, a friend's visit shows their sets on it under the user's own
-machine name, and the machine form names the friends it is linked with ("Связан с: …").
+shows each friend's latest visit on it ("Олег · вчера · 80-85кг 8-6"), a friend's visit shows
+their sets on it under the user's own machine name, and the machine form names the friends it is
+linked with ("Связан с: …").
 "Отвязать от друзей" in the form's menu, after a confirmation, breaks every link between the
 machine and friends' machines, whichever side made it.
 

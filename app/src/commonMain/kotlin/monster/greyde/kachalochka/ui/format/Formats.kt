@@ -5,7 +5,6 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
@@ -73,18 +72,6 @@ fun shortSet(
     weight: Double,
     reps: Int,
 ): String = "${formatNumber(weight)}×$reps"
-
-fun groupSummary(
-    sets: List<WorkoutSet>,
-    unit: String,
-): String {
-    val weights = sets.map { it.weight }
-    return if (weights.size > 1 && weights.distinct().size == 1) {
-        "${weights.size} × ${formatNumber(weights.first())} $unit"
-    } else {
-        weights.joinToString(", ") { formatNumber(it) } + " $unit"
-    }
-}
 
 fun pluralRu(
     n: Int,

@@ -60,7 +60,7 @@ class FriendVisitViewModelTest {
         assertEquals("Олег · 13 ноября", state.title)
         assertEquals("3 подхода", state.setCountLabel)
         assertEquals(
-            listOf("Жим ногами" to "80, 85 кг", "Тяга" to "100 lb"),
+            listOf("Жим ногами" to "80-85кг 8-6", "Тяга" to "45,5кг 1x10"),
             state.groups.map { it.title to it.summary },
         )
         assertEquals(

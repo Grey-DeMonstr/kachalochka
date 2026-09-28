@@ -24,9 +24,9 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
-import monster.greyde.kachalochka.ui.format.groupSummary
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
+import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.machine.visibleLinks
 import kotlin.time.Clock
@@ -131,11 +131,12 @@ class FriendVisitViewModel(
         machinesById: Map<MachineId, Machine>,
     ): FriendSetGroupUi {
         val title = names[machineId].orEmpty()
-        val unit = machinesById[machineId]?.let(::unitLabel) ?: "кг"
+        val machine = machinesById[machineId]
+        val unit = machine?.let(::unitLabel) ?: "кг"
         return FriendSetGroupUi(
             machineId = machineId,
             title = title,
-            summary = groupSummary(machineSets, unit),
+            summary = machine?.let { setsSummary(it, machineSets) }.orEmpty(),
             sets =
                 machineSets.mapIndexed { index, set ->
                     FriendSetRowUi(

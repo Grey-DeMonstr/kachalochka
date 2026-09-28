@@ -49,9 +49,13 @@ data class FriendVisit(
     val visit: Visit,
 )
 
-/** A friend's sets on a linked machine from their latest visit on it, in visit order. */
+/**
+ * A friend's sets on a linked machine from their latest visit on it, in visit order. [machine] is
+ * the friend's own, which the first set was recorded on: its unit is the one the weights are in.
+ */
 data class FriendResult(
     val friend: Friend,
+    val machine: Machine,
     val sets: List<WorkoutSet>,
 )
 

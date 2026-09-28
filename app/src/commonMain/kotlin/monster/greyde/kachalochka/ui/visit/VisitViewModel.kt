@@ -49,13 +49,13 @@ import monster.greyde.kachalochka.ui.format.clockLabel
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
-import monster.greyde.kachalochka.ui.format.groupSummary
 import monster.greyde.kachalochka.ui.format.machineTitle
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.platformSuffix
 import monster.greyde.kachalochka.ui.format.saveLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
+import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.shortSet
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.visitShareText
@@ -489,7 +489,7 @@ class VisitViewModel(
     private fun friendLine(result: FriendResult): String {
         val now = clock.now()
         val days = calendarDaysBetween(result.sets.last().recordedAt, now, utcOffset.at(now))
-        val sets = result.sets.joinToString(", ") { shortSet(it.weight, it.reps) }
+        val sets = setsSummary(result.machine, result.sets)
         return "${result.friend.displayName} · ${daysAgoLabel(days)} · $sets"
     }
 
@@ -523,7 +523,7 @@ class VisitViewModel(
         return SetGroupUi(
             machineId = machineId,
             title = title,
-            summary = groupSummary(machineSets, unit),
+            summary = machine?.let { setsSummary(it, machineSets) }.orEmpty(),
             expanded =
                 ordering || machineId in expanded || machineSets.any { it.id == editing?.id },
             sets =
