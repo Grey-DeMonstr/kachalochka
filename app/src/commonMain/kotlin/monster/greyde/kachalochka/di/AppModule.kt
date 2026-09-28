@@ -52,7 +52,18 @@ val appModule =
             VisitViewModel(day, get(), get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (day: CalendarDay) ->
-            MachinePickerViewModel(day, get(), get(), get(), get(), get(), get(), get(), get())
+            MachinePickerViewModel(
+                day,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
         }
         viewModel { (args: MachineFormArgs) ->
             MachineFormViewModel(args, get(), get(), get(), get())

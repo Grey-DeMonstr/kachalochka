@@ -79,6 +79,22 @@ fun MachinePickerScreen(
                     "machine-row-${row.id.value}",
                 ) { onPicked(row.id) }
             }
+            if (state.friendRows.isNotEmpty()) {
+                SectionLabel(
+                    "Тренажёры друзей",
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                            .testTag("picker-friends"),
+                )
+                state.friendRows.forEach { row ->
+                    MachineRow(
+                        row.name,
+                        row.detail,
+                        "friend-machine-${row.id.value}",
+                    ) { viewModel.pickFriend(row.id, onPicked) }
+                }
+            }
             if (selectedMachineId != null) {
                 SectionLabel(
                     "На основе существующего",

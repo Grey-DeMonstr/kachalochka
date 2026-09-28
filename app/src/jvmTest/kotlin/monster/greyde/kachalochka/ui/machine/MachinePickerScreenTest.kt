@@ -1,9 +1,11 @@
 package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -12,6 +14,9 @@ import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.ui.friends.ME
+import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -67,4 +72,22 @@ class MachinePickerScreenTest {
         ) {
             onNodeWithTag("copy-machine").assertDoesNotExist()
         }
+
+    @Test
+    fun a_friend_s_machine_is_picked_as_a_linked_copy() {
+        val on = signedInGym()
+        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val olegPress = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
+        on.friends.machines += olegPress
+        val picked = mutableListOf<MachineId>()
+        runScreenTest(on, screen = {
+            MachinePickerScreen(on.today, null, {}, {}, { picked += it }, {}, { _, _ -> })
+        }) {
+            onNodeWithTag("picker-friends").performScrollTo().assertIsDisplayed()
+            onNodeWithTag("friend-machine-${olegPress.id.value}").performScrollTo().performClick()
+            waitForIdle()
+        }
+        val copy = runBlocking { on.machines.byId(picked.single()) }
+        assertEquals(olegPress.id, copy?.linkId)
+    }
 }
