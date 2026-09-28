@@ -3,12 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Kachalochka is a gym workout log: record sets on each machine, sync them between Android and the web, and share visits with a group of friends.">
     <title>Kachalochka</title>
     <style>
+        :root { color-scheme: light dark; --legal-fg: #6b675f; --legal-bg: #fbfaf7; }
+        @media (prefers-color-scheme: dark) {
+            :root { --legal-fg: #9a968d; --legal-bg: #141417; }
+        }
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        body { display: flex; flex-direction: column; }
+        #app { flex: 1; min-height: 0; position: relative; }
+        .legal {
+            padding: 4px 12px;
+            font: 12px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            text-align: center;
+            color: var(--legal-fg);
+            background: var(--legal-bg);
+        }
+        .legal a { color: inherit; white-space: nowrap; }
     </style>
 </head>
 <body>
+<div id="app"></div>
+<footer class="legal">
+    Kachalochka — a gym workout log.
+    <a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a>
+</footer>
 <script src="app.js"></script>
 </body>
 </html>

@@ -49,7 +49,7 @@ fun main() {
         koin.warmGroups()
         // The active account, reached through its id, is the only owner the web reads.
         koin.startVisitNormalization(emptyList())
-        ComposeViewport(document.body!!) { App() }
+        ComposeViewport(document.getElementById("app")!!) { App() }
     }
 }
 

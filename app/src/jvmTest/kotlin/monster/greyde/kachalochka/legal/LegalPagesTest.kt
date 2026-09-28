@@ -76,6 +76,20 @@ class LegalPagesTest {
         assertTrue("do not limit the rights the GPL gives you" in html)
     }
 
+    // The app draws on a canvas, so only plain HTML shows a crawler what the page is.
+    @Test
+    fun entryPageDescribesTheAppAndLinksToBothDocuments() {
+        val html = page("index.html")
+        assertTrue("<meta name=\"description\"" in html)
+        assertTrue("<a href=\"privacy.html\">Privacy Policy</a>" in html)
+        assertTrue("<a href=\"terms.html\">Terms of Service</a>" in html)
+    }
+
+    @Test
+    fun entryPageGivesTheAppItsOwnContainer() {
+        assertTrue("<div id=\"app\"></div>" in page("index.html"))
+    }
+
     @Test
     fun eachDocumentStatesItsEffectiveDate() {
         val date = Regex("""Effective date: <time datetime="\d{4}-\d{2}-\d{2}">""")
