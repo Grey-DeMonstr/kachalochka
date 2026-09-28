@@ -128,6 +128,7 @@ class MeasureViewModel(
                     updatedAt = clock.now(),
                 )
             measures.upsert(renamed)
+            sync.request()
             measure = renamed
             editing = null
             publish()
@@ -151,6 +152,7 @@ class MeasureViewModel(
             val now = clock.now()
             measures.upsert(shown.copy(deleted = true, updatedAt = now))
             values.forEach { measurements.upsert(it.copy(deleted = true, updatedAt = now)) }
+            sync.request()
             deleting = false
             mutableGone.value = true
         }

@@ -113,6 +113,7 @@ class MeasuresViewModel(
             shown = order.map { changed[it.id] ?: it }
             publish()
             changed.values.forEach { measures.upsert(it) }
+            if (changed.isNotEmpty()) sync.request()
         }
     }
 
@@ -150,6 +151,7 @@ class MeasuresViewModel(
                     deleted = false,
                 ),
             )
+            sync.request()
             mutableState.value = mutableState.value.copy(adding = null)
             load()
         }

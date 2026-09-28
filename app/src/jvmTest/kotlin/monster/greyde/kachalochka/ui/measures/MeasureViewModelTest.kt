@@ -186,6 +186,7 @@ class MeasureViewModelTest {
         assertNull(vm.ui.editing)
         assertEquals("Масса тела", vm.ui.name)
         assertEquals("82 lb", vm.ui.latest)
+        assertEquals(1, gym.sync.requests)
     }
 
     @Test
@@ -221,6 +222,7 @@ class MeasureViewModelTest {
         assertFalse(vm.ui.deleting)
         assertEquals(weight, gym.measures.rows.getValue(weight.id))
         assertFalse(vm.gone.value)
+        assertEquals(0, gym.sync.requests)
 
         vm.askDelete()
         vm.confirmDelete()
@@ -237,5 +239,6 @@ class MeasureViewModelTest {
             )
         }
         assertEquals(listOf(waisted), runBlocking { gym.measurements.all(null) })
+        assertEquals(1, gym.sync.requests)
     }
 }

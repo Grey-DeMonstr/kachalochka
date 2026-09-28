@@ -163,6 +163,7 @@ class MeasuresViewModelTest {
             assertEquals("см", added.unit)
             assertNull(added.kind)
             assertEquals(8, added.position)
+            assertEquals(1, gym.sync.requests)
         }
 
     @Test
@@ -209,6 +210,7 @@ class MeasuresViewModelTest {
                     .filter { it.updatedAt != MEASURE_SEEDED_AT }
                     .associate { it.name to it.position }
             assertEquals(mapOf("Грудь" to 0, "Вес" to 1, "Талия" to 2), written)
+            assertEquals(1, gym.sync.requests)
 
             vm.toggleOrdering()
             assertFalse(vm.state.value.ordering)
