@@ -197,6 +197,20 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun switching_accounts_clears_the_notice() =
+        runTest {
+            val gym = twoAccountGym()
+            gym.sets.upsert(set(ivanVisit.id, ivanPress, 80.0, 8, 0, ivan.account.userId))
+            val vm = viewModel(gym)
+            vm.share()
+            assertEquals("Скопировано", vm.state.value?.notice)
+
+            gym.accounts.switchTo(misha.account.userId)
+
+            assertNull(vm.state.value?.notice)
+        }
+
+    @Test
     fun a_finished_sync_shows_the_sets_it_pulled() =
         runTest {
             val vm = viewModel()

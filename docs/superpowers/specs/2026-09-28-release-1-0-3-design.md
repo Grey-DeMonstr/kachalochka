@@ -80,7 +80,8 @@ the sync pass, and is unused so far.
 The visit screen's top bar gets a share icon (`PhosphorIcons.ShareNetwork`) whenever the visit has
 sets. It shares plain text through the same platform mechanism as invites: a new
 `TextSharing.share(text): String?` — Android's share sheet, the web's clipboard with a
-"Скопировано" confirmation — to which `InviteSharing` delegates its platform call.
+"Скопировано" confirmation. Android's `InviteSharing` delegates to `TextSharing`; the web's shares
+its clipboard helper and keeps the invite's own notices.
 
 The text is built by a pure function `visitShareText(nickname, day, groups)` in
 `app/ui/format`, tested in `commonTest`; `groups` is the visit's machines in visit order, each

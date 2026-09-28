@@ -122,6 +122,7 @@ class VisitScreenTest {
     fun a_visit_without_sets_offers_no_share() {
         runScreenTest(gym, screen = { visitScreen(day = CalendarDay(2023, 11, 12)) }) {
             waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 12 ноября")
             onNodeWithTag("share-visit").assertDoesNotExist()
         }
     }

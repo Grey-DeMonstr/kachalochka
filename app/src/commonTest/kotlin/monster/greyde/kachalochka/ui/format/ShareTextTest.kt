@@ -137,6 +137,10 @@ class ShareTextTest {
             "Блок 3-4 плитка 2x10",
             line(machine("Блок", WeightUnit.Custom, label = "плитка"), 3.0 to 10, 4.0 to 10),
         )
+        assertEquals(
+            "Блок (+2 плитка) 3 плитка 1x10",
+            line(machine("Блок", WeightUnit.Custom, platform = 2.0, label = "плитка"), 3.0 to 10),
+        )
     }
 
     @Test

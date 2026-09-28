@@ -157,6 +157,7 @@ class VisitViewModel(
     init {
         viewModelScope.launch {
             accounts.activeId.collect {
+                notice = null
                 loadSharer(it)
                 reload(reseed = true)
             }
