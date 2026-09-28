@@ -1,5 +1,15 @@
 Kachalochka - Changelog
 
+1.0.5
+
+- Linked machines are listed by name and owner in the machine form, and each one opens.
+- The set button shows progress until the set is saved.
+- Shared visits mark the weights of a machine counted per side.
+- Numbers are written with a decimal point; typing still accepts a comma.
+- The manual body fat measure is removed along with its values.
+- The unused left-and-right switch is gone from the machine form.
+
+
 1.0.4
 
 - Body fat is calculated under your measures by three formulas, and the measures they need are
