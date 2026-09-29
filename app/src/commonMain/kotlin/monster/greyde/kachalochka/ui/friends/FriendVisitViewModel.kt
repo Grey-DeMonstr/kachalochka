@@ -19,7 +19,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.dayAt
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
-import monster.greyde.kachalochka.core.domain.gym.keptVisit
+import monster.greyde.kachalochka.core.domain.gym.shownVisit
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -95,14 +95,9 @@ class FriendVisitViewModel(
         loading = viewModelScope.launch { load() }
     }
 
-    /** The sets of the day's visit [keptVisit] would show: the newest with live sets, else all. */
     private suspend fun setsOn(day: CalendarDay): List<WorkoutSet> {
         val sameDay = friends.visits(member).filter { it.dayAt(utcOffset::at) == day }
-        if (sameDay.isEmpty()) return emptyList()
-        val setsByVisit =
-            if (sameDay.size > 1) sameDay.associate { it.id to friends.sets(it) } else emptyMap()
-        val visit = keptVisit(sameDay) { setsByVisit[it]?.isNotEmpty() == true }
-        return setsByVisit[visit.id] ?: friends.sets(visit)
+        return shownVisit(sameDay, friends::sets)?.sets.orEmpty()
     }
 
     private suspend fun load() {

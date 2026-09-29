@@ -411,7 +411,10 @@ is created with the day's first set. `day` is nullable and unconstrained, becaus
 Before a visit's `day` is set, readers place it on the day of its `recorded_at` instead
 (`Visit.dayAt`), and where more than one visit falls on a day, show `keptVisit`'s pick: the newest
 by `(recorded_at, updated_at, id)` (`visitRecency`) of those with a live set, or of all when none
-has one (`VisitRepository.shownOn`).
+has one. `shownVisit` in `domain/gym` is the one reader of that rule: given a day's visits and a
+way to read a visit's sets, it returns the shown visit with its sets, asking for sets only when
+more than one visit is in play. `VisitRepository.shownOn` calls it for the account's own visits;
+the calendars and a friend's visit call it with `FriendsRepository.sets`.
 
 `normalizedVisits` in `domain/gym` is the pure function that reconciles this: it fills a missing
 `day` from `recorded_at` and, per day, keeps `keptVisit` of the visits — the newest by

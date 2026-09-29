@@ -24,10 +24,10 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.allOn
 import monster.greyde.kachalochka.core.domain.gym.dayAt
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
-import monster.greyde.kachalochka.core.domain.gym.keptVisit
 import monster.greyde.kachalochka.core.domain.gym.movedVisit
 import monster.greyde.kachalochka.core.domain.gym.removedVisit
 import monster.greyde.kachalochka.core.domain.gym.shownOn
+import monster.greyde.kachalochka.core.domain.gym.shownVisit
 import monster.greyde.kachalochka.core.domain.gym.summarize
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -188,10 +188,10 @@ class CalendarViewModel(
             val arrived =
                 visits
                     .shownOn(currentUser.id(), day, sets, utcOffset::at)
-                    ?.takeIf { it.id != visit.id }
+                    ?.takeIf { it.visit.id != visit.id }
             if (arrived != null) {
-                replacingSets = sets.forVisit(arrived.id).size
-                replacing = arrived
+                replacingSets = arrived.sets.size
+                replacing = arrived.visit
                 publish()
                 return@launch
             }
@@ -300,20 +300,9 @@ class CalendarViewModel(
             stale = false
             loadFriends()
         }
-        val day = selected
-        val sameDay = all.filter { it.day == day }
+        val sameDay = all.filter { it.day == selected }
         dayCard =
-            if (sameDay.isEmpty()) {
-                null
-            } else {
-                val setsByVisit =
-                    if (sameDay.size > 1) {
-                        sameDay.associate { it.id to sets.forVisit(it.id) }
-                    } else {
-                        emptyMap()
-                    }
-                val visit = keptVisit(sameDay) { setsByVisit[it]?.isNotEmpty() == true }
-                val visitSets = setsByVisit[visit.id] ?: sets.forVisit(visit.id)
+            shownVisit(sameDay) { sets.forVisit(it.id) }?.let { (visit, visitSets) ->
                 val shown = groupByMachine(visitSets).mapNotNull { machinesById[it.machineId] }
                 val tags = shown.flatMap { it.tags }.toSet()
                 CalendarVisitUi(
@@ -380,10 +369,7 @@ class CalendarViewModel(
     }
 
     private suspend fun countsOf(sameDay: List<Visit>): String {
-        val setsByVisit =
-            if (sameDay.size > 1) sameDay.associate { it.id to friends.sets(it) } else emptyMap()
-        val visit = keptVisit(sameDay) { setsByVisit[it]?.isNotEmpty() == true }
-        val summary = summarize(setsByVisit[visit.id] ?: friends.sets(visit))
+        val summary = summarize(shownVisit(sameDay, friends::sets)?.sets.orEmpty())
         return "${machineCount(summary.machineCount)} · ${setCount(summary.setCount)}"
     }
 

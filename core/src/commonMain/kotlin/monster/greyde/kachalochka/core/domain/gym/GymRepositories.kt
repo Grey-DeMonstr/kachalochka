@@ -47,26 +47,15 @@ suspend fun VisitRepository.allOn(
     utcOffset: (Instant) -> Duration,
 ): List<Visit> = all(owner).filter { it.dayAt(utcOffset) == day }
 
-/**
- * The owner's visit shown on [day]: of [allOn]'s visits, the one [keptVisit] would keep. [sets] is
- * read only when more than one visit is in play, so an ordinary day costs no extra read.
- */
+/** The owner's visit shown on [day], the [shownVisit] of [allOn]'s, with its sets. */
 suspend fun VisitRepository.shownOn(
     owner: UserId?,
     day: CalendarDay,
     sets: WorkoutSetRepository,
     utcOffset: (Instant) -> Duration,
-): Visit? {
-    val sameDay = allOn(owner, day, utcOffset)
-    if (sameDay.isEmpty()) return null
-    val withSets =
-        if (sameDay.size > 1) {
-            sameDay.filter { sets.forVisit(it.id).isNotEmpty() }.map { it.id }.toSet()
-        } else {
-            emptySet()
-        }
-    return keptVisit(sameDay) { it in withSets }.copy(day = day)
-}
+): ShownVisit? =
+    shownVisit(allOn(owner, day, utcOffset)) { sets.forVisit(it.id) }
+        ?.let { it.copy(visit = it.visit.copy(day = day)) }
 
 /**
  * Every list leaves deleted sets out; a visit's sets run in [visitOrder], the others in recording

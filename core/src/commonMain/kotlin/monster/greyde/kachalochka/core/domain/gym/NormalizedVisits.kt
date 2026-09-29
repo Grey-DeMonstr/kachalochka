@@ -20,6 +20,28 @@ fun keptVisit(
     return withSets.ifEmpty { sameDay }.maxWith(visitRecency)
 }
 
+/** The visit a day shows, with its live sets in [visitOrder]. */
+data class ShownVisit(
+    val visit: Visit,
+    val sets: List<WorkoutSet>,
+)
+
+/**
+ * Of one day's live visits, the [keptVisit] and its sets. [setsOf] is asked about every visit only
+ * when more than one is in play, so an ordinary day costs one read.
+ */
+suspend fun shownVisit(
+    sameDay: List<Visit>,
+    setsOf: suspend (Visit) -> List<WorkoutSet>,
+): ShownVisit? {
+    val only = sameDay.singleOrNull()
+    if (only != null) return ShownVisit(only, setsOf(only))
+    if (sameDay.isEmpty()) return null
+    val setsByVisit = sameDay.associate { it.id to setsOf(it) }
+    val kept = keptVisit(sameDay) { setsByVisit[it]?.isNotEmpty() == true }
+    return ShownVisit(kept, setsByVisit.getValue(kept.id))
+}
+
 /**
  * The rows that leave one live visit per day: a missing day filled in, and of the visits sharing
  * a day all but the [keptVisit] removed with their [sets]. Rows already in shape are left out, so

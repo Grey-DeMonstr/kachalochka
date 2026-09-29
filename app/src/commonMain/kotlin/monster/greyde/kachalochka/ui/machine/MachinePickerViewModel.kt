@@ -118,7 +118,7 @@ class MachinePickerViewModel(
                 inVisit =
                     visits
                         .shownOn(owner, day, sets, utcOffset::at)
-                        ?.let { sets.forVisit(it.id) }
+                        ?.sets
                         .orEmpty()
                         .groupingBy { it.machineId }
                         .eachCount()

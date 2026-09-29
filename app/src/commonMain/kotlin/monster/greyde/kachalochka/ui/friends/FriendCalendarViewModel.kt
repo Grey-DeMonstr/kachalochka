@@ -17,7 +17,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
-import monster.greyde.kachalochka.core.domain.gym.keptVisit
+import monster.greyde.kachalochka.core.domain.gym.shownVisit
 import monster.greyde.kachalochka.core.domain.gym.summarize
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -130,19 +130,8 @@ class FriendCalendarViewModel(
                 stale = false
             }
             val day = selected
-            val sameDay = all.filter { it.day == day }
             dayCard =
-                if (sameDay.isEmpty()) {
-                    null
-                } else {
-                    val setsByVisit =
-                        if (sameDay.size > 1) {
-                            sameDay.associate { it.id to friends.sets(it) }
-                        } else {
-                            emptyMap()
-                        }
-                    val visit = keptVisit(sameDay) { setsByVisit[it]?.isNotEmpty() == true }
-                    val visitSets = setsByVisit[visit.id] ?: friends.sets(visit)
+                shownVisit(all.filter { it.day == day }, friends::sets)?.let { (_, visitSets) ->
                     val summary = summarize(visitSets)
                     val machineNames = groupByMachine(visitSets).mapNotNull { names[it.machineId] }
                     val machinesLabel = machineCount(summary.machineCount)

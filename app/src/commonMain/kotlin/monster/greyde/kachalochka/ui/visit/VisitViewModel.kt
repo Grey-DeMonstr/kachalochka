@@ -21,7 +21,6 @@ import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.SetValues
-import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -156,7 +155,6 @@ class VisitViewModel(
     val state: StateFlow<VisitUiState?> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
-    private var visit: Visit? = null
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var visitSets: List<WorkoutSet> = emptyList()
     private var previousSets: List<WorkoutSet> = emptyList()
@@ -342,10 +340,10 @@ class VisitViewModel(
             val owner = currentUser.id()
             val offset = utcOffset.at(now)
             val today = CalendarDay.of(now, offset)
+            val shown = visits.shownOn(owner, day, sets, utcOffset::at)
             val target =
-                visits.shownOn(owner, day, sets, utcOffset::at)
-                    ?: dayVisit(day, owner, today, offset, now).also { visits.upsert(it) }
-            val targetSets = if (target.id == visit?.id) visitSets else sets.forVisit(target.id)
+                shown?.visit ?: dayVisit(day, owner, today, offset, now).also { visits.upsert(it) }
+            val targetSets = shown?.sets.orEmpty()
             sets.upsert(
                 WorkoutSet(
                     WorkoutSetId.random(),
@@ -532,12 +530,11 @@ class VisitViewModel(
         val profile = profiles.forOwner(owner)
         preferred = profile?.weightUnit ?: PreferredWeightUnit.Kg
         if (switches == groupByTagSwitches) groupByTag = profile?.groupByTag ?: false
-        visit = shown
         machinesById = machines.all(owner).associateBy { it.id }
         ownPhotos = photos.all(owner)
         ownLinks = machineLinks.all(owner)
         if (owner != groupPhotosFor || friendsStale) loadGroupPhotos(owner)
-        visitSets = shown?.let { sets.forVisit(it.id) }.orEmpty()
+        visitSets = shown?.sets.orEmpty()
         val machine = machineOf(owner)
         open = machine
         selected = machine?.id ?: selected
@@ -547,7 +544,7 @@ class VisitViewModel(
                 ?.let {
                     previousVisitSets(
                         sets.forMachine(it.id),
-                        shown?.id,
+                        shown?.visit?.id,
                         before = day.at(0L, utcOffset.at(clock.now())),
                     )
                 }.orEmpty()

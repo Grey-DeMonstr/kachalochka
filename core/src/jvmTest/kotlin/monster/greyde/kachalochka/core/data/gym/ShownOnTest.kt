@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.ShownVisit
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -20,7 +21,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
-/** Counts [forVisit] calls, so a test can assert an ordinary day reads no sets. */
+/** Counts [forVisit] calls, so a test can assert an ordinary day reads its sets once. */
 private class CountingWorkoutSets(
     private val delegate: WorkoutSetRepository,
 ) : WorkoutSetRepository by delegate {
@@ -33,7 +34,7 @@ private class CountingWorkoutSets(
     }
 }
 
-class ShownVisitTest {
+class ShownOnTest {
     private val database = inMemoryDatabase()
     private val visits =
         LocalVisitRepository(database, OutboxDao(database), Dispatchers.Unconfined)
@@ -55,21 +56,20 @@ class ShownVisitTest {
     private fun set(visitId: VisitId) =
         WorkoutSet(WorkoutSetId.random(), null, visitId, machine, 70.0, 10, 0, t0, t0, false)
 
+    private suspend fun shownOn(
+        day: CalendarDay,
+        utcOffset: (Instant) -> Duration = utc,
+    ): Visit? = visits.shownOn(null, day, sets, utcOffset)?.visit
+
     @Test
     fun a_visit_no_client_has_dated_shows_on_the_day_it_was_recorded_on() =
         runTest {
             val undated = visit(t0, null)
             visits.upsert(undated)
 
-            assertEquals(
-                undated.copy(day = fourteenth),
-                visits.shownOn(null, fourteenth, sets, utc),
-            )
-            assertNull(visits.shownOn(null, fifteenth, sets, utc))
-            assertEquals(
-                undated.copy(day = fifteenth),
-                visits.shownOn(null, fifteenth, sets) { 3.hours },
-            )
+            assertEquals(undated.copy(day = fourteenth), shownOn(fourteenth))
+            assertNull(shownOn(fifteenth))
+            assertEquals(undated.copy(day = fifteenth), shownOn(fifteenth) { 3.hours })
         }
 
     @Test
@@ -80,14 +80,11 @@ class ShownVisitTest {
             visits.upsert(dated)
             visits.upsert(undated)
 
-            assertEquals(
-                undated.copy(day = fourteenth),
-                visits.shownOn(null, fourteenth, sets, utc),
-            )
+            assertEquals(undated.copy(day = fourteenth), shownOn(fourteenth))
 
             visits.upsert(undated.copy(deleted = true))
 
-            assertEquals(dated, visits.shownOn(null, fourteenth, sets, utc))
+            assertEquals(dated, shownOn(fourteenth))
         }
 
     @Test
@@ -104,15 +101,19 @@ class ShownVisitTest {
         }
 
     @Test
-    fun an_earlier_visit_with_sets_shows_over_a_later_empty_one() =
+    fun an_earlier_visit_with_sets_shows_over_a_later_empty_one_with_those_sets() =
         runTest {
             val early = visit(t0 - 1.hours, fourteenth)
             val laterEmpty = visit(t0, fourteenth)
+            val earlySet = set(early.id)
             visits.upsert(early)
             visits.upsert(laterEmpty)
-            sets.upsert(set(early.id))
+            sets.upsert(earlySet)
 
-            assertEquals(early, visits.shownOn(null, fourteenth, sets, utc))
+            assertEquals(
+                ShownVisit(early, listOf(earlySet)),
+                visits.shownOn(null, fourteenth, sets, utc),
+            )
         }
 
     @Test
@@ -125,7 +126,7 @@ class ShownVisitTest {
             sets.upsert(set(early.id))
             sets.upsert(set(later.id))
 
-            assertEquals(later, visits.shownOn(null, fourteenth, sets, utc))
+            assertEquals(later, shownOn(fourteenth))
         }
 
     @Test
@@ -136,17 +137,21 @@ class ShownVisitTest {
             visits.upsert(early)
             visits.upsert(later)
 
-            assertEquals(later, visits.shownOn(null, fourteenth, sets, utc))
+            assertEquals(later, shownOn(fourteenth))
         }
 
     @Test
-    fun a_single_visit_on_a_day_shows_without_reading_its_sets() =
+    fun a_single_visit_on_a_day_shows_with_its_sets_read_once() =
         runTest {
             val only = visit(t0, fourteenth)
+            val onlySet = set(only.id)
             visits.upsert(only)
+            sets.upsert(onlySet)
 
-            assertEquals(only, visits.shownOn(null, fourteenth, sets, utc))
-
-            assertEquals(0, sets.forVisitCalls)
+            assertEquals(
+                ShownVisit(only, listOf(onlySet)),
+                visits.shownOn(null, fourteenth, sets, utc),
+            )
+            assertEquals(1, sets.forVisitCalls)
         }
 }
