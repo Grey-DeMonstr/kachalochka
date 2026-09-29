@@ -376,9 +376,16 @@ are written in), a friend's visit names each machine after the viewer's own in i
 name, then machine name (`linkedFriendMachines`). The clusters combine the account's own links,
 read locally, with its group mates' live links, read online through `FriendsRepository.groupLinks`.
 Picking a friend's machine, or "Взять себе" on one opened from the machine list, writes the own
-copy (`linkedCopy`) and the link from it to the friend's machine. Friends' rows read for one
-account are never shown or copied once another is active: each screen remembers whom it read
-them for.
+copy (`linkedCopy`) and the link from it to the friend's machine.
+
+`MachineCatalogue` in `app/ui/machine` is the one reader of all of this. Its `own` read gives an
+account's live machines, photos and links from the device; its `group` read gives the group
+mates' machines, links and photos from the network, in one parallel request; `clusters` reads
+only the links, for screens that just name a friend's machine after the viewer's own; and `take`
+writes the own copy and its link. `ShownMachines` joins an own read with a group read into what a
+screen shows, the clusters, each machine's cover photo and the friends' machines offered, and
+drops a group read made for another account than the own read's, so friends' rows read for one
+account are never shown or copied once another is active.
 
 The machine form's "Привязать к…" chooser (`LinkChooserViewModel`) links an own machine to a
 friend's by writing one own link, and merges two own machines. A merge removes a duplicate and

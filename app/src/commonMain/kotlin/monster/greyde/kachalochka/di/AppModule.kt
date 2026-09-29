@@ -27,6 +27,7 @@ import monster.greyde.kachalochka.ui.friends.PendingJoin
 import monster.greyde.kachalochka.ui.home.HomeViewModel
 import monster.greyde.kachalochka.ui.machine.FriendMachineViewModel
 import monster.greyde.kachalochka.ui.machine.LinkChooserViewModel
+import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
 import monster.greyde.kachalochka.ui.machine.MachineListViewModel
@@ -61,6 +62,7 @@ val appModule =
         single { Nickname(get(), get()) }
         single { FriendColorStore(get(), get(), get()) }
         single { PhotoLoaders(get()) }
+        single { MachineCatalogue(get(), get(), get(), get(), get(), get()) }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }
@@ -94,7 +96,6 @@ val appModule =
                 get(),
                 get(),
                 get(),
-                get(),
             )
         }
         viewModel { (day: CalendarDay) ->
@@ -109,13 +110,21 @@ val appModule =
                 get(),
                 get(),
                 get(),
+            )
+        }
+        viewModel { (args: MachineFormArgs) ->
+            MachineFormViewModel(
+                args,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
                 get(),
                 get(),
                 get(),
             )
-        }
-        viewModel { (args: MachineFormArgs) ->
-            MachineFormViewModel(args, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (machine: MachineId) ->
             LinkChooserViewModel(
@@ -130,21 +139,11 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
             )
         }
         viewModel { (machine: MachineId, owner: UserId) ->
-            FriendMachineViewModel(
-                machine,
-                owner,
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-            )
+            FriendMachineViewModel(machine, owner, get(), get(), get(), get(), get())
         }
         viewModel { (member: UserId, name: String, day: CalendarDay) ->
             FriendVisitViewModel(
@@ -158,11 +157,10 @@ val appModule =
                 get(),
                 get(),
                 get(),
-                get(),
             )
         }
         viewModel { (member: UserId) ->
-            FriendCalendarViewModel(member, get(), get(), get(), get(), get(), get(), get(), get())
+            FriendCalendarViewModel(member, get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (group: GroupId) ->
             GroupViewModel(group, get(), get(), get(), get(), get(), get())

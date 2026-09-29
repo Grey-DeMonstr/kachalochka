@@ -85,6 +85,7 @@ class LinkChooserViewModelTest {
         gym.sync,
         gym.profiles,
         gym.photos,
+        gym.catalogue,
     ).also { it.load() }
 
     /** Олег's machines: his copy of [press], linked to it, and one of his own. */

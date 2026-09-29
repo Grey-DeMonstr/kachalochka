@@ -8,23 +8,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
-import monster.greyde.kachalochka.core.domain.friends.FriendMachine
-import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLink
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
-import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
-import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
-import monster.greyde.kachalochka.core.domain.gym.coverPhoto
-import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -35,6 +26,7 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
+import monster.greyde.kachalochka.ui.format.friendMachineDetail
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.friends.reading
@@ -59,7 +51,6 @@ data class PickerRowUi(
 
 class MachinePickerViewModel(
     private val day: CalendarDay,
-    private val machines: MachineRepository,
     private val sets: WorkoutSetRepository,
     private val visits: VisitRepository,
     private val currentUser: CurrentUser,
@@ -67,36 +58,22 @@ class MachinePickerViewModel(
     private val clock: Clock,
     private val utcOffset: UtcOffset,
     private val sync: SyncTrigger,
-    private val friends: FriendsRepository,
-    private val machineLinks: MachineLinkRepository,
     private val profiles: ProfileRepository,
-    private val photos: PhotoRepository,
+    private val catalogue: MachineCatalogue,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PickerUiState())
     val state: StateFlow<PickerUiState> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
-    private var all: List<Machine> = emptyList()
-    private var ownPhotos: List<Photo> = emptyList()
-    private var ownLinks: List<MachineLink> = emptyList()
-    private var groupPhotos: List<Photo> = emptyList()
+    private var own: OwnMachines? = null
+    private var group: GroupMachines? = null
     private var latest: Map<MachineId, WorkoutSet> = emptyMap()
     private var inVisit: Map<MachineId, Int> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
-    private var shownFor: UserId? = null
-    private var group: GroupMachines? = null
-    private var friendsFor: UserId? = null
     private var loading: Job? = null
     private var loadingFriends: Job? = null
 
-    /** Friends' machines read for any account but the one shown are never offered or cloned. */
-    private val offeredFriends: List<FriendMachine>
-        get() {
-            val read =
-                group?.takeIf { friendsFor != null && friendsFor == shownFor }
-                    ?: return emptyList()
-            return read.offered(all)
-        }
+    private val shown: ShownMachines? get() = own?.let { ShownMachines(it, group) }
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -111,9 +88,7 @@ class MachinePickerViewModel(
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                all = machines.all(owner)
-                ownPhotos = photos.all(owner)
-                ownLinks = machineLinks.all(owner)
+                own = catalogue.own(owner)
                 latest = sets.latestPerMachine(owner).associateBy { it.machineId }
                 inVisit =
                     visits
@@ -123,7 +98,6 @@ class MachinePickerViewModel(
                         .groupingBy { it.machineId }
                         .eachCount()
                 preferred = profiles.preferredUnit(owner)
-                shownFor = owner
                 publish(mutableState.value.query)
                 owner?.let(::loadFriends)
             }
@@ -132,12 +106,7 @@ class MachinePickerViewModel(
     private fun loadFriends(owner: UserId) {
         loadingFriends =
             viewModelScope.launch {
-                val found = loadGroupMachines(owner, friends, machineLinks)
-                val mates = found?.let { reading { friends.groupPhotos(owner) }.getOrNull() }
-                if (currentUser.id() != owner) return@launch
-                group = found
-                groupPhotos = mates.orEmpty()
-                friendsFor = owner
+                group = reading { catalogue.group(owner) }.getOrNull()
                 publish(mutableState.value.query)
             }
     }
@@ -149,37 +118,40 @@ class MachinePickerViewModel(
         id: MachineId,
         onPicked: (MachineId) -> Unit,
     ) {
-        val friend = offeredFriends.firstOrNull { it.machine.id == id } ?: return
-        val offeredTo = friendsFor
+        val offered = shown ?: return
+        val friend = offered.offered.firstOrNull { it.machine.id == id } ?: return
+        val offeredTo = offered.own.owner
         writes.launch {
             val owner = currentUser.id() ?: return@launch
             if (owner != offeredTo) return@launch
-            val (copy, link) = linkedCopy(friend.machine, owner, clock.now())
-            machines.upsert(copy)
-            machineLinks.upsert(link)
-            sync.request()
-            onPicked(copy.id)
+            onPicked(catalogue.take(owner, friend.machine).id)
         }
     }
 
     private fun publish(query: String) {
-        val ranking = rankMachines(query, all, latest.mapValues { it.value.recordedAt })
+        val shown = shown
+        val ranking =
+            rankMachines(
+                query,
+                shown?.own?.machines.orEmpty(),
+                latest.mapValues { it.value.recordedAt },
+            )
         val now = clock.now()
         val needle = query.trim()
-        val read = group?.takeIf { friendsFor != null && friendsFor == shownFor }
-        val clusters = read?.clusters ?: MachineClusters(ownLinks)
-        val shownPhotos = ownPhotos + if (read != null) groupPhotos else emptyList()
         val friendRows =
-            offeredFriends
-                .filter { it.machine.name.contains(needle, ignoreCase = true) }
-                .map {
-                    PickerRowUi(
-                        it.machine.id,
-                        it.machine.name,
-                        friendMachineDetail(it, preferred),
-                        coverPhoto(it.machine.id, shownPhotos, clusters),
-                    )
-                }
+            shown
+                ?.let { s ->
+                    s.offered
+                        .filter { it.machine.name.contains(needle, ignoreCase = true) }
+                        .map {
+                            PickerRowUi(
+                                it.machine.id,
+                                it.machine.name,
+                                friendMachineDetail(it, preferred),
+                                s.cover(it.machine.id),
+                            )
+                        }
+                }.orEmpty()
         mutableState.value =
             PickerUiState(
                 query = query,
@@ -195,8 +167,7 @@ class MachinePickerViewModel(
                     if (query.isBlank()) AppStrings.current.recent else AppStrings.current.similar,
                 rows =
                     ranking.machines.map {
-                        val cover = coverPhoto(it.id, shownPhotos, clusters)
-                        PickerRowUi(it.id, it.name, detail(it, now), cover)
+                        PickerRowUi(it.id, it.name, detail(it, now), shown?.cover(it.id))
                     },
                 friendRows = friendRows,
             )

@@ -13,8 +13,6 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
-import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.shownVisit
@@ -30,7 +28,7 @@ import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.weekdayName
-import monster.greyde.kachalochka.ui.machine.visibleLinks
+import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
@@ -52,12 +50,11 @@ data class FriendDayUi(
 class FriendCalendarViewModel(
     private val member: UserId,
     private val friends: FriendsRepository,
-    private val machines: MachineRepository,
+    private val catalogue: MachineCatalogue,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
-    private val machineLinks: MachineLinkRepository,
     private val colors: FriendColorStore,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FriendCalendarUiState?>(null)
@@ -124,8 +121,9 @@ class FriendCalendarViewModel(
                 all = friends.visits(member).filter { it.day != null }
                 val theirs = friends.machines(member)
                 val me = currentUser.id()
-                val links = me?.let { visibleLinks(it, friends, machineLinks) }.orEmpty()
-                names = namesForViewer(theirs, machines.all(me), MachineClusters(links))
+                val own = catalogue.own(me)
+                val clusters = me?.let { catalogue.clusters(it) } ?: MachineClusters(own.links)
+                names = namesForViewer(theirs, own.machines, clusters)
                 color = me?.let { colors.colorsFor(it, listOf(member))[member] }
                 stale = false
             }

@@ -121,6 +121,7 @@ class MachineFormViewModel(
     private val machineLinks: MachineLinkRepository,
     private val sync: SyncTrigger,
     private val photoRows: PhotoRepository,
+    private val catalogue: MachineCatalogue,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineFormState(name = args.name))
     val state: StateFlow<MachineFormState> = mutableState
@@ -207,7 +208,7 @@ class MachineFormViewModel(
                     canUnlink = it.canUnlink || ownTouch,
                 )
             }
-        val group = owner?.let { loadGroupMachines(it, friends, machineLinks) }
+        val group = owner?.let { reading { catalogue.group(it) }.getOrNull() }
         if (accounts.activeId.value != owner || existing?.id != shown.id) return
         val linked = group?.let { linkedFriendMachines(shown.id, it.friends, it.clusters) }
         mutableLinking.value =

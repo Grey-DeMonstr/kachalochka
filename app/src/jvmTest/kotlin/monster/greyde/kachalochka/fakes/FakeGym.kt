@@ -53,6 +53,7 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.Invite
 import monster.greyde.kachalochka.ui.friends.InviteSharing
+import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoLaunchers
 import monster.greyde.kachalochka.ui.share.TextSharing
@@ -349,6 +350,7 @@ class FakeGym(
         }
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
+    val catalogue = MachineCatalogue(machines, photos, machineLinks, friends, clock, sync)
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()
     val joinCodes = InMemoryJoinCodeStore()

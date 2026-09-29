@@ -28,6 +28,7 @@ import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.preferredUnit
+import monster.greyde.kachalochka.ui.format.friendMachineDetail
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppStrings
@@ -65,6 +66,7 @@ class LinkChooserViewModel(
     private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
     private val photos: PhotoRepository,
+    private val catalogue: MachineCatalogue,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(LinkChooserUiState())
     val state: StateFlow<LinkChooserUiState> = mutableState
@@ -103,7 +105,7 @@ class LinkChooserViewModel(
                 group = null
                 publish()
                 if (owner == null || mine.none { it.id == machineId }) return@launch
-                val found = loadGroupMachines(owner, friends, machineLinks)
+                val found = reading { catalogue.group(owner) }.getOrNull()
                 if (currentUser.id() != owner) return@launch
                 group = found
                 publish()

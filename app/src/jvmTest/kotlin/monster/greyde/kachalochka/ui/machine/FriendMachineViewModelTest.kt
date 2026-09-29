@@ -55,12 +55,9 @@ class FriendMachineViewModelTest {
             olegPress.id,
             OLEG.userId,
             gym.friends,
-            gym.machines,
-            gym.machineLinks,
+            gym.catalogue,
             gym.currentUser,
             gym.accounts,
-            gym.clock,
-            gym.sync,
             gym.profiles,
         )
 

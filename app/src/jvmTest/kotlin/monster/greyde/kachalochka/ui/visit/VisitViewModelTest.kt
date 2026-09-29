@@ -129,9 +129,8 @@ class VisitViewModelTest {
         gym.friends,
         gym.texts,
         Nickname(gym.profiles, gym.accounts),
-        gym.machineLinks,
+        gym.catalogue,
         gym.profiles,
-        gym.photos,
     )
 
     @BeforeTest

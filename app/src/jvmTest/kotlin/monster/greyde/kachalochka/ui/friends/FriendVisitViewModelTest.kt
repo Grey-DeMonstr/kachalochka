@@ -38,12 +38,11 @@ class FriendVisitViewModelTest {
             "Олег",
             day,
             gym.friends,
-            gym.machines,
+            gym.catalogue,
             gym.currentUser,
             gym.accounts,
             gym.clock,
             gym.utcOffset,
-            gym.machineLinks,
             gym.profiles,
         )
 

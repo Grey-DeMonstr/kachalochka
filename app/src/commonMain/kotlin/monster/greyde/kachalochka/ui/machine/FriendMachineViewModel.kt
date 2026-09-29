@@ -7,16 +7,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
-import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
-import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
-import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -30,7 +25,6 @@ import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import kotlin.time.Clock
 
 data class FriendMachineUi(
     val name: String,
@@ -47,12 +41,9 @@ class FriendMachineViewModel(
     private val machineId: MachineId,
     private val owner: UserId,
     private val friends: FriendsRepository,
-    private val machines: MachineRepository,
-    private val machineLinks: MachineLinkRepository,
+    private val catalogue: MachineCatalogue,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FriendMachineUi?>(null)
@@ -110,8 +101,13 @@ class FriendMachineViewModel(
 
     /** Another copy would duplicate an own machine already linked to this one. */
     private suspend fun alreadyHas(viewer: UserId): Boolean {
-        val clusters = MachineClusters(visibleLinks(viewer, friends, machineLinks))
-        val own = machines.all(viewer).map { it.id }.toSet()
+        val clusters = catalogue.clusters(viewer)
+        val own =
+            catalogue
+                .own(viewer)
+                .machines
+                .map { it.id }
+                .toSet()
         return clusters.of(machineId).any { it in own }
     }
 
@@ -122,11 +118,7 @@ class FriendMachineViewModel(
         writes.launch {
             val viewer = currentUser.id() ?: return@launch
             if (viewer != takenFor) return@launch
-            val (copy, link) = linkedCopy(friend, viewer, clock.now())
-            machines.upsert(copy)
-            machineLinks.upsert(link)
-            sync.request()
-            onTaken(copy.id)
+            onTaken(catalogue.take(viewer, friend).id)
         }
     }
 

@@ -55,6 +55,7 @@ class MachineFormViewModelTest {
             gym.machineLinks,
             gym.sync,
             gym.photos,
+            gym.catalogue,
         )
 
     @BeforeTest

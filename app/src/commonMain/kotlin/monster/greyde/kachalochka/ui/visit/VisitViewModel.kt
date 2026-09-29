@@ -13,20 +13,15 @@ import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.DEFAULT_REPS
 import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLink
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
-import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
-import monster.greyde.kachalochka.core.domain.gym.coverPhoto
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.machineMovedTo
 import monster.greyde.kachalochka.core.domain.gym.minuteOfDay
@@ -63,7 +58,10 @@ import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.tagTitle
 import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.friends.reading
-import monster.greyde.kachalochka.ui.machine.visibleLinks
+import monster.greyde.kachalochka.ui.machine.GroupMachines
+import monster.greyde.kachalochka.ui.machine.MachineCatalogue
+import monster.greyde.kachalochka.ui.machine.OwnMachines
+import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.timer.RestTimer
@@ -144,9 +142,8 @@ class VisitViewModel(
     private val friends: FriendsRepository,
     private val sharing: TextSharing,
     private val nickname: Nickname,
-    private val machineLinks: MachineLinkRepository,
+    private val catalogue: MachineCatalogue,
     private val profiles: ProfileRepository,
-    private val photos: PhotoRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
@@ -168,14 +165,12 @@ class VisitViewModel(
     private var friendResults: List<FriendResult> = emptyList()
     private var friendsFor: Pair<UserId, MachineId>? = null
     private var loadingFriends: Job? = null
-    private var ownPhotos: List<Photo> = emptyList()
-    private var ownLinks: List<MachineLink> = emptyList()
+    private var own: OwnMachines? = null
 
-    /** Group mates' photos and links, read for [groupPhotosFor]; null links until a read lands. */
-    private var groupPhotos: List<Photo> = emptyList()
-    private var groupLinks: List<MachineLink>? = null
-    private var groupPhotosFor: UserId? = null
-    private var loadingPhotos: Job? = null
+    /** Group mates' machines, links and photos, read for [groupFor]; null until the read lands. */
+    private var group: GroupMachines? = null
+    private var groupFor: UserId? = null
+    private var loadingGroup: Job? = null
 
     /** Links may have changed on another screen or in a sync, so the next reload reads again. */
     private var friendsStale = false
@@ -471,10 +466,9 @@ class VisitViewModel(
         val profile = profiles.forOwner(owner)
         preferred = profile?.weightUnit ?: PreferredWeightUnit.Kg
         if (switches == groupByTagSwitches) groupByTag = profile?.groupByTag ?: false
-        machinesById = machines.all(owner).associateBy { it.id }
-        ownPhotos = photos.all(owner)
-        ownLinks = machineLinks.all(owner)
-        if (owner != groupPhotosFor || friendsStale) loadGroupPhotos(owner)
+        val ownRead = catalogue.own(owner)
+        own = ownRead
+        machinesById = ownRead.machines.associateBy { it.id }
         visitSets = shown?.sets.orEmpty()
         val machine = machineOf(owner)
         open = machine
@@ -501,30 +495,29 @@ class VisitViewModel(
         // Only an own machine has links worth asking about; a switch drops the old answer.
         val asked =
             owner?.let { me -> machine?.takeIf { it.userId == me }?.let { me to it.id } }
+        val readGroup = owner != groupFor || friendsStale
         if (asked != friendsFor) {
             friendResults = emptyList()
             loadingFriends?.cancel()
-        }
-        if (asked != friendsFor || friendsStale) {
             friendsFor = asked
-            friendsStale = false
-            asked?.let { loadFriends(it, machinesById.keys) }
+            if (!readGroup) loadFriends()
         }
+        if (readGroup) loadGroup(owner)
+        friendsStale = false
         publish()
     }
 
-    private fun loadFriends(
-        asked: Pair<UserId, MachineId>,
-        own: Set<MachineId>,
-    ) {
+    /** The friends' results on the open machine's cluster, asked once the group read is in. */
+    private fun loadFriends() {
+        val asked = friendsFor ?: return
         val (owner, machine) = asked
+        val clusters = group?.takeIf { it.owner == owner }?.clusters ?: return
+        val theirs = clusters.of(machine) - machinesById.keys
         loadingFriends?.cancel()
         loadingFriends =
             viewModelScope.launch {
                 val results =
                     reading {
-                        val links = visibleLinks(owner, friends, machineLinks)
-                        val theirs = MachineClusters(links).of(machine) - own
                         if (theirs.isEmpty()) emptyList() else friends.latestOn(owner, theirs)
                     }
                 if (friendsFor != asked) return@launch
@@ -536,33 +529,24 @@ class VisitViewModel(
             }
     }
 
-    private fun loadGroupPhotos(owner: UserId?) {
-        loadingPhotos?.cancel()
-        if (owner != groupPhotosFor) {
-            groupPhotos = emptyList()
-            groupLinks = null
-        }
-        groupPhotosFor = owner
+    private fun loadGroup(owner: UserId?) {
+        loadingGroup?.cancel()
+        if (owner != groupFor) group = null
+        groupFor = owner
         if (owner == null) return
-        loadingPhotos =
+        loadingGroup =
             viewModelScope.launch {
-                reading {
-                    visibleLinks(
-                        owner,
-                        friends,
-                        machineLinks,
-                    ) to friends.groupPhotos(owner)
-                }.onSuccess { (links, found) ->
-                    if (groupPhotosFor != owner) return@onSuccess
-                    groupLinks = links
-                    groupPhotos = found
+                reading { catalogue.group(owner) }.onSuccess { found ->
+                    if (groupFor != owner) return@onSuccess
+                    group = found
                     publish()
+                    loadFriends()
                 }
             }
     }
 
     private fun coverOf(machineId: MachineId): Photo? =
-        coverPhoto(machineId, ownPhotos + groupPhotos, MachineClusters(groupLinks ?: ownLinks))
+        own?.let { ShownMachines(it, group).cover(machineId) }
 
     private fun friendLine(result: FriendResult): String {
         val now = clock.now()

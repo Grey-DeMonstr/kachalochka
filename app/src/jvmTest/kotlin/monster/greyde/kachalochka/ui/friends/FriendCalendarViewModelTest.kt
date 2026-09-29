@@ -30,12 +30,11 @@ class FriendCalendarViewModelTest {
         FriendCalendarViewModel(
             OLEG.userId,
             gym.friends,
-            gym.machines,
+            gym.catalogue,
             gym.currentUser,
             gym.accounts,
             gym.clock,
             gym.utcOffset,
-            gym.machineLinks,
             FriendColorStore(gym.profiles, gym.clock, gym.friends),
         )
 

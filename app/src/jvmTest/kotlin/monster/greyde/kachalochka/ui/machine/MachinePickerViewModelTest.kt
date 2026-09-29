@@ -85,7 +85,6 @@ class MachinePickerViewModelTest {
     private fun viewModel(day: CalendarDay = gym.today) =
         MachinePickerViewModel(
             day,
-            gym.machines,
             gym.sets,
             gym.visits,
             gym.currentUser,
@@ -93,16 +92,13 @@ class MachinePickerViewModelTest {
             gym.clock,
             gym.utcOffset,
             gym.sync,
-            gym.friends,
-            gym.machineLinks,
             gym.profiles,
-            gym.photos,
+            gym.catalogue,
         )
 
     private fun pickerOn(on: FakeGym) =
         MachinePickerViewModel(
             on.today,
-            on.machines,
             on.sets,
             on.visits,
             on.currentUser,
@@ -110,10 +106,8 @@ class MachinePickerViewModelTest {
             on.clock,
             on.utcOffset,
             on.sync,
-            on.friends,
-            on.machineLinks,
             on.profiles,
-            on.photos,
+            on.catalogue,
         )
 
     @Test
@@ -345,7 +339,6 @@ class MachinePickerViewModelTest {
             val vm =
                 MachinePickerViewModel(
                     shared.today,
-                    shared.machines,
                     shared.sets,
                     shared.visits,
                     shared.currentUser,
@@ -353,10 +346,8 @@ class MachinePickerViewModelTest {
                     shared.clock,
                     shared.utcOffset,
                     shared.sync,
-                    shared.friends,
-                    shared.machineLinks,
                     shared.profiles,
-                    shared.photos,
+                    shared.catalogue,
                 ).also { it.load() }
             assertEquals(
                 listOf("Жим ногами" to "3 подхода сегодня"),

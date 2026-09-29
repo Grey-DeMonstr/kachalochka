@@ -46,14 +46,11 @@ class MachineListViewModelTest {
 
     private fun viewModel(on: FakeGym = gym) =
         MachineListViewModel(
-            on.machines,
+            on.catalogue,
             on.currentUser,
             on.accounts,
             on.sync,
-            on.friends,
-            on.machineLinks,
             on.profiles,
-            on.photos,
         )
 
     private fun olegsGym(): Pair<FakeGym, Machine> {

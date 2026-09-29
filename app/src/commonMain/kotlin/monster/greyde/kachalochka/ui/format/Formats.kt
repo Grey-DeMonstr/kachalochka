@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.format
 
+import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -76,6 +77,11 @@ fun recordingCaption(
     return "$own ($inChosen$chosen) ${modeLabel(machine.weightMode)} · " +
         "±$step$own ($stepInChosen$chosen)"
 }
+
+fun friendMachineDetail(
+    friend: FriendMachine,
+    preferred: PreferredWeightUnit,
+): String = "${friend.owner.displayName} · ${weightCaption(friend.machine, preferred)}"
 
 fun platformSuffix(
     machine: Machine,

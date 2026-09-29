@@ -8,21 +8,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
-import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
-import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLink
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
-import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
-import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
-import monster.greyde.kachalochka.core.domain.gym.coverPhoto
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.preferredUnit
+import monster.greyde.kachalochka.ui.format.friendMachineDetail
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
 
@@ -41,26 +34,18 @@ data class MachineListRowUi(
 )
 
 class MachineListViewModel(
-    private val machines: MachineRepository,
+    private val catalogue: MachineCatalogue,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val sync: SyncTrigger,
-    private val friends: FriendsRepository,
-    private val machineLinks: MachineLinkRepository,
     private val profiles: ProfileRepository,
-    private val photos: PhotoRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineListUiState())
     val state: StateFlow<MachineListUiState> = mutableState
 
-    private var own: List<Machine>? = null
-    private var ownPhotos: List<Photo> = emptyList()
-    private var ownLinks: List<MachineLink> = emptyList()
-    private var groupPhotos: List<Photo> = emptyList()
-    private var preferred = PreferredWeightUnit.Kg
-    private var shownFor: UserId? = null
+    private var own: OwnMachines? = null
     private var group: GroupMachines? = null
-    private var friendsFor: UserId? = null
+    private var preferred = PreferredWeightUnit.Kg
     private var loading: Job? = null
     private var loadingFriends: Job? = null
 
@@ -77,11 +62,8 @@ class MachineListViewModel(
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                own = machines.all(owner)
-                ownPhotos = photos.all(owner)
-                ownLinks = machineLinks.all(owner)
+                own = catalogue.own(owner)
                 preferred = profiles.preferredUnit(owner)
-                shownFor = owner
                 publish()
                 owner?.let(::loadFriends)
             }
@@ -90,43 +72,39 @@ class MachineListViewModel(
     private fun loadFriends(owner: UserId) {
         loadingFriends =
             viewModelScope.launch {
-                val found = loadGroupMachines(owner, friends, machineLinks)
-                val mates = found?.let { reading { friends.groupPhotos(owner) }.getOrNull() }
-                if (currentUser.id() != owner) return@launch
-                group = found
-                groupPhotos = mates.orEmpty()
-                friendsFor = owner
+                group = reading { catalogue.group(owner) }.getOrNull()
                 publish()
             }
     }
 
     private fun publish() {
-        val mine = own
-        // Friends read for any account but the one shown are never listed.
-        val read = group?.takeIf { friendsFor != null && friendsFor == shownFor }
-        val clusters = read?.clusters ?: MachineClusters(ownLinks)
-        val shownPhotos = ownPhotos + if (read != null) groupPhotos else emptyList()
+        val shown = own?.let { ShownMachines(it, group) }
         mutableState.value =
             MachineListUiState(
                 own =
-                    mine?.map {
-                        MachineListRowUi(
-                            it.id,
-                            it.name,
-                            weightCaption(it, preferred),
-                            photo = coverPhoto(it.id, shownPhotos, clusters),
-                        )
+                    shown?.let { s ->
+                        s.own.machines.map {
+                            MachineListRowUi(
+                                it.id,
+                                it.name,
+                                weightCaption(it, preferred),
+                                photo = s.cover(it.id),
+                            )
+                        }
                     },
                 friends =
-                    read?.offered(mine.orEmpty()).orEmpty().map {
-                        MachineListRowUi(
-                            it.machine.id,
-                            it.machine.name,
-                            friendMachineDetail(it, preferred),
-                            it.owner.userId,
-                            coverPhoto(it.machine.id, shownPhotos, clusters),
-                        )
-                    },
+                    shown
+                        ?.let { s ->
+                            s.offered.map {
+                                MachineListRowUi(
+                                    it.machine.id,
+                                    it.machine.name,
+                                    friendMachineDetail(it, preferred),
+                                    it.owner.userId,
+                                    s.cover(it.machine.id),
+                                )
+                            }
+                        }.orEmpty(),
             )
     }
 }
