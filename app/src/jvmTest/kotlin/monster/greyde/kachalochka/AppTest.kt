@@ -26,6 +26,8 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.strings.AppStrings
+import monster.greyde.kachalochka.ui.strings.RuStrings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -109,6 +111,29 @@ class AppTest {
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
             onNodeWithTag("open-today").assertIsDisplayed()
+        }
+
+    @Test
+    fun english_chosen_in_settings_speaks_on_return_home() =
+        try {
+            runApp {
+                onNodeWithTag("account-avatar").performClick()
+                onNodeWithTag("account-settings").performClick()
+                waitForIdle()
+                onNodeWithTag("language-english").performScrollTo().performClick()
+                onNodeWithTag("apply-settings").performScrollTo().performClick()
+                waitForIdle()
+                onNodeWithTag("top-bar-title").assertTextEquals("Settings")
+
+                onNodeWithTag("top-bar-back").performClick()
+                waitForIdle()
+                onNodeWithTag("top-bar-title").assertTextEquals("Kachalochka")
+                onNodeWithTag("section-machines").assertTextEquals("Machines")
+                AppStrings.set(RuStrings)
+                waitForIdle()
+            }
+        } finally {
+            AppStrings.set(RuStrings)
         }
 
     @Test
