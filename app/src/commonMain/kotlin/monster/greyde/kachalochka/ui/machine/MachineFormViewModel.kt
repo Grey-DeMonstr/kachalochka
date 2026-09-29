@@ -60,7 +60,14 @@ data class MachineFormState(
     val unit: WeightUnit = WeightUnit.Kg,
     val unitLabel: String = "",
     val weightStep: String = "2.5",
+    val tags: Set<String> = emptySet(),
+    /** Every tag of the account's machines, offered as chips. */
+    val knownTags: Set<String> = emptySet(),
+    val newTag: String = "",
 ) {
+    val shownTags: List<String>
+        get() = (knownTags + tags).sortedBy { it.lowercase() }
+
     val platformWeightValue: Double?
         get() =
             if (platformWeight.isBlank()) 0.0 else parseDecimal(platformWeight)?.takeIf { it >= 0 }
@@ -77,6 +84,7 @@ data class MachineFormState(
 
     companion object {
         const val UNIT_LABEL_LENGTH: Int = 12
+        const val TAG_LENGTH: Int = 30
 
         fun of(
             machine: Machine,
@@ -90,6 +98,7 @@ data class MachineFormState(
             unit = machine.unit,
             unitLabel = machine.unitLabel,
             weightStep = formatNumber(machine.weightStep),
+            tags = machine.tags,
         )
     }
 }
@@ -160,12 +169,14 @@ class MachineFormViewModel(
             val current = args.machineId?.let { machines.byId(it) }
             existing = current
             val source = current ?: args.copyOf?.let { machines.byId(it) }
-            mutableState.value =
+            val shown =
                 when {
                     current != null -> MachineFormState.of(current)
                     source != null -> MachineFormState.of(source, name = args.name)
                     else -> MachineFormState(name = args.name)
                 }
+            val known = machines.all(currentUser.id()).flatMap { it.tags }.toSet()
+            mutableState.value = shown.copy(knownTags = known)
             savedPhotos = current?.let { photoRows.forMachine(it.id) }.orEmpty()
             showPhotos()
             refreshLinks()
@@ -279,6 +290,24 @@ class MachineFormViewModel(
         mutableState.value = change(mutableState.value)
     }
 
+    fun toggleTag(tag: String) =
+        update { it.copy(tags = if (tag in it.tags) it.tags - tag else it.tags + tag) }
+
+    fun typeNewTag(text: String) =
+        update { it.copy(newTag = text.take(MachineFormState.TAG_LENGTH)) }
+
+    fun addNewTag() =
+        update { form ->
+            val tag = form.newTag.trim()
+            if (tag.isEmpty()) {
+                form.copy(
+                    newTag = "",
+                )
+            } else {
+                form.copy(tags = form.tags + tag, newTag = "")
+            }
+        }
+
     fun save(onSaved: (MachineId) -> Unit) {
         val form = mutableState.value
         val platformWeight = form.platformWeightValue ?: return
@@ -300,6 +329,7 @@ class MachineFormViewModel(
                     unit = form.unit,
                     unitLabel = if (form.unit == WeightUnit.Custom) form.unitLabel.trim() else "",
                     weightStep = weightStep,
+                    tags = form.tags,
                     updatedAt = now,
                 )
             machines.upsert(machine)

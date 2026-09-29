@@ -120,7 +120,10 @@ The machine form collects a name, a setup note, how the weight is counted ("Вс
 "Гравитрон", which explains that the weight counts as negative, the less the better), the platform
 weight and whether it is added to the recorded weight, the unit and the weight step. The unit is
 kg, lb or an own unit such as "плитка", whose name is then written after every weight on that
-machine, with no conversion. The weight step is any positive number, typed in its field.
+machine, with no conversion. The weight step is any positive number, typed in its field. Under the
+setup note, "Теги" shows every tag of the account's machines as a chip to tap on or off, and a
+field with "Добавить" makes a new one; a machine has any number of tags, and they are the account's
+own: a machine taken from a friend starts without any.
 
 Under the name, the machine's photos run in a row, oldest first, ending with "Добавить фото",
 which offers "Снять фото" and "Из галереи". On Android they open the phone's camera and its photo

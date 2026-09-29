@@ -4,6 +4,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -66,6 +67,32 @@ class MachineFormScreenTest {
             assertEquals(1, saved.size)
             val machine = runBlocking { gym.machines.byId(saved.single()) }
             assertEquals(2.5, machine?.weightStep)
+        }
+    }
+
+    @Test
+    fun tags_are_chosen_and_added_in_the_form() {
+        runBlocking {
+            gym.machines.upsert(
+                Machine.new("Присед", null, gym.clock.current).copy(tags = setOf("Ноги")),
+            )
+        }
+        val saved = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = { saved += it })
+        }) {
+            onNodeWithTag("machine-name").performTextInput("Гакк")
+            onNodeWithTag("tag-Ноги").performScrollTo().assertIsNotSelected().performClick()
+            onNodeWithTag("new-tag").performScrollTo().performTextInput("Жим")
+            onNodeWithTag("add-tag").performClick()
+            waitForIdle()
+            onNodeWithTag("tag-Ноги").assertIsSelected()
+            onNodeWithTag("tag-Жим").assertIsSelected()
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+
+            val machine = runBlocking { gym.machines.byId(saved.single()) }
+            assertEquals(setOf("Ноги", "Жим"), machine?.tags)
         }
     }
 

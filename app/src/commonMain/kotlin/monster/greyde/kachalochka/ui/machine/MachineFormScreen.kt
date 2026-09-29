@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -62,6 +64,7 @@ import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
+import monster.greyde.kachalochka.ui.components.TextInput
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
@@ -125,6 +128,7 @@ fun MachineFormScreen(
                 fontSize = 15.sp,
                 singleLine = false,
             )
+            TagsSection(state, viewModel)
             FieldLabel("Как считается вес")
             WeightModeRow(state, onSelect = { mode ->
                 viewModel.update { it.copy(weightMode = mode) }
@@ -273,6 +277,45 @@ private fun FormField(
                 .padding(horizontal = 12.dp, vertical = 12.dp)
                 .testTag(tag),
     )
+}
+
+@Composable
+private fun TagsSection(
+    state: MachineFormState,
+    viewModel: MachineFormViewModel,
+) {
+    FieldLabel("Теги")
+    if (state.shownTags.isNotEmpty()) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            state.shownTags.forEach { tag ->
+                FilterChip(
+                    selected = tag in state.tags,
+                    onClick = { viewModel.toggleTag(tag) },
+                    label = { Text(tag) },
+                    modifier = Modifier.testTag("tag-$tag"),
+                )
+            }
+        }
+    }
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.weight(1f)) {
+            TextInput(
+                state.newTag,
+                "Новый тег",
+                viewModel::typeNewTag,
+                Modifier.testTag("new-tag"),
+            )
+        }
+        OutlineButton(
+            "Добавить",
+            PhosphorIcons.Plus,
+            viewModel::addNewTag,
+            Modifier.testTag("add-tag"),
+        )
+    }
 }
 
 @Composable

@@ -66,6 +66,54 @@ class MachineFormViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
+    fun the_form_offers_every_tag_of_the_account_s_machines_sorted() =
+        runTest {
+            gym.machines.upsert(Machine.new("Жим", null, t0).copy(tags = setOf("руки", "Грудь")))
+            gym.machines.upsert(Machine.new("Присед", null, t0).copy(tags = setOf("Ноги")))
+            gym.machines.upsert(
+                Machine.new("Старый", null, t0).copy(tags = setOf("Спина"), deleted = true),
+            )
+
+            val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+
+            assertEquals(listOf("Грудь", "Ноги", "руки"), vm.state.value.shownTags)
+            assertEquals(emptySet(), vm.state.value.tags)
+        }
+
+    @Test
+    fun chosen_and_added_tags_are_saved_with_the_machine() =
+        runTest {
+            gym.machines.upsert(Machine.new("Присед", null, t0).copy(tags = setOf("Ноги")))
+            val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+
+            vm.toggleTag("Ноги")
+            vm.typeNewTag("  Жим  ")
+            vm.addNewTag()
+            vm.typeNewTag("   ")
+            vm.addNewTag()
+            var saved: MachineId? = null
+            vm.save { saved = it }
+
+            assertEquals(setOf("Ноги", "Жим"), gym.machines.byId(assertNotNull(saved))?.tags)
+            assertEquals(listOf("Жим", "Ноги"), vm.state.value.shownTags)
+            assertEquals("", vm.state.value.newTag)
+        }
+
+    @Test
+    fun a_saved_machine_opens_with_its_tags_chosen_and_a_tap_removes_one() =
+        runTest {
+            val press = Machine.new("Жим", null, t0).copy(tags = setOf("Грудь", "Руки"))
+            gym.machines.upsert(press)
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            assertEquals(setOf("Грудь", "Руки"), vm.state.value.tags)
+            vm.toggleTag("Руки")
+            vm.save {}
+
+            assertEquals(setOf("Грудь"), gym.machines.byId(press.id)?.tags)
+        }
+
+    @Test
     fun photos_taken_in_the_form_are_written_with_the_machine_it_saves() =
         runTest {
             val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
