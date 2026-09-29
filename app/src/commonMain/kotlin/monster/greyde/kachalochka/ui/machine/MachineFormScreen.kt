@@ -286,10 +286,19 @@ private fun WeightModeRow(
             listOf(
                 Choice("Всего", "mode-total"),
                 Choice("На сторону", "mode-per-side"),
+                Choice("Гравитрон", "mode-counterweight"),
             ),
         selected = modes.indexOf(state.weightMode),
         onSelect = { onSelect(modes[it]) },
     )
+    if (state.weightMode == WeightMode.Counterweight) {
+        Text(
+            "Вес считается отрицательным: чем меньше, тем лучше.",
+            modifier = Modifier.testTag("mode-counterweight-hint"),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.64f),
+        )
+    }
 }
 
 @Composable

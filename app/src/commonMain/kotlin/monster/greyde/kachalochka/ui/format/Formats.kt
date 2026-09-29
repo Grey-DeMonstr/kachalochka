@@ -44,6 +44,7 @@ private fun modeLabel(mode: WeightMode): String =
     when (mode) {
         WeightMode.Total -> "всего"
         WeightMode.PerSide -> "на сторону"
+        WeightMode.Counterweight -> "гравитрон"
     }
 
 fun weightCaption(
@@ -102,7 +103,13 @@ fun setValue(
     reps: Int,
     machine: Machine,
     preferred: PreferredWeightUnit,
-): String = setValue(shownWeight(weight, machine, preferred), reps, shownLabel(machine, preferred))
+): String =
+    counterweightSign(machine) +
+        setValue(shownWeight(weight, machine, preferred), reps, shownLabel(machine, preferred))
+
+/** A gravitron's weight helps rather than loads, so it is written as a negative. */
+fun counterweightSign(machine: Machine): String =
+    if (machine.weightMode == WeightMode.Counterweight) "(-)" else ""
 
 fun pluralRu(
     n: Int,

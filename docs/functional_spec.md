@@ -79,16 +79,17 @@ The text starts with the nickname and the short weekday ("ГДМ, чт", or only
 nickname), then an empty line, then one line per machine in visit order: the name, the platform
 weight in brackets when it is not included in the record, the weights and the reps, for example
 "Жим ногами (+76кг) 20-20-30-40-40кг 5x10". Equal weights are written once ("Пресс сидя 41кг
-10-15-15-15"), different ones joined with dashes; equal reps are written as sets x reps,
-different ones joined with dashes ("Жим от груди 30° 35-35-30кг 10-10-15"). Weights are in the
-unit chosen in the profile: with "кг", the default, pounds are converted to the nearest half
-kilogram; with "lb", kilograms are converted to the nearest half pound ("Тяга 99lb 2x10"); with
-"Смешанные", every machine's weights stay in its own unit. An own unit is never converted and is
-written as is with its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zero shows
-only its reps ("Подтягивания 3x10"). A machine whose weight is counted per side says so after the
-weights ("Гребная тяга (+11.3кг) 15кг на каждую, 3x12"). The machine rows of the visit screen and
-of a friend's visit, and the previous visit's and friends' results in the set sheet, write a
-machine's weights and reps exactly the same way.
+10-15-15-15"), different ones joined with dashes; equal reps are written as sets x reps, different
+ones joined with dashes ("Жим от груди 30° 35-35-30кг 10-10-15"). Weights are in the unit chosen in
+the profile: with "кг", the default, pounds are converted to the nearest half kilogram; with "lb",
+kilograms are converted to the nearest half pound ("Тяга 99lb 2x10"); with "Смешанные", every
+machine's weights stay in its own unit. An own unit is never converted and is written as is with
+its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zero shows only its reps
+("Подтягивания 3x10"). A machine whose weight is counted per side says so after the weights
+("Гребная тяга (+11.3кг) 15кг на каждую, 3x12"). A gravitron's weights are written after "(-)",
+since a smaller one is progress ("Подтягивания в гравитроне (-)27-25-22.5кг 10-8-6"). The machine
+rows of the visit screen and of a friend's visit, and the previous visit's and friends' results in
+the set sheet, write a machine's weights and reps exactly the same way.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips, the
 machine, the set number, the machine's setup note, the previous visit's sets on that machine, and
@@ -115,11 +116,11 @@ pre-filled with the typed name. When a machine is already chosen for the visit, 
 тренажёр" opens the form pre-filled from that machine, with the typed name instead of its own.
 Recently used machines are listed with their last result.
 
-The machine form collects a name, a setup note, how the weight is counted (total or per side),
-the platform weight and whether it is added to the recorded weight, the unit and the weight
-step. The unit is kg, lb or an own unit such as "плитка", whose name is then written after
-every weight on that machine, with no conversion. The weight step is any positive number, typed
-in its field.
+The machine form collects a name, a setup note, how the weight is counted ("Всего", "На сторону" or
+"Гравитрон", which explains that the weight counts as negative, the less the better), the platform
+weight and whether it is added to the recorded weight, the unit and the weight step. The unit is
+kg, lb or an own unit such as "плитка", whose name is then written after every weight on that
+machine, with no conversion. The weight step is any positive number, typed in its field.
 
 Under the name, the machine's photos run in a row, oldest first, ending with "Добавить фото",
 which offers "Снять фото" and "Из галереи". On Android they open the phone's camera and its photo

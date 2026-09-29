@@ -143,7 +143,7 @@ class SupabaseSyncGatewayTest {
         runTest {
             val row =
                 """[{"id":"33333333-3333-4333-8333-333333333333","user_id":"${OWNER.value}",""" +
-                    """"name":"Гравитрон","setup_note":"","weight_mode":"counterweight",""" +
+                    """"name":"Гравитрон","setup_note":"","weight_mode":"hydraulic",""" +
                     """"platform_weight":0.0,"platform_included":false,"unit":"custom",""" +
                     """"unit_label":"плитка","weight_step":1.0,""" +
                     """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false,""" +

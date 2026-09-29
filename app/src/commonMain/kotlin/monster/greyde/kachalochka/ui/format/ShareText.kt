@@ -62,11 +62,12 @@ fun setsSummary(
     val weights = sets.map { shownWeight(it.weight, machine, preferred) }
     val reps = sets.map { it.reps }
     val side = if (machine.weightMode == WeightMode.PerSide) " на каждую," else ""
+    val sign = counterweightSign(machine)
     val weightPart =
         when {
             weights.all { it == 0.0 } -> null
-            weights.distinct().size == 1 -> formatNumber(weights.first()) + unit + side
-            else -> weights.joinToString("-") { formatNumber(it) } + unit + side
+            weights.distinct().size == 1 -> sign + formatNumber(weights.first()) + unit + side
+            else -> sign + weights.joinToString("-") { formatNumber(it) } + unit + side
         }
     val repsPart =
         if (reps.distinct().size == 1) "${reps.size}x${reps.first()}" else reps.joinToString("-")

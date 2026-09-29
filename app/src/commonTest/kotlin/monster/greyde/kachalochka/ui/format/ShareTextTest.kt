@@ -268,4 +268,22 @@ class ShareTextTest {
 
         assertEquals("ГДМ, чт\n\nГиперэкстензия 14кг 1x12\nПресс сидя 41кг 10-15", text)
     }
+
+    @Test
+    fun a_gravitron_writes_its_weights_after_a_minus() {
+        val gravitron =
+            machine("Подтягивания в гравитроне").copy(weightMode = WeightMode.Counterweight)
+
+        assertEquals(
+            "Подтягивания в гравитроне (-)27-25-22.5-22.5-22.5кг 10-8-6-6-6",
+            line(gravitron, 27.0 to 10, 25.0 to 8, 22.5 to 6, 22.5 to 6, 22.5 to 6),
+        )
+    }
+
+    @Test
+    fun a_gravitron_without_weights_shows_only_its_reps() {
+        val gravitron = machine("Гравитрон").copy(weightMode = WeightMode.Counterweight)
+
+        assertEquals("Гравитрон 2x10", line(gravitron, 0.0 to 10, 0.0 to 10))
+    }
 }

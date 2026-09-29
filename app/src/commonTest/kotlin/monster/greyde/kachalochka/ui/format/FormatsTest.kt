@@ -57,6 +57,14 @@ class FormatsTest {
     }
 
     @Test
+    fun a_gravitron_set_and_caption_say_what_it_counts() {
+        val gravitron = press.copy(weightMode = WeightMode.Counterweight)
+
+        assertEquals("(-)27 кг × 10", setValue(27.0, 10, gravitron, kg))
+        assertEquals("кг гравитрон · ±2.5", weightCaption(gravitron, kg))
+    }
+
+    @Test
     fun an_own_unit_is_written_by_its_name() {
         val gravitron =
             press.copy(

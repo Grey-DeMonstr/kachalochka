@@ -22,9 +22,10 @@ fun WeightMode.wireName(): String =
     when (this) {
         WeightMode.Total -> "total"
         WeightMode.PerSide -> "per_side"
+        WeightMode.Counterweight -> "counterweight"
     }
 
-// Older clients still write `counterweight`, and one unreadable row must not stop a pull.
+// A mode this version does not know must not stop a pull.
 fun weightModeOf(wire: String): WeightMode =
     WeightMode.entries.firstOrNull { it.wireName() == wire } ?: WeightMode.Total
 

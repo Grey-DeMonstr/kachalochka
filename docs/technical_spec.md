@@ -352,11 +352,11 @@ friends' machines, and "Тренажёр друга" reads its machine's with `p
 Four synced tables: `machine`, `visit`, `workout_set` and `machine_link`. `workout_set` is not
 called `set` — a keyword in both SQLDelight's dialect and Postgres. Weights are `Double`; every
 step and every typed weight is rounded to three decimals so a running total never drifts. The
-weight-counting mode and the unit are enums, mapped to the wire names `total` / `per_side` and
-`kg` / `lb` / `custom` by one shared mapping in `core/data/gym`, used by both implementations. A
-name the mapping does not know reads as `total` or `kg`: clients before 1.0.2 still write
-`counterweight`, and one unreadable row must not stop a pull. A custom unit's name is
-`unit_label`, empty for kg and lb.
+weight-counting mode and the unit are enums, mapped to the wire names `total` / `per_side` /
+`counterweight` and `kg` / `lb` / `custom` by one shared mapping in `core/data/gym`, used by both
+implementations. A name the mapping does not know reads as `total` or `kg`: one unreadable row must
+not stop a pull, and clients from 1.0.2 to 1.1.0 read a gravitron's `counterweight` as `total`. A
+custom unit's name is `unit_label`, empty for kg and lb.
 
 A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
 member's `linked_machine_id`. Neither column is a foreign key and no policy checks either against

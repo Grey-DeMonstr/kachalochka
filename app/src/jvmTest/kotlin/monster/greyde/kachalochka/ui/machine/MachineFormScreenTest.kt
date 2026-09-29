@@ -19,6 +19,7 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
@@ -55,7 +56,7 @@ class MachineFormScreenTest {
             onNodeWithTag("save-machine").assertIsNotEnabled()
             onNodeWithTag("per-limb").assertDoesNotExist()
             onNodeWithTag("mode-total").assertIsSelected()
-            onNodeWithTag("mode-counterweight").assertDoesNotExist()
+            onNodeWithTag("mode-counterweight-hint").assertDoesNotExist()
             onNodeWithTag("weight-step").assertTextEquals("2.5")
 
             onNodeWithTag("machine-name").performTextInput("Гакк-машина")
@@ -65,6 +66,25 @@ class MachineFormScreenTest {
             assertEquals(1, saved.size)
             val machine = runBlocking { gym.machines.byId(saved.single()) }
             assertEquals(2.5, machine?.weightStep)
+        }
+    }
+
+    @Test
+    fun a_gravitron_explains_its_weight_and_is_saved() {
+        val saved = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = { saved += it })
+        }) {
+            onNodeWithTag("machine-name").performTextInput("Гравитрон")
+            onNodeWithTag("mode-counterweight").performClick()
+            waitForIdle()
+            onNodeWithTag("mode-counterweight-hint")
+                .assertTextEquals("Вес считается отрицательным: чем меньше, тем лучше.")
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+
+            val machine = runBlocking { gym.machines.byId(saved.single()) }
+            assertEquals(WeightMode.Counterweight, machine?.weightMode)
         }
     }
 

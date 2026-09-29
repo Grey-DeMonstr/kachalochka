@@ -3,7 +3,8 @@ package monster.greyde.kachalochka.core.domain.gym
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Instant
 
-enum class WeightMode { Total, PerSide }
+/** [Counterweight] assists the lift, so a smaller weight is progress. */
+enum class WeightMode { Total, PerSide, Counterweight }
 
 enum class WeightUnit { Kg, Lb, Custom }
 

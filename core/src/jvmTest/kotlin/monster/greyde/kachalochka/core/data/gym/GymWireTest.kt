@@ -15,13 +15,15 @@ import kotlin.time.Instant
 class GymWireTest {
     @Test
     fun weight_modes_use_the_names_the_postgres_check_accepts() {
-        assertEquals(listOf("total", "per_side"), WeightMode.entries.map { it.wireName() })
+        assertEquals(
+            listOf("total", "per_side", "counterweight"),
+            WeightMode.entries.map { it.wireName() },
+        )
         WeightMode.entries.forEach { assertEquals(it, weightModeOf(it.wireName())) }
     }
 
     @Test
-    fun a_counterweight_or_unknown_mode_reads_as_total() {
-        assertEquals(WeightMode.Total, weightModeOf("counterweight"))
+    fun an_unknown_mode_reads_as_total() {
         assertEquals(WeightMode.Total, weightModeOf("hydraulic"))
     }
 
