@@ -67,7 +67,7 @@ class FriendVisitViewModelTest {
             state.groups.map { it.title to it.summary },
         )
         assertEquals(
-            listOf("Жим ногами · подход 1" to "80 кг × 8", "Жим ногами · подход 2" to "85 кг × 6"),
+            listOf("#1" to "80 кг × 8", "#2" to "85 кг × 6"),
             state.groups
                 .first()
                 .sets

@@ -145,7 +145,7 @@ class FriendVisitViewModel(
                 machineSets.mapIndexed { index, set ->
                     FriendSetRowUi(
                         set.id,
-                        "$title · подход ${index + 1}",
+                        "#${index + 1}",
                         machine?.let { setValue(set.weight, set.reps, it, preferred) }
                             ?: setValue(set.weight, set.reps, "кг"),
                     )

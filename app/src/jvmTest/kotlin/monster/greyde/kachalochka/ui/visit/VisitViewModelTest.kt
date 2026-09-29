@@ -432,8 +432,8 @@ class VisitViewModelTest {
             assertEquals(true, group.expanded)
             assertEquals(
                 listOf(
-                    "Тяга верхнего блока · подход 1" to "45 кг × 12",
-                    "Тяга верхнего блока · подход 2" to "45 кг × 10",
+                    "#1" to "45 кг × 12",
+                    "#2" to "45 кг × 10",
                 ),
                 group.sets.map { it.title to it.value },
             )

@@ -543,7 +543,7 @@ class VisitViewModel(
                 machineSets.mapIndexed { setIndex, set ->
                     SetRowUi(
                         set.id,
-                        "$title · подход ${setIndex + 1}",
+                        "#${setIndex + 1}",
                         machine?.let { setValue(set.weight, set.reps, it, preferred) }
                             ?: setValue(set.weight, set.reps, "кг"),
                         set.id == editing?.id,
