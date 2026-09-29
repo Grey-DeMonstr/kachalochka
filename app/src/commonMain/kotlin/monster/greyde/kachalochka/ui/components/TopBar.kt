@@ -34,6 +34,7 @@ import monster.greyde.kachalochka.core.domain.gym.restRemaining
 import monster.greyde.kachalochka.ui.account.AccountMenu
 import monster.greyde.kachalochka.ui.format.formatRest
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
 import org.koin.compose.koinInject
@@ -72,7 +73,7 @@ fun Screen(
                 if (onBack != null) {
                     SquareIconButton(
                         PhosphorIcons.ArrowLeft,
-                        "Назад",
+                        strings().back,
                         onBack,
                         Modifier.testTag("top-bar-back"),
                     )

@@ -39,6 +39,7 @@ import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -58,34 +59,35 @@ fun HomeScreen(
     val signInAvailable: SignInAvailable = koinInject()
     val signedIn = accounts.activeId != null
     LaunchedEffect(Unit) { viewModel.refresh() }
-    Screen("Качалочка", onBack = null, onOpenSettings = onOpenSettings) {
+    val s = strings()
+    Screen(s.appName, onBack = null, onOpenSettings = onOpenSettings) {
         val current = state ?: return@Screen
         Box(Modifier.padding(16.dp)) {
             TodayCard(current.today, onOpen = { onOpenVisit(current.today.day) })
         }
         SectionRow(
             PhosphorIcons.CalendarBlank,
-            "Визиты",
+            s.visits,
             "section-visits",
             onClick = onOpenCalendar,
         )
         SectionRow(
             PhosphorIcons.Barbell,
-            "Упражнения",
+            s.machinesSection,
             "section-machines",
             onClick = onOpenMachines,
         )
         SectionRow(
             PhosphorIcons.Ruler,
-            "Замеры",
+            s.measurements,
             "section-measures",
             onClick = onOpenMeasures,
         )
-        SectionRow(PhosphorIcons.ListChecks, "Планы", "section-plans")
-        SectionRow(PhosphorIcons.ChartLineUp, "Статистика", "section-stats")
+        SectionRow(PhosphorIcons.ListChecks, s.plans, "section-plans")
+        SectionRow(PhosphorIcons.ChartLineUp, s.statistics, "section-stats")
         SectionRow(
             PhosphorIcons.UsersThree,
-            "Друзья",
+            s.friends,
             "section-friends",
             locked = !signedIn,
             onClick = onOpenFriends.takeIf { signedIn },
@@ -94,7 +96,7 @@ fun HomeScreen(
         if (!signedIn && signInAvailable.value) {
             Box(Modifier.padding(16.dp)) {
                 AccentButton(
-                    "Войти через Google",
+                    s.signInWithGoogle,
                     PhosphorIcons.ArrowRight,
                     accountsViewModel::addAccount,
                     Modifier.testTag("home-sign-in"),
@@ -104,7 +106,7 @@ fun HomeScreen(
         accounts.failure?.let { SignInFailure(it, Modifier.padding(horizontal = 16.dp)) }
         Spacer(Modifier.weight(1f))
         Text(
-            "Версия ${AppVersion.NAME}",
+            s.version(AppVersion.NAME),
             modifier = Modifier.padding(16.dp).testTag("app-version"),
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
@@ -118,6 +120,7 @@ private fun TodayCard(
     onOpen: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val s = strings()
     val shape = RoundedCornerShape(12.dp)
     Column(
         Modifier
@@ -131,13 +134,13 @@ private fun TodayCard(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
                 Text(
-                    "СЕГОДНЯ",
+                    s.today,
                     fontSize = 11.sp,
                     letterSpacing = 0.09.em,
                     color = colors.secondary,
                 )
                 Text(
-                    today.counts ?: "Подходов пока нет",
+                    today.counts ?: s.noSetsYet,
                     modifier = Modifier.testTag("visit-counts"),
                     fontSize = 14.sp,
                     color = colors.tertiary,
@@ -145,7 +148,7 @@ private fun TodayCard(
             }
             today.lastSet?.let {
                 Text(
-                    "Последний подход\n$it",
+                    s.lastSet(it),
                     modifier = Modifier.testTag("visit-last-set"),
                     fontSize = 13.sp,
                     lineHeight = 20.sp,
@@ -155,7 +158,7 @@ private fun TodayCard(
             }
         }
         AccentButton(
-            if (today.counts == null) "Записать подход" else "Продолжить",
+            if (today.counts == null) s.recordSet else s.continueVisit,
             if (today.counts == null) PhosphorIcons.Plus else PhosphorIcons.ArrowRight,
             onOpen,
             Modifier.testTag("open-today"),
@@ -193,7 +196,7 @@ private fun SectionRow(
         if (locked) {
             Icon(
                 PhosphorIcons.LockSimple,
-                "Заблокировано",
+                strings().locked,
                 tint = colors.onBackground.copy(alpha = 0.4f),
                 modifier = Modifier.size(20.dp).testTag("$tag-lock"),
             )

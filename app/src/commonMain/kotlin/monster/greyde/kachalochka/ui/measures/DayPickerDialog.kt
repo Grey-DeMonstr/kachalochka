@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.ui.calendar.DayUi
 import monster.greyde.kachalochka.ui.calendar.MonthGrid
 import monster.greyde.kachalochka.ui.calendar.MonthHeader
+import monster.greyde.kachalochka.ui.strings.strings
 
 /** Days with values are marked as visits are on the calendar. */
 data class DayPickerUi(
@@ -55,7 +56,7 @@ internal fun DayPickerDialog(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End).testTag("day-picker-cancel"),
                 ) {
-                    Text("Отмена")
+                    Text(strings().cancel)
                 }
             }
         }

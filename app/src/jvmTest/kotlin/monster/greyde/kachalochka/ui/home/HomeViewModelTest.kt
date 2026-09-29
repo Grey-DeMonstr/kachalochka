@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -81,6 +82,45 @@ class HomeViewModelTest {
                 TodayUi(gym.today, "2 упражнения · 3 подхода", "Жим ногами 70 кг × 10"),
                 vm.state.value?.today,
             )
+        }
+
+    @Test
+    fun a_new_language_rewrites_today_s_summary() =
+        runTest {
+            val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.visits.upsert(visit)
+            gym.machines.upsert(press)
+            gym.sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    visit.id,
+                    press.id,
+                    70.0,
+                    10,
+                    0,
+                    t0,
+                    t0,
+                    false,
+                ),
+            )
+            val vm = viewModel().also { it.refresh() }
+
+            inEnglish {
+                assertEquals(
+                    "1 machine · 1 set",
+                    vm.state.value
+                        ?.today
+                        ?.counts,
+                )
+                assertEquals(
+                    "Жим ногами 70 kg × 10",
+                    vm.state.value
+                        ?.today
+                        ?.lastSet,
+                )
+            }
         }
 
     @Test

@@ -18,6 +18,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -44,6 +45,19 @@ class HomeScreenTest {
             onNodeWithTag("app-version").assertTextEquals("Версия ${AppVersion.NAME}")
         }
     }
+
+    @Test
+    fun the_home_screen_speaks_english() =
+        inEnglish {
+            runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}, {}) }) {
+                onNodeWithTag("top-bar-title").assertTextEquals("Kachalochka")
+                onNodeWithTag("visit-counts").assertTextEquals("No sets yet")
+                onNodeWithTag("open-today").assertTextEquals("Record a set")
+                onNodeWithTag("section-machines").assertTextEquals("Machines")
+                onNodeWithTag("section-measures").assertTextEquals("Measurements")
+                onNodeWithTag("app-version").assertTextEquals("Version ${AppVersion.NAME}")
+            }
+        }
 
     @Test
     fun friends_stay_locked_until_an_account_is_signed_in() =

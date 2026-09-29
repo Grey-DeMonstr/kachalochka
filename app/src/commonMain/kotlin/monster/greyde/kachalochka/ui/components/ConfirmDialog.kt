@@ -7,6 +7,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import monster.greyde.kachalochka.ui.strings.strings
 
 @Composable
 fun ConfirmDialog(
@@ -29,7 +30,7 @@ fun ConfirmDialog(
         },
         dismissButton = {
             TextButton(onClick = onCancel, modifier = Modifier.testTag(cancelTag)) {
-                Text("Отмена")
+                Text(strings().cancel)
             }
         },
     )

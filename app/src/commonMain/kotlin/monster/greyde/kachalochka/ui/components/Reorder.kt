@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 
 /** Where the item dragged from [from] lands: the item its centre is over, clamped to the list. */
 fun dropIndex(
@@ -135,7 +136,7 @@ fun DragHandle(
     ) {
         Icon(
             PhosphorIcons.Equals,
-            "Перетащить",
+            strings().drag,
             modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
         )
