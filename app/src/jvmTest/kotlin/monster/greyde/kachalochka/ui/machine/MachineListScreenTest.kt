@@ -12,6 +12,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.signedInGym
@@ -52,6 +53,13 @@ class MachineListScreenTest {
         runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
             onNodeWithTag("machine-list-empty").assertTextEquals("Упражнений пока нет")
             onNodeWithTag("machine-list-friends").assertDoesNotExist()
+        }
+
+    @Test
+    fun the_machine_list_speaks_english() =
+        runScreenTestInEnglish(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
+            onNodeWithTag("top-bar-title").assertTextEquals("Machines")
+            onNodeWithTag("machine-list-empty").assertTextEquals("No machines yet")
         }
 
     @Test

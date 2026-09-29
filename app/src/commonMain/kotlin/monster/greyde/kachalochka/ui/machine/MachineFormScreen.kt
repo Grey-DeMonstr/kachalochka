@@ -71,6 +71,7 @@ import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoStrip
 import monster.greyde.kachalochka.ui.photos.PhotoViewer
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -94,7 +95,7 @@ fun MachineFormScreen(
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(
-        "Упражнение",
+        strings().machine,
         onBack = onBack,
         onOpenSettings = onOpenSettings,
         actions = { if (linking.canUnlink) MachineMenu(viewModel::askToUnlink) },
@@ -106,7 +107,7 @@ fun MachineFormScreen(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            FieldLabel("Название")
+            FieldLabel(strings().name)
             FormField(
                 value = state.name,
                 onValueChange = { name -> viewModel.update { it.copy(name = name) } },
@@ -119,7 +120,7 @@ fun MachineFormScreen(
             if (linking.linkedWith.isNotEmpty()) {
                 LinkedWith(linking.linkedWith, onOpenFriendMachine)
             }
-            FieldLabel("Заметка о настройке")
+            FieldLabel(strings().setupNote)
             FormField(
                 value = state.setupNote,
                 onValueChange = { note -> viewModel.update { it.copy(setupNote = note) } },
@@ -129,7 +130,7 @@ fun MachineFormScreen(
                 singleLine = false,
             )
             TagsSection(state, viewModel)
-            FieldLabel("Как считается вес")
+            FieldLabel(strings().howWeightCounts)
             WeightModeRow(state, onSelect = { mode ->
                 viewModel.update { it.copy(weightMode = mode) }
             })
@@ -142,7 +143,7 @@ fun MachineFormScreen(
             )
             UnitRow(state.unit, onSelect = { unit -> viewModel.update { it.copy(unit = unit) } })
             if (state.unit == WeightUnit.Custom) {
-                FieldLabel("Название единицы")
+                FieldLabel(strings().unitName)
                 FormField(
                     value = state.unitLabel,
                     onValueChange = { label ->
@@ -161,7 +162,7 @@ fun MachineFormScreen(
             })
             if (linking.canLink) {
                 OutlineButton(
-                    "Привязать к…",
+                    strings().linkTo,
                     PhosphorIcons.LinkSimple,
                     onLink,
                     Modifier.fillMaxWidth().testTag("link-machine"),
@@ -183,7 +184,7 @@ fun MachineFormScreen(
         ) {
             Rule()
             AccentButton(
-                "Сохранить упражнение",
+                strings().saveMachine,
                 PhosphorIcons.Check,
                 { viewModel.save(onSaved) },
                 Modifier.testTag("save-machine"),
@@ -203,9 +204,9 @@ fun MachineFormScreen(
     }
     if (linking.confirmingUnlink) {
         ConfirmDialog(
-            title = "Отвязать упражнение?",
-            text = "Результаты друзей в этом упражнении перестанут показываться у вас.",
-            confirmLabel = "Отвязать",
+            title = strings().unlinkTitle,
+            text = strings().unlinkText,
+            confirmLabel = strings().unlink,
             confirmTag = "confirm-unlink",
             cancelTag = "cancel-unlink",
             onConfirm = viewModel::confirmUnlink,
@@ -221,9 +222,10 @@ private fun LinkedWith(
 ) {
     val colors = MaterialTheme.colorScheme
     val linkStyle = TextLinkStyles(SpanStyle(color = colors.tertiary))
+    val s = strings()
     val text =
         buildAnnotatedString {
-            append("Связано с: ")
+            append(s.linkedWith)
             linked.forEachIndexed { index, machine ->
                 if (index > 0) append(", ")
                 val link =
@@ -284,7 +286,7 @@ private fun TagsSection(
     state: MachineFormState,
     viewModel: MachineFormViewModel,
 ) {
-    FieldLabel("Теги")
+    FieldLabel(strings().tags)
     if (state.shownTags.isNotEmpty()) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             state.shownTags.forEach { tag ->
@@ -304,13 +306,13 @@ private fun TagsSection(
         Box(Modifier.weight(1f)) {
             TextInput(
                 state.newTag,
-                "Новый тег",
+                strings().newTag,
                 viewModel::typeNewTag,
                 Modifier.testTag("new-tag"),
             )
         }
         OutlineButton(
-            "Добавить",
+            strings().add,
             PhosphorIcons.Plus,
             viewModel::addNewTag,
             Modifier.testTag("add-tag"),
@@ -327,16 +329,16 @@ private fun WeightModeRow(
     ChoiceRow(
         choices =
             listOf(
-                Choice("Всего", "mode-total"),
-                Choice("На сторону", "mode-per-side"),
-                Choice("Гравитрон", "mode-counterweight"),
+                Choice(strings().choiceTotal, "mode-total"),
+                Choice(strings().choicePerSide, "mode-per-side"),
+                Choice(strings().choiceCounterweight, "mode-counterweight"),
             ),
         selected = modes.indexOf(state.weightMode),
         onSelect = { onSelect(modes[it]) },
     )
     if (state.weightMode == WeightMode.Counterweight) {
         Text(
-            "Вес считается отрицательным: чем меньше, тем лучше.",
+            strings().counterweightHint,
             modifier = Modifier.testTag("mode-counterweight-hint"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.64f),
@@ -356,9 +358,9 @@ private fun PlatformWeightRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column {
-            Text("Вес платформы", fontSize = 15.sp, color = colors.onBackground)
+            Text(strings().platformWeight, fontSize = 15.sp, color = colors.onBackground)
             Text(
-                "Своя масса снаряда",
+                strings().ownMass,
                 fontSize = 12.sp,
                 color = colors.onBackground.copy(alpha = 0.48f),
             )
@@ -439,14 +441,13 @@ private fun PlatformIncludedCard(
                 onCheckedChange = onChange,
                 modifier = Modifier.testTag("platform-included"),
             )
-            Text("Прибавлять к записи", fontSize = 15.sp, color = colors.onBackground)
+            Text(strings().addToRecord, fontSize = 15.sp, color = colors.onBackground)
         }
         Text(
             if (included) {
-                "Включено: вес платформы входит в каждую запись."
+                strings().platformIncludedHint
             } else {
-                "Выключено: записывается только навесной вес, а платформа стоит рядом с " +
-                    "названием — «Жим ногами (+25 кг) 70 кг × 10»."
+                strings().platformApartHint
             },
             fontSize = 12.sp,
             color = colors.onBackground.copy(alpha = 0.50f),
@@ -463,9 +464,9 @@ private fun UnitRow(
     ChoiceRow(
         choices =
             listOf(
-                Choice("кг", "unit-kg"),
+                Choice(strings().kg, "unit-kg"),
                 Choice("lb", "unit-lb"),
-                Choice("Своя единица", "unit-custom", weight = 2f),
+                Choice(strings().customUnit, "unit-custom", weight = 2f),
             ),
         selected = units.indexOf(unit),
         onSelect = { onSelect(units[it]) },
@@ -480,7 +481,7 @@ private fun WeightStepRow(
     val colors = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            "Шаг веса",
+            strings().weightStep,
             modifier = Modifier.width(82.dp),
             fontSize = 14.sp,
             color = colors.onBackground.copy(alpha = 0.72f),
@@ -510,7 +511,7 @@ private fun HintRow() {
             modifier = Modifier.size(18.dp),
         )
         Text(
-            "После сохранения упражнение появится в этом визите.",
+            strings().afterSaveHint,
             fontSize = 13.sp,
             color = colors.onBackground.copy(alpha = 0.50f),
         )
@@ -523,13 +524,13 @@ private fun MachineMenu(onUnlink: () -> Unit) {
     Box {
         SquareIconButton(
             PhosphorIcons.DotsThreeVertical,
-            "Ещё",
+            strings().more,
             { expanded = true },
             Modifier.testTag("machine-menu"),
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
-                text = { Text("Отвязать от друзей") },
+                text = { Text(strings().unlinkFromFriends) },
                 onClick = {
                     expanded = false
                     onUnlink()

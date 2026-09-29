@@ -40,6 +40,7 @@ import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -56,7 +57,7 @@ fun MachinePickerScreen(
     val viewModel: MachinePickerViewModel = koinViewModel { parametersOf(day) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
-    Screen("Упражнение", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(strings().machine, onBack = onBack, onOpenSettings = onOpenSettings) {
         SearchBar(state.query, viewModel::onQueryChange)
         Column(
             Modifier
@@ -83,7 +84,7 @@ fun MachinePickerScreen(
             }
             if (state.friendRows.isNotEmpty()) {
                 SectionLabel(
-                    "Упражнения друзей",
+                    strings().friendsMachines,
                     modifier =
                         Modifier
                             .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
@@ -100,7 +101,7 @@ fun MachinePickerScreen(
             }
             if (selectedMachineId != null) {
                 SectionLabel(
-                    "На основе существующего",
+                    strings().basedOnExisting,
                     modifier =
                         Modifier.padding(
                             start = 16.dp,
@@ -192,7 +193,7 @@ private fun CreateRow(
                     fontWeight = FontWeight.Medium,
                     color = colors.onPrimaryContainer,
                 )
-                Text("Фото, заметка и настройка веса", fontSize = 13.sp, color = colors.secondary)
+                Text(strings().photoNoteAndSetup, fontSize = 13.sp, color = colors.secondary)
             }
             Icon(
                 PhosphorIcons.CaretRight,
@@ -264,9 +265,9 @@ private fun CopyRow(onClick: () -> Unit) {
             )
         }
         Column(Modifier.weight(1f)) {
-            Text("Скопировать упражнение", fontSize = 17.sp, color = colors.onBackground)
+            Text(strings().copyMachine, fontSize = 17.sp, color = colors.onBackground)
             Text(
-                "Заметка и настройка веса сохранятся",
+                strings().copyKeeps,
                 fontSize = 13.sp,
                 color = colors.onBackground.copy(alpha = 0.52f),
             )

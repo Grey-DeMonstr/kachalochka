@@ -25,6 +25,7 @@ import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
@@ -114,6 +115,19 @@ class MachineFormScreenTest {
             assertEquals(WeightMode.Counterweight, machine?.weightMode)
         }
     }
+
+    @Test
+    fun the_machine_form_speaks_english() =
+        runScreenTestInEnglish(gym, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("top-bar-title").assertTextEquals("Machine")
+            onNodeWithTag("mode-total").assertTextEquals("Total")
+            onNodeWithTag("mode-counterweight").performClick()
+            onNodeWithTag("mode-counterweight-hint")
+                .assertTextEquals("The weight counts as negative: the less, the better.")
+            onNodeWithTag("save-machine").assertTextEquals("Save machine")
+        }
 
     @Test
     fun a_photo_taken_in_the_form_is_saved_with_the_machine() {

@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.identity.Accounts
@@ -30,6 +31,7 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
 data class ChooserRowUi(
@@ -50,8 +52,6 @@ data class MergeUi(
     val title: String,
     val text: String,
 )
-
-private const val OFFLINE = "Нет связи с сервером"
 
 /** What [machineId], an own saved machine, can be merged with or linked to. */
 class LinkChooserViewModel(
@@ -89,6 +89,7 @@ class LinkChooserViewModel(
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
         viewModelScope.launch { accounts.activeId.collect { load() } }
+        viewModelScope.launch { AppStrings.flow.drop(1).collect { load() } }
     }
 
     /** Own machines show at once; friends' follow from the network, if it answers. */
@@ -129,9 +130,8 @@ class LinkChooserViewModel(
             pending = kept.id to removed.id
             val merge =
                 MergeUi(
-                    "Объединить упражнения?",
-                    "Останется «${kept.name}», подходы «${removed.name}» перейдут к нему. " +
-                        "Это нельзя отменить.",
+                    AppStrings.current.mergeTitle,
+                    AppStrings.current.mergeText(kept.name, removed.name),
                 )
             mutableState.value = mutableState.value.copy(merge = merge, error = null)
         }
@@ -168,7 +168,7 @@ class LinkChooserViewModel(
                         if (intoRemoved) friends.repointLinks(removed.id, kept.id)
                     }
                 if (repointed.isFailure) {
-                    closeMerge(error = OFFLINE)
+                    closeMerge(error = AppStrings.current.offline)
                     return@launch
                 }
             }

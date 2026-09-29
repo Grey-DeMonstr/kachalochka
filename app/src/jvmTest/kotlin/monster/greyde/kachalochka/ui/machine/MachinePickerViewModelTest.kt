@@ -33,6 +33,7 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
+import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -290,6 +291,17 @@ class MachinePickerViewModelTest {
         assertEquals("Создать «гакк»", vm.state.value.createLabel)
         assertEquals("Похожие", vm.state.value.sectionLabel)
         assertEquals(2, vm.state.value.rows.size)
+    }
+
+    @Test
+    fun the_picker_speaks_english_once_the_language_changes() {
+        val vm = viewModel().also { it.load() }
+        vm.onQueryChange("гакк")
+
+        inEnglish {
+            assertEquals("Create \"гакк\"", vm.state.value.createLabel)
+            assertEquals("Similar", vm.state.value.sectionLabel)
+        }
     }
 
     @Test

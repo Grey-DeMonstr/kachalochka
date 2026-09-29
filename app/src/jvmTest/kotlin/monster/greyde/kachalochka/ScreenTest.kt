@@ -34,6 +34,9 @@ import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.strings.AppStrings
+import monster.greyde.kachalochka.ui.strings.EnStrings
+import monster.greyde.kachalochka.ui.strings.RuStrings
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.timer.Ticker
@@ -115,3 +118,28 @@ fun runScreenTest(
     },
     assertions = assertions,
 )
+
+/**
+ * [runScreenTest] with the app speaking English. Russian comes back before the test ends, while
+ * the screen's view models can still react to it.
+ */
+@OptIn(ExperimentalTestApi::class)
+fun runScreenTestInEnglish(
+    gym: FakeGym,
+    screen: @Composable () -> Unit,
+    assertions: ComposeUiTest.() -> Unit,
+) {
+    AppStrings.set(EnStrings)
+    try {
+        runScreenTest(gym, screen) {
+            try {
+                assertions()
+            } finally {
+                AppStrings.set(RuStrings)
+                waitForIdle()
+            }
+        }
+    } finally {
+        AppStrings.set(RuStrings)
+    }
+}

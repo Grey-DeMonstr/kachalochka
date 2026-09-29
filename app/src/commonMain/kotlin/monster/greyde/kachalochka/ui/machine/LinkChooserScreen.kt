@@ -18,6 +18,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -32,7 +33,7 @@ fun LinkChooserScreen(
     val viewModel: LinkChooserViewModel = koinViewModel { parametersOf(machineId) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
-    Screen("Привязать к…", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(strings().linkTo, onBack = onBack, onOpenSettings = onOpenSettings) {
         SearchBar(state.query, viewModel::onQueryChange)
         Column(
             Modifier
@@ -50,14 +51,14 @@ fun LinkChooserScreen(
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-            if (state.own.isNotEmpty()) ChooserSection("Мои упражнения", "chooser-own")
+            if (state.own.isNotEmpty()) ChooserSection(strings().myMachines, "chooser-own")
             state.own.forEach { row ->
                 MachineRow(row.name, row.detail, "chooser-own-${row.id.value}") {
                     viewModel.chooseOwn(row.id)
                 }
             }
             state.friends?.takeIf { it.isNotEmpty() }?.let { rows ->
-                ChooserSection("Упражнения друзей", "chooser-friends")
+                ChooserSection(strings().friendsMachines, "chooser-friends")
                 rows.forEach { row ->
                     MachineRow(row.name, row.detail, "chooser-friend-${row.id.value}") {
                         viewModel.chooseFriend(row.id, onLinked)
@@ -70,7 +71,7 @@ fun LinkChooserScreen(
         ConfirmDialog(
             title = merge.title,
             text = merge.text,
-            confirmLabel = "Объединить",
+            confirmLabel = strings().merge,
             confirmTag = "confirm-merge",
             cancelTag = "cancel-merge",
             onConfirm = { viewModel.confirmMerge(onMerged) },

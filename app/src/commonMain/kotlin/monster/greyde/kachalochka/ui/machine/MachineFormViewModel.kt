@@ -28,6 +28,7 @@ import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -102,8 +103,6 @@ data class MachineFormState(
         )
     }
 }
-
-private const val OFFLINE = "Нет связи с сервером"
 
 /** A photo taken in the form, written with the machine when it is saved. */
 private class TakenPhoto(
@@ -250,7 +249,10 @@ class MachineFormViewModel(
             val broken = owner?.let { reading { friends.breakLinks(shown.id) } }
             if (broken?.isFailure == true) {
                 mutableLinking.value =
-                    mutableLinking.value.copy(confirmingUnlink = false, error = OFFLINE)
+                    mutableLinking.value.copy(
+                        confirmingUnlink = false,
+                        error = AppStrings.current.offline,
+                    )
                 return@launch
             }
             val now = clock.now()

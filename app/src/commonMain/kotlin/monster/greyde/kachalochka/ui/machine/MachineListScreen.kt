@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -34,7 +35,7 @@ fun MachineListScreen(
     val viewModel: MachineListViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
-    Screen("Упражнения", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(strings().machines, onBack = onBack, onOpenSettings = onOpenSettings) {
         Column(
             Modifier
                 .weight(1f)
@@ -45,7 +46,7 @@ fun MachineListScreen(
                 rows == null -> Unit
                 rows.isEmpty() ->
                     Text(
-                        "Упражнений пока нет",
+                        strings().noMachinesYet,
                         modifier = Modifier.padding(16.dp).testTag("machine-list-empty"),
                         fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
@@ -64,7 +65,7 @@ fun MachineListScreen(
             }
             if (state.friends.isNotEmpty()) {
                 SectionLabel(
-                    "Упражнения друзей",
+                    strings().friendsMachines,
                     modifier =
                         Modifier
                             .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
@@ -84,7 +85,7 @@ fun MachineListScreen(
         }
         Box(Modifier.padding(16.dp)) {
             AccentButton(
-                "Новое упражнение",
+                strings().newMachine,
                 PhosphorIcons.Plus,
                 onNewMachine,
                 Modifier.testTag("new-machine"),

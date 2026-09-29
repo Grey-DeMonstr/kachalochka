@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -38,13 +39,14 @@ import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 import kotlin.time.Instant
 
 data class PickerUiState(
     val query: String = "",
     val createLabel: String? = null,
-    val sectionLabel: String = "Недавние",
+    val sectionLabel: String = "",
     val rows: List<PickerRowUi> = emptyList(),
     val friendRows: List<PickerRowUi> = emptyList(),
 )
@@ -101,6 +103,7 @@ class MachinePickerViewModel(
     init {
         viewModelScope.launch { accounts.activeId.collect { load() } }
         viewModelScope.launch { sync.completed.collect { load() } }
+        viewModelScope.launch { AppStrings.flow.drop(1).collect { load() } }
     }
 
     /** Own machines show at once; friends' follow from the network, if it answers. */
@@ -182,8 +185,16 @@ class MachinePickerViewModel(
         mutableState.value =
             PickerUiState(
                 query = query,
-                createLabel = if (ranking.offerCreate) "Создать «${query.trim()}»" else null,
-                sectionLabel = if (query.isBlank()) "Недавние" else "Похожие",
+                createLabel =
+                    if (ranking.offerCreate) {
+                        AppStrings.current.createNamed(
+                            query.trim(),
+                        )
+                    } else {
+                        null
+                    },
+                sectionLabel =
+                    if (query.isBlank()) AppStrings.current.recent else AppStrings.current.similar,
                 rows =
                     ranking.machines.map {
                         val cover = coverPhoto(it.id, shownPhotos, clusters)
@@ -199,12 +210,19 @@ class MachinePickerViewModel(
     ): String? {
         val offset = utcOffset.at(now)
         inVisit[machine.id]?.let {
-            val where = if (day == CalendarDay.of(now, offset)) "сегодня" else "в этом визите"
+            val where =
+                if (day ==
+                    CalendarDay.of(now, offset)
+                ) {
+                    AppStrings.current.todayLower
+                } else {
+                    AppStrings.current.inThisVisit
+                }
             return "${setCount(it)} $where"
         }
         val last = latest[machine.id] ?: return null
         val days = calendarDaysBetween(last.recordedAt, now, offset)
         val value = setValue(last.weight, last.reps, machine, preferred)
-        return "Было $value · ${daysAgoLabel(days)}"
+        return AppStrings.current.wasAgo(value, daysAgoLabel(days))
     }
 }

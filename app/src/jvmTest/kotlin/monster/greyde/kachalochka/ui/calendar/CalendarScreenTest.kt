@@ -21,11 +21,11 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
-import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -121,12 +121,10 @@ class CalendarScreenTest {
 
     @Test
     fun the_calendar_screen_speaks_english() =
-        inEnglish {
-            runScreenTest(FakeGym(), screen = { calendar() }) {
-                waitForIdle()
-                onNodeWithTag("top-bar-title").assertTextEquals("Visits")
-                onNodeWithTag("calendar-empty").performScrollTo().assertTextEquals("No visit")
-            }
+        runScreenTestInEnglish(FakeGym(), screen = { calendar() }) {
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Visits")
+            onNodeWithTag("calendar-empty").performScrollTo().assertTextEquals("No visit")
         }
 
     @Test

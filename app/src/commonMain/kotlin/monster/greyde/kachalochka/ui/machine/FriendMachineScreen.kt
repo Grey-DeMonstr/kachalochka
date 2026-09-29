@@ -27,6 +27,7 @@ import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.PhotoStrip
 import monster.greyde.kachalochka.ui.photos.PhotoViewer
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -43,7 +44,7 @@ fun FriendMachineScreen(
     val offline by viewModel.offline.collectAsState()
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
     // The view model already loads once created: it follows accounts.activeId from init.
-    Screen("Упражнение друга", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(strings().friendMachine, onBack = onBack, onOpenSettings = onOpenSettings) {
         val current = state
         if (offline) {
             OfflineNotice(onRetry = viewModel::refresh)
@@ -71,15 +72,21 @@ fun FriendMachineScreen(
                 }
                 PhotoStrip(current.photos, launchers = null, onOpen = { opened = it })
                 if (current.note.isNotBlank()) {
-                    Setting("Заметка о настройке", current.note, "friend-machine-note")
+                    Setting(strings().setupNote, current.note, "friend-machine-note")
                 }
-                Setting("Как считается вес", current.caption, "friend-machine-caption")
-                current.platform?.let { Setting("Вес платформы", it, "friend-machine-platform") }
+                Setting(strings().howWeightCounts, current.caption, "friend-machine-caption")
+                current.platform?.let {
+                    Setting(
+                        strings().platformWeight,
+                        it,
+                        "friend-machine-platform",
+                    )
+                }
             }
             if (current.canTake) {
                 Box(Modifier.padding(16.dp)) {
                     AccentButton(
-                        "Взять себе",
+                        strings().takeForMyself,
                         PhosphorIcons.Copy,
                         { viewModel.take(onTaken) },
                         Modifier.testTag("take-machine"),

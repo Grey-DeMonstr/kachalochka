@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -29,6 +30,7 @@ import monster.greyde.kachalochka.ui.format.shownWeight
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
 data class FriendMachineUi(
@@ -66,6 +68,7 @@ class FriendMachineViewModel(
 
     init {
         viewModelScope.launch { accounts.activeId.collect { refresh() } }
+        viewModelScope.launch { AppStrings.flow.drop(1).collect { refresh() } }
     }
 
     /** Cancels the load in flight, so one for a previous account never lands last. */
@@ -143,7 +146,8 @@ class FriendMachineViewModel(
         preferred: PreferredWeightUnit,
     ): String? {
         if (machine.platformWeight <= 0) return null
-        val added = if (machine.platformIncluded) "прибавляется к записи" else "рядом с названием"
+        val strings = AppStrings.current
+        val added = if (machine.platformIncluded) strings.platformAdded else strings.platformBeside
         val weight = formatNumber(shownWeight(machine.platformWeight, machine, preferred))
         return "$weight ${shownLabel(machine, preferred)} · $added"
     }
