@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -49,7 +50,7 @@ fun AccountMenu(
         Avatar(active, modifier, onClick = { expanded = true })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             SectionLabel(
-                "Пишем подходы в",
+                strings().recordingAs,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
             ui.accounts.forEach { account ->
@@ -59,7 +60,7 @@ fun AccountMenu(
                 }
             }
             DropdownMenuItem(
-                text = { Text("Добавить аккаунт") },
+                text = { Text(strings().addAccount) },
                 onClick = {
                     expanded = false
                     viewModel.addAccount()
@@ -68,7 +69,7 @@ fun AccountMenu(
             )
             if (onOpenSettings != null) {
                 DropdownMenuItem(
-                    text = { Text("Настройки") },
+                    text = { Text(strings().settings) },
                     onClick = {
                         expanded = false
                         onOpenSettings()
@@ -78,7 +79,7 @@ fun AccountMenu(
             }
             if (active != null) {
                 DropdownMenuItem(
-                    text = { Text("Выйти из аккаунта «${active.displayName}»") },
+                    text = { Text(strings().signOutOf(active.displayName)) },
                     onClick = {
                         expanded = false
                         viewModel.signOutActive()

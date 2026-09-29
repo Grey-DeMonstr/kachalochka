@@ -20,6 +20,7 @@ import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.runScreenTestInEnglish
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -57,6 +58,18 @@ class SettingsScreenTest {
             onNodeWithTag("transition-millis").assertTextEquals("0")
             onNodeWithTag("apply-settings").performScrollTo().assertIsEnabled().performClick()
             onNodeWithTag("apply-settings").assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun the_settings_speak_english() {
+        val gym = FakeGym().withAccounts(ivan, active = ivan)
+        runScreenTestInEnglish(gym, screen = { settings() }) {
+            onNodeWithTag("top-bar-title").assertTextEquals("Settings")
+            onNodeWithTag("theme-dark").assertTextEquals("Dark")
+            onNodeWithTag("language-system").assertTextEquals("System")
+            onNodeWithTag("apply-settings").performScrollTo().assertTextEquals("Apply")
+            onNodeWithTag("settings-advanced").performScrollTo().assertTextEquals("Advanced")
         }
     }
 

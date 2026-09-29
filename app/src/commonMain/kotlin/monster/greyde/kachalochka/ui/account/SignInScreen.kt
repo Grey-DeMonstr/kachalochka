@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.koinInject
 
 /** The web's frame 5e: no route is reachable until this hands off through [onSignIn]. */
@@ -37,13 +38,13 @@ fun SignInScreen(
                 verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
                 Text(
-                    "Качалочка",
+                    strings().appName,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Medium,
                     color = colors.onBackground,
                 )
                 AccentButton(
-                    "Войти через Google",
+                    strings().signInWithGoogle,
                     PhosphorIcons.ArrowRight,
                     onSignIn,
                     Modifier.testTag("sign-in-google"),
@@ -51,7 +52,7 @@ fun SignInScreen(
                 )
                 if (!available.value) {
                     Text(
-                        "Вход недоступен — сборка не настроена",
+                        strings().signInUnavailable,
                         modifier = Modifier.testTag("sign-in-unconfigured"),
                         fontSize = 13.sp,
                         textAlign = TextAlign.Center,

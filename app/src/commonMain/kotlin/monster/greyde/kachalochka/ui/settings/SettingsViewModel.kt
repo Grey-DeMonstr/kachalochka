@@ -23,6 +23,7 @@ import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppLanguage
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.theme.ThemePreference
@@ -58,7 +59,7 @@ data class DeviceUi(
     val language: AppLanguage,
 )
 
-/** "Удалить аккаунт": offered while an account is signed in, under "Дополнительно". */
+/** AppStrings.current.deleteAccount: offered while an account is signed in, under AppStrings.current.advanced. */
 data class DeletionUi(
     val available: Boolean = false,
     val advancedOpen: Boolean = false,
@@ -274,7 +275,7 @@ class SettingsViewModel(
                     DeletionUi(
                         available = true,
                         advancedOpen = true,
-                        error = "Нет связи с сервером",
+                        error = AppStrings.current.offline,
                     )
             }
         }

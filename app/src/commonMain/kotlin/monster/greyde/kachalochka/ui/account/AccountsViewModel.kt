@@ -12,6 +12,7 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.format.monogram
+import monster.greyde.kachalochka.ui.strings.AppStrings
 
 data class AccountsUi(
     val accounts: List<AccountUi>,
@@ -56,7 +57,11 @@ class AccountsViewModel(
             accounts.activeId,
             accounts.lastFailure,
         ) { list, activeId, failure ->
-            AccountsUi(accountsUi(list, activeId), activeId, failure?.let { SIGN_IN_FAILED })
+            AccountsUi(
+                accountsUi(list, activeId),
+                activeId,
+                failure?.let { AppStrings.current.signInFailed },
+            )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, AccountsUi(emptyList(), null))
 
     fun addAccount() {
@@ -78,4 +83,3 @@ class AccountsViewModel(
 }
 
 /** The design draws no error screen, and a sign-in that failed still has to say that it did. */
-private const val SIGN_IN_FAILED = "Не удалось войти. Попробуйте ещё раз"

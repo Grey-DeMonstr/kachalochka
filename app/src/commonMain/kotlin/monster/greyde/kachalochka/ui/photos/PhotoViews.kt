@@ -38,6 +38,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 
 /** A photo on screen; [model] is a saved `Photo` or the bytes of one not saved yet. */
 data class ShownPhoto(
@@ -63,7 +64,7 @@ fun PhotoStrip(
         photos.forEach { photo ->
             AsyncImage(
                 model = photo.model,
-                contentDescription = "Фото",
+                contentDescription = strings().photo,
                 imageLoader = photoLoader(),
                 contentScale = ContentScale.Crop,
                 modifier =
@@ -101,11 +102,11 @@ private fun AddPhotoTile(launchers: PhotoLaunchers) {
                 tint = colors.tertiary,
                 modifier = Modifier.size(30.dp),
             )
-            Text("Добавить фото", fontSize = 13.sp, color = colors.tertiary)
+            Text(strings().addPhoto, fontSize = 13.sp, color = colors.tertiary)
         }
         DropdownMenu(expanded = choosing, onDismissRequest = { choosing = false }) {
             DropdownMenuItem(
-                text = { Text("Снять фото") },
+                text = { Text(strings().takePhoto) },
                 onClick = {
                     choosing = false
                     launchers.takePhoto()
@@ -113,7 +114,7 @@ private fun AddPhotoTile(launchers: PhotoLaunchers) {
                 modifier = Modifier.testTag("take-photo"),
             )
             DropdownMenuItem(
-                text = { Text("Из галереи") },
+                text = { Text(strings().fromGallery) },
                 onClick = {
                     choosing = false
                     launchers.pickPhoto()
@@ -143,7 +144,7 @@ fun PhotoViewer(
         ) {
             AsyncImage(
                 model = photo.model,
-                contentDescription = "Фото",
+                contentDescription = strings().photo,
                 imageLoader = photoLoader(),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),
@@ -154,7 +155,7 @@ fun PhotoViewer(
             ) {
                 SquareIconButton(
                     PhosphorIcons.ArrowLeft,
-                    "Назад",
+                    strings().back,
                     onClose,
                     Modifier.testTag("close-photo"),
                 )
@@ -162,7 +163,7 @@ fun PhotoViewer(
                 if (onDelete != null) {
                     SquareIconButton(
                         PhosphorIcons.Trash,
-                        "Удалить",
+                        strings().delete,
                         onDelete,
                         Modifier.testTag("delete-photo"),
                     )

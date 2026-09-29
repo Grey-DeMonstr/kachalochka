@@ -42,6 +42,7 @@ import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.TextInput
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.AppLanguage
+import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -59,35 +60,35 @@ fun SettingsScreen(onBack: () -> Unit) {
         isBackEnabled = true,
         onBackCompleted = leave,
     )
-    Screen("Настройки", onBack = leave, onOpenSettings = null) {
+    Screen(strings().settings, onBack = leave, onOpenSettings = null) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             profile?.let { ProfileSection(it, viewModel) }
-            SectionTitle("Тема", Modifier.testTag("settings-title"))
+            SectionTitle(strings().theme, Modifier.testTag("settings-title"))
             val modes = listOf(ThemeMode.System, ThemeMode.Light, ThemeMode.Dark)
             ChoiceRow(
                 listOf(
-                    Choice("Системная", "theme-system"),
-                    Choice("Светлая", "theme-light"),
-                    Choice("Тёмная", "theme-dark"),
+                    Choice(strings().themeSystem, "theme-system"),
+                    Choice(strings().themeLight, "theme-light"),
+                    Choice(strings().themeDark, "theme-dark"),
                 ),
                 selected = modes.indexOf(device.theme),
                 onSelect = { viewModel.chooseTheme(modes[it]) },
             )
-            SectionTitle("Язык")
+            SectionTitle(strings().language)
             val languages = listOf(AppLanguage.System, AppLanguage.English, AppLanguage.Russian)
             ChoiceRow(
                 listOf(
-                    Choice("Системный", "language-system"),
+                    Choice(strings().languageSystem, "language-system"),
                     Choice("English", "language-english"),
                     Choice("Русский", "language-russian"),
                 ),
                 selected = languages.indexOf(device.language),
                 onSelect = { viewModel.chooseLanguage(languages[it]) },
             )
-            SectionTitle("Анимация переходов")
+            SectionTitle(strings().transitions)
             TextInput(
                 device.transition,
                 "0",
@@ -95,9 +96,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                 Modifier.testTag("transition-millis"),
                 KeyboardOptions(keyboardType = KeyboardType.Number),
             )
-            Hint("Миллисекунды, до $MAX_TRANSITION_MILLIS; 0 — без анимации")
+            Hint(strings().transitionsHint(MAX_TRANSITION_MILLIS))
             AccentButton(
-                "Применить",
+                strings().apply,
                 PhosphorIcons.Check,
                 viewModel::apply,
                 Modifier.testTag("apply-settings"),
@@ -109,7 +110,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     if (confirmingLeave) {
         AlertDialog(
             onDismissRequest = viewModel::stay,
-            title = { Text("Применить изменения?") },
+            title = { Text(strings().applyTitle) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -119,7 +120,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                     },
                     enabled = canApply,
                     modifier = Modifier.testTag("leave-apply"),
-                ) { Text("Применить") }
+                ) { Text(strings().apply) }
             },
             dismissButton = {
                 TextButton(
@@ -128,7 +129,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                         onBack()
                     },
                     modifier = Modifier.testTag("leave-discard"),
-                ) { Text("Не применять") }
+                ) { Text(strings().discard) }
             },
         )
     }
@@ -168,7 +169,7 @@ private fun AdvancedSection(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("Дополнительно", style = MaterialTheme.typography.headlineSmall)
+        Text(strings().advanced, style = MaterialTheme.typography.headlineSmall)
         Icon(
             PhosphorIcons.CaretRight,
             null,
@@ -189,7 +190,7 @@ private fun AdvancedSection(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(PhosphorIcons.Trash, null, tint = colors.error, modifier = Modifier.size(20.dp))
-        Text("Удалить аккаунт", fontSize = 16.sp, color = colors.error)
+        Text(strings().deleteAccount, fontSize = 16.sp, color = colors.error)
     }
     deletion.error?.let {
         Text(
@@ -208,14 +209,11 @@ private fun DeleteDialog(
 ) {
     AlertDialog(
         onDismissRequest = viewModel::cancelDelete,
-        title = { Text("Удалить аккаунт?") },
+        title = { Text(strings().deleteAccountTitle) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    "Ваши визиты, упражнения с фото, замеры, профиль и группы будут удалены " +
-                        "с сервера и с этого устройства. Это нельзя отменить. " +
-                        "Чтобы подтвердить, введите $DELETE_WORD.",
-                )
+                Text(strings().deleteAccountText(DELETE_WORD))
+
                 TextInput(
                     deletion.word,
                     DELETE_WORD,
@@ -229,13 +227,13 @@ private fun DeleteDialog(
                 onClick = viewModel::confirmDelete,
                 enabled = deletion.canConfirm,
                 modifier = Modifier.testTag("confirm-delete-account"),
-            ) { Text("Удалить", color = MaterialTheme.colorScheme.error) }
+            ) { Text(strings().delete, color = MaterialTheme.colorScheme.error) }
         },
         dismissButton = {
             TextButton(
                 onClick = viewModel::cancelDelete,
                 modifier = Modifier.testTag("cancel-delete-account"),
-            ) { Text("Отмена") }
+            ) { Text(strings().cancel) }
         },
     )
 }
@@ -245,28 +243,28 @@ private fun ProfileSection(
     profile: ProfileUi,
     viewModel: SettingsViewModel,
 ) {
-    SectionTitle("Профиль", Modifier.testTag("profile-title"))
+    SectionTitle(strings().profile, Modifier.testTag("profile-title"))
     profile.nickname?.let {
-        FieldLabel("Ник")
+        FieldLabel(strings().nickname)
         TextInput(it, profile.placeholder, viewModel::type, Modifier.testTag("nickname"))
     }
-    FieldLabel("Пол")
+    FieldLabel(strings().sex)
     val sexes = listOf(Sex.Male, Sex.Female)
     ChoiceRow(
-        listOf(Choice("Мужской", "sex-male"), Choice("Женский", "sex-female")),
+        listOf(Choice(strings().male, "sex-male"), Choice(strings().female, "sex-female")),
         selected = sexes.indexOf(profile.sex),
         onSelect = { viewModel.chooseSex(sexes[it]) },
     )
-    FieldLabel("Дата рождения")
+    FieldLabel(strings().birthDate)
     TextInput(
         profile.birthDate,
-        "ДД.ММ.ГГГГ",
+        strings().datePlaceholder,
         viewModel::typeBirthDate,
         Modifier.testTag("birth-date"),
         KeyboardOptions(keyboardType = KeyboardType.Number),
         valid = profile.birthDateValid,
     )
-    FieldLabel("Рост, см")
+    FieldLabel(strings().heightCm)
     TextInput(
         profile.height,
         "",
@@ -275,19 +273,19 @@ private fun ProfileSection(
         KeyboardOptions(keyboardType = KeyboardType.Decimal),
         valid = profile.heightValid,
     )
-    Hint("Пол, дата рождения и рост нужны для расчёта процента жира.")
-    FieldLabel("Единицы веса")
+    Hint(strings().bodyFieldsHint)
+    FieldLabel(strings().weightUnits)
     val units = listOf(PreferredWeightUnit.Kg, PreferredWeightUnit.Lb, PreferredWeightUnit.Mixed)
     ChoiceRow(
         listOf(
-            Choice("кг", "weight-unit-kg"),
+            Choice(strings().kg, "weight-unit-kg"),
             Choice("lb", "weight-unit-lb"),
-            Choice("Смешанные", "weight-unit-mixed", weight = 1.6f),
+            Choice(strings().mixedUnits, "weight-unit-mixed", weight = 1.6f),
         ),
         selected = units.indexOf(profile.weightUnit),
         onSelect = { viewModel.chooseWeightUnit(units[it]) },
     )
-    Hint("Смешанные — у каждого упражнения свои единицы.")
+    Hint(strings().mixedUnitsHint)
 }
 
 @Composable
