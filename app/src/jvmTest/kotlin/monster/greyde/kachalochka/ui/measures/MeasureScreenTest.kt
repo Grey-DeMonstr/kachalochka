@@ -20,6 +20,7 @@ import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.missingDefaults
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -75,6 +76,14 @@ class MeasureScreenTest {
             onNodeWithTag("measure-change", useUnmergedTree = true).assertTextEquals("−1")
         }
     }
+
+    @Test
+    fun a_measure_speaks_english() =
+        runScreenTestInEnglish(gym, screen = { MeasureScreen(weight.id, {}, {}, {}, {}) }) {
+            onNodeWithTag("top-bar-title").assertTextEquals("Weight")
+            onNodeWithTag("period-Quarter").assertTextEquals("3 mo")
+            onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82 kg")
+        }
 
     @Test
     fun a_period_with_one_value_shows_the_value_instead_of_a_line() {

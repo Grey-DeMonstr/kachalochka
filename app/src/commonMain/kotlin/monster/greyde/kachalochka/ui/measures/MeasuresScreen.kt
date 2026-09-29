@@ -38,6 +38,7 @@ import monster.greyde.kachalochka.ui.components.dragOutline
 import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -50,7 +51,7 @@ fun MeasuresScreen(
     val viewModel: MeasuresViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
-    Screen("Замеры", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(strings().measurements, onBack = onBack, onOpenSettings = onOpenSettings) {
         Column(
             Modifier
                 .weight(1f)
@@ -59,9 +60,9 @@ fun MeasuresScreen(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                SectionLabel("Показатели", Modifier.weight(1f))
+                SectionLabel(strings().measuresSection, Modifier.weight(1f))
                 Text(
-                    if (state.ordering) "Готово" else "Порядок",
+                    if (state.ordering) strings().done else strings().reorder,
                     Modifier
                         .clickable(onClick = viewModel::toggleOrdering)
                         .padding(8.dp)
@@ -90,13 +91,13 @@ fun MeasuresScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             AccentButton(
-                "Новый замер",
+                strings().newMeasurement,
                 PhosphorIcons.Plus,
                 onNewMeasurement,
                 Modifier.testTag("new-measurement"),
             )
             OutlineButton(
-                "Добавить показатель",
+                strings().addMeasure,
                 PhosphorIcons.Ruler,
                 viewModel::openAdd,
                 Modifier.fillMaxWidth().testTag("add-measure"),
@@ -187,7 +188,7 @@ private fun FatSection(
 ) {
     val colors = MaterialTheme.colorScheme
     val muted = colors.onBackground.copy(alpha = 0.55f)
-    SectionLabel("Процент жира", Modifier.padding(top = 20.dp, bottom = 4.dp))
+    SectionLabel(strings().bodyFat, Modifier.padding(top = 20.dp, bottom = 4.dp))
     rows.forEach { row ->
         Row(
             Modifier
@@ -200,7 +201,7 @@ private fun FatSection(
             FormulaTag(row.tag)
             Text(row.name, Modifier.weight(1f), fontSize = 16.sp, color = colors.onBackground)
             Text(
-                row.percent ?: row.missing ?: "Не рассчитать по этим значениям",
+                row.percent ?: row.missing ?: strings().cannotCalculate,
                 Modifier.testTag("fat-value-${row.tag}"),
                 fontSize = if (row.percent != null) 16.sp else 13.sp,
                 color = if (row.percent != null) colors.onBackground else muted,
@@ -210,7 +211,7 @@ private fun FatSection(
     }
     if (profileIncomplete) {
         Text(
-            "Укажите пол, дату рождения и рост в настройках",
+            strings().fillProfile,
             Modifier
                 .clickable(onClick = onOpenSettings)
                 .padding(vertical = 12.dp)
@@ -248,20 +249,20 @@ private fun NewMeasureDialog(
 ) {
     AlertDialog(
         onDismissRequest = onCancel,
-        title = { Text("Новый показатель") },
+        title = { Text(strings().newMeasure) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = adding.name,
                     onValueChange = onName,
-                    label = { Text("Название") },
+                    label = { Text(strings().name) },
                     singleLine = true,
                     modifier = Modifier.testTag("new-measure-name"),
                 )
                 OutlinedTextField(
                     value = adding.unit,
                     onValueChange = onUnit,
-                    label = { Text("Единица, например см") },
+                    label = { Text(strings().unitExample) },
                     singleLine = true,
                     modifier = Modifier.testTag("new-measure-unit"),
                 )
@@ -273,12 +274,12 @@ private fun NewMeasureDialog(
                 enabled = adding.canSave,
                 modifier = Modifier.testTag("confirm-new-measure"),
             ) {
-                Text("Добавить")
+                Text(strings().add)
             }
         },
         dismissButton = {
             TextButton(onClick = onCancel, modifier = Modifier.testTag("cancel-new-measure")) {
-                Text("Отмена")
+                Text(strings().cancel)
             }
         },
     )

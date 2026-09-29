@@ -42,16 +42,18 @@ import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.AppStrings
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 private fun periodLabel(period: MeasurePeriod): String =
     when (period) {
-        MeasurePeriod.Month -> "1 мес"
-        MeasurePeriod.Quarter -> "3 мес"
-        MeasurePeriod.HalfYear -> "6 мес"
-        MeasurePeriod.Year -> "Год"
-        MeasurePeriod.All -> "Всё"
+        MeasurePeriod.Month -> AppStrings.current.periodMonth
+        MeasurePeriod.Quarter -> AppStrings.current.periodQuarter
+        MeasurePeriod.HalfYear -> AppStrings.current.periodHalfYear
+        MeasurePeriod.Year -> AppStrings.current.periodYear
+        MeasurePeriod.All -> AppStrings.current.periodAll
     }
 
 @Composable
@@ -98,7 +100,7 @@ fun MeasureScreen(
                 onSelect = { viewModel.choose(periods[it]) },
             )
             ChartArea(measure)
-            SectionLabel("История")
+            SectionLabel(strings().history)
             Column {
                 measure.history.forEach { HistoryRow(it, onOpenDay) }
             }
@@ -115,9 +117,9 @@ fun MeasureScreen(
     }
     if (measure?.deleting == true) {
         ConfirmDialog(
-            title = "Удалить показатель?",
-            text = "«${measure.name}» и все его значения пропадут.",
-            confirmLabel = "Удалить",
+            title = strings().deleteMeasureTitle,
+            text = strings().deleteMeasureText(measure.name),
+            confirmLabel = strings().delete,
             confirmTag = "confirm-delete-measure",
             cancelTag = "cancel-delete-measure",
             onConfirm = viewModel::confirmDelete,
@@ -135,7 +137,7 @@ private fun Summary(measure: MeasureUi) {
         verticalAlignment = Alignment.Bottom,
     ) {
         Text(
-            measure.latest ?: "Нет значений",
+            measure.latest ?: strings().noValues,
             Modifier.testTag("measure-latest"),
             fontSize = 28.sp,
             fontWeight = FontWeight.Medium,
@@ -158,7 +160,7 @@ private fun ChartArea(measure: MeasureUi) {
     val muted = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
         when (measure.points.size) {
-            0 -> Text("За этот период значений нет", fontSize = 15.sp, color = muted)
+            0 -> Text(strings().noValuesInPeriod, fontSize = 15.sp, color = muted)
             1 ->
                 Text(
                     measureValue(measure.points.single().second, measure.unit),
@@ -198,14 +200,14 @@ private fun MeasureMenu(
     Box {
         SquareIconButton(
             PhosphorIcons.DotsThreeVertical,
-            "Ещё",
+            strings().more,
             { expanded = true },
             Modifier.testTag("measure-menu"),
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             onEdit?.let {
                 DropdownMenuItem(
-                    text = { Text("Название и единица") },
+                    text = { Text(strings().nameAndUnit) },
                     onClick = {
                         expanded = false
                         it()
@@ -215,7 +217,7 @@ private fun MeasureMenu(
             }
             onDelete?.let {
                 DropdownMenuItem(
-                    text = { Text("Удалить показатель") },
+                    text = { Text(strings().deleteMeasure) },
                     onClick = {
                         expanded = false
                         it()
@@ -237,20 +239,20 @@ private fun EditMeasureDialog(
 ) {
     AlertDialog(
         onDismissRequest = onCancel,
-        title = { Text("Показатель") },
+        title = { Text(strings().measure) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = editing.name,
                     onValueChange = onName,
-                    label = { Text("Название") },
+                    label = { Text(strings().name) },
                     singleLine = true,
                     modifier = Modifier.testTag("edit-measure-name"),
                 )
                 OutlinedTextField(
                     value = editing.unit,
                     onValueChange = onUnit,
-                    label = { Text("Единица, например см") },
+                    label = { Text(strings().unitExample) },
                     singleLine = true,
                     modifier = Modifier.testTag("edit-measure-unit"),
                 )
@@ -262,12 +264,12 @@ private fun EditMeasureDialog(
                 enabled = editing.canSave,
                 modifier = Modifier.testTag("confirm-edit-measure"),
             ) {
-                Text("Сохранить")
+                Text(strings().save)
             }
         },
         dismissButton = {
             TextButton(onClick = onCancel, modifier = Modifier.testTag("cancel-edit-measure")) {
-                Text("Отмена")
+                Text(strings().cancel)
             }
         },
     )

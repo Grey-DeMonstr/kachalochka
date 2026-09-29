@@ -24,6 +24,7 @@ import monster.greyde.kachalochka.core.domain.measures.missingDefaults
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -193,6 +194,30 @@ class MeasuresViewModelTest {
             viewModel().load()
 
             assertEquals(7, counting.writes)
+        }
+
+    @Test
+    fun predefined_measures_and_formulas_read_in_english() =
+        runTest {
+            val vm = viewModel().also { it.load() }
+            val weight = measureOf(MeasureKind.Weight)
+            record(weight, gym.today, 82.0)
+
+            inEnglish {
+                val rows = vm.state.value.rows
+                assertEquals(
+                    listOf("Weight", "Waist", "Chest", "Hips", "Biceps", "Thigh", "Neck"),
+                    rows.map { it.name },
+                )
+                assertEquals("82 kg", rows.first().value)
+                assertEquals("today", rows.first().ago)
+                assertEquals(
+                    "US Navy",
+                    vm.state.value.fat
+                        .first()
+                        .name,
+                )
+            }
         }
 
     @Test

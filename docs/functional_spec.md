@@ -20,6 +20,12 @@ Both apps must support a dark and a light theme. By default the theme follows th
 the user can override it in Settings, choosing Системная, Светлая or Тёмная the way the weight unit
 is chosen. The choice is remembered between launches.
 
+The app speaks Russian and English. At first it follows the device: Russian on a device set to
+Russian, English on any other. Settings has "Язык" — Системный, English or Русский — remembered
+on the device like the theme and applied with the rest of the settings. The shared text is written
+in the app's language; names, own units, tags and comments stay as they were typed. In English a
+machine is called a machine.
+
 Numbers are written with a decimal point everywhere, the shared text included ("11.3кг"); a typed
 number takes a point or a comma.
 

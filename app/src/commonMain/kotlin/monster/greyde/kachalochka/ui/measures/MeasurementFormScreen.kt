@@ -37,6 +37,7 @@ import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -51,7 +52,7 @@ fun MeasurementFormScreen(
 ) {
     val viewModel: MeasurementFormViewModel = koinViewModel { parametersOf(initialDay) }
     val state by viewModel.state.collectAsState()
-    Screen("Замер", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(strings().measurement, onBack = onBack, onOpenSettings = onOpenSettings) {
         val form = state ?: return@Screen
         Column(
             Modifier
@@ -72,7 +73,7 @@ fun MeasurementFormScreen(
             }
             if (form.canDelete) {
                 OutlineButton(
-                    "Удалить замер",
+                    strings().deleteMeasurement,
                     PhosphorIcons.Trash,
                     viewModel::askDelete,
                     Modifier.fillMaxWidth().testTag("delete-measurement"),
@@ -85,7 +86,7 @@ fun MeasurementFormScreen(
         ) {
             Rule()
             AccentButton(
-                "Сохранить",
+                strings().save,
                 PhosphorIcons.Check,
                 { viewModel.save(onSaved) },
                 Modifier.testTag("save-measurement"),
@@ -103,9 +104,9 @@ fun MeasurementFormScreen(
         }
         if (form.deleting) {
             ConfirmDialog(
-                title = "Удалить замер?",
-                text = "${form.dayTitle}: все значения этого дня пропадут.",
-                confirmLabel = "Удалить",
+                title = strings().deleteMeasurementTitle,
+                text = strings().deleteMeasurementText(form.dayTitle),
+                confirmLabel = strings().delete,
                 confirmTag = "confirm-delete-measurement",
                 cancelTag = "cancel-delete-measurement",
                 onConfirm = { viewModel.confirmDelete(onDeleted) },

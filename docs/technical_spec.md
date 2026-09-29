@@ -737,3 +737,29 @@ into the pure day and clock-time functions in `domain/`.
 Calendar dates are `CalendarDay` values in `domain/`, with epoch-day arithmetic, because
 `kotlin.time` has no calendar and the stack adds no date library. The calendar screen, a past
 day's first set and moving a visit all go through them.
+
+---
+
+## 12. Strings and languages
+
+Every text the app shows is a member of the `Strings` interface in `app/.../ui/strings`, with
+`RuStrings` and `EnStrings` as its two implementations; counts are functions there, each language
+with its own plural rule. Compose resource files are not used: view models and the shared text
+build most strings outside composition.
+
+The language is process-wide, like the system locale: `AppStrings` holds the current `Strings` as
+a `StateFlow`. Formatters and view models read `AppStrings.current`; composables read `strings()`,
+which recomposes them on a change. View models whose state holds built text collect
+`AppStrings.flow` and publish again; the measurement form does not, since reloading would drop
+the values being typed.
+
+`AppLanguage` is `System`, `English` or `Russian`, a device setting stored like the theme in
+`LanguagePreference` (DataStore on Android, `localStorage` on the web). `System` means Russian
+when the device's language tag starts with `ru`, else English; the tag comes from `SystemLanguage`
+(the default `Locale` on Android, `navigator.language` on the web). `App` sets `AppStrings` while
+composing, so the first frame is already in the chosen language. The JVM host tests bind the
+system language to Russian, so their Russian assertions hold on any machine, and
+`runScreenTestInEnglish` checks screens in English.
+
+Predefined body measures keep their Russian names in storage and are named by kind on screen.
+User data — machine names, own units, tags, comments, measure names — is never translated.

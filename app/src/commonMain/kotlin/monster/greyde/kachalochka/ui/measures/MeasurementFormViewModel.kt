@@ -27,6 +27,7 @@ import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.weekdayName
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -207,8 +208,8 @@ class MeasurementFormViewModel(
             shown.map { measure ->
                 MeasureFieldUi(
                     id = measure.id,
-                    name = measure.displayName,
-                    unit = measure.displayUnit,
+                    name = measure.shownName(),
+                    unit = measure.shownUnit(),
                     text = texts[measure.id].orEmpty(),
                     hint =
                         values
@@ -218,7 +219,14 @@ class MeasurementFormViewModel(
                     howTo = measure.kind?.let(::howToMeasure),
                 )
             }
-        val dayName = if (day == today) "Сегодня" else weekdayName(day.dayOfWeek)
+        val dayName =
+            if (day ==
+                today
+            ) {
+                AppStrings.current.todayTitle
+            } else {
+                weekdayName(day.dayOfWeek)
+            }
         mutableState.value =
             MeasurementFormUi(
                 day = day,

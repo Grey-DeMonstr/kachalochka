@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.measures
 
 import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
 import monster.greyde.kachalochka.core.domain.measures.BodyInput
+import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /** The short mark a method's row and every measure it reads carry. */
 internal fun methodTag(method: BodyFatMethod): String =
@@ -13,18 +14,18 @@ internal fun methodTag(method: BodyFatMethod): String =
 
 internal fun methodName(method: BodyFatMethod): String =
     when (method) {
-        BodyFatMethod.Navy -> "ВМС США"
+        BodyFatMethod.Navy -> AppStrings.current.navy
         BodyFatMethod.Ymca -> "YMCA"
-        BodyFatMethod.Deurenberg -> "Дойренберг"
+        BodyFatMethod.Deurenberg -> AppStrings.current.deurenberg
     }
 
 internal fun inputName(input: BodyInput): String =
     when (input) {
-        BodyInput.Sex -> "пол"
-        BodyInput.Age -> "дата рождения"
-        BodyInput.Height -> "рост"
-        BodyInput.Weight -> "вес"
-        BodyInput.Waist -> "талия"
-        BodyInput.Neck -> "шея"
-        BodyInput.Hips -> "обхват бёдер"
+        BodyInput.Sex -> AppStrings.current.inputSex
+        BodyInput.Age -> AppStrings.current.inputAge
+        BodyInput.Height -> AppStrings.current.inputHeight
+        BodyInput.Weight -> AppStrings.current.inputWeight
+        BodyInput.Waist -> AppStrings.current.inputWaist
+        BodyInput.Neck -> AppStrings.current.inputNeck
+        BodyInput.Hips -> AppStrings.current.inputHips
     }

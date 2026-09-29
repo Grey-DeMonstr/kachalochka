@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -33,6 +34,7 @@ import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
 data class MeasureRowUi(
@@ -92,6 +94,7 @@ class MeasuresViewModel(
     init {
         viewModelScope.launch { accounts.activeId.collect { load() } }
         viewModelScope.launch { sync.completed.collect { load() } }
+        viewModelScope.launch { AppStrings.flow.drop(1).collect { load() } }
     }
 
     /** Brings the predefined measures in line with the formulas, then lists them all. */
@@ -250,7 +253,7 @@ class MeasuresViewModel(
             missing =
                 when {
                     missing.isNotEmpty() ->
-                        missing.joinToString(", ", prefix = "Нужно: ", transform = ::inputName)
+                        AppStrings.current.needs(missing.map(::inputName))
                     else -> null
                 },
         )
@@ -267,8 +270,8 @@ class MeasuresViewModel(
         val previous = newestFirst.getOrNull(1)
         return MeasureRowUi(
             id = measure.id,
-            name = measure.displayName,
-            value = latest?.let { measureValue(it.value, measure.displayUnit) },
+            name = measure.shownName(),
+            value = latest?.let { measureValue(it.value, measure.shownUnit()) },
             delta =
                 if (latest != null && previous != null) {
                     measureDelta(latest.value, previous.value)

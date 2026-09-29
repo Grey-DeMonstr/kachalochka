@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -23,6 +24,7 @@ import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
 /** [points] are the period's values, oldest first; [history] is every value, newest first. */
@@ -85,6 +87,7 @@ class MeasureViewModel(
     init {
         viewModelScope.launch { accounts.activeId.collect { load() } }
         viewModelScope.launch { sync.completed.collect { load() } }
+        viewModelScope.launch { AppStrings.flow.drop(1).collect { load() } }
     }
 
     fun load() {
@@ -180,11 +183,11 @@ class MeasureViewModel(
         val last = shownPeriod.lastOrNull()
         mutableState.value =
             MeasureUi(
-                name = shown.displayName,
-                unit = shown.displayUnit,
+                name = shown.shownName(),
+                unit = shown.shownUnit(),
                 period = period,
                 points = shownPeriod.map { it.day to it.value },
-                latest = values.firstOrNull()?.let { measureValue(it.value, shown.displayUnit) },
+                latest = values.firstOrNull()?.let { measureValue(it.value, shown.shownUnit()) },
                 change =
                     if (first != null && last != null && first != last) {
                         measureDelta(last.value, first.value)
@@ -196,7 +199,7 @@ class MeasureViewModel(
                         HistoryRowUi(
                             it.day,
                             dayMonthLabel(it.day, today.year),
-                            measureValue(it.value, shown.displayUnit),
+                            measureValue(it.value, shown.shownUnit()),
                         )
                     },
                 editing = editing,

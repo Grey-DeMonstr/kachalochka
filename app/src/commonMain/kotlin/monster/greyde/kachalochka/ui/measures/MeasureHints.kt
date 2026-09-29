@@ -1,24 +1,42 @@
 package monster.greyde.kachalochka.ui.measures
 
+import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
+import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /** How to take a predefined measure so that values from different days compare. */
-internal fun howToMeasure(kind: MeasureKind): String? =
-    when (kind) {
-        MeasureKind.Weight -> "Утром натощак, после туалета, без одежды."
-        MeasureKind.Waist ->
-            "Лента горизонтально: мужчинам — на уровне пупка, женщинам — в самом узком месте. " +
-                "На спокойном выдохе, не втягивая живот."
-        MeasureKind.Chest ->
-            "Лента горизонтально через самую выступающую часть груди и под лопатками, руки " +
-                "опущены, на спокойном выдохе."
-        MeasureKind.Hips ->
-            "Стопы вместе, лента горизонтально через самую выступающую часть ягодиц."
-        MeasureKind.Biceps ->
-            "Рука согнута и напряжена, лента через самую высокую точку бицепса."
-        MeasureKind.Thigh ->
-            "Стоя, вес на обеих ногах, лента горизонтально сразу под ягодичной складкой."
-        MeasureKind.Neck ->
-            "Сразу под кадыком, лента чуть наклонена вперёд и вниз, шея расслаблена."
+internal fun howToMeasure(kind: MeasureKind): String? {
+    val strings = AppStrings.current
+    return when (kind) {
+        MeasureKind.Weight -> strings.hintWeight
+        MeasureKind.Waist -> strings.hintWaist
+        MeasureKind.Chest -> strings.hintChest
+        MeasureKind.Hips -> strings.hintHips
+        MeasureKind.Biceps -> strings.hintBiceps
+        MeasureKind.Thigh -> strings.hintThigh
+        MeasureKind.Neck -> strings.hintNeck
         MeasureKind.BodyFat -> null
+    }
+}
+
+/** A predefined measure is named in the app's language; the user's own keeps what they typed. */
+internal fun Measure.shownName(): String {
+    val strings = AppStrings.current
+    return when (kind) {
+        MeasureKind.Weight -> strings.measureWeight
+        MeasureKind.Waist -> strings.measureWaist
+        MeasureKind.Chest -> strings.measureChest
+        MeasureKind.Hips -> strings.measureHips
+        MeasureKind.Biceps -> strings.measureBiceps
+        MeasureKind.Thigh -> strings.measureThigh
+        MeasureKind.Neck -> strings.measureNeck
+        MeasureKind.BodyFat, null -> displayName
+    }
+}
+
+internal fun Measure.shownUnit(): String =
+    when (kind) {
+        MeasureKind.Weight -> AppStrings.current.kg
+        MeasureKind.BodyFat, null -> displayUnit
+        else -> AppStrings.current.cm
     }
