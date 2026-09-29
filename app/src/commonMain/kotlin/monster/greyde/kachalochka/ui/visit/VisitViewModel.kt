@@ -107,7 +107,6 @@ data class SheetUi(
     val editing: Boolean,
     val people: List<AccountUi>,
     val saveLabel: String,
-    val expanded: Boolean,
     val canSave: Boolean,
     val saving: Boolean,
     val friends: List<String>,
@@ -143,7 +142,6 @@ class VisitViewModel(
     private var editing: WorkoutSet? = null
     private var expanded: Set<MachineId> = emptySet()
     private var values = SetValues(0.0, DEFAULT_REPS)
-    private var sheetExpanded = true
     private var ordering = false
     private var saving = false
     private var friendResults: List<FriendResult> = emptyList()
@@ -227,7 +225,6 @@ class VisitViewModel(
     fun selectMachine(id: MachineId) {
         selected = id
         editing = null
-        sheetExpanded = true
         ordering = false
         viewModelScope.launch { reload(reseed = true) }
     }
@@ -320,7 +317,7 @@ class VisitViewModel(
 
     fun toggleOrdering() {
         ordering = !ordering
-        if (ordering) collapseSheet()
+        if (ordering && closeSheet()) return
         publish()
     }
 
@@ -354,27 +351,18 @@ class VisitViewModel(
         selected = set.machineId
         values = SetValues(set.weight, set.reps)
         weightText = null
-        sheetExpanded = true
         reloadShown()
     }
 
-    fun collapseSheet(): Boolean {
-        if (open == null || !sheetExpanded) return false
-        sheetExpanded = false
-        if (editing == null) {
-            publish()
-        } else {
-            editing = null
-            viewModelScope.launch { reload(reseed = true) }
-        }
-        return true
-    }
-
-    fun expandSheet() {
-        if (open == null) return
-        sheetExpanded = true
-        ordering = false
+    /** Leaves any edit; returns false when no sheet was open, so back can leave the screen. */
+    fun closeSheet(): Boolean {
+        if (open == null) return false
+        selected = null
+        open = null
+        editing = null
+        weightText = null
         publish()
+        return true
     }
 
     fun deleteEditedSet() {
@@ -595,7 +583,6 @@ class VisitViewModel(
                     people.takeIf { it.size > 1 }?.firstOrNull { it.active }?.displayName,
                     edited != null,
                 ),
-            expanded = sheetExpanded,
             canSave = weightValid && !saving,
             saving = saving,
             friends = if (edited == null) friendResults.map(::friendLine) else emptyList(),

@@ -24,7 +24,6 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
-import androidx.compose.ui.test.swipeUp
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
@@ -283,7 +282,7 @@ class VisitScreenTest {
     }
 
     @Test
-    fun top_bar_back_collapses_the_sheet_before_it_leaves() {
+    fun top_bar_back_closes_the_sheet_before_it_leaves() {
         var backs = 0
         runScreenTest(gym, screen = { visitScreen(onBack = { backs++ }) }) {
             onNodeWithTag("group-${press.id.value}").performClick()
@@ -293,10 +292,8 @@ class VisitScreenTest {
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("delete-set").assertDoesNotExist()
-            onNodeWithTag("save-set").assertDoesNotExist()
-            onNodeWithTag("sheet-peek-label", useUnmergedTree = true)
-                .assertTextEquals("Жим ногами · подход 2")
+            onNodeWithTag("set-sheet").assertDoesNotExist()
+            onNodeWithTag("sheet-peek").assertDoesNotExist()
             assertEquals(0, backs)
 
             onNodeWithTag("top-bar-back").performClick()
@@ -306,7 +303,7 @@ class VisitScreenTest {
     }
 
     @Test
-    fun system_back_collapses_the_sheet() {
+    fun system_back_closes_the_sheet() {
         var backs = 0
         val dispatcher = NavigationEventDispatcher()
         val systemBack = DirectNavigationEventInput().also(dispatcher::addInput)
@@ -327,38 +324,45 @@ class VisitScreenTest {
 
             runOnIdle { systemBack.backCompleted() }
             waitForIdle()
-            onNodeWithTag("save-set").assertDoesNotExist()
-            onNodeWithTag("sheet-peek").assertIsDisplayed()
+            onNodeWithTag("set-sheet").assertDoesNotExist()
             assertEquals(0, backs)
         }
     }
 
     @Test
-    fun tapping_the_collapsed_bar_opens_the_sheet_again() {
+    fun swiping_down_closes_the_sheet() {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
-            onNodeWithTag("top-bar-back").performClick()
+            onNodeWithTag("set-sheet").performTouchInput { swipeDown() }
             waitForIdle()
-
-            onNodeWithTag("sheet-peek").performClick()
-            waitForIdle()
-            onNodeWithTag("save-set").assertIsDisplayed()
+            onNodeWithTag("set-sheet").assertDoesNotExist()
             onNodeWithTag("sheet-peek").assertDoesNotExist()
         }
     }
 
     @Test
-    fun swiping_down_collapses_the_sheet_and_swiping_the_bar_up_opens_it() {
-        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+    fun an_expanded_machine_adds_its_next_set_from_its_own_row() {
+        runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
-            onNodeWithTag("set-sheet").performTouchInput { swipeDown() }
+            onNodeWithTag("add-set-${press.id.value}").assertDoesNotExist()
+            onNodeWithTag("group-${press.id.value}").performClick()
             waitForIdle()
-            onNodeWithTag("save-set").assertDoesNotExist()
-            onNodeWithTag("sheet-peek").assertIsDisplayed()
 
-            onNodeWithTag("sheet-peek").performTouchInput { swipeUp() }
+            onNodeWithTag("add-set-${press.id.value}").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("save-set").assertIsDisplayed()
+            onNodeWithTag("set-sheet").assertIsDisplayed()
+            onNodeWithTag("sheet-set-number", useUnmergedTree = true).assertTextEquals("подход 2")
+        }
+    }
+
+    @Test
+    fun ordering_hides_the_add_set_rows() {
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("group-${press.id.value}").performClick()
+            onNodeWithTag("reorder-toggle").performClick()
+            waitForIdle()
+            onNodeWithTag("add-set-${press.id.value}").assertDoesNotExist()
         }
     }
 

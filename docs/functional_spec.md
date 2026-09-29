@@ -101,9 +101,10 @@ weight to the nearest half unit and the step to one decimal. The sheet's other w
 previous visit's sets included, follow the profile's unit. Tapping another account's chip
 switches to it: the shown history and the save button follow that person, and the set is
 recorded into their own visit. Swiping the sheet down, or pressing back on the phone or in the
-top bar, collapses it to a bar naming the machine and the next set; tapping the bar or swiping it
-up opens the sheet again. Pressing back while a set is being edited leaves the edit and collapses
-the sheet. The machine's name is not a button: another machine is chosen with "Новый тренажёр".
+top bar, closes it, leaving any edit; «Порядок» closes it too. An expanded machine in the list
+ends with "Добавить подход", which opens the sheet for that machine's next set, so any machine of
+the visit takes another set at any time. The machine's name is not a button: another machine is
+chosen with "Новый тренажёр".
 
 The machine picker lets the user search machines by name; "Создать «…»" opens the machine form
 pre-filled with the typed name. When a machine is already chosen for the visit, "Скопировать

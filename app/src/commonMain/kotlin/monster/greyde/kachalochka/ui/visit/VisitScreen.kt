@@ -36,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
@@ -103,12 +102,12 @@ fun VisitScreen(
     val current = state
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
-        isBackEnabled = current?.sheet?.expanded == true,
-        onBackCompleted = { viewModel.collapseSheet() },
+        isBackEnabled = current?.sheet != null,
+        onBackCompleted = { viewModel.closeSheet() },
     )
     Screen(
         current?.title ?: "Визит",
-        onBack = { if (!viewModel.collapseSheet()) onBack() },
+        onBack = { if (!viewModel.closeSheet()) onBack() },
         onOpenSettings = onOpenSettings,
         actions = {
             if (current?.canShare == true) {
@@ -127,6 +126,7 @@ fun VisitScreen(
             onDismissNotice = viewModel::dismissNotice,
             onToggle = viewModel::toggleGroup,
             onEdit = viewModel::editSet,
+            onAddSet = viewModel::selectMachine,
             onToggleOrdering = viewModel::toggleOrdering,
             onMoveMachine = viewModel::moveMachine,
             onMoveSet = viewModel::moveSet,
@@ -144,8 +144,7 @@ fun VisitScreen(
                 onDelete = viewModel::deleteEditedSet,
                 onSwitchTo = viewModel::switchTo,
                 onAddAccount = accountsViewModel::addAccount,
-                onExpand = viewModel::expandSheet,
-                onCollapse = { viewModel.collapseSheet() },
+                onClose = { viewModel.closeSheet() },
             )
         }
     }
@@ -157,6 +156,7 @@ private fun VisitList(
     onDismissNotice: () -> Unit,
     onToggle: (MachineId) -> Unit,
     onEdit: (WorkoutSetId) -> Unit,
+    onAddSet: (MachineId) -> Unit,
     onToggleOrdering: () -> Unit,
     onMoveMachine: (MachineId, Int) -> Unit,
     onMoveSet: (WorkoutSetId, Int) -> Unit,
@@ -168,7 +168,7 @@ private fun VisitList(
         modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .alpha(if (state.sheet?.expanded == true) 0.55f else 1f)
+            .alpha(if (state.sheet != null) 0.55f else 1f)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Row(
@@ -216,6 +216,7 @@ private fun VisitList(
                 ordering = state.ordering,
                 onToggle = onToggle,
                 onEdit = onEdit,
+                onAddSet = onAddSet,
                 onDropMachine = { from, to -> onMoveMachine(state.groups[from].machineId, to) },
                 onMoveSet = onMoveSet,
             )
@@ -237,6 +238,7 @@ private fun MachineBlock(
     ordering: Boolean,
     onToggle: (MachineId) -> Unit,
     onEdit: (WorkoutSetId) -> Unit,
+    onAddSet: (MachineId) -> Unit,
     onDropMachine: (from: Int, to: Int) -> Unit,
     onMoveSet: (WorkoutSetId, Int) -> Unit,
 ) {
@@ -309,8 +311,31 @@ private fun MachineBlock(
                     dragged = setOrder.dragging == setIndex,
                 )
             }
+            if (!ordering) AddSetRow(group.machineId, onAddSet)
         }
         Rule()
+    }
+}
+
+@Composable
+private fun AddSetRow(
+    machineId: MachineId,
+    onAdd: (MachineId) -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(ControlShape)
+            .clickable { onAdd(machineId) }
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .testTag("add-set-${machineId.value}"),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(PhosphorIcons.Plus, null, tint = colors.tertiary, modifier = Modifier.size(18.dp))
+        Text("Добавить подход", fontSize = 15.sp, color = colors.tertiary)
     }
 }
 
@@ -436,8 +461,7 @@ private fun PersonChip(
     }
 }
 
-private val CollapseDistance = 72.dp
-private val ExpandDistance = 24.dp
+private val CloseDistance = 72.dp
 private val FlingSpeed = 800.dp // per second
 private val SheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 
@@ -451,9 +475,9 @@ private fun Modifier.sheetChrome(): Modifier {
 }
 
 @Composable
-private fun Modifier.swipeDownTo(onCollapse: () -> Unit): Modifier {
+private fun Modifier.swipeDownTo(onClose: () -> Unit): Modifier {
     val density = LocalDensity.current
-    val distance = with(density) { CollapseDistance.toPx() }
+    val distance = with(density) { CloseDistance.toPx() }
     val fling = with(density) { FlingSpeed.toPx() }
     var pulled by remember { mutableFloatStateOf(0f) }
     return draggable(
@@ -462,28 +486,12 @@ private fun Modifier.swipeDownTo(onCollapse: () -> Unit): Modifier {
         onDragStopped = { velocity ->
             if (pulled > distance || velocity > fling) {
                 pulled = 0f
-                onCollapse()
+                onClose()
             } else {
                 animate(pulled, 0f) { value, _ -> pulled = value }
             }
         },
     ).offset { IntOffset(0, pulled.roundToInt()) }
-}
-
-@Composable
-private fun Modifier.swipeUpTo(onExpand: () -> Unit): Modifier {
-    val density = LocalDensity.current
-    val distance = with(density) { ExpandDistance.toPx() }
-    val fling = with(density) { FlingSpeed.toPx() }
-    var pulled by remember { mutableFloatStateOf(0f) }
-    return draggable(
-        state = rememberDraggableState { pulled += it },
-        orientation = Orientation.Vertical,
-        onDragStopped = { velocity ->
-            if (pulled < -distance || velocity < -fling) onExpand()
-            pulled = 0f
-        },
-    )
 }
 
 @Composable
@@ -498,46 +506,6 @@ private fun SheetHandle(modifier: Modifier) {
 }
 
 @Composable
-private fun SheetPeek(
-    sheet: SheetUi,
-    onExpand: () -> Unit,
-) {
-    val colors = MaterialTheme.colorScheme
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .swipeUpTo(onExpand)
-            .clip(SheetShape)
-            .clickable(onClick = onExpand)
-            .sheetChrome()
-            .testTag("sheet-peek"),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        SheetHandle(Modifier.align(Alignment.CenterHorizontally))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "${sheet.name} · ${sheet.setNumberLabel}",
-                modifier = Modifier.weight(1f).testTag("sheet-peek-label"),
-                fontSize = 17.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = colors.onBackground,
-            )
-            Icon(
-                PhosphorIcons.CaretRight,
-                "Развернуть",
-                modifier = Modifier.size(20.dp).rotate(-90f),
-                tint = colors.onBackground.copy(alpha = 0.55f),
-            )
-        }
-    }
-}
-
-@Composable
 private fun SetSheet(
     sheet: SheetUi,
     onWeight: (Int) -> Unit,
@@ -548,19 +516,14 @@ private fun SetSheet(
     onDelete: () -> Unit,
     onSwitchTo: (UserId) -> Unit,
     onAddAccount: () -> Unit,
-    onExpand: () -> Unit,
-    onCollapse: () -> Unit,
+    onClose: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     val muted = colors.onBackground.copy(alpha = 0.55f)
-    if (!sheet.expanded) {
-        SheetPeek(sheet, onExpand)
-        return
-    }
     Column(
         Modifier
             .fillMaxWidth()
-            .swipeDownTo(onCollapse)
+            .swipeDownTo(onClose)
             .sheetChrome()
             .testTag("set-sheet"),
         verticalArrangement = Arrangement.spacedBy(14.dp),

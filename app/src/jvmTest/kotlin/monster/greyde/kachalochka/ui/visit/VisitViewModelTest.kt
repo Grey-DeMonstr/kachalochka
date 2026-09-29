@@ -337,13 +337,11 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun a_typed_weight_survives_a_sync_reload_and_collapse_expand() {
+    fun a_typed_weight_survives_a_sync_reload() {
         val vm = viewModel().also { it.selectMachine(press.id) }
         vm.typeWeight("22,5")
 
         gym.sync.completePass()
-        vm.collapseSheet()
-        vm.expandSheet()
 
         assertEquals(
             "22,5",
@@ -679,73 +677,69 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun a_chosen_machine_opens_the_sheet_expanded() {
+    fun closing_the_sheet_removes_it() {
         val vm = viewModel().also { it.selectMachine(press.id) }
 
-        assertEquals(
-            true,
-            vm.state.value
-                ?.sheet
-                ?.expanded,
-        )
+        assertTrue(vm.closeSheet())
+
+        assertNull(vm.state.value?.sheet)
+        assertNull(vm.selectedMachineId)
+        assertFalse(vm.closeSheet())
     }
 
     @Test
-    fun collapsing_keeps_the_machine_and_the_stepper_values() {
-        val vm = viewModel().also { it.selectMachine(press.id) }
-        vm.changeWeight(+1)
-
-        assertTrue(vm.collapseSheet())
-
-        val collapsed = assertNotNull(vm.state.value?.sheet)
-        assertEquals(false, collapsed.expanded)
-        assertEquals("Жим ногами", collapsed.name)
-        assertEquals(press.id, vm.selectedMachineId)
-        assertFalse(vm.collapseSheet())
-
-        vm.expandSheet()
-
-        val expanded = assertNotNull(vm.state.value?.sheet)
-        assertEquals(true, expanded.expanded)
-        assertEquals("72.5", expanded.weight)
-    }
-
-    @Test
-    fun without_a_machine_there_is_nothing_to_collapse() {
+    fun without_a_machine_there_is_nothing_to_close() {
         val vm = viewModel().also { it.refresh() }
 
-        assertFalse(vm.collapseSheet())
+        assertFalse(vm.closeSheet())
     }
 
     @Test
-    fun tapping_a_set_while_collapsed_opens_the_sheet_on_it() =
+    fun a_set_opens_the_closed_sheet_on_itself() =
         runTest {
             val recorded = set(visit.id, press, 70.0, 10, 0)
             gym.sets.upsert(recorded)
             val vm = viewModel().also { it.selectMachine(row.id) }
-            vm.collapseSheet()
+            vm.closeSheet()
 
             vm.editSet(recorded.id)
 
-            val sheet = assertNotNull(vm.state.value?.sheet)
-            assertEquals(true, sheet.expanded)
-            assertEquals(true, sheet.editing)
+            assertEquals(
+                true,
+                vm.state.value
+                    ?.sheet
+                    ?.editing,
+            )
         }
 
     @Test
-    fun collapsing_while_editing_leaves_edit_mode_on_the_same_machine() =
+    fun closing_the_sheet_leaves_an_edit() =
         runTest {
             val recorded = set(visit.id, press, 70.0, 10, 0)
             gym.sets.upsert(recorded)
             val vm = viewModel().also { it.refresh() }
             vm.editSet(recorded.id)
 
-            assertTrue(vm.collapseSheet())
+            assertTrue(vm.closeSheet())
+            vm.selectMachine(press.id)
 
             val sheet = assertNotNull(vm.state.value?.sheet)
             assertEquals(false, sheet.editing)
-            assertEquals(false, sheet.expanded)
             assertEquals("подход 2", sheet.setNumberLabel)
+        }
+
+    @Test
+    fun closing_during_a_save_records_the_set_and_keeps_the_sheet_closed() =
+        runTest {
+            val gate = CompletableDeferred<Unit>().also { gym.sets.gate = it }
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            vm.save()
+            vm.closeSheet()
+            gate.complete(Unit)
+
+            assertEquals(1, todaySets().size)
+            assertNull(vm.state.value?.sheet)
         }
 
     @Test
@@ -1101,7 +1095,7 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun order_mode_collapses_the_sheet_and_opens_every_group() =
+    fun order_mode_closes_the_sheet_and_opens_every_group() =
         runTest {
             gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
             gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))
@@ -1111,7 +1105,7 @@ class VisitViewModelTest {
 
             val state = assertNotNull(vm.state.value)
             assertEquals(true, state.ordering)
-            assertEquals(false, state.sheet?.expanded)
+            assertNull(state.sheet)
             assertEquals(listOf(true, true), state.groups.map { it.expanded })
         }
 
@@ -1234,19 +1228,7 @@ class VisitViewModelTest {
 
         val state = assertNotNull(vm.state.value)
         assertEquals(false, state.ordering)
-        assertEquals(true, state.sheet?.expanded)
-    }
-
-    @Test
-    fun expanding_the_sheet_ends_order_mode() {
-        val vm = viewModel().also { it.selectMachine(press.id) }
-        vm.toggleOrdering()
-
-        vm.expandSheet()
-
-        val state = assertNotNull(vm.state.value)
-        assertEquals(false, state.ordering)
-        assertEquals(true, state.sheet?.expanded)
+        assertNotNull(state.sheet)
     }
 
     @Test
