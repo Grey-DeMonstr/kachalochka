@@ -138,6 +138,7 @@ internal data class WorkoutSetRow(
     @SerialName("recorded_at") val recordedAt: String,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
+    val comment: String,
 ) {
     fun toWorkoutSet(): WorkoutSet =
         WorkoutSet(
@@ -151,6 +152,7 @@ internal data class WorkoutSetRow(
             recordedAt = Instant.parse(recordedAt),
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
+            comment = comment,
         )
 
     companion object {
@@ -166,6 +168,7 @@ internal data class WorkoutSetRow(
                 recordedAt = set.recordedAt.toString(),
                 updatedAt = set.updatedAt.toString(),
                 deleted = set.deleted,
+                comment = set.comment,
             )
     }
 }

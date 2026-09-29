@@ -11,8 +11,9 @@ CREATE TABLE workout_set (
     recorded_at INTEGER AS Instant NOT NULL,
     updated_at  INTEGER AS Instant NOT NULL,
     deleted     INTEGER AS Boolean NOT NULL DEFAULT 0,
-    -- Last, where 3.sqm's ALTER TABLE puts it.
-    position    INTEGER NOT NULL DEFAULT 0
+    -- In the order the ALTER TABLEs of 3.sqm and 11.sqm put them.
+    position    INTEGER NOT NULL DEFAULT 0,
+    comment     TEXT    NOT NULL DEFAULT ''
 );
 
 CREATE INDEX workout_set_visit_idx ON workout_set (visit_id);
@@ -21,8 +22,8 @@ CREATE INDEX workout_set_updated_at_idx ON workout_set (updated_at);
 
 upsert:
 INSERT OR REPLACE INTO workout_set(id, user_id, visit_id, machine_id, weight, reps, recorded_at,
-    updated_at, deleted, position)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    updated_at, deleted, position, comment)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 byId:
 SELECT * FROM workout_set WHERE id = ?;

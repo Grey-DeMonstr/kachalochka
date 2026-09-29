@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -109,12 +110,24 @@ private fun FriendSetRow(row: FriendSetRowUi) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            row.title,
-            fontSize = 16.sp,
-            color = colors.onBackground,
-            modifier = Modifier.weight(1f),
-        )
+        val muted = colors.onBackground.copy(alpha = 0.6f)
+        Row(
+            Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(row.title, fontSize = 16.sp, color = colors.onBackground)
+            if (row.comment.isNotEmpty()) {
+                Text(
+                    row.comment,
+                    fontSize = 15.sp,
+                    color = muted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).testTag("friend-set-comment-${row.id.value}"),
+                )
+            }
+        }
         Text(
             row.value,
             fontSize = 15.sp,

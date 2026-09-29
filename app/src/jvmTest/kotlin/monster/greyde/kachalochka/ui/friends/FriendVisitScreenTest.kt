@@ -37,6 +37,18 @@ class FriendVisitScreenTest {
     }
 
     @Test
+    fun a_friend_s_set_shows_its_comment() {
+        val first = gym.friends.sets.first()
+        gym.friends.sets[0] = first.copy(comment = "Тяжело")
+        runScreenTest(gym, screen = {
+            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {})
+        }) {
+            onNodeWithTag("friend-set-comment-${first.id.value}", useUnmergedTree = true)
+                .assertTextEquals("Тяжело")
+        }
+    }
+
+    @Test
     fun offline_it_offers_a_retry() {
         gym.friends.offline = true
         runScreenTest(gym, screen = {

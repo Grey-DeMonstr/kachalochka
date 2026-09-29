@@ -56,6 +56,16 @@ class LocalWorkoutSetRepositoryTest {
         }
 
     @Test
+    fun a_set_keeps_its_comment() =
+        runTest {
+            val set = set(visitA, press, 0).copy(comment = "Тяжело")
+
+            repository.upsert(set)
+
+            assertEquals(listOf(set), repository.forVisit(visitA))
+        }
+
+    @Test
     fun lists_run_in_recording_order_and_leave_out_deleted_sets() =
         runTest {
             val late = set(visitA, press, 5)

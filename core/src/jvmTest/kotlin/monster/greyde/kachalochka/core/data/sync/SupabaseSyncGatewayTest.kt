@@ -330,7 +330,8 @@ class SupabaseSyncGatewayTest {
                     """"machine_id":"33333333-3333-4333-8333-333333333333",""" +
                     """"weight":70.0,"reps":10,"position":3,""" +
                     """"recorded_at":"2024-01-01T00:00:00+00:00",""" +
-                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false}]"""
+                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false,""" +
+                    """"comment":""}]"""
             val engine = MockEngine.Queue()
             engine.enqueue { respond(row, HttpStatusCode.OK, jsonHeaders()) }
             engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }

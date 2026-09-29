@@ -1,16 +1,10 @@
 package monster.greyde.kachalochka.ui.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
@@ -23,13 +17,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.navigation.MAX_TRANSITION_MILLIS
@@ -40,6 +30,7 @@ import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Screen
+import monster.greyde.kachalochka.ui.components.TextInput
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import org.koin.compose.viewmodel.koinViewModel
@@ -126,7 +117,7 @@ private fun TransitionSection(
         text = "Анимация переходов",
         style = MaterialTheme.typography.headlineSmall,
     )
-    SettingsField(
+    TextInput(
         value = text,
         placeholder = "0",
         onValueChange = { typed ->
@@ -158,7 +149,7 @@ private fun ProfileSection(
     )
     profile.nickname?.let {
         FieldLabel("Ник")
-        SettingsField(it, profile.placeholder, viewModel::type, Modifier.testTag("nickname"))
+        TextInput(it, profile.placeholder, viewModel::type, Modifier.testTag("nickname"))
     }
     FieldLabel("Пол")
     val sexes = listOf(Sex.Male, Sex.Female)
@@ -168,7 +159,7 @@ private fun ProfileSection(
         onSelect = { viewModel.chooseSex(sexes[it]) },
     )
     FieldLabel("Дата рождения")
-    SettingsField(
+    TextInput(
         profile.birthDate,
         "ДД.ММ.ГГГГ",
         viewModel::typeBirthDate,
@@ -177,7 +168,7 @@ private fun ProfileSection(
         valid = profile.birthDateValid,
     )
     FieldLabel("Рост, см")
-    SettingsField(
+    TextInput(
         profile.height,
         "",
         viewModel::typeHeight,
@@ -218,44 +209,6 @@ private fun ProfileSection(
 @Composable
 private fun FieldLabel(text: String) {
     Text(text, style = MaterialTheme.typography.labelLarge)
-}
-
-@Composable
-private fun SettingsField(
-    value: String,
-    placeholder: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    valid: Boolean = true,
-) {
-    val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(8.dp)
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 50.dp)
-            .clip(shape)
-            .background(colors.surfaceVariant)
-            .border(
-                1.dp,
-                if (valid) colors.onBackground.copy(alpha = 0.16f) else colors.error,
-                shape,
-            ).padding(horizontal = 12.dp, vertical = 12.dp),
-    ) {
-        if (value.isEmpty()) {
-            Text(placeholder, fontSize = 17.sp, color = colors.onBackground.copy(alpha = 0.48f))
-        }
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = true,
-            textStyle = TextStyle(fontSize = 17.sp, color = colors.onBackground),
-            cursorBrush = SolidColor(colors.secondary),
-            keyboardOptions = keyboardOptions,
-            modifier = modifier.fillMaxWidth(),
-        )
-    }
 }
 
 private fun themeModeLabel(mode: ThemeMode): String =

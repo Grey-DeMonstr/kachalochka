@@ -14,6 +14,7 @@ data class WorkoutSet(
     val recordedAt: Instant,
     val updatedAt: Instant,
     val deleted: Boolean,
+    val comment: String = "",
 )
 
 /** A visit's sets run by position; sets at the same position keep their recording order. */

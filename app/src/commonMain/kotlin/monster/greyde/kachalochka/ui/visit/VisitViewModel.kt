@@ -73,6 +73,8 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
 
+const val COMMENT_LENGTH = 200
+
 data class VisitUiState(
     val title: String,
     val setCountLabel: String,
@@ -98,6 +100,7 @@ data class SetRowUi(
     val title: String,
     val value: String,
     val selected: Boolean,
+    val comment: String = "",
 )
 
 data class SheetUi(
@@ -116,6 +119,8 @@ data class SheetUi(
     val saving: Boolean,
     val friends: List<String>,
     val photo: Photo? = null,
+    /** Null while the comment field is hidden. */
+    val comment: String? = null,
 )
 
 class VisitViewModel(
@@ -151,6 +156,7 @@ class VisitViewModel(
     private var values = SetValues(0.0, DEFAULT_REPS)
     private var ordering = false
     private var saving = false
+    private var commentText: String? = null
     private var friendResults: List<FriendResult> = emptyList()
     private var friendsFor: Pair<UserId, MachineId>? = null
     private var loadingFriends: Job? = null
@@ -240,6 +246,7 @@ class VisitViewModel(
     fun selectMachine(id: MachineId) {
         selected = id
         editing = null
+        commentText = null
         ordering = false
         viewModelScope.launch { reload(reseed = true) }
     }
@@ -262,6 +269,16 @@ class VisitViewModel(
         publish()
     }
 
+    fun toggleComment() {
+        commentText = if (commentText == null) "" else null
+        publish()
+    }
+
+    fun typeComment(text: String) {
+        commentText = text.take(COMMENT_LENGTH)
+        publish()
+    }
+
     fun switchTo(id: UserId) {
         viewModelScope.launch { accounts.switchTo(id) }
     }
@@ -279,6 +296,7 @@ class VisitViewModel(
             publish()
             try {
                 recordSet(machine)
+                commentText = null
                 reload(reseed = true)
             } finally {
                 saving = false
@@ -290,6 +308,7 @@ class VisitViewModel(
     private suspend fun recordSet(machine: Machine) {
         val now = clock.now()
         val edited = editing
+        val comment = commentText.orEmpty().trim()
         if (edited == null) {
             val owner = currentUser.id()
             val offset = utcOffset.at(now)
@@ -310,11 +329,19 @@ class VisitViewModel(
                     recordingInstant(target, targetSets, today, now),
                     now,
                     false,
+                    comment,
                 ),
             )
             if (day == today) restTimer.start() else sync.request()
         } else {
-            sets.upsert(edited.copy(weight = values.weight, reps = values.reps, updatedAt = now))
+            sets.upsert(
+                edited.copy(
+                    weight = values.weight,
+                    reps = values.reps,
+                    comment = comment,
+                    updatedAt = now,
+                ),
+            )
             editing = null
             requestSyncIfPast()
         }
@@ -374,6 +401,7 @@ class VisitViewModel(
         selected = set.machineId
         values = SetValues(set.weight, set.reps)
         weightText = null
+        commentText = set.comment.ifEmpty { null }
         reloadShown()
     }
 
@@ -384,6 +412,7 @@ class VisitViewModel(
         open = null
         editing = null
         weightText = null
+        commentText = null
         publish()
         return true
     }
@@ -591,6 +620,7 @@ class VisitViewModel(
                         machine?.let { setValue(set.weight, set.reps, it, preferred) }
                             ?: setValue(set.weight, set.reps, "кг"),
                         set.id == editing?.id,
+                        set.comment,
                     )
                 },
             photo = coverOf(machineId),
@@ -642,6 +672,7 @@ class VisitViewModel(
             saving = saving,
             friends = if (edited == null) friendResults.map(::friendLine) else emptyList(),
             photo = coverOf(machine.id),
+            comment = commentText,
         )
     }
 }

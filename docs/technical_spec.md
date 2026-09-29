@@ -430,16 +430,17 @@ one owner — at start, on a switch or in the worker — is logged (Android) or 
 pass normalizes again; the worker logs a failed pass as well.
 
 Moving a visit to another day moves its sets, and removing a visit soft-deletes its sets: every
-reader of sets filters on the set's own `deleted` and `recorded_at` and never joins `visit`. Such
-a rewrite writes the sets first and the visit last, and places each set by its clock time after
-the visit's, so a retry after a half-finished write on the web writes the same rows. Replacing a
-day's visit on the calendar removes every live visit on that day (`allOn`), so normalization
-never weighs another against the moved one. A set added to a visit of another day is stamped one
-second after the visit's last set, which keeps a late correction on the visit's day and in order.
-Within a visit, sets sort by `(position, recorded_at, id)`; `position` defaults to 0, so rows
-written before it keep their recording order. A reorder (`machineMovedTo`, `setMovedTo`)
-renumbers the visit's sets 1..n in the new order and writes only those whose position changed, so
-sets sharing a position still land in the dropped order.
+reader of sets filters on the set's own `deleted` and `recorded_at` and never joins `visit`. Such a
+rewrite writes the sets first and the visit last, and places each set by its clock time after the
+visit's, so a retry after a half-finished write on the web writes the same rows. Replacing a day's
+visit on the calendar removes every live visit on that day (`allOn`), so normalization never weighs
+another against the moved one. A set added to a visit of another day is stamped one second after
+the visit's last set, which keeps a late correction on the visit's day and in order. A set's
+`comment` is free text, empty by default, trimmed and cut to 200 characters on save; the shared
+text leaves it out. Within a visit, sets sort by `(position, recorded_at, id)`; `position` defaults
+to 0, so rows written before it keep their recording order. A reorder (`machineMovedTo`,
+`setMovedTo`) renumbers the visit's sets 1..n in the new order and writes only those whose position
+changed, so sets sharing a position still land in the dropped order.
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

@@ -474,6 +474,41 @@ class SchemaMigrationTest {
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
+    @Test
+    fun version_11_sets_gain_an_empty_comment() {
+        KachalochkaDatabase.Schema.create(driver)
+        version11SetTable()
+        exec(
+            "INSERT INTO workout_set VALUES ('${SET.value}', NULL, '${VISIT.value}', " +
+                "'${PRESS.value}', 80.0, 8, 1, 1, 0, 0)",
+        )
+
+        KachalochkaDatabase.Schema.migrate(driver, 11, 12)
+
+        assertEquals("", text("SELECT comment FROM workout_set WHERE id = '${SET.value}'"))
+    }
+
+    /** Versions 4 to 11 declare the set table this way. */
+    private fun version11SetTable() {
+        exec("DROP TABLE workout_set")
+        exec(
+            """
+            CREATE TABLE workout_set (
+                id TEXT NOT NULL PRIMARY KEY,
+                user_id TEXT,
+                visit_id TEXT NOT NULL,
+                machine_id TEXT NOT NULL,
+                weight REAL NOT NULL,
+                reps INTEGER NOT NULL,
+                recorded_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0,
+                position INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+        )
+    }
+
     /** Version 9 declares the profile table as 8.sqm rebuilds it. */
     private fun version9ProfileTable() {
         KachalochkaDatabase.Schema.create(driver)
@@ -495,6 +530,7 @@ class SchemaMigrationTest {
         )
         exec("CREATE INDEX profile_updated_at_idx ON profile (updated_at)")
         exec("DROP TABLE photo")
+        version11SetTable()
     }
 
     /** Versions 6 to 8 declare the profile table this way. */
@@ -518,6 +554,7 @@ class SchemaMigrationTest {
         )
         exec("CREATE INDEX profile_updated_at_idx ON profile (updated_at)")
         exec("DROP TABLE photo")
+        version11SetTable()
     }
 
     private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)

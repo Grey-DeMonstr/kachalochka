@@ -50,6 +50,7 @@ data class FriendSetRowUi(
     val id: WorkoutSetId,
     val title: String,
     val value: String,
+    val comment: String = "",
 )
 
 class FriendVisitViewModel(
@@ -148,6 +149,7 @@ class FriendVisitViewModel(
                         "#${index + 1}",
                         machine?.let { setValue(set.weight, set.reps, it, preferred) }
                             ?: setValue(set.weight, set.reps, "кг"),
+                        set.comment,
                     )
                 },
         )

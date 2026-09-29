@@ -70,6 +70,7 @@ import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.Stepper
+import monster.greyde.kachalochka.ui.components.TextInput
 import monster.greyde.kachalochka.ui.components.dragOutline
 import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
@@ -140,6 +141,8 @@ fun VisitScreen(
                 onWeight = viewModel::changeWeight,
                 onTypeWeight = viewModel::typeWeight,
                 onReps = viewModel::changeReps,
+                onToggleComment = viewModel::toggleComment,
+                onTypeComment = viewModel::typeComment,
                 onSave = viewModel::save,
                 onOpenMachineSettings = {
                     viewModel.selectedMachineId?.let {
@@ -391,12 +394,28 @@ private fun SetRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (ordering) handle()
-        Text(
-            row.title,
-            fontSize = 16.sp,
-            color = if (row.selected) colors.onPrimaryContainer else colors.onBackground,
-            modifier = Modifier.weight(1f),
-        )
+        val muted = if (row.selected) colors.tertiary else colors.onBackground.copy(alpha = 0.6f)
+        Row(
+            Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                row.title,
+                fontSize = 16.sp,
+                color = if (row.selected) colors.onPrimaryContainer else colors.onBackground,
+            )
+            if (row.comment.isNotEmpty()) {
+                Text(
+                    row.comment,
+                    fontSize = 15.sp,
+                    color = muted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).testTag("set-comment-${row.id.value}"),
+                )
+            }
+        }
         Text(
             row.value,
             fontSize = 15.sp,
@@ -526,6 +545,8 @@ private fun SetSheet(
     onWeight: (Int) -> Unit,
     onTypeWeight: (String) -> Unit,
     onReps: (Int) -> Unit,
+    onToggleComment: () -> Unit,
+    onTypeComment: (String) -> Unit,
     onSave: () -> Unit,
     onOpenMachineSettings: () -> Unit,
     onDelete: () -> Unit,
@@ -637,6 +658,9 @@ private fun SetSheet(
             onValueChange = onTypeWeight,
         )
         Stepper(sheet.reps, "повторы", { onReps(-1) }, { onReps(+1) }, "reps")
+        sheet.comment?.let {
+            TextInput(it, "Комментарий", onTypeComment, Modifier.testTag("set-comment-field"))
+        }
         AccentButton(
             sheet.saveLabel,
             PhosphorIcons.Check,
@@ -650,9 +674,8 @@ private fun SetSheet(
             OutlineButton(
                 "Комментарий",
                 PhosphorIcons.ChatTeardropText,
-                {},
+                onToggleComment,
                 Modifier.weight(1f).testTag("set-comment"),
-                enabled = false,
             )
             if (sheet.editing) {
                 OutlineButton(

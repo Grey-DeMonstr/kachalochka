@@ -441,6 +441,87 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun a_comment_is_saved_with_the_set_and_the_next_set_starts_without_one() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            assertNull(
+                vm.state.value
+                    ?.sheet
+                    ?.comment,
+            )
+
+            vm.toggleComment()
+            assertEquals(
+                "",
+                vm.state.value
+                    ?.sheet
+                    ?.comment,
+            )
+            vm.typeComment("  Тяжело ")
+            vm.save()
+
+            assertEquals("Тяжело", todaySets().single().comment)
+            assertNull(
+                vm.state.value
+                    ?.sheet
+                    ?.comment,
+            )
+        }
+
+    @Test
+    fun a_long_comment_is_cut_and_a_blank_one_stays_empty() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            vm.toggleComment()
+            vm.typeComment("а".repeat(250))
+            vm.save()
+            vm.toggleComment()
+            vm.typeComment("   ")
+            vm.save()
+
+            assertEquals(
+                listOf(COMMENT_LENGTH, 0),
+                todaySets().sortedBy { it.recordedAt }.map { it.comment.length },
+            )
+        }
+
+    @Test
+    fun an_edited_set_shows_its_comment_and_keeps_a_changed_one() =
+        runTest {
+            val recorded = set(visit.id, press, 80.0, 8, 0).copy(comment = "Тяжело")
+            gym.sets.upsert(recorded)
+            val vm = viewModel().also { it.editSet(recorded.id) }
+
+            assertEquals(
+                "Тяжело",
+                vm.state.value
+                    ?.sheet
+                    ?.comment,
+            )
+            vm.typeComment("Легко")
+            vm.save()
+
+            assertEquals("Легко", gym.sets.rows[recorded.id]?.comment)
+        }
+
+    @Test
+    fun a_set_row_shows_its_comment() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 80.0, 8, 0).copy(comment = "Тяжело"))
+            val vm = viewModel().also { it.refresh() }
+
+            assertEquals(
+                "Тяжело",
+                assertNotNull(vm.state.value)
+                    .groups
+                    .single()
+                    .sets
+                    .single()
+                    .comment,
+            )
+        }
+
+    @Test
     fun a_machine_row_carries_the_machine_s_setup_note() =
         runTest {
             gym.sets.upsert(set(visit.id, press, 80.0, 8, 0))

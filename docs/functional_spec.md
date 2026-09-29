@@ -60,16 +60,16 @@ visits, machines, plans, statistics, friends and body measures; plans and statis
 but not yet available. On Android with nobody signed in, "Войти через Google" sits at the bottom
 of the screen. The very bottom names the app's version, "Версия 1.1.0".
 
-The visit screen lists the day's sets grouped by machine, machines in the order of their first
-set, and ends with "Новый тренажёр", which opens the machine picker. A machine's row shows its photo,
-as the machine list does, or a barbell without one, names the machine with its setup note at the
-right, and writes its results on the line below. Tapping the photo opens the machine form; the
-set sheet shows the same photo, which opens the form too. Tapping a machine's row
-expands it to show its sets, numbered "#1", "#2" and so on; tapping a set opens it for editing or
-deletion. A friend's visit numbers its sets the same way. «Порядок» shows a
-handle at the left of every machine and set; dragging a machine's handle moves the machine with
-its sets, dragging a set's handle moves it among its machine's sets. «Готово» hides the handles.
-Today's visit is titled "Сегодня", any other day's with its date.
+The visit screen lists the day's sets grouped by machine, machines in the order of their first set,
+and ends with "Новый тренажёр", which opens the machine picker. A machine's row shows its photo, as
+the machine list does, or a barbell without one, names the machine with its setup note at the
+right, and writes its results on the line below. Tapping the photo opens the machine form; the set
+sheet shows the same photo, which opens the form too. Tapping a machine's row expands it to show
+its sets, numbered "#1", "#2" and so on; tapping a set opens it for editing or deletion. A friend's
+visit numbers its sets the same way. «Порядок» shows a handle at the left of every machine and set;
+dragging a machine's handle moves the machine with its sets, dragging a set's handle moves it among
+its machine's sets. «Готово» hides the handles. Today's visit is titled "Сегодня", any other day's
+with its date.
 
 A visit with sets has a "Поделиться" button in the top bar that hands the visit over as text:
 Android opens its share sheet, the web copies the text and says "Скопировано" (or "Не удалось
@@ -90,23 +90,25 @@ weights ("Гребная тяга (+11.3кг) 15кг на каждую, 3x12"). 
 of a friend's visit, and the previous visit's and friends' results in the set sheet, write a
 machine's weights and reps exactly the same way.
 
-Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
-the machine, the set number, the machine's setup note, the previous visit's sets on that machine,
-and weight and reps steppers. The first set on a machine starts from the previous visit's first
-set; each later one repeats the weight and the reps of the set just recorded. Saving records the set; until it
-is written, the save button shows progress and takes no taps. The weight can also be typed,
-with a comma or a point; − and + step it by the machine's weight step.
-The weight stepper is the one place where the machine's own unit comes first: its value and step
-are in that unit, and when the profile's unit is "кг" or "lb" and differs from it, the converted
-value follows in brackets — under 90 on a pound machine, "lb (41кг) всего · ±5lb (2.3кг)", the
-weight to the nearest half unit and the step to one decimal. The sheet's other weights, the
-previous visit's sets included, follow the profile's unit. Tapping another account's chip
-switches to it: the shown history and the save button follow that person, and the set is
-recorded into their own visit. Swiping the sheet down, or pressing back on the phone or in the
-top bar, closes it, leaving any edit; «Порядок» closes it too. An expanded machine in the list
-ends with "Добавить подход", which opens the sheet for that machine's next set, so any machine of
-the visit takes another set at any time. The machine's name is not a button: another machine is
-chosen with "Новый тренажёр".
+Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips, the
+machine, the set number, the machine's setup note, the previous visit's sets on that machine, and
+weight and reps steppers. The first set on a machine starts from the previous visit's first set;
+each later one repeats the weight and the reps of the set just recorded. Saving records the set;
+until it is written, the save button shows progress and takes no taps. "Комментарий" opens a field
+for a comment of up to 200 characters, saved with the set and shown after its number in the list,
+in a friend's visit too; the next set starts without one, and a shared visit never includes them.
+The weight can also be typed, with a comma or a point; − and + step it by the machine's weight
+step. The weight stepper is the one place where the machine's own unit comes first: its value and
+step are in that unit, and when the profile's unit is "кг" or "lb" and differs from it, the
+converted value follows in brackets — under 90 on a pound machine, "lb (41кг) всего · ±5lb
+(2.3кг)", the weight to the nearest half unit and the step to one decimal. The sheet's other
+weights, the previous visit's sets included, follow the profile's unit. Tapping another account's
+chip switches to it: the shown history and the save button follow that person, and the set is
+recorded into their own visit. Swiping the sheet down, or pressing back on the phone or in the top
+bar, closes it, leaving any edit; «Порядок» closes it too. An expanded machine in the list ends
+with "Добавить подход", which opens the sheet for that machine's next set, so any machine of the
+visit takes another set at any time. The machine's name is not a button: another machine is chosen
+with "Новый тренажёр".
 
 The machine picker lets the user search machines by name; "Создать «…»" opens the machine form
 pre-filled with the typed name. When a machine is already chosen for the visit, "Скопировать
@@ -168,8 +170,6 @@ entering the calendar, on changing the month and after switching accounts; witho
 calendar shows only the account's own visits. Each friend gets a colour at random at first, and
 the account can change it on the group screen. The colours are personal to the account: friends
 never see them, and they follow the account to its other devices.
-
-Comments on a set are shown on these screens but not yet available.
 
 ## Sign-in and accounts
 

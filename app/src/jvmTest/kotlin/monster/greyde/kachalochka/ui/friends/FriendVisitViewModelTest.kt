@@ -76,6 +76,22 @@ class FriendVisitViewModelTest {
     }
 
     @Test
+    fun a_friend_s_set_shows_its_comment() {
+        gym.friends.sets[0] = gym.friends.sets[0].copy(comment = "Тяжело")
+
+        val state = assertNotNull(viewModel().state.value)
+
+        assertEquals(
+            listOf("Тяжело"),
+            state.groups
+                .flatMap {
+                    it.sets
+                }.map { it.comment }
+                .filter { it.isNotEmpty() },
+        )
+    }
+
+    @Test
     fun a_friend_s_sets_read_in_the_viewer_s_unit() =
         runTest {
             gym.profiles.upsert(

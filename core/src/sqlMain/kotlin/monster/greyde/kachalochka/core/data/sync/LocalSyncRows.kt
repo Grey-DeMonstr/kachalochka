@@ -86,6 +86,7 @@ class LocalSyncRows(
             set.updatedAt,
             set.deleted,
             set.position.toLong(),
+            set.comment,
         )
 
     fun writeProfile(profile: Profile) = database.profileQueries.write(profile)

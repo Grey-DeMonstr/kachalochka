@@ -201,7 +201,6 @@ class VisitScreenTest {
                 useUnmergedTree = true,
             ).assertTextEquals("Жим ногами")
             onNodeWithTag("weight-value").assertTextEquals("70")
-            onNodeWithTag("set-comment").assertIsNotEnabled()
             onNodeWithTag("weight-plus").performClick()
             onNodeWithTag("save-set").performClick()
             waitForIdle()
@@ -210,6 +209,27 @@ class VisitScreenTest {
             onNodeWithTag("sheet-set-number", useUnmergedTree = true).assertTextEquals("подход 3")
             onNodeWithTag("rest-timer").assertTextEquals("1:30")
             assertEquals(1, consumed)
+        }
+    }
+
+    @Test
+    fun a_comment_typed_in_the_sheet_shows_in_the_set_s_row() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("set-comment-field").assertDoesNotExist()
+            onNodeWithTag("set-comment").performClick()
+            waitForIdle()
+            onNodeWithTag("set-comment-field").performTextReplacement("Тяжело")
+            onNodeWithTag("save-set").performClick()
+            waitForIdle()
+
+            val saved =
+                gym.sets.rows.values
+                    .single { it.id != recorded.id }
+            onNodeWithTag("group-${press.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("set-comment-${saved.id.value}", useUnmergedTree = true)
+                .assertTextEquals("Тяжело")
         }
     }
 
