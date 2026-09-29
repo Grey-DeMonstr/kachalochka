@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -61,6 +63,38 @@ fun SquareIconButton(
             icon,
             contentDescription,
             tint = colors.onBackground.copy(alpha = 0.65f),
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+/** [SquareIconButton] that stays lit while [checked]. */
+@Composable
+fun SquareToggleButton(
+    icon: ImageVector,
+    contentDescription: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier =
+            modifier
+                .size(50.dp)
+                .clip(ControlShape)
+                .background(if (checked) colors.primary.copy(alpha = 0.14f) else Color.Transparent)
+                .border(
+                    1.dp,
+                    if (checked) colors.primary else colors.onBackground.copy(alpha = 0.18f),
+                    ControlShape,
+                ).toggleable(value = checked, onValueChange = onCheckedChange),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            icon,
+            contentDescription,
+            tint = if (checked) colors.tertiary else colors.onBackground.copy(alpha = 0.65f),
             modifier = Modifier.size(22.dp),
         )
     }

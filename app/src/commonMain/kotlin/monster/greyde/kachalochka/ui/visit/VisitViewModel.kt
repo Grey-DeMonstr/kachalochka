@@ -63,7 +63,6 @@ import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.platformSuffix
 import monster.greyde.kachalochka.ui.format.recordingCaption
 import monster.greyde.kachalochka.ui.format.saveLabel
-import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.tagTitle
@@ -81,7 +80,6 @@ const val COMMENT_LENGTH = 200
 
 data class VisitUiState(
     val title: String,
-    val setCountLabel: String,
     val groups: List<SetGroupUi>,
     val sheet: SheetUi?,
     val ordering: Boolean,
@@ -637,7 +635,6 @@ class VisitViewModel(
                             dayMonthLabel(day, CalendarDay.of(now, offset).year),
                         )
                     },
-                setCountLabel = setCount(visitSets.size),
                 groups = groups,
                 sections = sections(groups),
                 groupByTag = groupByTag,

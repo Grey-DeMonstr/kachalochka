@@ -72,14 +72,16 @@ as the machine list does, or a barbell without one, names the machine with its s
 right, and writes its results on the line below. Tapping the photo opens the machine form; the set
 sheet shows the same photo, which opens the form too. Tapping a machine's row expands it to show
 its sets, numbered "#1", "#2" and so on; tapping a set opens it for editing or deletion. A friend's
-visit numbers its sets the same way. «Порядок» shows a handle at the left of every machine and set;
-dragging a machine's handle moves the machine with its sets, dragging a set's handle moves it among
-its machine's sets. «Готово» hides the handles. A machine's tags follow its name, each in a small
-frame. When a machine of the visit has tags, "Группировать по тегам" splits the list into sections,
-one per distinct set of tags, headed by the tags and in the order of their first machine; untagged
-machines come last without a heading. The choice is the account's, saved in its profile and synced,
-and «Порядок» shows the plain list while it is on. Today's visit is titled "Сегодня", any other
-day's with its date.
+visit numbers its sets the same way. The list has no count row. A visit with sets has an order
+button in the top bar, left of "Поделиться", drawn like the drag handle and lit while on: it shows
+a handle at the left of every machine and set; dragging a machine's handle moves the machine with
+its sets, dragging a set's handle moves it among its machine's sets. While it is on, "Готово"
+replaces "Новое упражнение" at the end of the list, and it or the button again hides the handles. A
+machine's tags follow its name, each in a small frame. When a machine of the visit has tags,
+"Группировать по тегам" splits the list into sections, one per distinct set of tags, headed by the
+tags and in the order of their first machine; untagged machines come last without a heading. The
+choice is the account's, saved in its profile and synced, and ordering shows the plain list.
+Today's visit is titled "Сегодня", any other day's with its date.
 
 A visit with sets has a "Поделиться" button in the top bar that hands the visit over as text:
 Android opens its share sheet, the web copies the text and says "Скопировано" (or "Не удалось
@@ -118,7 +120,7 @@ converted value follows in brackets — under 90 on a pound machine, "lb (41кг
 weights, the previous visit's sets included, follow the profile's unit. Tapping another account's
 chip switches to it: the shown history and the save button follow that person, and the set is
 recorded into their own visit. Swiping the sheet down, or pressing back on the phone or in the top
-bar, closes it, leaving any edit; «Порядок» closes it too. An expanded machine in the list ends
+bar, closes it, leaving any edit; starting to order closes it too. An expanded machine in the list ends
 with "Добавить подход", which opens the sheet for that machine's next set, so any machine of the
 visit takes another set at any time. The machine's name is not a button: another machine is chosen
 with "Новое упражнение".

@@ -1,9 +1,13 @@
 package monster.greyde.kachalochka
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.resetMain
@@ -17,12 +21,20 @@ fun runNavigationUiTest(
     assertions: ComposeUiTest.() -> Unit,
 ) {
     Dispatchers.setMain(Dispatchers.Unconfined)
+    // Cleared at the end, so no view model outlives its test and reacts to the next one.
+    val owner =
+        object : ViewModelStoreOwner {
+            override val viewModelStore = ViewModelStore()
+        }
     try {
         runComposeUiTest {
-            setContent(content)
+            setContent {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { content() }
+            }
             assertions()
         }
     } finally {
+        owner.viewModelStore.clear()
         Dispatchers.resetMain()
         // Koin's compose loader never stops the global context it starts.
         stopKoin()

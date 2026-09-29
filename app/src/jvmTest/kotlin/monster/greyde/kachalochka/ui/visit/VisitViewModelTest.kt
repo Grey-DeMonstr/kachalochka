@@ -156,7 +156,6 @@ class VisitViewModelTest {
         inEnglish {
             val state = assertNotNull(vm.state.value)
             assertEquals("Today", state.title)
-            assertEquals("0 sets", state.setCountLabel)
             val sheet = assertNotNull(state.sheet)
             assertEquals("set 1", sheet.setNumberLabel)
             assertEquals("Save set", sheet.saveLabel)
@@ -256,7 +255,7 @@ class VisitViewModelTest {
 
         val state = assertNotNull(vm.state.value)
         assertNull(state.sheet)
-        assertEquals("0 подходов", state.setCountLabel)
+        assertEquals(0, state.groups.sumOf { it.sets.size })
     }
 
     @Test
@@ -395,7 +394,7 @@ class VisitViewModelTest {
             assertEquals(67.5 to 10, saved.weight to saved.reps)
             assertEquals(t0, timer.startedAt.value)
             val state = assertNotNull(vm.state.value)
-            assertEquals("1 подход", state.setCountLabel)
+            assertEquals(1, state.groups.sumOf { it.sets.size })
             assertEquals("подход 2", state.sheet?.setNumberLabel)
             assertEquals("67.5", state.sheet?.weight)
             assertEquals(
@@ -933,7 +932,12 @@ class VisitViewModelTest {
 
             assertEquals(emptyList(), gym.sets.forVisit(visit.id))
             assertEquals(true, gym.sets.rows[recorded.id]?.deleted)
-            assertEquals("0 подходов", vm.state.value?.setCountLabel)
+            assertEquals(
+                0,
+                vm.state.value
+                    ?.groups
+                    ?.sumOf { it.sets.size },
+            )
         }
 
     @Test
@@ -1025,11 +1029,21 @@ class VisitViewModelTest {
             val two = twoAccountGym()
             two.sets.upsert(set(ivanVisit.id, ivanPress, 70.0, 10, 0, ivan.account.userId))
             val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
-            assertEquals("1 подход", vm.state.value?.setCountLabel)
+            assertEquals(
+                1,
+                vm.state.value
+                    ?.groups
+                    ?.sumOf { it.sets.size },
+            )
 
             vm.switchTo(misha.account.userId)
 
-            assertEquals("0 подходов", vm.state.value?.setCountLabel)
+            assertEquals(
+                0,
+                vm.state.value
+                    ?.groups
+                    ?.sumOf { it.sets.size },
+            )
             assertEquals(
                 listOf(ivanVisit.id),
                 two.visits.rows.keys
@@ -1046,7 +1060,12 @@ class VisitViewModelTest {
             gym.visits.upsert(laterEmpty)
             val vm = viewModel().also { it.refresh() }
 
-            assertEquals("1 подход", vm.state.value?.setCountLabel)
+            assertEquals(
+                1,
+                vm.state.value
+                    ?.groups
+                    ?.sumOf { it.sets.size },
+            )
 
             vm.selectMachine(press.id)
             vm.save()
@@ -1068,7 +1087,7 @@ class VisitViewModelTest {
                 two.sets.rows.values
                     .single()
             val state = assertNotNull(vm.state.value)
-            assertEquals("1 подход", state.setCountLabel)
+            assertEquals(1, state.groups.sumOf { it.sets.size })
             assertEquals(
                 listOf(saved.id),
                 state.groups

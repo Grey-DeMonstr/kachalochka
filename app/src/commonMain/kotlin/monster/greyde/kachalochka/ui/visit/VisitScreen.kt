@@ -71,6 +71,7 @@ import monster.greyde.kachalochka.ui.components.RestTimerChip
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
+import monster.greyde.kachalochka.ui.components.SquareToggleButton
 import monster.greyde.kachalochka.ui.components.Stepper
 import monster.greyde.kachalochka.ui.components.TextInput
 import monster.greyde.kachalochka.ui.components.dragOutline
@@ -114,6 +115,15 @@ fun VisitScreen(
         onBack = { if (!viewModel.closeSheet()) onBack() },
         onOpenSettings = onOpenSettings,
         actions = {
+            if (current?.groups?.isNotEmpty() == true) {
+                SquareToggleButton(
+                    PhosphorIcons.Equals,
+                    strings().reorder,
+                    current.ordering,
+                    { viewModel.toggleOrdering() },
+                    Modifier.testTag("reorder-toggle"),
+                )
+            }
             if (current?.canShare == true) {
                 SquareIconButton(
                     PhosphorIcons.ShareNetwork,
@@ -185,28 +195,6 @@ private fun VisitList(
             .alpha(if (state.sheet != null) 0.55f else 1f)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                state.setCountLabel.uppercase(),
-                modifier = Modifier.testTag("visit-set-count"),
-                fontSize = 13.sp,
-                letterSpacing = 0.09.em,
-                color = colors.onBackground.copy(alpha = 0.5f),
-            )
-            Text(
-                if (state.ordering) strings().done else strings().reorder,
-                Modifier
-                    .clickable(onClick = onToggleOrdering)
-                    .padding(8.dp)
-                    .testTag("reorder-toggle"),
-                fontSize = 14.sp,
-                color = colors.tertiary,
-            )
-        }
         if (state.canGroupByTag) {
             Row(
                 Modifier
@@ -269,12 +257,21 @@ private fun VisitList(
                 )
             }
         }
-        OutlineButton(
-            strings().newMachine,
-            PhosphorIcons.Plus,
-            onNewMachine,
-            Modifier.fillMaxWidth().padding(top = 14.dp).testTag("pick-machine"),
-        )
+        if (state.ordering) {
+            OutlineButton(
+                strings().done,
+                PhosphorIcons.Check,
+                onToggleOrdering,
+                Modifier.fillMaxWidth().padding(top = 14.dp).testTag("finish-ordering"),
+            )
+        } else {
+            OutlineButton(
+                strings().newMachine,
+                PhosphorIcons.Plus,
+                onNewMachine,
+                Modifier.fillMaxWidth().padding(top = 14.dp).testTag("pick-machine"),
+            )
+        }
     }
 }
 

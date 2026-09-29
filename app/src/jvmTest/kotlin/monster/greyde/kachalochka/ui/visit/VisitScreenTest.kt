@@ -12,6 +12,8 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
@@ -103,7 +105,7 @@ class VisitScreenTest {
         runScreenTest(gym, screen = { visitScreen(onPickMachine = { picks++ }) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Сегодня")
             onNodeWithTag("end-visit").assertDoesNotExist()
-            onNodeWithTag("visit-set-count").assertTextEquals("1 ПОДХОД")
+            onNodeWithTag("visit-set-count").assertDoesNotExist()
             onNodeWithTag("set-sheet").assertDoesNotExist()
             onNodeWithTag("pick-machine").performScrollTo().performClick()
             waitForIdle()
@@ -115,7 +117,6 @@ class VisitScreenTest {
     fun the_visit_screen_speaks_english() =
         runScreenTestInEnglish(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
-            onNodeWithTag("reorder-toggle").assertTextEquals("Reorder")
             onNodeWithTag("pick-machine").assertTextEquals("New machine")
             onNodeWithTag("set-comment").assertTextEquals("Comment")
             onNodeWithTag("save-set").assertTextEquals("Save set")
@@ -255,7 +256,7 @@ class VisitScreenTest {
             onNodeWithTag("save-set").performClick()
             waitForIdle()
 
-            onNodeWithTag("visit-set-count").assertTextEquals("2 ПОДХОДА")
+            assertEquals(2, gym.sets.rows.size)
             onNodeWithTag("sheet-set-number", useUnmergedTree = true).assertTextEquals("подход 3")
             onNodeWithTag("rest-timer").assertTextEquals("1:30")
             assertEquals(1, consumed)
@@ -320,7 +321,7 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("save-set").assertIsEnabled()
             onNode(saveProgress, useUnmergedTree = true).assertDoesNotExist()
-            onNodeWithTag("visit-set-count").assertTextEquals("2 ПОДХОДА")
+            assertEquals(2, gym.sets.rows.size)
         }
     }
 
@@ -422,6 +423,14 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("set-sheet").assertIsDisplayed()
             onNodeWithTag("sheet-set-number", useUnmergedTree = true).assertTextEquals("подход 2")
+        }
+    }
+
+    @Test
+    fun the_reorder_toggle_sits_in_the_top_bar_only_while_there_are_sets() {
+        runScreenTest(gym, screen = { visitScreen(day = CalendarDay(2023, 11, 12)) }) {
+            waitForIdle()
+            onNodeWithTag("reorder-toggle").assertDoesNotExist()
         }
     }
 
@@ -545,9 +554,11 @@ class VisitScreenTest {
             gym.sets.upsert(curled.copy(recordedAt = gym.clock.current + 2.minutes))
         }
         runScreenTest(gym, screen = { visitScreen() }) {
-            onNodeWithTag("reorder-toggle").assertTextEquals("Порядок").performClick()
+            onNodeWithTag("reorder-toggle").assertIsOff().performClick()
             waitForIdle()
-            onNodeWithText("Готово").assertExists()
+            onNodeWithTag("reorder-toggle").assertIsOn()
+            onNodeWithTag("pick-machine").assertDoesNotExist()
+            onNodeWithTag("finish-ordering").assertTextEquals("Готово")
             listOf(press, row, curl).forEach {
                 onNodeWithTag("drag-machine-${it.id.value}").assertExists()
             }
@@ -569,9 +580,10 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("delete-set").assertDoesNotExist()
 
-            onNodeWithTag("reorder-toggle").performClick()
+            onNodeWithTag("finish-ordering").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("reorder-toggle").assertTextEquals("Порядок")
+            onNodeWithTag("reorder-toggle").assertIsOff()
+            onNodeWithTag("pick-machine").assertExists()
             onNodeWithTag("drag-machine-${curl.id.value}").assertDoesNotExist()
         }
         assertEquals(
