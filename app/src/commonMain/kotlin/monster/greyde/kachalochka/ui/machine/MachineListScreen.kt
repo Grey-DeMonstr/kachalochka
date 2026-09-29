@@ -34,7 +34,7 @@ fun MachineListScreen(
     val viewModel: MachineListViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
-    Screen("Тренажёры", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen("Упражнения", onBack = onBack, onOpenSettings = onOpenSettings) {
         Column(
             Modifier
                 .weight(1f)
@@ -45,7 +45,7 @@ fun MachineListScreen(
                 rows == null -> Unit
                 rows.isEmpty() ->
                     Text(
-                        "Тренажёров пока нет",
+                        "Упражнений пока нет",
                         modifier = Modifier.padding(16.dp).testTag("machine-list-empty"),
                         fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
@@ -64,7 +64,7 @@ fun MachineListScreen(
             }
             if (state.friends.isNotEmpty()) {
                 SectionLabel(
-                    "Тренажёры друзей",
+                    "Упражнения друзей",
                     modifier =
                         Modifier
                             .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
@@ -84,7 +84,7 @@ fun MachineListScreen(
         }
         Box(Modifier.padding(16.dp)) {
             AccentButton(
-                "Новый тренажёр",
+                "Новое упражнение",
                 PhosphorIcons.Plus,
                 onNewMachine,
                 Modifier.testTag("new-machine"),

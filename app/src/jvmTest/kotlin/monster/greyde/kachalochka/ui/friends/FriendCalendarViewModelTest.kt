@@ -84,7 +84,7 @@ class FriendCalendarViewModelTest {
         vm.selectDay(CalendarDay(2023, 11, 13))
 
         assertEquals(
-            FriendDayUi("2 тренажёра · 3 подхода", "Жим ногами, Тяга"),
+            FriendDayUi("2 упражнения · 3 подхода", "Жим ногами, Тяга"),
             vm.state.value?.visit,
         )
     }

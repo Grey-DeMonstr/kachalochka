@@ -163,7 +163,7 @@ class VisitScreenTest {
             screen = { visitScreen(picked = press.id, onPickMachine = { picks += it }) },
         ) {
             waitForIdle()
-            onNodeWithTag("pick-machine").assertTextEquals("Новый тренажёр")
+            onNodeWithTag("pick-machine").assertTextEquals("Новое упражнение")
 
             onNodeWithTag("pick-machine").performScrollTo().performClick()
             waitForIdle()

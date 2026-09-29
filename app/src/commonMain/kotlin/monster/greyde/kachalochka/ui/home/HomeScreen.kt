@@ -71,7 +71,7 @@ fun HomeScreen(
         )
         SectionRow(
             PhosphorIcons.Barbell,
-            "Тренажёры",
+            "Упражнения",
             "section-machines",
             onClick = onOpenMachines,
         )

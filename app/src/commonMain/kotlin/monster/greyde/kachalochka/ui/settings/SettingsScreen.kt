@@ -73,7 +73,7 @@ fun SettingsScreen(
         ConfirmDialog(
             title = "Удалить аккаунт?",
             text =
-                "Ваши визиты, тренажёры с фото, замеры, профиль и группы будут удалены " +
+                "Ваши визиты, упражнения с фото, замеры, профиль и группы будут удалены " +
                     "с сервера и с этого устройства. Это нельзя отменить.",
             confirmLabel = "Удалить",
             confirmTag = "confirm-delete-account",
@@ -193,7 +193,7 @@ private fun ProfileSection(
         onSelect = { viewModel.chooseWeightUnit(units[it]) },
     )
     Text(
-        text = "Смешанные — у каждого тренажёра свои единицы.",
+        text = "Смешанные — у каждого упражнения свои единицы.",
         style = MaterialTheme.typography.bodyMedium,
         color = muted,
     )

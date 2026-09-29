@@ -78,7 +78,7 @@ class HomeViewModelTest {
             val vm = viewModel().also { it.refresh() }
 
             assertEquals(
-                TodayUi(gym.today, "2 тренажёра · 3 подхода", "Жим ногами 70 кг × 10"),
+                TodayUi(gym.today, "2 упражнения · 3 подхода", "Жим ногами 70 кг × 10"),
                 vm.state.value?.today,
             )
         }
@@ -212,7 +212,7 @@ class HomeViewModelTest {
             val vm = viewModel().also { it.refresh() }
 
             assertEquals(
-                "1 тренажёр · 1 подход",
+                "1 упражнение · 1 подход",
                 vm.state.value
                     ?.today
                     ?.counts,
@@ -233,7 +233,7 @@ class HomeViewModelTest {
             gym.sync.completePass()
 
             assertEquals(
-                "1 тренажёр · 1 подход",
+                "1 упражнение · 1 подход",
                 vm.state.value
                     ?.today
                     ?.counts,

@@ -345,7 +345,7 @@ gallery come from `PhotoCapture`, bound per platform: Android's registers the `T
 `coverPhoto` picks the photo standing for a machine in the machine list, the picker and the visit:
 its own first, else the first of any machine in its cluster (§4.5). Own photos are read locally
 (`PhotoRepository.all`); group mates' come in one read, `FriendsRepository.groupPhotos`, beside the
-friends' machines, and "Тренажёр друга" reads its machine's with `photos`.
+friends' machines, and "Упражнение друга" reads its machine's with `photos`.
 
 ### 4.5 Gym data
 

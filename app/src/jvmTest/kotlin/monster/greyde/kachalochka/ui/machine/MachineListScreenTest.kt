@@ -37,7 +37,7 @@ class MachineListScreenTest {
                 onOpenFriendMachine = { _, _ -> },
             )
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
             onNodeWithTag("machine-list-row-${press.id.value}").performClick()
             onNodeWithTag("new-machine").performClick()
             waitForIdle()
@@ -50,7 +50,7 @@ class MachineListScreenTest {
     @Test
     fun without_machines_the_list_says_so() =
         runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
-            onNodeWithTag("machine-list-empty").assertTextEquals("Тренажёров пока нет")
+            onNodeWithTag("machine-list-empty").assertTextEquals("Упражнений пока нет")
             onNodeWithTag("machine-list-friends").assertDoesNotExist()
         }
 
@@ -68,7 +68,7 @@ class MachineListScreenTest {
         }) {
             onNodeWithTag("machine-list-friends")
                 .performScrollTo()
-                .assertTextEquals("ТРЕНАЖЁРЫ ДРУЗЕЙ")
+                .assertTextEquals("УПРАЖНЕНИЯ ДРУЗЕЙ")
             onNodeWithTag("machine-list-friend-${olegPress.id.value}")
                 .performScrollTo()
                 .assertIsDisplayed()

@@ -43,7 +43,7 @@ fun FriendMachineScreen(
     val offline by viewModel.offline.collectAsState()
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
     // The view model already loads once created: it follows accounts.activeId from init.
-    Screen("Тренажёр друга", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen("Упражнение друга", onBack = onBack, onOpenSettings = onOpenSettings) {
         val current = state
         if (offline) {
             OfflineNotice(onRetry = viewModel::refresh)

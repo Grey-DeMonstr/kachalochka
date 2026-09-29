@@ -88,9 +88,9 @@ class FormatsTest {
         assertEquals("6 подходов", setCount(6))
         assertEquals("11 подходов", setCount(11))
         assertEquals("22 подхода", setCount(22))
-        assertEquals("3 тренажёра", machineCount(3))
-        assertEquals("5 тренажёров", machineCount(5))
-        assertEquals("21 тренажёр", machineCount(21))
+        assertEquals("3 упражнения", machineCount(3))
+        assertEquals("5 упражнений", machineCount(5))
+        assertEquals("21 упражнение", machineCount(21))
     }
 
     @Test

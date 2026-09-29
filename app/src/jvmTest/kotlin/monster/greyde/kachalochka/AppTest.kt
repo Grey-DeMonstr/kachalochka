@@ -234,7 +234,7 @@ class AppTest {
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
             val gakk = runBlocking { gym.machines.all(null) }.single()
             onNodeWithTag("machine-list-row-${gakk.id.value}").assertIsDisplayed()
         }
@@ -253,7 +253,7 @@ class AppTest {
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
             assertEquals(10.0, runBlocking { gym.machines.byId(press.id) }?.weightStep)
         }
     }
@@ -330,7 +330,7 @@ class AppTest {
             onNodeWithTag("machine-name").assertTextContains("Жим ногами старый")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
             onNodeWithTag("machine-list-row-${press.id.value}").assertDoesNotExist()
         }
     }
@@ -352,7 +352,7 @@ class AppTest {
             onNodeWithTag("machine-name").assertTextContains("Жим ногами")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
             val copy = runBlocking { gym.machines.all(ME.userId) }.single()
             onNodeWithTag("machine-list-row-${copy.id.value}").assertIsDisplayed()
             onNodeWithTag("machine-list-friend-${olegPress.id.value}").assertDoesNotExist()
@@ -403,7 +403,7 @@ class AppTest {
         runApp {
             waitForIdle()
             onNodeWithText("Вступить в группу по приглашению?").assertIsDisplayed()
-            onNodeWithText("Участники группы увидят ваши визиты и тренажёры.").assertIsDisplayed()
+            onNodeWithText("Участники группы увидят ваши визиты и упражнения.").assertIsDisplayed()
             assertEquals(0, gym.friends.reads)
             onNodeWithTag("invite-confirm").assertTextEquals("Вступить").performClick()
             waitForIdle()

@@ -50,7 +50,7 @@ class MachinePickerScreenTest {
                 onCopy = { s, n -> copied += s to n },
             )
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёр")
+            onNodeWithTag("top-bar-title").assertTextEquals("Упражнение")
             onNodeWithTag("machine-row-${press.id.value}").performClick()
             onNodeWithTag("machine-search").performTextInput("гакк")
             waitForIdle()

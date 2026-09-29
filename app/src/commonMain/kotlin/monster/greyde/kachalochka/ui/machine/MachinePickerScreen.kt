@@ -56,7 +56,7 @@ fun MachinePickerScreen(
     val viewModel: MachinePickerViewModel = koinViewModel { parametersOf(day) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
-    Screen("Тренажёр", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen("Упражнение", onBack = onBack, onOpenSettings = onOpenSettings) {
         SearchBar(state.query, viewModel::onQueryChange)
         Column(
             Modifier
@@ -83,7 +83,7 @@ fun MachinePickerScreen(
             }
             if (state.friendRows.isNotEmpty()) {
                 SectionLabel(
-                    "Тренажёры друзей",
+                    "Упражнения друзей",
                     modifier =
                         Modifier
                             .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
@@ -264,7 +264,7 @@ private fun CopyRow(onClick: () -> Unit) {
             )
         }
         Column(Modifier.weight(1f)) {
-            Text("Скопировать тренажёр", fontSize = 17.sp, color = colors.onBackground)
+            Text("Скопировать упражнение", fontSize = 17.sp, color = colors.onBackground)
             Text(
                 "Заметка и настройка веса сохранятся",
                 fontSize = 13.sp,

@@ -129,7 +129,7 @@ fun pluralRu(
 
 fun setCount(n: Int): String = "$n ${pluralRu(n, "подход", "подхода", "подходов")}"
 
-fun machineCount(n: Int): String = "$n ${pluralRu(n, "тренажёр", "тренажёра", "тренажёров")}"
+fun machineCount(n: Int): String = "$n ${pluralRu(n, "упражнение", "упражнения", "упражнений")}"
 
 fun memberCount(n: Int): String = "$n ${pluralRu(n, "участник", "участника", "участников")}"
 

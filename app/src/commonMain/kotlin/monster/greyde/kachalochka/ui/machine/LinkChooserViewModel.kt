@@ -129,7 +129,7 @@ class LinkChooserViewModel(
             pending = kept.id to removed.id
             val merge =
                 MergeUi(
-                    "Объединить тренажёры?",
+                    "Объединить упражнения?",
                     "Останется «${kept.name}», подходы «${removed.name}» перейдут к нему. " +
                         "Это нельзя отменить.",
                 )

@@ -34,7 +34,7 @@ class FriendMachineScreenTest {
         runScreenTest(on, screen = {
             FriendMachineScreen(olegPress.id, OLEG.userId, {}, {}, onTaken = { taken += it })
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёр друга")
+            onNodeWithTag("top-bar-title").assertTextEquals("Упражнение друга")
             onNodeWithTag("friend-machine-name").assertTextEquals("Жим ногами")
             onNodeWithTag("friend-machine-owner").assertTextEquals("Олег")
             onNodeWithTag("friend-machine-note").assertTextEquals("Спинка на 4")

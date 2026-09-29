@@ -265,7 +265,7 @@ class MachineFormScreenTest {
                 onLink = { linking++ },
             )
         }) {
-            onNodeWithTag("machine-linked-with").assertTextEquals("Связан с: Жим ногами (Олег)")
+            onNodeWithTag("machine-linked-with").assertTextEquals("Связано с: Жим ногами (Олег)")
             onNodeWithTag("link-machine").performScrollTo().performClick()
             waitForIdle()
         }
@@ -297,7 +297,7 @@ class MachineFormScreenTest {
             )
         }) {
             onNodeWithTag("machine-linked-with")
-                .assertTextEquals("Связан с: Жим ногами (Олег), Платформа (Паша)")
+                .assertTextEquals("Связано с: Жим ногами (Олег), Платформа (Паша)")
                 .performFirstLinkClick {
                     (it.item as LinkAnnotation.Clickable).tag == pashas.id.value
                 }

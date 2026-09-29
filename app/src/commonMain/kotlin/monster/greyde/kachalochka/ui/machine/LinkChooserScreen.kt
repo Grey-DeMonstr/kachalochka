@@ -50,14 +50,14 @@ fun LinkChooserScreen(
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-            if (state.own.isNotEmpty()) ChooserSection("Мои тренажёры", "chooser-own")
+            if (state.own.isNotEmpty()) ChooserSection("Мои упражнения", "chooser-own")
             state.own.forEach { row ->
                 MachineRow(row.name, row.detail, "chooser-own-${row.id.value}") {
                     viewModel.chooseOwn(row.id)
                 }
             }
             state.friends?.takeIf { it.isNotEmpty() }?.let { rows ->
-                ChooserSection("Тренажёры друзей", "chooser-friends")
+                ChooserSection("Упражнения друзей", "chooser-friends")
                 rows.forEach { row ->
                     MachineRow(row.name, row.detail, "chooser-friend-${row.id.value}") {
                         viewModel.chooseFriend(row.id, onLinked)

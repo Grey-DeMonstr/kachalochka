@@ -232,7 +232,7 @@ private fun VisitList(
             )
         }
         OutlineButton(
-            "Новый тренажёр",
+            "Новое упражнение",
             PhosphorIcons.Plus,
             onNewMachine,
             Modifier.fillMaxWidth().padding(top = 14.dp).testTag("pick-machine"),

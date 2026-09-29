@@ -61,8 +61,8 @@ but not yet available. On Android with nobody signed in, "Войти через 
 of the screen. The very bottom names the app's version, "Версия 1.1.0".
 
 The visit screen lists the day's sets grouped by machine, machines in the order of their first set,
-and ends with "Новый тренажёр", which opens the machine picker. A machine's row shows its photo, as
-the machine list does, or a barbell without one, names the machine with its setup note at the
+and ends with "Новое упражнение", which opens the machine picker. A machine's row shows its photo,
+as the machine list does, or a barbell without one, names the machine with its setup note at the
 right, and writes its results on the line below. Tapping the photo opens the machine form; the set
 sheet shows the same photo, which opens the form too. Tapping a machine's row expands it to show
 its sets, numbered "#1", "#2" and so on; tapping a set opens it for editing or deletion. A friend's
@@ -109,11 +109,11 @@ recorded into their own visit. Swiping the sheet down, or pressing back on the p
 bar, closes it, leaving any edit; «Порядок» closes it too. An expanded machine in the list ends
 with "Добавить подход", which opens the sheet for that machine's next set, so any machine of the
 visit takes another set at any time. The machine's name is not a button: another machine is chosen
-with "Новый тренажёр".
+with "Новое упражнение".
 
 The machine picker lets the user search machines by name; "Создать «…»" opens the machine form
 pre-filled with the typed name. When a machine is already chosen for the visit, "Скопировать
-тренажёр" opens the form pre-filled from that machine, with the typed name instead of its own.
+упражнение" opens the form pre-filled from that machine, with the typed name instead of its own.
 Recently used machines are listed with their last result.
 
 The machine form collects a name, a setup note, how the weight is counted ("Всего", "На сторону" or
@@ -126,13 +126,13 @@ Under the name, the machine's photos run in a row, oldest first, ending with "Д
 which offers "Снять фото" and "Из галереи". On Android they open the phone's camera and its photo
 picker; on the web the first opens a phone's camera and the second picks a file, and a computer
 picks a file for both. Tapping a photo opens it over the whole screen, with "Удалить". New and
-removed photos are part of the form's edits: "Сохранить тренажёр" writes them, and leaving the
+removed photos are part of the form's edits: "Сохранить упражнение" writes them, and leaving the
 form drops them. A photo is shrunk to at most 1600 pixels on its long edge before it is kept.
 
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
-search field: "Мои тренажёры", the account's other machines, and, signed in and online,
-"Тренажёры друзей", one row per friends' machine that is not yet the same machine as one of the
-account's. Choosing an own machine removes a duplicate: after "Объединить тренажёры?" the machine
+search field: "Мои упражнения", the account's other machines, and, signed in and online,
+"Упражнения друзей", one row per friends' machine that is not yet the same machine as one of the
+account's. Choosing an own machine removes a duplicate: after "Объединить упражнения?" the machine
 used first stays (a machine with no sets counts as the newest, and of two equal ones the edited
 one stays), the other one's sets move to it, and the other one disappears. Friends who linked to
 the removed machine are linked to the one that stays. The form of the machine that stays then
@@ -140,18 +140,18 @@ replaces the list, and unsaved edits in the old form are dropped. The other mach
 to the one that stays. Choosing a friend's machine
 links the two as one physical machine (see Group sharing) and returns to the form.
 
-The "Тренажёры" row lists the active account's machines by name, each with the unit its weights are
-shown in, how its weight is counted and its step, and its photo: the machine's first photo, or,
+The "Упражнения" row lists the active account's machines by name, each with the unit its weights
+are shown in, how its weight is counted and its step, and its photo: the machine's first photo, or,
 when it has none, the first photo of a friend's machine linked with it. The machine picker's rows
-show the same photo. Tapping one opens it in the machine form; "Новый
-тренажёр" adds one. Saving returns to the list. Signed in and online, "Тренажёры друзей" follows
-once the server answers: the machines of everyone sharing a group, one row per physical machine
-that is not yet the same machine as one of the account's, each with its owner and weight setup.
-Tapping one opens "Тренажёр друга", its settings to read — name, owner, photos, setup note, how its
-weight is counted and its platform — with "Взять себе", which saves the account's own copy linked to it
-(see Group sharing) and opens that copy in the machine form; a machine already linked to one of the
-account's, directly or through friends' links, is shown without it. Offline that view says "Нет
-связи с сервером" and offers a retry.
+show the same photo. Tapping one opens it in the machine form; "Новое упражнение" adds one. Saving
+returns to the list. Signed in and online, "Упражнения друзей" follows once the server answers: the
+machines of everyone sharing a group, one row per physical machine that is not yet the same machine
+as one of the account's, each with its owner and weight setup. Tapping one opens "Упражнение
+друга", its settings to read — name, owner, photos, setup note, how its weight is counted and its
+platform — with "Взять себе", which saves the account's own copy linked to it (see Group sharing)
+and opens that copy in the machine form; a machine already linked to one of the account's, directly
+or through friends' links, is shown without it. Offline that view says "Нет связи с сервером" and
+offers a retry.
 
 The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
 visit are marked, today and the chosen day are highlighted, and future days cannot be chosen.
@@ -281,7 +281,7 @@ friend's with "Привязать к…". Machines linked directly or through ot
 machine: the picker no longer offers the friend's machine beside the user's own, the set sheet
 shows each friend's latest visit on it ("Олег · вчера · 80-85кг 8-6"), a friend's visit shows
 their sets on it under the user's own machine name, and the machine form lists the friends'
-machines it is linked with, by owner and then by name ("Связан с: Жим ногами (Олег), Платформа
+machines it is linked with, by owner and then by name ("Связано с: Жим ногами (Олег), Платформа
 (Паша)"). Tapping one opens that friend's machine, as from the machine list.
 "Отвязать от друзей" in the form's menu, after a confirmation, breaks every link between the
 machine and friends' machines, whichever side made it.

@@ -91,7 +91,7 @@ fun MachineFormScreen(
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(
-        "Тренажёр",
+        "Упражнение",
         onBack = onBack,
         onOpenSettings = onOpenSettings,
         actions = { if (linking.canUnlink) MachineMenu(viewModel::askToUnlink) },
@@ -179,7 +179,7 @@ fun MachineFormScreen(
         ) {
             Rule()
             AccentButton(
-                "Сохранить тренажёр",
+                "Сохранить упражнение",
                 PhosphorIcons.Check,
                 { viewModel.save(onSaved) },
                 Modifier.testTag("save-machine"),
@@ -199,8 +199,8 @@ fun MachineFormScreen(
     }
     if (linking.confirmingUnlink) {
         ConfirmDialog(
-            title = "Отвязать тренажёр?",
-            text = "Результаты друзей на этом тренажёре перестанут показываться у вас.",
+            title = "Отвязать упражнение?",
+            text = "Результаты друзей в этом упражнении перестанут показываться у вас.",
             confirmLabel = "Отвязать",
             confirmTag = "confirm-unlink",
             cancelTag = "cancel-unlink",
@@ -219,7 +219,7 @@ private fun LinkedWith(
     val linkStyle = TextLinkStyles(SpanStyle(color = colors.tertiary))
     val text =
         buildAnnotatedString {
-            append("Связан с: ")
+            append("Связано с: ")
             linked.forEachIndexed { index, machine ->
                 if (index > 0) append(", ")
                 val link =
@@ -315,7 +315,7 @@ private fun PlatformWeightRow(
         Column {
             Text("Вес платформы", fontSize = 15.sp, color = colors.onBackground)
             Text(
-                "Своя масса тренажёра",
+                "Своя масса снаряда",
                 fontSize = 12.sp,
                 color = colors.onBackground.copy(alpha = 0.48f),
             )
@@ -467,7 +467,7 @@ private fun HintRow() {
             modifier = Modifier.size(18.dp),
         )
         Text(
-            "После сохранения тренажёр появится в этом визите.",
+            "После сохранения упражнение появится в этом визите.",
             fontSize = 13.sp,
             color = colors.onBackground.copy(alpha = 0.50f),
         )

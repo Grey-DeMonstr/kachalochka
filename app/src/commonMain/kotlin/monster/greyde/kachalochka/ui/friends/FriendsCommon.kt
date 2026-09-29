@@ -47,7 +47,7 @@ internal fun InviteConfirmDialog(
     AlertDialog(
         onDismissRequest = onCancel,
         title = { Text("Вступить в группу по приглашению?") },
-        text = { Text("Участники группы увидят ваши визиты и тренажёры.") },
+        text = { Text("Участники группы увидят ваши визиты и упражнения.") },
         confirmButton = {
             TextButton(onClick = onJoin, modifier = Modifier.testTag("invite-confirm")) {
                 Text("Вступить")

@@ -149,7 +149,7 @@ class CalendarViewModelTest {
             val state = assertNotNull(vm.state.value)
             assertTrue(state.day(11).hasVisit)
             assertEquals(undated.id, state.visit?.id)
-            assertEquals("1 тренажёр · 1 подход", state.visit?.counts)
+            assertEquals("1 упражнение · 1 подход", state.visit?.counts)
         }
 
     @Test
@@ -162,7 +162,7 @@ class CalendarViewModelTest {
         assertEquals("Воскресенье, 12 ноября", state.dayTitle)
         val listed = assertNotNull(state.visit)
         assertEquals(sunday.id, listed.id)
-        assertEquals("2 тренажёра · 3 подхода", listed.counts)
+        assertEquals("2 упражнения · 3 подхода", listed.counts)
         assertEquals("Жим ногами, Тяга верхнего блока", listed.machines)
     }
 
@@ -600,7 +600,7 @@ class CalendarViewModelTest {
             assertEquals(listOf(5), state.day(12).friendDots)
             assertEquals(
                 listOf(
-                    FriendDayVisitUi(OLEG.userId, "Олег", 5, twelfth, "2 тренажёра · 3 подхода"),
+                    FriendDayVisitUi(OLEG.userId, "Олег", 5, twelfth, "2 упражнения · 3 подхода"),
                 ),
                 state.friendVisits,
             )
@@ -625,7 +625,7 @@ class CalendarViewModelTest {
             )
             setsRead.complete(Unit)
             assertEquals(
-                "1 тренажёр · 1 подход",
+                "1 упражнение · 1 подход",
                 vm.state.value
                     ?.friendVisits
                     ?.single()

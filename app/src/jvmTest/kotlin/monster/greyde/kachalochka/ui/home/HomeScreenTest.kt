@@ -125,7 +125,7 @@ class HomeScreenTest {
             )
         }
         runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}, {}) }) {
-            onNodeWithTag("visit-counts").assertTextEquals("1 тренажёр · 1 подход")
+            onNodeWithTag("visit-counts").assertTextEquals("1 упражнение · 1 подход")
             onNodeWithTag("open-today").assertTextEquals("Продолжить")
         }
     }
