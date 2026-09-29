@@ -436,6 +436,33 @@ class VisitScreenTest {
     }
 
     @Test
+    fun a_machine_s_picture_in_the_list_opens_its_settings() {
+        val opened = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = { visitScreen(onOpenMachineSettings = { opened += it }) }) {
+            waitForIdle()
+            onNodeWithTag("thumb-${press.id.value}").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(press.id), opened)
+    }
+
+    @Test
+    fun the_sheet_s_picture_opens_the_machine_s_settings() {
+        val opened = mutableListOf<MachineId>()
+        runScreenTest(
+            gym,
+            screen = {
+                visitScreen(picked = press.id, onOpenMachineSettings = { opened += it })
+            },
+        ) {
+            waitForIdle()
+            onNodeWithTag("sheet-thumb").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(press.id), opened)
+    }
+
+    @Test
     fun order_mode_drags_a_machine_by_its_handle_and_opens_no_set() {
         val row = Machine.new("Тяга", null, gym.clock.current)
         val curl = Machine.new("Сгибание рук", null, gym.clock.current)

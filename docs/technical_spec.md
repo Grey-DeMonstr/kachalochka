@@ -342,8 +342,8 @@ gallery come from `PhotoCapture`, bound per platform: Android's registers the `T
 `PickVisualMedia` launchers in the composition, and the camera writes into the cache through the
 `FileProvider` `androidApp` declares; the web's opens a file input, with `capture` for the camera.
 
-`coverPhoto` picks the photo standing for a machine in the machine list and the picker: its own
-first, else the first of any machine in its cluster (§4.5). Own photos are read locally
+`coverPhoto` picks the photo standing for a machine in the machine list, the picker and the visit:
+its own first, else the first of any machine in its cluster (§4.5). Own photos are read locally
 (`PhotoRepository.all`); group mates' come in one read, `FriendsRepository.groupPhotos`, beside the
 friends' machines, and "Тренажёр друга" reads its machine's with `photos`.
 

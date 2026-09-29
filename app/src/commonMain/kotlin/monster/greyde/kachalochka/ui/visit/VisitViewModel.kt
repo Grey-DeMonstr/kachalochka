@@ -15,8 +15,11 @@ import monster.greyde.kachalochka.core.domain.gym.DEFAULT_REPS
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
@@ -24,6 +27,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
+import monster.greyde.kachalochka.core.domain.gym.coverPhoto
 import monster.greyde.kachalochka.core.domain.gym.dayVisit
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.machineMovedTo
@@ -86,6 +90,7 @@ data class SetGroupUi(
     val summary: String,
     val expanded: Boolean,
     val sets: List<SetRowUi>,
+    val photo: Photo? = null,
 )
 
 data class SetRowUi(
@@ -110,6 +115,7 @@ data class SheetUi(
     val canSave: Boolean,
     val saving: Boolean,
     val friends: List<String>,
+    val photo: Photo? = null,
 )
 
 class VisitViewModel(
@@ -128,6 +134,7 @@ class VisitViewModel(
     private val nickname: Nickname,
     private val machineLinks: MachineLinkRepository,
     private val profiles: ProfileRepository,
+    private val photos: PhotoRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
@@ -147,6 +154,14 @@ class VisitViewModel(
     private var friendResults: List<FriendResult> = emptyList()
     private var friendsFor: Pair<UserId, MachineId>? = null
     private var loadingFriends: Job? = null
+    private var ownPhotos: List<Photo> = emptyList()
+    private var ownLinks: List<MachineLink> = emptyList()
+
+    /** Group mates' photos and links, read for [groupPhotosFor]; null links until a read lands. */
+    private var groupPhotos: List<Photo> = emptyList()
+    private var groupLinks: List<MachineLink>? = null
+    private var groupPhotosFor: UserId? = null
+    private var loadingPhotos: Job? = null
 
     /** Links may have changed on another screen or in a sync, so the next reload reads again. */
     private var friendsStale = false
@@ -306,9 +321,17 @@ class VisitViewModel(
     }
 
     /** Configuring a machine is deliberate, so it may make the active account's copy of it. */
-    fun openMachineSettings(onOpen: (MachineId) -> Unit) {
-        val machine = open ?: return
+    fun openMachineSettings(
+        id: MachineId,
+        onOpen: (MachineId) -> Unit,
+    ) {
+        val machine = machinesById[id] ?: open?.takeIf { it.id == id } ?: return
         writes.launch {
+            // Merged away on another screen since the list was read.
+            if (machines.byId(machine.id)?.deleted == true) {
+                reload(reseed = false)
+                return@launch
+            }
             val own = ownMachine(currentUser.id(), machine)
             reload(reseed = false)
             onOpen(own.id)
@@ -428,6 +451,9 @@ class VisitViewModel(
         preferred = profiles.preferredUnit(owner)
         visit = shown
         machinesById = machines.all(owner).associateBy { it.id }
+        ownPhotos = photos.all(owner)
+        ownLinks = machineLinks.all(owner)
+        if (owner != groupPhotosFor || friendsStale) loadGroupPhotos(owner)
         visitSets = shown?.let { sets.forVisit(it.id) }.orEmpty()
         val machine = machineOf(owner)
         open = machine
@@ -489,6 +515,34 @@ class VisitViewModel(
             }
     }
 
+    private fun loadGroupPhotos(owner: UserId?) {
+        loadingPhotos?.cancel()
+        if (owner != groupPhotosFor) {
+            groupPhotos = emptyList()
+            groupLinks = null
+        }
+        groupPhotosFor = owner
+        if (owner == null) return
+        loadingPhotos =
+            viewModelScope.launch {
+                reading {
+                    visibleLinks(
+                        owner,
+                        friends,
+                        machineLinks,
+                    ) to friends.groupPhotos(owner)
+                }.onSuccess { (links, found) ->
+                    if (groupPhotosFor != owner) return@onSuccess
+                    groupLinks = links
+                    groupPhotos = found
+                    publish()
+                }
+            }
+    }
+
+    private fun coverOf(machineId: MachineId): Photo? =
+        coverPhoto(machineId, ownPhotos + groupPhotos, MachineClusters(groupLinks ?: ownLinks))
+
     private fun friendLine(result: FriendResult): String {
         val now = clock.now()
         val days = calendarDaysBetween(result.sets.last().recordedAt, now, utcOffset.at(now))
@@ -539,6 +593,7 @@ class VisitViewModel(
                         set.id == editing?.id,
                     )
                 },
+            photo = coverOf(machineId),
         )
     }
 
@@ -586,6 +641,7 @@ class VisitViewModel(
             canSave = weightValid && !saving,
             saving = saving,
             friends = if (edited == null) friendResults.map(::friendLine) else emptyList(),
+            photo = coverOf(machine.id),
         )
     }
 }

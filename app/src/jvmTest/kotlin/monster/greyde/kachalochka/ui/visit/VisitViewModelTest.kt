@@ -14,6 +14,7 @@ import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
@@ -27,6 +28,7 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.visitShareText
+import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.olegTrainedOn
 import monster.greyde.kachalochka.ui.timer.RestTimer
@@ -128,6 +130,7 @@ class VisitViewModelTest {
         Nickname(gym.profiles, gym.accounts),
         gym.machineLinks,
         gym.profiles,
+        gym.photos,
     )
 
     @BeforeTest
@@ -889,12 +892,73 @@ class VisitViewModelTest {
             vm.switchTo(misha.account.userId)
             var opened: MachineId? = null
 
-            vm.openMachineSettings { opened = it }
+            vm.openMachineSettings(ivanPress.id) { opened = it }
 
             val mishaPress = assertNotNull(two.machines.named(misha.account.userId, "Жим ногами"))
             assertEquals(mishaPress.id, opened)
             assertNotEquals(ivanPress.id, opened)
             assertEquals(ivanPress.setupNote, mishaPress.setupNote)
+        }
+
+    @Test
+    fun any_machine_of_the_visit_opens_its_settings() =
+        runTest {
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 0))
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            var opened: MachineId? = null
+
+            vm.openMachineSettings(row.id) { opened = it }
+
+            assertEquals(row.id, opened)
+        }
+
+    @Test
+    fun a_machine_merged_away_opens_no_settings() =
+        runTest {
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 0))
+            val vm = viewModel().also { it.refresh() }
+            gym.machines.upsert(row.copy(deleted = true))
+            var opened: MachineId? = null
+
+            vm.openMachineSettings(row.id) { opened = it }
+
+            assertNull(opened)
+        }
+
+    @Test
+    fun a_machine_shows_its_first_photo_in_the_list_and_the_sheet() =
+        runTest {
+            val first = Photo.new(press.id, null, t0)
+            gym.photos.upsert(first)
+            gym.photos.upsert(Photo.new(press.id, null, t0 + 1.minutes))
+            gym.sets.upsert(set(visit.id, press, 80.0, 8, 0))
+
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(first, state.groups.single().photo)
+            assertEquals(first, state.sheet?.photo)
+        }
+
+    @Test
+    fun a_linked_friend_s_photo_stands_in_for_a_machine_without_one() =
+        runTest {
+            val two = twoAccountGym()
+            two.olegTrainedOn(ivanPress, ivanFriend)
+            val olegPress = two.friends.machines.single { it.userId == OLEG.userId }
+            val olegs = Photo.new(olegPress.id, olegPress.userId, t0)
+            two.friends.photos += olegs
+            two.sets.upsert(set(ivanVisit.id, ivanPress, 80.0, 8, 0, ivan.account.userId))
+
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+            assertEquals(
+                olegs,
+                vm.state.value
+                    ?.groups
+                    ?.single()
+                    ?.photo,
+            )
         }
 
     @Test

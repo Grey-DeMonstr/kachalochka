@@ -70,11 +70,11 @@ import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.Stepper
-import monster.greyde.kachalochka.ui.components.Thumbnail
 import monster.greyde.kachalochka.ui.components.dragOutline
 import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.photos.MachineThumbnail
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
@@ -127,6 +127,7 @@ fun VisitScreen(
             onToggle = viewModel::toggleGroup,
             onEdit = viewModel::editSet,
             onAddSet = viewModel::selectMachine,
+            onOpenMachine = { viewModel.openMachineSettings(it, onOpenMachineSettings) },
             onToggleOrdering = viewModel::toggleOrdering,
             onMoveMachine = viewModel::moveMachine,
             onMoveSet = viewModel::moveSet,
@@ -140,7 +141,11 @@ fun VisitScreen(
                 onTypeWeight = viewModel::typeWeight,
                 onReps = viewModel::changeReps,
                 onSave = viewModel::save,
-                onOpenMachineSettings = { viewModel.openMachineSettings(onOpenMachineSettings) },
+                onOpenMachineSettings = {
+                    viewModel.selectedMachineId?.let {
+                        viewModel.openMachineSettings(it, onOpenMachineSettings)
+                    }
+                },
                 onDelete = viewModel::deleteEditedSet,
                 onSwitchTo = viewModel::switchTo,
                 onAddAccount = accountsViewModel::addAccount,
@@ -157,6 +162,7 @@ private fun VisitList(
     onToggle: (MachineId) -> Unit,
     onEdit: (WorkoutSetId) -> Unit,
     onAddSet: (MachineId) -> Unit,
+    onOpenMachine: (MachineId) -> Unit,
     onToggleOrdering: () -> Unit,
     onMoveMachine: (MachineId, Int) -> Unit,
     onMoveSet: (WorkoutSetId, Int) -> Unit,
@@ -217,6 +223,7 @@ private fun VisitList(
                 onToggle = onToggle,
                 onEdit = onEdit,
                 onAddSet = onAddSet,
+                onOpenMachine = onOpenMachine,
                 onDropMachine = { from, to -> onMoveMachine(state.groups[from].machineId, to) },
                 onMoveSet = onMoveSet,
             )
@@ -239,6 +246,7 @@ private fun MachineBlock(
     onToggle: (MachineId) -> Unit,
     onEdit: (WorkoutSetId) -> Unit,
     onAddSet: (MachineId) -> Unit,
+    onOpenMachine: (MachineId) -> Unit,
     onDropMachine: (from: Int, to: Int) -> Unit,
     onMoveSet: (WorkoutSetId, Int) -> Unit,
 ) {
@@ -264,6 +272,13 @@ private fun MachineBlock(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (ordering) DragHandle(order, index, "drag-machine-$id", onDropMachine)
+            MachineThumbnail(
+                group.photo,
+                PhosphorIcons.Barbell,
+                Modifier.padding(end = 12.dp).testTag("thumb-$id"),
+                size = 44.dp,
+                onClick = { onOpenMachine(group.machineId) }.takeUnless { ordering },
+            )
             Column(Modifier.weight(1f)) {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -533,7 +548,12 @@ private fun SetSheet(
             PersonChips(sheet.people, onSwitchTo, onAddAccount)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Thumbnail(PhosphorIcons.Barbell)
+            MachineThumbnail(
+                sheet.photo,
+                PhosphorIcons.Barbell,
+                Modifier.testTag("sheet-thumb"),
+                onClick = onOpenMachineSettings,
+            )
             Column(
                 Modifier
                     .weight(1f)

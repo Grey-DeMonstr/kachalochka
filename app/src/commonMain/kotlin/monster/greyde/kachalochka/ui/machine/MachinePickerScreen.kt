@@ -26,13 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
@@ -40,9 +38,8 @@ import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
-import monster.greyde.kachalochka.ui.components.Thumbnail
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
-import monster.greyde.kachalochka.ui.photos.photoLoader
+import monster.greyde.kachalochka.ui.photos.MachineThumbnail
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -227,17 +224,8 @@ internal fun MachineRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            if (photo == null) {
-                Thumbnail(PhosphorIcons.Image)
-            } else {
-                AsyncImage(
-                    model = photo,
-                    contentDescription = null,
-                    imageLoader = photoLoader(),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(56.dp).clip(ControlShape).testTag("machine-cover"),
-                )
-            }
+            MachineThumbnail(photo, PhosphorIcons.Image)
+
             Column(Modifier.weight(1f)) {
                 Text(name, fontSize = 17.sp, color = colors.onBackground)
                 detail?.let {
