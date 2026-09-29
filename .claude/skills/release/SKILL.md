@@ -77,8 +77,10 @@ ASCII - no markdown.
   app now does.
 - **Never write a real e-mail address, Supabase project URL or filesystem
   path.** These are personal data.
-- **One short sentence per bullet.** Name the change and where to find it, then
-  stop. A second sentence needs a reason to exist.
+- **Name the feature, then stop.** A new capability is a short noun phrase
+  ("English language support added."), not a description of where it lives or
+  how it behaves. Defaults, what the app follows, which screen holds the
+  switch: all of that is *how*, and stays out.
 - Say *what* changed, never *how* it works or *why* it was done. No mechanism,
   no rationale, no "instead of", no list of the cases covered. The commit
   message already explains itself to whoever needs that.
@@ -88,7 +90,7 @@ ASCII - no markdown.
 Good:
 
 ```
-- Exercise history. Every set you have logged for an exercise, on its own page.
+- English language support added.
 - The workout screen is completely redesigned.
 - Fixed: a workout logged offline no longer disappears after signing in.
 ```
