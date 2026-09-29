@@ -85,7 +85,7 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun a_new_language_rewrites_today_s_summary() =
+    fun today_s_summary_speaks_english_when_entered_again() =
         runTest {
             val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
             val press = Machine.new("Жим ногами", null, t0)
@@ -108,6 +108,7 @@ class HomeViewModelTest {
             val vm = viewModel().also { it.refresh() }
 
             inEnglish {
+                vm.refresh()
                 assertEquals(
                     "1 machine · 1 set",
                     vm.state.value

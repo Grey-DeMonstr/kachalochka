@@ -747,11 +747,13 @@ Every text the app shows is a member of the `Strings` interface in `app/.../ui/s
 with its own plural rule. Compose resource files are not used: view models and the shared text
 build most strings outside composition.
 
-The language is process-wide, like the system locale: `AppStrings` holds the current `Strings` as
-a `StateFlow`. Formatters and view models read `AppStrings.current`; composables read `strings()`,
-which recomposes them on a change. View models whose state holds built text collect
-`AppStrings.flow` and publish again; the measurement form does not, since reloading would drop
-the values being typed.
+The language is process-wide, like the system locale: `AppStrings` holds the current `Strings` as a
+`StateFlow`. Formatters and view models read `AppStrings.current`; composables read `strings()`,
+which recomposes them on a change. The language changes only in Settings, so text a view model
+built is rebuilt when its screen is entered again: most screens reload on entry, and the four that
+do not call `speak()`, which reads again only when the language changed. No view model subscribes
+to `AppStrings`, so none can outlive its screen reacting to it. The measurement form keeps its
+title until reopened, since reloading would drop the values being typed.
 
 `AppLanguage` is `System`, `English` or `Russian`, a device setting stored like the theme in
 `LanguagePreference` (DataStore on Android, `localStorage` on the web). `System` means Russian

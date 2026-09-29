@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
@@ -75,11 +74,19 @@ class FriendVisitViewModel(
 
     private var loading: Job? = null
 
+    private var spokenIn = AppStrings.current
+
+    /** Reads again when the language changed while another screen was open. */
+    fun speak() {
+        if (AppStrings.current == spokenIn) return
+        spokenIn = AppStrings.current
+        refresh()
+    }
+
     init {
         viewModelScope.launch {
             accounts.activeId.collect { refresh() }
         }
-        viewModelScope.launch { AppStrings.flow.drop(1).collect { refresh() } }
     }
 
     /** Cancels the load in flight, so one for a previous account never lands last. */

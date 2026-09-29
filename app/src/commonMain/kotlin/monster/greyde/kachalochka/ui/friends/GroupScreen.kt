@@ -55,6 +55,7 @@ fun GroupScreen(
     onGone: () -> Unit,
 ) {
     val viewModel: GroupViewModel = koinViewModel { parametersOf(groupId) }
+    LaunchedEffect(Unit) { viewModel.speak() }
     val state by viewModel.state.collectAsState()
     val offline by viewModel.offline.collectAsState()
     val gone by viewModel.gone.collectAsState()

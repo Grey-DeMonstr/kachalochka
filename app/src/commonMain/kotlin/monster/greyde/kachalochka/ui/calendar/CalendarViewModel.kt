@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -141,7 +140,6 @@ class CalendarViewModel(
             }
         }
         viewModelScope.launch { sync.completed.collect { reload() } }
-        viewModelScope.launch { AppStrings.flow.drop(1).collect { publish() } }
     }
 
     fun refresh() = reload()

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -26,7 +25,6 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
-import monster.greyde.kachalochka.ui.strings.AppStrings
 
 data class MachineListUiState(
     val own: List<MachineListRowUi>? = null,
@@ -70,7 +68,6 @@ class MachineListViewModel(
     init {
         viewModelScope.launch { accounts.activeId.collect { load() } }
         viewModelScope.launch { sync.completed.collect { load() } }
-        viewModelScope.launch { AppStrings.flow.drop(1).collect { load() } }
     }
 
     /** Own machines show at once; friends' follow from the network, if it answers. */

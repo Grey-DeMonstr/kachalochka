@@ -204,6 +204,7 @@ class MeasuresViewModelTest {
             record(weight, gym.today, 82.0)
 
             inEnglish {
+                vm.load()
                 val rows = vm.state.value.rows
                 assertEquals(
                     listOf("Weight", "Waist", "Chest", "Hips", "Biceps", "Thigh", "Neck"),

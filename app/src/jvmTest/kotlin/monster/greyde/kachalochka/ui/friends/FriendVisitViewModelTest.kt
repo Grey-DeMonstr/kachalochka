@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -73,6 +74,20 @@ class FriendVisitViewModelTest {
                 .sets
                 .map { it.title to it.value },
         )
+    }
+
+    @Test
+    fun coming_back_in_another_language_reads_the_visit_again() {
+        val vm = viewModel()
+        val reads = gym.friends.reads
+
+        vm.speak()
+        assertEquals(reads, gym.friends.reads)
+
+        inEnglish {
+            vm.speak()
+            assertEquals("Олег · 13 November", vm.state.value?.title)
+        }
     }
 
     @Test

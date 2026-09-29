@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -68,11 +67,19 @@ class GroupViewModel(
     private var colorsFor: UserId? = null
     private var colorPicker: UserId? = null
 
+    private var spokenIn = AppStrings.current
+
+    /** Reads again when the language changed while another screen was open. */
+    fun speak() {
+        if (AppStrings.current == spokenIn) return
+        spokenIn = AppStrings.current
+        viewModelScope.launch { load() }
+    }
+
     init {
         viewModelScope.launch {
             accounts.activeId.collect { load() }
         }
-        viewModelScope.launch { AppStrings.flow.drop(1).collect { load() } }
     }
 
     fun refresh() {

@@ -294,11 +294,12 @@ class MachinePickerViewModelTest {
     }
 
     @Test
-    fun the_picker_speaks_english_once_the_language_changes() {
+    fun the_picker_speaks_english_when_entered_again() {
         val vm = viewModel().also { it.load() }
         vm.onQueryChange("гакк")
 
         inEnglish {
+            vm.load()
             assertEquals("Create \"гакк\"", vm.state.value.createLabel)
             assertEquals("Similar", vm.state.value.sectionLabel)
         }

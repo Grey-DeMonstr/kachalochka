@@ -6,7 +6,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.identity.Accounts
@@ -89,7 +88,6 @@ class LinkChooserViewModel(
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
         viewModelScope.launch { accounts.activeId.collect { load() } }
-        viewModelScope.launch { AppStrings.flow.drop(1).collect { load() } }
     }
 
     /** Own machines show at once; friends' follow from the network, if it answers. */

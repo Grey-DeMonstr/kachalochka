@@ -138,10 +138,11 @@ class CalendarViewModelTest {
     }
 
     @Test
-    fun the_calendar_speaks_english_once_the_language_changes() {
+    fun the_calendar_speaks_english_when_entered_again() {
         val vm = viewModel().also { it.refresh() }
 
         inEnglish {
+            vm.refresh()
             val state = assertNotNull(vm.state.value)
             assertEquals("November 2023", state.monthTitle)
             assertEquals("Tuesday, 14 November", state.dayTitle)

@@ -150,10 +150,11 @@ class VisitViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun the_visit_speaks_english_once_the_language_changes() {
+    fun the_visit_speaks_english_when_entered_again() {
         val vm = viewModel().also { it.selectMachine(press.id) }
 
         inEnglish {
+            vm.refresh()
             val state = assertNotNull(vm.state.value)
             assertEquals("Today", state.title)
             val sheet = assertNotNull(state.sheet)
