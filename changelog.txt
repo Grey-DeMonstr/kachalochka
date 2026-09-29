@@ -1,5 +1,22 @@
 Kachalochka - Changelog
 
+1.2.0
+
+- English language support added.
+- Tag machines, and group a visit and its shared text by tag.
+- Add a comment to any set.
+- Gravitron is back as a way to count a machine's weight.
+- Machines are called exercises in the Russian text.
+- The set sheet closes completely.
+- Machine photos show in the visit and the set sheet.
+- In the visit, a machine's results sit under its name and its sets are numbered.
+- Reordering the visit is now a button in the top bar.
+- The calendar lists a visit's machines and their tags.
+- All settings are applied with one button.
+- Fixed: the next set no longer goes back to last visit's reps.
+- Fixed: the previous visit in the set sheet is written the same way as everywhere else.
+
+
 1.1.0
 
 - Machine photos: take one with the camera or pick one from the gallery in the machine form,
