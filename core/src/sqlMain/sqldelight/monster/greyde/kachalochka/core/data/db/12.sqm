@@ -1,0 +1,5 @@
+ALTER TABLE machine ADD COLUMN tags TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE profile ADD COLUMN group_by_tag INTEGER NOT NULL DEFAULT 0;
+
+-- Machines and profiles pulled before this version lost their tags and grouping.
+UPDATE syncState SET lastPullAt = NULL;

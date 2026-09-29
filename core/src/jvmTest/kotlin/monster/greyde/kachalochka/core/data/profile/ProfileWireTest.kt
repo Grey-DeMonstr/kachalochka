@@ -28,6 +28,7 @@ class ProfileWireTest {
                 birthDate = CalendarDay(1990, 6, 15),
                 heightCm = 172.5,
                 weightUnit = PreferredWeightUnit.Mixed,
+                groupByTag = true,
             )
 
         assertEquals("1990-06-15", ProfileRow.of(profile).birthDate)

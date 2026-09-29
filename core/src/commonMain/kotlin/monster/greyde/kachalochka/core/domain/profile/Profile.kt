@@ -20,6 +20,7 @@ data class Profile(
     val birthDate: CalendarDay? = null,
     val heightCm: Double? = null,
     val weightUnit: PreferredWeightUnit = PreferredWeightUnit.Kg,
+    val groupByTag: Boolean = false,
 ) {
     companion object {
         /** A signed-in owner's profile id is the owner's own, so devices converge on one row. */

@@ -84,6 +84,7 @@ internal data class ProfileRow(
     @SerialName("birth_date") val birthDate: String?,
     @SerialName("height_cm") val heightCm: Double?,
     @SerialName("weight_unit") val weightUnit: String?,
+    @SerialName("group_by_tag") val groupByTag: Boolean,
 ) {
     fun toProfile(): Profile =
         Profile(
@@ -97,6 +98,7 @@ internal data class ProfileRow(
             birthDate = birthDateOf(birthDate),
             heightCm = heightCm,
             weightUnit = weightUnitOf(weightUnit),
+            groupByTag = groupByTag,
         )
 
     companion object {
@@ -112,6 +114,7 @@ internal data class ProfileRow(
                 birthDate = profile.birthDate?.iso,
                 heightCm = profile.heightCm,
                 weightUnit = profile.weightUnit.wireName(),
+                groupByTag = profile.groupByTag,
             )
     }
 }

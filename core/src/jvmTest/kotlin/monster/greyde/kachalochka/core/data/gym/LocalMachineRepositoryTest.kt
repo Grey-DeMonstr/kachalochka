@@ -38,6 +38,16 @@ class LocalMachineRepositoryTest {
         }
 
     @Test
+    fun a_machine_keeps_its_tags() =
+        runTest {
+            val tagged = sled.copy(tags = setOf("Ноги", "Жим"))
+
+            repository.upsert(tagged)
+
+            assertEquals(tagged, repository.byId(sled.id))
+        }
+
+    @Test
     fun all_leaves_out_deleted_machines_and_sorts_by_name() =
         runTest {
             val abs = Machine.new("аб", null, now)

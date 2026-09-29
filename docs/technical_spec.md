@@ -356,7 +356,10 @@ weight-counting mode and the unit are enums, mapped to the wire names `total` / 
 `counterweight` and `kg` / `lb` / `custom` by one shared mapping in `core/data/gym`, used by both
 implementations. A name the mapping does not know reads as `total` or `kg`: one unreadable row must
 not stop a pull, and clients from 1.0.2 to 1.1.0 read a gravitron's `counterweight` as `total`. A
-custom unit's name is `unit_label`, empty for kg and lb.
+custom unit's name is `unit_label`, empty for kg and lb. `machine.tags` is a JSON array of the
+machine's tag names, trimmed and distinct, `[]` for none; unreadable text or entries read as no
+tags, as `friend_colors` does. Tags are personal: `linkedCopy` starts without any. Migration
+`0017` and `12.sqm` add the column, and `12.sqm` resets `lastPullAt`.
 
 A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
 member's `linked_machine_id`. Neither column is a foreign key and no policy checks either against
@@ -518,6 +521,8 @@ rebuilds the table, since Android 10's SQLite cannot drop a column, and resets `
 `Profile.weightUnit` travels as `kg` / `lb` / `mixed` in `profile.weight_unit`, added by migration
 `0012` (not null, default `kg`) and `9.sqm`, which also resets `lastPullAt`; a missing or unknown
 name reads as `Kg`. Settings saves it with the body fields, with or without an account.
+`Profile.groupByTag` is `profile.group_by_tag`, false by default, added by the same migrations as
+machine tags; the visit screen writes it as soon as it is switched.
 
 ---
 

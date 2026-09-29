@@ -4,6 +4,7 @@ import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.gym.machineLinkOf
 import monster.greyde.kachalochka.core.data.gym.machineOf
 import monster.greyde.kachalochka.core.data.gym.photoOf
+import monster.greyde.kachalochka.core.data.gym.tagsText
 import monster.greyde.kachalochka.core.data.gym.visitOf
 import monster.greyde.kachalochka.core.data.gym.wireName
 import monster.greyde.kachalochka.core.data.gym.workoutSetOf
@@ -62,6 +63,7 @@ class LocalSyncRows(
             machine.updatedAt,
             machine.deleted,
             machine.unitLabel,
+            tagsText(machine.tags),
         )
 
     fun writeVisit(visit: Visit) =

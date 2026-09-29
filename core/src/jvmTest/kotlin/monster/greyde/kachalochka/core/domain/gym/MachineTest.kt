@@ -44,6 +44,15 @@ class MachineTest {
     }
 
     @Test
+    fun a_linked_copy_starts_without_the_friend_s_tags() {
+        val theirs = Machine.new("Жим ногами", oleg, T0).copy(tags = setOf("Ноги"))
+
+        val (mine, _) = linkedCopy(theirs, ivan, T0)
+
+        assertEquals(emptySet(), mine.tags)
+    }
+
+    @Test
     fun a_linked_copy_comes_with_the_owner_s_link_to_the_friend_s_machine() {
         val theirs = Machine.new("Жим ногами", oleg, T0)
         val later = T0 + 1.hours

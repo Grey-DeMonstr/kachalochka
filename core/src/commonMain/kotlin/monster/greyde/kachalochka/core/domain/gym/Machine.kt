@@ -21,6 +21,7 @@ data class Machine(
     val weightStep: Double,
     val updatedAt: Instant,
     val deleted: Boolean,
+    val tags: Set<String> = emptySet(),
 ) {
     companion object {
         fun new(
@@ -57,6 +58,7 @@ fun linkedCopy(
             userId = owner,
             updatedAt = now,
             deleted = false,
+            tags = emptySet(),
         )
     return copy to MachineLink(MachineLinkId.random(), owner, copy.id, friend.id, now, false)
 }

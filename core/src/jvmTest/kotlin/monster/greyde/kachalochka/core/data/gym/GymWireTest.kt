@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.data.gym
 
 import kotlinx.serialization.json.Json
+import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -63,5 +64,22 @@ class GymWireTest {
         val json = Json.encodeToString(WorkoutSetRow.of(set.copy(comment = "")))
 
         assertTrue("\"comment\":\"\"" in json, json)
+    }
+
+    @Test
+    fun a_machine_s_tags_travel_as_a_json_array() {
+        val machine =
+            Machine
+                .new("Жим ногами", null, Instant.fromEpochSeconds(1_700_000_000))
+                .copy(tags = setOf("Ноги", "Жим"))
+
+        assertEquals("""["Ноги","Жим"]""", MachineRow.of(machine).tags)
+        assertEquals(machine, MachineRow.of(machine).toMachine())
+    }
+
+    @Test
+    fun unreadable_tags_read_as_none() {
+        assertEquals(emptySet(), tagsOf("{"))
+        assertEquals(setOf("Ноги"), tagsOf("""["Ноги", 3, " Ноги "]"""))
     }
 }

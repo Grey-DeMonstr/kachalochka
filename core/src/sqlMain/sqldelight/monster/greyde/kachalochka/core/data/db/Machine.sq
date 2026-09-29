@@ -15,16 +15,18 @@ CREATE TABLE machine (
     deleted           INTEGER AS Boolean NOT NULL DEFAULT 0,
     -- Last, where 2.sqm's ALTER TABLE puts it.
     unit_label        TEXT    NOT NULL DEFAULT '',
-    -- Last, where 4.sqm's ALTER TABLE puts it. Never read: links live in machine_link.
-    link_id           TEXT
+    -- Where 4.sqm's ALTER TABLE puts it. Never read: links live in machine_link.
+    link_id           TEXT,
+    -- Last, where 12.sqm's ALTER TABLE puts it: a JSON array.
+    tags              TEXT    NOT NULL DEFAULT '[]'
 );
 
 CREATE INDEX machine_updated_at_idx ON machine (updated_at);
 
 upsert:
 INSERT OR REPLACE INTO machine(id, user_id, name, setup_note, weight_mode, platform_weight,
-    platform_included, unit, weight_step, updated_at, deleted, unit_label)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    platform_included, unit, weight_step, updated_at, deleted, unit_label, tags)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 byId:
 SELECT * FROM machine WHERE id = ?;

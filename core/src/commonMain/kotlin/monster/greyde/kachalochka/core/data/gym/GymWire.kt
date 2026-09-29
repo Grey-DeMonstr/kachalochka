@@ -2,6 +2,10 @@ package monster.greyde.kachalochka.core.data.gym
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -36,6 +40,23 @@ fun WeightUnit.wireName(): String =
         WeightUnit.Custom -> "custom"
     }
 
+internal fun tagsText(tags: Set<String>): String = Json.encodeToString(tags.toList())
+
+// Another client's text is outside this one's control, and one unreadable entry must not stop a
+// pull or cost the tags that can be read.
+internal fun tagsOf(text: String): Set<String> {
+    val entries =
+        try {
+            Json.parseToJsonElement(text) as? JsonArray
+        } catch (_: SerializationException) {
+            null
+        } ?: return emptySet()
+    return entries
+        .mapNotNull { (it as? JsonPrimitive)?.takeIf { value -> value.isString }?.content?.trim() }
+        .filter { it.isNotEmpty() }
+        .toSet()
+}
+
 // A unit this version does not know must not stop a pull either.
 fun weightUnitOf(wire: String): WeightUnit =
     WeightUnit.entries.firstOrNull { it.wireName() == wire } ?: WeightUnit.Kg
@@ -56,6 +77,7 @@ internal data class MachineRow(
     @SerialName("weight_step") val weightStep: Double,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
+    val tags: String,
 ) {
     fun toMachine(): Machine =
         Machine(
@@ -71,6 +93,7 @@ internal data class MachineRow(
             weightStep = weightStep,
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
+            tags = tagsOf(tags),
         )
 
     companion object {
@@ -88,6 +111,7 @@ internal data class MachineRow(
                 weightStep = machine.weightStep,
                 updatedAt = machine.updatedAt.toString(),
                 deleted = machine.deleted,
+                tags = tagsText(machine.tags),
             )
     }
 }

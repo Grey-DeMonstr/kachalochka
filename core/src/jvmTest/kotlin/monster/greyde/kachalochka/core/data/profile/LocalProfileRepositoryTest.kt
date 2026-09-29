@@ -52,6 +52,17 @@ class LocalProfileRepositoryTest {
         }
 
     @Test
+    fun grouping_by_tag_is_kept_in_the_profile() =
+        runTest {
+            val repository = koin.get<ProfileRepository>()
+            val grouping = profile.copy(groupByTag = true)
+
+            repository.upsert(grouping)
+
+            assertEquals(grouping, repository.byId(profile.id))
+        }
+
+    @Test
     fun an_unknown_id_reads_back_as_null() =
         runTest {
             val absent = ProfileId("9b1f0c3e-0000-4000-8000-00000000000f")

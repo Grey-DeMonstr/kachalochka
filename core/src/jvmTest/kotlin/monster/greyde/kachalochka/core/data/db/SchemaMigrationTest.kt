@@ -490,6 +490,70 @@ class SchemaMigrationTest {
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
+    @Test
+    fun version_12_machines_gain_no_tags_and_profiles_no_grouping_and_are_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        version12MachineTable()
+        version12ProfileTable()
+        exec(
+            "INSERT INTO machine(id, name, weight_mode, unit, weight_step, updated_at) " +
+                "VALUES ('press', 'Жим', 'total', 'kg', 2.5, 1)",
+        )
+        exec("INSERT INTO profile(id, updated_at) VALUES ('me', 1)")
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 12, 13)
+
+        assertEquals("[]", text("SELECT tags FROM machine WHERE id = 'press'"))
+        assertEquals(0L, number("SELECT group_by_tag FROM profile WHERE id = 'me'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
+    /** Versions 5 to 12 declare the machine table this way. */
+    private fun version12MachineTable() {
+        exec("DROP TABLE machine")
+        exec(
+            """
+            CREATE TABLE machine (
+                id TEXT NOT NULL PRIMARY KEY,
+                user_id TEXT,
+                name TEXT NOT NULL,
+                setup_note TEXT NOT NULL DEFAULT '',
+                weight_mode TEXT NOT NULL,
+                platform_weight REAL NOT NULL DEFAULT 0,
+                platform_included INTEGER NOT NULL DEFAULT 0,
+                unit TEXT NOT NULL,
+                weight_step REAL NOT NULL,
+                updated_at INTEGER NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0,
+                unit_label TEXT NOT NULL DEFAULT '',
+                link_id TEXT
+            )
+            """.trimIndent(),
+        )
+    }
+
+    /** Versions 10 to 12 declare the profile table this way. */
+    private fun version12ProfileTable() {
+        exec("DROP TABLE profile")
+        exec(
+            """
+            CREATE TABLE profile (
+                id TEXT NOT NULL PRIMARY KEY,
+                user_id TEXT,
+                display_name TEXT,
+                updated_at INTEGER NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0,
+                friend_colors TEXT NOT NULL DEFAULT '{}',
+                sex TEXT,
+                birth_date TEXT,
+                height_cm REAL,
+                weight_unit TEXT NOT NULL DEFAULT 'kg'
+            )
+            """.trimIndent(),
+        )
+    }
+
     /** Versions 4 to 11 declare the set table this way. */
     private fun version11SetTable() {
         exec("DROP TABLE workout_set")
@@ -533,6 +597,7 @@ class SchemaMigrationTest {
         exec("CREATE INDEX profile_updated_at_idx ON profile (updated_at)")
         exec("DROP TABLE photo")
         version11SetTable()
+        version12MachineTable()
     }
 
     /** Versions 6 to 8 declare the profile table this way. */
@@ -557,6 +622,7 @@ class SchemaMigrationTest {
         exec("CREATE INDEX profile_updated_at_idx ON profile (updated_at)")
         exec("DROP TABLE photo")
         version11SetTable()
+        version12MachineTable()
     }
 
     private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)
