@@ -269,8 +269,10 @@ class VisitViewModel(
         publish()
     }
 
-    fun toggleComment() {
-        commentText = if (commentText == null) "" else null
+    /** Only opens the field, so a second tap never loses what was typed; emptying it removes it. */
+    fun openComment() {
+        if (commentText != null) return
+        commentText = ""
         publish()
     }
 

@@ -450,7 +450,7 @@ class VisitViewModelTest {
                     ?.comment,
             )
 
-            vm.toggleComment()
+            vm.openComment()
             assertEquals(
                 "",
                 vm.state.value
@@ -469,13 +469,26 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun the_comment_button_again_keeps_what_was_typed() =
+        runTest {
+            val recorded = set(visit.id, press, 80.0, 8, 0).copy(comment = "Тяжело")
+            gym.sets.upsert(recorded)
+            val vm = viewModel().also { it.editSet(recorded.id) }
+
+            vm.openComment()
+            vm.save()
+
+            assertEquals("Тяжело", gym.sets.rows[recorded.id]?.comment)
+        }
+
+    @Test
     fun a_long_comment_is_cut_and_a_blank_one_stays_empty() =
         runTest {
             val vm = viewModel().also { it.selectMachine(press.id) }
-            vm.toggleComment()
+            vm.openComment()
             vm.typeComment("а".repeat(250))
             vm.save()
-            vm.toggleComment()
+            vm.openComment()
             vm.typeComment("   ")
             vm.save()
 

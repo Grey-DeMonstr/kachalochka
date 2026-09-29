@@ -141,7 +141,7 @@ fun VisitScreen(
                 onWeight = viewModel::changeWeight,
                 onTypeWeight = viewModel::typeWeight,
                 onReps = viewModel::changeReps,
-                onToggleComment = viewModel::toggleComment,
+                onOpenComment = viewModel::openComment,
                 onTypeComment = viewModel::typeComment,
                 onSave = viewModel::save,
                 onOpenMachineSettings = {
@@ -545,7 +545,7 @@ private fun SetSheet(
     onWeight: (Int) -> Unit,
     onTypeWeight: (String) -> Unit,
     onReps: (Int) -> Unit,
-    onToggleComment: () -> Unit,
+    onOpenComment: () -> Unit,
     onTypeComment: (String) -> Unit,
     onSave: () -> Unit,
     onOpenMachineSettings: () -> Unit,
@@ -674,7 +674,7 @@ private fun SetSheet(
             OutlineButton(
                 "Комментарий",
                 PhosphorIcons.ChatTeardropText,
-                onToggleComment,
+                onOpenComment,
                 Modifier.weight(1f).testTag("set-comment"),
             )
             if (sheet.editing) {
