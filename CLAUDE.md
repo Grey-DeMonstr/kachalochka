@@ -21,10 +21,11 @@ cuts a release with a signed APK. See `docs/technical_spec.md` §8.
 
 ## Issue backlog
 
-`ISSUES.local.md` in the repo root is the user's git-ignored backlog: one `## N. Title — status`
-heading per issue (`open` or `done`), the user's description below it. When the user asks to list
-issues, show the open ones; when they report a new one, append it with the next number, worded
-from the user's point of view. Mark an issue `done` once its fix is committed.
+`ISSUES.local.md` in the repo root is the user's git-ignored backlog: one `# N. Title` heading per
+issue, the user's description below it. When the user reports a new one, append it with the next
+number, worded from the user's point of view. Remove the issue from the list once its fix is
+committed. An emptied list starts numbering over, so issue numbers are never mentioned outside
+this file: not in code, specs, plans or commit messages.
 
 ## Commits and releases
 
