@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
@@ -249,30 +250,49 @@ private fun MachineBlock(
             .zIndex(if (setOrder.dragging != null) 1f else 0f)
             .dragOutline(order.dragging == index),
     ) {
+        val id = group.machineId.value
+        val muted = colors.onBackground.copy(alpha = 0.6f)
         Row(
             Modifier
                 .fillMaxWidth()
                 .clickableUnless(ordering) { onToggle(group.machineId) }
                 .padding(vertical = 12.dp)
                 .padding(end = if (ordering) 12.dp else 0.dp)
-                .testTag("group-${group.machineId.value}"),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .testTag("group-$id"),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (ordering) {
-                DragHandle(order, index, "drag-machine-${group.machineId.value}", onDropMachine)
+            if (ordering) DragHandle(order, index, "drag-machine-$id", onDropMachine)
+            Column(Modifier.weight(1f)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Text(
+                        group.title,
+                        fontSize = 16.sp,
+                        color = colors.onBackground,
+                        modifier = Modifier.weight(1f, fill = false).testTag("group-title-$id"),
+                    )
+                    if (group.setupNote.isNotBlank()) {
+                        Text(
+                            group.setupNote,
+                            fontSize = 15.sp,
+                            color = muted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier.weight(1f).testTag("group-note-$id"),
+                        )
+                    }
+                }
+                Text(
+                    group.summary,
+                    fontSize = 15.sp,
+                    color = muted,
+                    modifier = Modifier.testTag("group-summary-$id"),
+                )
             }
-            Text(
-                group.title,
-                fontSize = 16.sp,
-                color = colors.onBackground,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                group.summary,
-                fontSize = 15.sp,
-                color = colors.onBackground.copy(alpha = 0.6f),
-            )
         }
         if (group.expanded) {
             group.sets.forEachIndexed { setIndex, row ->

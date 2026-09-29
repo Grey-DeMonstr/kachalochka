@@ -82,6 +82,7 @@ data class VisitUiState(
 data class SetGroupUi(
     val machineId: MachineId,
     val title: String,
+    val setupNote: String,
     val summary: String,
     val expanded: Boolean,
     val sets: List<SetRowUi>,
@@ -536,6 +537,7 @@ class VisitViewModel(
         return SetGroupUi(
             machineId = machineId,
             title = title,
+            setupNote = machine?.setupNote.orEmpty(),
             summary = machine?.let { setsSummary(it, machineSets, preferred) }.orEmpty(),
             expanded =
                 ordering || machineId in expanded || machineSets.any { it.id == editing?.id },

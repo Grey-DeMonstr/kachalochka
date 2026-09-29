@@ -61,7 +61,8 @@ but not yet available. On Android with nobody signed in, "Войти через 
 of the screen. The very bottom names the app's version, "Версия 1.1.0".
 
 The visit screen lists the day's sets grouped by machine, machines in the order of their first
-set, and ends with "Новый тренажёр", which opens the machine picker. Tapping a machine's row
+set, and ends with "Новый тренажёр", which opens the machine picker. A machine's row names it, with
+its setup note at the right, and writes its results on the line below. Tapping a machine's row
 expands it to show its sets, numbered "#1", "#2" and so on; tapping a set opens it for editing or
 deletion. A friend's visit numbers its sets the same way. «Порядок» shows a
 handle at the left of every machine and set; dragging a machine's handle moves the machine with

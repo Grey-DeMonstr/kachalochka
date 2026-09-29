@@ -440,6 +440,15 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun a_machine_row_carries_the_machine_s_setup_note() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 80.0, 8, 0))
+            val vm = viewModel().also { it.refresh() }
+
+            assertEquals("Сиденье на 4", assertNotNull(vm.state.value).groups.single().setupNote)
+        }
+
+    @Test
     fun every_machine_row_reads_like_its_line_in_the_shared_visit() =
         runTest {
             val cable = Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb)

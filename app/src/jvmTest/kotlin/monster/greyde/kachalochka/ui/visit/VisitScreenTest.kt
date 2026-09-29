@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasTestTag
@@ -122,6 +123,27 @@ class VisitScreenTest {
             onNodeWithTag("visit-notice").performClick()
             waitForIdle()
             onNodeWithTag("visit-notice").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun a_machine_row_names_the_machine_and_its_note_above_its_results() {
+        runBlocking { gym.machines.upsert(press.copy(setupNote = "Сиденье на 4")) }
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            val id = press.id.value
+            onNodeWithTag(
+                "group-note-$id",
+                useUnmergedTree = true,
+            ).assertTextEquals("Сиденье на 4")
+            onNodeWithTag(
+                "group-summary-$id",
+                useUnmergedTree = true,
+            ).assertTextEquals("70кг 1x10")
+            val title = onNodeWithTag("group-title-$id", useUnmergedTree = true).getBoundsInRoot()
+            val summary =
+                onNodeWithTag("group-summary-$id", useUnmergedTree = true).getBoundsInRoot()
+            assertTrue(summary.top >= title.bottom)
         }
     }
 
