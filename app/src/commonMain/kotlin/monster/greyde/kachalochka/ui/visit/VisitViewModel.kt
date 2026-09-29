@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -70,6 +71,7 @@ import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.machine.visibleLinks
 import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -209,6 +211,7 @@ class VisitViewModel(
                 reload(reseed = true)
             }
         }
+        viewModelScope.launch { AppStrings.flow.drop(1).collect { publish() } }
         // The weight and reps the user is choosing stay as they are.
         viewModelScope.launch {
             sync.completed.collect {
@@ -628,9 +631,11 @@ class VisitViewModel(
             VisitUiState(
                 title =
                     if (isToday) {
-                        "Сегодня"
+                        AppStrings.current.todayTitle
                     } else {
-                        "Визит · ${dayMonthLabel(day, CalendarDay.of(now, offset).year)}"
+                        AppStrings.current.visitOn(
+                            dayMonthLabel(day, CalendarDay.of(now, offset).year),
+                        )
                     },
                 setCountLabel = setCount(visitSets.size),
                 groups = groups,
@@ -663,7 +668,7 @@ class VisitViewModel(
                         set.id,
                         "#${setIndex + 1}",
                         machine?.let { setValue(set.weight, set.reps, it, preferred) }
-                            ?: setValue(set.weight, set.reps, "кг"),
+                            ?: setValue(set.weight, set.reps, AppStrings.current.kg),
                         set.id == editing?.id,
                         set.comment,
                     )
@@ -700,8 +705,10 @@ class VisitViewModel(
             if (edited == null) {
                 machine.setupNote.ifBlank { null }
             } else {
-                "Правка · записано ${clockLabel(minuteOfDay(edited.recordedAt, offset))}, " +
-                    "было ${setValue(edited.weight, edited.reps, machine, preferred)}"
+                AppStrings.current.editCaption(
+                    clockLabel(minuteOfDay(edited.recordedAt, offset)),
+                    setValue(edited.weight, edited.reps, machine, preferred),
+                )
             }
         val previous =
             previousSets.takeIf { edited == null && it.isNotEmpty() }?.let { previous ->
@@ -713,7 +720,7 @@ class VisitViewModel(
         return SheetUi(
             name = machine.name,
             platformSuffix = platformSuffix(machine, preferred),
-            setNumberLabel = "подход $number",
+            setNumberLabel = AppStrings.current.setNumber(number),
             caption = caption,
             previous = previous,
             weight = weightText ?: formatNumber(values.weight),

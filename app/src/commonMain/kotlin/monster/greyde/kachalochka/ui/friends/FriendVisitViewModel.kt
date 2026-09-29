@@ -31,6 +31,7 @@ import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.machine.visibleLinks
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
 data class FriendVisitUiState(
@@ -148,7 +149,7 @@ class FriendVisitViewModel(
                         set.id,
                         "#${index + 1}",
                         machine?.let { setValue(set.weight, set.reps, it, preferred) }
-                            ?: setValue(set.weight, set.reps, "кг"),
+                            ?: setValue(set.weight, set.reps, AppStrings.current.kg),
                         set.comment,
                     )
                 },

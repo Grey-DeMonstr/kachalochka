@@ -46,6 +46,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.ui.friends.olegTrainedOn
+import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -109,6 +110,19 @@ class VisitScreenTest {
             assertEquals(1, picks)
         }
     }
+
+    @Test
+    fun the_visit_screen_speaks_english() =
+        inEnglish {
+            runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+                waitForIdle()
+                onNodeWithTag("reorder-toggle").assertTextEquals("Reorder")
+                onNodeWithTag("pick-machine").assertTextEquals("New machine")
+                onNodeWithTag("set-comment").assertTextEquals("Comment")
+                onNodeWithTag("save-set").assertTextEquals("Save set")
+                onNodeWithTag("top-bar-title").assertTextEquals("Today")
+            }
+        }
 
     @Test
     fun sharing_the_visit_hands_its_text_over_and_shows_the_notice_until_tapped() {

@@ -31,6 +31,7 @@ import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.olegTrainedOn
+import monster.greyde.kachalochka.ui.strings.inEnglish
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -147,6 +148,21 @@ class VisitViewModelTest {
 
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun the_visit_speaks_english_once_the_language_changes() {
+        val vm = viewModel().also { it.selectMachine(press.id) }
+
+        inEnglish {
+            val state = assertNotNull(vm.state.value)
+            assertEquals("Today", state.title)
+            assertEquals("0 sets", state.setCountLabel)
+            val sheet = assertNotNull(state.sheet)
+            assertEquals("set 1", sheet.setNumberLabel)
+            assertEquals("Save set", sheet.saveLabel)
+            assertEquals("kg total · ±2.5", sheet.weightCaption)
+        }
+    }
 
     @Test
     fun a_visit_without_sets_cannot_be_shared() {

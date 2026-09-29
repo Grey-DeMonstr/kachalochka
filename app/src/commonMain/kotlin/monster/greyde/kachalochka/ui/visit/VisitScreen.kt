@@ -78,6 +78,7 @@ import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
@@ -109,14 +110,14 @@ fun VisitScreen(
         onBackCompleted = { viewModel.closeSheet() },
     )
     Screen(
-        current?.title ?: "Визит",
+        current?.title ?: strings().visit,
         onBack = { if (!viewModel.closeSheet()) onBack() },
         onOpenSettings = onOpenSettings,
         actions = {
             if (current?.canShare == true) {
                 SquareIconButton(
                     PhosphorIcons.ShareNetwork,
-                    "Поделиться",
+                    strings().share,
                     viewModel::share,
                     Modifier.testTag("share-visit"),
                 )
@@ -197,7 +198,7 @@ private fun VisitList(
                 color = colors.onBackground.copy(alpha = 0.5f),
             )
             Text(
-                if (state.ordering) "Готово" else "Порядок",
+                if (state.ordering) strings().done else strings().reorder,
                 Modifier
                     .clickable(onClick = onToggleOrdering)
                     .padding(8.dp)
@@ -216,7 +217,7 @@ private fun VisitList(
             ) {
                 Checkbox(checked = state.groupByTag, onCheckedChange = null)
                 Text(
-                    "Группировать по тегам",
+                    strings().groupByTag,
                     modifier = Modifier.padding(start = 8.dp),
                     fontSize = 14.sp,
                     color = colors.onBackground.copy(alpha = 0.7f),
@@ -269,7 +270,7 @@ private fun VisitList(
             }
         }
         OutlineButton(
-            "Новое упражнение",
+            strings().newMachine,
             PhosphorIcons.Plus,
             onNewMachine,
             Modifier.fillMaxWidth().padding(top = 14.dp).testTag("pick-machine"),
@@ -405,7 +406,7 @@ private fun AddSetRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(PhosphorIcons.Plus, null, tint = colors.tertiary, modifier = Modifier.size(18.dp))
-        Text("Добавить подход", fontSize = 15.sp, color = colors.tertiary)
+        Text(strings().addSet, fontSize = 15.sp, color = colors.tertiary)
     }
 }
 
@@ -503,7 +504,7 @@ private fun PersonChips(
         ) {
             Icon(
                 PhosphorIcons.Plus,
-                "Добавить аккаунт",
+                strings().addAccount,
                 tint = colors.onBackground.copy(alpha = 0.55f),
                 modifier = Modifier.size(20.dp),
             )
@@ -693,7 +694,7 @@ private fun SetSheet(
             }
             if (sheet.friends.isNotEmpty()) {
                 Column(Modifier.fillMaxWidth().testTag("sheet-friends")) {
-                    Text("Друзья:", fontSize = 13.sp, color = colors.secondary)
+                    Text(strings().friendsColon, fontSize = 13.sp, color = colors.secondary)
                     sheet.friends.forEach {
                         Text(it, fontSize = 13.sp, color = colors.onBackground.copy(alpha = 0.6f))
                     }
@@ -709,9 +710,9 @@ private fun SetSheet(
             accent = sheet.editing,
             onValueChange = onTypeWeight,
         )
-        Stepper(sheet.reps, "повторы", { onReps(-1) }, { onReps(+1) }, "reps")
+        Stepper(sheet.reps, strings().reps, { onReps(-1) }, { onReps(+1) }, "reps")
         sheet.comment?.let {
-            TextInput(it, "Комментарий", onTypeComment, Modifier.testTag("set-comment-field"))
+            TextInput(it, strings().comment, onTypeComment, Modifier.testTag("set-comment-field"))
         }
         AccentButton(
             sheet.saveLabel,
@@ -724,21 +725,21 @@ private fun SetSheet(
         )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlineButton(
-                "Комментарий",
+                strings().comment,
                 PhosphorIcons.ChatTeardropText,
                 onOpenComment,
                 Modifier.weight(1f).testTag("set-comment"),
             )
             if (sheet.editing) {
                 OutlineButton(
-                    "Удалить подход",
+                    strings().deleteSet,
                     PhosphorIcons.Trash,
                     onDelete,
                     Modifier.weight(1f).testTag("delete-set"),
                 )
             } else {
                 OutlineButton(
-                    "Настройки",
+                    strings().settings,
                     PhosphorIcons.SlidersHorizontal,
                     onOpenMachineSettings,
                     Modifier.weight(1f).testTag("machine-settings"),
