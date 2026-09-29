@@ -187,6 +187,10 @@ class VisitViewModel(
     private var preferred = PreferredWeightUnit.Kg
     private var groupByTag = false
 
+    /** Counts switches, so a profile read before the latest one cannot undo it. */
+    private var groupByTagSwitches = 0
+    private var groupByTagWrite: Job? = null
+
     /**
      * Read ahead of the tap: a browser lets the clipboard be written only while a tap is recent,
      * which a network read of the profile could outlast.
@@ -394,15 +398,24 @@ class VisitViewModel(
     /** Kept in the account's profile, so the choice follows it to its other devices. */
     fun toggleGroupByTag() {
         groupByTag = !groupByTag
+        groupByTagSwitches++
         publish()
         val wanted = groupByTag
-        viewModelScope.launch {
-            val owner = currentUser.id()
-            val now = clock.now()
-            val stored = profiles.forOwner(owner) ?: Profile.new(owner, now)
-            profiles.upsert(stored.copy(groupByTag = wanted, updatedAt = now))
-            sync.request()
-        }
+        val previous = groupByTagWrite
+        groupByTagWrite =
+            viewModelScope.launch {
+                // One write at a time, so the last switch is the one the server keeps.
+                previous?.join()
+                writeGroupByTag(wanted)
+            }
+    }
+
+    private suspend fun writeGroupByTag(wanted: Boolean) {
+        val owner = currentUser.id()
+        val now = clock.now()
+        val stored = profiles.forOwner(owner) ?: Profile.new(owner, now)
+        profiles.upsert(stored.copy(groupByTag = wanted, updatedAt = now))
+        sync.request()
     }
 
     fun toggleOrdering() {
@@ -517,9 +530,10 @@ class VisitViewModel(
     private suspend fun reload(reseed: Boolean) {
         val owner = currentUser.id()
         val shown = visits.shownOn(owner, day, sets, utcOffset::at)
+        val switches = groupByTagSwitches
         val profile = profiles.forOwner(owner)
         preferred = profile?.weightUnit ?: PreferredWeightUnit.Kg
-        groupByTag = profile?.groupByTag ?: false
+        if (switches == groupByTagSwitches) groupByTag = profile?.groupByTag ?: false
         visit = shown
         machinesById = machines.all(owner).associateBy { it.id }
         ownPhotos = photos.all(owner)

@@ -659,6 +659,22 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun a_reload_that_read_the_profile_before_a_switch_keeps_the_switch() =
+        runTest {
+            taggedVisit(grouped = false)
+            val vm = viewModel().also { it.refresh() }
+            val gate = CompletableDeferred<Unit>().also { gym.profiles.readGate = it }
+            vm.refresh()
+            gym.profiles.readGate = null
+
+            vm.toggleGroupByTag()
+            gate.complete(Unit)
+
+            assertTrue(assertNotNull(vm.state.value).groupByTag)
+            assertEquals(true, gym.profiles.forOwner(null)?.groupByTag)
+        }
+
+    @Test
     fun ordering_shows_the_plain_list_even_when_grouped() =
         runTest {
             taggedVisit(grouped = true)

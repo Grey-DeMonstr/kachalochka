@@ -171,10 +171,17 @@ class InMemoryProfileRepository : ProfileRepository {
 
     override suspend fun byId(id: ProfileId): Profile? = rows[id]
 
-    override suspend fun forOwner(owner: UserId?): Profile? =
-        rows.values
-            .filter { !it.deleted && it.userId == owner }
-            .maxWithOrNull(compareBy<Profile> { it.updatedAt }.thenBy { it.id.value })
+    /** While set, [forOwner] answers with what it read before waiting, as a slow network read. */
+    var readGate: CompletableDeferred<Unit>? = null
+
+    override suspend fun forOwner(owner: UserId?): Profile? {
+        val found =
+            rows.values
+                .filter { !it.deleted && it.userId == owner }
+                .maxWithOrNull(compareBy<Profile> { it.updatedAt }.thenBy { it.id.value })
+        readGate?.await()
+        return found
+    }
 }
 
 class InMemoryMachineLinkRepository : MachineLinkRepository {
