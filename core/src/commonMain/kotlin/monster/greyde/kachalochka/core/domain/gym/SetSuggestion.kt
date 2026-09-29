@@ -19,17 +19,14 @@ fun previousVisitSets(
 
 /**
  * [thisVisit] holds the sets already recorded on [machine] in this visit, in order. Once a set is
- * recorded its weight carries on, since the user just chose it; the reps still follow the
- * previous visit's pattern.
+ * recorded it carries on whole, since the user just chose it.
  */
 fun suggestNextSet(
     machine: Machine,
     previousVisit: List<WorkoutSet>,
     thisVisit: List<WorkoutSet>,
 ): SetValues {
-    val pattern =
-        previousVisit.getOrNull(thisVisit.size) ?: thisVisit.lastOrNull()
-            ?: previousVisit.lastOrNull()
-    return pattern?.let { SetValues(thisVisit.lastOrNull()?.weight ?: it.weight, it.reps) }
+    val pattern = thisVisit.lastOrNull() ?: previousVisit.firstOrNull()
+    return pattern?.let { SetValues(it.weight, it.reps) }
         ?: SetValues(if (machine.platformIncluded) machine.platformWeight else 0.0, DEFAULT_REPS)
 }

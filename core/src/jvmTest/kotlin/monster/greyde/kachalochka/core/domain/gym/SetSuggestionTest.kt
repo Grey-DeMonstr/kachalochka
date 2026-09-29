@@ -43,10 +43,10 @@ class SetSuggestionTest {
     }
 
     @Test
-    fun a_later_set_keeps_the_weight_just_recorded_and_the_previous_visit_s_reps() {
-        val today = listOf(set(VISIT_B, 60.0, atSeconds = 1), set(VISIT_B, 72.5, atSeconds = 2))
+    fun a_later_set_repeats_the_weight_and_the_reps_just_recorded() {
+        val today = listOf(set(VISIT_B, 60.0, 12, 1), set(VISIT_B, 72.5, 6, 2))
 
-        assertEquals(SetValues(72.5, 8), suggestNextSet(machine(), yesterday, today))
+        assertEquals(SetValues(72.5, 6), suggestNextSet(machine(), yesterday, today))
     }
 
     @Test
