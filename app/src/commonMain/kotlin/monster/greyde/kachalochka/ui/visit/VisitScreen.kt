@@ -292,7 +292,7 @@ private fun MachineBlock(
                         group.title,
                         fontSize = 16.sp,
                         color = colors.onBackground,
-                        modifier = Modifier.weight(1f, fill = false).testTag("group-title-$id"),
+                        modifier = Modifier.testTag("group-title-$id"),
                     )
                     if (group.setupNote.isNotBlank()) {
                         Text(

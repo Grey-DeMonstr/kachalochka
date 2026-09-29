@@ -24,6 +24,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.unit.width
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
@@ -143,6 +144,19 @@ class VisitScreenTest {
             val summary =
                 onNodeWithTag("group-summary-$id", useUnmergedTree = true).getBoundsInRoot()
             assertTrue(summary.top >= title.bottom)
+        }
+    }
+
+    @Test
+    fun a_long_name_takes_the_room_a_short_note_leaves() {
+        val name = "Жим ногами в раме Смита с широкой постановкой стоп ".repeat(3).trim()
+        runBlocking { gym.machines.upsert(press.copy(name = name, setupNote = "4")) }
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            val id = press.id.value
+            val row = onNodeWithTag("group-$id").getBoundsInRoot()
+            val title = onNodeWithTag("group-title-$id", useUnmergedTree = true).getBoundsInRoot()
+            assertTrue(title.width > (row.width * 0.6f), "title ${title.width} of ${row.width}")
         }
     }
 
