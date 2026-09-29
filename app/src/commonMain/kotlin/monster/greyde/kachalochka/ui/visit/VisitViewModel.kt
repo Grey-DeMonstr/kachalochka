@@ -27,13 +27,10 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
 import monster.greyde.kachalochka.core.domain.gym.coverPhoto
-import monster.greyde.kachalochka.core.domain.gym.dayVisit
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.machineMovedTo
 import monster.greyde.kachalochka.core.domain.gym.minuteOfDay
-import monster.greyde.kachalochka.core.domain.gym.nextPosition
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
-import monster.greyde.kachalochka.core.domain.gym.recordingInstant
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.gym.setMovedTo
 import monster.greyde.kachalochka.core.domain.gym.shownOn
@@ -154,6 +151,8 @@ class VisitViewModel(
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
     private val writes = WriteGuard(viewModelScope)
+    private val recorder =
+        SetRecorder(day, visits, machines, sets, clock, utcOffset, restTimer, sync)
 
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var visitSets: List<WorkoutSet> = emptyList()
@@ -315,7 +314,11 @@ class VisitViewModel(
             saving = true
             publish()
             try {
-                recordSet(machine, saved, comment, edited)
+                if (edited == null) {
+                    recorder.record(currentUser.id(), machine, saved, comment)
+                } else {
+                    recorder.amend(edited, saved, comment)
+                }
                 val stillOpen = open?.id == machine.id
                 if (stillOpen) {
                     commentText = null
@@ -326,50 +329,6 @@ class VisitViewModel(
                 saving = false
                 publish()
             }
-        }
-    }
-
-    private suspend fun recordSet(
-        machine: Machine,
-        values: SetValues,
-        comment: String,
-        edited: WorkoutSet?,
-    ) {
-        val now = clock.now()
-        if (edited == null) {
-            val owner = currentUser.id()
-            val offset = utcOffset.at(now)
-            val today = CalendarDay.of(now, offset)
-            val shown = visits.shownOn(owner, day, sets, utcOffset::at)
-            val target =
-                shown?.visit ?: dayVisit(day, owner, today, offset, now).also { visits.upsert(it) }
-            val targetSets = shown?.sets.orEmpty()
-            sets.upsert(
-                WorkoutSet(
-                    WorkoutSetId.random(),
-                    owner,
-                    target.id,
-                    ownMachine(owner, machine).id,
-                    values.weight,
-                    values.reps,
-                    nextPosition(targetSets),
-                    recordingInstant(target, targetSets, today, now),
-                    now,
-                    false,
-                    comment,
-                ),
-            )
-            if (day == today) restTimer.start() else sync.request()
-        } else {
-            sets.upsert(
-                edited.copy(
-                    weight = values.weight,
-                    reps = values.reps,
-                    comment = comment,
-                    updatedAt = now,
-                ),
-            )
-            requestSyncIfPast()
         }
     }
 
@@ -385,7 +344,7 @@ class VisitViewModel(
                 reload(reseed = false)
                 return@launch
             }
-            val own = ownMachine(currentUser.id(), machine)
+            val own = recorder.ownCopy(currentUser.id(), machine)
             reload(reseed = false)
             onOpen(own.id)
         }
@@ -437,8 +396,7 @@ class VisitViewModel(
             val byId = changed.associateBy { it.id }
             visitSets = visitSets.map { byId[it.id] ?: it }
             publish()
-            changed.forEach { sets.upsert(it) }
-            if (changed.isNotEmpty()) requestSyncIfPast()
+            recorder.reorder(changed)
             reload(reseed = false)
         }
     }
@@ -469,16 +427,10 @@ class VisitViewModel(
     fun deleteEditedSet() {
         val edited = editing ?: return
         writes.launch {
-            sets.upsert(edited.copy(deleted = true, updatedAt = clock.now()))
+            recorder.remove(edited)
             editing = null
-            requestSyncIfPast()
             reload(reseed = true)
         }
-    }
-
-    /** A past day's edit is a one-off, so it is pushed at once rather than with today's sets. */
-    private fun requestSyncIfPast() {
-        if (!isToday) sync.request()
     }
 
     private fun today(): CalendarDay {
@@ -500,17 +452,6 @@ class VisitViewModel(
             return null
         }
         return machines.named(owner, shown.name) ?: shown
-    }
-
-    private suspend fun ownMachine(
-        owner: UserId?,
-        shown: Machine,
-    ): Machine {
-        if (shown.userId == owner) return shown
-        machines.named(owner, shown.name)?.let { return it }
-        val mirrored = shown.copy(id = MachineId.random(), userId = owner, updatedAt = clock.now())
-        machines.upsert(mirrored)
-        return mirrored
     }
 
     private fun setNumber(

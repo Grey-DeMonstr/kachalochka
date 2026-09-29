@@ -450,6 +450,12 @@ A reorder (`machineMovedTo`, `setMovedTo`) renumbers the visit's sets 1..n in th
 writes only those whose position changed, so sets sharing a position still land in the dropped
 order.
 
+Every write to a day's sets goes through `SetRecorder` in `app/ui/visit`: it finds or creates the
+day's visit, replaces a machine of another account with the active account's own copy of it,
+gives a new set its position and instant, starts the rest timer for today's set and requests a
+sync for another day's, and amends, removes and reorders sets under the same rule. The visit view
+model keeps the sheet's state and hands the recorder what to write.
+
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward
 instead of observing it.
