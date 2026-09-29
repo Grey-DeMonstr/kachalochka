@@ -8,8 +8,8 @@ Thirteen changes from the backlog, in three parts. Each change is its own commit
   set sheet closes completely and a "+" row adds a set to any expanded machine. Photos show in the
   visit and the sheet, and tapping one opens the machine form. Sets take comments. "Гравитрон"
   becomes a third weight mode. The Russian text says "упражнение" for a machine.
-- **Part B — tags.** A machine has one personal tag, shown beside its name in the visit. "Group by
-  tag", kept per account, splits the visit and its shared text into sections.
+- **Part B — tags.** A machine has any number of personal tags, shown beside its name in the visit.
+  "Group by tag", kept per account, splits the visit and its shared text into sections.
 - **Part C — settings and English.** One "Применить" saves every setting; theme and language are
   chosen like the weight unit; deleting the account hides under "Дополнительно" and asks for
   DELETE. The app speaks English as well as Russian, following the system until the user picks
@@ -40,9 +40,11 @@ changes add.
 - **"Тренажёр" becomes "упражнение" in Russian only.** Every Russian label, with its grammar
   ("Новое упражнение", "3 упражнения"). The English text says "machine"; code and docs keep
   `Machine`.
-- **One tag per machine.** `machine.tag`, empty for none, personal: a copy taken from a friend
-  starts without one. Sections follow the visit order of their first machine; untagged machines
-  come last, without a header.
+- **Tags are a set per machine.** `machine.tags`, a JSON array of trimmed, distinct names, empty
+  for none, personal: a copy taken from a friend starts without any. Grouping makes one section per
+  distinct set of tags, headed by its tags sorted and joined with ", ", so "Грудь, Руки" is its own
+  section apart from "Руки". Sections follow the visit order of their first machine; untagged
+  machines come last, without a header.
 - **Grouping is per account.** `profile.group_by_tag`, synced, false by default.
 - **Settings apply together.** Theme, language and transition length become drafts saved by the
   same button as the profile. Leaving with unapplied changes asks first.
@@ -119,18 +121,21 @@ Every Russian label naming a machine is reworded, with the tests that assert the
 
 ## 3. Part B — tags
 
-- `Machine.tag: String`, trimmed, empty for none: `machine.tag` in SQLDelight (`12.sqm`) and in
-  migration `0017_machine_tag.sql`, with `profile.group_by_tag boolean not null default false`.
-  `Profile.groupByTag` maps it. `linkedCopy` clears the tag; a merge keeps the kept machine's.
-- The machine form has a "Тег" field under the setup note, and below it one chip per distinct tag
-  of the account's live machines, sorted; tapping one fills the field.
-- The visit shows a machine's tag after its title, muted, in a small outlined label.
+- `Machine.tags: Set<String>`: `machine.tags text not null default '[]'`, a JSON array, in
+  SQLDelight (`12.sqm`) and in migration `0017_machine_tags.sql`, with
+  `profile.group_by_tag boolean not null default false`. A row whose `tags` does not parse reads as untagged, as `friend_colors`
+  does. `Profile.groupByTag` maps the flag. `linkedCopy` clears the tags; a merge keeps the kept
+  machine's.
+- The machine form has a "Теги" section under the setup note: one chip per distinct tag of the
+  account's live machines, sorted, selected when the machine has it and toggled by a tap; a field
+  with "Добавить" adds a new tag, trimmed, and selects it.
+- The visit shows a machine's tags after its title, muted, each in a small outlined label.
 - A "Группировать по тегам" checkbox (`group-by-tag`) sits in the row with the set count. It writes
   the profile at once and requests a sync. When on and some machine has a tag, the list is split
-  into sections, each headed by its tag, untagged machines last and unheaded. "Порядок" shows the
+  into sections, one per tag set, untagged machines last and unheaded. "Порядок" shows the
   plain list while ordering, since a drag moves machines in the visit order.
 - `visitShareText` takes the grouping: sections separated by an empty line, each tagged one headed
-  by its tag.
+  by its tags.
 
 ```
 ГДМ, чт
@@ -182,7 +187,7 @@ Every Russian label naming a machine is reworded, with the tests that assert the
 
 - `docs/functional_spec.md`: the visit screen and the sheet (2.1–2.8), the Russian labels (2.9),
   tags and the shared text (3), settings (4.1), languages under Requirements (4.2).
-- `docs/technical_spec.md` §4.5: `comment`, `tag`, `counterweight`; the profile's `group_by_tag`;
+- `docs/technical_spec.md` §4.5: `comment`, `tags`, `counterweight`; the profile's `group_by_tag`;
   a new section on strings and languages beside §10 Theming.
 
 ## 6. Release
