@@ -68,8 +68,12 @@ sheet shows the same photo, which opens the form too. Tapping a machine's row ex
 its sets, numbered "#1", "#2" and so on; tapping a set opens it for editing or deletion. A friend's
 visit numbers its sets the same way. «Порядок» shows a handle at the left of every machine and set;
 dragging a machine's handle moves the machine with its sets, dragging a set's handle moves it among
-its machine's sets. «Готово» hides the handles. Today's visit is titled "Сегодня", any other day's
-with its date.
+its machine's sets. «Готово» hides the handles. A machine's tags follow its name, each in a small
+frame. When a machine of the visit has tags, "Группировать по тегам" splits the list into sections,
+one per distinct set of tags, headed by the tags and in the order of their first machine; untagged
+machines come last without a heading. The choice is the account's, saved in its profile and synced,
+and «Порядок» shows the plain list while it is on. Today's visit is titled "Сегодня", any other
+day's with its date.
 
 A visit with sets has a "Поделиться" button in the top bar that hands the visit over as text:
 Android opens its share sheet, the web copies the text and says "Скопировано" (or "Не удалось
@@ -89,7 +93,9 @@ its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zer
 ("Гребная тяга (+11.3кг) 15кг на каждую, 3x12"). A gravitron's weights are written after "(-)",
 since a smaller one is progress ("Подтягивания в гравитроне (-)27-25-22.5кг 10-8-6"). The machine
 rows of the visit screen and of a friend's visit, and the previous visit's and friends' results in
-the set sheet, write a machine's weights and reps exactly the same way.
+the set sheet, write a machine's weights and reps exactly the same way. When the visit is grouped
+by tags, the machine lines form the same sections, separated by an empty line, each tagged one
+starting with a line of its tags.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips, the
 machine, the set number, the machine's setup note, the previous visit's sets on that machine, and

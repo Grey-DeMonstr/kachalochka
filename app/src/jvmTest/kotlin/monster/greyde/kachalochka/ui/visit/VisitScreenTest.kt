@@ -161,6 +161,30 @@ class VisitScreenTest {
     }
 
     @Test
+    fun grouping_by_tag_heads_each_section_with_its_tags() {
+        runBlocking { gym.machines.upsert(press.copy(tags = setOf("Ноги"))) }
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            val id = press.id.value
+            onNodeWithTag("group-tag-$id-Ноги", useUnmergedTree = true).assertTextEquals("Ноги")
+            onNodeWithTag("section-Ноги").assertDoesNotExist()
+
+            onNodeWithTag("group-by-tag").performClick()
+            waitForIdle()
+
+            onNodeWithTag("section-Ноги").assertTextEquals("Ноги")
+        }
+    }
+
+    @Test
+    fun a_visit_without_tags_offers_no_grouping() {
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("group-by-tag").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun a_visit_without_sets_offers_no_share() {
         runScreenTest(gym, screen = { visitScreen(day = CalendarDay(2023, 11, 12)) }) {
             waitForIdle()

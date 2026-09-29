@@ -41,15 +41,16 @@ import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.stepReps
 import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
+import monster.greyde.kachalochka.core.domain.gym.tagSections
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountUi
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.accountsUi
-import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.clockLabel
@@ -64,6 +65,7 @@ import monster.greyde.kachalochka.ui.format.saveLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
+import monster.greyde.kachalochka.ui.format.tagTitle
 import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.machine.visibleLinks
@@ -83,6 +85,15 @@ data class VisitUiState(
     val ordering: Boolean,
     val canShare: Boolean,
     val notice: String?,
+    /** [groups] as shown: split by tag set when grouped, else one untitled section. */
+    val sections: List<VisitSectionUi> = listOf(VisitSectionUi(null, groups)),
+    val groupByTag: Boolean = false,
+    val canGroupByTag: Boolean = false,
+)
+
+data class VisitSectionUi(
+    val title: String?,
+    val groups: List<SetGroupUi>,
 )
 
 data class SetGroupUi(
@@ -93,6 +104,7 @@ data class SetGroupUi(
     val expanded: Boolean,
     val sets: List<SetRowUi>,
     val photo: Photo? = null,
+    val tags: List<String> = emptyList(),
 )
 
 data class SetRowUi(
@@ -173,6 +185,7 @@ class VisitViewModel(
     private var friendsStale = false
     private var notice: String? = null
     private var preferred = PreferredWeightUnit.Kg
+    private var groupByTag = false
 
     /**
      * Read ahead of the tap: a browser lets the clipboard be written only while a tap is recent,
@@ -225,7 +238,7 @@ class VisitViewModel(
             groupByMachine(visitSets).mapNotNull { group ->
                 machinesById[group.machineId]?.let { SharedMachine(it, group.sets) }
             }
-        val text = visitShareText(name, day, shared, preferred)
+        val text = visitShareText(name, day, shared, preferred, groupByTag)
         writes.launch {
             notice = reading { sharing.share(text) }.getOrNull()
             publish()
@@ -377,6 +390,20 @@ class VisitViewModel(
         }
     }
 
+    /** Kept in the account's profile, so the choice follows it to its other devices. */
+    fun toggleGroupByTag() {
+        groupByTag = !groupByTag
+        publish()
+        val wanted = groupByTag
+        viewModelScope.launch {
+            val owner = currentUser.id()
+            val now = clock.now()
+            val stored = profiles.forOwner(owner) ?: Profile.new(owner, now)
+            profiles.upsert(stored.copy(groupByTag = wanted, updatedAt = now))
+            sync.request()
+        }
+    }
+
     fun toggleOrdering() {
         ordering = !ordering
         if (ordering && closeSheet()) return
@@ -489,7 +516,9 @@ class VisitViewModel(
     private suspend fun reload(reseed: Boolean) {
         val owner = currentUser.id()
         val shown = visits.shownOn(owner, day, sets, utcOffset::at)
-        preferred = profiles.preferredUnit(owner)
+        val profile = profiles.forOwner(owner)
+        preferred = profile?.weightUnit ?: PreferredWeightUnit.Kg
+        groupByTag = profile?.groupByTag ?: false
         visit = shown
         machinesById = machines.all(owner).associateBy { it.id }
         ownPhotos = photos.all(owner)
@@ -594,6 +623,7 @@ class VisitViewModel(
     private fun publish() {
         val now = clock.now()
         val offset = utcOffset.at(now)
+        val groups = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) }
         mutableState.value =
             VisitUiState(
                 title =
@@ -603,7 +633,10 @@ class VisitViewModel(
                         "Визит · ${dayMonthLabel(day, CalendarDay.of(now, offset).year)}"
                     },
                 setCountLabel = setCount(visitSets.size),
-                groups = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) },
+                groups = groups,
+                sections = sections(groups),
+                groupByTag = groupByTag,
+                canGroupByTag = groups.any { it.tags.isNotEmpty() },
                 sheet = sheetUi(offset),
                 ordering = ordering,
                 canShare = visitSets.isNotEmpty(),
@@ -636,8 +669,21 @@ class VisitViewModel(
                     )
                 },
             photo = coverOf(machineId),
+            tags = machine?.tags.orEmpty().sortedBy { it.lowercase() },
         )
     }
+
+    private fun sections(groups: List<SetGroupUi>): List<VisitSectionUi> =
+        if (groupByTag && !ordering) {
+            tagSections(groups) { it.tags.toSet() }.map { section ->
+                VisitSectionUi(
+                    section.tags.takeIf { it.isNotEmpty() }?.let(::tagTitle),
+                    section.items,
+                )
+            }
+        } else {
+            listOf(VisitSectionUi(null, groups))
+        }
 
     private fun sheetUi(offset: Duration): SheetUi? {
         val machine = open ?: return null

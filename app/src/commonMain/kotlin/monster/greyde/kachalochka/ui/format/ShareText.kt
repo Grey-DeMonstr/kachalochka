@@ -2,9 +2,11 @@ package monster.greyde.kachalochka.ui.format
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.TagSection
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.tagSections
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 
 data class SharedMachine(
@@ -20,14 +22,31 @@ fun visitShareText(
     day: CalendarDay,
     machines: List<SharedMachine>,
     preferred: PreferredWeightUnit,
+    groupByTag: Boolean = false,
 ): String {
     val header =
         listOf(nickname.trim(), SHORT_WEEKDAYS[day.dayOfWeek - 1])
             .filter { it.isNotEmpty() }
             .joinToString(", ")
-    val lines = machines.filter { it.sets.isNotEmpty() }.map { shareLine(it, preferred) }
-    return (listOf(header, "") + lines).joinToString("\n")
+    val shown = machines.filter { it.sets.isNotEmpty() }
+    val sections =
+        if (groupByTag) {
+            tagSections(
+                shown,
+            ) { it.machine.tags }
+        } else {
+            listOf(TagSection(emptySet(), shown))
+        }
+    val body =
+        sections.joinToString("\n\n") { section ->
+            val title = if (section.tags.isEmpty()) emptyList() else listOf(tagTitle(section.tags))
+            (title + section.items.map { shareLine(it, preferred) }).joinToString("\n")
+        }
+    return "$header\n\n$body"
 }
+
+/** A tag set's heading, the same wherever it is read. */
+fun tagTitle(tags: Set<String>): String = tags.sortedBy { it.lowercase() }.joinToString(", ")
 
 private fun sharedUnit(
     machine: Machine,

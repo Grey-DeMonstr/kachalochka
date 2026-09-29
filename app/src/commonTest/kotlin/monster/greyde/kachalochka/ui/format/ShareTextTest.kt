@@ -286,4 +286,35 @@ class ShareTextTest {
 
         assertEquals("Гравитрон 2x10", line(gravitron, 0.0 to 10, 0.0 to 10))
     }
+
+    @Test
+    fun grouped_by_tag_the_text_splits_into_headed_sections_untagged_last() {
+        val press = machine("Жим ногами", platform = 76.0).copy(tags = setOf("Ноги"))
+        val curl = machine("Бицепс").copy(tags = setOf("Руки"))
+        val abs = machine("Пресс сидя")
+        val dips = machine("Трицепс").copy(tags = setOf("Руки"))
+        val shared =
+            listOf(
+                SharedMachine(press, sets(20.0 to 10, 30.0 to 10)),
+                SharedMachine(abs, sets(41.0 to 10)),
+                SharedMachine(curl, sets(14.0 to 12)),
+                SharedMachine(dips, sets(5.0 to 10)),
+            )
+
+        assertEquals(
+            "ГДМ, чт\n\nНоги\nЖим ногами (+76кг) 20-30кг 2x10\n\nРуки\nБицепс 14кг 1x12\n" +
+                "Трицепс 5кг 1x10\n\nПресс сидя 41кг 1x10",
+            visitShareText("ГДМ", thursday, shared, kg, groupByTag = true),
+        )
+    }
+
+    @Test
+    fun grouping_without_any_tags_writes_the_plain_list() {
+        val shared = listOf(SharedMachine(machine("Пресс сидя"), sets(41.0 to 10)))
+
+        assertEquals(
+            "чт\n\nПресс сидя 41кг 1x10",
+            visitShareText("", thursday, shared, kg, groupByTag = true),
+        )
+    }
 }

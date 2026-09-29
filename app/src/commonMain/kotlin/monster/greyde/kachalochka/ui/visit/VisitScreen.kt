@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -130,6 +132,7 @@ fun VisitScreen(
             onAddSet = viewModel::selectMachine,
             onOpenMachine = { viewModel.openMachineSettings(it, onOpenMachineSettings) },
             onToggleOrdering = viewModel::toggleOrdering,
+            onToggleGroupByTag = viewModel::toggleGroupByTag,
             onMoveMachine = viewModel::moveMachine,
             onMoveSet = viewModel::moveSet,
             onNewMachine = { onPickMachine(viewModel.selectedMachineId) },
@@ -167,6 +170,7 @@ private fun VisitList(
     onAddSet: (MachineId) -> Unit,
     onOpenMachine: (MachineId) -> Unit,
     onToggleOrdering: () -> Unit,
+    onToggleGroupByTag: () -> Unit,
     onMoveMachine: (MachineId, Int) -> Unit,
     onMoveSet: (WorkoutSetId, Int) -> Unit,
     onNewMachine: () -> Unit,
@@ -202,6 +206,23 @@ private fun VisitList(
                 color = colors.tertiary,
             )
         }
+        if (state.canGroupByTag) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .toggleable(value = state.groupByTag, onValueChange = { onToggleGroupByTag() })
+                    .testTag("group-by-tag"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = state.groupByTag, onCheckedChange = null)
+                Text(
+                    "Группировать по тегам",
+                    modifier = Modifier.padding(start = 8.dp),
+                    fontSize = 14.sp,
+                    color = colors.onBackground.copy(alpha = 0.7f),
+                )
+            }
+        }
         state.notice?.let {
             Text(
                 it,
@@ -217,19 +238,35 @@ private fun VisitList(
         }
         val machineOrder = rememberReorderState()
         SideEffect { machineOrder.retain(state.groups.size) }
-        state.groups.forEachIndexed { index, group ->
-            MachineBlock(
-                group = group,
-                index = index,
-                order = machineOrder,
-                ordering = state.ordering,
-                onToggle = onToggle,
-                onEdit = onEdit,
-                onAddSet = onAddSet,
-                onOpenMachine = onOpenMachine,
-                onDropMachine = { from, to -> onMoveMachine(state.groups[from].machineId, to) },
-                onMoveSet = onMoveSet,
-            )
+        state.sections.forEach { section ->
+            section.title?.let {
+                Text(
+                    it,
+                    modifier = Modifier.padding(top = 18.dp, bottom = 2.dp).testTag("section-$it"),
+                    fontSize = 13.sp,
+                    letterSpacing = 0.09.em,
+                    color = colors.secondary,
+                )
+            }
+            section.groups.forEach { group ->
+                MachineBlock(
+                    group = group,
+                    index = state.groups.indexOf(group),
+                    order = machineOrder,
+                    ordering = state.ordering,
+                    onToggle = onToggle,
+                    onEdit = onEdit,
+                    onAddSet = onAddSet,
+                    onOpenMachine = onOpenMachine,
+                    onDropMachine = {
+                        from,
+                        to,
+                        ->
+                        onMoveMachine(state.groups[from].machineId, to)
+                    },
+                    onMoveSet = onMoveSet,
+                )
+            }
         }
         OutlineButton(
             "Новое упражнение",
@@ -294,6 +331,21 @@ private fun MachineBlock(
                         color = colors.onBackground,
                         modifier = Modifier.testTag("group-title-$id"),
                     )
+                    group.tags.forEach { tag ->
+                        Text(
+                            tag,
+                            modifier =
+                                Modifier
+                                    .border(
+                                        1.dp,
+                                        muted.copy(alpha = 0.4f),
+                                        RoundedCornerShape(6.dp),
+                                    ).padding(horizontal = 6.dp, vertical = 1.dp)
+                                    .testTag("group-tag-$id-$tag"),
+                            fontSize = 12.sp,
+                            color = muted,
+                        )
+                    }
                     if (group.setupNote.isNotBlank()) {
                         Text(
                             group.setupNote,

@@ -575,6 +575,112 @@ class VisitViewModelTest {
             )
         }
 
+    private val curl = Machine.new("Бицепс", null, t0).copy(tags = setOf("Руки"))
+
+    /** Тяга untagged first, then Жим ногами under Ноги and Бицепс under Руки. */
+    private suspend fun taggedVisit(grouped: Boolean) {
+        gym.machines.upsert(press.copy(tags = setOf("Ноги", "Жим")))
+        gym.machines.upsert(curl)
+        gym.sets.upsert(set(visit.id, row, 45.0, 12, 0))
+        gym.sets.upsert(set(visit.id, press, 80.0, 8, 1))
+        gym.sets.upsert(set(visit.id, curl, 14.0, 12, 2))
+        gym.profiles.upsert(Profile.new(null, t0).copy(groupByTag = grouped))
+    }
+
+    private fun VisitUiState.sectionIds() =
+        sections.map { section -> section.title to section.groups.map { it.machineId } }
+
+    @Test
+    fun a_machine_row_lists_its_tags_sorted() =
+        runTest {
+            taggedVisit(grouped = false)
+            val vm = viewModel().also { it.refresh() }
+
+            val tags = assertNotNull(vm.state.value).groups.map { it.tags }
+
+            assertEquals(listOf(emptyList(), listOf("Жим", "Ноги"), listOf("Руки")), tags)
+        }
+
+    @Test
+    fun ungrouped_the_visit_is_one_untitled_section() =
+        runTest {
+            taggedVisit(grouped = false)
+            val vm = viewModel().also { it.refresh() }
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(listOf(null to listOf(row.id, press.id, curl.id)), state.sectionIds())
+            assertTrue(state.canGroupByTag)
+            assertFalse(state.groupByTag)
+        }
+
+    @Test
+    fun grouped_the_visit_splits_by_tag_set_with_untagged_machines_last() =
+        runTest {
+            taggedVisit(grouped = true)
+            val vm = viewModel().also { it.refresh() }
+
+            assertEquals(
+                listOf(
+                    "Жим, Ноги" to listOf(press.id),
+                    "Руки" to listOf(curl.id),
+                    null to listOf(row.id),
+                ),
+                assertNotNull(vm.state.value).sectionIds(),
+            )
+        }
+
+    @Test
+    fun switching_grouping_keeps_it_in_the_profile_and_syncs_it() =
+        runTest {
+            taggedVisit(grouped = false)
+            val vm = viewModel().also { it.refresh() }
+            val before = gym.sync.requests
+
+            vm.toggleGroupByTag()
+
+            assertEquals(true, gym.profiles.forOwner(null)?.groupByTag)
+            assertEquals(before + 1, gym.sync.requests)
+            assertTrue(assertNotNull(vm.state.value).groupByTag)
+        }
+
+    @Test
+    fun ordering_shows_the_plain_list_even_when_grouped() =
+        runTest {
+            taggedVisit(grouped = true)
+            val vm = viewModel().also { it.refresh() }
+
+            vm.toggleOrdering()
+
+            assertEquals(
+                listOf(null to listOf(row.id, press.id, curl.id)),
+                assertNotNull(vm.state.value).sectionIds(),
+            )
+        }
+
+    @Test
+    fun a_visit_without_tags_offers_no_grouping() =
+        runTest {
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 0))
+            val vm = viewModel().also { it.refresh() }
+
+            assertFalse(assertNotNull(vm.state.value).canGroupByTag)
+        }
+
+    @Test
+    fun a_grouped_visit_is_shared_in_sections() =
+        runTest {
+            taggedVisit(grouped = true)
+            val vm = viewModel().also { it.refresh() }
+
+            vm.share()
+
+            assertEquals(
+                "вт\n\nЖим, Ноги\nЖим ногами (+20кг) 80кг 1x8\n\nРуки\nБицепс 14кг 1x12\n\n" +
+                    "Тяга верхнего блока 45кг 1x12",
+                gym.texts.shared.single(),
+            )
+        }
+
     @Test
     fun a_machine_row_carries_the_machine_s_setup_note() =
         runTest {
