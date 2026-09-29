@@ -26,6 +26,7 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
+import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -134,6 +135,17 @@ class CalendarViewModelTest {
         assertNull(state.visit)
         assertTrue(state.noVisit)
         assertEquals(CalendarDay(2023, 11, 14), state.day)
+    }
+
+    @Test
+    fun the_calendar_speaks_english_once_the_language_changes() {
+        val vm = viewModel().also { it.refresh() }
+
+        inEnglish {
+            val state = assertNotNull(vm.state.value)
+            assertEquals("November 2023", state.monthTitle)
+            assertEquals("Tuesday, 14 November", state.dayTitle)
+        }
     }
 
     @Test

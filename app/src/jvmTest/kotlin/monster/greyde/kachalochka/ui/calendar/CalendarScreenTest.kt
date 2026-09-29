@@ -25,6 +25,7 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
+import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -117,6 +118,16 @@ class CalendarScreenTest {
                 .assertDoesNotExist()
         }
     }
+
+    @Test
+    fun the_calendar_screen_speaks_english() =
+        inEnglish {
+            runScreenTest(FakeGym(), screen = { calendar() }) {
+                waitForIdle()
+                onNodeWithTag("top-bar-title").assertTextEquals("Visits")
+                onNodeWithTag("calendar-empty").performScrollTo().assertTextEquals("No visit")
+            }
+        }
 
     @Test
     fun a_marked_day_lists_its_visit_and_opens_it() {

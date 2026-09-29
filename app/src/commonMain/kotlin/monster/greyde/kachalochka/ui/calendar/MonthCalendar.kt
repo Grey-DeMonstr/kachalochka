@@ -34,6 +34,7 @@ import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.format.isoDate
 import monster.greyde.kachalochka.ui.format.weekdayLabels
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.friendColor
 
 data class DayUi(
@@ -83,7 +84,7 @@ internal fun MonthHeader(
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         SquareIconButton(
             PhosphorIcons.ArrowLeft,
-            "Предыдущий месяц",
+            strings().previousMonth,
             onPrevious,
             Modifier.testTag("month-previous"),
         )
@@ -97,7 +98,7 @@ internal fun MonthHeader(
         if (canShowNext) {
             SquareIconButton(
                 PhosphorIcons.ArrowRight,
-                "Следующий месяц",
+                strings().nextMonth,
                 onNext,
                 Modifier.testTag("month-next"),
             )

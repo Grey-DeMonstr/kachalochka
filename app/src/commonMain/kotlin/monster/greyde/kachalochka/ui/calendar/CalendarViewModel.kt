@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -41,6 +42,7 @@ import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.weekdayName
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
 data class CalendarUiState(
@@ -137,6 +139,7 @@ class CalendarViewModel(
             }
         }
         viewModelScope.launch { sync.completed.collect { reload() } }
+        viewModelScope.launch { AppStrings.flow.drop(1).collect { publish() } }
     }
 
     fun refresh() = reload()
@@ -429,9 +432,9 @@ class CalendarViewModel(
     ): RemovalUi {
         val day = checkNotNull(visit.day)
         return RemovalUi(
-            "Удалить визит?",
+            AppStrings.current.deleteVisitTitle,
             "${dayMonthLabel(day, today.year)} · ${setCount(removingSets)}. " +
-                "Подходы пропадут из истории и статистики.",
+                AppStrings.current.deleteVisitText,
         )
     }
 
@@ -441,9 +444,11 @@ class CalendarViewModel(
     ): ReplacementUi {
         val day = occupant.day ?: today
         return ReplacementUi(
-            "Заменить визит?",
-            "На ${dayMonthLabel(day, today.year)} уже есть визит: ${setCount(replacingSets)}. " +
-                "Он и его подходы пропадут из истории и статистики.",
+            AppStrings.current.replaceVisitTitle,
+            AppStrings.current.replaceVisitText(
+                dayMonthLabel(day, today.year),
+                setCount(replacingSets),
+            ),
         )
     }
 

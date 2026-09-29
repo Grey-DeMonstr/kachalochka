@@ -39,6 +39,7 @@ import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.friendColor
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -59,7 +60,7 @@ fun CalendarScreen(
         onBackCompleted = { viewModel.cancelMove() },
     )
     Screen(
-        "Визиты",
+        strings().visits,
         onBack = { if (!viewModel.cancelMove()) onBack() },
         onOpenSettings = onOpenSettings,
     ) {
@@ -98,13 +99,13 @@ fun CalendarScreen(
             }
             if (current.noVisit) {
                 Text(
-                    "Нет визита",
+                    strings().noVisit,
                     modifier = Modifier.testTag("calendar-empty"),
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 )
                 AccentButton(
-                    "Добавить визит",
+                    strings().addVisit,
                     PhosphorIcons.Plus,
                     { onOpenVisit(current.day) },
                     Modifier.testTag("add-visit"),
@@ -121,7 +122,7 @@ fun CalendarScreen(
             ConfirmDialog(
                 it.title,
                 it.text,
-                "Удалить",
+                strings().delete,
                 "confirm-remove",
                 "cancel-remove",
                 onConfirm = viewModel::confirmRemoval,
@@ -132,7 +133,7 @@ fun CalendarScreen(
             ConfirmDialog(
                 it.title,
                 it.text,
-                "Заменить",
+                strings().replace,
                 "confirm-replace",
                 "cancel-replace",
                 onConfirm = viewModel::confirmReplacement,
@@ -150,13 +151,13 @@ private fun MoveBanner(onCancel: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "Выберите новый день",
+            strings().chooseNewDay,
             modifier = Modifier.weight(1f),
             fontSize = 15.sp,
             color = colors.secondary,
         )
         Text(
-            "Отмена",
+            strings().cancel,
             modifier = Modifier.clickable(onClick = onCancel).padding(8.dp).testTag("cancel-move"),
             fontSize = 15.sp,
             color = colors.onBackground,
@@ -238,13 +239,13 @@ private fun VisitCard(
         if (editable) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlineButton(
-                    "Перенести",
+                    strings().move,
                     PhosphorIcons.CalendarBlank,
                     onMove,
                     Modifier.weight(1f).testTag("move-visit-${visit.id.value}"),
                 )
                 OutlineButton(
-                    "Удалить",
+                    strings().delete,
                     PhosphorIcons.Trash,
                     onRemove,
                     Modifier.weight(1f).testTag("remove-visit-${visit.id.value}"),
