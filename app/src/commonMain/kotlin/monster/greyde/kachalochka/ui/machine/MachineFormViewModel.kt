@@ -298,16 +298,13 @@ class MachineFormViewModel(
     fun typeNewTag(text: String) =
         update { it.copy(newTag = text.take(MachineFormState.TAG_LENGTH)) }
 
+    /** A tag typed in another case picks the existing one, so a visit never splits over it. */
     fun addNewTag() =
         update { form ->
-            val tag = form.newTag.trim()
-            if (tag.isEmpty()) {
-                form.copy(
-                    newTag = "",
-                )
-            } else {
-                form.copy(tags = form.tags + tag, newTag = "")
-            }
+            val typed = form.newTag.trim().replace(Regex("""\s+"""), " ")
+            val tag = form.shownTags.firstOrNull { it.equals(typed, ignoreCase = true) } ?: typed
+            val tags = if (tag.isEmpty()) form.tags else form.tags + tag
+            form.copy(tags = tags, newTag = "")
         }
 
     fun save(onSaved: (MachineId) -> Unit) {

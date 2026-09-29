@@ -100,6 +100,19 @@ class MachineFormViewModelTest {
         }
 
     @Test
+    fun a_typed_tag_that_exists_in_another_case_picks_the_existing_one() =
+        runTest {
+            gym.machines.upsert(Machine.new("Присед", null, t0).copy(tags = setOf("Ноги")))
+            val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+
+            vm.typeNewTag(" ноги ")
+            vm.addNewTag()
+
+            assertEquals(setOf("Ноги"), vm.state.value.tags)
+            assertEquals(listOf("Ноги"), vm.state.value.shownTags)
+        }
+
+    @Test
     fun a_saved_machine_opens_with_its_tags_chosen_and_a_tap_removes_one() =
         runTest {
             val press = Machine.new("Жим", null, t0).copy(tags = setOf("Грудь", "Руки"))

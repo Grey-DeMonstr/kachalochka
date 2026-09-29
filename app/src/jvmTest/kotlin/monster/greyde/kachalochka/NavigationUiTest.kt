@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.koin.core.context.stopKoin
@@ -20,7 +21,7 @@ fun runNavigationUiTest(
     content: @Composable () -> Unit,
     assertions: ComposeUiTest.() -> Unit,
 ) {
-    Dispatchers.setMain(Dispatchers.Unconfined)
+    Dispatchers.setMain(UnconfinedTestDispatcher())
     // Cleared at the end, so no view model outlives its test and reacts to the next one.
     val owner =
         object : ViewModelStoreOwner {
