@@ -482,6 +482,47 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun a_slow_save_records_the_values_it_started_with() =
+        runTest {
+            val vm = viewModel(day = seventh).also { it.selectMachine(press.id) }
+            vm.typeWeight("50")
+            val gate = CompletableDeferred<Unit>().also { gym.visits.gate = it }
+            vm.save()
+
+            vm.closeSheet()
+            vm.selectMachine(row.id)
+            vm.typeWeight("33")
+            gate.complete(Unit)
+
+            val saved =
+                gym.sets.rows.values.single {
+                    it.machineId == press.id &&
+                        it.visitId != yesterday
+                }
+            assertEquals(50.0, saved.weight)
+        }
+
+    @Test
+    fun a_save_landing_later_leaves_the_next_machine_s_sheet_alone() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            val gate = CompletableDeferred<Unit>().also { gym.sets.gate = it }
+            vm.save()
+
+            vm.closeSheet()
+            vm.selectMachine(row.id)
+            vm.typeWeight("33")
+            vm.openComment()
+            vm.typeComment("Пишу")
+            gate.complete(Unit)
+
+            val sheet = assertNotNull(vm.state.value?.sheet)
+            assertEquals(row.name, sheet.name)
+            assertEquals("33", sheet.weight)
+            assertEquals("Пишу", sheet.comment)
+        }
+
+    @Test
     fun a_long_comment_is_cut_and_a_blank_one_stays_empty() =
         runTest {
             val vm = viewModel().also { it.selectMachine(press.id) }

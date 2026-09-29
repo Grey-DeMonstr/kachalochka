@@ -293,13 +293,21 @@ class VisitViewModel(
     fun save() {
         val machine = open ?: return
         if (!weightValid) return
+        // Taken now: while the write waits on the network the sheet may move to another machine.
+        val saved = values
+        val comment = commentText.orEmpty().trim()
+        val edited = editing
         writes.launch {
             saving = true
             publish()
             try {
-                recordSet(machine)
-                commentText = null
-                reload(reseed = true)
+                recordSet(machine, saved, comment, edited)
+                val stillOpen = open?.id == machine.id
+                if (stillOpen) {
+                    commentText = null
+                    if (editing?.id == edited?.id) editing = null
+                }
+                reload(reseed = stillOpen)
             } finally {
                 saving = false
                 publish()
@@ -307,10 +315,13 @@ class VisitViewModel(
         }
     }
 
-    private suspend fun recordSet(machine: Machine) {
+    private suspend fun recordSet(
+        machine: Machine,
+        values: SetValues,
+        comment: String,
+        edited: WorkoutSet?,
+    ) {
         val now = clock.now()
-        val edited = editing
-        val comment = commentText.orEmpty().trim()
         if (edited == null) {
             val owner = currentUser.id()
             val offset = utcOffset.at(now)
@@ -344,7 +355,6 @@ class VisitViewModel(
                     updatedAt = now,
                 ),
             )
-            editing = null
             requestSyncIfPast()
         }
     }
