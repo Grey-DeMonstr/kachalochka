@@ -283,7 +283,7 @@ class VisitViewModel(
         publish()
     }
 
-    /** Only opens the field, so a second tap never loses what was typed; emptying it removes it. */
+    /** Only opens the field, so a second tap never loses the text; clearing it removes it. */
     fun openComment() {
         if (commentText != null) return
         commentText = ""

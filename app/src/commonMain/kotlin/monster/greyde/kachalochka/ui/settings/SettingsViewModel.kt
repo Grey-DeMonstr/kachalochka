@@ -59,7 +59,7 @@ data class DeviceUi(
     val language: AppLanguage,
 )
 
-/** AppStrings.current.deleteAccount: offered while an account is signed in, under AppStrings.current.advanced. */
+/** Account deletion: offered while an account is signed in, under "Дополнительно". */
 data class DeletionUi(
     val available: Boolean = false,
     val advancedOpen: Boolean = false,
@@ -261,8 +261,9 @@ class SettingsViewModel(
     }
 
     /**
-     * Signing the account out on success reloads the screen for whoever is active next. Leaving the
-     * screen must not stop it halfway, between the server forgetting the account and the device.
+     * Signing the account out on success reloads the screen for whoever is active next. Leaving
+     * the screen must not stop it halfway, between the server forgetting the account and the
+     * device.
      */
     fun confirmDelete() {
         if (!mutableDeletion.value.canConfirm) return

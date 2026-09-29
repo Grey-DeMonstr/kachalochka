@@ -60,6 +60,7 @@ class AccountsViewModel(
             AccountsUi(
                 accountsUi(list, activeId),
                 activeId,
+                // The design draws no error screen, and a failed sign-in still has to say so.
                 failure?.let { AppStrings.current.signInFailed },
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, AccountsUi(emptyList(), null))
@@ -81,5 +82,3 @@ class AccountsViewModel(
         }
     }
 }
-
-/** The design draws no error screen, and a sign-in that failed still has to say that it did. */
