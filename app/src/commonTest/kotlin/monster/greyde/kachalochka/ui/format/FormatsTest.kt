@@ -112,7 +112,6 @@ class FormatsTest {
     fun a_date_reads_as_day_and_month_with_the_year_only_when_it_differs() {
         assertEquals("7 ноября", dayMonthLabel(CalendarDay(2023, 11, 7), currentYear = 2023))
         assertEquals("1 января 2022", dayMonthLabel(CalendarDay(2022, 1, 1), currentYear = 2023))
-        assertEquals("мая", monthGenitive(5))
     }
 
     @Test
@@ -127,7 +126,7 @@ class FormatsTest {
     fun calendar_labels_are_russian() {
         assertEquals("Ноябрь 2023", monthTitle(CalendarMonth(2023, 11)))
         assertEquals("Вторник", weekdayName(2))
-        assertEquals("Вс", WEEKDAY_LABELS.last())
+        assertEquals("Вс", weekdayLabels().last())
         assertEquals("2023-11-05", isoDate(CalendarDay(2023, 11, 5)))
     }
 

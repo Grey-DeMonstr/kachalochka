@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
@@ -32,19 +33,19 @@ fun unitLabel(
     customLabel: String,
 ): String =
     when (unit) {
-        WeightUnit.Kg -> "кг"
+        WeightUnit.Kg -> AppStrings.current.kg
         WeightUnit.Lb -> "lb"
         // Only a row written elsewhere can leave the name blank; the form requires one.
-        WeightUnit.Custom -> customLabel.trim().ifEmpty { "ед." }
+        WeightUnit.Custom -> customLabel.trim().ifEmpty { AppStrings.current.customUnitFallback }
     }
 
 fun unitLabel(machine: Machine): String = unitLabel(machine.unit, machine.unitLabel)
 
 private fun modeLabel(mode: WeightMode): String =
     when (mode) {
-        WeightMode.Total -> "всего"
-        WeightMode.PerSide -> "на сторону"
-        WeightMode.Counterweight -> "гравитрон"
+        WeightMode.Total -> AppStrings.current.modeTotal
+        WeightMode.PerSide -> AppStrings.current.modePerSide
+        WeightMode.Counterweight -> AppStrings.current.modeCounterweight
     }
 
 fun weightCaption(
@@ -111,93 +112,28 @@ fun setValue(
 fun counterweightSign(machine: Machine): String =
     if (machine.weightMode == WeightMode.Counterweight) "(-)" else ""
 
-fun pluralRu(
-    n: Int,
-    one: String,
-    few: String,
-    many: String,
-): String {
-    val lastTwo = n % 100
-    val last = n % 10
-    return when {
-        lastTwo in 11..14 -> many
-        last == 1 -> one
-        last in 2..4 -> few
-        else -> many
-    }
-}
+fun setCount(n: Int): String = AppStrings.current.sets(n)
 
-fun setCount(n: Int): String = "$n ${pluralRu(n, "подход", "подхода", "подходов")}"
+fun machineCount(n: Int): String = AppStrings.current.machines(n)
 
-fun machineCount(n: Int): String = "$n ${pluralRu(n, "упражнение", "упражнения", "упражнений")}"
+fun memberCount(n: Int): String = AppStrings.current.members(n)
 
-fun memberCount(n: Int): String = "$n ${pluralRu(n, "участник", "участника", "участников")}"
-
-fun daysAgoLabel(days: Int): String =
-    when (days) {
-        0 -> "сегодня"
-        1 -> "вчера"
-        else -> "$days ${pluralRu(days, "день", "дня", "дней")} назад"
-    }
-
-private val monthsGenitive =
-    listOf(
-        "января",
-        "февраля",
-        "марта",
-        "апреля",
-        "мая",
-        "июня",
-        "июля",
-        "августа",
-        "сентября",
-        "октября",
-        "ноября",
-        "декабря",
-    )
-
-fun monthGenitive(month: Int): String = monthsGenitive[month - 1]
+fun daysAgoLabel(days: Int): String = AppStrings.current.daysAgo(days)
 
 fun dayMonthLabel(
     day: CalendarDay,
     currentYear: Int,
 ): String {
-    val label = "${day.day} ${monthGenitive(day.month)}"
+    val label = AppStrings.current.dayMonth(day.day, day.month)
     return if (day.year == currentYear) label else "$label ${day.year}"
 }
 
-private val monthsNominative =
-    listOf(
-        "Январь",
-        "Февраль",
-        "Март",
-        "Апрель",
-        "Май",
-        "Июнь",
-        "Июль",
-        "Август",
-        "Сентябрь",
-        "Октябрь",
-        "Ноябрь",
-        "Декабрь",
-    )
+fun monthTitle(month: CalendarMonth): String =
+    "${AppStrings.current.monthTitle(month.month)} ${month.year}"
 
-fun monthTitle(month: CalendarMonth): String = "${monthsNominative[month.month - 1]} ${month.year}"
+fun weekdayName(dayOfWeek: Int): String = AppStrings.current.weekday(dayOfWeek)
 
-private val weekdayNames =
-    listOf(
-        "Понедельник",
-        "Вторник",
-        "Среда",
-        "Четверг",
-        "Пятница",
-        "Суббота",
-        "Воскресенье",
-    )
-
-fun weekdayName(dayOfWeek: Int): String = weekdayNames[dayOfWeek - 1]
-
-val WEEKDAY_LABELS: List<String> = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
+fun weekdayLabels(): List<String> = (1..7).map(AppStrings.current::weekdayShort)
 
 fun isoDate(day: CalendarDay): String = day.iso
 
@@ -218,9 +154,9 @@ fun saveLabel(
     editing: Boolean,
 ): String =
     when {
-        editing -> "Сохранить"
-        person == null -> "Сохранить подход"
-        else -> "Сохранить · $person"
+        editing -> AppStrings.current.save
+        person == null -> AppStrings.current.saveSet
+        else -> AppStrings.current.saveAs(person)
     }
 
 /** The avatar draws a letter, never a photo. */

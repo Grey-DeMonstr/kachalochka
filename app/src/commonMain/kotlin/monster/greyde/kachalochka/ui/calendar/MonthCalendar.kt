@@ -31,8 +31,8 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.SquareIconButton
-import monster.greyde.kachalochka.ui.format.WEEKDAY_LABELS
 import monster.greyde.kachalochka.ui.format.isoDate
+import monster.greyde.kachalochka.ui.format.weekdayLabels
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.theme.friendColor
 
@@ -116,7 +116,7 @@ internal fun MonthGrid(
     val colors = MaterialTheme.colorScheme
     Column {
         Row(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-            WEEKDAY_LABELS.forEach {
+            weekdayLabels().forEach {
                 Text(
                     it,
                     modifier = Modifier.weight(1f),

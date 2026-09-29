@@ -28,14 +28,16 @@ import com.patrykandpatrick.vico.multiplatform.common.component.rememberShapeCom
 import com.patrykandpatrick.vico.multiplatform.common.data.ExtraStore
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.ui.format.formatNumber
-import monster.greyde.kachalochka.ui.format.monthGenitive
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.math.ceil
 import kotlin.math.floor
 
 private const val CHART_LABELS = 3
 
-internal fun chartDayLabel(day: CalendarDay): String =
-    "${day.day} ${monthGenitive(day.month).take(3)}"
+internal fun chartDayLabel(day: CalendarDay): String {
+    val (number, month) = AppStrings.current.dayMonth(day.day, day.month).split(' ', limit = 2)
+    return "$number ${month.take(3)}"
+}
 
 /** Days between two bottom labels, so that about four fit whatever the span. */
 internal fun chartLabelSpacing(spanDays: Long): Int =

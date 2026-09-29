@@ -8,13 +8,12 @@ import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.tagSections
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.ui.strings.AppStrings
 
 data class SharedMachine(
     val machine: Machine,
     val sets: List<WorkoutSet>,
 )
-
-private val SHORT_WEEKDAYS = listOf("пн", "вт", "ср", "чт", "пт", "сб", "вс")
 
 /** [machines] in visit order, each with its sets in visit order. */
 fun visitShareText(
@@ -25,7 +24,7 @@ fun visitShareText(
     groupByTag: Boolean = false,
 ): String {
     val header =
-        listOf(nickname.trim(), SHORT_WEEKDAYS[day.dayOfWeek - 1])
+        listOf(nickname.trim(), AppStrings.current.weekdayShared(day.dayOfWeek))
             .filter { it.isNotEmpty() }
             .joinToString(", ")
     val shown = machines.filter { it.sets.isNotEmpty() }
@@ -80,7 +79,14 @@ fun setsSummary(
     val unit = sharedUnit(machine, preferred)
     val weights = sets.map { shownWeight(it.weight, machine, preferred) }
     val reps = sets.map { it.reps }
-    val side = if (machine.weightMode == WeightMode.PerSide) " на каждую," else ""
+    val side =
+        if (machine.weightMode ==
+            WeightMode.PerSide
+        ) {
+            AppStrings.current.perSideShared
+        } else {
+            ""
+        }
     val sign = counterweightSign(machine)
     val weightPart =
         when {
