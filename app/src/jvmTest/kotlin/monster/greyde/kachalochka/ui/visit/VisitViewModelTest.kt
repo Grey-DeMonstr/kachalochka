@@ -249,7 +249,7 @@ class VisitViewModelTest {
         assertEquals("(+20 кг)", sheet.platformSuffix)
         assertEquals("подход 1", sheet.setNumberLabel)
         assertEquals("Сиденье на 4", sheet.caption)
-        assertEquals("Вчера · 70×10 · 70×10 · 75×8", sheet.previous)
+        assertEquals("Вчера · 70-70-75кг 10-10-8", sheet.previous)
         assertEquals("70", sheet.weight)
         assertEquals("кг всего · ±2.5", sheet.weightCaption)
         assertEquals("10", sheet.reps)
@@ -512,7 +512,7 @@ class VisitViewModelTest {
                     .single()
                     .value,
             )
-            assertEquals("Вчера · 41кг×8", sheet.previous)
+            assertEquals("Вчера · 41кг 1x8", sheet.previous)
             assertEquals("90", sheet.weight)
             assertEquals("lb (41кг) всего · ±5lb (2.3кг)", sheet.weightCaption)
 
@@ -549,7 +549,7 @@ class VisitViewModelTest {
                     .value,
             )
             assertEquals("90lb 1x8", state.groups.single().summary)
-            assertEquals("Вчера · 90×8", sheet.previous)
+            assertEquals("Вчера · 90lb 1x8", sheet.previous)
             assertEquals("lb всего · ±5", sheet.weightCaption)
         }
 
@@ -572,7 +572,7 @@ class VisitViewModelTest {
                     .value,
             )
             assertEquals("(+44 lb)", sheet.platformSuffix)
-            assertEquals("Вчера · 154.5lb×10 · 154.5lb×10 · 165.5lb×8", sheet.previous)
+            assertEquals("Вчера · 154.5-154.5-165.5lb 10-10-8", sheet.previous)
             assertEquals("70", sheet.weight)
             assertEquals("кг (154.5lb) всего · ±2.5кг (5.5lb)", sheet.weightCaption)
 
@@ -982,7 +982,7 @@ class VisitViewModelTest {
             val vm = viewModel(day = seventh).also { it.selectMachine(press.id) }
 
             val sheet = assertNotNull(vm.state.value?.sheet)
-            assertEquals("2 дня назад · 50×8", sheet.previous)
+            assertEquals("2 дня назад · 50кг 1x8", sheet.previous)
             assertEquals("50", sheet.weight)
         }
 

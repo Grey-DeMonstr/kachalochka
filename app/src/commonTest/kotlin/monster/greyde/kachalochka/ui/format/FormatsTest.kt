@@ -54,7 +54,6 @@ class FormatsTest {
     @Test
     fun sets_read_as_weight_times_reps() {
         assertEquals("70 кг × 10", setValue(70.0, 10, "кг"))
-        assertEquals("72.5×8", shortSet(72.5, 8, press, kg))
     }
 
     @Test

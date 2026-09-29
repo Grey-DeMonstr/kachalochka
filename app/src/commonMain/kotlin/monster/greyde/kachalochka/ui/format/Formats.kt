@@ -104,18 +104,6 @@ fun setValue(
     preferred: PreferredWeightUnit,
 ): String = setValue(shownWeight(weight, machine, preferred), reps, shownLabel(machine, preferred))
 
-/** Unit-less beside the stepper, which names the machine's unit, unless converted from it. */
-fun shortSet(
-    weight: Double,
-    reps: Int,
-    machine: Machine,
-    preferred: PreferredWeightUnit,
-): String {
-    val shown = shownUnit(machine, preferred)
-    val unit = if (shown == machine.unit) "" else unitLabel(shown, machine.unitLabel)
-    return "${formatNumber(shownWeight(weight, machine.unit, shown))}$unit×$reps"
-}
-
 fun pluralRu(
     n: Int,
     one: String,

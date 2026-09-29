@@ -60,7 +60,6 @@ import monster.greyde.kachalochka.ui.format.saveLabel
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
-import monster.greyde.kachalochka.ui.format.shortSet
 import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.machine.visibleLinks
@@ -576,8 +575,7 @@ class VisitViewModel(
                 val until = if (isToday) clock.now() else day.at(0L, offset)
                 val days = calendarDaysBetween(previous.last().recordedAt, until, offset)
                 val ago = daysAgoLabel(days).replaceFirstChar { it.uppercase() }
-                val shortSets = previous.map { shortSet(it.weight, it.reps, machine, preferred) }
-                (listOf(ago) + shortSets).joinToString(" · ")
+                "$ago · ${setsSummary(machine, previous, preferred)}"
             }
         return SheetUi(
             name = machine.name,

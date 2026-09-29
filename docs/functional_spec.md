@@ -83,8 +83,8 @@ kilogram; with "lb", kilograms are converted to the nearest half pound ("Тяг�
 written as is with its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zero shows
 only its reps ("Подтягивания 3x10"). A machine whose weight is counted per side says so after the
 weights ("Гребная тяга (+11.3кг) 15кг на каждую, 3x12"). The machine rows of the visit screen and
-of a friend's visit, and friends' results in the set sheet, write a machine's weights and reps
-exactly the same way.
+of a friend's visit, and the previous visit's and friends' results in the set sheet, write a
+machine's weights and reps exactly the same way.
 
 Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips,
 the machine, the set number, the machine's setup note, the previous visit's sets on that machine,

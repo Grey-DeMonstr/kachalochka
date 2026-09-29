@@ -94,11 +94,4 @@ class WeightUnitsTest {
             machineTitle(kgPress.copy(platformWeight = 20.0), PreferredWeightUnit.Lb),
         )
     }
-
-    @Test
-    fun a_short_set_names_its_unit_only_when_converted() {
-        assertEquals("41кг×8", shortSet(90.0, 8, lbCable, PreferredWeightUnit.Kg))
-        assertEquals("90×8", shortSet(90.0, 8, lbCable, PreferredWeightUnit.Lb))
-        assertEquals("7×10", shortSet(7.0, 10, gravitron, PreferredWeightUnit.Kg))
-    }
 }
