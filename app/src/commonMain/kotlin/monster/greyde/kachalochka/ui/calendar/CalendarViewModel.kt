@@ -39,6 +39,7 @@ import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.setCount
+import monster.greyde.kachalochka.ui.format.tagTitle
 import monster.greyde.kachalochka.ui.format.weekdayName
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.reading
@@ -68,10 +69,11 @@ data class FriendDayVisitUi(
     val counts: String?,
 )
 
+/** [tags] joins every tag of the visit's machines, null when none has any. */
 data class CalendarVisitUi(
     val id: VisitId,
-    val counts: String,
-    val machines: String?,
+    val machines: String,
+    val tags: String?,
 )
 
 data class RemovalUi(
@@ -314,15 +316,15 @@ class CalendarViewModel(
                     }
                 val visit = keptVisit(sameDay) { setsByVisit[it]?.isNotEmpty() == true }
                 val visitSets = setsByVisit[visit.id] ?: sets.forVisit(visit.id)
-                val summary = summarize(visitSets)
-                val names =
-                    groupByMachine(visitSets).mapNotNull { machinesById[it.machineId]?.name }
-                val machinesLabel = machineCount(summary.machineCount)
-                val setsLabel = setCount(summary.setCount)
+                val shown = groupByMachine(visitSets).mapNotNull { machinesById[it.machineId] }
+                val tags = shown.flatMap { it.tags }.toSet()
                 CalendarVisitUi(
                     id = visit.id,
-                    counts = "$machinesLabel · $setsLabel",
-                    machines = names.joinToString(", ").ifEmpty { null },
+                    machines =
+                        shown.joinToString(", ") { it.name }.ifEmpty {
+                            AppStrings.current.noSetsYet
+                        },
+                    tags = tags.takeIf { it.isNotEmpty() }?.let(::tagTitle),
                 )
             }
         publish()

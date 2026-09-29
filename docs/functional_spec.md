@@ -169,13 +169,13 @@ or through friends' links, is shown without it. Offline that view says "Нет �
 offers a retry.
 
 The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
-visit are marked, today and the chosen day are highlighted, and future days cannot be chosen.
-Below the month is the chosen day's visit, with its machines and set count. Tapping it opens
-it on the visit screen, where its sets are added, edited, deleted and ordered as today's are.
-A day without a visit offers "Добавить визит". "Перенести" moves a visit, with its sets, to the
-day tapped next; if that day already has a visit, the app asks whether to replace it, and
-replacing removes it with its sets. "Удалить" asks for confirmation, then removes the visit
-and its sets from the history and the statistics.
+visit are marked, today and the chosen day are highlighted, and future days cannot be chosen. Below
+the month is the chosen day's visit: the names of its machines in visit order and, under them,
+every tag those machines carry. Tapping it opens it on the visit screen, where its sets are added,
+edited, deleted and ordered as today's are. A day without a visit offers "Добавить визит".
+"Перенести" moves a visit, with its sets, to the day tapped next; if that day already has a visit,
+the app asks whether to replace it, and replacing removes it with its sets. "Удалить" asks for
+confirmation, then removes the visit and its sets from the history and the statistics.
 
 With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
 group with it: each friend who trained on a day adds a dot in that friend's colour after the

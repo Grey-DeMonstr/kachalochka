@@ -161,21 +161,37 @@ class CalendarViewModelTest {
             val state = assertNotNull(vm.state.value)
             assertTrue(state.day(11).hasVisit)
             assertEquals(undated.id, state.visit?.id)
-            assertEquals("1 упражнение · 1 подход", state.visit?.counts)
+            assertEquals("Жим ногами", state.visit?.machines)
         }
 
     @Test
-    fun a_chosen_day_shows_its_visit_with_machines_and_sets() {
+    fun a_chosen_day_shows_its_visit_s_machines_and_their_tags() =
+        runTest {
+            gym.machines.upsert(press.copy(tags = setOf("Ноги", "Жим")))
+            gym.machines.upsert(row.copy(tags = setOf("Спина", "Жим")))
+            val vm = viewModel().also { it.refresh() }
+
+            vm.selectDay(twelfth)
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals("Воскресенье, 12 ноября", state.dayTitle)
+            val listed = assertNotNull(state.visit)
+            assertEquals(sunday.id, listed.id)
+            assertEquals("Жим ногами, Тяга верхнего блока", listed.machines)
+            assertEquals("Жим, Ноги, Спина", listed.tags)
+        }
+
+    @Test
+    fun a_visit_of_untagged_machines_shows_no_tags() {
         val vm = viewModel().also { it.refresh() }
 
         vm.selectDay(twelfth)
 
-        val state = assertNotNull(vm.state.value)
-        assertEquals("Воскресенье, 12 ноября", state.dayTitle)
-        val listed = assertNotNull(state.visit)
-        assertEquals(sunday.id, listed.id)
-        assertEquals("2 упражнения · 3 подхода", listed.counts)
-        assertEquals("Жим ногами, Тяга верхнего блока", listed.machines)
+        assertNull(
+            vm.state.value
+                ?.visit
+                ?.tags,
+        )
     }
 
     @Test

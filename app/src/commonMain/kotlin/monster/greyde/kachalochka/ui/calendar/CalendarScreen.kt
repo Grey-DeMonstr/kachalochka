@@ -225,13 +225,19 @@ private fun VisitCard(
                 .testTag("calendar-visit-${visit.id.value}"),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text(visit.counts, fontSize = 15.sp, color = colors.onBackground)
-            visit.machines?.let {
+            Text(
+                visit.machines,
+                modifier = Modifier.testTag("calendar-visit-machines"),
+                fontSize = 15.sp,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                color = colors.onBackground,
+            )
+            visit.tags?.let {
                 Text(
                     it,
+                    modifier = Modifier.testTag("calendar-visit-tags"),
                     fontSize = 13.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                     color = colors.onBackground.copy(alpha = 0.6f),
                 )
             }
