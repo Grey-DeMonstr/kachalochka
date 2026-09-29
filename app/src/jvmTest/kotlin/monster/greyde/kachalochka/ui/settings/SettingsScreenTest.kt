@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -19,7 +20,6 @@ import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.ui.theme.ThemeMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -35,14 +35,7 @@ private fun session(
 )
 
 @Composable
-private fun settings(onTransitionMillisChange: (Int) -> Unit = {}) =
-    SettingsScreen(
-        mode = ThemeMode.Dark,
-        onModeChange = {},
-        transitionMillis = 150,
-        onTransitionMillisChange = onTransitionMillisChange,
-        onBack = {},
-    )
+private fun settings(onBack: () -> Unit = {}) = SettingsScreen(onBack = onBack)
 
 @OptIn(ExperimentalTestApi::class)
 class SettingsScreenTest {
@@ -56,25 +49,49 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun typing_a_length_reports_it() {
-        val reported = mutableListOf<Int>()
-        runScreenTest(FakeGym(), screen = { settings { reported += it } }) {
+    fun a_typed_length_waits_for_apply() {
+        runScreenTest(FakeGym(), screen = { settings() }) {
+            onNodeWithTag("apply-settings").performScrollTo().assertIsNotEnabled()
             onNodeWithTag("transition-millis").performTextReplacement("0")
 
             onNodeWithTag("transition-millis").assertTextEquals("0")
-            assertEquals(listOf(0), reported)
+            onNodeWithTag("apply-settings").performScrollTo().assertIsEnabled().performClick()
+            onNodeWithTag("apply-settings").assertIsNotEnabled()
         }
     }
 
     @Test
     fun a_length_out_of_range_or_not_a_number_is_refused() {
-        val reported = mutableListOf<Int>()
-        runScreenTest(FakeGym(), screen = { settings { reported += it } }) {
+        runScreenTest(FakeGym(), screen = { settings() }) {
             onNodeWithTag("transition-millis").performTextReplacement("1001")
             onNodeWithTag("transition-millis").performTextReplacement("abc")
 
             onNodeWithTag("transition-millis").assertTextEquals("150")
-            assertEquals(emptyList(), reported)
+        }
+    }
+
+    @Test
+    fun the_theme_is_chosen_like_the_weight_unit_and_waits_for_apply() {
+        runScreenTest(FakeGym(), screen = { settings() }) {
+            onNodeWithTag("theme-dark").performScrollTo().performClick()
+
+            onNodeWithTag("theme-dark").assertIsSelected()
+            onNodeWithTag("apply-settings").performScrollTo().assertIsEnabled()
+        }
+    }
+
+    @Test
+    fun leaving_with_changes_asks_and_can_drop_them() {
+        var backs = 0
+        runScreenTest(FakeGym(), screen = { settings(onBack = { backs++ }) }) {
+            onNodeWithTag("theme-light").performScrollTo().performClick()
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            assertEquals(0, backs)
+
+            onNodeWithTag("leave-discard").performClick()
+            waitForIdle()
+            assertEquals(1, backs)
         }
     }
 
@@ -87,7 +104,7 @@ class SettingsScreenTest {
             onNodeWithTag("nickname").assertDoesNotExist()
             onNodeWithTag("birth-date").assertExists()
             onNodeWithTag("height").assertExists()
-            onNodeWithTag("save-profile").assertIsNotEnabled()
+            onNodeWithTag("apply-settings").assertIsNotEnabled()
         }
     }
 
@@ -98,7 +115,7 @@ class SettingsScreenTest {
             onNodeWithTag("sex-female").performClick()
             onNodeWithTag("birth-date").performTextInput("15.06.1990")
             onNodeWithTag("height").performTextInput("165")
-            onNodeWithTag("save-profile").performScrollTo().performClick()
+            onNodeWithTag("apply-settings").performScrollTo().performClick()
             waitForIdle()
         }
         val profile = runBlocking { gym.profiles.forOwner(null) }
@@ -114,7 +131,7 @@ class SettingsScreenTest {
             onNodeWithTag("weight-unit-kg").assertExists()
             onNodeWithTag("weight-unit-mixed").assertExists()
             onNodeWithTag("weight-unit-lb").performScrollTo().performClick()
-            onNodeWithTag("save-profile").performScrollTo().performClick()
+            onNodeWithTag("apply-settings").performScrollTo().performClick()
             waitForIdle()
         }
         val profile = runBlocking { gym.profiles.forOwner(null) }
@@ -129,11 +146,11 @@ class SettingsScreenTest {
             screen = { settings() },
         ) {
             onNodeWithTag("nickname").assertExists()
-            onNodeWithTag("save-profile").assertIsNotEnabled()
+            onNodeWithTag("apply-settings").assertIsNotEnabled()
 
             onNodeWithTag("nickname").performTextInput("Ванёк")
 
-            onNodeWithTag("save-profile").assertIsEnabled()
+            onNodeWithTag("apply-settings").assertIsEnabled()
         }
     }
 
@@ -145,9 +162,9 @@ class SettingsScreenTest {
             screen = { settings() },
         ) {
             onNodeWithTag("nickname").performTextInput("Ванёк")
-            onNodeWithTag("save-profile").performClick()
+            onNodeWithTag("apply-settings").performScrollTo().performClick()
 
-            onNodeWithTag("save-profile").assertIsNotEnabled()
+            onNodeWithTag("apply-settings").assertIsNotEnabled()
         }
     }
 
@@ -155,6 +172,9 @@ class SettingsScreenTest {
     fun a_signed_in_account_is_deleted_after_a_confirmation() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
         runScreenTest(gym, screen = { settings() }) {
+            onNodeWithTag("delete-account").assertDoesNotExist()
+            onNodeWithTag("settings-advanced").performScrollTo().performClick()
+            waitForIdle()
             onNodeWithTag("delete-account").performScrollTo().performClick()
             waitForIdle()
             onNodeWithTag("cancel-delete-account").performClick()
@@ -163,6 +183,8 @@ class SettingsScreenTest {
 
             onNodeWithTag("delete-account").performScrollTo().performClick()
             waitForIdle()
+            onNodeWithTag("confirm-delete-account").assertIsNotEnabled()
+            onNodeWithTag("delete-word").performTextInput("delete")
             onNodeWithTag("confirm-delete-account").performClick()
             waitForIdle()
 
@@ -174,6 +196,7 @@ class SettingsScreenTest {
     @Test
     fun without_an_account_nothing_can_be_deleted() {
         runScreenTest(FakeGym(), screen = { settings() }) {
+            onNodeWithTag("settings-advanced").assertDoesNotExist()
             onNodeWithTag("delete-account").assertDoesNotExist()
         }
     }

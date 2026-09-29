@@ -17,8 +17,8 @@ the device. Any other account the server stops accepting stays listed but stops 
 to it fails to activate and reports the failure, and the account stays listed.
 
 Both apps must support a dark and a light theme. By default the theme follows the system setting;
-the user can override it and pick light or dark explicitly. The choice is remembered between
-launches.
+the user can override it in Settings, choosing Системная, Светлая or Тёмная the way the weight unit
+is chosen. The choice is remembered between launches.
 
 Numbers are written with a decimal point everywhere, the shared text included ("11.3кг"); a typed
 number takes a point or a comma.
@@ -195,17 +195,21 @@ Signing out of an account removes it from the device but keeps what it recorded,
 in finds it again. On Android, signing out of the last account returns the app to working without
 one. Friends stay locked until an account is signed in.
 
-Settings ends with "Удалить аккаунт" for the active account. After "Удалить аккаунт?" it deletes
-the account and everything it recorded — visits, machines with their photos, measures, profile and
-the groups it owns — from the server and, on Android, from the device, then signs it out as
-signing out does. Without a network it says "Нет связи с сервером" and changes nothing.
+Settings ends with "Дополнительно", a heading that opens, for the active account, a red "Удалить
+аккаунт". Its question, "Удалить аккаунт?", asks to type DELETE, in any case, before "Удалить"
+works; then it deletes the account and everything it recorded — visits, machines with their photos,
+measures, profile and the groups it owns — from the server and, on Android, from the device, then
+signs it out as signing out does. Without a network it says "Нет связи с сервером" and changes
+nothing.
 
-Settings has a "Профиль" section saved by one "Сохранить". Its "Ник" field, for the signed-in
-account, takes up to 40 characters; the Google account name is shown as a placeholder and used
-when the field is left blank. Friends see this nickname instead of the Google name, and it heads a
-visit shared as text. Пол (Мужской / Женский), Дата рождения (ДД.ММ.ГГГГ, from 1900 to today) and
-Рост, см (50 to 250) feed the body fat formulas; they are there without an account too, and an
-emptied field clears its value. Nobody else sees them.
+Settings has a "Профиль" section. One "Применить", under the theme and the transition length,
+applies every change on the screen at once, the theme included; leaving with changes not applied
+asks "Применить изменения?", with "Применить" and "Не применять". Its "Ник" field, for the
+signed-in account, takes up to 40 characters; the Google account name is shown as a placeholder and
+used when the field is left blank. Friends see this nickname instead of the Google name, and it
+heads a visit shared as text. Пол (Мужской / Женский), Дата рождения (ДД.ММ.ГГГГ, from 1900 to
+today) and Рост, см (50 to 250) feed the body fat formulas; they are there without an account too,
+and an emptied field clears its value. Nobody else sees them.
 
 "Единицы веса" in the same section, also there without an account, chooses how gym weights are
 shown: "кг" (the default), "lb" or "Смешанные", where each machine shows its own unit. With "кг"

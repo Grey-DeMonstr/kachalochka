@@ -17,7 +17,6 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
-import monster.greyde.kachalochka.ui.theme.ThemeMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -87,13 +86,7 @@ class AccountMenuTest {
         runScreenTest(
             gym,
             screen = {
-                SettingsScreen(
-                    mode = ThemeMode.Dark,
-                    onModeChange = {},
-                    transitionMillis = 150,
-                    onTransitionMillisChange = {},
-                    onBack = {},
-                )
+                SettingsScreen(onBack = {})
             },
         ) {
             onNodeWithTag("account-avatar").assertExists()

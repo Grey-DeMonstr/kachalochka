@@ -14,6 +14,9 @@ import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
+import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
+import monster.greyde.kachalochka.ui.theme.ThemeMode
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -36,6 +39,9 @@ class SettingsViewModelTest {
     private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван", t0)
     private val misha = session("22222222-2222-4222-8222-222222222222", "Миша", t0)
 
+    private val themes = InMemoryThemePreference()
+    private val transitions = InMemoryTransitionPreference()
+
     private fun viewModel() =
         SettingsViewModel(
             gym.profiles,
@@ -45,6 +51,8 @@ class SettingsViewModelTest {
             gym.utcOffset,
             gym.sync,
             gym.deletion,
+            themes,
+            transitions,
         )
 
     private val SettingsViewModel.ui: ProfileUi get() = profile.value!!
@@ -109,7 +117,7 @@ class SettingsViewModelTest {
             vm.chooseSex(Sex.Female)
             vm.typeBirthDate("15.06.1990")
             vm.typeHeight("165,5")
-            vm.save()
+            vm.apply()
 
             val profile = gym.profiles.forOwner(ivan.account.userId)
             assertNotNull(profile)
@@ -135,7 +143,7 @@ class SettingsViewModelTest {
             gym.clock.current += kotlin.time.Duration.parse("PT1H")
 
             vm.type("New")
-            vm.save()
+            vm.apply()
 
             val profile = gym.profiles.forOwner(owner)
             assertEquals(
@@ -150,7 +158,7 @@ class SettingsViewModelTest {
             val vm = viewModel()
 
             vm.chooseSex(Sex.Male)
-            vm.save()
+            vm.apply()
 
             assertEquals(Sex.Male, gym.profiles.forOwner(null)?.sex)
         }
@@ -167,7 +175,7 @@ class SettingsViewModelTest {
             assertFalse(vm.ui.canSave)
 
             vm.chooseWeightUnit(PreferredWeightUnit.Mixed)
-            vm.save()
+            vm.apply()
 
             assertEquals(PreferredWeightUnit.Mixed, gym.profiles.forOwner(null)?.weightUnit)
             assertFalse(vm.ui.canSave)
@@ -218,7 +226,7 @@ class SettingsViewModelTest {
 
             vm.typeHeight("")
             assertTrue(vm.ui.canSave)
-            vm.save()
+            vm.apply()
 
             assertNull(gym.profiles.forOwner(null)?.heightCm)
         }
@@ -256,6 +264,7 @@ class SettingsViewModelTest {
 
             vm.askToDelete()
             assertTrue(vm.deletion.value.confirming)
+            vm.typeDeleteWord(" delete ")
             vm.confirmDelete()
 
             assertEquals(listOf(ivan.account.userId), gym.accountServer.deleted)
@@ -276,6 +285,7 @@ class SettingsViewModelTest {
             val vm = viewModel()
 
             vm.askToDelete()
+            vm.typeDeleteWord("DELETE")
             vm.confirmDelete()
 
             assertEquals("Нет связи с сервером", vm.deletion.value.error)
@@ -294,5 +304,96 @@ class SettingsViewModelTest {
 
             assertFalse(vm.deletion.value.confirming)
             assertEquals(emptyList(), gym.accountServer.deleted)
+        }
+
+    @Test
+    fun the_theme_and_the_transition_change_only_when_applied() =
+        runTest {
+            val vm = viewModel()
+            assertFalse(vm.canApply.value)
+
+            vm.chooseTheme(ThemeMode.Dark)
+            vm.typeTransition("300")
+
+            assertEquals(ThemeMode.System, themes.mode.value)
+            assertEquals(150, transitions.millis.value)
+            assertTrue(vm.canApply.value)
+            vm.apply()
+
+            assertEquals(ThemeMode.Dark, themes.mode.value)
+            assertEquals(300, transitions.millis.value)
+            assertFalse(vm.canApply.value)
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun a_transition_out_of_range_is_refused() =
+        runTest {
+            val vm = viewModel()
+
+            vm.typeTransition("1001")
+            vm.typeTransition("abc")
+
+            assertEquals("150", vm.device.value.transition)
+            assertFalse(vm.canApply.value)
+        }
+
+    @Test
+    fun an_invalid_profile_field_holds_back_every_change() =
+        runTest {
+            val vm = viewModel()
+
+            vm.chooseTheme(ThemeMode.Light)
+            vm.typeHeight("18")
+
+            assertFalse(vm.canApply.value)
+            vm.apply()
+            assertEquals(ThemeMode.System, themes.mode.value)
+        }
+
+    @Test
+    fun leaving_with_unapplied_changes_asks_first() =
+        runTest {
+            val vm = viewModel()
+            assertTrue(vm.requestLeave())
+
+            vm.chooseTheme(ThemeMode.Dark)
+
+            assertFalse(vm.requestLeave())
+            assertTrue(vm.confirmingLeave.value)
+            vm.stay()
+            assertFalse(vm.confirmingLeave.value)
+            assertEquals(ThemeMode.Dark, vm.device.value.theme)
+            vm.discard()
+            assertEquals(ThemeMode.System, vm.device.value.theme)
+            assertTrue(vm.requestLeave())
+        }
+
+    @Test
+    fun the_advanced_section_opens_on_request() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val vm = viewModel()
+            assertFalse(vm.deletion.value.advancedOpen)
+
+            vm.toggleAdvanced()
+
+            assertTrue(vm.deletion.value.advancedOpen)
+        }
+
+    @Test
+    fun a_deletion_needs_the_word_typed() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val vm = viewModel()
+
+            vm.askToDelete()
+            vm.typeDeleteWord("DELET")
+            assertFalse(vm.deletion.value.canConfirm)
+            vm.confirmDelete()
+
+            assertEquals(emptyList(), gym.accountServer.deleted)
+            vm.typeDeleteWord("DELETE")
+            assertTrue(vm.deletion.value.canConfirm)
         }
 }

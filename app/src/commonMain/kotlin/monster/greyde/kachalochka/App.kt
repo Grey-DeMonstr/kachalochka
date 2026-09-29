@@ -185,13 +185,7 @@ fun App() {
                     )
                 }
                 composable<SettingsRoute> {
-                    SettingsScreen(
-                        mode = mode,
-                        onModeChange = { scope.launch { preference.set(it) } },
-                        transitionMillis = transitionMillis,
-                        onTransitionMillisChange = { scope.launch { transitions.set(it) } },
-                        onBack = { navController.popBackStack() },
-                    )
+                    SettingsScreen(onBack = { navController.popBackStack() })
                 }
                 composable<VisitRoute> { entry ->
                     val route = entry.toRoute<VisitRoute>()
