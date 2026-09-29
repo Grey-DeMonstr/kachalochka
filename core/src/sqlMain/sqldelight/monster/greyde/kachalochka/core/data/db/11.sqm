@@ -1,1 +1,4 @@
 ALTER TABLE workout_set ADD COLUMN comment TEXT NOT NULL DEFAULT '';
+
+-- Sets and gravitrons pulled before this version lost their comment and mode.
+UPDATE syncState SET lastPullAt = NULL;

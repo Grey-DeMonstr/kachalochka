@@ -437,10 +437,12 @@ visit on the calendar removes every live visit on that day (`allOn`), so normali
 another against the moved one. A set added to a visit of another day is stamped one second after
 the visit's last set, which keeps a late correction on the visit's day and in order. A set's
 `comment` is free text, empty by default, trimmed and cut to 200 characters on save; the shared
-text leaves it out. Within a visit, sets sort by `(position, recorded_at, id)`; `position` defaults
-to 0, so rows written before it keep their recording order. A reorder (`machineMovedTo`,
-`setMovedTo`) renumbers the visit's sets 1..n in the new order and writes only those whose position
-changed, so sets sharing a position still land in the dropped order.
+text leaves it out. `11.sqm` adds it and resets `lastPullAt`, so comments and gravitron modes a
+device pulled before it updated are pulled again. Within a visit, sets sort by `(position,
+recorded_at, id)`; `position` defaults to 0, so rows written before it keep their recording order.
+A reorder (`machineMovedTo`, `setMovedTo`) renumbers the visit's sets 1..n in the new order and
+writes only those whose position changed, so sets sharing a position still land in the dropped
+order.
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

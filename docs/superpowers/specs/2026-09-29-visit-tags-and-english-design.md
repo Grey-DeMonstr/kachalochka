@@ -192,6 +192,7 @@ Every Russian label naming a machine is reworded, with the tests that assert the
 
 ## 6. Release
 
-Migrations `0016` and `0017` must be pushed with `supabase db push` before the release is tagged:
-until then the web and the sync pass fail on the unknown columns. Clients before this release keep
+Each migration must be applied with `supabase db push` before the commit that needs it is pushed
+to `origin`: CI publishes the web build on every push to `master`, and until the server has the
+column the web and the sync pass fail on it. Clients before this release keep
 working, since PostgREST updates only the columns an upsert sends.

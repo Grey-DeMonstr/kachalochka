@@ -475,17 +475,19 @@ class SchemaMigrationTest {
     }
 
     @Test
-    fun version_11_sets_gain_an_empty_comment() {
+    fun version_11_sets_gain_an_empty_comment_and_every_row_is_pulled_again() {
         KachalochkaDatabase.Schema.create(driver)
         version11SetTable()
         exec(
             "INSERT INTO workout_set VALUES ('${SET.value}', NULL, '${VISIT.value}', " +
                 "'${PRESS.value}', 80.0, 8, 1, 1, 0, 0)",
         )
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
 
         KachalochkaDatabase.Schema.migrate(driver, 11, 12)
 
         assertEquals("", text("SELECT comment FROM workout_set WHERE id = '${SET.value}'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
     /** Versions 4 to 11 declare the set table this way. */
