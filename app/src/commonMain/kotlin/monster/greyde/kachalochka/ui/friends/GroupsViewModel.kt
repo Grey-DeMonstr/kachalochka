@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
@@ -14,6 +15,7 @@ import monster.greyde.kachalochka.core.domain.friends.inviteCodeOf
 import monster.greyde.kachalochka.core.domain.friends.typedInviteCode
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.memberCount
+import monster.greyde.kachalochka.ui.strings.AppStrings
 
 const val GROUP_NAME_LENGTH = 40
 
@@ -57,6 +59,7 @@ class GroupsViewModel(
         viewModelScope.launch {
             accounts.activeId.collect { load() }
         }
+        viewModelScope.launch { AppStrings.flow.drop(1).collect { load() } }
     }
 
     /**
@@ -134,12 +137,12 @@ class GroupsViewModel(
     }
 
     private fun notFound(current: GroupsDialogUi) {
-        dialog = current.copy(error = "Приглашение не найдено")
+        dialog = current.copy(error = AppStrings.current.inviteNotFound)
         publish()
     }
 
     private fun failed(current: GroupsDialogUi) {
-        dialog = current.copy(error = "Нет связи с сервером")
+        dialog = current.copy(error = AppStrings.current.offline)
         publish()
     }
 

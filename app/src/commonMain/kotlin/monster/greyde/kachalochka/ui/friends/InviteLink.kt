@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.friends
 
 import monster.greyde.kachalochka.core.domain.friends.inviteCodeOf
 import monster.greyde.kachalochka.ui.account.signInReturnAddress
+import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /** The page itself with the code: GitHub Pages serves the app under a path. */
 fun inviteLink(
@@ -38,7 +39,7 @@ data class Invite(
 )
 
 fun inviteText(invite: Invite): String {
-    val call = "Вступай в группу «${invite.groupName}» в Качалочке"
+    val call = AppStrings.current.inviteMessage(invite.groupName)
     val first = invite.link?.let { "$call: $it" } ?: call
-    return "$first\nКод: ${invite.code}"
+    return "$first\n${AppStrings.current.codeLine(invite.code)}"
 }

@@ -40,6 +40,8 @@ import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.AppStrings
+import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.friendColor
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -58,7 +60,7 @@ fun GroupScreen(
     val gone by viewModel.gone.collectAsState()
     LaunchedEffect(gone) { if (gone) onGone() }
     // The view model already loads once created: it follows accounts.activeId from init.
-    Screen(state?.title ?: "Группа", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(state?.title ?: strings().group, onBack = onBack, onOpenSettings = onOpenSettings) {
         if (offline) {
             OfflineNotice(onRetry = viewModel::refresh)
             return@Screen
@@ -72,7 +74,7 @@ fun GroupScreen(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SectionLabel("Участники")
+            SectionLabel(strings().membersSection)
             current.members.forEach { row ->
                 MemberRow(
                     row,
@@ -82,7 +84,7 @@ fun GroupScreen(
                 Rule()
             }
             Text(
-                "Код приглашения: ${current.code}",
+                strings().inviteCode(current.code),
                 modifier = Modifier.testTag("invite-code"),
                 fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
@@ -96,21 +98,21 @@ fun GroupScreen(
                 )
             }
             AccentButton(
-                "Пригласить",
+                strings().invite,
                 PhosphorIcons.UsersThree,
                 viewModel::invite,
                 Modifier.testTag("invite"),
             )
             if (current.isOwner) {
                 OutlineButton(
-                    "Удалить группу",
+                    strings().deleteGroup,
                     PhosphorIcons.Trash,
                     viewModel::askToGo,
                     Modifier.fillMaxWidth().testTag("delete-group"),
                 )
             } else {
                 OutlineButton(
-                    "Выйти из группы",
+                    strings().leaveGroup,
                     PhosphorIcons.ArrowLeft,
                     viewModel::askToGo,
                     Modifier.fillMaxWidth().testTag("leave-group"),
@@ -176,7 +178,7 @@ private fun MemberRow(
         )
         if (row.owner) {
             Text(
-                "владелец",
+                strings().owner,
                 modifier = Modifier.testTag("member-owner-${row.friend.userId.value}"),
                 fontSize = 13.sp,
                 color = colors.secondary,
@@ -185,7 +187,7 @@ private fun MemberRow(
     }
 }
 
-private fun colorName(index: Int) = "Цвет ${index + 1}"
+private fun colorName(index: Int) = AppStrings.current.colorName(index + 1)
 
 @Composable
 private fun ColorPicker(
@@ -195,7 +197,7 @@ private fun ColorPicker(
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.testTag("color-picker"),
-        title = { Text("Цвет в календаре") },
+        title = { Text(strings().calendarColor) },
         // Wraps only where a narrow phone cannot fit the eight in one row.
         text = {
             FlowRow(
@@ -217,7 +219,7 @@ private fun ColorPicker(
         },
         confirmButton = {
             TextButton(onClick = onDismiss, modifier = Modifier.testTag("color-cancel")) {
-                Text("Отмена")
+                Text(strings().cancel)
             }
         },
     )

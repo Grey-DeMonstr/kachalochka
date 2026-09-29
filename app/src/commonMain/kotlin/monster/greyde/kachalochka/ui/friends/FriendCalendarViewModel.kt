@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
@@ -31,6 +32,7 @@ import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.weekdayName
 import monster.greyde.kachalochka.ui.machine.visibleLinks
+import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
 data class FriendCalendarUiState(
@@ -79,6 +81,7 @@ class FriendCalendarViewModel(
         viewModelScope.launch {
             accounts.activeId.collect { reload() }
         }
+        viewModelScope.launch { AppStrings.flow.drop(1).collect { reload() } }
     }
 
     fun refresh() = reload()

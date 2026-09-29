@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performTextInput
 import kotlinx.coroutines.CompletableDeferred
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.runScreenTestInEnglish
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -48,6 +49,13 @@ class GroupsScreenTest {
     fun without_groups_the_list_says_so() =
         runScreenTest(gym, screen = { GroupsScreen({}, {}, {}) }) {
             onNodeWithTag("groups-empty").assertTextEquals("Групп пока нет")
+        }
+
+    @Test
+    fun the_groups_screen_speaks_english() =
+        runScreenTestInEnglish(gym, screen = { GroupsScreen({}, {}, {}) }) {
+            onNodeWithTag("top-bar-title").assertTextEquals("Friends")
+            onNodeWithTag("groups-empty").assertTextEquals("No groups yet")
         }
 
     @Test

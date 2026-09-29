@@ -26,6 +26,7 @@ import monster.greyde.kachalochka.ui.calendar.MonthGrid
 import monster.greyde.kachalochka.ui.calendar.MonthHeader
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -74,7 +75,7 @@ fun FriendCalendarScreen(
             }
             if (current.noVisit) {
                 Text(
-                    "Нет визита",
+                    strings().noVisit,
                     modifier = Modifier.testTag("calendar-empty"),
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),

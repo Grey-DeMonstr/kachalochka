@@ -23,6 +23,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -66,7 +67,7 @@ private fun FriendVisitList(state: FriendVisitUiState) {
         )
         if (state.groups.isEmpty()) {
             Text(
-                "Нет визита",
+                strings().noVisit,
                 modifier = Modifier.padding(top = 12.dp).testTag("friend-visit-empty"),
                 fontSize = 16.sp,
                 color = colors.onBackground.copy(alpha = 0.6f),

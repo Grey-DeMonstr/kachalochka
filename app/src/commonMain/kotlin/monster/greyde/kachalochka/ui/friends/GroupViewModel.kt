@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -15,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.friends.GroupMember
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.strings.AppStrings
 
 data class GroupUiState(
     val title: String,
@@ -70,6 +72,7 @@ class GroupViewModel(
         viewModelScope.launch {
             accounts.activeId.collect { load() }
         }
+        viewModelScope.launch { AppStrings.flow.drop(1).collect { load() } }
     }
 
     fun refresh() {
@@ -94,7 +97,7 @@ class GroupViewModel(
                 .onSuccess { mutableGone.value = true }
                 .onFailure {
                     confirming = false
-                    notice = "Нет связи с сервером"
+                    notice = AppStrings.current.offline
                     publish()
                 }
         }
@@ -120,7 +123,7 @@ class GroupViewModel(
                 .onSuccess {
                     colors = colors + (member to index)
                     sync.request()
-                }.onFailure { notice = "Нет связи с сервером" }
+                }.onFailure { notice = AppStrings.current.offline }
             publish()
         }
     }
@@ -192,15 +195,15 @@ class GroupViewModel(
     private fun confirmUi(isOwner: Boolean) =
         if (isOwner) {
             GroupConfirmUi(
-                "Удалить группу?",
-                "Участники перестанут видеть визиты друг друга.",
-                "Удалить",
+                AppStrings.current.deleteGroupTitle,
+                AppStrings.current.deleteGroupText,
+                AppStrings.current.delete,
             )
         } else {
             GroupConfirmUi(
-                "Выйти из группы?",
-                "Вы перестанете видеть визиты участников, а они — ваши.",
-                "Выйти",
+                AppStrings.current.leaveGroupTitle,
+                AppStrings.current.leaveGroupText,
+                AppStrings.current.leave,
             )
         }
 }

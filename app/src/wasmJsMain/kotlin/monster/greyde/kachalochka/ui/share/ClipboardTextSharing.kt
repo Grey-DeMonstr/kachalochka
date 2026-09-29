@@ -4,11 +4,12 @@ import kotlinx.browser.window
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asDeferred
+import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /** The web has no share sheet, so the text goes to the clipboard instead. */
 class ClipboardTextSharing : TextSharing {
     override suspend fun share(text: String): String =
-        if (copyToClipboard(text)) "Скопировано" else "Не удалось скопировать"
+        if (copyToClipboard(text)) AppStrings.current.copied else AppStrings.current.copyFailed
 }
 
 /** False when the browser refuses, as it may without a recent tap or a secure page. */

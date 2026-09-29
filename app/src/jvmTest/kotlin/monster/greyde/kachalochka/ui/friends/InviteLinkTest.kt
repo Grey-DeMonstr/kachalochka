@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.friends
 
+import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -35,6 +36,15 @@ class InviteLinkTest {
         val plain = "https://example.test/k/?code=x"
         assertEquals(plain, withoutJoinCode(plain))
     }
+
+    @Test
+    fun the_invitation_is_written_in_english_too() =
+        inEnglish {
+            assertEquals(
+                "Join the group \"Зал\" in Kachalochka\nCode: ABCD2345",
+                inviteText(Invite("Зал", "ABCD2345", null)),
+            )
+        }
 
     @Test
     fun the_shared_text_carries_the_link_only_when_there_is_one() {

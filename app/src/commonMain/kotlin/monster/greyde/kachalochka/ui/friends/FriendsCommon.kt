@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 
 /** Friends' data is read online only; every friends screen shows this instead of crashing. */
 @Composable
@@ -25,13 +26,13 @@ internal fun OfflineNotice(onRetry: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            "Нет связи с сервером",
+            strings().offline,
             modifier = Modifier.testTag("friends-offline"),
             fontSize = 15.sp,
             color = colors.onBackground.copy(alpha = 0.6f),
         )
         OutlineButton(
-            "Повторить",
+            strings().retry,
             PhosphorIcons.ArrowRight,
             onRetry,
             Modifier.fillMaxWidth().testTag("friends-retry"),
@@ -46,16 +47,16 @@ internal fun InviteConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onCancel,
-        title = { Text("Вступить в группу по приглашению?") },
-        text = { Text("Участники группы увидят ваши визиты и упражнения.") },
+        title = { Text(strings().joinTitle) },
+        text = { Text(strings().joinText) },
         confirmButton = {
             TextButton(onClick = onJoin, modifier = Modifier.testTag("invite-confirm")) {
-                Text("Вступить")
+                Text(strings().join)
             }
         },
         dismissButton = {
             TextButton(onClick = onCancel, modifier = Modifier.testTag("invite-cancel")) {
-                Text("Отмена")
+                Text(strings().cancel)
             }
         },
     )
@@ -66,10 +67,10 @@ internal fun InviteMissingDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.testTag("invite-missing"),
-        title = { Text("Приглашение не найдено") },
+        title = { Text(strings().inviteNotFound) },
         confirmButton = {
             TextButton(onClick = onDismiss, modifier = Modifier.testTag("invite-missing-ok")) {
-                Text("Понятно")
+                Text(strings().understood)
             }
         },
     )

@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.friends
 
 import kotlinx.browser.window
 import monster.greyde.kachalochka.ui.share.copyToClipboard
+import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /** The web has no share sheet, so an invite goes to the clipboard instead. */
 class ClipboardInviteSharing : InviteSharing {
@@ -9,8 +10,8 @@ class ClipboardInviteSharing : InviteSharing {
 
     override suspend fun share(invite: Invite): String? =
         if (copyToClipboard(invite.link ?: inviteText(invite))) {
-            "Ссылка скопирована"
+            AppStrings.current.linkCopied
         } else {
-            "Код: ${invite.code}"
+            AppStrings.current.codeLine(invite.code)
         }
 }

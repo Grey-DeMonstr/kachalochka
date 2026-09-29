@@ -30,6 +30,7 @@ import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -42,7 +43,7 @@ fun GroupsScreen(
     val state by viewModel.state.collectAsState()
     // A return from a group reloads; the first mount already has data from the view model.
     LaunchedEffect(Unit) { viewModel.enter() }
-    Screen("Друзья", onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(strings().friends, onBack = onBack, onOpenSettings = onOpenSettings) {
         if (state.offline) {
             OfflineNotice(onRetry = viewModel::load)
             return@Screen
@@ -57,14 +58,14 @@ fun GroupsScreen(
             when {
                 groups == null ->
                     Text(
-                        "Загрузка…",
+                        strings().loading,
                         modifier = Modifier.padding(16.dp).testTag("groups-loading"),
                         fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                     )
                 groups.isEmpty() ->
                     Text(
-                        "Групп пока нет",
+                        strings().noGroupsYet,
                         modifier = Modifier.padding(16.dp).testTag("groups-empty"),
                         fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
@@ -81,13 +82,13 @@ fun GroupsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             AccentButton(
-                "Создать группу",
+                strings().createGroup,
                 PhosphorIcons.Plus,
                 viewModel::openCreate,
                 Modifier.testTag("create-group"),
             )
             OutlineButton(
-                "Вступить по коду",
+                strings().joinByCode,
                 PhosphorIcons.ArrowRight,
                 viewModel::openJoin,
                 Modifier.fillMaxWidth().testTag("join-by-code"),
@@ -142,7 +143,7 @@ private fun GroupsDialog(
     val creating = dialog.kind == GroupsDialogKind.Create
     AlertDialog(
         onDismissRequest = onCancel,
-        title = { Text(if (creating) "Новая группа" else "Вступить в группу") },
+        title = { Text(if (creating) strings().newGroup else strings().joinGroup) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -166,12 +167,12 @@ private fun GroupsDialog(
                 enabled = dialog.canConfirm,
                 modifier = Modifier.testTag("group-dialog-confirm"),
             ) {
-                Text(if (creating) "Создать" else "Вступить")
+                Text(if (creating) strings().create else strings().join)
             }
         },
         dismissButton = {
             TextButton(onClick = onCancel, modifier = Modifier.testTag("group-dialog-cancel")) {
-                Text("Отмена")
+                Text(strings().cancel)
             }
         },
     )
