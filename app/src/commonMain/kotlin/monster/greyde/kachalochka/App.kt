@@ -64,6 +64,10 @@ import monster.greyde.kachalochka.ui.measures.MeasureScreen
 import monster.greyde.kachalochka.ui.measures.MeasurementFormScreen
 import monster.greyde.kachalochka.ui.measures.MeasuresScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
+import monster.greyde.kachalochka.ui.strings.AppStrings
+import monster.greyde.kachalochka.ui.strings.LanguagePreference
+import monster.greyde.kachalochka.ui.strings.SystemLanguage
+import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import monster.greyde.kachalochka.ui.visit.VisitScreen
@@ -83,6 +87,11 @@ fun App() {
     val mode by preference.mode.collectAsState()
     val transitions: TransitionPreference = koinInject()
     val transitionMillis by transitions.millis.collectAsState()
+    val languages: LanguagePreference = koinInject()
+    val systemLanguage: SystemLanguage = koinInject()
+    val language by languages.language.collectAsState()
+    // Set while composing, so this very frame is already drawn in the chosen language.
+    remember(language) { AppStrings.set(language.strings(systemLanguage.tag())) }
     val scope = rememberCoroutineScope()
     val signInRequired: SignInRequired = koinInject()
     val accountsViewModel: AccountsViewModel = koinViewModel()

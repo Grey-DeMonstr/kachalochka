@@ -18,6 +18,9 @@ import monster.greyde.kachalochka.ui.photos.NoPhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.share.UnavailableTextSharing
+import monster.greyde.kachalochka.ui.strings.InMemoryLanguagePreference
+import monster.greyde.kachalochka.ui.strings.LanguagePreference
+import monster.greyde.kachalochka.ui.strings.SystemLanguage
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import org.koin.core.module.Module
@@ -28,6 +31,9 @@ actual fun platformModule(): Module =
     module {
         single<ThemePreference> { InMemoryThemePreference() }
         single<TransitionPreference> { InMemoryTransitionPreference() }
+        single<LanguagePreference> { InMemoryLanguagePreference() }
+        // The host tests assert Russian text, whatever the machine running them speaks.
+        single { SystemLanguage { "ru" } }
         single<GoogleSignIn> { UnavailableGoogleSignIn }
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }

@@ -1,0 +1,318 @@
+package monster.greyde.kachalochka.ui.strings
+
+/** Every text the app shows, in one language. User data is never translated. */
+interface Strings {
+    // Common
+    val appName: String
+    val back: String
+    val cancel: String
+    val delete: String
+    val save: String
+    val add: String
+    val create: String
+    val more: String
+    val done: String
+    val reorder: String
+    val drag: String
+    val offline: String
+    val retry: String
+    val loading: String
+    val settings: String
+    val name: String
+    val unitExample: String
+    val noVisit: String
+    val photo: String
+
+    // Units, modes and counts
+    val kg: String
+    val cm: String
+    val customUnitFallback: String
+    val modeTotal: String
+    val modePerSide: String
+    val modeCounterweight: String
+    val perSideShared: String
+
+    fun sets(n: Int): String
+
+    fun machines(n: Int): String
+
+    fun members(n: Int): String
+
+    fun daysAgo(days: Int): String
+
+    /** [month] 1..12, as in "12 ноября". */
+    fun dayMonth(
+        day: Int,
+        month: Int,
+    ): String
+
+    fun monthTitle(month: Int): String
+
+    /** [dayOfWeek] 1 (Monday)..7. */
+    fun weekday(dayOfWeek: Int): String
+
+    fun weekdayShort(dayOfWeek: Int): String
+
+    fun weekdayShared(dayOfWeek: Int): String
+
+    // Accounts and sign-in
+    val recordingAs: String
+    val addAccount: String
+
+    fun signOutOf(name: String): String
+
+    val signInFailed: String
+    val signInWithGoogle: String
+    val signInUnavailable: String
+
+    // Home
+    val visits: String
+    val machinesSection: String
+    val measurements: String
+    val plans: String
+    val statistics: String
+    val friends: String
+
+    fun version(name: String): String
+
+    val today: String
+    val todayTitle: String
+    val noSetsYet: String
+
+    fun lastSet(set: String): String
+
+    val recordSet: String
+    val continueVisit: String
+    val locked: String
+
+    // Visit
+    val visit: String
+
+    fun visitOn(date: String): String
+
+    val share: String
+    val groupByTag: String
+    val newMachine: String
+    val addSet: String
+    val friendsColon: String
+    val reps: String
+    val comment: String
+    val deleteSet: String
+    val saveSet: String
+
+    fun saveAs(person: String): String
+
+    fun setNumber(n: Int): String
+
+    fun editCaption(
+        time: String,
+        was: String,
+    ): String
+
+    // Calendar
+    val addVisit: String
+    val replace: String
+    val chooseNewDay: String
+    val move: String
+    val deleteVisitTitle: String
+    val deleteVisitText: String
+    val replaceVisitTitle: String
+
+    fun replaceVisitText(
+        date: String,
+        sets: String,
+    ): String
+
+    val previousMonth: String
+    val nextMonth: String
+
+    // Machines
+    val machine: String
+    val machines: String
+    val noMachinesYet: String
+    val friendsMachines: String
+    val myMachines: String
+    val friendMachine: String
+    val setupNote: String
+    val howWeightCounts: String
+    val platformWeight: String
+    val takeForMyself: String
+    val platformAdded: String
+    val platformBeside: String
+    val linkTo: String
+    val merge: String
+    val mergeTitle: String
+
+    fun mergeText(
+        kept: String,
+        removed: String,
+    ): String
+
+    val unitName: String
+    val saveMachine: String
+    val unlinkTitle: String
+    val unlinkText: String
+    val unlink: String
+    val linkedWith: String
+    val tags: String
+    val newTag: String
+    val choiceTotal: String
+    val choicePerSide: String
+    val choiceCounterweight: String
+    val counterweightHint: String
+    val ownMass: String
+    val addToRecord: String
+    val platformIncludedHint: String
+    val platformApartHint: String
+    val customUnit: String
+    val weightStep: String
+    val afterSaveHint: String
+    val unlinkFromFriends: String
+    val basedOnExisting: String
+    val photoNoteAndSetup: String
+    val copyMachine: String
+    val copyKeeps: String
+    val recent: String
+    val similar: String
+
+    fun createNamed(name: String): String
+
+    val todayLower: String
+    val inThisVisit: String
+
+    fun wasAgo(
+        value: String,
+        ago: String,
+    ): String
+
+    // Photos
+    val addPhoto: String
+    val takePhoto: String
+    val fromGallery: String
+
+    // Friends
+    val joinTitle: String
+    val joinText: String
+    val join: String
+    val inviteNotFound: String
+    val understood: String
+    val group: String
+    val membersSection: String
+
+    fun inviteCode(code: String): String
+
+    val invite: String
+    val deleteGroup: String
+    val leaveGroup: String
+    val owner: String
+
+    fun colorName(n: Int): String
+
+    val calendarColor: String
+    val noGroupsYet: String
+    val createGroup: String
+    val joinByCode: String
+    val newGroup: String
+    val joinGroup: String
+    val deleteGroupTitle: String
+    val deleteGroupText: String
+    val leaveGroupTitle: String
+    val leaveGroupText: String
+    val leave: String
+
+    fun inviteMessage(group: String): String
+
+    fun codeLine(code: String): String
+
+    val linkCopied: String
+    val copied: String
+    val copyFailed: String
+
+    // Measures
+    val measurement: String
+    val deleteMeasurement: String
+    val deleteMeasurementTitle: String
+
+    fun deleteMeasurementText(day: String): String
+
+    val periodMonth: String
+    val periodQuarter: String
+    val periodHalfYear: String
+    val periodYear: String
+    val periodAll: String
+    val history: String
+    val deleteMeasureTitle: String
+
+    fun deleteMeasureText(name: String): String
+
+    val noValues: String
+    val noValuesInPeriod: String
+    val nameAndUnit: String
+    val deleteMeasure: String
+    val measure: String
+    val measuresSection: String
+    val newMeasurement: String
+    val addMeasure: String
+    val bodyFat: String
+    val cannotCalculate: String
+    val fillProfile: String
+    val newMeasure: String
+
+    fun needs(inputs: List<String>): String
+
+    val navy: String
+    val deurenberg: String
+    val inputSex: String
+    val inputAge: String
+    val inputHeight: String
+    val inputWeight: String
+    val inputWaist: String
+    val inputNeck: String
+    val inputHips: String
+    val measureWeight: String
+    val measureWaist: String
+    val measureChest: String
+    val measureHips: String
+    val measureBiceps: String
+    val measureThigh: String
+    val measureNeck: String
+    val hintWeight: String
+    val hintWaist: String
+    val hintChest: String
+    val hintHips: String
+    val hintBiceps: String
+    val hintThigh: String
+    val hintNeck: String
+
+    // Settings
+    val profile: String
+    val nickname: String
+    val sex: String
+    val male: String
+    val female: String
+    val birthDate: String
+    val datePlaceholder: String
+    val heightCm: String
+    val bodyFieldsHint: String
+    val weightUnits: String
+    val mixedUnits: String
+    val mixedUnitsHint: String
+    val theme: String
+    val themeSystem: String
+    val themeLight: String
+    val themeDark: String
+    val language: String
+    val languageSystem: String
+    val transitions: String
+
+    fun transitionsHint(max: Int): String
+
+    val apply: String
+    val applyTitle: String
+    val discard: String
+    val advanced: String
+    val deleteAccount: String
+    val deleteAccountTitle: String
+
+    fun deleteAccountText(word: String): String
+}

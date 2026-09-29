@@ -22,6 +22,8 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.strings.AppLanguage
+import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import kotlin.time.Clock
@@ -53,6 +55,7 @@ data class ProfileUi(
 data class DeviceUi(
     val theme: ThemeMode,
     val transition: String,
+    val language: AppLanguage,
 )
 
 /** "Удалить аккаунт": offered while an account is signed in, under "Дополнительно". */
@@ -77,6 +80,7 @@ class SettingsViewModel(
     private val accountDeletion: AccountDeletion,
     private val themes: ThemePreference,
     private val transitions: TransitionPreference,
+    private val languages: LanguagePreference,
 ) : ViewModel() {
     private val mutableProfile = MutableStateFlow<ProfileUi?>(null)
     val profile: StateFlow<ProfileUi?> = mutableProfile
@@ -100,7 +104,8 @@ class SettingsViewModel(
         viewModelScope.launch { accounts.activeId.collect { load() } }
     }
 
-    private fun storedDevice() = DeviceUi(themes.mode.value, transitions.millis.value.toString())
+    private fun storedDevice() =
+        DeviceUi(themes.mode.value, transitions.millis.value.toString(), languages.language.value)
 
     private suspend fun load() {
         val owner = currentUser.id()
@@ -140,6 +145,8 @@ class SettingsViewModel(
     fun typeHeight(text: String) = edit { it.copy(height = text) }
 
     fun chooseTheme(mode: ThemeMode) = editDevice { it.copy(theme = mode) }
+
+    fun chooseLanguage(language: AppLanguage) = editDevice { it.copy(language = language) }
 
     /** Text that is not a length in range is refused, so the field keeps its last valid value. */
     fun typeTransition(text: String) {
@@ -189,6 +196,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             withContext(NonCancellable) {
                 themes.set(device.theme)
+                languages.set(device.language)
                 transitionMillisOrNull(device.transition)?.let { transitions.set(it) }
                 if (writeProfile && shown != null) saveProfile(shown)
             }

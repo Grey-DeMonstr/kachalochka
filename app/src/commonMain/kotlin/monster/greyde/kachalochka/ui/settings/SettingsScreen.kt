@@ -41,6 +41,7 @@ import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.TextInput
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.strings.AppLanguage
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -74,6 +75,17 @@ fun SettingsScreen(onBack: () -> Unit) {
                 ),
                 selected = modes.indexOf(device.theme),
                 onSelect = { viewModel.chooseTheme(modes[it]) },
+            )
+            SectionTitle("Язык")
+            val languages = listOf(AppLanguage.System, AppLanguage.English, AppLanguage.Russian)
+            ChoiceRow(
+                listOf(
+                    Choice("Системный", "language-system"),
+                    Choice("English", "language-english"),
+                    Choice("Русский", "language-russian"),
+                ),
+                selected = languages.indexOf(device.language),
+                onSelect = { viewModel.chooseLanguage(languages[it]) },
             )
             SectionTitle("Анимация переходов")
             TextInput(

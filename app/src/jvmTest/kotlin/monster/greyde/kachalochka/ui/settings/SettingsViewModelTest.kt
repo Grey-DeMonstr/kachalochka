@@ -15,6 +15,8 @@ import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
+import monster.greyde.kachalochka.ui.strings.AppLanguage
+import monster.greyde.kachalochka.ui.strings.InMemoryLanguagePreference
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import kotlin.test.AfterTest
@@ -41,6 +43,7 @@ class SettingsViewModelTest {
 
     private val themes = InMemoryThemePreference()
     private val transitions = InMemoryTransitionPreference()
+    private val languages = InMemoryLanguagePreference()
 
     private fun viewModel() =
         SettingsViewModel(
@@ -53,6 +56,7 @@ class SettingsViewModelTest {
             gym.deletion,
             themes,
             transitions,
+            languages,
         )
 
     private val SettingsViewModel.ui: ProfileUi get() = profile.value!!
@@ -395,5 +399,18 @@ class SettingsViewModelTest {
             assertEquals(emptyList(), gym.accountServer.deleted)
             vm.typeDeleteWord("DELETE")
             assertTrue(vm.deletion.value.canConfirm)
+        }
+
+    @Test
+    fun the_language_changes_only_when_applied() =
+        runTest {
+            val vm = viewModel()
+
+            vm.chooseLanguage(AppLanguage.English)
+
+            assertEquals(AppLanguage.System, languages.language.value)
+            assertTrue(vm.canApply.value)
+            vm.apply()
+            assertEquals(AppLanguage.English, languages.language.value)
         }
 }

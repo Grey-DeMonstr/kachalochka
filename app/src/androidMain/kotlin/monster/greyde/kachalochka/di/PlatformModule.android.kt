@@ -29,6 +29,9 @@ import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.SystemPhotoCapture
 import monster.greyde.kachalochka.ui.share.ShareSheetTextSharing
 import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.strings.DataStoreLanguagePreference
+import monster.greyde.kachalochka.ui.strings.LanguagePreference
+import monster.greyde.kachalochka.ui.strings.SystemLanguage
 import monster.greyde.kachalochka.ui.theme.DataStoreThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import okio.Path.Companion.toPath
@@ -36,6 +39,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import java.util.Locale
 
 private const val LOG_TAG = "Kachalochka"
 
@@ -62,6 +66,13 @@ actual fun platformModule(): Module =
                 CoroutineScope(SupervisorJob() + Dispatchers.Default),
             )
         }
+        single<LanguagePreference>(createdAtStart = true) {
+            DataStoreLanguagePreference(
+                get(),
+                CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            )
+        }
+        single { SystemLanguage { Locale.getDefault().toLanguageTag() } }
         single { ActivityHolder() }
         single { WorkManagerSyncTrigger(androidContext()) } bind SyncTrigger::class
         single { VisitStore.Device }

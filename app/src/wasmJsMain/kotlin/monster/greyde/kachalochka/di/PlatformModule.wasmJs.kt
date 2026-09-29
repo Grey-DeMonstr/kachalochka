@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.di
 
+import kotlinx.browser.window
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
@@ -20,6 +21,9 @@ import monster.greyde.kachalochka.ui.photos.BrowserPhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.share.ClipboardTextSharing
 import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.strings.LanguagePreference
+import monster.greyde.kachalochka.ui.strings.LocalStorageLanguagePreference
+import monster.greyde.kachalochka.ui.strings.SystemLanguage
 import monster.greyde.kachalochka.ui.theme.LocalStorageThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import org.koin.core.module.Module
@@ -29,6 +33,8 @@ actual fun platformModule(): Module =
     module {
         single<ThemePreference> { LocalStorageThemePreference() }
         single<TransitionPreference> { LocalStorageTransitionPreference() }
+        single<LanguagePreference> { LocalStorageLanguagePreference() }
+        single { SystemLanguage { window.navigator.language } }
         single<GoogleSignIn> { RedirectGoogleSignIn(get()) }
         single { SignInRequired(true) }
         single { SignInAvailable(get<SupabaseCredentials>().isConfigured) }
