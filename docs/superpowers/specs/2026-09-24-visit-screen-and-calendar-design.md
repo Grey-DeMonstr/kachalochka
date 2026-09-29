@@ -4,12 +4,12 @@
 
 Three changes around the gym visit, from the issue backlog:
 
-- **Issue 1.** The set sheet looks swipeable and must be: swiping it down, the phone's back and
+- **The set sheet.** It looks swipeable and must be: swiping it down, the phone's back and
   the top bar's back collapse it. Tapping the machine's name does nothing.
-- **Issue 2.** The visit's machine list ends with "Новый тренажёр", so adding the next row is
-  obvious.
-- **Issue 4.** A calendar of every visit, where a visit is added, opened, moved to another day
-  or removed.
+- **"Новый тренажёр".** The visit's machine list ends with "Новый тренажёр", so adding the
+  next row is obvious.
+- **The visit calendar.** A calendar of every visit, where a visit is added, opened, moved to
+  another day or removed.
 
 The design project draws none of this, so every new element is built from the Nocturne
 components already in `ui/components` and follows the frames' copy style.
@@ -92,7 +92,7 @@ Each decision, then why.
 
 ---
 
-## 3. The set sheet (issue 1)
+## 3. The set sheet
 
 Three states:
 
@@ -116,7 +116,7 @@ The view model gains `collapseSheet(): Boolean` (false when there was nothing to
 the top bar knows to leave) and `expandSheet()`. `leaveEdit()` goes; `collapseSheet()` covers it.
 `SheetUi` gains `expanded`.
 
-## 4. "Новый тренажёр" (issue 2)
+## 4. "Новый тренажёр"
 
 The list ends, after the last machine group, with a full-width `OutlineButton` "Новый тренажёр"
 with the Plus icon. It opens the picker with the chosen machine, as the sheet's name did, so
@@ -125,7 +125,7 @@ It keeps the `pick-machine` test tag the old sheet button had.
 
 ---
 
-## 5. The visit calendar (issue 4)
+## 5. The visit calendar
 
 ### 5.1 Reaching it
 
@@ -316,7 +316,7 @@ Set **Last reviewed** to 2026-09-24.
 9. The calendar screen, its route and the home row.
 10. The functional and technical specs.
 
-Step 3 carries issue 1's "the name does nothing": until the list has its button, the name is the
+Step 3 carries the sheet's "the name does nothing": until the list has its button, the name is the
 only way to change machine.
 
 ## 11. Risks

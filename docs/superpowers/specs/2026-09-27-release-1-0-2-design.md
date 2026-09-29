@@ -4,13 +4,13 @@
 
 Nine issues from the backlog, in three parts that ship together as 1.0.2:
 
-- **Part A — machines.** Issue 5: the weight step is any decimal. Issue 6: a set's weight is
-  typed, with a comma or a point. Issue 7: "Своя единица" becomes a real unit with its own name.
-  Issue 8: "Противовес" goes. Issue 11: a list of the account's machines, reached from home.
-- **Part B — visits.** Issue 10: one visit per day, with no start or end. Issue 9: machines and
-  sets within a visit keep an order the user can change.
-- **Part C — groups and linked machines.** Issue 12: friends form groups and read each other's
-  visits. Issue 13: a machine can be linked to a friend's copy of the same physical machine.
+- **Part A — machines.** The weight step is any decimal. A set's weight is typed, with a comma or
+  a point. "Своя единица" becomes a real unit with its own name. "Противовес" goes. A list of the
+  account's machines, reached from home.
+- **Part B — visits.** One visit per day, with no start or end. Machines and sets within a visit
+  keep an order the user can change.
+- **Part C — groups and linked machines.** Friends form groups and read each other's visits. A
+  machine can be linked to a friend's copy of the same physical machine.
 
 No design frame draws any of this, so every new element is built from the Nocturne components
 already in `ui/components` and follows the existing screens' copy style.
@@ -70,8 +70,8 @@ Each decision, then why.
   to three decimals; a step finer than that would be lost at the first press.
 - **The set sheet's weight number itself becomes the text field.** One control keeps the sheet
   as tall as it is; the design's 52 sp number is large enough to tap.
-- **A typed weight is not snapped to the step, and is rounded to three decimals.** Issue 6 is
-  about weights the step cannot reach, such as a 22,5 on a machine stepping by 5.
+- **A typed weight is not snapped to the step, and is rounded to three decimals.** Typing is
+  for weights the step cannot reach, such as a 22,5 on a machine stepping by 5.
 - **A weight that is empty, not a number or negative disables "Сохранить подход"; − and + step
   from the last valid weight and replace the text.** The sheet never saves a value the user
   cannot see.

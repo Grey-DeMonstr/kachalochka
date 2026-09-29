@@ -1,12 +1,12 @@
 # Release 1.0.3 — design
 
-Backlog issues 14–21: group machines in the machine list, linking and merging machines, the slow
+Eight backlog issues: group machines in the machine list, linking and merging machines, the slow
 friends screen, friends in the calendar, sharing a visit with a nickname, drag-and-drop ordering,
 body measures and a body-fat calculator. Each issue is implemented and committed on its own, in
 the order of the sections below, and each updates `functional_spec.md` and `technical_spec.md`
 in the same commit as the code.
 
-## 1. Friends screen loads slowly (issue 16)
+## 1. Friends screen loads slowly
 
 While `GroupsViewModel` has no answer yet, `GroupsScreen` treats the missing list as an empty
 one and shows "Групп пока нет", so a slow first read looks like a missing group.
@@ -23,7 +23,7 @@ one and shows "Групп пока нет", so a slow first read looks like a mi
 Tests: the view-model test asserts the loading state before the fake answers; the screen test
 asserts no empty text while loading.
 
-## 2. Drag-and-drop ordering (issue 19)
+## 2. Drag-and-drop ordering
 
 "Порядок" on the visit screen switches ordering on and turns into "Готово"; "Готово" switches it
 off. The arrow buttons and their code are removed.
@@ -45,7 +45,7 @@ off. The arrow buttons and their code are removed.
 Tests: domain tests for the two functions; a Compose test drags a handle with
 `performTouchInput` and asserts the new order; a test asserts no arrow tags exist.
 
-## 3. Nickname and the account profile (issue 18, part 1)
+## 3. Nickname and the account profile
 
 Each signed-in account has one synced `profile` row. It already exists in both schemas and in
 the sync pass, and is unused so far.
@@ -75,7 +75,7 @@ the sync pass, and is unused so far.
 - `Nickname` in `app` resolves the name to show: the profile's nickname, else the account's
   display name, else empty (Android without an account).
 
-## 4. Sharing a visit (issue 18, part 2)
+## 4. Sharing a visit
 
 The visit screen's top bar gets a share icon (`PhosphorIcons.ShareNetwork`) whenever the visit has
 sets. It shares plain text through the same platform mechanism as invites: a new
@@ -103,7 +103,7 @@ with its sets in visit order:
   "Equal" compares the converted, rounded values. When every weight is 0 the weight part is
   left out (`"Подтягивания 3x10"` or `"Подтягивания 10-8-6"`).
 
-## 5. Friends' visits in the calendar (issue 17)
+## 5. Friends' visits in the calendar
 
 - `FriendsRepository.groupVisits(viewer, from, to): List<FriendVisit>` reads the live visits of
   every group mate around the shown month in one request (`user_id in mates`, and `day` between
@@ -128,7 +128,7 @@ with its sets in visit order:
 - The group screen shows each member's colour dot (not the viewer's own); tapping it opens a
   palette dialog, and choosing writes the profile.
 
-## 6. Linking and merging machines (issue 15)
+## 6. Linking and merging machines
 
 ### 6.1 Model
 
@@ -212,7 +212,7 @@ the chooser and the old form.
 - **Friend visit**: `namesForViewer` names each of their machines by the viewer's machine in the
   same cluster, else by its own name.
 
-## 7. Group machines in the machine list (issue 14)
+## 7. Group machines in the machine list
 
 "Тренажёры" lists the own machines at once and, after the network answers, "Тренажёры друзей": one
 row per friends' cluster without an own machine (6.4), with "<friend> · <caption>". Offline or
@@ -221,7 +221,7 @@ read-only view of its settings (name, owner, setup note, weight caption, platfor
 accent button "Взять себе", which makes the linked own copy (6.2) and replaces the view with that
 copy's form.
 
-## 8. Body measures (issue 20)
+## 8. Body measures
 
 Private to each account: RLS lets only the owner read or write, and no group policy exists.
 
@@ -281,7 +281,7 @@ deletes one.
 Weekly habit: days are chosen freely; the list and chart assume roughly weekly points (the x-axis
 labels months, and a period with fewer than two points shows the value instead of a line).
 
-## 9. Body-fat calculator (issue 21)
+## 9. Body-fat calculator
 
 The "Жир" field in the measurement form has a "Рассчитать" button opening a sheet.
 

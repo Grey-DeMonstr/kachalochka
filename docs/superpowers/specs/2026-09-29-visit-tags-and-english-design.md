@@ -106,8 +106,8 @@ composable draws the photo or the icon, used by the picker, the list and the vis
 - The machine form offers "Всего", "На сторону" and "Гравитрон". With "Гравитрон" chosen, a hint:
   "Вес считается отрицательным: чем меньше, тем лучше."
 - `setsSummary` writes such weights after "(-)": "Подтягивания в гравитроне
-  (-)27-25-22.5-22.5-22.5кг 10-8-6-6-6"; `setValue` writes "(-)27 кг × 10". The stepper keeps positive numbers; its caption
-  names the mode "гравитрон".
+  (-)27-25-22.5-22.5-22.5кг 10-8-6-6-6"; `setValue` writes "(-)27 кг × 10". The stepper keeps
+  positive numbers; its caption names the mode "гравитрон".
 - Statistics are not built yet; when they are, a smaller weight on such a machine is progress.
 
 ### 2.9 "Упражнения"

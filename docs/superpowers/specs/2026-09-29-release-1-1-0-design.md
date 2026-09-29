@@ -1,7 +1,7 @@
 # Release 1.1.0 — design
 
 Three changes: machine photos from the camera or the gallery, the app version on the home screen,
-and deleting an account from inside the app (backlog issue 22). Each is implemented and committed
+and deleting an account from inside the app. Each is implemented and committed
 on its own, in the order of the sections below, and updates `functional_spec.md` and
 `technical_spec.md` in the same commit as the code. The release follows the `release` skill.
 
@@ -85,7 +85,7 @@ The home screen ends with a muted "Версия X.Y.Z" line, on both platforms.
 
 Tests: a home screen test finds the line with `AppVersion.NAME`.
 
-## 3. Delete the account (issue 22)
+## 3. Delete the account
 
 Settings, for a signed-in account, ends with "Удалить аккаунт".
 
