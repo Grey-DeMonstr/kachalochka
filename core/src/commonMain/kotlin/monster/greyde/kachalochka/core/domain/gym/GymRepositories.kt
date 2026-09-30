@@ -71,3 +71,12 @@ interface WorkoutSetRepository {
     /** The most recently recorded set of each of the owner's machines. */
     suspend fun latestPerMachine(owner: UserId?): List<WorkoutSet>
 }
+
+interface PlanRepository {
+    suspend fun upsert(plan: Plan)
+
+    suspend fun byId(id: PlanId): Plan?
+
+    /** The owner's live plans in [planOrder]. */
+    suspend fun all(owner: UserId?): List<Plan>
+}

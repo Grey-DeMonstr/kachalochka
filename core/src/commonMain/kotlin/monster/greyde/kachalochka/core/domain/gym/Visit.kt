@@ -11,6 +11,8 @@ data class Visit(
     val recordedAt: Instant,
     val updatedAt: Instant,
     val deleted: Boolean,
+    /** Machines a started plan added, in plan order, whether or not they have sets yet. */
+    val planned: List<MachineId> = emptyList(),
 )
 
 /**
