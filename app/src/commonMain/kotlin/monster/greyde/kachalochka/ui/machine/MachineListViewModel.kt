@@ -8,30 +8,27 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
-import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.preferredUnit
-import monster.greyde.kachalochka.ui.format.friendMachineDetail
-import monster.greyde.kachalochka.ui.format.weightCaption
+import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.reading
+import kotlin.time.Clock
 
+/** [own] is null until the account's machines are read. */
 data class MachineListUiState(
-    val own: List<MachineListRowUi>? = null,
-    val friends: List<MachineListRowUi> = emptyList(),
-)
-
-data class MachineListRowUi(
-    val id: MachineId,
-    val name: String,
-    val detail: String,
-    /** The group mate owning a friends' row; null on the account's own. */
-    val friend: UserId? = null,
-    val photo: Photo? = null,
-)
+    val own: List<MachineCardUi>? = null,
+    val friendSections: List<FriendSectionUi> = emptyList(),
+) {
+    val friends: List<MachineCardUi> get() = friendSections.flatMap { it.cards }
+}
 
 class MachineListViewModel(
     private val catalogue: MachineCatalogue,
@@ -39,12 +36,20 @@ class MachineListViewModel(
     private val accounts: Accounts,
     private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
+    private val sets: WorkoutSetRepository,
+    private val friendsRepository: FriendsRepository,
+    private val friendColors: FriendColorStore,
+    private val clock: Clock,
+    private val utcOffset: UtcOffset,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineListUiState())
     val state: StateFlow<MachineListUiState> = mutableState
 
     private var own: OwnMachines? = null
     private var group: GroupMachines? = null
+    private var ownPeaks: List<MachinePeaks> = emptyList()
+    private var friendPeaks: List<MachinePeaks> = emptyList()
+    private var colors: Map<UserId, Int> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
     private var loading: Job? = null
     private var loadingFriends: Job? = null
@@ -63,6 +68,7 @@ class MachineListViewModel(
             viewModelScope.launch {
                 val owner = currentUser.id()
                 own = catalogue.own(owner)
+                ownPeaks = sets.peaks(owner)
                 preferred = profiles.preferredUnit(owner)
                 publish()
                 owner?.let(::loadFriends)
@@ -74,37 +80,36 @@ class MachineListViewModel(
             viewModelScope.launch {
                 group = reading { catalogue.group(owner) }.getOrNull()
                 publish()
+                friendPeaks =
+                    reading { friendsRepository.groupPeaks(owner) }.getOrDefault(friendPeaks)
+                val offered = group?.offered(own?.machines.orEmpty()).orEmpty()
+                colors =
+                    reading {
+                        friendColors.colorsFor(owner, offered.map { it.owner.userId }.distinct())
+                    }.getOrDefault(colors)
+                publish()
             }
     }
 
     private fun publish() {
         val shown = own?.let { ShownMachines(it, group) }
+        val now = clock.now()
+        val offset = utcOffset.at(now)
+        val cards =
+            shown?.let {
+                MachineCards(
+                    it,
+                    ownPeaks,
+                    friendPeaks,
+                    preferred,
+                    CalendarDay.of(now, offset),
+                    offset,
+                )
+            }
         mutableState.value =
             MachineListUiState(
-                own =
-                    shown?.let { s ->
-                        s.own.machines.map {
-                            MachineListRowUi(
-                                it.id,
-                                it.name,
-                                weightCaption(it, preferred),
-                                photo = s.cover(it.id),
-                            )
-                        }
-                    },
-                friends =
-                    shown
-                        ?.let { s ->
-                            s.offered.map {
-                                MachineListRowUi(
-                                    it.machine.id,
-                                    it.machine.name,
-                                    friendMachineDetail(it, preferred),
-                                    it.owner.userId,
-                                    s.cover(it.machine.id),
-                                )
-                            }
-                        }.orEmpty(),
+                own = cards?.let { c -> shown.own.machines.map(c::own) },
+                friendSections = cards?.friendSections(shown.offered, colors).orEmpty(),
             )
     }
 }

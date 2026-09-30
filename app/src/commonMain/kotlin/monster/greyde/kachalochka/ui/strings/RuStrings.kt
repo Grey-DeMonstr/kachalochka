@@ -173,7 +173,7 @@ object RuStrings : Strings {
     override val friendsMachines = "Упражнения друзей"
     override val myMachines = "Мои упражнения"
     override val friendMachine = "Упражнение друга"
-    override val setupNote = "Заметка о настройке"
+    override val setupNote = "Комментарий"
     override val howWeightCounts = "Как считается вес"
     override val platformWeight = "Вес платформы"
     override val takeForMyself = "Взять себе"
@@ -196,6 +196,7 @@ object RuStrings : Strings {
     override val linkedWith = "Связано с: "
     override val tags = "Теги"
     override val newTag = "Новый тег"
+    override val friendsTags = "Теги друзей — добавятся к вашим после выбора"
     override val choiceTotal = "Всего"
     override val choicePerSide = "На сторону"
     override val choiceCounterweight = "Гравитрон"
@@ -211,13 +212,18 @@ object RuStrings : Strings {
     override val afterSaveHint = "После сохранения упражнение появится в этом визите."
     override val unlinkFromFriends = "Отвязать от друзей"
     override val basedOnExisting = "На основе существующего"
-    override val photoNoteAndSetup = "Фото, заметка и настройка веса"
+    override val photoNoteAndSetup = "Фото, комментарий и настройка веса"
     override val copyMachine = "Скопировать упражнение"
     override val copyKeeps = "Заметка и настройка веса сохранятся"
     override val recent = "Недавние"
     override val similar = "Похожие"
 
     override fun createNamed(name: String) = "Создать «$name»"
+
+    override fun withTags(tags: List<String>) =
+        (if (tags.size == 1) "С тегом " else "С тегами ") + tags.joinToString(", ") { "«$it»" }
+
+    override val nothingFound = "Ничего не найдено"
 
     override val todayLower = "сегодня"
     override val inThisVisit = "в этом визите"

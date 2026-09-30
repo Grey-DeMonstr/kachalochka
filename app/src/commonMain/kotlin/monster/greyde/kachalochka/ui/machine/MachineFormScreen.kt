@@ -2,27 +2,31 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,6 +49,7 @@ import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Dp
@@ -55,8 +60,10 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Choice
+import monster.greyde.kachalochka.ui.components.ChoiceChip
 import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.ControlShape
@@ -64,7 +71,7 @@ import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
-import monster.greyde.kachalochka.ui.components.TextInput
+import monster.greyde.kachalochka.ui.components.dashedBorder
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
@@ -116,9 +123,21 @@ fun MachineFormScreen(
                 fontSize = 18.sp,
                 singleLine = true,
             )
-            PhotoStrip(photos, launchers, onOpen = { opened = it })
-            if (linking.linkedWith.isNotEmpty()) {
-                LinkedWith(linking.linkedWith, onOpenFriendMachine)
+            if (photos.isEmpty()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PhotoStrip(photos, launchers, onOpen = { opened = it })
+                    if (linking.linkedWith.isNotEmpty()) {
+                        LinkedWith(linking.linkedWith, onOpenFriendMachine)
+                    }
+                }
+            } else {
+                PhotoStrip(photos, launchers, { opened = it }, Modifier.fillMaxWidth())
+                if (linking.linkedWith.isNotEmpty()) {
+                    LinkedWith(linking.linkedWith, onOpenFriendMachine)
+                }
             }
             FieldLabel(strings().setupNote)
             FormField(
@@ -184,7 +203,7 @@ fun MachineFormScreen(
         ) {
             Rule()
             AccentButton(
-                strings().saveMachine,
+                strings().save,
                 PhosphorIcons.Check,
                 { viewModel.save(onSaved) },
                 Modifier.testTag("save-machine"),
@@ -286,36 +305,123 @@ private fun TagsSection(
     state: MachineFormState,
     viewModel: MachineFormViewModel,
 ) {
+    val colors = MaterialTheme.colorScheme
     FieldLabel(strings().tags)
-    if (state.shownTags.isNotEmpty()) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            state.shownTags.forEach { tag ->
-                FilterChip(
-                    selected = tag in state.tags,
-                    onClick = { viewModel.toggleTag(tag) },
-                    label = { Text(tag) },
-                    modifier = Modifier.testTag("tag-$tag"),
-                )
-            }
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        state.shownTags.forEach { tag ->
+            ChoiceChip(tag, tag in state.tags, "tag-$tag") { viewModel.toggleTag(tag) }
+        }
+        NewTagChip(state.newTag, viewModel::typeNewTag, viewModel::addNewTag)
+    }
+    val offered = state.offeredFriendTags
+    if (offered.isNotEmpty()) {
+        Text(
+            strings().friendsTags,
+            fontSize = 12.sp,
+            color = colors.onBackground.copy(alpha = 0.48f),
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            offered.forEach { FriendTagChip(it) { viewModel.toggleTag(it.tag) } }
         }
     }
+}
+
+/** A chip-shaped field adding the tag typed in it, on done or on its "+". */
+@Composable
+private fun NewTagChip(
+    text: String,
+    onType: (String) -> Unit,
+    onAdd: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(20.dp)
     Row(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        Modifier
+            .height(38.dp)
+            .clip(shape)
+            .border(1.dp, colors.onBackground.copy(alpha = 0.18f), shape)
+            .padding(start = 14.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.weight(1f)) {
-            TextInput(
-                state.newTag,
-                strings().newTag,
-                viewModel::typeNewTag,
-                Modifier.testTag("new-tag"),
+        Box(Modifier.widthIn(min = 72.dp)) {
+            if (text.isEmpty()) {
+                Text(
+                    strings().newTag,
+                    fontSize = 15.sp,
+                    color = colors.onBackground.copy(alpha = 0.45f),
+                )
+            }
+            BasicTextField(
+                value = text,
+                onValueChange = onType,
+                singleLine = true,
+                textStyle = TextStyle(fontSize = 15.sp, color = colors.onBackground),
+                cursorBrush = SolidColor(colors.secondary),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onAdd() }),
+                modifier =
+                    Modifier
+                        .width(
+                            IntrinsicSize.Min,
+                        ).widthIn(min = 72.dp)
+                        .testTag("new-tag"),
             )
         }
-        OutlineButton(
-            strings().add,
+        Box(
+            Modifier
+                .size(30.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onAdd)
+                .testTag("add-tag"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                PhosphorIcons.Plus,
+                strings().add,
+                tint = colors.onBackground.copy(alpha = 0.6f),
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}
+
+/** A friend's tag the account lacks: dashed, with the friend's avatar, added with a tap. */
+@Composable
+private fun FriendTagChip(
+    offered: FriendTagUi,
+    onAdd: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        Modifier
+            .height(38.dp)
+            .clip(shape)
+            .dashedBorder(colors.onBackground.copy(alpha = 0.35f), 20.dp)
+            .clickable(onClick = onAdd)
+            .padding(start = 6.dp, end = 12.dp)
+            .testTag("friend-tag-${offered.tag}"),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PersonAvatar(
+            offered.friend.userId,
+            offered.friend.displayName,
+            offered.friend.avatar,
+            size = 24.dp,
+        )
+        Text(offered.tag, fontSize = 15.sp, color = colors.onBackground)
+        Icon(
             PhosphorIcons.Plus,
-            viewModel::addNewTag,
-            Modifier.testTag("add-tag"),
+            null,
+            tint = colors.secondary,
+            modifier = Modifier.size(14.dp),
         )
     }
 }
@@ -357,14 +463,7 @@ private fun PlatformWeightRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
-            Text(strings().platformWeight, fontSize = 15.sp, color = colors.onBackground)
-            Text(
-                strings().ownMass,
-                fontSize = 12.sp,
-                color = colors.onBackground.copy(alpha = 0.48f),
-            )
-        }
+        Text(strings().platformWeight, fontSize = 15.sp, color = colors.onBackground)
         NumberField(
             state.platformWeight,
             onChange,

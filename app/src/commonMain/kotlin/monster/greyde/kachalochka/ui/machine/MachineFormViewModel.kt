@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.linkedFriendMachines
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -36,6 +37,14 @@ data class MachineFormArgs(
     val machineId: MachineId?,
     val copyOf: MachineId?,
     val name: String,
+    /** The tags a new machine starts with. */
+    val tags: List<String> = emptyList(),
+)
+
+/** A tag of a friend's machine the account has not got, offered with the friend it came from. */
+data class FriendTagUi(
+    val tag: String,
+    val friend: Friend,
 )
 
 data class LinkedMachineUi(
@@ -65,9 +74,14 @@ data class MachineFormState(
     /** Every tag of the account's machines, offered as chips. */
     val knownTags: Set<String> = emptySet(),
     val newTag: String = "",
+    /** Friends' tags, offered until one is chosen and so becomes the account's own. */
+    val friendTags: List<FriendTagUi> = emptyList(),
 ) {
     val shownTags: List<String>
         get() = (knownTags + tags).sortedBy { it.lowercase() }
+
+    val offeredFriendTags: List<FriendTagUi>
+        get() = friendTags.filter { offered -> shownTags.none { it.equals(offered.tag, true) } }
 
     val platformWeightValue: Double?
         get() =
@@ -123,7 +137,8 @@ class MachineFormViewModel(
     private val photoRows: PhotoRepository,
     private val catalogue: MachineCatalogue,
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(MachineFormState(name = args.name))
+    private val mutableState =
+        MutableStateFlow(MachineFormState(name = args.name, tags = args.tags.toSet()))
     val state: StateFlow<MachineFormState> = mutableState
     private val mutableLinking = MutableStateFlow(LinkingUi())
     val linking: StateFlow<LinkingUi> = mutableLinking
@@ -173,14 +188,29 @@ class MachineFormViewModel(
                 when {
                     current != null -> MachineFormState.of(current)
                     source != null -> MachineFormState.of(source, name = args.name)
-                    else -> MachineFormState(name = args.name)
+                    else -> MachineFormState(name = args.name, tags = args.tags.toSet())
                 }
-            val known = machines.all(currentUser.id()).flatMap { it.tags }.toSet()
+            val owner = currentUser.id()
+            val known = machines.all(owner).flatMap { it.tags }.toSet()
             mutableState.value = shown.copy(knownTags = known)
             savedPhotos = current?.let { photoRows.forMachine(it.id) }.orEmpty()
             showPhotos()
             refreshLinks()
+            owner?.let { readFriendTags(it) }
         }
+    }
+
+    /** Each friend's tag once, from the first friend by name who has it. */
+    private suspend fun readFriendTags(owner: UserId) {
+        val group = reading { catalogue.group(owner) }.getOrNull() ?: return
+        if (accounts.activeId.value != owner) return
+        val offered =
+            group.friends
+                .sortedBy { it.owner.displayName.lowercase() }
+                .flatMap { mate -> mate.machine.tags.map { FriendTagUi(it, mate.owner) } }
+                .distinctBy { it.tag.lowercase() }
+                .sortedBy { it.tag.lowercase() }
+        update { it.copy(friendTags = offered) }
     }
 
     private fun refreshLinks() {

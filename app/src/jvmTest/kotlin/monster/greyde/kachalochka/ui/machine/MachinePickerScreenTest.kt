@@ -37,7 +37,7 @@ class MachinePickerScreenTest {
     @Test
     fun choosing_creating_and_copying_report_back() {
         val picked = mutableListOf<MachineId>()
-        val created = mutableListOf<String>()
+        val created = mutableListOf<Pair<String, List<String>>>()
         val copied = mutableListOf<Pair<MachineId, String>>()
         runScreenTest(gym, screen = {
             MachinePickerScreen(
@@ -46,7 +46,7 @@ class MachinePickerScreenTest {
                 onBack = {},
                 onOpenSettings = {},
                 onPicked = { picked += it },
-                onCreate = { created += it },
+                onCreate = { name, tags -> created += name to tags },
                 onCopy = { s, n -> copied += s to n },
             )
         }) {
@@ -59,7 +59,7 @@ class MachinePickerScreenTest {
             waitForIdle()
 
             assertEquals(listOf(press.id), picked)
-            assertEquals(listOf("гакк"), created)
+            assertEquals(listOf("гакк" to emptyList<String>()), created)
             assertEquals(listOf(press.id to "гакк"), copied)
         }
     }
@@ -68,7 +68,17 @@ class MachinePickerScreenTest {
     fun without_a_chosen_machine_there_is_nothing_to_copy() =
         runScreenTest(
             gym,
-            screen = { MachinePickerScreen(gym.today, null, {}, {}, {}, {}, { _, _ -> }) },
+            screen = {
+                MachinePickerScreen(
+                    gym.today,
+                    null,
+                    {},
+                    {},
+                    {},
+                    { _, _ -> },
+                    { _, _ -> },
+                )
+            },
         ) {
             onNodeWithTag("copy-machine").assertDoesNotExist()
         }
@@ -81,9 +91,11 @@ class MachinePickerScreenTest {
         on.friends.machines += olegPress
         val picked = mutableListOf<MachineId>()
         runScreenTest(on, screen = {
-            MachinePickerScreen(on.today, null, {}, {}, { picked += it }, {}, { _, _ -> })
+            MachinePickerScreen(on.today, null, {}, {}, { picked += it }, { _, _ -> }, { _, _ -> })
         }) {
-            onNodeWithTag("picker-friends").performScrollTo().assertIsDisplayed()
+            onNodeWithTag(
+                "picker-friend-${OLEG.userId.value}",
+            ).performScrollTo().assertIsDisplayed()
             onNodeWithTag("friend-machine-${olegPress.id.value}").performScrollTo().performClick()
             waitForIdle()
         }
@@ -91,5 +103,39 @@ class MachinePickerScreenTest {
             on.machineLinks.rows.values
                 .single()
         assertEquals(picked.single() to olegPress.id, link.machineId to link.linkedMachineId)
+    }
+
+    @Test
+    fun a_chosen_tag_narrows_the_list_and_goes_to_a_created_machine() {
+        runBlocking {
+            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
+            gym.machines.upsert(Machine.new("Бицепс", null, gym.clock.current))
+        }
+        val created = mutableListOf<Pair<String, List<String>>>()
+        runScreenTest(gym, screen = {
+            MachinePickerScreen(
+                gym.today,
+                null,
+                {},
+                {},
+                {},
+                { n, t -> created += n to t },
+                { _, _ -> },
+            )
+        }) {
+            waitForIdle()
+            onNodeWithTag("picker-tag-Ноги").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-row-${press.id.value}").assertExists()
+            onNodeWithTag("card-tag-${press.id.value}-Ноги", useUnmergedTree = true).assertExists()
+
+            onNodeWithTag("machine-search").performTextInput("гакк")
+            waitForIdle()
+            onNodeWithTag("picker-nothing").assertTextEquals("Ничего не найдено")
+            onNodeWithTag("create-hint", useUnmergedTree = true).assertTextEquals("С тегом «Ноги»")
+            onNodeWithTag("create-machine").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf("гакк" to listOf("Ноги")), created)
     }
 }

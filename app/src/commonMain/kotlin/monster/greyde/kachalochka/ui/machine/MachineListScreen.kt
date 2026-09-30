@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,9 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
-import monster.greyde.kachalochka.ui.components.AccentButton
+import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Screen
-import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
@@ -41,10 +41,10 @@ fun MachineListScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState()),
         ) {
-            val rows = state.own
+            val cards = state.own
             when {
-                rows == null -> Unit
-                rows.isEmpty() ->
+                cards == null -> Unit
+                cards.isEmpty() ->
                     Text(
                         strings().noMachinesYet,
                         modifier = Modifier.padding(16.dp).testTag("machine-list-empty"),
@@ -52,43 +52,30 @@ fun MachineListScreen(
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                     )
                 else ->
-                    rows.forEach { row ->
-                        MachineRow(
-                            row.name,
-                            row.detail,
-                            "machine-list-row-${row.id.value}",
-                            row.photo,
-                        ) {
-                            onOpenMachine(row.id)
+                    cards.forEach { card ->
+                        MachineCard(card, "machine-list-row-${card.id.value}") {
+                            onOpenMachine(card.id)
                         }
                     }
             }
-            if (state.friends.isNotEmpty()) {
-                SectionLabel(
-                    strings().friendsMachines,
-                    modifier =
-                        Modifier
-                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
-                            .testTag("machine-list-friends"),
+            state.friendSections.forEach { section ->
+                FriendSectionHeader(
+                    section,
+                    Modifier.testTag("machine-list-friend-section-${section.friend.userId.value}"),
                 )
-                state.friends.forEach { row ->
-                    MachineRow(
-                        row.name,
-                        row.detail,
-                        "machine-list-friend-${row.id.value}",
-                        row.photo,
-                    ) {
-                        row.friend?.let { onOpenFriendMachine(row.id, it) }
+                section.cards.forEach { card ->
+                    MachineCard(card, "machine-list-friend-${card.id.value}") {
+                        onOpenFriendMachine(card.id, section.friend.userId)
                     }
                 }
             }
         }
         Box(Modifier.padding(16.dp)) {
-            AccentButton(
-                strings().newMachine,
+            OutlineButton(
+                strings().add,
                 PhosphorIcons.Plus,
                 onNewMachine,
-                Modifier.testTag("new-machine"),
+                Modifier.fillMaxWidth().testTag("new-machine"),
             )
         }
     }

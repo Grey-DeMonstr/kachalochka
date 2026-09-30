@@ -157,7 +157,7 @@ object EnStrings : Strings {
     override val friendsMachines = "Friends' machines"
     override val myMachines = "My machines"
     override val friendMachine = "Friend's machine"
-    override val setupNote = "Setup note"
+    override val setupNote = "Comment"
     override val howWeightCounts = "How the weight counts"
     override val platformWeight = "Platform weight"
     override val takeForMyself = "Take for myself"
@@ -180,6 +180,7 @@ object EnStrings : Strings {
     override val linkedWith = "Linked with: "
     override val tags = "Tags"
     override val newTag = "New tag"
+    override val friendsTags = "Friends' tags — become yours once chosen"
     override val choiceTotal = "Total"
     override val choicePerSide = "Per side"
     override val choiceCounterweight = "Gravitron"
@@ -195,13 +196,17 @@ object EnStrings : Strings {
     override val afterSaveHint = "Once saved, the machine appears in this visit."
     override val unlinkFromFriends = "Unlink from friends"
     override val basedOnExisting = "Based on an existing one"
-    override val photoNoteAndSetup = "Photos, note and weight setup"
+    override val photoNoteAndSetup = "Photos, comment and weight setup"
     override val copyMachine = "Copy machine"
     override val copyKeeps = "The note and weight setup are kept"
     override val recent = "Recent"
     override val similar = "Similar"
 
     override fun createNamed(name: String) = "Create \"$name\""
+
+    override fun withTags(tags: List<String>) = "Tagged " + tags.joinToString(", ") { "\"$it\"" }
+
+    override val nothingFound = "Nothing found"
 
     override val todayLower = "today"
     override val inThisVisit = "in this visit"

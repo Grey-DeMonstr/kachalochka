@@ -4,7 +4,8 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -83,12 +84,12 @@ class MachineFormScreenTest {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = { saved += it })
         }) {
             onNodeWithTag("machine-name").performTextInput("Гакк")
-            onNodeWithTag("tag-Ноги").performScrollTo().assertIsNotSelected().performClick()
+            onNodeWithTag("tag-Ноги").performScrollTo().assertIsOff().performClick()
             onNodeWithTag("new-tag").performScrollTo().performTextInput("Жим")
             onNodeWithTag("add-tag").performClick()
             waitForIdle()
-            onNodeWithTag("tag-Ноги").assertIsSelected()
-            onNodeWithTag("tag-Жим").assertIsSelected()
+            onNodeWithTag("tag-Ноги").assertIsOn()
+            onNodeWithTag("tag-Жим").assertIsOn()
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
@@ -126,7 +127,7 @@ class MachineFormScreenTest {
             onNodeWithTag("mode-counterweight").performClick()
             onNodeWithTag("mode-counterweight-hint")
                 .assertTextEquals("The weight counts as negative: the less, the better.")
-            onNodeWithTag("save-machine").assertTextEquals("Save machine")
+            onNodeWithTag("save-machine").assertTextEquals("Save")
         }
 
     @Test

@@ -52,7 +52,7 @@ class MachineListScreenTest {
     fun without_machines_the_list_says_so() =
         runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
             onNodeWithTag("machine-list-empty").assertTextEquals("Упражнений пока нет")
-            onNodeWithTag("machine-list-friends").assertDoesNotExist()
+            onNodeWithTag("machine-list-friend-section-${OLEG.userId.value}").assertDoesNotExist()
         }
 
     @Test
@@ -74,9 +74,9 @@ class MachineListScreenTest {
                 opened += id to owner
             })
         }) {
-            onNodeWithTag("machine-list-friends")
+            onNodeWithTag("machine-list-friend-section-${OLEG.userId.value}")
                 .performScrollTo()
-                .assertTextEquals("УПРАЖНЕНИЯ ДРУЗЕЙ")
+                .assertIsDisplayed()
             onNodeWithTag("machine-list-friend-${olegPress.id.value}")
                 .performScrollTo()
                 .assertIsDisplayed()

@@ -11,7 +11,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
-import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -28,6 +27,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -82,25 +82,11 @@ class MachinePickerViewModelTest {
         false,
     )
 
-    private fun viewModel(day: CalendarDay = gym.today) =
-        MachinePickerViewModel(
-            day,
-            gym.sets,
-            gym.visits,
-            gym.currentUser,
-            gym.accounts,
-            gym.clock,
-            gym.utcOffset,
-            gym.sync,
-            gym.profiles,
-            gym.catalogue,
-        )
+    private fun viewModel() = pickerOn(gym)
 
     private fun pickerOn(on: FakeGym) =
         MachinePickerViewModel(
-            on.today,
             on.sets,
-            on.visits,
             on.currentUser,
             on.accounts,
             on.clock,
@@ -108,6 +94,8 @@ class MachinePickerViewModelTest {
             on.sync,
             on.profiles,
             on.catalogue,
+            on.friends,
+            FriendColorStore(on.profiles, on.clock, on.friends),
         )
 
     @Test
@@ -154,34 +142,6 @@ class MachinePickerViewModelTest {
         return on to olegPress
     }
 
-    @Test
-    fun a_plan_s_picker_shows_the_last_result_even_for_a_machine_trained_today() {
-        runBlocking { gym.sets.upsert(set(visit.id, press, 60.0, 10, t0)) }
-        val picker =
-            MachinePickerViewModel(
-                null,
-                gym.sets,
-                gym.visits,
-                gym.currentUser,
-                gym.accounts,
-                gym.clock,
-                gym.utcOffset,
-                gym.sync,
-                gym.profiles,
-                gym.catalogue,
-            )
-
-        picker.load()
-
-        val detail =
-            picker.state.value.rows
-                .single { it.id == press.id }
-                .detail
-        assertNotNull(detail)
-        assertTrue(detail.startsWith("Было"))
-        assertEquals(false, detail.contains("подход"))
-    }
-
     @BeforeTest
     fun setUp() =
         runTest {
@@ -214,16 +174,16 @@ class MachinePickerViewModelTest {
     }
 
     @Test
-    fun rows_say_what_happened_today_or_last_time() {
+    fun rows_show_the_day_last_used_and_the_record_most_recent_first() {
         val vm = viewModel().also { it.load() }
 
         assertEquals(
             listOf(
-                "Жим ногами" to "3 подхода сегодня",
-                "Приседания в Смите" to "Было 80 кг × 8 · 4 дня назад",
+                Triple("Жим ногами", "14 ноября", "75 кг × 8"),
+                Triple("Приседания в Смите", "10 ноября", "80 кг × 8"),
             ),
             vm.state.value.rows
-                .map { it.name to it.detail },
+                .map { Triple(it.name, it.lastUsed, it.record) },
         )
         assertEquals("Недавние", vm.state.value.sectionLabel)
         assertNull(vm.state.value.createLabel)
@@ -241,10 +201,10 @@ class MachinePickerViewModelTest {
             val vm = viewModel().also { it.load() }
 
             assertEquals(
-                "Было 7 плитка × 10 · вчера",
+                "7 плитка × 10",
                 vm.state.value.rows
                     .single { it.id == gravitron.id }
-                    .detail,
+                    .record,
             )
         }
 
@@ -256,64 +216,72 @@ class MachinePickerViewModelTest {
             gym.sets.upsert(set(otherVisit, cable, 90.0, 8, t0 - 1.days))
             val vm = viewModel().also { it.load() }
 
-            fun details() =
+            fun records() =
                 vm.state.value.rows
-                    .associate { it.name to it.detail }
-            assertEquals("Было 41 кг × 8 · вчера", details()["Кроссовер"])
+                    .associate { it.name to it.record }
+            assertEquals("41 кг × 8", records()["Кроссовер"])
 
             gym.profiles.upsert(Profile.new(null, t0).copy(weightUnit = PreferredWeightUnit.Lb))
             vm.load()
 
-            assertEquals("Было 90 lb × 8 · вчера", details()["Кроссовер"])
-            assertEquals("Было 176.5 lb × 8 · 4 дня назад", details()["Приседания в Смите"])
+            assertEquals("90 lb × 8", records()["Кроссовер"])
+            assertEquals("176.5 lb × 8", records()["Приседания в Смите"])
         }
 
     @Test
-    fun a_visit_no_client_has_dated_counts_on_the_day_it_was_recorded_on() =
-        runTest {
-            val tenth = CalendarDay(2023, 11, 10)
-            val undated = Visit(VisitId.random(), null, null, t0 - 4.days, t0, false)
-            gym.visits.upsert(undated)
-            gym.sets.upsert(set(undated.id, smith, 80.0, 8, t0 - 4.days))
-
-            val vm = viewModel(tenth).also { it.load() }
-
-            assertEquals(
-                "1 подход в этом визите",
-                vm.state.value.rows
-                    .single { it.id == smith.id }
-                    .detail,
-            )
-        }
-
-    @Test
-    fun another_day_counts_the_sets_of_its_own_visit() =
-        runTest {
-            val tenth = CalendarDay(2023, 11, 10)
-            val past = Visit(VisitId.random(), null, tenth, t0 - 4.days, t0, false)
-            gym.visits.upsert(past)
-            repeat(2) { gym.sets.upsert(set(past.id, smith, 80.0, 8, t0 - 4.days + it.minutes)) }
-
-            val vm = viewModel(tenth).also { it.load() }
-
-            assertEquals(
-                "2 подхода в этом визите",
-                vm.state.value.rows
-                    .single { it.id == smith.id }
-                    .detail,
-            )
-        }
-
-    @Test
-    fun typing_a_new_name_offers_to_create_it_and_shows_similar_machines() {
+    fun typing_a_new_name_offers_to_create_it_and_finds_nothing() {
         val vm = viewModel().also { it.load() }
 
         vm.onQueryChange("гакк")
 
         assertEquals("Создать «гакк»", vm.state.value.createLabel)
-        assertEquals("Похожие", vm.state.value.sectionLabel)
-        assertEquals(2, vm.state.value.rows.size)
+        assertEquals("Фото, комментарий и настройка веса", vm.state.value.createHint)
+        assertEquals(emptyList(), vm.state.value.rows)
+        assertTrue(vm.state.value.nothingFound)
     }
+
+    @Test
+    fun a_search_keeps_only_the_machines_whose_name_holds_it() {
+        val vm = viewModel().also { it.load() }
+
+        vm.onQueryChange("смит")
+
+        assertEquals(
+            listOf("Приседания в Смите"),
+            vm.state.value.rows
+                .map { it.name },
+        )
+        assertEquals(false, vm.state.value.nothingFound)
+    }
+
+    @Test
+    fun tags_under_the_search_narrow_the_list_and_go_to_a_created_machine() =
+        runTest {
+            gym.machines.upsert(press.copy(tags = setOf("Ноги", "Жим")))
+            gym.machines.upsert(smith.copy(tags = setOf("Ноги")))
+            val vm = viewModel().also { it.load() }
+            assertEquals(
+                listOf("Жим" to false, "Ноги" to false),
+                vm.state.value.tags
+                    .map { it.name to it.chosen },
+            )
+
+            vm.toggleTag("Жим")
+
+            assertEquals(
+                listOf("Жим ногами"),
+                vm.state.value.rows
+                    .map { it.name },
+            )
+            vm.onQueryChange("гакк")
+            assertEquals("С тегом «Жим»", vm.state.value.createHint)
+            assertEquals(listOf("Жим"), vm.createTags)
+            assertTrue(vm.state.value.nothingFound)
+
+            vm.toggleTag("Жим")
+            vm.onQueryChange("")
+            assertEquals(2, vm.state.value.rows.size)
+        }
 
     @Test
     fun the_picker_speaks_english_when_entered_again() {
@@ -323,7 +291,7 @@ class MachinePickerViewModelTest {
         inEnglish {
             vm.load()
             assertEquals("Create \"гакк\"", vm.state.value.createLabel)
-            assertEquals("Similar", vm.state.value.sectionLabel)
+            assertEquals("Photos, comment and weight setup", vm.state.value.createHint)
         }
     }
 
@@ -364,32 +332,20 @@ class MachinePickerViewModelTest {
                     set(his.id, hisPress, 60.0, 10, t0 + it.minutes, ivan.account.userId),
                 )
             }
-            val vm =
-                MachinePickerViewModel(
-                    shared.today,
-                    shared.sets,
-                    shared.visits,
-                    shared.currentUser,
-                    shared.accounts,
-                    shared.clock,
-                    shared.utcOffset,
-                    shared.sync,
-                    shared.profiles,
-                    shared.catalogue,
-                ).also { it.load() }
+            val vm = pickerOn(shared).also { it.load() }
             assertEquals(
-                listOf("Жим ногами" to "3 подхода сегодня"),
+                listOf("Жим ногами" to "70 кг × 10"),
                 vm.state.value.rows
-                    .map { it.name to it.detail },
+                    .map { it.name to it.record },
             )
 
             shared.accounts.switchTo(ivan.account.userId)
             advanceUntilIdle()
 
             assertEquals(
-                listOf("Жим Ивана" to "2 подхода сегодня"),
+                listOf("Жим Ивана" to "60 кг × 10"),
                 vm.state.value.rows
-                    .map { it.name to it.detail },
+                    .map { it.name to it.record },
             )
         }
 
@@ -400,8 +356,13 @@ class MachinePickerViewModelTest {
         val vm = pickerOn(on).also { it.load() }
 
         assertEquals(
-            listOf(PickerRowUi(olegPress.id, "Жим ногами", "Олег · кг на сторону · ±5")),
+            listOf(MachineCardUi(olegPress.id, "Жим ногами", null, emptyList(), "", null, null)),
             vm.state.value.friendRows,
+        )
+        assertEquals(
+            listOf("Олег"),
+            vm.state.value.friendSections
+                .map { it.friend.displayName },
         )
     }
 
@@ -513,8 +474,9 @@ class MachinePickerViewModelTest {
         val vm = pickerOn(on).also { it.load() }
 
         assertEquals(
-            listOf(PickerRowUi(olegPress.id, "Жим ногами", "Олег · кг всего · ±2.5")),
-            vm.state.value.friendRows,
+            listOf(olegPress.id),
+            vm.state.value.friendRows
+                .map { it.id },
         )
     }
 

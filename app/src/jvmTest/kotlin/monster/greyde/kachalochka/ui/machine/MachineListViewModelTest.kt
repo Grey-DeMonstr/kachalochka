@@ -14,13 +14,17 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -30,6 +34,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -51,6 +56,11 @@ class MachineListViewModelTest {
             on.accounts,
             on.sync,
             on.profiles,
+            on.sets,
+            on.friends,
+            FriendColorStore(on.profiles, on.clock, on.friends),
+            on.clock,
+            on.utcOffset,
         )
 
     private fun olegsGym(): Pair<FakeGym, Machine> {
@@ -73,46 +83,76 @@ class MachineListViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun the_machines_are_listed_by_name_with_how_they_are_weighed() =
+    fun the_machines_are_listed_by_name_with_their_tags_comment_last_use_and_record() =
         runTest {
-            gym.machines.upsert(Machine.new("Тяга", null, t0))
-            gym.machines.upsert(
+            val row = Machine.new("Тяга", null, t0)
+            gym.machines.upsert(row)
+            val press =
                 Machine
                     .new("Жим ногами", null, t0)
-                    .copy(weightMode = WeightMode.PerSide, weightStep = 5.0),
-            )
+                    .copy(setupNote = "Сиденье на 4", tags = setOf("Ноги", "Жим"))
+            gym.machines.upsert(press)
             gym.machines.upsert(Machine.new("Гакк", null, t0).copy(deleted = true))
+            gym.sets.upsert(set(press, 80.0, 8))
+            gym.sets.upsert(set(press, 80.0, 10))
 
             val vm = viewModel().also { it.load() }
 
             assertEquals(
-                listOf("Жим ногами" to "кг на сторону · ±5", "Тяга" to "кг всего · ±2.5"),
-                vm.state.value.own
-                    ?.map { it.name to it.detail },
+                listOf(
+                    MachineCardUi(
+                        press.id,
+                        "Жим ногами",
+                        null,
+                        listOf("Жим", "Ноги"),
+                        "Сиденье на 4",
+                        "14 ноября",
+                        "80 кг × 10",
+                    ),
+                    MachineCardUi(row.id, "Тяга", null, emptyList(), "", null, null),
+                ),
+                vm.state.value.own,
             )
         }
 
+    private fun set(
+        machine: Machine,
+        weight: Double,
+        reps: Int,
+    ) = WorkoutSet(
+        WorkoutSetId.random(),
+        machine.userId,
+        VisitId.random(),
+        machine.id,
+        weight,
+        reps,
+        0,
+        t0,
+        t0,
+        false,
+    )
+
     @Test
-    fun a_machine_s_step_reads_in_the_unit_chosen_in_the_profile() =
+    fun a_record_reads_in_the_unit_chosen_in_the_profile() =
         runTest {
-            gym.machines.upsert(
-                Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb, weightStep = 5.0),
-            )
+            val cable = Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb)
+            gym.machines.upsert(cable)
+            gym.sets.upsert(set(cable, 90.0, 8))
             val vm = viewModel().also { it.load() }
 
             assertEquals(
-                listOf("кг всего · ±2.3"),
+                listOf("41 кг × 8"),
                 vm.state.value.own
-                    ?.map { it.detail },
+                    ?.map { it.record },
             )
 
             gym.profiles.upsert(Profile.new(null, t0).copy(weightUnit = PreferredWeightUnit.Mixed))
             vm.load()
 
             assertEquals(
-                listOf("lb всего · ±5"),
+                listOf("90 lb × 8"),
                 vm.state.value.own
-                    ?.map { it.detail },
+                    ?.map { it.record },
             )
         }
 
@@ -157,9 +197,10 @@ class MachineListViewModelTest {
         }
 
     @Test
-    fun a_friend_s_machine_reads_in_the_viewer_s_unit() =
+    fun a_friend_s_record_reads_in_the_viewer_s_unit() =
         runTest {
-            val (on, _) = olegsGym()
+            val (on, olegPress) = olegsGym()
+            on.friends.sets += set(olegPress, 40.0, 12)
             on.profiles.upsert(
                 Profile.new(ME.userId, t0).copy(weightUnit = PreferredWeightUnit.Lb),
             )
@@ -167,9 +208,9 @@ class MachineListViewModelTest {
             val vm = viewModel(on).also { it.load() }
 
             assertEquals(
-                listOf("Олег · lb на сторону · ±11"),
+                listOf("88 lb × 12"),
                 vm.state.value.friends
-                    .map { it.detail },
+                    .map { it.record },
             )
         }
 
@@ -228,16 +269,14 @@ class MachineListViewModelTest {
         val vm = viewModel(on).also { it.load() }
 
         assertEquals(
-            listOf(
-                MachineListRowUi(
-                    olegPress.id,
-                    "Жим ногами",
-                    "Олег · кг на сторону · ±5",
-                    friend = OLEG.userId,
-                ),
-            ),
+            listOf(MachineCardUi(olegPress.id, "Жим ногами", null, emptyList(), "", null, null)),
             vm.state.value.friends,
         )
+        val section =
+            vm.state.value.friendSections
+                .single()
+        assertEquals(OLEG.userId, section.friend.userId)
+        assertNotNull(section.color)
     }
 
     @Test

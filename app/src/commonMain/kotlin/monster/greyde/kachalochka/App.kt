@@ -283,8 +283,10 @@ fun App() {
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onPicked = { navController.returnMachine(it, forPlan) },
-                        onCreate = {
-                            navController.navigate(MachineFormRoute(name = it, forPlan = forPlan))
+                        onCreate = { name, tags ->
+                            navController.navigate(
+                                MachineFormRoute(name = name, forPlan = forPlan, tags = tags),
+                            )
                         },
                         onCopy = { source, name ->
                             navController.navigate(
@@ -301,6 +303,7 @@ fun App() {
                                 machineId = route.machineId?.let(::MachineId),
                                 copyOf = route.copyOfId?.let(::MachineId),
                                 name = route.name,
+                                tags = route.tags,
                             ),
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },

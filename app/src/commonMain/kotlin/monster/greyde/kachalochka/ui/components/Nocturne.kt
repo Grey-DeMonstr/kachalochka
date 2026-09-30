@@ -29,8 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
@@ -240,6 +244,52 @@ fun ChoiceRow(
                 )
             }
         }
+    }
+}
+
+/** A dashed outline of rounded [radius], marking something offered rather than chosen. */
+fun Modifier.dashedBorder(
+    color: Color,
+    radius: Dp,
+): Modifier =
+    drawBehind {
+        val stroke =
+            Stroke(
+                width = 1.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx())),
+            )
+        drawRoundRect(color = color, cornerRadius = CornerRadius(radius.toPx()), style = stroke)
+    }
+
+/** A pill switched on and off, as a tag chosen to filter by. */
+@Composable
+fun ChoiceChip(
+    label: String,
+    chosen: Boolean,
+    tag: String,
+    onToggle: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(20.dp)
+    Box(
+        Modifier
+            .height(38.dp)
+            .clip(shape)
+            .background(if (chosen) colors.primary.copy(alpha = 0.16f) else Color.Transparent)
+            .border(
+                1.dp,
+                if (chosen) colors.primary else colors.onBackground.copy(alpha = 0.18f),
+                shape,
+            ).toggleable(value = chosen, onValueChange = { onToggle() })
+            .padding(horizontal = 14.dp)
+            .testTag(tag),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            fontSize = 15.sp,
+            color = if (chosen) colors.onPrimaryContainer else colors.onBackground,
+        )
     }
 }
 

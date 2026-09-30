@@ -8,16 +8,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.Photo
-import monster.greyde.kachalochka.core.domain.gym.VisitRepository
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
-import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
-import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -25,34 +21,33 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
-import monster.greyde.kachalochka.ui.format.daysAgoLabel
-import monster.greyde.kachalochka.ui.format.friendMachineDetail
-import monster.greyde.kachalochka.ui.format.setCount
-import monster.greyde.kachalochka.ui.format.setValue
+import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
-import kotlin.time.Instant
+
+data class TagChoiceUi(
+    val name: String,
+    val chosen: Boolean,
+)
 
 data class PickerUiState(
     val query: String = "",
     val createLabel: String? = null,
+    /** What a created machine starts with, under [createLabel]. */
+    val createHint: String = "",
     val sectionLabel: String = "",
-    val rows: List<PickerRowUi> = emptyList(),
-    val friendRows: List<PickerRowUi> = emptyList(),
-)
-
-data class PickerRowUi(
-    val id: MachineId,
-    val name: String,
-    val detail: String?,
-    val photo: Photo? = null,
-)
+    val tags: List<TagChoiceUi> = emptyList(),
+    val rows: List<MachineCardUi> = emptyList(),
+    val friendSections: List<FriendSectionUi> = emptyList(),
+    /** True when a search or a tag leaves nothing to list. */
+    val nothingFound: Boolean = false,
+) {
+    val friendRows: List<MachineCardUi> get() = friendSections.flatMap { it.cards }
+}
 
 class MachinePickerViewModel(
-    private val day: CalendarDay?,
     private val sets: WorkoutSetRepository,
-    private val visits: VisitRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
@@ -60,6 +55,8 @@ class MachinePickerViewModel(
     private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
     private val catalogue: MachineCatalogue,
+    private val friends: FriendsRepository,
+    private val friendColors: FriendColorStore,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PickerUiState())
     val state: StateFlow<PickerUiState> = mutableState
@@ -67,9 +64,11 @@ class MachinePickerViewModel(
 
     private var own: OwnMachines? = null
     private var group: GroupMachines? = null
-    private var latest: Map<MachineId, WorkoutSet> = emptyMap()
-    private var inVisit: Map<MachineId, Int> = emptyMap()
+    private var ownPeaks: List<MachinePeaks> = emptyList()
+    private var friendPeaks: List<MachinePeaks> = emptyList()
+    private var colors: Map<UserId, Int> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
+    private var chosenTags: Set<String> = emptySet()
     private var loading: Job? = null
     private var loadingFriends: Job? = null
 
@@ -89,16 +88,9 @@ class MachinePickerViewModel(
             viewModelScope.launch {
                 val owner = currentUser.id()
                 own = catalogue.own(owner)
-                latest = sets.latestPerMachine(owner).associateBy { it.machineId }
-                inVisit =
-                    day
-                        ?.let { visits.shownOn(owner, it, sets, utcOffset::at) }
-                        ?.sets
-                        .orEmpty()
-                        .groupingBy { it.machineId }
-                        .eachCount()
+                ownPeaks = sets.peaks(owner)
                 preferred = profiles.preferredUnit(owner)
-                publish(mutableState.value.query)
+                publish()
                 owner?.let(::loadFriends)
             }
     }
@@ -107,11 +99,29 @@ class MachinePickerViewModel(
         loadingFriends =
             viewModelScope.launch {
                 group = reading { catalogue.group(owner) }.getOrNull()
-                publish(mutableState.value.query)
+                publish()
+                friendPeaks = reading { friends.groupPeaks(owner) }.getOrDefault(friendPeaks)
+                val offered = group?.offered(own?.machines.orEmpty()).orEmpty()
+                colors =
+                    reading {
+                        friendColors.colorsFor(owner, offered.map { it.owner.userId }.distinct())
+                    }.getOrDefault(colors)
+                publish()
             }
     }
 
-    fun onQueryChange(query: String) = publish(query)
+    fun onQueryChange(query: String) {
+        mutableState.value = mutableState.value.copy(query = query)
+        publish()
+    }
+
+    fun toggleTag(tag: String) {
+        chosenTags = if (tag in chosenTags) chosenTags - tag else chosenTags + tag
+        publish()
+    }
+
+    /** The tags a machine created now starts with. */
+    val createTags: List<String> get() = chosenTags.sortedBy { it.lowercase() }
 
     /** A friend's machine becomes the account's own, linked to theirs, before it is picked. */
     fun pickFriend(
@@ -128,70 +138,59 @@ class MachinePickerViewModel(
         }
     }
 
-    private fun publish(query: String) {
+    private fun publish() {
+        val query = mutableState.value.query
         val shown = shown
-        val ranking =
-            rankMachines(
-                query,
-                shown?.own?.machines.orEmpty(),
-                latest.mapValues { it.value.recordedAt },
-            )
-        val now = clock.now()
+        val ownMachines = shown?.own?.machines.orEmpty()
+        val offered = shown?.offered.orEmpty()
+        val lastUsed = ownPeaks.associate { it.machineId to it.lastAt }
+        val ranking = rankMachines(query, ownMachines, lastUsed, chosenTags)
         val needle = query.trim()
-        val friendRows =
-            shown
-                ?.let { s ->
-                    s.offered
-                        .filter { it.machine.name.contains(needle, ignoreCase = true) }
-                        .map {
-                            PickerRowUi(
-                                it.machine.id,
-                                it.machine.name,
-                                friendMachineDetail(it, preferred),
-                                s.cover(it.machine.id),
-                            )
-                        }
-                }.orEmpty()
+        val matchingOffered =
+            offered.filter {
+                it.machine.name.contains(needle, ignoreCase = true) &&
+                    it.machine.tags.containsAll(chosenTags)
+            }
+        val now = clock.now()
+        val offset = utcOffset.at(now)
+        val cards =
+            shown?.let {
+                MachineCards(
+                    it,
+                    ownPeaks,
+                    friendPeaks,
+                    preferred,
+                    CalendarDay.of(now, offset),
+                    offset,
+                )
+            }
+        val rows = cards?.let { c -> ranking.machines.map(c::own) }.orEmpty()
+        val sections = cards?.friendSections(matchingOffered, colors).orEmpty()
+        val strings = AppStrings.current
         mutableState.value =
             PickerUiState(
                 query = query,
-                createLabel =
-                    if (ranking.offerCreate) {
-                        AppStrings.current.createNamed(
-                            query.trim(),
-                        )
+                createLabel = strings.createNamed(needle).takeIf { ranking.offerCreate },
+                createHint =
+                    if (chosenTags.isEmpty()) {
+                        strings.photoNoteAndSetup
                     } else {
-                        null
+                        strings.withTags(createTags)
                     },
-                sectionLabel =
-                    if (query.isBlank()) AppStrings.current.recent else AppStrings.current.similar,
-                rows =
-                    ranking.machines.map {
-                        PickerRowUi(it.id, it.name, detail(it, now), shown?.cover(it.id))
-                    },
-                friendRows = friendRows,
+                sectionLabel = if (query.isBlank()) strings.recent else strings.similar,
+                tags =
+                    (ownMachines + offered.map { it.machine })
+                        .flatMap { it.tags }
+                        .plus(chosenTags)
+                        .distinct()
+                        .sortedBy { it.lowercase() }
+                        .map { TagChoiceUi(it, it in chosenTags) },
+                rows = rows,
+                friendSections = sections,
+                nothingFound =
+                    (needle.isNotEmpty() || chosenTags.isNotEmpty()) &&
+                        rows.isEmpty() &&
+                        sections.isEmpty(),
             )
-    }
-
-    private fun detail(
-        machine: Machine,
-        now: Instant,
-    ): String? {
-        val offset = utcOffset.at(now)
-        inVisit[machine.id]?.let {
-            val where =
-                if (day ==
-                    CalendarDay.of(now, offset)
-                ) {
-                    AppStrings.current.todayLower
-                } else {
-                    AppStrings.current.inThisVisit
-                }
-            return "${setCount(it)} $where"
-        }
-        val last = latest[machine.id] ?: return null
-        val days = calendarDaysBetween(last.recordedAt, now, offset)
-        val value = setValue(last.weight, last.reps, machine, preferred)
-        return AppStrings.current.wasAgo(value, daysAgoLabel(days))
     }
 }

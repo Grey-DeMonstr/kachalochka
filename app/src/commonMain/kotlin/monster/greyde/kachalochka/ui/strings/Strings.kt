@@ -164,6 +164,7 @@ interface Strings {
     val linkedWith: String
     val tags: String
     val newTag: String
+    val friendsTags: String
     val choiceTotal: String
     val choicePerSide: String
     val choiceCounterweight: String
@@ -184,6 +185,10 @@ interface Strings {
     val similar: String
 
     fun createNamed(name: String): String
+
+    fun withTags(tags: List<String>): String
+
+    val nothingFound: String
 
     val todayLower: String
     val inThisVisit: String

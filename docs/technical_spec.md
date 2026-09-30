@@ -417,6 +417,10 @@ screen shows, the clusters, each machine's cover photo and the friends' machines
 drops a group read made for another account than the own read's, so friends' rows read for one
 account are never shown or copied once another is active.
 
+`MachineCards` turns what a screen read — `ShownMachines` and both peaks — into the card every
+list draws, in the viewer's unit; the machine list and the picker group friends' cards by owner,
+each owner with the colour `FriendColorStore` gives them.
+
 The machine form's "Привязать к…" chooser (`LinkChooserViewModel`) links an own machine to a
 friend's by writing one own link, and merges two own machines. A merge removes a duplicate and
 writes no link: `olderMachine` keeps the machine whose earliest live set is earlier, one without

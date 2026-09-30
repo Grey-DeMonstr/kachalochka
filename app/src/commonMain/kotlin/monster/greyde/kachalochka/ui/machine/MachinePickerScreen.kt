@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.ui.machine
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,18 +34,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.ui.components.ChoiceChip
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
-import monster.greyde.kachalochka.ui.photos.MachineThumbnail
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 
-/** A null [day] picks for a plan, where no visit's sets are counted. */
+/** A null [day] picks for a plan, where the copy row is not offered. */
 @Composable
 fun MachinePickerScreen(
     day: CalendarDay?,
@@ -52,55 +51,57 @@ fun MachinePickerScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onPicked: (MachineId) -> Unit,
-    onCreate: (name: String) -> Unit,
+    onCreate: (name: String, tags: List<String>) -> Unit,
     onCopy: (source: MachineId, name: String) -> Unit,
 ) {
-    val viewModel: MachinePickerViewModel = koinViewModel { parametersOf(day) }
+    val viewModel: MachinePickerViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(strings().machine, onBack = onBack, onOpenSettings = onOpenSettings) {
-        SearchBar(state.query, viewModel::onQueryChange)
+        SearchBar(state.query, viewModel::onQueryChange, rule = state.tags.isEmpty())
+        if (state.tags.isNotEmpty()) TagFilter(state.tags, viewModel::toggleTag)
         Column(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState()),
         ) {
             state.createLabel?.let { label ->
-                CreateRow(label, onClick = { onCreate(state.query.trim()) })
+                CreateRow(label, state.createHint) {
+                    onCreate(state.query.trim(), viewModel.createTags)
+                }
             }
-            SectionLabel(
-                state.sectionLabel,
-                modifier =
-                    Modifier
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
-                        .testTag("picker-section"),
-            )
-            state.rows.forEach { row ->
-                MachineRow(
-                    row.name,
-                    row.detail,
-                    "machine-row-${row.id.value}",
-                    row.photo,
-                ) { onPicked(row.id) }
+            if (state.nothingFound) {
+                Text(
+                    strings().nothingFound,
+                    modifier = Modifier.padding(16.dp).testTag("picker-nothing"),
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                )
             }
-            if (state.friendRows.isNotEmpty()) {
+            if (state.rows.isNotEmpty()) {
                 SectionLabel(
-                    strings().friendsMachines,
+                    state.sectionLabel,
                     modifier =
                         Modifier
                             .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
-                            .testTag("picker-friends"),
+                            .testTag("picker-section"),
                 )
-                state.friendRows.forEach { row ->
-                    MachineRow(
-                        row.name,
-                        row.detail,
-                        "friend-machine-${row.id.value}",
-                        row.photo,
-                    ) { viewModel.pickFriend(row.id, onPicked) }
+            }
+            state.rows.forEach { card ->
+                MachineCard(card, "machine-row-${card.id.value}") { onPicked(card.id) }
+            }
+            state.friendSections.forEach { section ->
+                FriendSectionHeader(
+                    section,
+                    Modifier.testTag("picker-friend-${section.friend.userId.value}"),
+                )
+                section.cards.forEach { card ->
+                    MachineCard(card, "friend-machine-${card.id.value}") {
+                        viewModel.pickFriend(card.id, onPicked)
+                    }
                 }
             }
-            if (selectedMachineId != null) {
+            if (selectedMachineId != null && day != null) {
                 SectionLabel(
                     strings().basedOnExisting,
                     modifier =
@@ -117,10 +118,37 @@ fun MachinePickerScreen(
     }
 }
 
+/** Tags under the search field; the chosen ones narrow the list and go to a created machine. */
+@Composable
+private fun TagFilter(
+    tags: List<TagChoiceUi>,
+    onToggle: (String) -> Unit,
+) {
+    Column {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            tags.forEach {
+                ChoiceChip(
+                    it.name,
+                    it.chosen,
+                    "picker-tag-${it.name}",
+                ) { onToggle(it.name) }
+            }
+        }
+        Rule()
+    }
+}
+
 @Composable
 internal fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
+    rule: Boolean = true,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(8.dp)
@@ -152,13 +180,14 @@ internal fun SearchBar(
                 modifier = Modifier.weight(1f).testTag("machine-search"),
             )
         }
-        Rule()
+        if (rule) Rule()
     }
 }
 
 @Composable
 private fun CreateRow(
     label: String,
+    hint: String,
     onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -194,7 +223,12 @@ private fun CreateRow(
                     fontWeight = FontWeight.Medium,
                     color = colors.onPrimaryContainer,
                 )
-                Text(strings().photoNoteAndSetup, fontSize = 13.sp, color = colors.secondary)
+                Text(
+                    hint,
+                    modifier = Modifier.testTag("create-hint"),
+                    fontSize = 13.sp,
+                    color = colors.secondary,
+                )
             }
             Icon(
                 PhosphorIcons.CaretRight,
@@ -202,38 +236,6 @@ private fun CreateRow(
                 tint = colors.onBackground.copy(alpha = 0.4f),
                 modifier = Modifier.size(22.dp),
             )
-        }
-        Rule()
-    }
-}
-
-@Composable
-internal fun MachineRow(
-    name: String,
-    detail: String?,
-    tag: String,
-    photo: Photo? = null,
-    onClick: () -> Unit,
-) {
-    val colors = MaterialTheme.colorScheme
-    Column {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .testTag(tag),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            MachineThumbnail(photo, PhosphorIcons.Image)
-
-            Column(Modifier.weight(1f)) {
-                Text(name, fontSize = 17.sp, color = colors.onBackground)
-                detail?.let {
-                    Text(it, fontSize = 13.sp, color = colors.onBackground.copy(alpha = 0.52f))
-                }
-            }
         }
         Rule()
     }

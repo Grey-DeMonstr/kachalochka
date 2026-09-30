@@ -53,7 +53,7 @@ fun PersonAvatar(
         Text(
             monogram(name),
             fontSize = (size.value * 0.4f).sp,
-            color = if (filled) colors.onPrimaryContainer else colors.onBackground,
+            color = tint ?: if (filled) colors.onPrimaryContainer else colors.onBackground,
         )
         val model = avatar.photo?.let { avatarPhoto(owner, it) } ?: avatar.picture
         if (model != null) {

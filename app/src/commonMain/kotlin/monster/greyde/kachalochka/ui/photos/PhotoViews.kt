@@ -32,7 +32,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
@@ -58,7 +57,7 @@ fun PhotoStrip(
 ) {
     if (photos.isEmpty() && launchers == null) return
     Row(
-        modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         photos.forEach { photo ->
@@ -97,12 +96,11 @@ private fun AddPhotoTile(launchers: PhotoLaunchers) {
             verticalArrangement = Arrangement.Center,
         ) {
             Icon(
-                PhosphorIcons.Camera,
-                null,
+                PhosphorIcons.CameraPlus,
+                strings().addPhoto,
                 tint = colors.tertiary,
-                modifier = Modifier.size(30.dp),
+                modifier = Modifier.size(40.dp),
             )
-            Text(strings().addPhoto, fontSize = 13.sp, color = colors.tertiary)
         }
         DropdownMenu(expanded = choosing, onDismissRequest = { choosing = false }) {
             DropdownMenuItem(

@@ -137,26 +137,37 @@ page. Tapping another account's chip switches to it: the shown history and the b
 names the person ("Добавить · Миша"), follow that person, and the set is recorded into their own
 visit.
 
-The machine picker lets the user search machines by name; "Создать «…»" opens the machine form
-pre-filled with the typed name. When a machine is already chosen for the visit, "Скопировать
-упражнение" opens the form pre-filled from that machine, with the typed name instead of its own.
-Recently used machines are listed with their last result.
+Every list of machines draws a machine the same way: its photo, its name, its tags, then, for the
+account's own machine, its comment and the day it was last used, and a trophy with its record — the
+heaviest set with the most reps at that weight, the lightest on a gravitron — in the viewer's unit.
+The machine picker lists the account's machines, most recently used first, then, signed in and
+online, one section per friend headed by their avatar and name, with the friend's machines that are
+not yet the same machine as one of the account's. A search keeps the machines whose name holds what
+is typed. The tags of all these machines follow the search field as chips, and the chosen ones keep
+only the machines carrying every one of them. With nothing left, the picker says "Ничего не
+найдено". "Создать «…»" opens the machine form pre-filled with the typed name and the chosen tags
+("С тегом «Руки»"). When a machine was opened in the visit, "Скопировать упражнение" opens the form
+pre-filled from that machine, with the typed name instead of its own.
 
-The machine form collects a name, a setup note, how the weight is counted ("Всего", "На сторону" or
-"Гравитрон", which explains that the weight counts as negative, the less the better), the platform
-weight and whether it is added to the recorded weight, the unit and the weight step. The unit is
-kg, lb or an own unit such as "плитка", whose name is then written after every weight on that
-machine, with no conversion. The weight step is any positive number, typed in its field. Under the
-setup note, "Теги" shows every tag of the account's machines as a chip to tap on or off, and a
-field with "Добавить" makes a new one; a machine has any number of tags, and they are the account's
-own: a machine taken from a friend starts without any.
+The machine form collects a name, a comment ("Комментарий", its setup note), how the weight is
+counted ("Всего", "На сторону" or "Гравитрон", which explains that the weight counts as negative,
+the less the better), the platform weight and whether it is added to the recorded weight, the unit
+and the weight step. The unit is kg, lb or an own unit such as "плитка", whose name is then written
+after every weight on that machine, with no conversion. The weight step is any positive number,
+typed in its field. Under the comment, "Теги" shows every tag of the account's machines as a chip
+to tap on or off, and a "Новый тег" chip that adds what is typed in it; a machine has any number of
+tags, and they are the account's own: a machine taken from a friend starts without any. Signed in
+and online, the tags of friends' machines the account has not got follow under "Теги друзей —
+добавятся к вашим после выбора", as dashed chips with the friend's avatar; tapping one gives it to
+the machine, and saving makes it the account's own.
 
-Under the name, the machine's photos run in a row, oldest first, ending with "Добавить фото",
-which offers "Снять фото" and "Из галереи". On Android they open the phone's camera and its photo
-picker; on the web the first opens a phone's camera and the second picks a file, and a computer
-picks a file for both. Tapping a photo opens it over the whole screen, with "Удалить". New and
-removed photos are part of the form's edits: "Сохранить упражнение" writes them, and leaving the
-form drops them. A photo is shrunk to at most 1600 pixels on its long edge before it is kept.
+Under the name, the machine's photos run in a row, oldest first, ending with a camera tile, which
+offers "Снять фото" and "Из галереи"; with no photo yet, the machines it is linked with stand
+beside the tile. On Android they open the phone's camera and its photo picker; on the web the first
+opens a phone's camera and the second picks a file, and a computer picks a file for both. Tapping a
+photo opens it over the whole screen, with "Удалить". New and removed photos are part of the form's
+edits: "Сохранить" writes them, and leaving the form drops them. A photo is shrunk to at most 1600
+pixels on its long edge before it is kept.
 
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
 search field: "Мои упражнения", the account's other machines, and, signed in and online,
@@ -169,18 +180,17 @@ replaces the list, and unsaved edits in the old form are dropped. The other mach
 to the one that stays. Choosing a friend's machine
 links the two as one physical machine (see Group sharing) and returns to the form.
 
-The "Упражнения" row lists the active account's machines by name, each with the unit its weights
-are shown in, how its weight is counted and its step, and its photo: the machine's first photo, or,
-when it has none, the first photo of a friend's machine linked with it. The machine picker's rows
-show the same photo. Tapping one opens it in the machine form; "Новое упражнение" adds one. Saving
-returns to the list. Signed in and online, "Упражнения друзей" follows once the server answers: the
-machines of everyone sharing a group, one row per physical machine that is not yet the same machine
-as one of the account's, each with its owner and weight setup. Tapping one opens "Упражнение
-друга", its settings to read — name, owner, photos, setup note, how its weight is counted and its
-platform — with "Взять себе", which saves the account's own copy linked to it (see Group sharing)
-and opens that copy in the machine form; a machine already linked to one of the account's, directly
-or through friends' links, is shown without it. Offline that view says "Нет связи с сервером" and
-offers a retry.
+The "Упражнения" row lists the active account's machines by name, each drawn as every list draws
+it, with its photo: the machine's first photo, or, when it has none, the first photo of a friend's
+machine linked with it. Tapping one opens it in the machine form; "Добавить" adds one. Saving
+returns to the list. Signed in and online, the friends' machines follow once the server answers:
+one section per friend, headed by their avatar (or their initial in their calendar colour), name
+and machine count, one machine per physical machine that is not yet the same machine as one of the
+account's. Tapping one opens "Упражнение друга", its settings to read — name, owner, photos, setup
+note, how its weight is counted and its platform — with "Взять себе", which saves the account's own
+copy linked to it (see Group sharing) and opens that copy in the machine form; a machine already
+linked to one of the account's, directly or through friends' links, is shown without it. Offline
+that view says "Нет связи с сервером" and offers a retry.
 
 The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
 visit are marked, today and the chosen day are highlighted, and future days cannot be chosen. Below

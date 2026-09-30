@@ -20,6 +20,9 @@ import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.ME
+import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -79,6 +82,58 @@ class MachineFormViewModelTest {
 
             assertEquals(listOf("Грудь", "Ноги", "руки"), vm.state.value.shownTags)
             assertEquals(emptySet(), vm.state.value.tags)
+        }
+
+    @Test
+    fun a_machine_created_from_a_tag_filter_starts_with_its_tags() =
+        runTest {
+            val vm =
+                viewModel(MachineFormArgs(null, null, "Гакк", listOf("Руки"))).also { it.load() }
+            var saved: MachineId? = null
+
+            vm.save { saved = it }
+
+            assertEquals(setOf("Руки"), gym.machines.byId(assertNotNull(saved))?.tags)
+        }
+
+    private fun formOn(
+        on: FakeGym,
+        args: MachineFormArgs,
+    ) = MachineFormViewModel(
+        args,
+        on.machines,
+        on.currentUser,
+        on.accounts,
+        on.clock,
+        on.friends,
+        on.machineLinks,
+        on.sync,
+        on.photos,
+        on.catalogue,
+    )
+
+    @Test
+    fun friends_tags_the_account_lacks_are_offered_and_one_chosen_becomes_its_own() =
+        runTest {
+            val on = signedInGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            on.friends.machines +=
+                Machine.new("Жим", OLEG.userId, t0).copy(tags = setOf("Плечи", "ноги"))
+            on.machines.upsert(Machine.new("Присед", ME.userId, t0).copy(tags = setOf("Ноги")))
+            val vm = formOn(on, MachineFormArgs(null, null, "Гакк")).also { it.load() }
+
+            assertEquals(
+                listOf("Плечи" to OLEG.userId),
+                vm.state.value.offeredFriendTags
+                    .map { it.tag to it.friend.userId },
+            )
+
+            vm.toggleTag("Плечи")
+            var saved: MachineId? = null
+            vm.save { saved = it }
+
+            assertEquals(setOf("Плечи"), on.machines.byId(assertNotNull(saved))?.tags)
+            assertEquals(emptyList(), vm.state.value.offeredFriendTags)
         }
 
     @Test

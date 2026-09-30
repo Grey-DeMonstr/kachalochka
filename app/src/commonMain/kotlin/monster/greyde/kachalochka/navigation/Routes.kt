@@ -33,6 +33,7 @@ data class MachineFormRoute(
     val name: String = "",
     val fromList: Boolean = false,
     val forPlan: Boolean = false,
+    val tags: List<String> = emptyList(),
 )
 
 /** [fromList] is the form's own, handed on to the kept machine's form after a merge. */

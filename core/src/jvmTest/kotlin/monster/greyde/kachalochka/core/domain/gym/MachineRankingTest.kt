@@ -28,10 +28,25 @@ class MachineRankingTest {
     }
 
     @Test
-    fun a_query_nothing_contains_falls_back_to_every_machine() {
+    fun a_query_nothing_contains_lists_nothing() {
         val ranking = rankMachines("гакк", listOf(press, smith), lastUsed)
 
-        assertEquals(MachineRanking(offerCreate = true, machines = listOf(smith, press)), ranking)
+        assertEquals(MachineRanking(offerCreate = true, machines = emptyList()), ranking)
+    }
+
+    @Test
+    fun tags_keep_the_machines_carrying_every_one_of_them() {
+        val legs = press.copy(tags = setOf("Ноги", "Жим"))
+        val back = smith.copy(tags = setOf("Ноги"))
+
+        assertEquals(
+            listOf(back, legs),
+            rankMachines("", listOf(legs, back), lastUsed, setOf("Ноги")).machines,
+        )
+        assertEquals(
+            listOf(legs),
+            rankMachines("", listOf(legs, back), lastUsed, setOf("Ноги", "Жим")).machines,
+        )
     }
 
     @Test
