@@ -146,12 +146,6 @@ fun weekdayLabels(): List<String> = (1..7).map(AppStrings.current::weekdayShort)
 
 fun isoDate(day: CalendarDay): String = day.iso
 
-fun clockLabel(minuteOfDay: Int): String {
-    val hours = (minuteOfDay / 60).toString().padStart(2, '0')
-    val minutes = (minuteOfDay % 60).toString().padStart(2, '0')
-    return "$hours:$minutes"
-}
-
 fun formatRest(remaining: Duration): String {
     val total = ceil(remaining.inWholeMilliseconds / 1000.0).toLong().coerceAtLeast(0)
     return "${total / 60}:${(total % 60).toString().padStart(2, '0')}"

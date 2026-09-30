@@ -128,8 +128,6 @@ class FormatsTest {
 
     @Test
     fun times_are_formatted_like_the_design() {
-        assertEquals("19:52", clockLabel(19 * 60 + 52))
-        assertEquals("07:05", clockLabel(7 * 60 + 5))
         assertEquals("1:30", formatRest(90.seconds))
         assertEquals("0:05", formatRest(4.2.seconds))
     }

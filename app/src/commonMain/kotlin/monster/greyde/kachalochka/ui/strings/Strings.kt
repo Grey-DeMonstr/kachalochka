@@ -84,12 +84,8 @@ interface Strings {
     // Visit
     val visit: String
 
-    fun visitOn(date: String): String
-
     val share: String
     val groupByTag: String
-    val newMachine: String
-    val addSet: String
     val planned: String
     val unplan: String
     val noPlansYet: String
@@ -103,7 +99,6 @@ interface Strings {
     val deletePlan: String
     val deletePlanTitle: String
     val deletePlanText: String
-    val friendsColon: String
     val reps: String
     val comment: String
     val deleteSet: String
@@ -123,7 +118,6 @@ interface Strings {
     val chooseNewDay: String
     val move: String
     val deleteVisitTitle: String
-    val deleteVisitText: String
     val replaceVisitTitle: String
 
     fun replaceVisitText(
@@ -157,7 +151,6 @@ interface Strings {
     ): String
 
     val unitName: String
-    val saveMachine: String
     val unlinkTitle: String
     val unlinkText: String
     val unlink: String
@@ -169,7 +162,6 @@ interface Strings {
     val choicePerSide: String
     val choiceCounterweight: String
     val counterweightHint: String
-    val ownMass: String
     val addToRecord: String
     val platformIncludedHint: String
     val platformApartHint: String
@@ -189,14 +181,6 @@ interface Strings {
     fun withTags(tags: List<String>): String
 
     val nothingFound: String
-
-    val todayLower: String
-    val inThisVisit: String
-
-    fun wasAgo(
-        value: String,
-        ago: String,
-    ): String
 
     // Photos
     val addPhoto: String

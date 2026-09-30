@@ -101,12 +101,8 @@ object EnStrings : Strings {
 
     override val visit = "Visit"
 
-    override fun visitOn(date: String) = "Visit · $date"
-
     override val share = "Share"
     override val groupByTag = "Group by tag"
-    override val newMachine = "New machine"
-    override val addSet = "Add a set"
     override val planned = "Planned"
     override val unplan = "Remove"
     override val noPlansYet = "No plans yet"
@@ -120,7 +116,6 @@ object EnStrings : Strings {
     override val deletePlan = "Delete plan"
     override val deletePlanTitle = "Delete the plan?"
     override val deletePlanText = "The plan will disappear from the list."
-    override val friendsColon = "Friends:"
     override val reps = "reps"
     override val comment = "Comment"
     override val deleteSet = "Delete set"
@@ -139,7 +134,6 @@ object EnStrings : Strings {
     override val chooseNewDay = "Choose the new day"
     override val move = "Move"
     override val deleteVisitTitle = "Delete the visit?"
-    override val deleteVisitText = "Its sets will disappear from the history and statistics."
     override val replaceVisitTitle = "Replace the visit?"
 
     override fun replaceVisitText(
@@ -173,7 +167,6 @@ object EnStrings : Strings {
     ) = "\"$kept\" stays and the sets of \"$removed\" move to it. This cannot be undone."
 
     override val unitName = "Unit name"
-    override val saveMachine = "Save machine"
     override val unlinkTitle = "Unlink the machine?"
     override val unlinkText = "Friends' results on this machine will no longer show for you."
     override val unlink = "Unlink"
@@ -185,7 +178,6 @@ object EnStrings : Strings {
     override val choicePerSide = "Per side"
     override val choiceCounterweight = "Gravitron"
     override val counterweightHint = "The weight counts as negative: the less, the better."
-    override val ownMass = "The equipment's own weight"
     override val addToRecord = "Add to the record"
     override val platformIncludedHint = "On: the platform weight is part of every record."
     override val platformApartHint =
@@ -207,14 +199,6 @@ object EnStrings : Strings {
     override fun withTags(tags: List<String>) = "Tagged " + tags.joinToString(", ") { "\"$it\"" }
 
     override val nothingFound = "Nothing found"
-
-    override val todayLower = "today"
-    override val inThisVisit = "in this visit"
-
-    override fun wasAgo(
-        value: String,
-        ago: String,
-    ) = "Last $value · $ago"
 
     override val addPhoto = "Add photo"
     override val takePhoto = "Take a photo"

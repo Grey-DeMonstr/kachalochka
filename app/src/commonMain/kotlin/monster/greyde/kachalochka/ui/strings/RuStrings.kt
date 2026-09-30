@@ -118,12 +118,8 @@ object RuStrings : Strings {
 
     override val visit = "Визит"
 
-    override fun visitOn(date: String) = "Визит · $date"
-
     override val share = "Поделиться"
     override val groupByTag = "Группировать по тегам"
-    override val newMachine = "Новое упражнение"
-    override val addSet = "Добавить подход"
     override val planned = "Запланировано"
     override val unplan = "Убрать"
     override val noPlansYet = "Планов пока нет"
@@ -137,7 +133,6 @@ object RuStrings : Strings {
     override val deletePlan = "Удалить план"
     override val deletePlanTitle = "Удалить план?"
     override val deletePlanText = "План исчезнет из списка."
-    override val friendsColon = "Друзья:"
     override val reps = "повторы"
     override val comment = "Комментарий"
     override val deleteSet = "Удалить подход"
@@ -156,7 +151,6 @@ object RuStrings : Strings {
     override val chooseNewDay = "Выберите новый день"
     override val move = "Перенести"
     override val deleteVisitTitle = "Удалить визит?"
-    override val deleteVisitText = "Подходы пропадут из истории и статистики."
     override val replaceVisitTitle = "Заменить визит?"
 
     override fun replaceVisitText(
@@ -189,7 +183,6 @@ object RuStrings : Strings {
     ) = "Останется «$kept», подходы «$removed» перейдут к нему. Это нельзя отменить."
 
     override val unitName = "Название единицы"
-    override val saveMachine = "Сохранить упражнение"
     override val unlinkTitle = "Отвязать упражнение?"
     override val unlinkText = "Результаты друзей в этом упражнении перестанут показываться у вас."
     override val unlink = "Отвязать"
@@ -201,7 +194,6 @@ object RuStrings : Strings {
     override val choicePerSide = "На сторону"
     override val choiceCounterweight = "Гравитрон"
     override val counterweightHint = "Вес считается отрицательным: чем меньше, тем лучше."
-    override val ownMass = "Своя масса снаряда"
     override val addToRecord = "Прибавлять к записи"
     override val platformIncludedHint = "Включено: вес платформы входит в каждую запись."
     override val platformApartHint =
@@ -224,14 +216,6 @@ object RuStrings : Strings {
         (if (tags.size == 1) "С тегом " else "С тегами ") + tags.joinToString(", ") { "«$it»" }
 
     override val nothingFound = "Ничего не найдено"
-
-    override val todayLower = "сегодня"
-    override val inThisVisit = "в этом визите"
-
-    override fun wasAgo(
-        value: String,
-        ago: String,
-    ) = "Было $value · $ago"
 
     override val addPhoto = "Добавить фото"
     override val takePhoto = "Снять фото"
