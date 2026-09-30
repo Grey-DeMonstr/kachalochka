@@ -44,9 +44,10 @@ import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
+/** A null [day] picks for a plan, where no visit's sets are counted. */
 @Composable
 fun MachinePickerScreen(
-    day: CalendarDay,
+    day: CalendarDay?,
     selectedMachineId: MachineId?,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,

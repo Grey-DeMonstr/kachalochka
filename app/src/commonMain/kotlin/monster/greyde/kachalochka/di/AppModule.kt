@@ -9,6 +9,7 @@ import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.sync.VisitNormalization
@@ -36,6 +37,7 @@ import monster.greyde.kachalochka.ui.measures.MeasureViewModel
 import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
 import monster.greyde.kachalochka.ui.measures.MeasuresViewModel
 import monster.greyde.kachalochka.ui.photos.PhotoLoaders
+import monster.greyde.kachalochka.ui.plans.PlanFormViewModel
 import monster.greyde.kachalochka.ui.plans.PlansViewModel
 import monster.greyde.kachalochka.ui.settings.SettingsViewModel
 import monster.greyde.kachalochka.ui.timer.RestTimer
@@ -100,7 +102,7 @@ val appModule =
                 get(),
             )
         }
-        viewModel { (day: CalendarDay) ->
+        viewModel { (day: CalendarDay?) ->
             MachinePickerViewModel(
                 day,
                 get(),
@@ -114,6 +116,7 @@ val appModule =
                 get(),
             )
         }
+        viewModel { (plan: PlanId?) -> PlanFormViewModel(plan, get(), get(), get(), get()) }
         viewModel { (args: MachineFormArgs) ->
             MachineFormViewModel(
                 args,

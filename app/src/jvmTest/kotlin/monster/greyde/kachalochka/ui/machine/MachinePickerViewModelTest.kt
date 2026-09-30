@@ -154,6 +154,34 @@ class MachinePickerViewModelTest {
         return on to olegPress
     }
 
+    @Test
+    fun a_plan_s_picker_shows_the_last_result_even_for_a_machine_trained_today() {
+        runBlocking { gym.sets.upsert(set(visit.id, press, 60.0, 10, t0)) }
+        val picker =
+            MachinePickerViewModel(
+                null,
+                gym.sets,
+                gym.visits,
+                gym.currentUser,
+                gym.accounts,
+                gym.clock,
+                gym.utcOffset,
+                gym.sync,
+                gym.profiles,
+                gym.catalogue,
+            )
+
+        picker.load()
+
+        val detail =
+            picker.state.value.rows
+                .single { it.id == press.id }
+                .detail
+        assertNotNull(detail)
+        assertTrue(detail.startsWith("Было"))
+        assertEquals(false, detail.contains("подход"))
+    }
+
     @BeforeTest
     fun setUp() =
         runTest {

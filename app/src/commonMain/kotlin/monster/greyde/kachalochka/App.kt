@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.navigation.CalendarRoute
@@ -65,6 +66,7 @@ import monster.greyde.kachalochka.ui.machine.MachinePickerScreen
 import monster.greyde.kachalochka.ui.measures.MeasureScreen
 import monster.greyde.kachalochka.ui.measures.MeasurementFormScreen
 import monster.greyde.kachalochka.ui.measures.MeasuresScreen
+import monster.greyde.kachalochka.ui.plans.PlanFormScreen
 import monster.greyde.kachalochka.ui.plans.PlansScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
 import monster.greyde.kachalochka.ui.strings.AppStrings
@@ -77,11 +79,21 @@ import monster.greyde.kachalochka.ui.visit.VisitScreen
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
+/** The saved-state key a visit or a plan reads a picked machine from. */
 const val PICKED_MACHINE = "pickedMachine"
 
-private fun NavController.returnMachineToVisit(id: MachineId) {
-    getBackStackEntry<VisitRoute>().savedStateHandle[PICKED_MACHINE] = id.value
-    popBackStack<VisitRoute>(inclusive = false)
+/** Hands a picked machine to the visit or plan that opened the picker, and returns to it. */
+private fun NavController.returnMachine(
+    id: MachineId,
+    toPlan: Boolean,
+) {
+    if (toPlan) {
+        getBackStackEntry<PlanRoute>().savedStateHandle[PICKED_MACHINE] = id.value
+        popBackStack<PlanRoute>(inclusive = false)
+    } else {
+        getBackStackEntry<VisitRoute>().savedStateHandle[PICKED_MACHINE] = id.value
+        popBackStack<VisitRoute>(inclusive = false)
+    }
 }
 
 @Composable
@@ -139,6 +151,23 @@ fun App() {
                                 popUpTo<PlansRoute> { inclusive = true }
                             }
                         },
+                    )
+                }
+                composable<PlanRoute> { entry ->
+                    val route = entry.toRoute<PlanRoute>()
+                    val picked by entry.savedStateHandle
+                        .getStateFlow<String?>(PICKED_MACHINE, null)
+                        .collectAsState()
+                    PlanFormScreen(
+                        planId = route.planId?.let(::PlanId),
+                        pickedMachineId = picked?.let(::MachineId),
+                        onPickedMachineConsumed = {
+                            entry.savedStateHandle[PICKED_MACHINE] = null
+                        },
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onAddMachine = { navController.navigate(MachinePickerRoute()) },
+                        onDone = { navController.popBackStack() },
                     )
                 }
                 composable<MeasuresRoute> {
@@ -238,14 +267,15 @@ fun App() {
                 }
                 composable<MachinePickerRoute> { entry ->
                     val route = entry.toRoute<MachinePickerRoute>()
+                    val forPlan = route.day == null
                     MachinePickerScreen(
-                        day = CalendarDay.parse(route.day),
+                        day = route.day?.let(CalendarDay::parse),
                         selectedMachineId = route.selectedMachineId?.let(::MachineId),
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
-                        onPicked = { navController.returnMachineToVisit(it) },
+                        onPicked = { navController.returnMachine(it, forPlan) },
                         onCreate = {
-                            navController.navigate(MachineFormRoute(name = it))
+                            navController.navigate(MachineFormRoute(name = it, forPlan = forPlan))
                         },
                         onCopy = { source, name ->
                             navController.navigate(
@@ -269,10 +299,10 @@ fun App() {
                             if (route.fromList) {
                                 navController.popBackStack()
                             } else {
-                                navController.returnMachineToVisit(it)
+                                navController.returnMachine(it, route.forPlan)
                             }
                         },
-                        inVisit = !route.fromList,
+                        inVisit = !route.fromList && !route.forPlan,
                         onLink = {
                             route.machineId?.let {
                                 navController.navigate(LinkChooserRoute(it, route.fromList))

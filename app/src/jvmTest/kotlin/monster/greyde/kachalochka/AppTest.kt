@@ -512,4 +512,47 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("open-today").assertIsDisplayed()
         }
+
+    @Test
+    fun a_machine_picked_for_a_new_plan_lands_in_its_form() =
+        runApp {
+            val press = Machine.new("Жим ногами", null, gym.clock.current)
+            runBlocking { gym.machines.upsert(press) }
+            onNodeWithTag("section-plans").performClick()
+            waitForIdle()
+            onNodeWithTag("new-plan").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-add-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("copy-machine").assertDoesNotExist()
+            onNodeWithTag("machine-row-${press.id.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("План")
+            onNodeWithTag("plan-machine-${press.id.value}").assertIsDisplayed()
+            onNodeWithTag("save-plan").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Планы")
+        }
+
+    @Test
+    fun a_machine_created_from_a_plan_s_picker_lands_in_its_form() =
+        runApp {
+            onNodeWithTag("section-plans").performClick()
+            waitForIdle()
+            onNodeWithTag("new-plan").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-add-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-search").performTextInput("Гакк")
+            waitForIdle()
+            onNodeWithTag("create-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("План")
+            val created = runBlocking { gym.machines.all(null) }.single()
+            onNodeWithTag("plan-machine-${created.id.value}").assertIsDisplayed()
+        }
 }

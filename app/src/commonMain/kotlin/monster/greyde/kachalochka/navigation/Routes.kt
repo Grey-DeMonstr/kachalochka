@@ -19,9 +19,10 @@ data class VisitRoute(
     val day: String,
 )
 
+/** [day] null picks for the plan below it on the back stack. */
 @Serializable
 data class MachinePickerRoute(
-    val day: String,
+    val day: String? = null,
     val selectedMachineId: String? = null,
 )
 
@@ -31,6 +32,7 @@ data class MachineFormRoute(
     val copyOfId: String? = null,
     val name: String = "",
     val fromList: Boolean = false,
+    val forPlan: Boolean = false,
 )
 
 /** [fromList] is the form's own, handed on to the kept machine's form after a merge. */

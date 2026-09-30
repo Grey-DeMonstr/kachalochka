@@ -100,6 +100,13 @@ interface Strings {
     val newPlan: String
     val startPlan: String
     val untitledPlan: String
+    val plan: String
+    val planName: String
+    val addMachine: String
+    val savePlan: String
+    val deletePlan: String
+    val deletePlanTitle: String
+    val deletePlanText: String
     val friendsColon: String
     val reps: String
     val comment: String

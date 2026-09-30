@@ -50,7 +50,7 @@ data class PickerRowUi(
 )
 
 class MachinePickerViewModel(
-    private val day: CalendarDay,
+    private val day: CalendarDay?,
     private val sets: WorkoutSetRepository,
     private val visits: VisitRepository,
     private val currentUser: CurrentUser,
@@ -91,8 +91,8 @@ class MachinePickerViewModel(
                 own = catalogue.own(owner)
                 latest = sets.latestPerMachine(owner).associateBy { it.machineId }
                 inVisit =
-                    visits
-                        .shownOn(owner, day, sets, utcOffset::at)
+                    day
+                        ?.let { visits.shownOn(owner, it, sets, utcOffset::at) }
                         ?.sets
                         .orEmpty()
                         .groupingBy { it.machineId }
