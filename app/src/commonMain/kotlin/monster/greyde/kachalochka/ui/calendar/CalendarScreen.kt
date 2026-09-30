@@ -1,6 +1,5 @@
 package monster.greyde.kachalochka.ui.calendar
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,15 +10,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,10 +36,10 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.ControlShape
-import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
@@ -91,6 +95,7 @@ fun CalendarScreen(
             current.visit?.let { visit ->
                 VisitCard(
                     visit,
+                    current.me,
                     editable = !current.moving,
                     onOpen = { onOpenVisit(current.day) },
                     onMove = { viewModel.startMove(visit.id) },
@@ -170,6 +175,60 @@ private fun FriendVisitCard(
     visit: FriendDayVisitUi,
     onOpen: () -> Unit,
 ) {
+    DayCard(
+        tag = "friend-visit-${visit.userId.value}",
+        avatar = {
+            PersonAvatar(
+                visit.userId,
+                visit.name,
+                visit.avatar,
+                size = 32.dp,
+                tint = friendColor(visit.color),
+            )
+        },
+        tags = visit.tags,
+        machines = visit.machines,
+        onOpen = onOpen,
+    )
+}
+
+/**
+ * Frame 7m: the own visit and a friend's are the same card — avatar, the day's tags, then its
+ * machines in a small light font; the own one has a menu to move or delete it.
+ */
+@Composable
+private fun VisitCard(
+    visit: CalendarVisitUi,
+    me: PersonUi?,
+    editable: Boolean,
+    onOpen: () -> Unit,
+    onMove: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    DayCard(
+        tag = "calendar-visit-${visit.id.value}",
+        avatar = me?.let { { PersonAvatar(it.userId, it.name, it.avatar, size = 32.dp) } },
+        tags = visit.tags,
+        machines = visit.machines,
+        onOpen = onOpen,
+        menu =
+            if (editable) {
+                { VisitMenu(visit, onMove, onRemove) }
+            } else {
+                null
+            },
+    )
+}
+
+@Composable
+private fun DayCard(
+    tag: String,
+    avatar: (@Composable () -> Unit)?,
+    tags: String?,
+    machines: String?,
+    onOpen: () -> Unit,
+    menu: (@Composable () -> Unit)? = null,
+) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(12.dp)
     Row(
@@ -178,85 +237,77 @@ private fun FriendVisitCard(
             .clip(shape)
             .border(1.dp, colors.onBackground.copy(alpha = 0.16f), shape)
             .clickable(onClick = onOpen)
-            .padding(16.dp)
-            .testTag("friend-visit-${visit.userId.value}"),
+            .padding(start = 14.dp, top = 12.dp, bottom = 12.dp, end = 6.dp)
+            .testTag(tag),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(10.dp).clip(CircleShape).background(friendColor(visit.color)))
-        Text(
-            visit.name,
-            modifier = Modifier.weight(1f),
-            fontSize = 15.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = colors.onBackground,
-        )
-        visit.counts?.let {
-            Text(it, fontSize = 13.sp, color = colors.onBackground.copy(alpha = 0.6f))
+        avatar?.invoke()
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            tags?.let {
+                Text(
+                    it,
+                    modifier = Modifier.testTag("$tag-tags"),
+                    fontSize = 15.sp,
+                    color = colors.onBackground,
+                )
+            }
+            machines?.let {
+                Text(
+                    it,
+                    modifier = Modifier.testTag("$tag-machines"),
+                    fontSize = 13.sp,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    color = colors.onBackground.copy(alpha = 0.55f),
+                )
+            }
         }
+        menu?.invoke()
     }
 }
 
 @Composable
-private fun VisitCard(
+private fun VisitMenu(
     visit: CalendarVisitUi,
-    editable: Boolean,
-    onOpen: () -> Unit,
     onMove: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(12.dp)
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .border(1.dp, colors.onBackground.copy(alpha = 0.16f), shape)
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Box(
             Modifier
-                .fillMaxWidth()
+                .size(36.dp)
                 .clip(ControlShape)
-                .clickable(onClick = onOpen)
-                .padding(4.dp)
-                .testTag("calendar-visit-${visit.id.value}"),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+                .clickable { open = true }
+                .testTag("visit-menu-${visit.id.value}"),
+            contentAlignment = Alignment.Center,
         ) {
-            Text(
-                visit.machines,
-                modifier = Modifier.testTag("calendar-visit-machines"),
-                fontSize = 15.sp,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                color = colors.onBackground,
+            Icon(
+                PhosphorIcons.DotsThreeVertical,
+                strings().more,
+                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp),
             )
-            visit.tags?.let {
-                Text(
-                    it,
-                    modifier = Modifier.testTag("calendar-visit-tags"),
-                    fontSize = 13.sp,
-                    color = colors.onBackground.copy(alpha = 0.6f),
-                )
-            }
         }
-        if (editable) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlineButton(
-                    strings().move,
-                    PhosphorIcons.CalendarBlank,
-                    onMove,
-                    Modifier.weight(1f).testTag("move-visit-${visit.id.value}"),
-                )
-                OutlineButton(
-                    strings().delete,
-                    PhosphorIcons.Trash,
-                    onRemove,
-                    Modifier.weight(1f).testTag("remove-visit-${visit.id.value}"),
-                )
-            }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(strings().move) },
+                leadingIcon = { Icon(PhosphorIcons.CalendarBlank, null, Modifier.size(20.dp)) },
+                onClick = {
+                    open = false
+                    onMove()
+                },
+                modifier = Modifier.testTag("move-visit-${visit.id.value}"),
+            )
+            DropdownMenuItem(
+                text = { Text(strings().delete) },
+                leadingIcon = { Icon(PhosphorIcons.Trash, null, Modifier.size(20.dp)) },
+                onClick = {
+                    open = false
+                    onRemove()
+                },
+                modifier = Modifier.testTag("remove-visit-${visit.id.value}"),
+            )
         }
     }
 }

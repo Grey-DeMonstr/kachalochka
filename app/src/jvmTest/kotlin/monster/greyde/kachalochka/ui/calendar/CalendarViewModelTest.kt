@@ -17,9 +17,11 @@ import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
@@ -81,6 +83,7 @@ class CalendarViewModelTest {
             gym.sync,
             gym.friends,
             FriendColorStore(gym.profiles, gym.clock, gym.friends),
+            AccountAvatars(gym.accounts, gym.profiles),
         )
 
     private fun FakeGym.friendVisit(
@@ -92,6 +95,10 @@ class CalendarViewModelTest {
         val visit = Visit(VisitId.random(), friend.userId, day, recordedAt, t0, false)
         friends.visits += visit
         friends.sets += machines.mapIndexed { i, machine -> set(visit, machine, i) }
+        machines
+            .map { it.copy(userId = friend.userId) }
+            .filter { theirs -> friends.machines.none { it.id == theirs.id } }
+            .forEach { friends.machines += it }
         return visit
     }
 
@@ -179,7 +186,7 @@ class CalendarViewModelTest {
             val listed = assertNotNull(state.visit)
             assertEquals(sunday.id, listed.id)
             assertEquals("Жим ногами, Тяга верхнего блока", listed.machines)
-            assertEquals("Жим, Ноги, Спина", listed.tags)
+            assertEquals("Жим · Ноги · Спина", listed.tags)
         }
 
     @Test
@@ -310,10 +317,7 @@ class CalendarViewModelTest {
             vm.askToRemove(sunday.id)
             val removal = assertNotNull(vm.state.value?.removal)
             assertEquals("Удалить визит?", removal.title)
-            assertEquals(
-                "12 ноября · 3 подхода. Подходы пропадут из истории и статистики.",
-                removal.text,
-            )
+            assertEquals("Воскресенье, 12 ноября", removal.text)
             vm.cancelRemoval()
             assertNull(vm.state.value?.removal)
             assertEquals(false, gym.visits.byId(sunday.id)?.deleted)
@@ -629,7 +633,15 @@ class CalendarViewModelTest {
             assertEquals(listOf(5), state.day(12).friendDots)
             assertEquals(
                 listOf(
-                    FriendDayVisitUi(OLEG.userId, "Олег", 5, twelfth, "2 упражнения · 3 подхода"),
+                    FriendDayVisitUi(
+                        OLEG.userId,
+                        "Олег",
+                        Avatar(),
+                        5,
+                        twelfth,
+                        null,
+                        "${press.name}, ${row.name}",
+                    ),
                 ),
                 state.friendVisits,
             )
@@ -649,16 +661,16 @@ class CalendarViewModelTest {
             vm.selectDay(twelfth)
 
             assertEquals(
-                listOf(FriendDayVisitUi(OLEG.userId, "Олег", 5, twelfth, null)),
+                listOf(FriendDayVisitUi(OLEG.userId, "Олег", Avatar(), 5, twelfth, null, null)),
                 vm.state.value?.friendVisits,
             )
             setsRead.complete(Unit)
             assertEquals(
-                "1 упражнение · 1 подход",
+                press.name,
                 vm.state.value
                     ?.friendVisits
                     ?.single()
-                    ?.counts,
+                    ?.machines,
             )
         }
 

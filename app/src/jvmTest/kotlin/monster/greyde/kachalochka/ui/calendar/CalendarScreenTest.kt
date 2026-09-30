@@ -158,7 +158,8 @@ class CalendarScreenTest {
         runScreenTest(gym, screen = { calendar() }) {
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
-            onNodeWithTag("remove-visit-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("remove-visit-${sunday.id.value}").performClick()
             waitForIdle()
             onNodeWithTag("cancel-remove").performClick()
             waitForIdle()
@@ -169,7 +170,8 @@ class CalendarScreenTest {
                     .deleted,
             )
 
-            onNodeWithTag("remove-visit-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("remove-visit-${sunday.id.value}").performClick()
             waitForIdle()
             onNodeWithTag("confirm-remove").performClick()
             waitForIdle()
@@ -189,7 +191,8 @@ class CalendarScreenTest {
         runScreenTest(gym, screen = { calendar() }) {
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
-            onNodeWithTag("move-visit-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("move-visit-${sunday.id.value}").performClick()
             waitForIdle()
             onNodeWithTag("move-banner").assertIsDisplayed()
 
@@ -208,16 +211,16 @@ class CalendarScreenTest {
         runScreenTest(gym, screen = { calendar() }) {
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
-            onNodeWithTag("move-visit-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("move-visit-${sunday.id.value}").performClick()
             waitForIdle()
-            onNodeWithTag("move-visit-${sunday.id.value}").assertDoesNotExist()
-            onNodeWithTag("remove-visit-${sunday.id.value}").assertDoesNotExist()
+            onNodeWithTag("visit-menu-${sunday.id.value}").assertDoesNotExist()
 
             onNodeWithTag("cancel-move").performClick()
             waitForIdle()
 
             onNodeWithTag("move-banner").assertDoesNotExist()
-            onNodeWithTag("remove-visit-${sunday.id.value}").performScrollTo().assertIsDisplayed()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().assertIsDisplayed()
             assertEquals(sunday, gym.visits.rows[sunday.id])
         }
     }
@@ -228,7 +231,8 @@ class CalendarScreenTest {
         runScreenTest(gym, screen = { calendar(onBack = { backs++ }) }) {
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
-            onNodeWithTag("move-visit-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("move-visit-${sunday.id.value}").performClick()
             waitForIdle()
 
             onNodeWithTag("top-bar-back").performClick()
@@ -264,7 +268,8 @@ class CalendarScreenTest {
         runScreenTest(gym, screen = { calendar() }) {
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
-            onNodeWithTag("move-visit-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("move-visit-${sunday.id.value}").performClick()
             waitForIdle()
             onNodeWithTag("day-2023-11-05").performScrollTo().performClick()
             waitForIdle()

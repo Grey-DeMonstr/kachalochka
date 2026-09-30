@@ -193,24 +193,26 @@ that view says "Нет связи с сервером" and offers a retry.
 
 The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
 visit are marked, today and the chosen day are highlighted, and future days cannot be chosen. Below
-the month is the chosen day's visit: the names of its machines in visit order and, under them,
-every tag those machines carry. Tapping it opens it on the visit screen, where its sets are added,
-edited, deleted and ordered as today's are. A day without a visit offers "Добавить визит".
-"Перенести" moves a visit, with its sets, to the day tapped next; if that day already has a visit,
-the app asks whether to replace it, and replacing removes it with its sets. "Удалить" asks for
-confirmation, then removes the visit and its sets from the history and the statistics.
+the month is the chosen day's visit as a card: the account's avatar, every tag its machines carry
+("Спина · Грудь · Руки"), then the names of its machines in visit order in a small light font.
+Tapping it opens it on the visit screen, where its sets are added, edited, deleted and ordered as
+today's are. A day without a visit offers "Добавить визит". The card's "⋮" menu has "Перенести",
+which moves the visit, with its sets, to the day tapped next; if that day already has a visit, the
+app asks whether to replace it, and replacing removes it with its sets. Its "Удалить" asks
+"Удалить визит?" under the visit's date, then removes the visit and its sets from the history and
+the statistics.
 
 With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
 group with it: each friend who trained on a day adds a dot in that friend's colour after the
 account's own dot, at most four dots a day. Below the chosen day's own visit is one card per friend
-who trained that day, with the colour dot, the friend's name and, once read, their machine and set
-counts; tapping it opens that friend's visit, read-only: the friend's avatar and name in the top
-bar, the day and how many machines they did, then one row per machine as on the visit screen —
-photo, name, tags, comment and results — without its sets. Friends are read again on entering the
-calendar, on changing the month and after switching accounts; without a network the calendar shows
-only the account's own visits. Each friend gets a colour at random at first, and the account can
-change it on the group screen. The colours are personal to the account: friends never see them, and
-they follow the account to its other devices.
+who trained that day, drawn as the own one — the friend's avatar, or their initial in their colour,
+then, once read, the day's tags and machines; tapping it opens that friend's visit, read-only: the
+friend's avatar and name in the top bar, the day and how many machines they did, then one row per
+machine as on the visit screen — photo, name, tags, comment and results — without its sets. Friends
+are read again on entering the calendar, on changing the month and after switching accounts;
+without a network the calendar shows only the account's own visits. Each friend gets a colour at
+random at first, and the account can change it on the group screen. The colours are personal to the
+account: friends never see them, and they follow the account to its other devices.
 
 ## Sign-in and accounts
 

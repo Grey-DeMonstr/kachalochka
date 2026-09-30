@@ -28,17 +28,17 @@ import monster.greyde.kachalochka.core.domain.gym.movedVisit
 import monster.greyde.kachalochka.core.domain.gym.removedVisit
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.shownVisit
-import monster.greyde.kachalochka.core.domain.gym.summarize
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
+import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
-import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.setCount
-import monster.greyde.kachalochka.ui.format.tagTitle
+import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.format.weekdayName
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.reading
@@ -57,15 +57,28 @@ data class CalendarUiState(
     val removal: RemovalUi?,
     val replacement: ReplacementUi?,
     val friendVisits: List<FriendDayVisitUi>,
+    /** Whoever the own visit belongs to; null with nobody signed in. */
+    val me: PersonUi? = null,
 )
 
-/** A friend's visit on the chosen day; [counts] stays null until their sets are read. */
+data class PersonUi(
+    val userId: UserId,
+    val name: String,
+    val avatar: Avatar,
+)
+
+/**
+ * A friend's visit on the chosen day, drawn as the own one is; [tags] and [machines] stay null
+ * until their sets are read.
+ */
 data class FriendDayVisitUi(
     val userId: UserId,
     val name: String,
+    val avatar: Avatar,
     val color: Int,
     val day: CalendarDay,
-    val counts: String?,
+    val tags: String?,
+    val machines: String?,
 )
 
 /** [tags] joins every tag of the visit's machines, null when none has any. */
@@ -73,6 +86,21 @@ data class CalendarVisitUi(
     val id: VisitId,
     val machines: String,
     val tags: String?,
+)
+
+/** A visit card's tag line: every tag of its machines, in one order everywhere. */
+private fun dayTags(machines: List<Machine>): String? =
+    machines
+        .flatMap { it.tags }
+        .distinct()
+        .sortedBy { it.lowercase() }
+        .takeIf { it.isNotEmpty() }
+        ?.joinToString(" · ")
+
+/** The day's details of a friend's visit, once read. */
+private data class FriendDayDetails(
+    val tags: String?,
+    val machines: String,
 )
 
 data class RemovalUi(
@@ -96,6 +124,7 @@ class CalendarViewModel(
     private val sync: SyncTrigger,
     private val friends: FriendsRepository,
     private val colors: FriendColorStore,
+    private val avatars: AccountAvatars,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<CalendarUiState?>(null)
     val state: StateFlow<CalendarUiState?> = mutableState
@@ -111,7 +140,6 @@ class CalendarViewModel(
     private var selected: CalendarDay = today()
     private var moving: Visit? = null
     private var removing: Visit? = null
-    private var removingSets: Int = 0
     private var replacing: Visit? = null
     private var replacingSets: Int = 0
     private var reloading: Job? = null
@@ -120,7 +148,7 @@ class CalendarViewModel(
     /** Friends' visits around [friendsFor]'s month, each carrying the day it shows on. */
     private var friendVisits: List<FriendVisit> = emptyList()
     private var friendColors: Map<UserId, Int> = emptyMap()
-    private var friendCounts: Map<Pair<UserId, CalendarDay>, String> = emptyMap()
+    private var friendCounts: Map<Pair<UserId, CalendarDay>, FriendDayDetails> = emptyMap()
     private var friendsFor: Pair<UserId, CalendarMonth>? = null
     private var loadingFriends: Job? = null
     private var countingFriends: Job? = null
@@ -221,12 +249,8 @@ class CalendarViewModel(
     }
 
     fun askToRemove(id: VisitId) {
-        val visit = all.firstOrNull { it.id == id } ?: return
-        viewModelScope.launch {
-            removingSets = sets.forVisit(visit.id).size
-            removing = visit
-            publish()
-        }
+        removing = all.firstOrNull { it.id == id } ?: return
+        publish()
     }
 
     fun cancelRemoval() {
@@ -304,14 +328,13 @@ class CalendarViewModel(
         dayCard =
             shownVisit(sameDay) { sets.forVisit(it.id) }?.let { (visit, visitSets) ->
                 val shown = groupByMachine(visitSets).mapNotNull { machinesById[it.machineId] }
-                val tags = shown.flatMap { it.tags }.toSet()
                 CalendarVisitUi(
                     id = visit.id,
                     machines =
                         shown.joinToString(", ") { it.name }.ifEmpty {
                             AppStrings.current.noSetsYet
                         },
-                    tags = tags.takeIf { it.isNotEmpty() }?.let(::tagTitle),
+                    tags = dayTags(shown),
                 )
             }
         publish()
@@ -361,16 +384,22 @@ class CalendarViewModel(
     ) {
         val byFriend = friendVisits.filter { it.visit.day == day }.groupBy { it.friend.userId }
         for ((friend, theirs) in byFriend) {
-            val counts = reading { countsOf(theirs.map { it.visit }) }.getOrNull() ?: continue
+            val details =
+                reading { detailsOf(friend, theirs.map { it.visit }) }.getOrNull() ?: continue
             if (friendsFor != key) return
-            friendCounts = friendCounts + ((friend to day) to counts)
+            friendCounts = friendCounts + ((friend to day) to details)
             publish()
         }
     }
 
-    private suspend fun countsOf(sameDay: List<Visit>): String {
-        val summary = summarize(shownVisit(sameDay, friends::sets)?.sets.orEmpty())
-        return "${machineCount(summary.machineCount)} · ${setCount(summary.setCount)}"
+    private suspend fun detailsOf(
+        friend: UserId,
+        sameDay: List<Visit>,
+    ): FriendDayDetails {
+        val daySets = shownVisit(sameDay, friends::sets)?.sets.orEmpty()
+        val theirs = friends.machines(friend).associateBy { it.id }
+        val shown = groupByMachine(daySets).mapNotNull { theirs[it.machineId] }
+        return FriendDayDetails(dayTags(shown), shown.joinToString(", ") { it.name })
     }
 
     private fun friendsOn(day: CalendarDay): List<Friend> =
@@ -406,10 +435,26 @@ class CalendarViewModel(
                 friendVisits =
                     friendsOn(day).mapNotNull { friend ->
                         val color = friendColors[friend.userId] ?: return@mapNotNull null
-                        val counts = friendCounts[friend.userId to day]
-                        FriendDayVisitUi(friend.userId, friend.displayName, color, day, counts)
+                        val details = friendCounts[friend.userId to day]
+                        FriendDayVisitUi(
+                            friend.userId,
+                            friend.displayName,
+                            friend.avatar,
+                            color,
+                            day,
+                            details?.tags,
+                            details?.machines,
+                        )
                     },
+                me = me(),
             )
+    }
+
+    private fun me(): PersonUi? {
+        val account =
+            accounts.accounts.value.firstOrNull { it.userId == shownFor } ?: return null
+        val chosen = avatars.photos.value[account.userId]
+        return PersonUi(account.userId, account.displayName, Avatar(chosen, account.pictureUrl))
     }
 
     private fun removalUi(
@@ -419,8 +464,7 @@ class CalendarViewModel(
         val day = checkNotNull(visit.day)
         return RemovalUi(
             AppStrings.current.deleteVisitTitle,
-            "${dayMonthLabel(day, today.year)} · ${setCount(removingSets)}. " +
-                AppStrings.current.deleteVisitText,
+            weekdayDate(day, withYear = day.year != today.year),
         )
     }
 
