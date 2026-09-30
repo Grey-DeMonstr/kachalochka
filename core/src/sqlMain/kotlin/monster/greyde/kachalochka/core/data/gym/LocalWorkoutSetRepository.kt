@@ -5,10 +5,12 @@ import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
 import kotlin.time.Instant
@@ -53,6 +55,11 @@ class LocalWorkoutSetRepository(
     override suspend fun latestPerMachine(owner: UserId?): List<WorkoutSet> =
         withContext(dispatcher) {
             queries.latestPerMachine(owner?.value, ::workoutSetOf).executeAsList()
+        }
+
+    override suspend fun peaks(owner: UserId?): List<MachinePeaks> =
+        withContext(dispatcher) {
+            machinePeaks(queries.ownedLive(owner?.value, ::workoutSetOf).executeAsList())
         }
 }
 

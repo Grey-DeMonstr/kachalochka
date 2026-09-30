@@ -31,7 +31,9 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.SetPeak
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -337,6 +339,27 @@ class SupabaseFriendsRepositoryTest {
             assertTrue(request.url.encodedPath.endsWith("/machine_link"), request.url.encodedPath)
             assertEquals("in.(${OLEG.value})", request.url.parameters["user_id"])
             assertEquals("eq.false", request.url.parameters["deleted"])
+        }
+
+    @Test
+    fun group_peaks_ask_the_server_to_reduce_the_mates_sets() =
+        runTest {
+            val machine = MachineId.random()
+            val engine = MockEngine.Queue()
+            engine.answer(MEMBERSHIPS)
+            engine.answer(
+                """[{"machine_id":"${machine.value}","heaviest":80,"heaviest_reps":8,""" +
+                    """"lightest":60,"lightest_reps":12,"last_at":"2024-01-01T00:00:00+00:00"}]""",
+            )
+
+            assertEquals(
+                listOf(MachinePeaks(machine, SetPeak(80.0, 8), SetPeak(60.0, 12), NOW)),
+                repositoryOn(engine).groupPeaks(IVAN),
+            )
+
+            val request = engine.requestHistory[1]
+            assertTrue(request.url.encodedPath.endsWith("/rpc/machine_peaks"))
+            assertEquals("""{"owners":["${OLEG.value}"]}""", request.bodyText())
         }
 
     @Test

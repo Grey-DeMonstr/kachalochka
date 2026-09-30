@@ -19,6 +19,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -205,6 +206,12 @@ class FakeFriends(
         online {
             val mates = matesById(viewer)
             links.filter { !it.deleted && it.userId in mates.keys }
+        }
+
+    override suspend fun groupPeaks(viewer: UserId) =
+        online {
+            val mates = matesById(viewer)
+            machinePeaks(sets.filter { it.userId in mates.keys })
         }
 
     /** The machines every [breakLinks] call named, in order. */

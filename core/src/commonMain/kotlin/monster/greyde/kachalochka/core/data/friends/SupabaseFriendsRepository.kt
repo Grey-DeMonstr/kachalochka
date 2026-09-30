@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.gym.WorkoutSetRow
+import monster.greyde.kachalochka.core.data.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
@@ -35,6 +36,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -255,6 +257,9 @@ class SupabaseFriendsRepository(
             },
         )
     }
+
+    override suspend fun groupPeaks(viewer: UserId): List<MachinePeaks> =
+        postgrest.machinePeaks(matesById(viewer).keys)
 
     override suspend fun latestOn(
         viewer: UserId,

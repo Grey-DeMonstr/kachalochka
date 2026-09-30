@@ -5,6 +5,8 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
+import monster.greyde.kachalochka.core.domain.gym.SetPeak
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -116,6 +118,25 @@ class LocalWorkoutSetRepositoryTest {
 
             assertEquals(listOf(ivanSet), repository.latestPerMachine(ivan))
             assertEquals(listOf(mishaSet), repository.latestPerMachine(misha))
+        }
+
+    @Test
+    fun peaks_reduce_each_owner_s_own_live_sets() =
+        runTest {
+            val ivan = UserId("11111111-1111-4111-8111-111111111111")
+            val misha = UserId("22222222-2222-4222-8222-222222222222")
+            val light = set(visitA, press, 1, weight = 60.0, userId = ivan)
+            val heavy = set(visitA, press, 2, weight = 80.0, userId = ivan)
+            val hers = set(visitB, press, 3, weight = 100.0, userId = misha)
+            val gone = set(visitA, press, 4, weight = 120.0, userId = ivan, deleted = true)
+            listOf(light, heavy, hers, gone).forEach { repository.upsert(it) }
+
+            assertEquals(
+                listOf(
+                    MachinePeaks(press, SetPeak(80.0, 10), SetPeak(60.0, 10), heavy.recordedAt),
+                ),
+                repository.peaks(ivan),
+            )
         }
 
     @Test

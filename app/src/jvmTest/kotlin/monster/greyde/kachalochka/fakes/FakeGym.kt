@@ -36,6 +36,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.planOrder
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
@@ -184,6 +185,8 @@ class InMemoryWorkoutSetRepository : WorkoutSetRepository {
             .groupBy { it.machineId }
             .values
             .map { it.last() }
+
+    override suspend fun peaks(owner: UserId?) = machinePeaks(live().filter { it.userId == owner })
 }
 
 class InMemoryProfileRepository : ProfileRepository {

@@ -4,6 +4,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -121,6 +122,9 @@ interface FriendsRepository {
         removed: MachineId,
         kept: MachineId,
     )
+
+    /** How far the live sets on each group mate's machine reach. */
+    suspend fun groupPeaks(viewer: UserId): List<MachinePeaks>
 
     /** Up to three friends' latest visits on any of [machines], newest first. */
     suspend fun latestOn(

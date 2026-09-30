@@ -70,6 +70,9 @@ interface WorkoutSetRepository {
 
     /** The most recently recorded set of each of the owner's machines. */
     suspend fun latestPerMachine(owner: UserId?): List<WorkoutSet>
+
+    /** How far the live sets on each of the owner's machines reach. */
+    suspend fun peaks(owner: UserId?): List<MachinePeaks>
 }
 
 interface PlanRepository {

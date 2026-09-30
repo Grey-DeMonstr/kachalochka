@@ -5,6 +5,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
@@ -27,6 +28,9 @@ class RemoteWorkoutSetRepository(
     // PostgREST has no per-group maximum, so the newest set of each machine is picked here.
     override suspend fun latestPerMachine(owner: UserId?): List<WorkoutSet> =
         live { owned(owner) }.sortedByDescending { it.recordedAt }.distinctBy { it.machineId }
+
+    override suspend fun peaks(owner: UserId?): List<MachinePeaks> =
+        client.postgrest.machinePeaks(listOfNotNull(owner))
 
     private suspend fun live(match: PostgrestFilterBuilder.() -> Unit): List<WorkoutSet> =
         client.postgrest

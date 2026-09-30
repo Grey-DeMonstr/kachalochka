@@ -3,6 +3,8 @@ package monster.greyde.kachalochka.core.data.gym
 import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
+import monster.greyde.kachalochka.core.domain.gym.SetPeak
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
@@ -75,6 +77,26 @@ class GymWireTest {
 
         assertEquals("""["Ноги","Жим"]""", MachineRow.of(machine).tags)
         assertEquals(machine, MachineRow.of(machine).toMachine())
+    }
+
+    @Test
+    fun a_machine_s_peaks_read_from_the_server_s_reduction() {
+        val machine = MachineId.random()
+        val row =
+            Json.decodeFromString<MachinePeaksRow>(
+                """{"machine_id":"${machine.value}","heaviest":80,"heaviest_reps":8,""" +
+                    """"lightest":60.5,"lightest_reps":15,"last_at":"2023-11-14T22:13:20+00:00"}""",
+            )
+
+        assertEquals(
+            MachinePeaks(
+                machine,
+                SetPeak(80.0, 8),
+                SetPeak(60.5, 15),
+                Instant.fromEpochSeconds(1_700_000_000),
+            ),
+            row.toPeaks(),
+        )
     }
 
     @Test
