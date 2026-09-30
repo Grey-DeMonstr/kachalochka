@@ -11,45 +11,44 @@ import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.namesForViewer
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.dayAt
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.shownVisit
+import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
-import monster.greyde.kachalochka.ui.format.dayMonthLabel
-import monster.greyde.kachalochka.ui.format.setCount
-import monster.greyde.kachalochka.ui.format.setValue
-import monster.greyde.kachalochka.ui.format.setsSummary
+import monster.greyde.kachalochka.ui.format.machineCount
+import monster.greyde.kachalochka.ui.format.setsSummaryParts
+import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
+import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
+/** [title] is the friend's name, [day] heads the list over [countLabel], its machine count. */
 data class FriendVisitUiState(
     val title: String,
-    val setCountLabel: String,
-    val groups: List<FriendSetGroupUi>,
+    val avatar: Avatar,
+    val day: String,
+    val countLabel: String,
+    val groups: List<FriendMachineRowUi>,
 )
 
-data class FriendSetGroupUi(
+/** A machine of the friend's visit, drawn as a row of the viewer's own visit. */
+data class FriendMachineRowUi(
     val machineId: MachineId,
     val title: String,
-    val summary: String,
-    val sets: List<FriendSetRowUi>,
-)
-
-data class FriendSetRowUi(
-    val id: WorkoutSetId,
-    val title: String,
-    val value: String,
-    val comment: String = "",
+    val note: String,
+    val tags: List<String>,
+    val summary: List<String>,
+    val photo: Photo?,
 )
 
 class FriendVisitViewModel(
@@ -103,9 +102,21 @@ class FriendVisitViewModel(
             val theirs = friends.machines(member)
             val me = currentUser.id()
             val own = catalogue.own(me)
-            val clusters = me?.let { catalogue.clusters(it) } ?: MachineClusters(own.links)
-            val names = namesForViewer(theirs, own.machines, clusters)
-            stateOf(visitSets, theirs.associateBy { it.id }, names, profiles.preferredUnit(me))
+            val group = me?.let { catalogue.group(it) }
+            val shown = ShownMachines(own, group)
+            val names = namesForViewer(theirs, own.machines, shown.clusters)
+            val avatar =
+                me
+                    ?.let { viewer -> friends.mates(viewer).firstOrNull { it.userId == member } }
+                    ?.avatar ?: Avatar()
+            stateOf(
+                visitSets,
+                theirs.associateBy { it.id },
+                names,
+                profiles.preferredUnit(me),
+                avatar,
+                shown,
+            )
         }.onSuccess {
             mutableState.value = it
             mutableOffline.value = false
@@ -119,15 +130,20 @@ class FriendVisitViewModel(
         machinesById: Map<MachineId, Machine>,
         names: Map<MachineId, String>,
         preferred: PreferredWeightUnit,
+        avatar: Avatar,
+        shown: ShownMachines,
     ): FriendVisitUiState {
         val now = clock.now()
         val today = CalendarDay.of(now, utcOffset.at(now))
+        val groups = groupByMachine(visitSets)
         return FriendVisitUiState(
-            title = "$name · ${dayMonthLabel(day, today.year)}",
-            setCountLabel = setCount(visitSets.size),
+            title = name,
+            avatar = avatar,
+            day = weekdayDate(day, withYear = day.year != today.year),
+            countLabel = machineCount(groups.size),
             groups =
-                groupByMachine(visitSets).map {
-                    groupUi(it.machineId, it.sets, names, machinesById, preferred)
+                groups.map {
+                    groupUi(it.machineId, it.sets, names, machinesById, preferred, shown)
                 },
         )
     }
@@ -138,23 +154,16 @@ class FriendVisitViewModel(
         names: Map<MachineId, String>,
         machinesById: Map<MachineId, Machine>,
         preferred: PreferredWeightUnit,
-    ): FriendSetGroupUi {
-        val title = names[machineId].orEmpty()
+        shown: ShownMachines,
+    ): FriendMachineRowUi {
         val machine = machinesById[machineId]
-        return FriendSetGroupUi(
+        return FriendMachineRowUi(
             machineId = machineId,
-            title = title,
-            summary = machine?.let { setsSummary(it, machineSets, preferred) }.orEmpty(),
-            sets =
-                machineSets.mapIndexed { index, set ->
-                    FriendSetRowUi(
-                        set.id,
-                        "#${index + 1}",
-                        machine?.let { setValue(set.weight, set.reps, it, preferred) }
-                            ?: setValue(set.weight, set.reps, AppStrings.current.kg),
-                        set.comment,
-                    )
-                },
+            title = names[machineId].orEmpty(),
+            note = machine?.setupNote.orEmpty(),
+            tags = machine?.tags.orEmpty().sortedBy { it.lowercase() },
+            summary = machine?.let { setsSummaryParts(it, machineSets, preferred) }.orEmpty(),
+            photo = shown.cover(machineId),
         )
     }
 }

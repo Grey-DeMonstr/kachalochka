@@ -57,21 +57,18 @@ class FriendVisitViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun a_friend_s_visit_groups_their_sets_under_the_viewer_s_names_where_linked() {
+    fun a_friend_s_visit_lists_their_machines_under_the_viewer_s_names_where_linked() {
         val state = assertNotNull(viewModel().state.value)
 
-        assertEquals("Олег · 13 ноября", state.title)
-        assertEquals("3 подхода", state.setCountLabel)
+        assertEquals("Олег", state.title)
+        assertEquals("Понедельник, 13 ноября", state.day)
+        assertEquals("2 упражнения", state.countLabel)
         assertEquals(
-            listOf("Жим ногами" to "80-85кг 8-6", "Тяга" to "45.5кг 1x10"),
+            listOf(
+                "Жим ногами" to listOf("80-85кг", "8-6"),
+                "Тяга" to listOf("45.5кг", "1x10"),
+            ),
             state.groups.map { it.title to it.summary },
-        )
-        assertEquals(
-            listOf("#1" to "80 кг × 8", "#2" to "85 кг × 6"),
-            state.groups
-                .first()
-                .sets
-                .map { it.title to it.value },
         )
     }
 
@@ -85,24 +82,8 @@ class FriendVisitViewModelTest {
 
         inEnglish {
             vm.speak()
-            assertEquals("Олег · 13 November", vm.state.value?.title)
+            assertEquals("Monday, 13 November", vm.state.value?.day)
         }
-    }
-
-    @Test
-    fun a_friend_s_set_shows_its_comment() {
-        gym.friends.sets[0] = gym.friends.sets[0].copy(comment = "Тяжело")
-
-        val state = assertNotNull(viewModel().state.value)
-
-        assertEquals(
-            listOf("Тяжело"),
-            state.groups
-                .flatMap {
-                    it.sets
-                }.map { it.comment }
-                .filter { it.isNotEmpty() },
-        )
     }
 
     @Test
@@ -117,12 +98,8 @@ class FriendVisitViewModelTest {
             val state = assertNotNull(viewModel().state.value)
 
             assertEquals(
-                listOf("176.5-187.5lb 8-6", "100lb 1x10"),
+                listOf(listOf("176.5-187.5lb", "8-6"), listOf("100lb", "1x10")),
                 state.groups.map { it.summary },
-            )
-            assertEquals(
-                listOf("176.5 lb × 8", "187.5 lb × 6", "100 lb × 10"),
-                state.groups.flatMap { group -> group.sets.map { it.value } },
             )
         }
 
@@ -155,7 +132,7 @@ class FriendVisitViewModelTest {
         val state = assertNotNull(viewModel(day = gym.today).state.value)
 
         assertEquals(emptyList(), state.groups)
-        assertEquals("0 подходов", state.setCountLabel)
+        assertEquals("0 упражнений", state.countLabel)
     }
 
     @Test
@@ -173,10 +150,11 @@ class FriendVisitViewModelTest {
 
         val state = assertNotNull(viewModel().state.value)
 
-        assertEquals("3 подхода", state.setCountLabel)
+        assertEquals("2 упражнения", state.countLabel)
         assertEquals(2, state.groups.size)
-        // The visits, each visit's sets once, the machines, the links.
-        assertEquals(5, gym.friends.reads)
+        // The visits, each visit's sets once, the machines, the group's machines, links and
+        // photos, and the mates.
+        assertEquals(8, gym.friends.reads)
     }
 
     @Test
@@ -191,7 +169,7 @@ class FriendVisitViewModelTest {
 
         val state = assertNotNull(viewModel(day = gym.today.plusDays(-3)).state.value)
 
-        assertEquals("1 подход", state.setCountLabel)
+        assertEquals("1 упражнение", state.countLabel)
     }
 
     @Test
@@ -206,7 +184,7 @@ class FriendVisitViewModelTest {
         first.complete(Unit)
 
         assertFalse(vm.offline.value)
-        assertEquals("3 подхода", vm.state.value?.setCountLabel)
+        assertEquals("2 упражнения", vm.state.value?.countLabel)
     }
 
     @Test

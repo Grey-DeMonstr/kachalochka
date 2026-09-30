@@ -120,22 +120,21 @@ one starting with a line of its tags.
 
 Adding or editing a set uses the same form, which slides up over the page. Adding shows the
 signed-in accounts as a row of chips, then "#4 Новый подход"; editing shows "#3 Правка: 70 кг ×
-10". Weight and reps steppers follow, both typed as well, the weight with a comma or a point; −
-and + step the weight by the machine's weight step and the reps by one, and reps that are not a
-whole number above zero cannot be saved. The weight is the one place where the machine's own unit
-comes first: it is typed and stepped in that unit, written beside it ("65 lb"), a gravitron's with
-"−" before it, and when the profile's unit is "кг" or "lb" and differs from it, the converted
-weight follows under it ("29.5 кг"), to the nearest half unit. The page's other weights follow the
+10". Weight and reps steppers follow, both typed as well, the weight with a comma or a point; − and
++ step the weight by the machine's weight step and the reps by one, and reps that are not a whole
+number above zero cannot be saved. The weight is the one place where the machine's own unit comes
+first: it is typed and stepped in that unit, written beside it ("65 lb"), a gravitron's with "−"
+before it, and when the profile's unit is "кг" or "lb" and differs from it, the converted weight
+follows under it ("29.5 кг"), to the nearest half unit. The page's other weights follow the
 profile's unit. A "Комментарий" field of several lines takes up to 200 characters, saved with the
-set and shown after its number, in a friend's visit too; a shared visit never includes them. The
-first set on a machine starts from the previous visit's first set; each later one repeats the
-weight and the reps of the set just recorded. "Добавить" records the set and keeps the form open
-for the next one, without a comment; until it is written, the button shows progress and takes no
-taps. Editing offers "Сохранить", which closes the form, and a trash button that deletes the set.
-"Отмена", swiping the form down, or back, closes it, leaving any edit; starting to order closes the
-page. Tapping another account's chip switches to it: the shown history and the button, which then
-names the person ("Добавить · Миша"), follow that person, and the set is recorded into their own
-visit.
+set and shown after its number; a shared visit never includes them. The first set on a machine
+starts from the previous visit's first set; each later one repeats the weight and the reps of the
+set just recorded. "Добавить" records the set and keeps the form open for the next one, without a
+comment; until it is written, the button shows progress and takes no taps. Editing offers
+"Сохранить", which closes the form, and a trash button that deletes the set. "Отмена", swiping the
+form down, or back, closes it, leaving any edit; starting to order closes the page. Tapping another
+account's chip switches to it: the shown history and the button, which then names the person
+("Добавить · Миша"), follow that person, and the set is recorded into their own visit.
 
 Every list of machines draws a machine the same way: its photo, its name, its tags, then, for the
 account's own machine, its comment and the day it was last used, and a trophy with its record — the
@@ -203,13 +202,15 @@ confirmation, then removes the visit and its sets from the history and the stati
 
 With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
 group with it: each friend who trained on a day adds a dot in that friend's colour after the
-account's own dot, at most four dots a day. Below the chosen day's own visit is one card per
-friend who trained that day, with the colour dot, the friend's name and, once read, their machine
-and set counts; tapping it opens that friend's visit, read-only. Friends are read again on
-entering the calendar, on changing the month and after switching accounts; without a network the
-calendar shows only the account's own visits. Each friend gets a colour at random at first, and
-the account can change it on the group screen. The colours are personal to the account: friends
-never see them, and they follow the account to its other devices.
+account's own dot, at most four dots a day. Below the chosen day's own visit is one card per friend
+who trained that day, with the colour dot, the friend's name and, once read, their machine and set
+counts; tapping it opens that friend's visit, read-only: the friend's avatar and name in the top
+bar, the day and how many machines they did, then one row per machine as on the visit screen —
+photo, name, tags, comment and results — without its sets. Friends are read again on entering the
+calendar, on changing the month and after switching accounts; without a network the calendar shows
+only the account's own visits. Each friend gets a colour at random at first, and the account can
+change it on the group screen. The colours are personal to the account: friends never see them, and
+they follow the account to its other devices.
 
 ## Sign-in and accounts
 
@@ -346,16 +347,16 @@ The group screen shows a colour dot before every member's name but the user's ow
 opens a palette of eight colours; the chosen one marks that friend's visits in the user's
 calendar and in the friend's calendar, opened from the group.
 
-A machine can be taken from a friend's list: the copy keeps the friend's settings and stays
-linked to the friend's machine as one physical machine. An own machine can also be linked to a
-friend's with "Привязать к…". Machines linked directly or through other friends' links are one
-machine: the picker no longer offers the friend's machine beside the user's own, the machine's
-page shows each friend's latest visit on it ("Олег  вчера · 80-85кг 8-6"), a friend's visit shows
-their sets on it under the user's own machine name, and the machine form lists the friends'
-machines it is linked with, by owner and then by name ("Связано с: Жим ногами (Олег), Платформа
-(Паша)"). Tapping one opens that friend's machine, as from the machine list.
-"Отвязать от друзей" in the form's menu, after a confirmation, breaks every link between the
-machine and friends' machines, whichever side made it.
+A machine can be taken from a friend's list: the copy keeps the friend's settings and stays linked
+to the friend's machine as one physical machine. An own machine can also be linked to a friend's
+with "Привязать к…". Machines linked directly or through other friends' links are one machine: the
+picker no longer offers the friend's machine beside the user's own, the machine's page shows each
+friend's latest visit on it ("Олег  вчера · 80-85кг 8-6"), a friend's visit shows their results on
+it under the user's own machine name, and the machine form lists the friends' machines it is linked
+with, by owner and then by name ("Связано с: Жим ногами (Олег), Платформа (Паша)"). Tapping one
+opens that friend's machine, as from the machine list. "Отвязать от друзей" in the form's menu,
+after a confirmation, breaks every link between the machine and friends' machines, whichever side
+made it.
 
 Unlinking and, when signed in, merging duplicates change friends' links on the server, so they
 need the network: without it the app says "Нет связи с сервером" and changes nothing.

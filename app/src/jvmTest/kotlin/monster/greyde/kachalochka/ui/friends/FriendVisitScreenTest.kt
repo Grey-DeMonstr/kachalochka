@@ -24,27 +24,27 @@ class FriendVisitScreenTest {
         runScreenTest(gym, screen = {
             FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {})
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Олег · 13 ноября")
+            onNodeWithTag("top-bar-title").assertTextEquals("Олег")
+            onNodeWithTag("friend-visit-day").assertTextEquals("Понедельник, 13 ноября")
             onNodeWithTag("friend-group-${fixture.olegPress.id.value}").assertIsDisplayed()
             val first = gym.friends.sets.first()
-            onNodeWithTag("friend-set-${first.id.value}").assertIsDisplayed()
+            onNodeWithTag("friend-set-${first.id.value}").assertDoesNotExist()
             onNodeWithTag("pick-machine").assertDoesNotExist()
             onNodeWithTag("reorder-toggle").assertDoesNotExist()
             onNodeWithTag("set-sheet").assertDoesNotExist()
-            // One load on mount: visits, sets, machines and links, each a network round trip.
-            assertEquals(4, gym.friends.reads)
+            // One load on mount: visits, sets, machines, the group's machines, links and photos,
+            // and the mates, each a network round trip.
+            assertEquals(7, gym.friends.reads)
         }
     }
 
     @Test
-    fun a_friend_s_set_shows_its_comment() {
-        val first = gym.friends.sets.first()
-        gym.friends.sets[0] = first.copy(comment = "Тяжело")
+    fun a_friend_s_machine_shows_its_results_as_an_own_row_does() {
         runScreenTest(gym, screen = {
             FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {})
         }) {
-            onNodeWithTag("friend-set-comment-${first.id.value}", useUnmergedTree = true)
-                .assertTextEquals("Тяжело")
+            onNodeWithTag("group-summary-${fixture.olegPress.id.value}")
+                .assertTextEquals("80-85кг", "8-6")
         }
     }
 

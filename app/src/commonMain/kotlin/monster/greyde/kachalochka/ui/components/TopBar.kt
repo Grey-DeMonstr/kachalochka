@@ -60,6 +60,8 @@ fun Screen(
     onBack: (() -> Unit)?,
     onOpenSettings: (() -> Unit)?,
     actions: @Composable RowScope.() -> Unit = {},
+    /** Drawn before [title], such as the avatar of whoever the screen is about. */
+    leading: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -78,6 +80,7 @@ fun Screen(
                         Modifier.testTag("top-bar-back"),
                     )
                 }
+                leading?.invoke()
                 Text(
                     title,
                     modifier = Modifier.weight(1f).testTag("top-bar-title"),
