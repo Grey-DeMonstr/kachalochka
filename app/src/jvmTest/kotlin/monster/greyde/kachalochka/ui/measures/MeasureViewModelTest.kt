@@ -27,6 +27,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -149,21 +150,165 @@ class MeasureViewModelTest {
         assertNull(vm.ui.change)
     }
 
-    @Test
-    fun the_history_lists_every_value_newest_first() {
-        val history = viewModel().ui.history
+    private val MeasureHistoryUi.marked: List<CalendarDay>
+        get() =
+            weeks
+                .flatten()
+                .filterNotNull()
+                .filter { it.hasVisit }
+                .map { it.day }
 
+    private fun stored(
+        measure: Measure,
+        day: CalendarDay,
+    ): Measurement? =
+        gym.measurements.rows.values.singleOrNull {
+            it.measureId == measure.id && it.day == day && !it.deleted
+        }
+
+    @Test
+    fun the_measure_opens_on_today_s_value() {
+        val ui = viewModel().ui
+
+        assertEquals("Вес", ui.title)
         assertEquals(
-            listOf(
-                HistoryRowUi(CalendarDay(2023, 11, 14), "14 ноября", "82 кг"),
-                HistoryRowUi(CalendarDay(2023, 11, 7), "7 ноября", "82.4 кг"),
-                HistoryRowUi(CalendarDay(2023, 10, 10), "10 октября", "83 кг"),
-                HistoryRowUi(CalendarDay(2023, 8, 1), "1 августа", "84 кг"),
-                HistoryRowUi(CalendarDay(2023, 5, 10), "10 мая", "85 кг"),
-                HistoryRowUi(CalendarDay(2022, 12, 1), "1 декабря 2022", "86 кг"),
+            MeasureEntryUi(
+                CalendarDay(2023, 11, 14),
+                "Сегодня, 14 ноября",
+                "82",
+                canSave = false,
+                canDelete = true,
             ),
-            history,
+            ui.entry,
         )
+        assertNull(ui.history)
+    }
+
+    @Test
+    fun a_typed_value_replaces_today_s() {
+        val today = CalendarDay(2023, 11, 14)
+        val vm = viewModel(forearm.id)
+        val before = stored(forearm, today)!!
+
+        vm.typeValue("31,5")
+        assertTrue(vm.ui.entry.canSave)
+        vm.saveValue()
+
+        val after = stored(forearm, today)!!
+        assertEquals(before.id, after.id)
+        assertEquals(31.5, after.value)
+        assertEquals("31.5", vm.ui.entry.text)
+        assertFalse(vm.ui.entry.canSave)
+        assertEquals("31.5 см", vm.ui.latest)
+        assertEquals(0, gym.sync.requests)
+    }
+
+    @Test
+    fun a_value_that_is_not_a_number_cannot_be_saved() {
+        val vm = viewModel()
+
+        vm.typeValue("8x")
+        assertFalse(vm.ui.entry.canSave)
+        vm.typeValue("")
+        assertFalse(vm.ui.entry.canSave)
+    }
+
+    @Test
+    fun an_empty_day_steps_by_half_from_the_latest_value() {
+        gym.clock.current = t0 + 1.days
+        val vm = viewModel()
+        assertEquals(
+            MeasureEntryUi(
+                CalendarDay(2023, 11, 15),
+                "Сегодня, 15 ноября",
+                "",
+                canSave = false,
+                canDelete = false,
+            ),
+            vm.ui.entry,
+        )
+
+        vm.stepValue(+1)
+        assertEquals("82.5", vm.ui.entry.text)
+        vm.stepValue(-1)
+        vm.stepValue(-1)
+        assertEquals("81.5", vm.ui.entry.text)
+        vm.saveValue()
+
+        assertEquals(81.5, stored(weight, CalendarDay(2023, 11, 15))?.value)
+        assertTrue(vm.ui.entry.canDelete)
+    }
+
+    @Test
+    fun the_history_marks_the_month_s_days_with_a_value() {
+        val vm = viewModel()
+
+        vm.openHistory()
+
+        assertEquals("Вес · история", vm.ui.title)
+        val history = vm.ui.history!!
+        assertEquals("Ноябрь 2023", history.monthTitle)
+        assertFalse(history.canShowNextMonth)
+        assertEquals(listOf(CalendarDay(2023, 11, 7), CalendarDay(2023, 11, 14)), history.marked)
+
+        vm.showHistoryMonth(-1)
+
+        assertEquals("Октябрь 2023", vm.ui.history?.monthTitle)
+        assertEquals(listOf(CalendarDay(2023, 10, 10)), vm.ui.history?.marked)
+    }
+
+    @Test
+    fun a_day_in_the_history_shows_its_value_and_deletes_it() {
+        val day = CalendarDay(2023, 11, 7)
+        val vm = viewModel().also { it.openHistory() }
+
+        vm.chooseDay(day)
+        assertEquals(
+            MeasureEntryUi(day, "Вторник, 7 ноября", "82.4", canSave = false, canDelete = true),
+            vm.ui.entry,
+        )
+        vm.deleteValue()
+
+        assertNull(stored(weight, day))
+        assertEquals("", vm.ui.entry.text)
+        assertFalse(vm.ui.entry.canDelete)
+        assertEquals(listOf(CalendarDay(2023, 11, 14)), vm.ui.history?.marked)
+        assertEquals(1, gym.sync.requests)
+    }
+
+    @Test
+    fun an_empty_day_in_the_history_takes_a_new_value() {
+        val day = CalendarDay(2023, 11, 1)
+        val vm = viewModel().also { it.openHistory() }
+
+        vm.chooseDay(day)
+        vm.typeValue("82.8")
+        vm.saveValue()
+
+        assertEquals(82.8, stored(weight, day)?.value)
+        assertEquals(1, gym.sync.requests)
+    }
+
+    @Test
+    fun a_day_after_today_cannot_be_chosen() {
+        val vm = viewModel().also { it.openHistory() }
+
+        vm.chooseDay(CalendarDay(2023, 11, 15))
+
+        assertEquals(CalendarDay(2023, 11, 14), vm.ui.entry.day)
+    }
+
+    @Test
+    fun closing_the_history_returns_to_today() {
+        val vm = viewModel().also { it.openHistory() }
+        vm.chooseDay(CalendarDay(2023, 11, 7))
+
+        assertTrue(vm.closeHistory())
+
+        assertNull(vm.ui.history)
+        assertEquals("Вес", vm.ui.title)
+        assertEquals(CalendarDay(2023, 11, 14), vm.ui.entry.day)
+        assertFalse(vm.closeHistory())
     }
 
     @Test

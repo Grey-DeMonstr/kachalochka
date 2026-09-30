@@ -271,6 +271,7 @@ object EnStrings : Strings {
     override val periodYear = "Year"
     override val periodAll = "All"
     override val history = "History"
+    override val editHistory = "Edit history"
     override val deleteMeasureTitle = "Delete the measure?"
 
     override fun deleteMeasureText(name: String) = "\"$name\" and all its values will disappear."

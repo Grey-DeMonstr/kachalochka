@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -174,6 +176,14 @@ private fun MeasureRow(
                         color = muted,
                     )
                 }
+            }
+            if (!ordering) {
+                Icon(
+                    PhosphorIcons.CaretRight,
+                    null,
+                    tint = muted,
+                    modifier = Modifier.size(18.dp).testTag("measure-chevron-$id"),
+                )
             }
         }
         Rule()

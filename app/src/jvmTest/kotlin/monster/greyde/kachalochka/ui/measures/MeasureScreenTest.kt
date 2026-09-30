@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.ui.measures
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
@@ -57,12 +58,12 @@ class MeasureScreenTest {
 
     private fun runMeasure(
         measure: MeasureId = weight.id,
-        onOpenDay: (CalendarDay) -> Unit = {},
+        onBack: () -> Unit = {},
         onGone: () -> Unit = {},
         assertions: ComposeUiTest.() -> Unit,
     ) = runScreenTest(
         gym,
-        screen = { MeasureScreen(measure, {}, {}, onOpenDay, onGone) },
+        screen = { MeasureScreen(measure, onBack, {}, onGone) },
         assertions = assertions,
     )
 
@@ -79,7 +80,7 @@ class MeasureScreenTest {
 
     @Test
     fun a_measure_speaks_english() =
-        runScreenTestInEnglish(gym, screen = { MeasureScreen(weight.id, {}, {}, {}, {}) }) {
+        runScreenTestInEnglish(gym, screen = { MeasureScreen(weight.id, {}, {}, {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Weight")
             onNodeWithTag("period-Quarter").assertTextEquals("3 mo")
             onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82 kg")
@@ -104,14 +105,49 @@ class MeasureScreenTest {
         }
     }
 
+    private fun valueOn(day: CalendarDay): Double? =
+        gym.measurements.rows.values
+            .singleOrNull { it.day == day && !it.deleted }
+            ?.value
+
     @Test
-    fun tapping_a_value_in_the_history_opens_its_day() {
-        val opened = mutableListOf<CalendarDay>()
-        runMeasure(onOpenDay = { opened += it }) {
-            onNodeWithTag("history-${lastWeek.iso}").performScrollTo().performClick()
+    fun today_s_value_is_stepped_and_saved() {
+        runMeasure {
+            onNodeWithTag("measure-entry-title", useUnmergedTree = true)
+                .assertTextEquals("СЕГОДНЯ, 14 НОЯБРЯ")
+            onNodeWithTag("entry-value").assertTextEquals("82")
+            onNodeWithTag("save-value").assertIsNotEnabled()
+
+            onNodeWithTag("entry-plus").performClick()
+            onNodeWithTag("save-value").performClick()
             waitForIdle()
+
+            onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82.5 кг")
         }
-        assertEquals(listOf(lastWeek), opened)
+        assertEquals(82.5, valueOn(today))
+    }
+
+    @Test
+    fun the_history_deletes_a_day_s_value_and_back_returns_to_the_measure() {
+        var left = 0
+        runMeasure(onBack = { left++ }) {
+            onNodeWithTag("edit-history").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Вес · история")
+
+            onNodeWithTag("day-${lastWeek.iso}").performClick()
+            waitForIdle()
+            onNodeWithTag("entry-value").assertTextEquals("82.4")
+            onNodeWithTag("delete-value").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("entry-value").assertTextEquals("")
+
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Вес")
+        }
+        assertEquals(0, left)
+        assertEquals(null, valueOn(lastWeek))
     }
 
     @Test

@@ -288,12 +288,18 @@ measure, and sex, birth date and height from the profile; age is counted in whol
 A row shows its result ("18.4 %") or what it lacks ("Нужно: шея, рост"). While sex, birth date or
 height is missing, a line under the rows leads to Settings.
 
-Tapping a measure in the list opens it: its latest value and the change over the chosen period,
-a line chart of its values over 1 мес, 3 мес (the default), 6 мес, Год or Всё, then every value
-it ever had, newest first. A period with a single value shows that value instead of a line.
-Tapping a value opens that day's measurement form. The menu in the top bar edits the name and unit
-of the user's own measure, and deletes a measure that can be deleted with all its values after a
-confirmation.
+Each measure row ends with a chevron; tapping it opens the measure. The screen starts with today's
+value ("Сегодня, 29 сентября"): a decimal field between − and +, which step by 0.5 (from the latest
+value when the field is empty), and "Сохранить". Then come its latest value and the change over
+the chosen period, and a line chart of its values over 1 мес, 3 мес (the default), 6 мес, Год or
+Всё. A period with a single value shows that value instead of a line.
+
+"Редактировать историю" opens the measure's history ("Талия · история"): a month calendar with a
+dot on every day that has a value; future days cannot be chosen. Tapping a day shows its value in
+the same field with "Сохранить" and, when the day has a value, a trash button deleting it; an
+empty day takes a new value. Back closes the history first. The menu in the top bar edits the name
+and unit of the user's own measure, and deletes a measure that can be deleted with all its values
+after a confirmation.
 
 ## Plans
 

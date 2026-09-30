@@ -557,6 +557,11 @@ values instead of Vico's default from zero, which would flatten a body weight. D
 also soft-deletes the values `MeasurementRepository.all` returns for it; older rows of those days
 stay hidden behind them through `newestPerDay`.
 
+The measure screen writes one day's value as the form does: the day's row updated in place or a
+new row, and the trash soft-deletes it; a past day's write requests a sync at once. Its history is
+a mode of `MeasureViewModel`, not a route, and draws its month with the calendar's `monthWeeks`,
+`MonthHeader` and `MonthGrid`.
+
 The body-fat formulas are pure functions in `domain/measures/BodyFat.kt` (`bodyFat`,
 `missingInputs`, `methodsReading`); a result outside 2–70 % is treated as none. "Замеры" finds the
 inputs by `MeasureKind`, never by name: the latest value of each kind, and sex, `birthDate` and

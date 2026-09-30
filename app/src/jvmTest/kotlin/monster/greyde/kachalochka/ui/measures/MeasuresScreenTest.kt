@@ -74,10 +74,14 @@ class MeasuresScreenTest {
             gym,
             screen = { MeasuresScreen({}, {}, {}, onOpenMeasure = { opened += it }) },
         ) {
+            onNodeWithTag("measure-chevron-${waist.id.value}", useUnmergedTree = true)
+                .assertIsDisplayed()
             onNodeWithTag("measure-row-${waist.id.value}").performClick()
             waitForIdle()
             onNodeWithTag("reorder-toggle").performClick()
             waitForIdle()
+            onNodeWithTag("measure-chevron-${waist.id.value}", useUnmergedTree = true)
+                .assertDoesNotExist()
             onNodeWithTag("measure-row-${weight.id.value}").performClick()
             waitForIdle()
         }

@@ -287,6 +287,7 @@ object RuStrings : Strings {
     override val periodYear = "Год"
     override val periodAll = "Всё"
     override val history = "История"
+    override val editHistory = "Редактировать историю"
     override val deleteMeasureTitle = "Удалить показатель?"
 
     override fun deleteMeasureText(name: String) = "«$name» и все его значения пропадут."

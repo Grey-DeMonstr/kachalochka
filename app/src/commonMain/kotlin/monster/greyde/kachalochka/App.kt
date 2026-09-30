@@ -193,7 +193,6 @@ fun App() {
                         measureId = MeasureId(route.measureId),
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
-                        onOpenDay = { navController.navigate(MeasurementFormRoute(it.iso)) },
                         onGone = { navController.popBackStack() },
                     )
                 }

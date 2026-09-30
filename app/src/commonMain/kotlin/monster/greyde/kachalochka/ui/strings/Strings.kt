@@ -255,6 +255,7 @@ interface Strings {
     val periodYear: String
     val periodAll: String
     val history: String
+    val editHistory: String
     val deleteMeasureTitle: String
 
     fun deleteMeasureText(name: String): String

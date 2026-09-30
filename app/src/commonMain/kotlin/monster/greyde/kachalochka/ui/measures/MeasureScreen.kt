@@ -1,6 +1,5 @@
 package monster.greyde.kachalochka.ui.measures
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,16 +30,23 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
+import monster.greyde.kachalochka.ui.calendar.MonthGrid
+import monster.greyde.kachalochka.ui.calendar.MonthHeader
+import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Choice
 import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
+import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.components.SquareIconButton
+import monster.greyde.kachalochka.ui.components.Stepper
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.strings
@@ -61,7 +67,6 @@ fun MeasureScreen(
     measureId: MeasureId,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenDay: (CalendarDay) -> Unit,
     onGone: () -> Unit,
 ) {
     val viewModel: MeasureViewModel = koinViewModel { parametersOf(measureId) }
@@ -70,9 +75,14 @@ fun MeasureScreen(
     LaunchedEffect(Unit) { viewModel.load() }
     LaunchedEffect(gone) { if (gone) onGone() }
     val measure = state
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = measure?.history != null,
+        onBackCompleted = { viewModel.closeHistory() },
+    )
     Screen(
-        measure?.name.orEmpty(),
-        onBack = onBack,
+        measure?.title.orEmpty(),
+        onBack = { if (!viewModel.closeHistory()) onBack() },
         onOpenSettings = onOpenSettings,
         actions = {
             if (measure != null && (measure.canEdit || measure.canDelete)) {
@@ -92,17 +102,40 @@ fun MeasureScreen(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Summary(measure)
-            val periods = MeasurePeriod.entries
-            ChoiceRow(
-                choices = periods.map { Choice(periodLabel(it), "period-${it.name}") },
-                selected = periods.indexOf(measure.period),
-                onSelect = { viewModel.choose(periods[it]) },
-            )
-            ChartArea(measure)
-            SectionLabel(strings().history)
-            Column {
-                measure.history.forEach { HistoryRow(it, onOpenDay) }
+            val history = measure.history
+            if (history == null) {
+                SectionLabel(measure.entry.label, Modifier.testTag("measure-entry-title"))
+                Entry(measure, viewModel)
+                Summary(measure)
+                val periods = MeasurePeriod.entries
+                ChoiceRow(
+                    choices = periods.map { Choice(periodLabel(it), "period-${it.name}") },
+                    selected = periods.indexOf(measure.period),
+                    onSelect = { viewModel.choose(periods[it]) },
+                )
+                ChartArea(measure)
+                OutlineButton(
+                    strings().editHistory,
+                    PhosphorIcons.CalendarBlank,
+                    viewModel::openHistory,
+                    Modifier.fillMaxWidth().testTag("edit-history"),
+                )
+            } else {
+                MonthHeader(
+                    history.monthTitle,
+                    history.canShowNextMonth,
+                    onPrevious = { viewModel.showHistoryMonth(-1) },
+                    onNext = { viewModel.showHistoryMonth(+1) },
+                )
+                MonthGrid(history.weeks, onSelect = viewModel::chooseDay)
+                Rule()
+                Text(
+                    measure.entry.label,
+                    Modifier.testTag("measure-entry-title"),
+                    fontSize = 17.sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Entry(measure, viewModel)
             }
         }
     }
@@ -173,21 +206,39 @@ private fun ChartArea(measure: MeasureUi) {
     }
 }
 
+/** The entry day's value; the history can also delete it. */
 @Composable
-private fun HistoryRow(
-    row: HistoryRowUi,
-    onOpenDay: (CalendarDay) -> Unit,
+private fun Entry(
+    measure: MeasureUi,
+    viewModel: MeasureViewModel,
 ) {
-    val colors = MaterialTheme.colorScheme
-    Column(Modifier.clickable { onOpenDay(row.day) }.testTag("history-${row.day.iso}")) {
-        Row(
-            Modifier.fillMaxWidth().padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(row.label, Modifier.weight(1f), fontSize = 16.sp, color = colors.onBackground)
-            Text(row.value, fontSize = 16.sp, color = colors.onBackground)
+    val entry = measure.entry
+    Stepper(
+        value = entry.text,
+        caption = null,
+        onMinus = { viewModel.stepValue(-1) },
+        onPlus = { viewModel.stepValue(+1) },
+        tag = "entry",
+        onValueChange = viewModel::typeValue,
+        suffix = measure.unit,
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (measure.history != null && entry.canDelete) {
+            SquareIconButton(
+                PhosphorIcons.Trash,
+                strings().delete,
+                viewModel::deleteValue,
+                Modifier.testTag("delete-value"),
+            )
         }
-        Rule()
+        AccentButton(
+            strings().save,
+            PhosphorIcons.Check,
+            viewModel::saveValue,
+            Modifier.weight(1f).testTag("save-value"),
+            height = 56.dp,
+            enabled = entry.canSave,
+        )
     }
 }
 
