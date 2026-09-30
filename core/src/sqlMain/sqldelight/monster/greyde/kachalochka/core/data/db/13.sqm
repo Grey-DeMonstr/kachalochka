@@ -1,0 +1,16 @@
+ALTER TABLE visit ADD COLUMN planned TEXT NOT NULL DEFAULT '[]';
+
+CREATE TABLE workout_plan (
+    id          TEXT NOT NULL PRIMARY KEY,
+    user_id     TEXT,
+    name        TEXT NOT NULL DEFAULT '',
+    machine_ids TEXT NOT NULL DEFAULT '[]',
+    created_at  INTEGER NOT NULL,
+    updated_at  INTEGER NOT NULL,
+    deleted     INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX workout_plan_updated_at_idx ON workout_plan (updated_at);
+
+-- Visits pulled before this version lost their planned machines.
+UPDATE syncState SET lastPullAt = NULL;

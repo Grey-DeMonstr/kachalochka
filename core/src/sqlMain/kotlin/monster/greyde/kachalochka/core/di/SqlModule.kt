@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalPhotoRepository
+import monster.greyde.kachalochka.core.data.gym.LocalPlanRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
@@ -39,6 +40,7 @@ import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
+import monster.greyde.kachalochka.core.domain.gym.PlanRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
@@ -55,6 +57,7 @@ internal fun sqlModule(): Module =
         single { OutboxDao(get()) }
         single<ProfileRepository> { LocalProfileRepository(get(), get(), Dispatchers.IO) }
         single<MachineRepository> { LocalMachineRepository(get(), get(), Dispatchers.IO) }
+        single<PlanRepository> { LocalPlanRepository(get(), get(), Dispatchers.IO) }
         single<VisitRepository> { LocalVisitRepository(get(), get(), Dispatchers.IO) }
         single<WorkoutSetRepository> { LocalWorkoutSetRepository(get(), get(), Dispatchers.IO) }
         single<MachineLinkRepository> { LocalMachineLinkRepository(get(), get(), Dispatchers.IO) }

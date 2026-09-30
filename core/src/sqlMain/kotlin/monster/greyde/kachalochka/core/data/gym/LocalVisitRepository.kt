@@ -29,6 +29,7 @@ class LocalVisitRepository(
                     visit.recordedAt,
                     visit.updatedAt,
                     visit.deleted,
+                    machineIdsText(visit.planned),
                 )
                 if (visit.userId != null) {
                     outbox.enqueue(OutboxEntry(VISIT_TABLE, visit.id.value, visit.updatedAt))
@@ -65,4 +66,13 @@ internal fun visitOf(
     recordedAt: Instant,
     updatedAt: Instant,
     deleted: Boolean,
-) = Visit(VisitId(id), userId?.let(::UserId), day, recordedAt, updatedAt, deleted)
+    planned: String,
+) = Visit(
+    VisitId(id),
+    userId?.let(::UserId),
+    day,
+    recordedAt,
+    updatedAt,
+    deleted,
+    machineIdsOf(planned),
+)

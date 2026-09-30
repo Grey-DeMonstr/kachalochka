@@ -57,6 +57,23 @@ internal fun tagsOf(text: String): Set<String> {
         .toSet()
 }
 
+internal fun machineIdsText(ids: List<MachineId>): String =
+    Json.encodeToString(ids.map { it.value })
+
+// Read like tags: an entry another client wrote that is not an id is dropped, not fatal.
+internal fun machineIdsOf(text: String): List<MachineId> {
+    val entries =
+        try {
+            Json.parseToJsonElement(text) as? JsonArray
+        } catch (_: SerializationException) {
+            null
+        } ?: return emptyList()
+    return entries
+        .mapNotNull { (it as? JsonPrimitive)?.takeIf { value -> value.isString }?.content }
+        .mapNotNull { runCatching { MachineId(it) }.getOrNull() }
+        .distinct()
+}
+
 // A unit this version does not know must not stop a pull either.
 fun weightUnitOf(wire: String): WeightUnit =
     WeightUnit.entries.firstOrNull { it.wireName() == wire } ?: WeightUnit.Kg
@@ -126,6 +143,7 @@ internal data class VisitRow(
     @SerialName("ended_at") val endedAt: String?,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
+    val planned: String,
 ) {
     fun toVisit(): Visit =
         Visit(
@@ -135,6 +153,7 @@ internal data class VisitRow(
             recordedAt = Instant.parse(recordedAt),
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
+            planned = machineIdsOf(planned),
         )
 
     companion object {
@@ -147,6 +166,7 @@ internal data class VisitRow(
                 endedAt = visit.recordedAt.toString(),
                 updatedAt = visit.updatedAt.toString(),
                 deleted = visit.deleted,
+                planned = machineIdsText(visit.planned),
             )
     }
 }

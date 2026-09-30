@@ -11,34 +11,36 @@ CREATE TABLE visit (
     updated_at  INTEGER AS Instant NOT NULL,
     deleted     INTEGER AS Boolean NOT NULL DEFAULT 0,
     -- Last, where 3.sqm's ALTER TABLE puts it.
-    day         TEXT AS CalendarDay
+    day         TEXT AS CalendarDay,
+    -- Last, where 13.sqm's ALTER TABLE puts it.
+    planned     TEXT NOT NULL DEFAULT '[]'
 );
 
 CREATE INDEX visit_updated_at_idx ON visit (updated_at);
 CREATE INDEX visit_day_idx ON visit (user_id, day);
 
 upsert:
-INSERT OR REPLACE INTO visit(id, user_id, day, recorded_at, updated_at, deleted)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO visit(id, user_id, day, recorded_at, updated_at, deleted, planned)
+VALUES (?, ?, ?, ?, ?, ?, ?);
 
 byId:
-SELECT id, user_id, day, recorded_at, updated_at, deleted FROM visit WHERE id = ?;
+SELECT id, user_id, day, recorded_at, updated_at, deleted, planned FROM visit WHERE id = ?;
 
 onDay:
-SELECT id, user_id, day, recorded_at, updated_at, deleted FROM visit
+SELECT id, user_id, day, recorded_at, updated_at, deleted, planned FROM visit
 WHERE day = :day AND deleted = 0
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 ORDER BY recorded_at DESC, updated_at DESC, id DESC
 LIMIT 1;
 
 forOwner:
-SELECT id, user_id, day, recorded_at, updated_at, deleted FROM visit
+SELECT id, user_id, day, recorded_at, updated_at, deleted, planned FROM visit
 WHERE deleted = 0
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 ORDER BY recorded_at DESC;
 
 undated:
-SELECT id, user_id, day, recorded_at, updated_at, deleted FROM visit
+SELECT id, user_id, day, recorded_at, updated_at, deleted, planned FROM visit
 WHERE day IS NULL AND deleted = 0
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
 

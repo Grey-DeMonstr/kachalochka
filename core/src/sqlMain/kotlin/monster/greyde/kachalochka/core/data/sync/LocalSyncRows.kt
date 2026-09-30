@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.data.sync
 
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
+import monster.greyde.kachalochka.core.data.gym.machineIdsText
 import monster.greyde.kachalochka.core.data.gym.machineLinkOf
 import monster.greyde.kachalochka.core.data.gym.machineOf
 import monster.greyde.kachalochka.core.data.gym.photoOf
@@ -74,6 +75,7 @@ class LocalSyncRows(
             visit.recordedAt,
             visit.updatedAt,
             visit.deleted,
+            machineIdsText(visit.planned),
         )
 
     fun writeSet(set: WorkoutSet) =

@@ -1,0 +1,36 @@
+import kotlin.Boolean;
+import kotlin.time.Instant;
+
+-- PLAN is an SQLite keyword, as SET is.
+CREATE TABLE workout_plan (
+    id          TEXT NOT NULL PRIMARY KEY,
+    user_id     TEXT,
+    name        TEXT NOT NULL DEFAULT '',
+    machine_ids TEXT NOT NULL DEFAULT '[]',
+    created_at  INTEGER AS Instant NOT NULL,
+    updated_at  INTEGER AS Instant NOT NULL,
+    deleted     INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+CREATE INDEX workout_plan_updated_at_idx ON workout_plan (updated_at);
+
+upsert:
+INSERT OR REPLACE INTO workout_plan(id, user_id, name, machine_ids, created_at, updated_at,
+    deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+byId:
+SELECT * FROM workout_plan WHERE id = ?;
+
+live:
+SELECT * FROM workout_plan
+WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
+
+ownerlessIds:
+SELECT id FROM workout_plan WHERE user_id IS NULL;
+
+claimOwnerless:
+UPDATE workout_plan SET user_id = :owner, updated_at = :updatedAt WHERE user_id IS NULL;
+
+purgeOwner:
+DELETE FROM workout_plan WHERE user_id = ?;

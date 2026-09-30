@@ -1,6 +1,6 @@
 # Kachalochka — Technical Specification
 
-**Last reviewed:** 2026-09-29
+**Last reviewed:** 2026-09-30
 
 The architectural decisions and invariants new work must respect. It is not a description of the
 current code — read the code for that. What is written here is what the code cannot tell you: why
@@ -361,6 +361,14 @@ machine's tag names, trimmed and distinct, `[]` for none; unreadable text or ent
 tags, as `friend_colors` does. Tags are personal: `linkedCopy` starts without any. Migration
 `0017` and `12.sqm` add the column, and `12.sqm` resets `lastPullAt`.
 
+`workout_plan` holds an account's plans: `name`, `machine_ids` — a JSON array of machine ids in
+plan order, read like `machine.tags`, so an entry that is not an id is dropped — and
+`created_at`, which orders the list. It is not called `plan`, a keyword in SQLite. It is private
+to its owner, like `measure`. A started plan's machines go to `visit.planned`, the same kind of
+array: `startedPlanned` appends the plan's live machines the visit neither recorded nor planned,
+and the visit screen shows `plannedWithoutSets` as planned rows. Readers skip ids that name no
+live machine, so a machine merged away drops out of plans. Migration `0018` and `13.sqm` add
+both; `13.sqm` resets `lastPullAt`.
 A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
 member's `linked_machine_id`. Neither column is a foreign key and no policy checks either against
 `machine`: a link may reach the server before its own machine does, and the linked machine is

@@ -5,6 +5,8 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.PRESS
+import monster.greyde.kachalochka.core.domain.gym.ROW
 import monster.greyde.kachalochka.core.domain.gym.VISIT_A
 import monster.greyde.kachalochka.core.domain.gym.VISIT_B
 import monster.greyde.kachalochka.core.domain.gym.VISIT_C
@@ -108,5 +110,16 @@ class LocalVisitRepositoryTest {
 
             assertEquals(listOf(undated), repository.undated(null))
             assertEquals(listOf(ivans), repository.undated(ivan))
+        }
+
+    @Test
+    fun a_visit_reads_back_with_its_planned_machines() =
+        runTest {
+            val visit = visit().copy(planned = listOf(ROW, PRESS))
+
+            repository.upsert(visit)
+
+            assertEquals(visit, repository.byId(visit.id))
+            assertEquals(listOf(visit), repository.all(null))
         }
 }

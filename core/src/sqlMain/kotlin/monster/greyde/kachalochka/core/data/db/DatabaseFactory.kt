@@ -28,6 +28,11 @@ internal fun kachalochkaDatabase(driver: SqlDriver): KachalochkaDatabase =
                 updated_atAdapter = InstantColumnAdapter,
                 dayAdapter = CalendarDayColumnAdapter,
             ),
+        workout_planAdapter =
+            Workout_plan.Adapter(
+                created_atAdapter = InstantColumnAdapter,
+                updated_atAdapter = InstantColumnAdapter,
+            ),
         workout_setAdapter =
             Workout_set.Adapter(
                 recorded_atAdapter = InstantColumnAdapter,

@@ -162,6 +162,7 @@ class SchemaMigrationTest {
         exec("DROP TABLE measure")
         exec("DROP TABLE measurement")
         exec("DROP TABLE photo")
+        exec("DROP TABLE workout_plan")
     }
 
     /** Every version before 6 declares the profile table this way. */
@@ -509,6 +510,47 @@ class SchemaMigrationTest {
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
+    /** Versions 4 to 13 declare the visit table this way. */
+    private fun version13VisitTable() {
+        exec("DROP TABLE visit")
+        exec(
+            """
+            CREATE TABLE visit (
+                id TEXT NOT NULL PRIMARY KEY,
+                user_id TEXT,
+                recorded_at INTEGER NOT NULL,
+                ended_at INTEGER,
+                updated_at INTEGER NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0,
+                day TEXT
+            )
+            """.trimIndent(),
+        )
+    }
+
+    @Test
+    fun version_13_visits_plan_nothing_and_plans_arrive_and_everything_is_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        version13VisitTable()
+        exec("DROP TABLE workout_plan")
+        exec(
+            "INSERT INTO visit(id, recorded_at, updated_at, day) " +
+                "VALUES ('sunday', 5, 7, '2026-09-27')",
+        )
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 13, 14)
+
+        exec(
+            "INSERT INTO workout_plan(id, user_id, created_at, updated_at) " +
+                "VALUES ('legs', 'ivan', 5, 7)",
+        )
+        assertEquals("[]", text("SELECT planned FROM visit WHERE id = 'sunday'"))
+        assertEquals("[]", text("SELECT machine_ids FROM workout_plan WHERE id = 'legs'"))
+        assertEquals("", text("SELECT name FROM workout_plan WHERE id = 'legs'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
     /** Versions 5 to 12 declare the machine table this way. */
     private fun version12MachineTable() {
         exec("DROP TABLE machine")
@@ -598,6 +640,8 @@ class SchemaMigrationTest {
         exec("DROP TABLE photo")
         version11SetTable()
         version12MachineTable()
+        version13VisitTable()
+        exec("DROP TABLE workout_plan")
     }
 
     /** Versions 6 to 8 declare the profile table this way. */
@@ -623,6 +667,8 @@ class SchemaMigrationTest {
         exec("DROP TABLE photo")
         version11SetTable()
         version12MachineTable()
+        version13VisitTable()
+        exec("DROP TABLE workout_plan")
     }
 
     private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)

@@ -45,6 +45,7 @@ private fun visitRow(
     endedAt = null,
     updatedAt = updatedAt,
     deleted = false,
+    planned = "[]",
 )
 
 private fun jsonHeaders() = headersOf(HttpHeaders.ContentType, "application/json")
