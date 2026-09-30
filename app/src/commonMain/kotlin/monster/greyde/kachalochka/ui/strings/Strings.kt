@@ -198,6 +198,7 @@ interface Strings {
     val addPhoto: String
     val takePhoto: String
     val fromGallery: String
+    val googlePictureReturns: String
 
     // Friends
     val joinTitle: String

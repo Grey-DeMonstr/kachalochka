@@ -9,12 +9,15 @@ import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
+import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.strings.AppLanguage
 import monster.greyde.kachalochka.ui.strings.InMemoryLanguagePreference
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
@@ -22,6 +25,7 @@ import monster.greyde.kachalochka.ui.theme.ThemeMode
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -57,9 +61,110 @@ class SettingsViewModelTest {
             themes,
             transitions,
             languages,
+            gym.photos,
+            AccountAvatars(gym.accounts, gym.profiles),
         )
 
     private val SettingsViewModel.ui: ProfileUi get() = profile.value!!
+
+    @Test
+    fun nobody_signed_in_has_no_avatar_to_choose() =
+        runTest {
+            assertNull(viewModel().avatar.value)
+        }
+
+    @Test
+    fun the_avatar_shows_the_google_picture_until_one_is_chosen() =
+        runTest {
+            val pictured =
+                ivan.copy(account = ivan.account.copy(pictureUrl = "https://example.test/i.png"))
+            gym.withAccounts(pictured, active = pictured)
+
+            val avatar = assertNotNull(viewModel().avatar.value)
+
+            assertEquals(Avatar(picture = "https://example.test/i.png"), avatar.avatar)
+            assertFalse(avatar.canRemove)
+        }
+
+    @Test
+    fun a_chosen_photo_waits_for_apply_then_becomes_the_profile_s_avatar() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val owner = ivan.account.userId
+            val vm = viewModel()
+
+            vm.chooseAvatar(byteArrayOf(7, 7))
+
+            assertTrue(vm.canApply.value)
+            assertNull(gym.profiles.forOwner(owner)?.avatarPhoto)
+
+            vm.apply()
+
+            val profile = assertNotNull(gym.profiles.forOwner(owner))
+            val photo = gym.photos.rows.getValue(assertNotNull(profile.avatarPhoto))
+            assertEquals(MachineId(profile.id.value), photo.machineId)
+            assertEquals(owner, photo.userId)
+            assertContentEquals(byteArrayOf(7, 7), gym.photos.bytes[photo.id])
+            assertFalse(vm.canApply.value)
+            assertEquals(
+                photo.id,
+                vm.avatar.value
+                    ?.avatar
+                    ?.photo,
+            )
+        }
+
+    @Test
+    fun removing_the_avatar_brings_the_google_picture_back() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val owner = ivan.account.userId
+            val vm = viewModel()
+            vm.chooseAvatar(byteArrayOf(7))
+            vm.apply()
+            val chosen = assertNotNull(gym.profiles.forOwner(owner)?.avatarPhoto)
+
+            assertTrue(assertNotNull(vm.avatar.value).canRemove)
+            vm.removeAvatar()
+            vm.apply()
+
+            assertNull(gym.profiles.forOwner(owner)?.avatarPhoto)
+            assertTrue(
+                gym.photos.rows
+                    .getValue(chosen)
+                    .deleted,
+            )
+        }
+
+    @Test
+    fun a_new_avatar_replaces_the_old_photo() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val owner = ivan.account.userId
+            val vm = viewModel()
+            vm.chooseAvatar(byteArrayOf(1))
+            vm.apply()
+            val first = assertNotNull(gym.profiles.forOwner(owner)?.avatarPhoto)
+
+            vm.chooseAvatar(byteArrayOf(2))
+            vm.apply()
+
+            assertTrue(
+                gym.photos.rows
+                    .getValue(first)
+                    .deleted,
+            )
+            assertEquals(
+                listOf(byteArrayOf(2).toList()),
+                gym.photos.rows.values
+                    .filterNot { it.deleted }
+                    .map {
+                        gym.photos.bytes
+                            .getValue(it.id)
+                            .toList()
+                    },
+            )
+        }
 
     @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
 

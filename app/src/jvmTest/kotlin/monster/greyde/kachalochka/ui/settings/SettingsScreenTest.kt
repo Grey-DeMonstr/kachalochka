@@ -50,6 +50,29 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun the_avatar_takes_a_photo_that_waits_for_apply() {
+        val gym = FakeGym().withAccounts(ivan, active = ivan)
+        runScreenTest(gym, screen = { settings() }) {
+            waitForIdle()
+            onNodeWithTag("profile-avatar").performClick()
+            onNodeWithTag("avatar-remove").assertDoesNotExist()
+            onNodeWithTag("pick-photo").performClick()
+            waitForIdle()
+
+            onNodeWithTag("apply-settings").performScrollTo().assertIsEnabled()
+            onNodeWithTag("profile-avatar").performScrollTo().performClick()
+            onNodeWithTag("avatar-remove").assertExists()
+        }
+    }
+
+    @Test
+    fun without_an_account_there_is_no_avatar() {
+        runScreenTest(FakeGym(), screen = { settings() }) {
+            onNodeWithTag("profile-avatar").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun a_typed_length_waits_for_apply() {
         runScreenTest(FakeGym(), screen = { settings() }) {
             onNodeWithTag("apply-settings").performScrollTo().assertIsNotEnabled()

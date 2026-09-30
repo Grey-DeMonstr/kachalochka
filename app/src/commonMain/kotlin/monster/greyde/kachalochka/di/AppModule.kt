@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.sync.VisitNormalization
+import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
@@ -65,6 +66,7 @@ val appModule =
         single { Nickname(get(), get()) }
         single { FriendColorStore(get(), get(), get()) }
         single { PhotoLoaders(get()) }
+        single { AccountAvatars(get(), get()) }
         single { MachineCatalogue(get(), get(), get(), get(), get(), get()) }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))

@@ -231,6 +231,7 @@ object RuStrings : Strings {
     override val addPhoto = "Добавить фото"
     override val takePhoto = "Снять фото"
     override val fromGallery = "Из галереи"
+    override val googlePictureReturns = "Вернётся фото из Google"
 
     override val joinTitle = "Вступить в группу по приглашению?"
     override val joinText = "Участники группы увидят ваши визиты и упражнения."

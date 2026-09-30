@@ -11,11 +11,16 @@ import coil3.fetch.FetchResult
 import coil3.fetch.Fetcher
 import coil3.fetch.SourceFetchResult
 import coil3.key.Keyer
+import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.Options
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import okio.Buffer
 import org.koin.compose.koinInject
+import kotlin.time.Instant
 
 private class PhotoFetcher(
     private val photo: Photo,
@@ -50,6 +55,15 @@ private class PhotoKeyer : Keyer<Photo> {
     ): String = data.id.value
 }
 
+/**
+ * The bytes of the avatar photo [id] of [owner]. Only the id and owner are read, to find the file
+ * or the Storage object, so the machine is a stand-in.
+ */
+fun avatarPhoto(
+    owner: UserId?,
+    id: PhotoId,
+): Photo = Photo(id, owner, MachineId(id.value), Instant.DISTANT_PAST, Instant.DISTANT_PAST, false)
+
 /** One loader for the process, so every screen shares its memory cache. */
 class PhotoLoaders(
     private val images: PhotoImages,
@@ -63,6 +77,8 @@ class PhotoLoaders(
             .components {
                 add(PhotoKeyer())
                 add(PhotoFetcher.Factory(images))
+                // Google pictures are plain addresses.
+                add(KtorNetworkFetcherFactory())
             }.build()
             .also { loader = it }
 }

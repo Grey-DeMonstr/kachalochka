@@ -1,7 +1,5 @@
 package monster.greyde.kachalochka.ui.account
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,8 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.ui.components.SectionLabel
@@ -103,31 +99,12 @@ private fun Avatar(
     onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val shape = CircleShape
     Box {
         Box(
-            modifier =
-                modifier
-                    .size(50.dp)
-                    .clip(shape)
-                    .then(
-                        if (active != null) {
-                            Modifier
-                                .background(colors.primary.copy(alpha = 0.16f))
-                                .border(1.dp, colors.primary, shape)
-                        } else {
-                            Modifier
-                        },
-                    ).clickable(onClick = onClick),
+            modifier = modifier.size(50.dp).clip(CircleShape).clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            active?.let {
-                Text(
-                    it.monogram,
-                    fontWeight = FontWeight.Medium,
-                    color = colors.onPrimaryContainer,
-                )
-            }
+            active?.let { PersonAvatar(it.id, it.displayName, it.avatar, size = 50.dp) }
         }
         if (active == null) {
             Box(
@@ -154,7 +131,7 @@ private fun AccountRow(
                 Text(account.email, fontSize = 13.sp, color = colors.onSurface.copy(alpha = 0.6f))
             }
         },
-        leadingIcon = { MonogramBadge(account.monogram) },
+        leadingIcon = { PersonAvatar(account.id, account.displayName, account.avatar) },
         trailingIcon = {
             if (account.active) {
                 Icon(
@@ -168,36 +145,6 @@ private fun AccountRow(
         onClick = onClick,
         modifier = Modifier.testTag(tag),
     )
-}
-
-/** The letter circle, drawn in the menu's rows and in the set sheet's person chips. */
-@Composable
-internal fun MonogramBadge(
-    monogram: String,
-    size: Dp = 32.dp,
-    accent: Boolean = true,
-) {
-    val colors = MaterialTheme.colorScheme
-    val shape = CircleShape
-    Box(
-        Modifier
-            .size(size)
-            .clip(shape)
-            .then(
-                if (accent) Modifier.background(colors.primary.copy(alpha = 0.16f)) else Modifier,
-            ).border(
-                1.dp,
-                if (accent) colors.primary else colors.onBackground.copy(alpha = 0.22f),
-                shape,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            monogram,
-            fontSize = if (size > 32.dp) 15.sp else 13.sp,
-            color = if (accent) colors.onPrimaryContainer else colors.onBackground,
-        )
-    }
 }
 
 internal fun Modifier.dashedCircle(color: Color): Modifier =

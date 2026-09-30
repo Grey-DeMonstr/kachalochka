@@ -173,7 +173,7 @@ fun saveLabel(
         else -> AppStrings.current.saveAs(person)
     }
 
-/** The avatar draws a letter, never a photo. */
+/** The letter standing for [name] where no picture does. */
 fun monogram(name: String): String =
     name
         .trim()

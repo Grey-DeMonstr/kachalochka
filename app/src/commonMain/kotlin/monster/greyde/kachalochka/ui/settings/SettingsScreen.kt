@@ -1,18 +1,24 @@
 package monster.greyde.kachalochka.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,10 +26,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -31,9 +41,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import coil3.compose.AsyncImage
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.navigation.MAX_TRANSITION_MILLIS
+import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Choice
 import monster.greyde.kachalochka.ui.components.ChoiceRow
@@ -41,9 +53,12 @@ import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.TextInput
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.photos.PhotoCapture
+import monster.greyde.kachalochka.ui.photos.photoLoader
 import monster.greyde.kachalochka.ui.strings.AppLanguage
 import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.ThemeMode
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -244,9 +259,18 @@ private fun ProfileSection(
     viewModel: SettingsViewModel,
 ) {
     SectionTitle(strings().profile, Modifier.testTag("profile-title"))
+    val avatar by viewModel.avatar.collectAsState()
     profile.nickname?.let {
-        FieldLabel(strings().nickname)
-        TextInput(it, profile.placeholder, viewModel::type, Modifier.testTag("nickname"))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            avatar?.let { shown -> AvatarChooser(shown, viewModel) }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                FieldLabel(strings().nickname)
+                TextInput(it, profile.placeholder, viewModel::type, Modifier.testTag("nickname"))
+            }
+        }
     }
     FieldLabel(strings().sex)
     val sexes = listOf(Sex.Male, Sex.Female)
@@ -286,6 +310,98 @@ private fun ProfileSection(
         onSelect = { viewModel.chooseWeightUnit(units[it]) },
     )
     Hint(strings().mixedUnitsHint)
+}
+
+/** The avatar with a camera mark; tapping it offers what adding a machine's photo does, and more. */
+@Composable
+private fun AvatarChooser(
+    avatar: AvatarUi,
+    viewModel: SettingsViewModel,
+) {
+    val colors = MaterialTheme.colorScheme
+    val capture: PhotoCapture = koinInject()
+    val launchers = capture.rememberLaunchers(viewModel::chooseAvatar)
+    var choosing by remember { mutableStateOf(false) }
+    Box {
+        Box(
+            Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .clickable(enabled = launchers != null || avatar.canRemove) { choosing = true }
+                .testTag("profile-avatar"),
+        ) {
+            val chosen = avatar.chosen
+            if (chosen == null) {
+                PersonAvatar(avatar.owner, avatar.name, avatar.shown, size = 72.dp)
+            } else {
+                AsyncImage(
+                    model = chosen,
+                    contentDescription = null,
+                    imageLoader = photoLoader(),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        Box(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(colors.surface)
+                .border(1.dp, colors.primary, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                PhosphorIcons.Camera,
+                null,
+                tint = colors.tertiary,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+        DropdownMenu(expanded = choosing, onDismissRequest = { choosing = false }) {
+            launchers?.let {
+                DropdownMenuItem(
+                    text = { Text(strings().takePhoto) },
+                    leadingIcon = { Icon(PhosphorIcons.Camera, null, Modifier.size(20.dp)) },
+                    onClick = {
+                        choosing = false
+                        it.takePhoto()
+                    },
+                    modifier = Modifier.testTag("take-photo"),
+                )
+                DropdownMenuItem(
+                    text = { Text(strings().fromGallery) },
+                    leadingIcon = { Icon(PhosphorIcons.Image, null, Modifier.size(20.dp)) },
+                    onClick = {
+                        choosing = false
+                        it.pickPhoto()
+                    },
+                    modifier = Modifier.testTag("pick-photo"),
+                )
+            }
+            if (avatar.canRemove) {
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(strings().delete)
+                            Text(
+                                strings().googlePictureReturns,
+                                fontSize = 12.sp,
+                                color = colors.onSurface.copy(alpha = 0.6f),
+                            )
+                        }
+                    },
+                    leadingIcon = { Icon(PhosphorIcons.Trash, null, Modifier.size(20.dp)) },
+                    onClick = {
+                        choosing = false
+                        viewModel.removeAvatar()
+                    },
+                    modifier = Modifier.testTag("avatar-remove"),
+                )
+            }
+        }
+    }
 }
 
 @Composable

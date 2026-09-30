@@ -15,7 +15,11 @@ import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
+import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.fakes.InMemoryProfileRepository
 import monster.greyde.kachalochka.fakes.RecordingSyncTrigger
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -55,18 +59,57 @@ class AccountsViewModelTest {
 
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
+    private val profiles = InMemoryProfileRepository()
+
     private fun viewModel(
         signIn: GoogleSignIn,
         sync: SyncTrigger = RecordingSyncTrigger(),
-    ) = AccountsViewModel(
-        Accounts(
-            PersistedAccountStore(InMemoryAccountStorage()),
-            signIn,
-            NoOpSessionActivation(),
-            NoOpOwnerlessRows(),
-        ),
-        sync,
-    )
+    ): AccountsViewModel {
+        val accounts =
+            Accounts(
+                PersistedAccountStore(InMemoryAccountStorage()),
+                signIn,
+                NoOpSessionActivation(),
+                NoOpOwnerlessRows(),
+            )
+        return AccountsViewModel(accounts, sync, AccountAvatars(accounts, profiles))
+    }
+
+    @Test
+    fun an_account_shows_the_photo_it_chose_else_its_google_picture() =
+        runTest {
+            val id = UserId("11111111-1111-4111-8111-111111111111")
+            val picture = "https://example.test/sam.png"
+            val session =
+                AccountSession(
+                    Account(id, "sam@example.test", "Sam", picture),
+                    "access",
+                    "refresh",
+                    Instant.fromEpochSeconds(0),
+                )
+            val sync = RecordingSyncTrigger()
+            val viewModel = viewModel(SucceedingSignIn(session), sync)
+
+            viewModel.addAccount()
+
+            assertEquals(
+                Avatar(picture = picture),
+                viewModel.state.value.accounts
+                    .single()
+                    .avatar,
+            )
+
+            val photo = PhotoId.random()
+            profiles.upsert(Profile.new(id, Instant.fromEpochSeconds(0)).copy(avatarPhoto = photo))
+            sync.completePass()
+
+            assertEquals(
+                Avatar(photo, picture),
+                viewModel.state.value.accounts
+                    .single()
+                    .avatar,
+            )
+        }
 
     /**
      * `addAccount()` fires and forgets on `viewModelScope`, so a failure escapes as an uncaught

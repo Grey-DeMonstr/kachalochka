@@ -83,6 +83,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.vico.multiplatform)
             implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

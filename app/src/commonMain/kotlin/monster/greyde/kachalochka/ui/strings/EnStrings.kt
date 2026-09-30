@@ -215,6 +215,7 @@ object EnStrings : Strings {
     override val addPhoto = "Add photo"
     override val takePhoto = "Take a photo"
     override val fromGallery = "From the gallery"
+    override val googlePictureReturns = "Your Google picture comes back"
 
     override val joinTitle = "Join the group from the invitation?"
     override val joinText = "Group members will see your visits and machines."

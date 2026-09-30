@@ -60,7 +60,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountUi
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
-import monster.greyde.kachalochka.ui.account.MonogramBadge
+import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.account.dashedCircle
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ControlShape
@@ -563,7 +563,13 @@ private fun PersonChip(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MonogramBadge(person.monogram, size = 40.dp, accent = person.active)
+        PersonAvatar(
+            person.id,
+            person.displayName,
+            person.avatar,
+            size = 40.dp,
+            accent = person.active,
+        )
         Text(
             person.displayName,
             fontSize = 15.sp,

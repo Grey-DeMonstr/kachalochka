@@ -10,6 +10,8 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
+import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.format.monogram
 import monster.greyde.kachalochka.ui.strings.AppStrings
@@ -26,11 +28,13 @@ data class AccountUi(
     val email: String,
     val monogram: String,
     val active: Boolean,
+    val avatar: Avatar = Avatar(),
 )
 
 fun accountsUi(
     accounts: List<Account>,
     activeId: UserId?,
+    chosen: Map<UserId, PhotoId> = emptyMap(),
 ): List<AccountUi> =
     accounts.map {
         AccountUi(
@@ -39,31 +43,39 @@ fun accountsUi(
             it.email,
             monogram(it.displayName),
             it.userId == activeId,
+            Avatar(chosen[it.userId], it.pictureUrl),
         )
     }
 
 /**
  * Resolved at more than one `ViewModelStoreOwner` (the app-level sign-in gate and each screen),
- * so distinct instances coexist. They only agree because [state] derives entirely from [accounts];
- * any local mutable state added here would let those instances drift apart.
+ * so distinct instances coexist. They only agree because [state] derives entirely from [accounts]
+ * and the process-wide [avatars]; any local mutable state added here would let them drift apart.
  */
 class AccountsViewModel(
     private val accounts: Accounts,
     private val sync: SyncTrigger,
+    private val avatars: AccountAvatars,
 ) : ViewModel() {
     val state: StateFlow<AccountsUi> =
         combine(
             accounts.accounts,
             accounts.activeId,
             accounts.lastFailure,
-        ) { list, activeId, failure ->
+            avatars.photos,
+        ) { list, activeId, failure, chosen ->
             AccountsUi(
-                accountsUi(list, activeId),
+                accountsUi(list, activeId, chosen),
                 activeId,
                 // The design draws no error screen, and a failed sign-in still has to say so.
                 failure?.let { AppStrings.current.signInFailed },
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, AccountsUi(emptyList(), null))
+
+    init {
+        viewModelScope.launch { accounts.accounts.collect { avatars.refresh() } }
+        viewModelScope.launch { sync.completed.collect { avatars.refresh() } }
+    }
 
     fun addAccount() {
         viewModelScope.launch {

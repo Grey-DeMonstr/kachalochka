@@ -57,7 +57,9 @@ Every screen shares a top bar: a back arrow (except on the home screen), the scr
 rest timer chip and the avatar of the active account. The timer counts down from 1:30; tapping
 the chip, or saving a set, restarts it, and it shows the full 1:30 when idle. Tapping the avatar
 opens the account menu: the signed-in accounts with the active one marked, then adding another
-account, the settings and signing out. With nobody signed in the avatar is an empty outline.
+account, the settings and signing out. With nobody signed in the avatar is an empty outline. An
+avatar, wherever a person is shown, is the photo they chose in Settings, else their Google
+picture, else their initial; friends see it too.
 
 The home screen shows today's card: the date, as "Вторник, 29 сентября 2026", and a button
 opening today's visit, "Начать" while today has no visit and "Продолжить" once it has a set or a
@@ -213,7 +215,9 @@ nothing.
 
 Settings has a "Профиль" section. One "Применить", under the theme and the transition length,
 applies every change on the screen at once, the theme included; leaving with changes not applied
-asks "Применить изменения?", with "Применить" and "Не применять". Its "Ник" field, for the
+asks "Применить изменения?", with "Применить" and "Не применять". Signed in, the avatar sits
+left of "Ник"; tapping it offers "Снять фото" and "Из галереи", as a machine's photo does, and,
+once a photo is chosen, "Удалить", which brings the Google picture back. Its "Ник" field, for the
 signed-in account, takes up to 40 characters; the Google account name is shown as a placeholder and
 used when the field is left blank. Friends see this nickname instead of the Google name, and it
 heads a visit shared as text. Пол (Мужской / Женский), Дата рождения (ДД.ММ.ГГГГ, from 1900 to
