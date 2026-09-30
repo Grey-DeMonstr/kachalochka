@@ -26,6 +26,7 @@ class SetRecorderTest {
     private val seventh = CalendarDay(2023, 11, 7)
     private val timer = RestTimer(gym.clock)
     private val press = Machine.new("Жим ногами", null, t0)
+    private val row = Machine.new("Тяга", null, t0)
     private val ivan = UserId("11111111-1111-4111-8111-111111111111")
     private val misha = UserId("22222222-2222-4222-8222-222222222222")
     private val lastWeek = Visit(VisitId.random(), null, seventh, t0 - 7.days, t0, false)
@@ -178,5 +179,77 @@ class SetRecorderTest {
                     .position,
             )
             assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun a_plan_started_on_a_day_without_a_visit_creates_it_with_the_plan_s_machines() =
+        runTest {
+            gym.machines.upsert(press)
+            gym.machines.upsert(row)
+
+            recorder().plan(null, listOf(row.id, press.id))
+
+            val visit =
+                gym.visits.rows.values
+                    .single()
+            assertEquals(today, visit.day)
+            assertEquals(listOf(row.id, press.id), visit.planned)
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun a_plan_started_on_a_visit_adds_only_what_it_lacks() =
+        runTest {
+            gym.machines.upsert(press)
+            gym.machines.upsert(row)
+            val gone = Machine.new("Гакк", null, t0).copy(deleted = true)
+            gym.machines.upsert(gone)
+            recorder().record(null, press, SetValues(60.0, 10), "")
+
+            recorder().plan(null, listOf(press.id, row.id, gone.id))
+            recorder().plan(null, listOf(row.id))
+
+            val visit =
+                gym.visits.rows.values
+                    .single()
+            assertEquals(listOf(row.id), visit.planned)
+        }
+
+    @Test
+    fun a_set_recorded_into_a_planned_visit_keeps_the_plan() =
+        runTest {
+            gym.machines.upsert(press)
+            gym.machines.upsert(row)
+            recorder().plan(null, listOf(row.id, press.id))
+
+            recorder().record(null, press, SetValues(60.0, 10), "")
+
+            val visit =
+                gym.visits.rows.values
+                    .single()
+            assertEquals(listOf(row.id, press.id), visit.planned)
+            assertEquals(
+                visit.id,
+                gym.sets.rows.values
+                    .single()
+                    .visitId,
+            )
+        }
+
+    @Test
+    fun a_planned_machine_taken_out_of_a_past_visit_is_pushed_at_once() =
+        runTest {
+            gym.machines.upsert(press)
+            gym.visits.upsert(lastWeek.copy(planned = listOf(press.id)))
+
+            recorder(seventh).unplan(lastWeek.id, press.id)
+
+            assertEquals(
+                emptyList(),
+                gym.visits.rows
+                    .getValue(lastWeek.id)
+                    .planned,
+            )
+            assertEquals(1, gym.sync.requests)
         }
 }
