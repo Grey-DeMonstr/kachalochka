@@ -127,6 +127,8 @@ object RuStrings : Strings {
     override val groupByTag = "Группировать по тегам"
     override val newMachine = "Новое упражнение"
     override val addSet = "Добавить подход"
+    override val planned = "Запланировано"
+    override val unplan = "Убрать"
     override val friendsColon = "Друзья:"
     override val reps = "повторы"
     override val comment = "Комментарий"

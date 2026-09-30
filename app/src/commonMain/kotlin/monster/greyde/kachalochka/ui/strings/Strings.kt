@@ -94,6 +94,8 @@ interface Strings {
     val groupByTag: String
     val newMachine: String
     val addSet: String
+    val planned: String
+    val unplan: String
     val friendsColon: String
     val reps: String
     val comment: String

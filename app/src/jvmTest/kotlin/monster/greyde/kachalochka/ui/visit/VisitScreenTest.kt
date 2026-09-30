@@ -99,6 +99,90 @@ class VisitScreenTest {
         }
     }
 
+    private val row = Machine.new("Тяга", null, gym.clock.current)
+
+    private fun planRow() =
+        runBlocking {
+            gym.machines.upsert(row)
+            gym.visits.upsert(visit.copy(planned = listOf(press.id, row.id)))
+        }
+
+    @Test
+    fun a_planned_machine_without_sets_follows_the_recorded_ones() {
+        planRow()
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("group-summary-${row.id.value}", useUnmergedTree = true)
+                .assertTextEquals("Запланировано")
+            val pressTop = onNodeWithTag("group-${press.id.value}").getBoundsInRoot().top
+            val rowTop = onNodeWithTag("group-${row.id.value}").getBoundsInRoot().top
+            assertTrue(pressTop < rowTop)
+        }
+    }
+
+    @Test
+    fun a_planned_machine_takes_its_first_set_from_its_row() {
+        planRow()
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("group-${row.id.value}").performClick()
+            onNodeWithTag("add-set-${row.id.value}").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("set-sheet").assertIsDisplayed()
+            onNodeWithTag("save-set").performClick()
+            waitForIdle()
+
+            assertEquals(
+                1,
+                gym.sets.rows.values
+                    .count { it.machineId == row.id },
+            )
+            onNodeWithText("Запланировано").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun a_planned_machine_can_be_taken_out() {
+        planRow()
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("group-${row.id.value}").performClick()
+            onNodeWithTag("unplan-${row.id.value}").performScrollTo().performClick()
+            waitForIdle()
+
+            onNodeWithTag("group-${row.id.value}").assertDoesNotExist()
+            assertEquals(
+                listOf(press.id),
+                gym.visits.rows
+                    .getValue(visit.id)
+                    .planned,
+            )
+        }
+    }
+
+    @Test
+    fun ordering_hides_planned_machines() {
+        planRow()
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("reorder-toggle").performClick()
+            waitForIdle()
+            onNodeWithTag("group-${row.id.value}").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun a_plan_alone_offers_neither_order_nor_share() {
+        planRow()
+        runBlocking { gym.sets.upsert(recorded.copy(deleted = true)) }
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("group-${row.id.value}").assertIsDisplayed()
+            onNodeWithTag("reorder-toggle").assertDoesNotExist()
+            onNodeWithTag("share-visit").assertDoesNotExist()
+        }
+    }
+
     @Test
     fun a_fresh_visit_asks_for_a_machine() {
         var picks = 0

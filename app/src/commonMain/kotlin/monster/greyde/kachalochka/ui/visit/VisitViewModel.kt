@@ -17,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.SetValues
+import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -25,6 +26,7 @@ import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.machineMovedTo
 import monster.greyde.kachalochka.core.domain.gym.minuteOfDay
+import monster.greyde.kachalochka.core.domain.gym.plannedWithoutSets
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.gym.setMovedTo
@@ -82,6 +84,7 @@ data class VisitUiState(
     val sections: List<VisitSectionUi> = listOf(VisitSectionUi(null, groups)),
     val groupByTag: Boolean = false,
     val canGroupByTag: Boolean = false,
+    val canOrder: Boolean = false,
 )
 
 data class VisitSectionUi(
@@ -98,6 +101,7 @@ data class SetGroupUi(
     val sets: List<SetRowUi>,
     val photo: Photo? = null,
     val tags: List<String> = emptyList(),
+    val planned: Boolean = false,
 )
 
 data class SetRowUi(
@@ -153,6 +157,7 @@ class VisitViewModel(
 
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var visitSets: List<WorkoutSet> = emptyList()
+    private var shownVisit: Visit? = null
     private var previousSets: List<WorkoutSet> = emptyList()
     private var selected: MachineId? = null
     private var open: Machine? = null
@@ -470,6 +475,7 @@ class VisitViewModel(
         own = ownRead
         machinesById = ownRead.machines.associateBy { it.id }
         visitSets = shown?.sets.orEmpty()
+        shownVisit = shown?.visit
         val machine = machineOf(owner)
         open = machine
         selected = machine?.id ?: selected
@@ -558,7 +564,16 @@ class VisitViewModel(
     private fun publish() {
         val now = clock.now()
         val offset = utcOffset.at(now)
-        val groups = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) }
+        val recorded = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) }
+        // A planned row among the dragged ones could be dropped where no machine can go.
+        val planned =
+            if (ordering) {
+                emptyList()
+            } else {
+                plannedWithoutSets(shownVisit?.planned.orEmpty(), visitSets, machinesById.keys)
+                    .map { plannedUi(it) }
+            }
+        val groups = recorded + planned
         mutableState.value =
             VisitUiState(
                 title =
@@ -576,6 +591,7 @@ class VisitViewModel(
                 sheet = sheetUi(offset),
                 ordering = ordering,
                 canShare = visitSets.isNotEmpty(),
+                canOrder = visitSets.isNotEmpty(),
                 notice = notice,
             )
     }
@@ -607,6 +623,29 @@ class VisitViewModel(
             photo = coverOf(machineId),
             tags = machine?.tags.orEmpty().sortedBy { it.lowercase() },
         )
+    }
+
+    private fun plannedUi(machineId: MachineId): SetGroupUi {
+        val machine = machinesById.getValue(machineId)
+        return SetGroupUi(
+            machineId = machineId,
+            title = machineTitle(machine, preferred),
+            setupNote = machine.setupNote,
+            summary = AppStrings.current.planned,
+            expanded = machineId in expanded,
+            sets = emptyList(),
+            photo = coverOf(machineId),
+            tags = machine.tags.sortedBy { it.lowercase() },
+            planned = true,
+        )
+    }
+
+    fun unplan(id: MachineId) {
+        val visit = shownVisit ?: return
+        writes.launch {
+            recorder.unplan(visit.id, id)
+            reload(reseed = false)
+        }
     }
 
     private fun sections(groups: List<SetGroupUi>): List<VisitSectionUi> =

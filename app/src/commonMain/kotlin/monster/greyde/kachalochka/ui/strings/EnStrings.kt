@@ -110,6 +110,8 @@ object EnStrings : Strings {
     override val groupByTag = "Group by tag"
     override val newMachine = "New machine"
     override val addSet = "Add a set"
+    override val planned = "Planned"
+    override val unplan = "Remove"
     override val friendsColon = "Friends:"
     override val reps = "reps"
     override val comment = "Comment"

@@ -115,7 +115,7 @@ fun VisitScreen(
         onBack = { if (!viewModel.closeSheet()) onBack() },
         onOpenSettings = onOpenSettings,
         actions = {
-            if (current?.groups?.isNotEmpty() == true) {
+            if (current?.canOrder == true) {
                 SquareToggleButton(
                     PhosphorIcons.Equals,
                     strings().reorder,
@@ -141,6 +141,7 @@ fun VisitScreen(
             onToggle = viewModel::toggleGroup,
             onEdit = viewModel::editSet,
             onAddSet = viewModel::selectMachine,
+            onUnplan = viewModel::unplan,
             onOpenMachine = { viewModel.openMachineSettings(it, onOpenMachineSettings) },
             onToggleOrdering = viewModel::toggleOrdering,
             onToggleGroupByTag = viewModel::toggleGroupByTag,
@@ -179,6 +180,7 @@ private fun VisitList(
     onToggle: (MachineId) -> Unit,
     onEdit: (WorkoutSetId) -> Unit,
     onAddSet: (MachineId) -> Unit,
+    onUnplan: (MachineId) -> Unit,
     onOpenMachine: (MachineId) -> Unit,
     onToggleOrdering: () -> Unit,
     onToggleGroupByTag: () -> Unit,
@@ -246,6 +248,7 @@ private fun VisitList(
                     onToggle = onToggle,
                     onEdit = onEdit,
                     onAddSet = onAddSet,
+                    onUnplan = onUnplan,
                     onOpenMachine = onOpenMachine,
                     onDropMachine = {
                         from,
@@ -284,6 +287,7 @@ private fun MachineBlock(
     onToggle: (MachineId) -> Unit,
     onEdit: (WorkoutSetId) -> Unit,
     onAddSet: (MachineId) -> Unit,
+    onUnplan: (MachineId) -> Unit,
     onOpenMachine: (MachineId) -> Unit,
     onDropMachine: (from: Int, to: Int) -> Unit,
     onMoveSet: (WorkoutSetId, Int) -> Unit,
@@ -380,6 +384,7 @@ private fun MachineBlock(
                 )
             }
             if (!ordering) AddSetRow(group.machineId, onAddSet)
+            if (group.planned) UnplanRow(group.machineId, onUnplan)
         }
         Rule()
     }
@@ -404,6 +409,28 @@ private fun AddSetRow(
     ) {
         Icon(PhosphorIcons.Plus, null, tint = colors.tertiary, modifier = Modifier.size(18.dp))
         Text(strings().addSet, fontSize = 15.sp, color = colors.tertiary)
+    }
+}
+
+@Composable
+private fun UnplanRow(
+    machineId: MachineId,
+    onUnplan: (MachineId) -> Unit,
+) {
+    val muted = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(ControlShape)
+            .clickable { onUnplan(machineId) }
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .testTag("unplan-${machineId.value}"),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(PhosphorIcons.Trash, null, tint = muted, modifier = Modifier.size(18.dp))
+        Text(strings().unplan, fontSize = 15.sp, color = muted)
     }
 }
 
