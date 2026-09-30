@@ -109,13 +109,10 @@ object RuStrings : Strings {
 
     override fun version(name: String) = "Версия $name"
 
-    override val today = "СЕГОДНЯ"
     override val todayTitle = "Сегодня"
     override val noSetsYet = "Подходов пока нет"
 
-    override fun lastSet(set: String) = "Последний подход\n$set"
-
-    override val recordSet = "Записать подход"
+    override val startVisit = "Начать"
     override val continueVisit = "Продолжить"
     override val locked = "Заблокировано"
 

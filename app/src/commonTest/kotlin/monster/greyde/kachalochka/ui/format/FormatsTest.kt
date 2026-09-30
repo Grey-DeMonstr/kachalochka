@@ -25,6 +25,18 @@ class FormatsTest {
     }
 
     @Test
+    fun a_weekday_date_names_the_year_only_when_asked() {
+        assertEquals(
+            "Вторник, 14 ноября",
+            weekdayDate(CalendarDay(2023, 11, 14), withYear = false),
+        )
+        assertEquals(
+            "Вторник, 14 ноября 2023",
+            weekdayDate(CalendarDay(2023, 11, 14), withYear = true),
+        )
+    }
+
+    @Test
     fun the_weight_caption_names_unit_mode_and_step() {
         assertEquals("кг всего · ±2.5", weightCaption(press, kg))
         assertEquals(

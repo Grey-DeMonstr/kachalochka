@@ -92,13 +92,10 @@ object EnStrings : Strings {
 
     override fun version(name: String) = "Version $name"
 
-    override val today = "TODAY"
     override val todayTitle = "Today"
     override val noSetsYet = "No sets yet"
 
-    override fun lastSet(set: String) = "Last set\n$set"
-
-    override val recordSet = "Record a set"
+    override val startVisit = "Start"
     override val continueVisit = "Continue"
     override val locked = "Locked"
 

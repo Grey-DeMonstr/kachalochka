@@ -59,8 +59,9 @@ the chip, or saving a set, restarts it, and it shows the full 1:30 when idle. Ta
 opens the account menu: the signed-in accounts with the active one marked, then adding another
 account, the settings and signing out. With nobody signed in the avatar is an empty outline.
 
-The home screen shows today's card: how many machines and sets were recorded today and the
-last set, or "Подходов пока нет", and a button opening today's visit. A visit is one calendar
+The home screen shows today's card: the date, as "Вторник, 29 сентября 2026", and a button
+opening today's visit, "Начать" while today has no visit and "Продолжить" once it has a set or a
+started plan. A visit is one calendar
 day; it has no start or end and comes into being with its first set. Below the card are rows for
 visits, machines, plans, statistics, friends and body measures; statistics is shown but not yet
 available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
@@ -280,8 +281,8 @@ plan and opens the visit; back from it returns home. A machine the visit already
 added again. In the visit the added machines follow the ones with sets, each saying
 "Запланировано"; tapping one shows "Добавить подход", which opens the set sheet for its first
 set, and "Убрать", which takes it out of the visit. A machine with a set is listed like any
-other. Ordering shows only the machines with sets. The shared text and the home card count only
-machines with sets. A started plan makes the day a visit even before its first set, so the
+other. Ordering shows only the machines with sets. The shared text counts only machines with
+sets. A started plan makes the day a visit even before its first set, so the
 calendar marks the day and friends see the visit. Plans sync like visits and friends never see
 them.
 

@@ -75,13 +75,9 @@ interface Strings {
 
     fun version(name: String): String
 
-    val today: String
     val todayTitle: String
     val noSetsYet: String
-
-    fun lastSet(set: String): String
-
-    val recordSet: String
+    val startVisit: String
     val continueVisit: String
     val locked: String
 

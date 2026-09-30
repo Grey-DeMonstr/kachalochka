@@ -50,8 +50,8 @@ class HomeScreenTest {
     fun the_home_screen_speaks_english() =
         runScreenTestInEnglish(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Kachalochka")
-            onNodeWithTag("visit-counts").assertTextEquals("No sets yet")
-            onNodeWithTag("open-today").assertTextEquals("Record a set")
+            onNodeWithTag("today-date").assertTextEquals("Tuesday, 14 November 2023")
+            onNodeWithTag("open-today").assertTextEquals("Start")
             onNodeWithTag("section-machines").assertTextEquals("Machines")
             onNodeWithTag("section-measures").assertTextEquals("Measurements")
             onNodeWithTag("app-version").assertTextEquals("Version ${AppVersion.NAME}")
@@ -101,14 +101,15 @@ class HomeScreenTest {
     }
 
     @Test
-    fun the_today_card_offers_the_first_set_and_opens_today() {
+    fun the_today_card_offers_to_start_today_and_opens_it() {
         val opened = mutableListOf<CalendarDay>()
         runScreenTest(
             FakeGym(),
             screen = { HomeScreen({ opened += it }, {}, {}, {}, {}, {}, {}) },
         ) {
-            onNodeWithTag("visit-counts").assertTextEquals("Подходов пока нет")
-            onNodeWithTag("open-today").assertTextEquals("Записать подход")
+            onNodeWithTag("today-date").assertTextEquals("Вторник, 14 ноября 2023")
+            onNodeWithTag("visit-counts").assertDoesNotExist()
+            onNodeWithTag("open-today").assertTextEquals("Начать")
             onNodeWithTag("open-today").performClick()
             waitForIdle()
         }
@@ -140,7 +141,7 @@ class HomeScreenTest {
             )
         }
         runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}) }) {
-            onNodeWithTag("visit-counts").assertTextEquals("1 упражнение · 1 подход")
+            onNodeWithTag("visit-last-set").assertDoesNotExist()
             onNodeWithTag("open-today").assertTextEquals("Продолжить")
         }
     }

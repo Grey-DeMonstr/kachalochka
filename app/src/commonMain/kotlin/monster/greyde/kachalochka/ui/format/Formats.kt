@@ -134,6 +134,14 @@ fun dayMonthLabel(
     return if (day.year == currentYear) label else "$label ${day.year}"
 }
 
+fun weekdayDate(
+    day: CalendarDay,
+    withYear: Boolean,
+): String {
+    val label = "${weekdayName(day.dayOfWeek)}, ${AppStrings.current.dayMonth(day.day, day.month)}"
+    return if (withYear) "$label ${day.year}" else label
+}
+
 fun monthTitle(month: CalendarMonth): String =
     "${AppStrings.current.monthTitle(month.month)} ${month.year}"
 

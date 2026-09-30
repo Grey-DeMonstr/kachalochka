@@ -161,7 +161,7 @@ class AppTest {
             onNodeWithTag("top-bar-title").assertTextEquals("Сегодня")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("visit-counts").assertTextEquals("Подходов пока нет")
+            onNodeWithTag("open-today").assertTextEquals("Начать")
         }
 
     @Test

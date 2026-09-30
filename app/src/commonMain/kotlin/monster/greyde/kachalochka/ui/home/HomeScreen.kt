@@ -25,9 +25,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.AppVersion
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
@@ -137,35 +135,15 @@ private fun TodayCard(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column {
-                Text(
-                    s.today,
-                    fontSize = 11.sp,
-                    letterSpacing = 0.09.em,
-                    color = colors.secondary,
-                )
-                Text(
-                    today.counts ?: s.noSetsYet,
-                    modifier = Modifier.testTag("visit-counts"),
-                    fontSize = 14.sp,
-                    color = colors.tertiary,
-                )
-            }
-            today.lastSet?.let {
-                Text(
-                    s.lastSet(it),
-                    modifier = Modifier.testTag("visit-last-set"),
-                    fontSize = 13.sp,
-                    lineHeight = 20.sp,
-                    textAlign = TextAlign.End,
-                    color = colors.onBackground.copy(alpha = 0.6f),
-                )
-            }
-        }
+        Text(
+            today.date,
+            modifier = Modifier.testTag("today-date"),
+            fontSize = 16.sp,
+            color = colors.onBackground,
+        )
         AccentButton(
-            if (today.counts == null) s.recordSet else s.continueVisit,
-            if (today.counts == null) PhosphorIcons.Plus else PhosphorIcons.ArrowRight,
+            if (today.started) s.continueVisit else s.startVisit,
+            if (today.started) PhosphorIcons.ArrowRight else PhosphorIcons.Plus,
             onOpen,
             Modifier.testTag("open-today"),
         )
