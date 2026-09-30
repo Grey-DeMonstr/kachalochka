@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -70,6 +71,15 @@ internal fun birthDateOf(iso: String?): CalendarDay? =
         }
     }
 
+internal fun avatarPhotoOf(id: String?): PhotoId? =
+    id?.let {
+        try {
+            PhotoId(it.lowercase())
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
+
 // Postgres names its columns with underscores and stores the instant as a timestamptz string,
 // so the wire shape is its own type and the domain entity stays serialization-neutral.
 @Serializable
@@ -85,6 +95,7 @@ internal data class ProfileRow(
     @SerialName("height_cm") val heightCm: Double?,
     @SerialName("weight_unit") val weightUnit: String?,
     @SerialName("group_by_tag") val groupByTag: Boolean,
+    @SerialName("avatar_photo") val avatarPhoto: String?,
 ) {
     fun toProfile(): Profile =
         Profile(
@@ -99,6 +110,7 @@ internal data class ProfileRow(
             heightCm = heightCm,
             weightUnit = weightUnitOf(weightUnit),
             groupByTag = groupByTag,
+            avatarPhoto = avatarPhotoOf(avatarPhoto),
         )
 
     companion object {
@@ -115,6 +127,7 @@ internal data class ProfileRow(
                 heightCm = profile.heightCm,
                 weightUnit = profile.weightUnit.wireName(),
                 groupByTag = profile.groupByTag,
+                avatarPhoto = profile.avatarPhoto?.value,
             )
     }
 }

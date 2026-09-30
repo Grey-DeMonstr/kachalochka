@@ -55,6 +55,7 @@ internal fun ProfileQueries.write(profile: Profile) =
         profile.heightCm,
         profile.weightUnit.wireName(),
         profile.groupByTag,
+        profile.avatarPhoto?.value,
     )
 
 internal fun profileOf(
@@ -69,6 +70,7 @@ internal fun profileOf(
     heightCm: Double?,
     weightUnit: String,
     groupByTag: Boolean,
+    avatarPhoto: String?,
 ) = Profile(
     id = ProfileId(id),
     userId = userId?.let(::UserId),
@@ -81,4 +83,5 @@ internal fun profileOf(
     heightCm = heightCm,
     weightUnit = weightUnitOf(weightUnit),
     groupByTag = groupByTag,
+    avatarPhoto = avatarPhotoOf(avatarPhoto),
 )

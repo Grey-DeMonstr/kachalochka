@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.identity.requireUuidV4
 import kotlin.jvm.JvmInline
@@ -33,12 +34,14 @@ data class GroupMember(
     val userId: UserId,
     val displayName: String,
     val isOwner: Boolean,
+    val avatar: Avatar = Avatar(),
 )
 
 /** Someone sharing a live group with the viewer; they may share several, so no owner mark. */
 data class Friend(
     val userId: UserId,
     val displayName: String,
+    val avatar: Avatar = Avatar(),
 )
 
 data class FriendMachine(

@@ -7,6 +7,8 @@ data class Account(
     val userId: UserId,
     val email: String,
     val displayName: String,
+    /** The Google picture's address, when Google sent one. */
+    val pictureUrl: String? = null,
 )
 
 data class AccountSession(

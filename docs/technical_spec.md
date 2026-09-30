@@ -342,6 +342,17 @@ gallery come from `PhotoCapture`, bound per platform: Android's registers the `T
 `PickVisualMedia` launchers in the composition, and the camera writes into the cache through the
 `FileProvider` `androidApp` declares; the web's opens a file input, with `capture` for the camera.
 
+An avatar the owner chose is a photo too: a `photo` row whose `machine_id` is the owner's profile
+id, named by `profile.avatar_photo`, so its bytes are stored, synced and deleted exactly as a
+machine's are. Migration `0020` lets a photo row name the writer's own profile as well as their
+own machine, and `14.sqm` adds the column and resets `lastPullAt`. Profiles stay private, so
+friends read avatars from `group_member`: `avatar_photo` and `picture_url`, the Google picture
+(`google_picture`), are rewritten on every member row by the `member_takes_avatar` trigger, and a
+profile write touches the member rows whose avatar changed. The account's own Google picture is
+the session's `avatar_url` or `picture` claim, kept with the account in the account store.
+`Avatar` in `domain/identity` carries the photo and the picture; with neither, the initial is
+drawn.
+
 `coverPhoto` picks the photo standing for a machine in the machine list, the picker and the visit:
 its own first, else the first of any machine in its cluster (§4.5). Own photos are read locally
 (`PhotoRepository.all`); group mates' come in one read, `FriendsRepository.groupPhotos`, beside the

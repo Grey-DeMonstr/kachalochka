@@ -13,7 +13,8 @@ CREATE TABLE profile (
     birth_date    TEXT,
     height_cm     REAL,
     weight_unit   TEXT    NOT NULL DEFAULT 'kg',
-    group_by_tag  INTEGER AS Boolean NOT NULL DEFAULT 0
+    group_by_tag  INTEGER AS Boolean NOT NULL DEFAULT 0,
+    avatar_photo  TEXT
 );
 
 CREATE INDEX profile_updated_at_idx ON profile (updated_at);
@@ -21,9 +22,9 @@ CREATE INDEX profile_updated_at_idx ON profile (updated_at);
 upsert:
 INSERT OR REPLACE INTO profile(
     id, user_id, display_name, updated_at, deleted, friend_colors, sex, birth_date, height_cm,
-    weight_unit, group_by_tag
+    weight_unit, group_by_tag, avatar_photo
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 byId:
 SELECT * FROM profile WHERE id = ?;

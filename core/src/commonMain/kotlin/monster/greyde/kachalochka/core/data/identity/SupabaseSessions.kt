@@ -20,6 +20,8 @@ private const val FULL_NAME_CLAIM = "full_name"
 // Supabase copies the Google claim verbatim, and which of the two it lands under depends on what
 // the provider sent.
 private val NAME_CLAIMS = listOf(FULL_NAME_CLAIM, "name")
+private const val AVATAR_CLAIM = "avatar_url"
+private val PICTURE_CLAIMS = listOf(AVATAR_CLAIM, "picture")
 
 /** The client is resolved on the first session change: a build without credentials still runs. */
 class SupabaseSessions(
@@ -90,7 +92,12 @@ fun AccountSession.toUserSession(now: Instant): UserSession =
                 aud = "authenticated",
                 email = account.email,
                 userMetadata =
-                    JsonObject(mapOf(FULL_NAME_CLAIM to JsonPrimitive(account.displayName))),
+                    JsonObject(
+                        listOfNotNull(
+                            FULL_NAME_CLAIM to JsonPrimitive(account.displayName),
+                            account.pictureUrl?.let { AVATAR_CLAIM to JsonPrimitive(it) },
+                        ).toMap(),
+                    ),
             ),
         expiresAt = expiresAt,
     )
@@ -100,7 +107,12 @@ fun UserSession.toAccountSession(): AccountSession {
     val email = user.email ?: error("Supabase returned a user without an e-mail")
     return AccountSession(
         // Postgres spells uuids in lower case; anything else would be rejected by UserId.
-        Account(UserId(user.id.lowercase()), email, user.displayName(email)),
+        Account(
+            UserId(user.id.lowercase()),
+            email,
+            user.displayName(email),
+            PICTURE_CLAIMS.firstNotNullOfOrNull { user.textClaim(it) },
+        ),
         accessToken,
         refreshToken,
         expiresAt,
@@ -108,12 +120,12 @@ fun UserSession.toAccountSession(): AccountSession {
 }
 
 private fun UserInfo.displayName(email: String): String =
-    NAME_CLAIMS.firstNotNullOfOrNull { nameClaim(it) }
+    NAME_CLAIMS.firstNotNullOfOrNull { textClaim(it) }
         ?: email.substringBefore('@').ifBlank { email }
 
 // JsonNull is a JsonPrimitive whose content is the word "null", so a claim the provider sent
 // empty has to be turned away before it reaches anybody's screen.
-private fun UserInfo.nameClaim(claim: String): String? =
+private fun UserInfo.textClaim(claim: String): String? =
     (userMetadata?.get(claim) as? JsonPrimitive)
         ?.takeIf { it.isString }
         ?.content

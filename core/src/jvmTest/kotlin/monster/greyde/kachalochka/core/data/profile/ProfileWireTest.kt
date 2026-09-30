@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.data.profile
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -29,6 +30,7 @@ class ProfileWireTest {
                 heightCm = 172.5,
                 weightUnit = PreferredWeightUnit.Mixed,
                 groupByTag = true,
+                avatarPhoto = PhotoId("9b1f0c3e-0000-4000-8000-000000000003"),
             )
 
         assertEquals("1990-06-15", ProfileRow.of(profile).birthDate)

@@ -1,0 +1,4 @@
+ALTER TABLE profile ADD COLUMN avatar_photo TEXT;
+
+-- Profiles pulled before this version lost their chosen avatar.
+UPDATE syncState SET lastPullAt = NULL;

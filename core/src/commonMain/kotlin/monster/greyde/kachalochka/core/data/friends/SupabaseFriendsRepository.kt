@@ -127,7 +127,12 @@ class SupabaseFriendsRepository(
     override suspend fun members(group: FriendGroup): List<GroupMember> =
         memberships(group.id)
             .map {
-                GroupMember(UserId(it.userId), it.displayName, it.userId == group.ownerId.value)
+                GroupMember(
+                    UserId(it.userId),
+                    it.displayName,
+                    it.userId == group.ownerId.value,
+                    it.avatar,
+                )
             }.sortedWith(
                 compareByDescending<GroupMember> { it.isOwner }
                     .thenBy { it.displayName.lowercase() },
@@ -316,7 +321,11 @@ class SupabaseFriendsRepository(
     private suspend fun matesById(viewer: UserId): Map<UserId, Friend> =
         memberships()
             .filter { it.userId != viewer.value }
-            .associate { UserId(it.userId) to Friend(UserId(it.userId), it.displayName) }
+            .associate {
+                UserId(
+                    it.userId,
+                ) to Friend(UserId(it.userId), it.displayName, it.avatar)
+            }
 
     private suspend fun liveMachines(match: PostgrestFilterBuilder.() -> Unit): List<Machine> =
         postgrest

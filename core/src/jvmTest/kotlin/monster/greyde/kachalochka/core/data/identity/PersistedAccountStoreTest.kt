@@ -51,6 +51,29 @@ class PersistedAccountStoreTest {
         }
 
     @Test
+    fun an_account_s_picture_survives_a_restart() =
+        runTest {
+            val storage = FakeStorage()
+            val pictured =
+                ivan.copy(account = ivan.account.copy(pictureUrl = "https://example.test/i.png"))
+            PersistedAccountStore(storage).add(pictured)
+
+            assertEquals(listOf(pictured.account), PersistedAccountStore(storage).accounts.value)
+        }
+
+    @Test
+    fun an_account_stored_before_pictures_reads_without_one() {
+        val storage =
+            FakeStorage(
+                """{"accounts":[{"userId":"${ivan.account.userId.value}",""" +
+                    """"email":"Ivan@example.test","displayName":"Ivan",""" +
+                    """"accessToken":"a","refreshToken":"r","expiresAtMillis":0}]}""",
+            )
+
+        assertEquals(ivan.account, PersistedAccountStore(storage).accounts.value.single())
+    }
+
+    @Test
     fun switching_changes_only_the_active_id() =
         runTest {
             val store = PersistedAccountStore(FakeStorage())

@@ -33,11 +33,13 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.gym.SetPeak
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -339,6 +341,33 @@ class SupabaseFriendsRepositoryTest {
             assertTrue(request.url.encodedPath.endsWith("/machine_link"), request.url.encodedPath)
             assertEquals("in.(${OLEG.value})", request.url.parameters["user_id"])
             assertEquals("eq.false", request.url.parameters["deleted"])
+        }
+
+    @Test
+    fun members_and_mates_carry_their_avatars() =
+        runTest {
+            val photo = PhotoId.random()
+            val picture = "https://example.test/oleg.png"
+            val rows =
+                """[{"group_id":"$GROUP","user_id":"${IVAN.value}","display_name":"Иван",""" +
+                    """"deleted":false,"avatar_photo":"${photo.value}","picture_url":null},""" +
+                    """{"group_id":"$GROUP","user_id":"${OLEG.value}","display_name":"Олег",""" +
+                    """"deleted":false,"avatar_photo":null,"picture_url":"$picture"}]"""
+            val engine = MockEngine { respond(rows, HttpStatusCode.OK, jsonHeaders()) }
+            val repository = repositoryOn(engine)
+            val group = FriendGroup(GroupId(GROUP), "Зал на Лесной", OLEG, "ABCD2345", 2)
+
+            assertEquals(
+                listOf(
+                    GroupMember(OLEG, "Олег", isOwner = true, Avatar(picture = picture)),
+                    GroupMember(IVAN, "Иван", isOwner = false, Avatar(photo = photo)),
+                ),
+                repository.members(group),
+            )
+            assertEquals(
+                listOf(Friend(OLEG, "Олег", Avatar(picture = picture))),
+                repository.mates(IVAN),
+            )
         }
 
     @Test

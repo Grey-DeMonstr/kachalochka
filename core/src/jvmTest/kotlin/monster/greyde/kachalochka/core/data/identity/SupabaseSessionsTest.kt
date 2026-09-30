@@ -57,6 +57,43 @@ class SupabaseSessionsTest {
     }
 
     @Test
+    fun a_google_picture_survives_the_round_trip_through_supabase() {
+        val pictured =
+            stored.copy(account = stored.account.copy(pictureUrl = "https://example.test/i.png"))
+
+        assertEquals(pictured, pictured.toUserSession(NOW).toAccountSession())
+    }
+
+    @Test
+    fun the_picture_google_sent_is_the_account_s() {
+        val metadata = mapOf("picture" to JsonPrimitive("https://example.test/p.png"))
+
+        assertEquals(
+            "https://example.test/p.png",
+            userSession(metadata).toAccountSession().account.pictureUrl,
+        )
+    }
+
+    @Test
+    fun the_avatar_claim_comes_before_the_picture_one() {
+        val metadata =
+            mapOf(
+                "avatar_url" to JsonPrimitive("https://example.test/a.png"),
+                "picture" to JsonPrimitive("https://example.test/p.png"),
+            )
+
+        assertEquals(
+            "https://example.test/a.png",
+            userSession(metadata).toAccountSession().account.pictureUrl,
+        )
+    }
+
+    @Test
+    fun an_account_without_a_picture_has_none() {
+        assertEquals(null, userSession(emptyMap()).toAccountSession().account.pictureUrl)
+    }
+
+    @Test
     fun the_live_session_expires_when_the_stored_one_does() {
         assertEquals(3_600, stored.toUserSession(NOW).expiresIn)
     }

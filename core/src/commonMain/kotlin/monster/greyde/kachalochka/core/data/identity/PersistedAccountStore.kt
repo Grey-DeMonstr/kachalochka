@@ -17,6 +17,8 @@ private data class StoredAccount(
     val accessToken: String,
     val refreshToken: String,
     val expiresAtMillis: Long,
+    // Accounts stored before pictures have none until their next refresh.
+    val pictureUrl: String? = null,
 )
 
 @Serializable
@@ -112,7 +114,7 @@ class PersistedAccountStore(
 
     private fun toSession(stored: StoredAccount) =
         AccountSession(
-            Account(UserId(stored.userId), stored.email, stored.displayName),
+            Account(UserId(stored.userId), stored.email, stored.displayName, stored.pictureUrl),
             stored.accessToken,
             stored.refreshToken,
             Instant.fromEpochMilliseconds(stored.expiresAtMillis),
@@ -126,5 +128,6 @@ class PersistedAccountStore(
             session.accessToken,
             session.refreshToken,
             session.expiresAt.toEpochMilliseconds(),
+            session.account.pictureUrl,
         )
 }

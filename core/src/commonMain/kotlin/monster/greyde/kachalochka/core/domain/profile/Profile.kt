@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.domain.profile
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Instant
 
@@ -21,6 +22,8 @@ data class Profile(
     val heightCm: Double? = null,
     val weightUnit: PreferredWeightUnit = PreferredWeightUnit.Kg,
     val groupByTag: Boolean = false,
+    /** The photo chosen to stand for the owner instead of the Google picture. */
+    val avatarPhoto: PhotoId? = null,
 ) {
     companion object {
         /** A signed-in owner's profile id is the owner's own, so devices converge on one row. */

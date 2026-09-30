@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.di.corePlatformModule
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -60,6 +61,17 @@ class LocalProfileRepositoryTest {
             repository.upsert(grouping)
 
             assertEquals(grouping, repository.byId(profile.id))
+        }
+
+    @Test
+    fun the_chosen_avatar_is_kept_in_the_profile() =
+        runTest {
+            val repository = koin.get<ProfileRepository>()
+            val pictured = profile.copy(avatarPhoto = PhotoId.random())
+
+            repository.upsert(pictured)
+
+            assertEquals(pictured, repository.byId(profile.id))
         }
 
     @Test
