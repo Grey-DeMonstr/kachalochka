@@ -198,6 +198,16 @@ class SetRecorderTest {
         }
 
     @Test
+    fun a_plan_with_nothing_left_to_add_creates_no_visit() =
+        runTest {
+            gym.machines.upsert(press.copy(deleted = true))
+
+            recorder().plan(null, listOf(press.id))
+
+            assertTrue(gym.visits.rows.isEmpty())
+        }
+
+    @Test
     fun a_plan_started_on_a_visit_adds_only_what_it_lacks() =
         runTest {
             gym.machines.upsert(press)

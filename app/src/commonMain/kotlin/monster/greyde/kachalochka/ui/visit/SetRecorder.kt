@@ -65,22 +65,30 @@ class SetRecorder(
         if (day == today) restTimer.start() else sync.request()
     }
 
-    /** Adds [machines] to the day's visit as planned, creating the visit when there is none. */
+    /**
+     * Adds [planMachines] to the day's visit as planned, creating the visit when there is none
+     * and something is added.
+     */
     suspend fun plan(
         owner: UserId?,
-        machines: List<MachineId>,
+        planMachines: List<MachineId>,
     ) {
-        val (visit, visitSets) = shownOrNew(owner)
+        val shown = visits.shownOn(owner, day, sets, utcOffset::at)
         val live =
-            this.machines
+            machines
                 .all(owner)
                 .map { it.id }
                 .toSet()
         val planned =
-            startedPlanned(visit.planned, visitSets.map { it.machineId }, machines, live)
-        if (planned != visit.planned) {
-            visits.upsert(visit.copy(planned = planned, updatedAt = clock.now()))
-        }
+            startedPlanned(
+                shown?.visit?.planned.orEmpty(),
+                shown?.sets.orEmpty().map { it.machineId },
+                planMachines,
+                live,
+            )
+        if (planned == shown?.visit?.planned.orEmpty()) return
+        val visit = (shown ?: newVisit(owner)).visit
+        visits.upsert(visit.copy(planned = planned, updatedAt = clock.now()))
         pushIfPast()
     }
 
@@ -134,11 +142,18 @@ class SetRecorder(
 
     private suspend fun shownOrNew(owner: UserId?): ShownVisit {
         visits.shownOn(owner, day, sets, utcOffset::at)?.let { return it }
+        val created = newVisit(owner)
+        visits.upsert(created.visit)
+        return created
+    }
+
+    private fun newVisit(owner: UserId?): ShownVisit {
         val now = clock.now()
         val offset = utcOffset.at(now)
-        val created = dayVisit(day, owner, CalendarDay.of(now, offset), offset, now)
-        visits.upsert(created)
-        return ShownVisit(created, emptyList())
+        return ShownVisit(
+            dayVisit(day, owner, CalendarDay.of(now, offset), offset, now),
+            emptyList(),
+        )
     }
 
     private fun pushIfPast() {

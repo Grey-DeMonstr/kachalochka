@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.plans
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -51,6 +52,7 @@ class PlanFormViewModel(
     private var owner: UserId? = null
     private var stored: Plan? = null
     private var own: OwnMachines? = null
+    private var reading: Job? = null
     private var name = ""
     private var machineIds: List<MachineId> = emptyList()
     private var ordering = false
@@ -76,9 +78,12 @@ class PlanFormViewModel(
         own = catalogue.own(owner)
         stored =
             planId?.let { plans.byId(it) }?.takeIf { it.userId == owner && !it.deleted }
-        stored?.let {
-            name = it.name
-            machineIds = it.machineIds
+        val found = stored
+        if (found != null) {
+            name = found.name
+            machineIds = found.machineIds
+        } else if (planId != null) {
+            done = true
         }
         publish()
     }
@@ -91,10 +96,16 @@ class PlanFormViewModel(
     /** The machine may have been created or taken from a friend in the picker just now. */
     fun add(id: MachineId) {
         if (id !in machineIds) machineIds = machineIds + id
-        viewModelScope.launch {
-            own = catalogue.own(owner)
+        if (own?.machines?.any { it.id == id } == true) {
             publish()
+            return
         }
+        reading?.cancel()
+        reading =
+            viewModelScope.launch {
+                own = catalogue.own(owner)
+                publish()
+            }
     }
 
     fun remove(id: MachineId) {
@@ -119,9 +130,10 @@ class PlanFormViewModel(
     }
 
     fun save() {
-        val live = rows().map { it.id }
-        if (live.isEmpty()) return
         writes.launch {
+            reading?.join()
+            val live = rows().map { it.id }
+            if (live.isEmpty()) return@launch
             val now = clock.now()
             val trimmed = name.trim()
             plans.upsert(

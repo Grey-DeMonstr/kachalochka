@@ -62,9 +62,9 @@ account, the settings and signing out. With nobody signed in the avatar is an em
 The home screen shows today's card: how many machines and sets were recorded today and the
 last set, or "Подходов пока нет", and a button opening today's visit. A visit is one calendar
 day; it has no start or end and comes into being with its first set. Below the card are rows for
-visits, machines, plans, statistics, friends and body measures; statistics is shown but
-not yet available. On Android with nobody signed in, "Войти через Google" sits at the bottom
-of the screen. The very bottom names the app's version, "Версия 1.1.0".
+visits, machines, plans, statistics, friends and body measures; statistics is shown but not yet
+available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
+screen. The very bottom names the app's version, "Версия 1.1.0".
 
 The visit screen lists the day's sets grouped by machine, machines in the order of their first set,
 and ends with "Новое упражнение", which opens the machine picker. A machine's row shows its photo,
@@ -280,8 +280,19 @@ plan and opens the visit; back from it returns home. A machine the visit already
 added again. In the visit the added machines follow the ones with sets, each saying
 "Запланировано"; tapping one shows "Добавить подход", which opens the set sheet for its first
 set, and "Убрать", which takes it out of the visit. A machine with a set is listed like any
-other. Ordering shows only the machines with sets. The shared text, the calendar and the home
-card count only machines with sets. Plans sync like visits and friends never see them.
+other. Ordering shows only the machines with sets. The shared text and the home card count only
+machines with sets. A started plan makes the day a visit even before its first set, so the
+calendar marks the day and friends see the visit. Plans sync like visits and friends never see
+them.
+
+The plan form opens from a row or from "Новый план". "Название" takes up to 40 characters and
+reads "Без названия" while empty. Below it are the plan's machines in order, each with its photo
+and a remove button. The order button in the top bar shows a drag handle at the left of every
+machine. "Добавить упражнение" opens the machine picker, which in a plan shows each machine's
+last result and offers no "Скопировать упражнение"; a machine already in the plan is not added
+twice. "Сохранить план" saves and returns to the list; a plan without machines cannot be saved.
+Leaving without saving drops the edits. The menu of a saved plan has "Удалить план", which asks
+"Удалить план?". Switching accounts returns to the list.
 
 ## Custom exercsies
 

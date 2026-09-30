@@ -1,4 +1,3 @@
--- PLAN is a keyword in the device's SQLite, so the table mirrors workout_set's name.
 create table public.workout_plan (
     id          uuid        primary key,
     user_id     uuid        not null references auth.users (id) on delete cascade,

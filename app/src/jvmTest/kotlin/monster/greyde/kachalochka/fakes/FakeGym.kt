@@ -92,11 +92,16 @@ class InMemoryMachineRepository : MachineRepository {
 
     override suspend fun byId(id: MachineId): Machine? = rows[id]
 
-    override suspend fun all(owner: UserId?): List<Machine> =
-        rows.values
+    /** While set, [all] waits for it, keeping a read in flight as long as a test needs. */
+    var readGate: CompletableDeferred<Unit>? = null
+
+    override suspend fun all(owner: UserId?): List<Machine> {
+        readGate?.await()
+        return rows.values
             .filterNot { it.deleted }
             .filter { it.userId == owner }
             .sortedBy { it.name.lowercase() }
+    }
 
     override suspend fun named(
         owner: UserId?,

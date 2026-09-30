@@ -581,8 +581,8 @@ Row-level security enforces every visibility rule from the functional spec:
 - A user reads their own rows and the live `machine`, `visit`, `workout_set`, `machine_link` and
   `photo` rows of everyone who shares a live group with them, through the security-definer
   function `shares_group_with`; the `photos` bucket's read policy applies it to the first folder
-  of an object's name. `profile`, `measure` and `measurement` stay readable by their owner alone:
-  each has one owner-only policy and no group policy.
+  of an object's name. `profile`, `measure`, `measurement` and `workout_plan` stay readable by
+  their owner alone: each has one owner-only policy and no group policy.
 - A friend's link into one's own machine is changed only through two security-definer
   functions, called by `FriendsRepository.breakLinks` and `repointLinks`.
   `break_machine_links(machine)` soft-deletes the live links pointing at `machine`

@@ -7,7 +7,6 @@ import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Instant
 
-// PLAN is an SQLite keyword, as SET is.
 const val PLAN_TABLE: String = "workout_plan"
 
 @Serializable
