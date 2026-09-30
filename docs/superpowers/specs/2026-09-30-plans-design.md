@@ -24,9 +24,10 @@ today's visit, deletes the plan and opens the visit, where the user records sets
 
 ## 2. Data
 
-### 2.1 `plan`
+### 2.1 `workout_plan`
 
-A new synced table, owner-only like `measure`:
+A new synced table, owner-only like `measure`. It is not called `plan`, a keyword in SQLite,
+as `workout_set` is not called `set`:
 
 | Column | Type | Rule |
 |---|---|---|
@@ -50,11 +51,11 @@ and their upserts leave it unchanged, since a wire row declares no defaults.
 
 ### 2.3 Migrations
 
-- Postgres `0018_plans.sql`: creates `plan` with its indexes, policy and grants, and adds
+- Postgres `0018_plans.sql`: creates `workout_plan` with its indexes, policy and grants, and adds
   `visit.planned`.
-- SQLDelight `13.sqm`: creates `plan`, adds `visit.planned` (declared last in `Visit.sq`), and
-  resets `lastPullAt`, so visits pulled before the update come down again with their column.
-  `Schema.version` moves with it.
+- SQLDelight `13.sqm`: creates `workout_plan`, adds `visit.planned` (declared last in
+  `Visit.sq`), and resets `lastPullAt`, so visits pulled before the update come down again with
+  their column. `Schema.version` moves with it.
 
 ### 2.4 Domain and repositories
 
@@ -65,19 +66,19 @@ and their upserts leave it unchanged, since a wire row declares no defaults.
   Implementations: `LocalPlanRepository` (SQLDelight plus the outbox) and `RemotePlanRepository`
   (PostgREST), with one wire mapping in `core/data/gym` shared by both.
 - Pure functions in `domain/gym`, each with its own tests:
-  - `startedPlanned(visitPlanned, visitMachines, plan, liveMachines)`: the visit's new planned
+  - `startedPlanned(planned, recorded, plan, live)`, all machine ids: the visit's new planned
     list — its current one followed by the plan's live machines that are neither recorded in the
     visit nor already planned, in plan order.
-  - `plannedWithoutSets(visit, sets, liveMachines)`: the planned machines the visit screen shows
+  - `plannedWithoutSets(planned, sets, live)`: the planned machines the visit screen shows
     as planned rows — live, and without a live set in the visit.
-- `planTitle(plan, machinesById)` in `app/ui/format`: the name, or the machine names joined with
-  ", " when it is blank.
+- `planTitle(name, machineNames)` in `app/ui/format`: the name, or the machine names joined with
+  ", " when it is blank, or "Без названия" when both are empty.
 
 ### 2.5 Sync and account upkeep
 
-- The outbox ranks `plan` after `visit`; the server checks nothing a plan names, and it follows
-  the machines it names as a link does.
-- The pull fetches `plan` with every other table.
+- The outbox ranks `workout_plan` after `visit`; the server checks nothing a plan names, and it
+  follows the machines it names as a link does.
+- The pull fetches `workout_plan` with every other table.
 - The first sign-in claims ownerless plans (`SqlOwnerlessRows`); deleting an account removes its
   plans on the server by cascade and on the device through `SqlOwnedRowsPurge`.
 
@@ -140,16 +141,16 @@ same saved-state key the visit uses today.
 - Once a planned machine has a set it becomes an ordinary machine row, ordered by its first set.
   It stays in `visit.planned`; the screen simply no longer shows it as planned. Deleting its last
   set therefore brings the planned row back.
-- In order mode only machines with sets have handles; planned rows stay listed below them.
+- Order mode shows only the machines with sets; planned rows return when it ends.
 - The order and share buttons appear only when the visit has sets, as now.
 
 ## 4. Testing
 
 Test first throughout.
 
-- `core`: the `plan` and `visit.planned` wire and SQLDelight mappings, unreadable JSON read as
-  empty, `LocalPlanRepository` with the outbox, `plan` in the pull and the push order, the claim
-  and the purge, and the two pure functions.
+- `core`: the `workout_plan` and `visit.planned` wire and SQLDelight mappings, unreadable JSON
+  read as empty, `LocalPlanRepository` with the outbox, `workout_plan` in the pull and the push
+  order, the claim and the purge, and the two pure functions.
 - `app`: the plans list (titles, count, empty state, "Начать" opening today's visit with the plan
   gone), the plan form (picker round trip, duplicates, remove, reorder, save, delete, leaving
   without saving), the picker in plan mode, and planned rows on the visit ("Запланировано",
@@ -158,5 +159,5 @@ Test first throughout.
 ## 5. Specs
 
 `functional_spec.md` gains a "Plans" section and loses "plans … not yet available" from the home
-screen description; `technical_spec.md` §4.5 describes `plan` and `visit.planned`, and §4.2's push
-order gains `plan`. Both are updated in the commits that implement them.
+screen description; `technical_spec.md` §4.5 describes `workout_plan` and `visit.planned`, and
+§4.2's push order gains `workout_plan`. Both are updated in the commits that implement them.
