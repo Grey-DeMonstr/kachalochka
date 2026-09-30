@@ -53,6 +53,7 @@ import monster.greyde.kachalochka.core.domain.measures.newestPerDay
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.Invite
@@ -337,6 +338,15 @@ class RecordingTextSharing : TextSharing {
     }
 }
 
+class RecordingPageFooter : PageFooter {
+    /** Null until the app first says. */
+    var visible: Boolean? = null
+
+    override fun show(visible: Boolean) {
+        this.visible = visible
+    }
+}
+
 class FakeGym(
     now: Instant = Instant.fromEpochSeconds(1_700_000_000),
     val credentials: SupabaseCredentials =
@@ -376,6 +386,7 @@ class FakeGym(
     val catalogue = MachineCatalogue(machines, photos, machineLinks, friends, clock, sync)
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()
+    val footer = RecordingPageFooter()
     val joinCodes = InMemoryJoinCodeStore()
     val accountServer = RecordingAccountServer()
     val deletion = AccountDeletion(accountServer, {}, accounts)

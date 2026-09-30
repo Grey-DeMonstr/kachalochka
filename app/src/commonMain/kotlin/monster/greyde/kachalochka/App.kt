@@ -12,8 +12,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
@@ -37,6 +39,7 @@ import monster.greyde.kachalochka.navigation.MachinePickerRoute
 import monster.greyde.kachalochka.navigation.MeasureRoute
 import monster.greyde.kachalochka.navigation.MeasurementFormRoute
 import monster.greyde.kachalochka.navigation.MeasuresRoute
+import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.navigation.PlanRoute
 import monster.greyde.kachalochka.navigation.PlansRoute
 import monster.greyde.kachalochka.navigation.SettingsRoute
@@ -112,14 +115,20 @@ fun App() {
     val accountsViewModel: AccountsViewModel = koinViewModel()
     val accounts by accountsViewModel.state.collectAsState()
 
+    val footer: PageFooter = koinInject()
+
     KachalochkaTheme(mode) {
         if (signInRequired.value && accounts.activeId == null) {
+            LaunchedEffect(Unit) { footer.show(true) }
             SignInScreen(
                 onSignIn = accountsViewModel::addAccount,
                 failure = accounts.failure,
             )
         } else {
             val navController = rememberNavController()
+            val entry by navController.currentBackStackEntryAsState()
+            val onHome = entry?.destination?.hasRoute<HomeRoute>() ?: true
+            LaunchedEffect(onHome) { footer.show(onHome) }
             NavHost(
                 navController = navController,
                 startDestination = HomeRoute,

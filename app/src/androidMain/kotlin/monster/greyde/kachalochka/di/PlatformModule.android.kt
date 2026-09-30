@@ -14,6 +14,7 @@ import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.supabase.webAppUrlFromBuild
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.navigation.DataStoreTransitionPreference
+import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.sync.WorkManagerSyncTrigger
@@ -85,6 +86,7 @@ actual fun platformModule(): Module =
         }
         single<JoinCodeStore> { InMemoryJoinCodeStore() }
         single<PhotoCapture> { SystemPhotoCapture(androidContext()) }
+        single<PageFooter> { PageFooter {} }
         single<GoogleSignIn> {
             val activities: ActivityHolder = get()
             CredentialManagerGoogleSignIn(

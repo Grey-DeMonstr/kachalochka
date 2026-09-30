@@ -5,7 +5,9 @@ import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.navigation.DocumentFooter
 import monster.greyde.kachalochka.navigation.LocalStorageTransitionPreference
+import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.report
 import monster.greyde.kachalochka.sync.ServerSyncTrigger
@@ -45,4 +47,5 @@ actual fun platformModule(): Module =
         single { VisitStore.Server }
         single<PhotoCapture> { BrowserPhotoCapture() }
         single<FailureLog> { FailureLog { report(it.toString()) } }
+        single<PageFooter> { DocumentFooter() }
     }

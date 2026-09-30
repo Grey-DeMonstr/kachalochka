@@ -706,7 +706,8 @@ repositories, a fixed clock and a ticker that only advances when the test tells 
 - `privacy.html` and `terms.html` are static pages in the web resources and ship in the Pages
   bundle; their addresses are what the OAuth consent screen and the Play listing point to. The
   entry page links to both in plain HTML under `#app`, the container Compose mounts into,
-  since the app itself draws on a canvas.
+  since the app itself draws on a canvas. `App` tells `PageFooter` whether the home or the
+  sign-in screen is shown, and the web binding hides that footer on every other screen.
 - The repository is licensed under the GNU GPL v3, in `LICENSE`.
 
 ---

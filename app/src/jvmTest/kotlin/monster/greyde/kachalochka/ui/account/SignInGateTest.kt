@@ -7,6 +7,7 @@ import monster.greyde.kachalochka.TestKoin
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runNavigationUiTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 @OptIn(ExperimentalTestApi::class)
 class SignInGateTest {
@@ -15,6 +16,15 @@ class SignInGateTest {
         runNavigationUiTest(content = { TestKoin(FakeGym(), signInRequired = true) { App() } }) {
             onNodeWithTag("sign-in-google").assertExists()
             onNodeWithTag("open-today").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun the_sign_in_screen_keeps_the_page_footer() {
+        val gym = FakeGym()
+        runNavigationUiTest(content = { TestKoin(gym, signInRequired = true) { App() } }) {
+            waitForIdle()
+            assertEquals(true, gym.footer.visible)
         }
     }
 

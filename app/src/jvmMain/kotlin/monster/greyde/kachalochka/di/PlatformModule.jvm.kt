@@ -5,6 +5,7 @@ import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
+import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.ui.account.SignInAvailable
@@ -44,4 +45,5 @@ actual fun platformModule(): Module =
         single { VisitStore.Device }
         single<PhotoCapture> { NoPhotoCapture }
         single<FailureLog> { FailureLog {} }
+        single<PageFooter> { PageFooter {} }
     }

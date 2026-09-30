@@ -28,6 +28,7 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.format.UtcOffset
@@ -74,6 +75,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<InviteSharing> { gym.invites }
         single<TextSharing> { gym.texts }
         single<JoinCodeStore> { gym.joinCodes }
+        single<PageFooter> { gym.footer }
         viewModelOf(::AccountsViewModel)
     }
 

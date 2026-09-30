@@ -339,5 +339,6 @@ need the network: without it the app says "Нет связи с сервером
 ## Privacy and terms
 
 The Privacy Policy and the Terms of Service are separate pages published beside the web app
-and linked from its entry page, readable without signing in. Someone who can no longer sign in asks
+and linked from the footer of its entry page, readable without signing in. The footer shows on
+the sign-in screen and the home screen only. Someone who can no longer sign in asks
 for their account's deletion through the repository's issues.

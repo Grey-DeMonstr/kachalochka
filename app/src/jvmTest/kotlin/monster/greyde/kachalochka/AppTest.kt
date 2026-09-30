@@ -56,6 +56,21 @@ class AppTest {
         }
 
     @Test
+    fun the_page_footer_shows_on_home_only() =
+        runApp {
+            waitForIdle()
+            assertEquals(true, gym.footer.visible)
+
+            onNodeWithTag("section-machines").performClick()
+            waitForIdle()
+            assertEquals(false, gym.footer.visible)
+
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            assertEquals(true, gym.footer.visible)
+        }
+
+    @Test
     fun a_measurement_saved_from_the_measures_screen_shows_up_in_it() =
         runApp {
             onNodeWithTag("section-measures").performClick()
