@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.friends.FRIEND_PALETTE_SIZE
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
+import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
@@ -122,6 +123,21 @@ class GroupViewModelTest {
             state.members.map { Triple(it.friend.displayName, it.owner, it.opens) },
         )
         assertFalse(state.isOwner)
+    }
+
+    @Test
+    fun a_member_carries_their_avatar() {
+        val pictured = OLEG.copy(avatar = Avatar(picture = "https://example.test/oleg.png"))
+        val group = gym.friends.group("Зал на Лесной", owner = pictured, ME)
+
+        val state = assertNotNull(viewModel(group).state.value)
+
+        assertEquals(
+            pictured.avatar,
+            state.members
+                .single { it.friend.userId == OLEG.userId }
+                .friend.avatar,
+        )
     }
 
     @Test

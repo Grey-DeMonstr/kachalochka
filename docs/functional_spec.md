@@ -343,9 +343,10 @@ Every member sees the other members' calendars, visits and machine photos, read-
 is shared outside a group. A member can leave; the owner deletes the group instead. Friends' data is read
 online and never stored on the device.
 
-The group screen shows a colour dot before every member's name but the user's own. Tapping it
-opens a palette of eight colours; the chosen one marks that friend's visits in the user's
-calendar and in the friend's calendar, opened from the group.
+The group screen starts each member's row with their avatar, or their initial in their colour, and
+ends every row but the user's own with a colour dot. Tapping it opens a palette of eight colours;
+the chosen one marks that friend's visits in the user's calendar and in the friend's calendar,
+opened from the group.
 
 A machine can be taken from a friend's list: the copy keeps the friend's settings and stays linked
 to the friend's machine as one physical machine. An own machine can also be linked to a friend's

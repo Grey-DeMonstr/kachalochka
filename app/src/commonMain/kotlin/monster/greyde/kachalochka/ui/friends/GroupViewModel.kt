@@ -183,7 +183,7 @@ class GroupViewModel(
                 code = shown.inviteCode,
                 members =
                     members.map {
-                        val friend = Friend(it.userId, it.displayName)
+                        val friend = Friend(it.userId, it.displayName, it.avatar)
                         val mate = it.userId != viewer
                         MemberRowUi(
                             friend,

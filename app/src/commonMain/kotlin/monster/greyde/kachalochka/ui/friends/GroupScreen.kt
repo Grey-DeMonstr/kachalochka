@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.friends.FRIEND_PALETTE_SIZE
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.GroupId
+import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.OutlineButton
@@ -153,24 +153,13 @@ private fun MemberRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val index = row.color
-        if (index == null) {
-            // Keeps the viewer's own name in line with the others'.
-            Spacer(Modifier.size(32.dp))
-        } else {
-            // The dot is small; the circle around it is what takes the tap.
-            Box(
-                Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onPickColor)
-                    .semantics { contentDescription = colorName(index) }
-                    .testTag("member-color-${row.friend.userId.value}"),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(Modifier.size(14.dp).clip(CircleShape).background(friendColor(index)))
-            }
-        }
+        PersonAvatar(
+            row.friend.userId,
+            row.friend.displayName,
+            row.friend.avatar,
+            size = 44.dp,
+            tint = row.color?.let { friendColor(it) },
+        )
         Text(
             row.friend.displayName,
             modifier = Modifier.weight(1f),
@@ -184,6 +173,21 @@ private fun MemberRow(
                 fontSize = 13.sp,
                 color = colors.secondary,
             )
+        }
+        val index = row.color
+        if (index != null) {
+            // The dot is small; the circle around it is what takes the tap.
+            Box(
+                Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onPickColor)
+                    .semantics { contentDescription = colorName(index) }
+                    .testTag("member-color-${row.friend.userId.value}"),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(Modifier.size(14.dp).clip(CircleShape).background(friendColor(index)))
+            }
         }
     }
 }

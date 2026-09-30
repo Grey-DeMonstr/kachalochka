@@ -129,8 +129,14 @@ class FakeFriends(
         online {
             members[group.id]
                 .orEmpty()
-                .map { GroupMember(it.userId, it.displayName, it.userId == group.ownerId) }
-                .sortedWith(
+                .map {
+                    GroupMember(
+                        it.userId,
+                        it.displayName,
+                        it.userId == group.ownerId,
+                        it.avatar,
+                    )
+                }.sortedWith(
                     compareByDescending<GroupMember> { it.isOwner }
                         .thenBy { it.displayName.lowercase() },
                 )
