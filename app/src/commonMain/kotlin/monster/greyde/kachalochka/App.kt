@@ -36,6 +36,8 @@ import monster.greyde.kachalochka.navigation.MachinePickerRoute
 import monster.greyde.kachalochka.navigation.MeasureRoute
 import monster.greyde.kachalochka.navigation.MeasurementFormRoute
 import monster.greyde.kachalochka.navigation.MeasuresRoute
+import monster.greyde.kachalochka.navigation.PlanRoute
+import monster.greyde.kachalochka.navigation.PlansRoute
 import monster.greyde.kachalochka.navigation.SettingsRoute
 import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.navigation.VisitRoute
@@ -63,6 +65,7 @@ import monster.greyde.kachalochka.ui.machine.MachinePickerScreen
 import monster.greyde.kachalochka.ui.measures.MeasureScreen
 import monster.greyde.kachalochka.ui.measures.MeasurementFormScreen
 import monster.greyde.kachalochka.ui.measures.MeasuresScreen
+import monster.greyde.kachalochka.ui.plans.PlansScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
@@ -122,6 +125,20 @@ fun App() {
                         onOpenMachines = { navController.navigate(MachineListRoute) },
                         onOpenFriends = { navController.navigate(FriendsRoute) },
                         onOpenMeasures = { navController.navigate(MeasuresRoute) },
+                        onOpenPlans = { navController.navigate(PlansRoute) },
+                    )
+                }
+                composable<PlansRoute> {
+                    PlansScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenPlan = { navController.navigate(PlanRoute(it?.value)) },
+                        onStarted = { day ->
+                            // The started plan is gone, so back leads home, not to the list.
+                            navController.navigate(VisitRoute(day.iso)) {
+                                popUpTo<PlansRoute> { inclusive = true }
+                            }
+                        },
                     )
                 }
                 composable<MeasuresRoute> {

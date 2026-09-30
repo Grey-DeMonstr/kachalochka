@@ -62,8 +62,8 @@ account, the settings and signing out. With nobody signed in the avatar is an em
 The home screen shows today's card: how many machines and sets were recorded today and the
 last set, or "Подходов пока нет", and a button opening today's visit. A visit is one calendar
 day; it has no start or end and comes into being with its first set. Below the card are rows for
-visits, machines, plans, statistics, friends and body measures; plans and statistics are shown
-but not yet available. On Android with nobody signed in, "Войти через Google" sits at the bottom
+visits, machines, plans, statistics, friends and body measures; statistics is shown but
+not yet available. On Android with nobody signed in, "Войти через Google" sits at the bottom
 of the screen. The very bottom names the app's version, "Версия 1.1.0".
 
 The visit screen lists the day's sets grouped by machine, machines in the order of their first set,
@@ -267,6 +267,21 @@ it ever had, newest first. A period with a single value shows that value instead
 Tapping a value opens that day's measurement form. The menu in the top bar edits the name and unit
 of the user's own measure, and deletes a measure that can be deleted with all its values after a
 confirmation.
+
+## Plans
+
+A plan is a list of machines to do on a visit to come, with no sets. "Планы" on the home screen
+lists the account's plans, oldest first: each by its name, or by its machines' names when it has
+none, with how many machines it holds and a "Начать" button. "Планов пока нет" stands in for an
+empty list, and "Новый план" makes one.
+
+"Начать" adds the plan's machines to today's visit, creating it when there is none, deletes the
+plan and opens the visit; back from it returns home. A machine the visit already has is not
+added again. In the visit the added machines follow the ones with sets, each saying
+"Запланировано"; tapping one shows "Добавить подход", which opens the set sheet for its first
+set, and "Убрать", which takes it out of the visit. A machine with a set is listed like any
+other. Ordering shows only the machines with sets. The shared text, the calendar and the home
+card count only machines with sets. Plans sync like visits and friends never see them.
 
 ## Custom exercsies
 

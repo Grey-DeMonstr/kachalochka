@@ -36,6 +36,7 @@ import monster.greyde.kachalochka.ui.measures.MeasureViewModel
 import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
 import monster.greyde.kachalochka.ui.measures.MeasuresViewModel
 import monster.greyde.kachalochka.ui.photos.PhotoLoaders
+import monster.greyde.kachalochka.ui.plans.PlansViewModel
 import monster.greyde.kachalochka.ui.settings.SettingsViewModel
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
@@ -73,6 +74,7 @@ val appModule =
         viewModelOf(::MachineListViewModel)
         viewModelOf(::SettingsViewModel)
         viewModelOf(::MeasuresViewModel)
+        viewModelOf(::PlansViewModel)
         viewModel { (day: CalendarDay?) ->
             MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get())
         }

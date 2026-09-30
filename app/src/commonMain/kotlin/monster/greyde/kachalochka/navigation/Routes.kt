@@ -80,3 +80,12 @@ data class MeasurementFormRoute(
 data class MeasureRoute(
     val measureId: String,
 )
+
+@Serializable
+object PlansRoute
+
+/** [planId] null opens a new plan. */
+@Serializable
+data class PlanRoute(
+    val planId: String? = null,
+)

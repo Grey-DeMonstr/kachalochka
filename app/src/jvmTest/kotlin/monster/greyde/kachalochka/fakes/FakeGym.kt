@@ -27,6 +27,9 @@ import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
+import monster.greyde.kachalochka.core.domain.gym.Plan
+import monster.greyde.kachalochka.core.domain.gym.PlanId
+import monster.greyde.kachalochka.core.domain.gym.PlanRepository
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
@@ -34,6 +37,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.photoOrder
+import monster.greyde.kachalochka.core.domain.gym.planOrder
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -98,6 +102,19 @@ class InMemoryMachineRepository : MachineRepository {
         owner: UserId?,
         name: String,
     ): Machine? = all(owner).firstOrNull { it.name == name }
+}
+
+class InMemoryPlanRepository : PlanRepository {
+    val rows = linkedMapOf<PlanId, Plan>()
+
+    override suspend fun upsert(plan: Plan) {
+        rows[plan.id] = plan
+    }
+
+    override suspend fun byId(id: PlanId): Plan? = rows[id]
+
+    override suspend fun all(owner: UserId?): List<Plan> =
+        rows.values.filter { !it.deleted && it.userId == owner }.sortedWith(planOrder)
 }
 
 class InMemoryVisitRepository : VisitRepository {
@@ -324,6 +341,7 @@ class FakeGym(
     val ticker = ManualTicker()
     val machines = InMemoryMachineRepository()
     val visits = InMemoryVisitRepository()
+    val plans = InMemoryPlanRepository()
     val sets = InMemoryWorkoutSetRepository()
     val profiles = InMemoryProfileRepository()
     val machineLinks = InMemoryMachineLinkRepository()

@@ -96,6 +96,10 @@ interface Strings {
     val addSet: String
     val planned: String
     val unplan: String
+    val noPlansYet: String
+    val newPlan: String
+    val startPlan: String
+    val untitledPlan: String
     val friendsColon: String
     val reps: String
     val comment: String

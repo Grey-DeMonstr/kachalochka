@@ -16,6 +16,8 @@ import androidx.compose.ui.test.performTextReplacement
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.Plan
+import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -46,7 +48,7 @@ class AppTest {
         runApp {
             onNodeWithTag("top-bar-title").assertTextEquals("Качалочка")
             onNodeWithTag("top-bar-back").assertDoesNotExist()
-            onNodeWithTag("section-plans").assertIsNotEnabled()
+            onNodeWithTag("section-plans").assertIsEnabled()
             onNodeWithTag("section-stats").assertIsNotEnabled()
             onNodeWithTag("section-friends").assertIsNotEnabled()
             onNodeWithTag("section-machines").assertIsEnabled()
@@ -479,4 +481,35 @@ class AppTest {
             onNodeWithTag("invite-missing").assertDoesNotExist()
         }
     }
+
+    @Test
+    fun a_started_plan_opens_today_s_visit_and_back_returns_home() =
+        runApp {
+            val press = Machine.new("Жим ногами", null, gym.clock.current)
+            runBlocking {
+                gym.machines.upsert(press)
+                gym.plans.upsert(
+                    Plan(
+                        PlanId.random(),
+                        null,
+                        "Ноги",
+                        listOf(press.id),
+                        gym.clock.current,
+                        gym.clock.current,
+                        false,
+                    ),
+                )
+            }
+            onNodeWithTag("section-plans").performClick()
+            waitForIdle()
+            onNodeWithText("Начать").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Сегодня")
+            onNodeWithTag("group-summary-${press.id.value}", useUnmergedTree = true)
+                .assertTextEquals("Запланировано")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("open-today").assertIsDisplayed()
+        }
 }
