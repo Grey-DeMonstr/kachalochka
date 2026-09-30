@@ -1,5 +1,18 @@
 Kachalochka - Changelog
 
+1.3.1
+
+- Each machine of a visit opens on its own page, with its record, previous visit and friends.
+- The home screen card is redesigned.
+- Machines are shown as cards with tags, record and last use, and can be filtered by tags.
+- Avatars: your Google picture or a photo of your choice, shown to your friends too.
+- A friend's visit and the group screen are redesigned.
+- The calendar shows your and your friends' visits the same way, each with a menu.
+- A measure's value is entered on its screen, and its history is edited in a calendar.
+- On the web, the footer shows only on the home and sign-in screens.
+- Fixed: reps can now be typed, not only changed with - and +.
+
+
 1.3.0
 
 - Workout plans added.
