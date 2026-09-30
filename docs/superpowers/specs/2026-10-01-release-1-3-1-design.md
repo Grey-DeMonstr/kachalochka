@@ -96,8 +96,8 @@ replaces "Новое упражнение".
 
 - The add-photo tile is only a larger camera icon; "Связано с: …" sits beside the photos.
 - "Заметка о настройке" is renamed "Комментарий".
-- Tags: own tags as chips and a "Новый тег" chip field that adds on done. Under them, "Теги друзей —
-  добавятся к вашим после выбора": friends' tags the account lacks, as dashed chips with the
+- Tags: own tags as chips and a "Новый тег" chip field that adds on done. Under them, "Теги друзей
+  — добавятся к вашим после выбора": friends' tags the account lacks, as dashed chips with the
   friend's avatar; tapping one adds it to the machine, and saving makes it the account's own.
 - The platform weight loses "Своя масса снаряда"; the save button reads "Сохранить".
 

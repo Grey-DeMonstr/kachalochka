@@ -69,22 +69,32 @@ visits, machines, plans, statistics, friends and body measures; statistics is sh
 available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
 screen. The very bottom names the app's version, "Версия 1.1.0".
 
-The visit screen lists the day's sets grouped by machine, machines in the order of their first set,
-and ends with "Новое упражнение", which opens the machine picker. A machine's row shows its photo,
-as the machine list does, or a barbell without one, names the machine with its setup note at the
-right, and writes its results on the line below. Tapping the photo opens the machine form; the set
-sheet shows the same photo, which opens the form too. Tapping a machine's row expands it to show
-its sets, numbered "#1", "#2" and so on; tapping a set opens it for editing or deletion. A friend's
-visit numbers its sets the same way. The list has no count row. A visit with sets has an order
-button in the top bar, left of "Поделиться", drawn like the drag handle and lit while on: it shows
-a handle at the left of every machine and set; dragging a machine's handle moves the machine with
-its sets, dragging a set's handle moves it among its machine's sets. While it is on, "Готово"
-replaces "Новое упражнение" at the end of the list, and it or the button again hides the handles. A
-machine's tags follow its name, each in a small frame. When a machine of the visit has tags,
+The visit screen is headed by its day, as "Вторник, 29 сентября" (with the year when it is not
+this one), and lists the day's machines in the order of their first set, ending with "Добавить",
+which opens the machine picker. A machine's row shows its photo, as the machine list does, or a
+barbell without one, then its name with its tags, each in a small frame; its comment (the setup
+note) and its results follow in grey, each on a line of its own, and the results wrap between the
+weights and the reps when they do not fit one line. Tapping the photo opens the machine form;
+tapping the row opens the machine's page. The list has no count row. A visit with sets has an
+order button in the top bar, left of "Поделиться", drawn like the drag handle and lit while on: it
+shows every machine's sets, numbered "#1", "#2" and so on, and a handle at the left of every
+machine and set; dragging a machine's handle moves the machine with its sets, dragging a set's
+handle moves it among its machine's sets. While it is on, "Готово" replaces "Добавить" at the end
+of the list, and it or the button again hides the handles. When a machine of the visit has tags,
 "Группировать по тегам" splits the list into sections, one per distinct set of tags, headed by the
 tags and in the order of their first machine; untagged machines come last without a heading. The
 choice is the account's, saved in its profile and synced, and ordering shows the plain list.
-Today's visit is titled "Сегодня", any other day's with its date.
+
+A machine's page covers the list. Its top bar has a gear opening the machine form, whose photo
+opens it too. It shows the photo, the name with the platform, the tags and the comment, then two
+cards: "Рекорд", the best set ever on the machine — the heaviest weight with the most reps at it,
+the lightest on a gravitron — and the previous visit's results, headed by how long ago it was
+("12 дней назад"). Friends' latest visits on the machine follow, each with the friend's avatar
+and name ("Олег  вчера · 80-85кг 8-6"). Under "Сегодня · 3 подхода" (another day's date instead
+of "Сегодня") are the day's sets on the machine, "#1  (-)29.5 кг × 10" with the set's comment;
+tapping one opens it for editing. "Добавить" opens the form for the next set, and a planned
+machine without sets also offers "Убрать", which takes it out of the visit and returns to the
+list. Back, in the top bar or on the phone, closes an open form, then the page.
 
 A visit with sets has a "Поделиться" button in the top bar that hands the visit over as text:
 Android opens its share sheet, the web copies the text and says "Скопировано" (or "Не удалось
@@ -103,30 +113,29 @@ its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zer
 ("Подтягивания 3x10"). A machine whose weight is counted per side says so after the weights
 ("Гребная тяга (+11.3кг) 15кг на каждую, 3x12"). A gravitron's weights are written after "(-)",
 since a smaller one is progress ("Подтягивания в гравитроне (-)27-25-22.5кг 10-8-6"). The machine
-rows of the visit screen and of a friend's visit, and the previous visit's and friends' results in
-the set sheet, write a machine's weights and reps exactly the same way. When the visit is grouped
-by tags, the machine lines form the same sections, separated by an empty line, each tagged one
-starting with a line of its tags.
+rows of the visit screen and of a friend's visit, and the previous visit's and friends' results on
+the machine's page, write a machine's weights and reps exactly the same way. When the visit is
+grouped by tags, the machine lines form the same sections, separated by an empty line, each tagged
+one starting with a line of its tags.
 
-Adding or editing a set uses the same sheet. It shows the signed-in accounts as a row of chips, the
-machine, the set number, the machine's setup note, the previous visit's sets on that machine, and
-weight and reps steppers. The first set on a machine starts from the previous visit's first set;
-each later one repeats the weight and the reps of the set just recorded. Saving records the set;
-until it is written, the save button shows progress and takes no taps. "Комментарий" opens a field
-for a comment of up to 200 characters, saved with the set and shown after its number in the list,
-in a friend's visit too; the next set starts without one, and a shared visit never includes them.
-The weight can also be typed, with a comma or a point; − and + step it by the machine's weight
-step. The weight stepper is the one place where the machine's own unit comes first: its value and
-step are in that unit, and when the profile's unit is "кг" or "lb" and differs from it, the
-converted value follows in brackets — under 90 on a pound machine, "lb (41кг) всего · ±5lb
-(2.3кг)", the weight to the nearest half unit and the step to one decimal. The sheet's other
-weights, the previous visit's sets included, follow the profile's unit. Tapping another account's
-chip switches to it: the shown history and the save button follow that person, and the set is
-recorded into their own visit. Swiping the sheet down, or pressing back on the phone or in the top
-bar, closes it, leaving any edit; starting to order closes it too. An expanded machine in the list ends
-with "Добавить подход", which opens the sheet for that machine's next set, so any machine of the
-visit takes another set at any time. The machine's name is not a button: another machine is chosen
-with "Новое упражнение".
+Adding or editing a set uses the same form, which slides up over the page. Adding shows the
+signed-in accounts as a row of chips, then "#4 Новый подход"; editing shows "#3 Правка: 70 кг ×
+10". Weight and reps steppers follow, both typed as well, the weight with a comma or a point; −
+and + step the weight by the machine's weight step and the reps by one, and reps that are not a
+whole number above zero cannot be saved. The weight is the one place where the machine's own unit
+comes first: it is typed and stepped in that unit, written beside it ("65 lb"), a gravitron's with
+"−" before it, and when the profile's unit is "кг" or "lb" and differs from it, the converted
+weight follows under it ("29.5 кг"), to the nearest half unit. The page's other weights follow the
+profile's unit. A "Комментарий" field of several lines takes up to 200 characters, saved with the
+set and shown after its number, in a friend's visit too; a shared visit never includes them. The
+first set on a machine starts from the previous visit's first set; each later one repeats the
+weight and the reps of the set just recorded. "Добавить" records the set and keeps the form open
+for the next one, without a comment; until it is written, the button shows progress and takes no
+taps. Editing offers "Сохранить", which closes the form, and a trash button that deletes the set.
+"Отмена", swiping the form down, or back, closes it, leaving any edit; starting to order closes the
+page. Tapping another account's chip switches to it: the shown history and the button, which then
+names the person ("Добавить · Миша"), follow that person, and the set is recorded into their own
+visit.
 
 The machine picker lets the user search machines by name; "Создать «…»" opens the machine form
 pre-filled with the typed name. When a machine is already chosen for the visit, "Скопировать
@@ -199,7 +208,7 @@ on the device, and the first account to sign in takes ownership of it. Accounts 
 empty. The web app shows nothing but the sign-in screen until an account is chosen.
 
 Adding an account asks Google. Switching between accounts afterwards does not, and works with no
-network — either from the avatar menu or, while recording, from the chips in the set sheet, so a
+network — either from the avatar menu or, while recording, from the chips in the set form, so a
 parent can record their own sets and their child's between one machine and the next.
 
 Signing out of an account removes it from the device but keeps what it recorded, and signing back
@@ -283,8 +292,8 @@ empty list, and "Новый план" makes one.
 "Начать" adds the plan's machines to today's visit, creating it when there is none, deletes the
 plan and opens the visit; back from it returns home. A machine the visit already has is not
 added again. In the visit the added machines follow the ones with sets, each saying
-"Запланировано"; tapping one shows "Добавить подход", which opens the set sheet for its first
-set, and "Убрать", which takes it out of the visit. A machine with a set is listed like any
+"Запланировано"; tapping one opens its page, where "Добавить" opens the form for its first set
+and "Убрать" takes it out of the visit. A machine with a set is listed like any
 other. Ordering shows only the machines with sets. The shared text counts only machines with
 sets. A started plan makes the day a visit even before its first set, so the
 calendar marks the day and friends see the visit. Plans sync like visits and friends never see
@@ -330,8 +339,8 @@ calendar and in the friend's calendar, opened from the group.
 A machine can be taken from a friend's list: the copy keeps the friend's settings and stays
 linked to the friend's machine as one physical machine. An own machine can also be linked to a
 friend's with "Привязать к…". Machines linked directly or through other friends' links are one
-machine: the picker no longer offers the friend's machine beside the user's own, the set sheet
-shows each friend's latest visit on it ("Олег · вчера · 80-85кг 8-6"), a friend's visit shows
+machine: the picker no longer offers the friend's machine beside the user's own, the machine's
+page shows each friend's latest visit on it ("Олег  вчера · 80-85кг 8-6"), a friend's visit shows
 their sets on it under the user's own machine name, and the machine form lists the friends'
 machines it is linked with, by owner and then by name ("Связано с: Жим ногами (Олег), Платформа
 (Паша)"). Tapping one opens that friend's machine, as from the machine list.

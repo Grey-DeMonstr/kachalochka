@@ -124,16 +124,15 @@ object EnStrings : Strings {
     override val reps = "reps"
     override val comment = "Comment"
     override val deleteSet = "Delete set"
-    override val saveSet = "Save set"
+    override val saveSet = "Add"
 
-    override fun saveAs(person: String) = "Save · $person"
+    override fun saveAs(person: String) = "Add · $person"
 
-    override fun setNumber(n: Int) = "set $n"
+    override val newSet = "New set"
 
-    override fun editCaption(
-        time: String,
-        was: String,
-    ) = "Editing · recorded at $time, was $was"
+    override fun editOf(set: String) = "Edit: $set"
+
+    override val record = "Record"
 
     override val addVisit = "Add visit"
     override val replace = "Replace"

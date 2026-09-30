@@ -141,16 +141,15 @@ object RuStrings : Strings {
     override val reps = "повторы"
     override val comment = "Комментарий"
     override val deleteSet = "Удалить подход"
-    override val saveSet = "Сохранить подход"
+    override val saveSet = "Добавить"
 
-    override fun saveAs(person: String) = "Сохранить · $person"
+    override fun saveAs(person: String) = "Добавить · $person"
 
-    override fun setNumber(n: Int) = "подход $n"
+    override val newSet = "Новый подход"
 
-    override fun editCaption(
-        time: String,
-        was: String,
-    ) = "Правка · записано $time, было $was"
+    override fun editOf(set: String) = "Правка: $set"
+
+    override val record = "Рекорд"
 
     override val addVisit = "Добавить визит"
     override val replace = "Заменить"

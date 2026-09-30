@@ -102,6 +102,7 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
             )
         }
         viewModel { (day: CalendarDay?) ->

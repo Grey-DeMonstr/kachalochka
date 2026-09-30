@@ -6,10 +6,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -239,52 +243,83 @@ fun ChoiceRow(
     }
 }
 
+/**
+ * A typed value between − and +, with [prefix] and [suffix] beside it, such as a gravitron's "−"
+ * and the unit. [note] is a second value under it, as strong as the design asks; [caption] a
+ * quieter line.
+ */
 @Composable
 fun Stepper(
     value: String,
-    caption: String,
+    caption: String?,
     onMinus: () -> Unit,
     onPlus: () -> Unit,
     tag: String,
+    onValueChange: (String) -> Unit,
     accent: Boolean = false,
-    onValueChange: ((String) -> Unit)? = null,
+    prefix: String = "",
+    suffix: String = "",
+    note: String? = null,
+    keyboardType: KeyboardType = KeyboardType.Decimal,
 ) {
     val colors = MaterialTheme.colorScheme
     val valueColor = if (accent) colors.onPrimaryContainer else colors.onBackground
+    val muted = colors.onBackground.copy(alpha = 0.55f)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         StepButton("−", onMinus, Modifier.testTag("$tag-minus"))
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-            if (onValueChange != null) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                if (prefix.isNotEmpty()) {
+                    Text(
+                        prefix,
+                        modifier = Modifier.testTag("$tag-prefix"),
+                        fontSize = 44.sp,
+                        lineHeight = 52.sp,
+                        color = valueColor,
+                    )
+                }
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
                     singleLine = true,
                     textStyle =
                         TextStyle(
-                            fontSize = 52.sp,
+                            fontSize = 44.sp,
                             lineHeight = 52.sp,
                             fontWeight = FontWeight.Medium,
                             color = valueColor,
                             textAlign = TextAlign.Center,
                         ),
                     cursorBrush = SolidColor(colors.secondary),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth().testTag("$tag-value"),
+                    keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                    modifier =
+                        Modifier
+                            .width(IntrinsicSize.Min)
+                            .widthIn(min = 28.dp)
+                            .testTag("$tag-value"),
                 )
-            } else {
+                if (suffix.isNotEmpty()) {
+                    Text(
+                        suffix,
+                        modifier = Modifier.padding(start = 6.dp, bottom = 8.dp),
+                        fontSize = 17.sp,
+                        color = muted,
+                    )
+                }
+            }
+            note?.let {
                 Text(
-                    value,
-                    modifier = Modifier.testTag("$tag-value"),
-                    fontSize = 52.sp,
-                    lineHeight = 52.sp,
+                    it,
+                    modifier = Modifier.testTag("$tag-note"),
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
-                    color = valueColor,
+                    color = colors.onBackground,
                 )
             }
-            Text(caption, fontSize = 13.sp, color = colors.onBackground.copy(alpha = 0.55f))
+            caption?.let { Text(it, fontSize = 13.sp, color = muted) }
         }
         StepButton("+", onPlus, Modifier.testTag("$tag-plus"))
     }
@@ -301,7 +336,7 @@ private fun StepButton(
     Box(
         modifier =
             modifier
-                .size(72.dp)
+                .size(64.dp)
                 .clip(shape)
                 .border(1.dp, colors.onBackground.copy(alpha = 0.20f), shape)
                 .clickable(onClick = onClick),

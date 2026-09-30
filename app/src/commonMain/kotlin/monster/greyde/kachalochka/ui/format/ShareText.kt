@@ -75,7 +75,14 @@ fun setsSummary(
     machine: Machine,
     sets: List<WorkoutSet>,
     preferred: PreferredWeightUnit,
-): String {
+): String = setsSummaryParts(machine, sets, preferred).joinToString(" ")
+
+/** [setsSummary] as its weights, when any count, then its reps, so a narrow row may wrap them. */
+fun setsSummaryParts(
+    machine: Machine,
+    sets: List<WorkoutSet>,
+    preferred: PreferredWeightUnit,
+): List<String> {
     val unit = sharedUnit(machine, preferred)
     val weights = sets.map { shownWeight(it.weight, machine, preferred) }
     val reps = sets.map { it.reps }
@@ -96,5 +103,5 @@ fun setsSummary(
         }
     val repsPart =
         if (reps.distinct().size == 1) "${reps.size}x${reps.first()}" else reps.joinToString("-")
-    return listOfNotNull(weightPart, repsPart).joinToString(" ")
+    return listOfNotNull(weightPart, repsPart)
 }

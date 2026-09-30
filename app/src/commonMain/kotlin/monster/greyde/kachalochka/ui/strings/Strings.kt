@@ -111,12 +111,11 @@ interface Strings {
 
     fun saveAs(person: String): String
 
-    fun setNumber(n: Int): String
+    val newSet: String
 
-    fun editCaption(
-        time: String,
-        was: String,
-    ): String
+    fun editOf(set: String): String
+
+    val record: String
 
     // Calendar
     val addVisit: String

@@ -19,7 +19,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** A one-line text field; [modifier] goes on the field itself, so a test tag reaches its text. */
+/**
+ * A text field, one line unless [singleLine] is off; [modifier] goes on the field itself, so a
+ * test tag reaches its text.
+ */
 @Composable
 fun TextInput(
     value: String,
@@ -28,6 +31,7 @@ fun TextInput(
     modifier: Modifier,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     valid: Boolean = true,
+    singleLine: Boolean = true,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(8.dp)
@@ -49,7 +53,7 @@ fun TextInput(
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            singleLine = true,
+            singleLine = singleLine,
             textStyle = TextStyle(fontSize = 17.sp, color = colors.onBackground),
             cursorBrush = SolidColor(colors.secondary),
             keyboardOptions = keyboardOptions,

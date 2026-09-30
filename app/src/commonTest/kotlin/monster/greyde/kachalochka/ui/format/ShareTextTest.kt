@@ -253,6 +253,18 @@ class ShareTextTest {
     }
 
     @Test
+    fun a_summary_splits_into_its_weights_and_its_reps() {
+        assertEquals(
+            listOf("20-40кг", "2x10"),
+            setsSummaryParts(machine("Жим ногами"), sets(20.0 to 10, 40.0 to 10), kg),
+        )
+        assertEquals(
+            listOf("3x10"),
+            setsSummaryParts(machine("Подтягивания"), sets(0.0 to 10, 0.0 to 10, 0.0 to 10), kg),
+        )
+    }
+
+    @Test
     fun machines_follow_one_per_line_and_one_without_sets_is_skipped() {
         val text =
             visitShareText(

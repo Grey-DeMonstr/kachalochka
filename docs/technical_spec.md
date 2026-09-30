@@ -125,15 +125,17 @@ Text leaves the app through `TextSharing`, bound per platform in `platformModule
 `ClipboardTextSharing` writes the clipboard and returns the notice the screen shows. Invites use
 the same platform call. A shared visit's text comes from the pure `visitShareText` in
 `app/ui/format`. Its `setsSummary` writes one machine's weights and reps, and every screen that
-sums up a machine's sets calls it, so they read exactly like the shared text. `VisitViewModel`
-reads the nickname ahead of the tap, because a browser accepts a clipboard write only shortly
-after the user's gesture.
+sums up a machine's sets calls it, so they read exactly like the shared text; `setsSummaryParts`
+gives the same text as its weights and its reps, which a row wraps apart when they do not fit.
+`VisitViewModel` reads the nickname ahead of the tap, because a browser accepts a clipboard write
+only shortly after the user's gesture.
 
 Every gym weight shown passes through `app/ui/format/WeightUnits.kt`: `shownUnit` picks the unit
 for a machine's unit and the profile's `PreferredWeightUnit`, `shownWeight` converts to the
 nearest half unit and `shownStep` to one decimal. The formatters that write a machine's weights
 (`setsSummary`, `setValue`, `shortSet`, `weightCaption`, `platformSuffix`, `machineTitle`) take
-the preference, and only the set sheet's `recordingCaption` puts the machine's own unit first.
+the preference, and only the set form's weight is typed in the machine's own unit, with
+`recordingConversion` under it in the shown one.
 View models read the preference with `ProfileRepository.preferredUnit` wherever they reload.
 
 ---
@@ -386,15 +388,15 @@ member's `linked_machine_id`. Neither column is a foreign key and no policy chec
 `machine`: a link may reach the server before its own machine does, and the linked machine is
 someone else's. Links are undirected for reading: machines joined by live links, in either
 direction and through any number of hops, form a cluster that counts as one physical machine.
-`MachineClusters` in `domain/gym` builds the clusters from a list of links by union-find, and
-every reader asks it: the picker and the machine list offer one friend's machine per cluster
-without an own machine (`friendMachineRows`, the machine with the fewest outgoing links, then by
-owner name and id), the set sheet asks `FriendsRepository.latestOn` for the friends' machines of
-the open machine's cluster (each `FriendResult` carries the friend's machine, whose unit its sets
-are written in), a friend's visit names each machine after the viewer's own in its cluster
-(`namesForViewer`), and the machine form lists the friends' machines of its cluster by owner
-name, then machine name (`linkedFriendMachines`). The clusters combine the account's own links,
-read locally, with its group mates' live links, read online through `FriendsRepository.groupLinks`.
+`MachineClusters` in `domain/gym` builds the clusters from a list of links by union-find, and every
+reader asks it: the picker and the machine list offer one friend's machine per cluster without an
+own machine (`friendMachineRows`, the machine with the fewest outgoing links, then by owner name
+and id), the machine's page asks `FriendsRepository.latestOn` for the friends' machines of the open
+machine's cluster (each `FriendResult` carries the friend's machine, whose unit its sets are
+written in), a friend's visit names each machine after the viewer's own in its cluster
+(`namesForViewer`), and the machine form lists the friends' machines of its cluster by owner name,
+then machine name (`linkedFriendMachines`). The clusters combine the account's own links, read
+locally, with its group mates' live links, read online through `FriendsRepository.groupLinks`.
 Picking a friend's machine, or "Взять себе" on one opened from the machine list, writes the own
 copy (`linkedCopy`) and the link from it to the friend's machine.
 
@@ -420,15 +422,15 @@ friend's by writing one own link, and merges two own machines. A merge removes a
 writes no link: `olderMachine` keeps the machine whose earliest live set is earlier, one without
 sets counting as newest and a tie keeping the edited one, and `mergedMachines` returns the rows to
 write — the removed machine's sets, photos and own links moved to the kept one (a link the kept one
-already has, or one into it, is soft-deleted instead) and the removed machine soft-deleted.
-Signed in, friends' links into the removed machine are moved first through
+already has, or one into it, is soft-deleted instead) and the removed machine soft-deleted. Signed
+in, friends' links into the removed machine are moved first through
 `FriendsRepository.repointLinks`, called only when `groupLinks` shows one; if the server does not
-answer nothing is written. The rows are then written sets first and the machine last, and a sync
-is requested. "Отвязать от друзей" breaks every direct link of the machine the same way round:
-`FriendsRepository.breakLinks` first, then the own links touching it soft-deleted locally. The
-form reads the links again whenever it is shown, and the set sheet reads friends' results again on
+answer nothing is written. The rows are then written sets first and the machine last, and a sync is
+requested. "Отвязать от друзей" breaks every direct link of the machine the same way round:
+`FriendsRepository.breakLinks` first, then the own links touching it soft-deleted locally. The form
+reads the links again whenever it is shown, and the machine's page reads friends' results again on
 `refresh()` and after a sync pass, because the chooser changes links on another screen. A merge
-started from a visit hands the kept machine to the visit's sheet, and the sheet closes on an own
+started from a visit hands the kept machine to the visit's page, and the page closes on an own
 machine that has been deleted rather than record a set on it.
 
 1.0.2 linked machines by a shared key, `machine.link_id`, which stays in both schemas for its
@@ -489,7 +491,8 @@ Every write to a day's sets goes through `SetRecorder` in `app/ui/visit`: it fin
 day's visit, replaces a machine of another account with the active account's own copy of it,
 gives a new set its position and instant, starts the rest timer for today's set and requests a
 sync for another day's, and amends, removes and reorders sets under the same rule. The visit view
-model keeps the sheet's state and hands the recorder what to write.
+model keeps the state of the machine's page and its set form, both drawn by the visit screen over
+its list, and hands the recorder what to write.
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

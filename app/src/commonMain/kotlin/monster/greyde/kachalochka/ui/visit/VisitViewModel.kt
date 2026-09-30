@@ -19,13 +19,14 @@ import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
+import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.machineMovedTo
-import monster.greyde.kachalochka.core.domain.gym.minuteOfDay
+import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.plannedWithoutSets
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
@@ -35,30 +36,35 @@ import monster.greyde.kachalochka.core.domain.gym.stepReps
 import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
 import monster.greyde.kachalochka.core.domain.gym.tagSections
+import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.AccountUi
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.accountsUi
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.UtcOffset
-import monster.greyde.kachalochka.ui.format.clockLabel
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.machineTitle
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.platformSuffix
-import monster.greyde.kachalochka.ui.format.recordingCaption
+import monster.greyde.kachalochka.ui.format.recordingConversion
 import monster.greyde.kachalochka.ui.format.saveLabel
+import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
+import monster.greyde.kachalochka.ui.format.setsSummaryParts
 import monster.greyde.kachalochka.ui.format.tagTitle
+import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.visitShareText
+import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.machine.GroupMachines
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
@@ -73,10 +79,15 @@ import kotlin.time.Instant
 
 const val COMMENT_LENGTH = 200
 
+/** More reps than anyone does in one set: a typo, not a record. */
+private const val MAX_REPS = 999
+
 data class VisitUiState(
+    /** The day, heading the list. */
     val title: String,
     val groups: List<SetGroupUi>,
-    val sheet: SheetUi?,
+    /** The machine being looked at, over the list; null shows the list. */
+    val page: MachinePageUi?,
     val ordering: Boolean,
     val canShare: Boolean,
     val notice: String?,
@@ -92,12 +103,12 @@ data class VisitSectionUi(
     val groups: List<SetGroupUi>,
 )
 
+/** A machine's row; [summary] is its results, the weights and the reps, which may wrap apart. */
 data class SetGroupUi(
     val machineId: MachineId,
     val title: String,
     val setupNote: String,
-    val summary: String,
-    val expanded: Boolean,
+    val summary: List<String>,
     val sets: List<SetRowUi>,
     val photo: Photo? = null,
     val tags: List<String> = emptyList(),
@@ -112,24 +123,50 @@ data class SetRowUi(
     val comment: String = "",
 )
 
-data class SheetUi(
+data class FriendLineUi(
+    val id: UserId,
+    val name: String,
+    val avatar: Avatar,
+    val text: String,
+)
+
+data class MachinePageUi(
+    val machineId: MachineId,
     val name: String,
     val platformSuffix: String?,
-    val setNumberLabel: String,
-    val caption: String?,
+    val photo: Photo?,
+    val tags: List<String>,
+    val setupNote: String,
+    /** The best set ever on the machine. */
+    val record: String?,
+    /** How long ago the previous visit on the machine was, over [previous], its results. */
+    val previousAgo: String?,
     val previous: String?,
+    val friends: List<FriendLineUi>,
+    /** "Сегодня · 3 подхода" over [sets], the day's sets on the machine; null without any. */
+    val daySets: String?,
+    val sets: List<SetRowUi>,
+    val canUnplan: Boolean,
+    val form: SetFormUi?,
+)
+
+/** The set being added or corrected; [weight] and [reps] are as typed. */
+data class SetFormUi(
+    val number: String,
+    val title: String,
     val weight: String,
-    val weightCaption: String,
+    /** "−" before a gravitron's weight. */
+    val weightSign: String,
+    val weightUnit: String,
+    /** The weight in the unit weights are shown in, when that is not the machine's own. */
+    val converted: String?,
     val reps: String,
+    val comment: String,
     val editing: Boolean,
     val people: List<AccountUi>,
     val saveLabel: String,
     val canSave: Boolean,
     val saving: Boolean,
-    val friends: List<String>,
-    val photo: Photo? = null,
-    /** Null while the comment field is hidden. */
-    val comment: String? = null,
 )
 
 class VisitViewModel(
@@ -148,6 +185,7 @@ class VisitViewModel(
     private val nickname: Nickname,
     private val catalogue: MachineCatalogue,
     private val profiles: ProfileRepository,
+    private val avatars: AccountAvatars,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
@@ -159,14 +197,15 @@ class VisitViewModel(
     private var visitSets: List<WorkoutSet> = emptyList()
     private var shownVisit: Visit? = null
     private var previousSets: List<WorkoutSet> = emptyList()
+    private var machineSets: List<WorkoutSet> = emptyList()
     private var selected: MachineId? = null
     private var open: Machine? = null
+    private var formOpen = false
     private var editing: WorkoutSet? = null
-    private var expanded: Set<MachineId> = emptySet()
     private var values = SetValues(0.0, DEFAULT_REPS)
     private var ordering = false
     private var saving = false
-    private var commentText: String? = null
+    private var commentText = ""
     private var friendResults: List<FriendResult> = emptyList()
     private var friendsFor: Pair<UserId, MachineId>? = null
     private var loadingFriends: Job? = null
@@ -198,6 +237,12 @@ class VisitViewModel(
     private val typedWeight: Double? get() = weightText?.let(::parseDecimal)?.takeIf { it >= 0 }
     private val weightValid: Boolean get() = weightText == null || typedWeight != null
 
+    /** The reps as typed; null while they show the stepped value. */
+    private var repsText: String? = null
+    private val typedReps: Int?
+        get() = repsText?.trim()?.toIntOrNull()?.takeIf { it in 1..MAX_REPS }
+    private val repsValid: Boolean get() = repsText == null || typedReps != null
+
     private val isToday: Boolean get() = day == today()
 
     /** The screen follows whoever is active, wherever the switch came from. */
@@ -218,7 +263,10 @@ class VisitViewModel(
         }
     }
 
-    val selectedMachineId: MachineId? get() = selected
+    /** The machine last opened, which the picker offers to copy even once its page is closed. */
+    private var lastOpened: MachineId? = null
+
+    val selectedMachineId: MachineId? get() = selected ?: lastOpened
 
     fun refresh() {
         friendsStale = true
@@ -256,11 +304,30 @@ class VisitViewModel(
         }
     }
 
-    fun selectMachine(id: MachineId) {
+    /** Opens [id]'s page with the form for its next set, as a picked machine opens. */
+    fun selectMachine(id: MachineId) = showMachine(id, withForm = true)
+
+    /** Opens [id]'s page, as a tap on its row does. */
+    fun openMachine(id: MachineId) = showMachine(id, withForm = false)
+
+    private fun showMachine(
+        id: MachineId,
+        withForm: Boolean,
+    ) {
         selected = id
         editing = null
-        commentText = null
+        formOpen = withForm
+        commentText = ""
         ordering = false
+        viewModelScope.launch { reload(reseed = true) }
+    }
+
+    /** The form for the open machine's next set, from the last set's values. */
+    fun openForm() {
+        if (open == null) return
+        formOpen = true
+        editing = null
+        commentText = ""
         viewModelScope.launch { reload(reseed = true) }
     }
 
@@ -278,14 +345,14 @@ class VisitViewModel(
     }
 
     fun changeReps(direction: Int) {
+        repsText = null
         values = values.copy(reps = stepReps(values.reps, direction))
         publish()
     }
 
-    /** Only opens the field, so a second tap never loses the text; clearing it removes it. */
-    fun openComment() {
-        if (commentText != null) return
-        commentText = ""
+    fun typeReps(text: String) {
+        repsText = text
+        typedReps?.let { values = values.copy(reps = it) }
         publish()
     }
 
@@ -298,17 +365,12 @@ class VisitViewModel(
         viewModelScope.launch { accounts.switchTo(id) }
     }
 
-    fun toggleGroup(id: MachineId) {
-        expanded = if (id in expanded) expanded - id else expanded + id
-        publish()
-    }
-
     fun save() {
         val machine = open ?: return
-        if (!weightValid) return
-        // Taken now: while the write waits on the network the sheet may move to another machine.
+        if (!weightValid || !repsValid || !formOpen) return
+        // Taken now: while the write waits on the network the page may move to another machine.
         val saved = values
-        val comment = commentText.orEmpty().trim()
+        val comment = commentText.trim()
         val edited = editing
         writes.launch {
             saving = true
@@ -320,9 +382,10 @@ class VisitViewModel(
                     recorder.amend(edited, saved, comment)
                 }
                 val stillOpen = open?.id == machine.id
-                if (stillOpen) {
-                    commentText = null
-                    if (editing?.id == edited?.id) editing = null
+                if (stillOpen && editing?.id == edited?.id) {
+                    commentText = ""
+                    // A correction is done with; a new set is followed by the next one.
+                    if (edited != null) closeForm()
                 }
                 reload(reseed = stillOpen)
             } finally {
@@ -375,7 +438,7 @@ class VisitViewModel(
 
     fun toggleOrdering() {
         ordering = !ordering
-        if (ordering && closeSheet()) return
+        if (ordering) closePage()
         publish()
     }
 
@@ -401,34 +464,61 @@ class VisitViewModel(
         }
     }
 
+    /** Opens [id] in the form, on its machine's page. */
     fun editSet(id: WorkoutSetId) {
         if (ordering) return
         val set = visitSets.firstOrNull { it.id == id } ?: return
         editing = set
         selected = set.machineId
+        formOpen = true
         values = SetValues(set.weight, set.reps)
         weightText = null
-        commentText = set.comment.ifEmpty { null }
+        repsText = null
+        commentText = set.comment
         reloadShown()
     }
 
-    /** Leaves any edit; returns false when no sheet was open, so back can leave the screen. */
+    /**
+     * Steps back once: an open form closes, else the open page does. Returns false when there was
+     * neither, so back can leave the screen.
+     */
     fun closeSheet(): Boolean {
+        if (formOpen && open != null) {
+            closeForm()
+            publish()
+            return true
+        }
         if (open == null) return false
-        selected = null
-        open = null
-        editing = null
-        weightText = null
-        commentText = null
+        closePage()
         publish()
         return true
+    }
+
+    /** Leaves the form, dropping any edit in it. */
+    fun cancelForm() {
+        closeForm()
+        publish()
+    }
+
+    private fun closeForm() {
+        formOpen = false
+        editing = null
+        weightText = null
+        repsText = null
+        commentText = ""
+    }
+
+    private fun closePage() {
+        closeForm()
+        selected = null
+        open = null
     }
 
     fun deleteEditedSet() {
         val edited = editing ?: return
         writes.launch {
             recorder.remove(edited)
-            editing = null
+            closeForm()
             reload(reseed = true)
         }
     }
@@ -439,7 +529,7 @@ class VisitViewModel(
     }
 
     /**
-     * After a switch the sheet still shows the machine the previous account was on; the active
+     * After a switch the page still shows the machine the previous account was on; the active
      * account's own row of that name stands in for it, until a save mirrors it (spec §4.1).
      */
     private suspend fun machineOf(owner: UserId?): Machine? {
@@ -448,7 +538,7 @@ class VisitViewModel(
         val shown = open ?: return null
         // Merged away or deleted on another screen: a set must not land on it.
         if (shown.userId == owner && machines.byId(shown.id)?.deleted == true) {
-            selected = null
+            closePage()
             return null
         }
         return machines.named(owner, shown.name) ?: shown
@@ -479,16 +569,18 @@ class VisitViewModel(
         val machine = machineOf(owner)
         open = machine
         selected = machine?.id ?: selected
-        previousSets =
+        machine?.let { lastOpened = it.id }
+        machineSets =
             machine
                 ?.takeIf { it.userId == owner }
-                ?.let {
-                    previousVisitSets(
-                        sets.forMachine(it.id),
-                        shown?.visit?.id,
-                        before = day.at(0L, utcOffset.at(clock.now())),
-                    )
-                }.orEmpty()
+                ?.let { sets.forMachine(it.id) }
+                .orEmpty()
+        previousSets =
+            previousVisitSets(
+                machineSets,
+                shown?.visit?.id,
+                before = day.at(0L, utcOffset.at(clock.now())),
+            )
         if (reseed && editing == null && machine != null) {
             values =
                 suggestNextSet(
@@ -497,6 +589,7 @@ class VisitViewModel(
                     visitSets.filter { it.machineId == machine.id },
                 )
             weightText = null
+            repsText = null
         }
         // Only an own machine has links worth asking about; a switch drops the old answer.
         val asked =
@@ -554,11 +647,16 @@ class VisitViewModel(
     private fun coverOf(machineId: MachineId): Photo? =
         own?.let { ShownMachines(it, group).cover(machineId) }
 
-    private fun friendLine(result: FriendResult): String {
+    private fun friendLine(result: FriendResult): FriendLineUi {
         val now = clock.now()
         val days = calendarDaysBetween(result.sets.last().recordedAt, now, utcOffset.at(now))
         val sets = setsSummary(result.machine, result.sets, preferred)
-        return "${result.friend.displayName} · ${daysAgoLabel(days)} · $sets"
+        return FriendLineUi(
+            result.friend.userId,
+            result.friend.displayName,
+            result.friend.avatar,
+            "${daysAgoLabel(days)} · $sets",
+        )
     }
 
     private fun publish() {
@@ -576,19 +674,12 @@ class VisitViewModel(
         val groups = recorded + planned
         mutableState.value =
             VisitUiState(
-                title =
-                    if (isToday) {
-                        AppStrings.current.todayTitle
-                    } else {
-                        AppStrings.current.visitOn(
-                            dayMonthLabel(day, CalendarDay.of(now, offset).year),
-                        )
-                    },
+                title = weekdayDate(day, withYear = day.year != CalendarDay.of(now, offset).year),
                 groups = groups,
                 sections = sections(groups),
                 groupByTag = groupByTag,
                 canGroupByTag = groups.any { it.tags.isNotEmpty() },
-                sheet = sheetUi(offset),
+                page = pageUi(offset),
                 ordering = ordering,
                 canShare = visitSets.isNotEmpty(),
                 canOrder = visitSets.isNotEmpty(),
@@ -596,30 +687,32 @@ class VisitViewModel(
             )
     }
 
+    private fun setRows(
+        machine: Machine?,
+        machineSets: List<WorkoutSet>,
+    ): List<SetRowUi> =
+        machineSets.mapIndexed { setIndex, set ->
+            SetRowUi(
+                set.id,
+                "#${setIndex + 1}",
+                machine?.let { setValue(set.weight, set.reps, it, preferred) }
+                    ?: setValue(set.weight, set.reps, AppStrings.current.kg),
+                set.id == editing?.id,
+                set.comment,
+            )
+        }
+
     private fun groupUi(
         machineId: MachineId,
         machineSets: List<WorkoutSet>,
     ): SetGroupUi {
         val machine = machinesById[machineId]
-        val title = machine?.let { machineTitle(it, preferred) }.orEmpty()
         return SetGroupUi(
             machineId = machineId,
-            title = title,
+            title = machine?.let { machineTitle(it, preferred) }.orEmpty(),
             setupNote = machine?.setupNote.orEmpty(),
-            summary = machine?.let { setsSummary(it, machineSets, preferred) }.orEmpty(),
-            expanded =
-                ordering || machineId in expanded || machineSets.any { it.id == editing?.id },
-            sets =
-                machineSets.mapIndexed { setIndex, set ->
-                    SetRowUi(
-                        set.id,
-                        "#${setIndex + 1}",
-                        machine?.let { setValue(set.weight, set.reps, it, preferred) }
-                            ?: setValue(set.weight, set.reps, AppStrings.current.kg),
-                        set.id == editing?.id,
-                        set.comment,
-                    )
-                },
+            summary = machine?.let { setsSummaryParts(it, machineSets, preferred) }.orEmpty(),
+            sets = setRows(machine, machineSets),
             photo = coverOf(machineId),
             tags = machine?.tags.orEmpty().sortedBy { it.lowercase() },
         )
@@ -631,8 +724,7 @@ class VisitViewModel(
             machineId = machineId,
             title = machineTitle(machine, preferred),
             setupNote = machine.setupNote,
-            summary = AppStrings.current.planned,
-            expanded = machineId in expanded,
+            summary = listOf(AppStrings.current.planned),
             sets = emptyList(),
             photo = coverOf(machineId),
             tags = machine.tags.sortedBy { it.lowercase() },
@@ -640,8 +732,10 @@ class VisitViewModel(
         )
     }
 
+    /** Takes [id] out of the visit's plan, and its page with it. */
     fun unplan(id: MachineId) {
         val visit = shownVisit ?: return
+        if (open?.id == id) closePage()
         writes.launch {
             recorder.unplan(visit.id, id)
             reload(reseed = false)
@@ -660,42 +754,76 @@ class VisitViewModel(
             listOf(VisitSectionUi(null, groups))
         }
 
-    private fun sheetUi(offset: Duration): SheetUi? {
+    private fun pageUi(offset: Duration): MachinePageUi? {
         val machine = open ?: return null
-        val people =
+        val onMachine = visitSets.filter { it.machineId == machine.id }
+        val until = if (isToday) clock.now() else day.at(0L, offset)
+        val previousAgo =
+            previousSets.lastOrNull()?.let {
+                daysAgoLabel(calendarDaysBetween(it.recordedAt, until, offset))
+                    .replaceFirstChar { first -> first.uppercase() }
+            }
+        val dayName =
             if (isToday) {
-                accountsUi(accounts.accounts.value, accounts.activeId.value)
+                AppStrings.current.todayTitle
+            } else {
+                dayMonthLabel(day, CalendarDay.of(clock.now(), offset).year)
+            }
+        val planned = shownVisit?.planned.orEmpty()
+        return MachinePageUi(
+            machineId = machine.id,
+            name = machine.name,
+            platformSuffix = platformSuffix(machine, preferred),
+            photo = coverOf(machine.id),
+            tags = machine.tags.sortedBy { it.lowercase() },
+            setupNote = machine.setupNote,
+            record =
+                machinePeaks(machineSets).firstOrNull()?.best(machine.weightMode)?.let {
+                    setValue(it.weight, it.reps, machine, preferred)
+                },
+            previousAgo = previousAgo,
+            previous =
+                previousSets.takeIf { it.isNotEmpty() }?.let {
+                    setsSummary(machine, it, preferred)
+                },
+            friends = if (editing == null) friendResults.map(::friendLine) else emptyList(),
+            daySets =
+                onMachine.takeIf { it.isNotEmpty() }?.let {
+                    "$dayName · ${setCount(it.size)}"
+                },
+            sets = setRows(machine, onMachine),
+            canUnplan = onMachine.isEmpty() && machine.id in planned,
+            form = if (formOpen) formUi(machine, onMachine) else null,
+        )
+    }
+
+    private fun formUi(
+        machine: Machine,
+        onMachine: List<WorkoutSet>,
+    ): SetFormUi {
+        val edited = editing
+        val people =
+            if (isToday && edited == null) {
+                accountsUi(accounts.accounts.value, accounts.activeId.value, avatars.photos.value)
             } else {
                 emptyList()
             }
-        val onMachine = visitSets.filter { it.machineId == machine.id }
-        val edited = editing
-        val number = setNumber(edited, onMachine)
-        val caption =
-            if (edited == null) {
-                machine.setupNote.ifBlank { null }
-            } else {
-                AppStrings.current.editCaption(
-                    clockLabel(minuteOfDay(edited.recordedAt, offset)),
-                    setValue(edited.weight, edited.reps, machine, preferred),
-                )
-            }
-        val previous =
-            previousSets.takeIf { edited == null && it.isNotEmpty() }?.let { previous ->
-                val until = if (isToday) clock.now() else day.at(0L, offset)
-                val days = calendarDaysBetween(previous.last().recordedAt, until, offset)
-                val ago = daysAgoLabel(days).replaceFirstChar { it.uppercase() }
-                "$ago · ${setsSummary(machine, previous, preferred)}"
-            }
-        return SheetUi(
-            name = machine.name,
-            platformSuffix = platformSuffix(machine, preferred),
-            setNumberLabel = AppStrings.current.setNumber(number),
-            caption = caption,
-            previous = previous,
+        return SetFormUi(
+            number = "#${setNumber(edited, onMachine)}",
+            title =
+                if (edited == null) {
+                    AppStrings.current.newSet
+                } else {
+                    AppStrings.current.editOf(
+                        setValue(edited.weight, edited.reps, machine, preferred),
+                    )
+                },
             weight = weightText ?: formatNumber(values.weight),
-            weightCaption = recordingCaption(machine, values.weight, preferred),
-            reps = values.reps.toString(),
+            weightSign = if (machine.weightMode == WeightMode.Counterweight) "−" else "",
+            weightUnit = unitLabel(machine),
+            converted = recordingConversion(machine, values.weight, preferred),
+            reps = repsText ?: values.reps.toString(),
+            comment = commentText,
             editing = edited != null,
             people = people,
             saveLabel =
@@ -703,11 +831,8 @@ class VisitViewModel(
                     people.takeIf { it.size > 1 }?.firstOrNull { it.active }?.displayName,
                     edited != null,
                 ),
-            canSave = weightValid && !saving,
+            canSave = weightValid && repsValid && !saving,
             saving = saving,
-            friends = if (edited == null) friendResults.map(::friendLine) else emptyList(),
-            photo = coverOf(machine.id),
-            comment = commentText,
         )
     }
 }

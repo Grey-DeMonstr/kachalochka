@@ -61,26 +61,17 @@ class WeightUnitsTest {
     }
 
     @Test
-    fun recording_puts_the_machine_s_unit_first_and_the_chosen_one_in_brackets() {
-        assertEquals(
-            "lb (41кг) всего · ±5lb (2.3кг)",
-            recordingCaption(lbCable, 90.0, PreferredWeightUnit.Kg),
-        )
-        assertEquals(
-            "кг (88lb) всего · ±2.5кг (5.5lb)",
-            recordingCaption(kgPress, 40.0, PreferredWeightUnit.Lb),
-        )
+    fun a_weight_recorded_in_another_unit_is_converted_to_the_chosen_one() {
+        assertEquals("41 кг", recordingConversion(lbCable, 90.0, PreferredWeightUnit.Kg))
+        assertEquals("88 lb", recordingConversion(kgPress, 40.0, PreferredWeightUnit.Lb))
     }
 
     @Test
-    fun recording_in_the_chosen_unit_or_with_mixed_units_adds_no_brackets() {
-        assertEquals("lb всего · ±5", recordingCaption(lbCable, 90.0, PreferredWeightUnit.Mixed))
-        assertEquals("lb всего · ±5", recordingCaption(lbCable, 90.0, PreferredWeightUnit.Lb))
-        assertEquals("кг всего · ±2.5", recordingCaption(kgPress, 40.0, PreferredWeightUnit.Kg))
-        assertEquals(
-            "плитка всего · ±1",
-            recordingCaption(gravitron, 7.0, PreferredWeightUnit.Kg),
-        )
+    fun a_weight_recorded_in_the_chosen_unit_or_an_own_one_needs_no_conversion() {
+        assertEquals(null, recordingConversion(lbCable, 90.0, PreferredWeightUnit.Mixed))
+        assertEquals(null, recordingConversion(lbCable, 90.0, PreferredWeightUnit.Lb))
+        assertEquals(null, recordingConversion(kgPress, 40.0, PreferredWeightUnit.Kg))
+        assertEquals(null, recordingConversion(gravitron, 7.0, PreferredWeightUnit.Kg))
     }
 
     @Test

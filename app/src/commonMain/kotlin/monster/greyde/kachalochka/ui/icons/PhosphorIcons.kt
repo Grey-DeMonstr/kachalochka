@@ -15,6 +15,7 @@ object PhosphorIcons {
     val Barbell: ImageVector by lazy { phosphor("Barbell", BARBELL) }
     val CalendarBlank: ImageVector by lazy { phosphor("CalendarBlank", CALENDAR_BLANK) }
     val Camera: ImageVector by lazy { phosphor("Camera", CAMERA) }
+    val CameraPlus: ImageVector by lazy { phosphor("CameraPlus", CAMERA_PLUS) }
     val CaretRight: ImageVector by lazy { phosphor("CaretRight", CARET_RIGHT) }
     val ChartLineUp: ImageVector by lazy { phosphor("ChartLineUp", CHART_LINE_UP) }
     val ChatTeardropText: ImageVector by lazy { phosphor("ChatTeardropText", CHAT_TEARDROP_TEXT) }
@@ -42,7 +43,9 @@ object PhosphorIcons {
     }
     val Timer: ImageVector by lazy { phosphor("Timer", TIMER) }
     val Trash: ImageVector by lazy { phosphor("Trash", TRASH) }
+    val Trophy: ImageVector by lazy { phosphor("Trophy", TROPHY) }
     val UsersThree: ImageVector by lazy { phosphor("UsersThree", USERS_THREE) }
+    val X: ImageVector by lazy { phosphor("X", X_MARK) }
 
     val all: List<ImageVector>
         get() =
@@ -52,6 +55,7 @@ object PhosphorIcons {
                 Barbell,
                 CalendarBlank,
                 Camera,
+                CameraPlus,
                 CaretRight,
                 ChartLineUp,
                 ChatTeardropText,
@@ -72,7 +76,9 @@ object PhosphorIcons {
                 SlidersHorizontal,
                 Timer,
                 Trash,
+                Trophy,
                 UsersThree,
+                X,
             )
 }
 
@@ -112,3 +118,6 @@ private const val SLIDERS_HORIZONTAL = "M40,88H73a32,32,0,0,0,62,0h81a8,8,0,0,0,
 private const val TIMER = "M128,40a96,96,0,1,0,96,96A96.11,96.11,0,0,0,128,40Zm0,176a80,80,0,1,1,80-80A80.09,80.09,0,0,1,128,216ZM173.66,90.34a8,8,0,0,1,0,11.32l-40,40a8,8,0,0,1-11.32-11.32l40-40A8,8,0,0,1,173.66,90.34ZM96,16a8,8,0,0,1,8-8h48a8,8,0,0,1,0,16H104A8,8,0,0,1,96,16Z"
 private const val TRASH = "M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"
 private const val USERS_THREE = "M244.8,150.4a8,8,0,0,1-11.2-1.6A51.6,51.6,0,0,0,192,128a8,8,0,0,1-7.37-4.89,8,8,0,0,1,0-6.22A8,8,0,0,1,192,112a24,24,0,1,0-23.24-30,8,8,0,1,1-15.5-4A40,40,0,1,1,219,117.51a67.94,67.94,0,0,1,27.43,21.68A8,8,0,0,1,244.8,150.4ZM190.92,212a8,8,0,1,1-13.84,8,57,57,0,0,0-98.16,0,8,8,0,1,1-13.84-8,72.06,72.06,0,0,1,33.74-29.92,48,48,0,1,1,58.36,0A72.06,72.06,0,0,1,190.92,212ZM128,176a32,32,0,1,0-32-32A32,32,0,0,0,128,176ZM72,120a8,8,0,0,0-8-8A24,24,0,1,1,87.24,82a8,8,0,1,0,15.5-4A40,40,0,1,0,37,117.51,67.94,67.94,0,0,0,9.6,139.19a8,8,0,1,0,12.8,9.61A51.6,51.6,0,0,1,64,128,8,8,0,0,0,72,120Z"
+private const val CAMERA_PLUS = "M168,136a8,8,0,0,1-8,8H136v24a8,8,0,0,1-16,0V144H96a8,8,0,0,1,0-16h24V104a8,8,0,0,1,16,0v24h24A8,8,0,0,1,168,136Zm64-56V192a24,24,0,0,1-24,24H48a24,24,0,0,1-24-24V80A24,24,0,0,1,48,56H75.72L87,39.12A16,16,0,0,1,100.28,32h55.44A16,16,0,0,1,169,39.12L180.28,56H208A24,24,0,0,1,232,80Zm-16,0a8,8,0,0,0-8-8H176a8,8,0,0,1-6.66-3.56L155.72,48H100.28L86.66,68.44A8,8,0,0,1,80,72H48a8,8,0,0,0-8,8V192a8,8,0,0,0,8,8H208a8,8,0,0,0,8-8Z"
+private const val TROPHY = "M232,64H208V48a8,8,0,0,0-8-8H56a8,8,0,0,0-8,8V64H24A16,16,0,0,0,8,80V96a40,40,0,0,0,40,40h3.65A80.13,80.13,0,0,0,120,191.61V216H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16H136V191.58c31.94-3.23,58.44-25.64,68.08-55.58H208a40,40,0,0,0,40-40V80A16,16,0,0,0,232,64ZM48,120A24,24,0,0,1,24,96V80H48v32q0,4,.39,8Zm144-8.9c0,35.52-29,64.64-64,64.9a64,64,0,0,1-64-64V56H192ZM232,96a24,24,0,0,1-24,24h-.5a81.81,81.81,0,0,0,.5-8.9V80h24Z"
+private const val X_MARK = "M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"

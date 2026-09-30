@@ -17,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -25,6 +26,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.visitShareText
@@ -131,6 +133,7 @@ class VisitViewModelTest {
         Nickname(gym.profiles, gym.accounts),
         gym.catalogue,
         gym.profiles,
+        AccountAvatars(gym.accounts, gym.profiles),
     )
 
     @BeforeTest
@@ -155,11 +158,11 @@ class VisitViewModelTest {
         inEnglish {
             vm.refresh()
             val state = assertNotNull(vm.state.value)
-            assertEquals("Today", state.title)
-            val sheet = assertNotNull(state.sheet)
-            assertEquals("set 1", sheet.setNumberLabel)
-            assertEquals("Save set", sheet.saveLabel)
-            assertEquals("kg total · ±2.5", sheet.weightCaption)
+            assertEquals("Tuesday, 14 November", state.title)
+            val form = assertNotNull(state.page?.form)
+            assertEquals("New set", form.title)
+            assertEquals("Add", form.saveLabel)
+            assertEquals("kg", form.weightUnit)
         }
     }
 
@@ -254,7 +257,7 @@ class VisitViewModelTest {
         val vm = viewModel().also { it.refresh() }
 
         val state = assertNotNull(vm.state.value)
-        assertNull(state.sheet)
+        assertNull(state.page)
         assertEquals(0, state.groups.sumOf { it.sets.size })
     }
 
@@ -262,15 +265,18 @@ class VisitViewModelTest {
     fun choosing_a_machine_seeds_the_steppers_from_the_previous_visit() {
         val vm = viewModel().also { it.selectMachine(press.id) }
 
-        val sheet = assertNotNull(vm.state.value?.sheet)
-        assertEquals("Жим ногами", sheet.name)
-        assertEquals("(+20 кг)", sheet.platformSuffix)
-        assertEquals("подход 1", sheet.setNumberLabel)
-        assertEquals("Сиденье на 4", sheet.caption)
-        assertEquals("Вчера · 70-70-75кг 10-10-8", sheet.previous)
-        assertEquals("70", sheet.weight)
-        assertEquals("кг всего · ±2.5", sheet.weightCaption)
-        assertEquals("10", sheet.reps)
+        val page = assertNotNull(vm.state.value?.page)
+        assertEquals("Жим ногами", page.name)
+        assertEquals("(+20 кг)", page.platformSuffix)
+        assertEquals("Сиденье на 4", page.setupNote)
+        assertEquals("Вчера", page.previousAgo)
+        assertEquals("70-70-75кг 10-10-8", page.previous)
+        val form = assertNotNull(page.form)
+        assertEquals("#1", form.number)
+        assertEquals("70", form.weight)
+        assertEquals("кг", form.weightUnit)
+        assertNull(form.converted)
+        assertEquals("10", form.reps)
     }
 
     @Test
@@ -280,7 +286,12 @@ class VisitViewModelTest {
         vm.changeWeight(+1)
         vm.changeReps(-1)
 
-        val sheet = assertNotNull(vm.state.value?.sheet)
+        val sheet =
+            assertNotNull(
+                vm.state.value
+                    ?.page
+                    ?.form,
+            )
         assertEquals("72.5", sheet.weight)
         assertEquals("9", sheet.reps)
     }
@@ -293,14 +304,16 @@ class VisitViewModelTest {
         assertEquals(
             "22,5",
             vm.state.value
-                ?.sheet
+                ?.page
+                ?.form
                 ?.weight,
         )
         vm.changeWeight(+1)
         assertEquals(
             "25",
             vm.state.value
-                ?.sheet
+                ?.page
+                ?.form
                 ?.weight,
         )
 
@@ -309,7 +322,8 @@ class VisitViewModelTest {
         assertEquals(
             "20.25",
             vm.state.value
-                ?.sheet
+                ?.page
+                ?.form
                 ?.weight,
         )
     }
@@ -324,7 +338,8 @@ class VisitViewModelTest {
                 assertEquals(
                     false,
                     vm.state.value
-                        ?.sheet
+                        ?.page
+                        ?.form
                         ?.canSave,
                     it,
                 )
@@ -349,9 +364,131 @@ class VisitViewModelTest {
                     .single()
                     .weight,
             )
-            val sheet = assertNotNull(vm.state.value?.sheet)
+            val sheet =
+                assertNotNull(
+                    vm.state.value
+                        ?.page
+                        ?.form,
+                )
             assertEquals("22.5", sheet.weight)
             assertEquals(true, sheet.canSave)
+        }
+
+    @Test
+    fun typed_reps_are_saved_and_the_steppers_go_on_from_them() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            vm.typeReps("12")
+            vm.changeReps(+1)
+            vm.save()
+
+            assertEquals(13, todaySets().single().reps)
+        }
+
+    @Test
+    fun reps_that_are_not_a_whole_number_above_zero_are_not_saved() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            listOf("", "0", "1.5", "abc", "-3").forEach {
+                vm.typeReps(it)
+                assertEquals(
+                    false,
+                    vm.state.value
+                        ?.page
+                        ?.form
+                        ?.canSave,
+                    it,
+                )
+            }
+            vm.save()
+
+            assertEquals(emptyList(), todaySets())
+        }
+
+    @Test
+    fun the_page_shows_the_machine_s_record_and_the_day_s_sets() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 80.0, 6, 0))
+            gym.sets.upsert(set(visit.id, press, 80.0, 8, 1).copy(comment = "Тяжело"))
+            val vm = viewModel().also { it.openMachine(press.id) }
+
+            val page = assertNotNull(vm.state.value?.page)
+            assertEquals("80 кг × 8", page.record)
+            assertEquals("Сегодня · 2 подхода", page.daySets)
+            assertEquals(
+                listOf(Triple("#1", "80 кг × 6", ""), Triple("#2", "80 кг × 8", "Тяжело")),
+                page.sets.map { Triple(it.title, it.value, it.comment) },
+            )
+        }
+
+    @Test
+    fun a_gravitron_s_record_is_its_lightest_set_and_its_weight_is_signed() =
+        runTest {
+            val gravitron =
+                Machine.new("Подтягивания", null, t0).copy(weightMode = WeightMode.Counterweight)
+            gym.machines.upsert(gravitron)
+            gym.sets.upsert(set(yesterday, gravitron, 30.0, 10, -100))
+            gym.sets.upsert(set(yesterday, gravitron, 25.0, 8, -99))
+            gym.sets.upsert(set(yesterday, gravitron, 25.0, 6, -98))
+
+            val vm = viewModel().also { it.selectMachine(gravitron.id) }
+
+            val page = assertNotNull(vm.state.value?.page)
+            assertEquals("(-)25 кг × 8", page.record)
+            assertEquals("−", page.form?.weightSign)
+        }
+
+    @Test
+    fun a_machine_without_sets_has_no_record_nor_day_s_sets() {
+        val vm = viewModel().also { it.openMachine(row.id) }
+
+        val page = assertNotNull(vm.state.value?.page)
+        assertNull(page.record)
+        assertNull(page.previous)
+        assertNull(page.daySets)
+    }
+
+    @Test
+    fun a_planned_machine_without_sets_is_taken_out_from_its_page() =
+        runTest {
+            gym.visits.upsert(visit.copy(planned = listOf(row.id)))
+            val vm = viewModel().also { it.openMachine(row.id) }
+            assertTrue(assertNotNull(vm.state.value?.page).canUnplan)
+
+            vm.unplan(row.id)
+
+            assertNull(vm.state.value?.page)
+            assertEquals(
+                emptyList(),
+                gym.visits.rows
+                    .getValue(visit.id)
+                    .planned,
+            )
+        }
+
+    @Test
+    fun adding_a_set_keeps_the_form_open_for_the_next_one() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            vm.save()
+
+            assertEquals(
+                "#2",
+                vm.state.value
+                    ?.page
+                    ?.form
+                    ?.number,
+            )
+            assertEquals(
+                "Новый подход",
+                vm.state.value
+                    ?.page
+                    ?.form
+                    ?.title,
+            )
         }
 
     @Test
@@ -364,7 +501,8 @@ class VisitViewModelTest {
         assertEquals(
             "22,5",
             vm.state.value
-                ?.sheet
+                ?.page
+                ?.form
                 ?.weight,
         )
     }
@@ -377,7 +515,12 @@ class VisitViewModelTest {
 
         vm.refresh()
 
-        val sheet = assertNotNull(vm.state.value?.sheet)
+        val sheet =
+            assertNotNull(
+                vm.state.value
+                    ?.page
+                    ?.form,
+            )
         assertEquals("72.5", sheet.weight)
         assertEquals("9", sheet.reps)
     }
@@ -395,10 +538,10 @@ class VisitViewModelTest {
             assertEquals(t0, timer.startedAt.value)
             val state = assertNotNull(vm.state.value)
             assertEquals(1, state.groups.sumOf { it.sets.size })
-            assertEquals("подход 2", state.sheet?.setNumberLabel)
-            assertEquals("67.5", state.sheet?.weight)
+            assertEquals("#2", state.page?.form?.number)
+            assertEquals("67.5", state.page?.form?.weight)
             assertEquals(
-                listOf("Жим ногами (+20 кг)" to "67.5кг 1x10"),
+                listOf("Жим ногами (+20 кг)" to listOf("67.5кг", "1x10")),
                 state.groups.map { it.title to it.summary },
             )
         }
@@ -424,28 +567,25 @@ class VisitViewModelTest {
 
             vm.save()
 
-            val saving = assertNotNull(assertNotNull(vm.state.value).sheet)
+            val saving = assertNotNull(assertNotNull(vm.state.value).page?.form)
             assertTrue(saving.saving)
             assertFalse(saving.canSave)
             gate.complete(Unit)
-            val saved = assertNotNull(assertNotNull(vm.state.value).sheet)
+            val saved = assertNotNull(assertNotNull(vm.state.value).page?.form)
             assertFalse(saved.saving)
             assertTrue(saved.canSave)
-            assertEquals("подход 2", saved.setNumberLabel)
+            assertEquals("#2", saved.number)
         }
 
     @Test
-    fun a_group_expands_into_its_sets() =
+    fun a_group_sums_up_its_sets() =
         runTest {
             gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))
             gym.sets.upsert(set(visit.id, row, 45.0, 10, 2))
             val vm = viewModel().also { it.refresh() }
 
-            vm.toggleGroup(row.id)
-
             val group = assertNotNull(vm.state.value).groups.single()
-            assertEquals("45кг 12-10", group.summary)
-            assertEquals(true, group.expanded)
+            assertEquals(listOf("45кг", "12-10"), group.summary)
             assertEquals(
                 listOf(
                     "#1" to "45 кг × 12",
@@ -459,38 +599,33 @@ class VisitViewModelTest {
     fun a_comment_is_saved_with_the_set_and_the_next_set_starts_without_one() =
         runTest {
             val vm = viewModel().also { it.selectMachine(press.id) }
-            assertNull(
-                vm.state.value
-                    ?.sheet
-                    ?.comment,
-            )
-
-            vm.openComment()
             assertEquals(
                 "",
                 vm.state.value
-                    ?.sheet
+                    ?.page
+                    ?.form
                     ?.comment,
             )
             vm.typeComment("  Тяжело ")
             vm.save()
 
             assertEquals("Тяжело", todaySets().single().comment)
-            assertNull(
+            assertEquals(
+                "",
                 vm.state.value
-                    ?.sheet
+                    ?.page
+                    ?.form
                     ?.comment,
             )
         }
 
     @Test
-    fun the_comment_button_again_keeps_what_was_typed() =
+    fun an_edit_keeps_the_comment_it_did_not_touch() =
         runTest {
             val recorded = set(visit.id, press, 80.0, 8, 0).copy(comment = "Тяжело")
             gym.sets.upsert(recorded)
             val vm = viewModel().also { it.editSet(recorded.id) }
 
-            vm.openComment()
             vm.save()
 
             assertEquals("Тяжело", gym.sets.rows[recorded.id]?.comment)
@@ -527,24 +662,21 @@ class VisitViewModelTest {
             vm.closeSheet()
             vm.selectMachine(row.id)
             vm.typeWeight("33")
-            vm.openComment()
             vm.typeComment("Пишу")
             gate.complete(Unit)
 
-            val sheet = assertNotNull(vm.state.value?.sheet)
-            assertEquals(row.name, sheet.name)
-            assertEquals("33", sheet.weight)
-            assertEquals("Пишу", sheet.comment)
+            val page = assertNotNull(vm.state.value?.page)
+            assertEquals(row.name, page.name)
+            assertEquals("33", page.form?.weight)
+            assertEquals("Пишу", page.form?.comment)
         }
 
     @Test
     fun a_long_comment_is_cut_and_a_blank_one_stays_empty() =
         runTest {
             val vm = viewModel().also { it.selectMachine(press.id) }
-            vm.openComment()
             vm.typeComment("а".repeat(250))
             vm.save()
-            vm.openComment()
             vm.typeComment("   ")
             vm.save()
 
@@ -564,7 +696,8 @@ class VisitViewModelTest {
             assertEquals(
                 "Тяжело",
                 vm.state.value
-                    ?.sheet
+                    ?.page
+                    ?.form
                     ?.comment,
             )
             vm.typeComment("Легко")
@@ -734,7 +867,8 @@ class VisitViewModelTest {
 
             vm.share()
 
-            val summaries = assertNotNull(vm.state.value).groups.map { it.summary }
+            val summaries =
+                assertNotNull(vm.state.value).groups.map { it.summary.joinToString(" ") }
             assertEquals(listOf("60-70кг 2x10", "20.5кг 10-8"), summaries)
             assertEquals(
                 listOf("Жим ногами (+20кг) 60-70кг 2x10", "Кроссовер 20.5кг 10-8"),
@@ -758,8 +892,9 @@ class VisitViewModelTest {
             val vm = viewModel().also { it.selectMachine(gravitron.id) }
 
             val state = assertNotNull(vm.state.value)
-            assertEquals("7 плитка 1x10", state.groups.single().summary)
-            assertEquals("плитка всего · ±1", state.sheet?.weightCaption)
+            assertEquals(listOf("7 плитка", "1x10"), state.groups.single().summary)
+            assertEquals("плитка", state.page?.form?.weightUnit)
+            assertNull(state.page?.form?.converted)
         }
 
     private val cable =
@@ -785,7 +920,7 @@ class VisitViewModelTest {
             val vm = viewModel().also { it.selectMachine(cable.id) }
 
             val state = assertNotNull(vm.state.value)
-            val sheet = assertNotNull(state.sheet)
+            val page = assertNotNull(state.page)
             assertEquals(
                 "41 кг × 8",
                 state.groups
@@ -794,16 +929,18 @@ class VisitViewModelTest {
                     .single()
                     .value,
             )
-            assertEquals("Вчера · 41кг 1x8", sheet.previous)
-            assertEquals("90", sheet.weight)
-            assertEquals("lb (41кг) всего · ±5lb (2.3кг)", sheet.weightCaption)
+            assertEquals("41кг 1x8", page.previous)
+            assertEquals("90", page.form?.weight)
+            assertEquals("lb", page.form?.weightUnit)
+            assertEquals("41 кг", page.form?.converted)
 
             vm.typeWeight("100")
             assertEquals(
-                "lb (45.5кг) всего · ±5lb (2.3кг)",
+                "45.5 кг",
                 vm.state.value
-                    ?.sheet
-                    ?.weightCaption,
+                    ?.page
+                    ?.form
+                    ?.converted,
             )
             vm.save()
 
@@ -821,7 +958,7 @@ class VisitViewModelTest {
             val vm = viewModel().also { it.selectMachine(cable.id) }
 
             val state = assertNotNull(vm.state.value)
-            val sheet = assertNotNull(state.sheet)
+            val page = assertNotNull(state.page)
             assertEquals(
                 "90 lb × 8",
                 state.groups
@@ -830,9 +967,9 @@ class VisitViewModelTest {
                     .single()
                     .value,
             )
-            assertEquals("90lb 1x8", state.groups.single().summary)
-            assertEquals("Вчера · 90lb 1x8", sheet.previous)
-            assertEquals("lb всего · ±5", sheet.weightCaption)
+            assertEquals(listOf("90lb", "1x8"), state.groups.single().summary)
+            assertEquals("90lb 1x8", page.previous)
+            assertNull(page.form?.converted)
         }
 
     @Test
@@ -843,8 +980,8 @@ class VisitViewModelTest {
             val vm = viewModel().also { it.selectMachine(press.id) }
 
             val state = assertNotNull(vm.state.value)
-            val sheet = assertNotNull(state.sheet)
-            assertEquals("99lb 1x12", state.groups.single().summary)
+            val page = assertNotNull(state.page)
+            assertEquals(listOf("99lb", "1x12"), state.groups.single().summary)
             assertEquals(
                 "99 lb × 12",
                 state.groups
@@ -853,10 +990,11 @@ class VisitViewModelTest {
                     .single()
                     .value,
             )
-            assertEquals("(+44 lb)", sheet.platformSuffix)
-            assertEquals("Вчера · 154.5-154.5-165.5lb 10-10-8", sheet.previous)
-            assertEquals("70", sheet.weight)
-            assertEquals("кг (154.5lb) всего · ±2.5кг (5.5lb)", sheet.weightCaption)
+            assertEquals("(+44 lb)", page.platformSuffix)
+            assertEquals("154.5-154.5-165.5lb 10-10-8", page.previous)
+            assertEquals("70", page.form?.weight)
+            assertEquals("кг", page.form?.weightUnit)
+            assertEquals("154.5 lb", page.form?.converted)
 
             vm.share()
 
@@ -878,11 +1016,11 @@ class VisitViewModelTest {
             prefer(PreferredWeightUnit.Lb)
             gym.sync.completePass()
 
-            assertEquals(
-                "lb всего · ±5",
+            assertNull(
                 vm.state.value
-                    ?.sheet
-                    ?.weightCaption,
+                    ?.page
+                    ?.form
+                    ?.converted,
             )
         }
 
@@ -898,12 +1036,12 @@ class VisitViewModelTest {
             vm.editSet(second.id)
 
             val state = assertNotNull(vm.state.value)
-            val sheet = assertNotNull(state.sheet)
-            assertEquals(true, sheet.editing)
-            assertEquals("подход 2", sheet.setNumberLabel)
-            assertEquals("Правка · записано 22:14, было 70 кг × 10", sheet.caption)
-            assertNull(sheet.previous)
-            assertEquals("70", sheet.weight)
+            val form = assertNotNull(state.page?.form)
+            assertEquals(true, form.editing)
+            assertEquals("#2", form.number)
+            assertEquals("Правка: 70 кг × 10", form.title)
+            assertEquals("70", form.weight)
+            assertEquals("Сохранить", form.saveLabel)
             assertEquals(
                 listOf(false, true),
                 state.groups
@@ -928,11 +1066,10 @@ class VisitViewModelTest {
             assertEquals(recorded.id, saved.id)
             assertEquals(72.5, saved.weight)
             assertNull(timer.startedAt.value)
-            assertEquals(
-                false,
+            assertNull(
                 vm.state.value
-                    ?.sheet
-                    ?.editing,
+                    ?.page
+                    ?.form,
             )
         }
 
@@ -957,14 +1094,58 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun closing_the_sheet_removes_it() {
+    fun back_closes_the_form_then_the_page() {
         val vm = viewModel().also { it.selectMachine(press.id) }
 
         assertTrue(vm.closeSheet())
+        assertNull(
+            vm.state.value
+                ?.page
+                ?.form,
+        )
+        assertNotNull(vm.state.value?.page)
 
-        assertNull(vm.state.value?.sheet)
-        assertNull(vm.selectedMachineId)
+        assertTrue(vm.closeSheet())
+        assertNull(vm.state.value?.page)
+        assertEquals(press.id, vm.selectedMachineId)
         assertFalse(vm.closeSheet())
+    }
+
+    @Test
+    fun a_machine_opened_from_the_list_shows_its_page_without_the_form() {
+        val vm = viewModel().also { it.openMachine(press.id) }
+
+        val page = assertNotNull(vm.state.value?.page)
+        assertNull(page.form)
+
+        vm.openForm()
+
+        assertEquals(
+            "#1",
+            vm.state.value
+                ?.page
+                ?.form
+                ?.number,
+        )
+    }
+
+    @Test
+    fun cancelling_the_form_keeps_the_page() {
+        val vm = viewModel().also { it.selectMachine(press.id) }
+
+        vm.cancelForm()
+
+        assertNull(
+            vm.state.value
+                ?.page
+                ?.form,
+        )
+        assertEquals(
+            press.id,
+            vm.state.value
+                ?.page
+                ?.machineId,
+        )
     }
 
     @Test
@@ -987,7 +1168,8 @@ class VisitViewModelTest {
             assertEquals(
                 true,
                 vm.state.value
-                    ?.sheet
+                    ?.page
+                    ?.form
                     ?.editing,
             )
         }
@@ -1003,9 +1185,14 @@ class VisitViewModelTest {
             assertTrue(vm.closeSheet())
             vm.selectMachine(press.id)
 
-            val sheet = assertNotNull(vm.state.value?.sheet)
+            val sheet =
+                assertNotNull(
+                    vm.state.value
+                        ?.page
+                        ?.form,
+                )
             assertEquals(false, sheet.editing)
-            assertEquals("подход 2", sheet.setNumberLabel)
+            assertEquals("#2", sheet.number)
         }
 
     @Test
@@ -1019,7 +1206,11 @@ class VisitViewModelTest {
             gate.complete(Unit)
 
             assertEquals(1, todaySets().size)
-            assertNull(vm.state.value?.sheet)
+            assertNull(
+                vm.state.value
+                    ?.page
+                    ?.form,
+            )
         }
 
     @Test
@@ -1120,16 +1311,22 @@ class VisitViewModelTest {
             val two = twoAccountGym()
             val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
             assertEquals(
-                "Сохранить · Иван",
+                "Добавить · Иван",
                 vm.state.value
-                    ?.sheet
+                    ?.page
+                    ?.form
                     ?.saveLabel,
             )
 
             vm.switchTo(misha.account.userId)
 
-            val sheet = assertNotNull(vm.state.value?.sheet)
-            assertEquals("Сохранить · Миша", sheet.saveLabel)
+            val sheet =
+                assertNotNull(
+                    vm.state.value
+                        ?.page
+                        ?.form,
+                )
+            assertEquals("Добавить · Миша", sheet.saveLabel)
             assertEquals(
                 listOf("Иван" to false, "Миша" to true),
                 sheet.people.map {
@@ -1229,7 +1426,7 @@ class VisitViewModelTest {
 
             val state = assertNotNull(vm.state.value)
             assertEquals(first, state.groups.single().photo)
-            assertEquals(first, state.sheet?.photo)
+            assertEquals(first, state.page?.photo)
         }
 
     @Test
@@ -1279,10 +1476,10 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun today_s_visit_is_titled_today() {
+    fun today_s_visit_is_titled_with_its_weekday_and_date() {
         val state = assertNotNull(viewModel().also { it.refresh() }.state.value)
 
-        assertEquals("Сегодня", state.title)
+        assertEquals("Вторник, 14 ноября", state.title)
     }
 
     @Test
@@ -1293,7 +1490,7 @@ class VisitViewModelTest {
             val vm = viewModel(day = seventh).also { it.refresh() }
 
             val state = assertNotNull(vm.state.value)
-            assertEquals("Визит · 7 ноября", state.title)
+            assertEquals("Вторник, 7 ноября", state.title)
         }
 
     @Test
@@ -1340,9 +1537,10 @@ class VisitViewModelTest {
             gym.sets.upsert(set(VisitId.random(), press, 50.0, 8, nineDaysAgo))
             val vm = viewModel(day = seventh).also { it.selectMachine(press.id) }
 
-            val sheet = assertNotNull(vm.state.value?.sheet)
-            assertEquals("2 дня назад · 50кг 1x8", sheet.previous)
-            assertEquals("50", sheet.weight)
+            val page = assertNotNull(vm.state.value?.page)
+            assertEquals("2 дня назад", page.previousAgo)
+            assertEquals("50кг 1x8", page.previous)
+            assertEquals("50", page.form?.weight)
         }
 
     @Test
@@ -1353,9 +1551,14 @@ class VisitViewModelTest {
             two.visits.upsert(ivanVisit.copy(id = VisitId.random(), day = thirteenth))
             val vm = viewModel(two, thirteenth).also { it.selectMachine(ivanPress.id) }
 
-            val sheet = assertNotNull(vm.state.value?.sheet)
+            val sheet =
+                assertNotNull(
+                    vm.state.value
+                        ?.page
+                        ?.form,
+                )
             assertEquals(emptyList(), sheet.people)
-            assertEquals("Сохранить подход", sheet.saveLabel)
+            assertEquals("Добавить", sheet.saveLabel)
         }
 
     @Test
@@ -1461,8 +1664,8 @@ class VisitViewModelTest {
 
             val state = assertNotNull(vm.state.value)
             assertEquals(true, state.ordering)
-            assertNull(state.sheet)
-            assertEquals(listOf(true, true), state.groups.map { it.expanded })
+            assertNull(state.page)
+            assertEquals(listOf(1, 1), state.groups.map { it.sets.size })
         }
 
     @Test
@@ -1572,7 +1775,7 @@ class VisitViewModelTest {
 
             vm.editSet(recorded.id)
 
-            assertNull(vm.state.value?.sheet)
+            assertNull(vm.state.value?.page)
         }
 
     @Test
@@ -1584,7 +1787,7 @@ class VisitViewModelTest {
 
         val state = assertNotNull(vm.state.value)
         assertEquals(false, state.ordering)
-        assertNotNull(state.sheet)
+        assertNotNull(state.page)
     }
 
     @Test
@@ -1680,8 +1883,9 @@ class VisitViewModelTest {
         assertEquals(
             listOf("Олег · вчера · 80-85кг 8-6"),
             vm.state.value
-                ?.sheet
-                ?.friends,
+                ?.page
+                ?.friends
+                ?.map { "${it.name} · ${it.text}" },
         )
     }
 
@@ -1697,8 +1901,9 @@ class VisitViewModelTest {
             assertEquals(
                 listOf("Олег · вчера · 176.5-187.5lb 8-6"),
                 vm.state.value
-                    ?.sheet
-                    ?.friends,
+                    ?.page
+                    ?.friends
+                    ?.map { "${it.name} · ${it.text}" },
             )
         }
 
@@ -1725,8 +1930,9 @@ class VisitViewModelTest {
         assertEquals(
             listOf("Олег · вчера · 36.5-38.5кг 8-6"),
             vm.state.value
-                ?.sheet
-                ?.friends,
+                ?.page
+                ?.friends
+                ?.map { "${it.name} · ${it.text}" },
         )
     }
 
@@ -1758,7 +1964,7 @@ class VisitViewModelTest {
             vm.refresh()
             vm.save()
 
-            assertNull(vm.state.value?.sheet)
+            assertNull(vm.state.value?.page)
             assertEquals(before, gym.sets.rows.size)
         }
 
@@ -1774,8 +1980,9 @@ class VisitViewModelTest {
         assertEquals(
             listOf("Олег · вчера · 80-85кг 8-6"),
             vm.state.value
-                ?.sheet
-                ?.friends,
+                ?.page
+                ?.friends
+                ?.map { "${it.name} · ${it.text}" },
         )
     }
 
@@ -1788,8 +1995,9 @@ class VisitViewModelTest {
         assertEquals(
             emptyList(),
             vm.state.value
-                ?.sheet
-                ?.friends,
+                ?.page
+                ?.friends
+                ?.map { "${it.name} · ${it.text}" },
         )
 
         two.friends.links += link
@@ -1798,8 +2006,9 @@ class VisitViewModelTest {
         assertEquals(
             listOf("Олег · вчера · 80-85кг 8-6"),
             vm.state.value
-                ?.sheet
-                ?.friends,
+                ?.page
+                ?.friends
+                ?.map { "${it.name} · ${it.text}" },
         )
     }
 
@@ -1816,8 +2025,9 @@ class VisitViewModelTest {
         assertEquals(
             listOf("Олег · вчера · 80-85кг 8-6"),
             vm.state.value
-                ?.sheet
-                ?.friends,
+                ?.page
+                ?.friends
+                ?.map { "${it.name} · ${it.text}" },
         )
     }
 
@@ -1832,8 +2042,9 @@ class VisitViewModelTest {
         assertEquals(
             emptyList(),
             vm.state.value
-                ?.sheet
-                ?.friends,
+                ?.page
+                ?.friends
+                ?.map { "${it.name} · ${it.text}" },
         )
     }
 
@@ -1853,8 +2064,9 @@ class VisitViewModelTest {
             assertEquals(
                 emptyList(),
                 vm.state.value
-                    ?.sheet
-                    ?.friends,
+                    ?.page
+                    ?.friends
+                    ?.map { "${it.name} · ${it.text}" },
             )
         }
 
@@ -1865,8 +2077,9 @@ class VisitViewModelTest {
         assertEquals(
             emptyList(),
             vm.state.value
-                ?.sheet
-                ?.friends,
+                ?.page
+                ?.friends
+                ?.map { "${it.name} · ${it.text}" },
         )
         assertEquals(0, gym.friends.reads)
     }
@@ -1885,8 +2098,9 @@ class VisitViewModelTest {
             assertEquals(
                 emptyList(),
                 vm.state.value
-                    ?.sheet
-                    ?.friends,
+                    ?.page
+                    ?.friends
+                    ?.map { "${it.name} · ${it.text}" },
             )
         }
 }

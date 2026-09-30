@@ -158,7 +158,7 @@ class AppTest {
         runApp {
             onNodeWithTag("open-today").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Сегодня")
+            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
             onNodeWithTag("open-today").assertTextEquals("Начать")
@@ -173,7 +173,7 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("add-visit").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 10 ноября")
+            onNodeWithTag("visit-title").assertTextEquals("Пятница, 10 ноября")
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
@@ -193,7 +193,7 @@ class AppTest {
             onNodeWithTag("machine-row-${press.id.value}").performClick()
             waitForIdle()
             onNodeWithTag(
-                "sheet-machine-name",
+                "page-machine-name",
                 useUnmergedTree = true,
             ).assertTextEquals("Жим ногами")
         }
@@ -215,7 +215,7 @@ class AppTest {
             waitForIdle()
 
             onNodeWithTag(
-                "sheet-machine-name",
+                "page-machine-name",
                 useUnmergedTree = true,
             ).assertTextEquals("Гакк")
         }
@@ -234,7 +234,7 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("calendar-visit-${past.id.value}").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 12 ноября")
+            onNodeWithTag("visit-title").assertTextEquals("Воскресенье, 12 ноября")
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
@@ -348,7 +348,7 @@ class AppTest {
             waitForIdle()
 
             onNodeWithTag(
-                "sheet-machine-name",
+                "page-machine-name",
                 useUnmergedTree = true,
             ).assertTextEquals("Жим ногами старый")
         }
@@ -520,9 +520,8 @@ class AppTest {
             onNodeWithText("Начать").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Сегодня")
-            onNodeWithTag("group-summary-${press.id.value}", useUnmergedTree = true)
-                .assertTextEquals("Запланировано")
+            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
+            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Запланировано")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
             onNodeWithTag("open-today").assertIsDisplayed()

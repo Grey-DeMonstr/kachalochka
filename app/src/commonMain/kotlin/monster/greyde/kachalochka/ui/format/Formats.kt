@@ -59,23 +59,18 @@ fun weightCaption(
 }
 
 /**
- * The weight being recorded is typed and stepped in the machine's own unit, so that unit comes
- * first and the chosen one follows in brackets.
+ * The weight being recorded is typed and stepped in the machine's own unit; this is it in the
+ * unit weights are shown in, or null when that is the same.
  */
-fun recordingCaption(
+fun recordingConversion(
     machine: Machine,
     weight: Double,
     preferred: PreferredWeightUnit,
-): String {
+): String? {
     val shown = shownUnit(machine, preferred)
-    if (shown == machine.unit) return weightCaption(machine, preferred)
-    val own = unitLabel(machine)
-    val chosen = unitLabel(shown, machine.unitLabel)
-    val inChosen = formatNumber(shownWeight(weight, machine.unit, shown))
-    val step = formatNumber(machine.weightStep)
-    val stepInChosen = formatNumber(shownStep(machine.weightStep, machine.unit, shown))
-    return "$own ($inChosen$chosen) ${modeLabel(machine.weightMode)} · " +
-        "±$step$own ($stepInChosen$chosen)"
+    if (shown == machine.unit) return null
+    return "${formatNumber(shownWeight(weight, machine.unit, shown))} " +
+        unitLabel(shown, machine.unitLabel)
 }
 
 fun friendMachineDetail(

@@ -41,6 +41,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -48,6 +49,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.runScreenTestInEnglish
+import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.olegTrainedOn
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -112,8 +114,7 @@ class VisitScreenTest {
         planRow()
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
-            onNodeWithTag("group-summary-${row.id.value}", useUnmergedTree = true)
-                .assertTextEquals("Запланировано")
+            onNodeWithTag("group-summary-${row.id.value}").assertTextEquals("Запланировано")
             val pressTop = onNodeWithTag("group-${press.id.value}").getBoundsInRoot().top
             val rowTop = onNodeWithTag("group-${row.id.value}").getBoundsInRoot().top
             assertTrue(pressTop < rowTop)
@@ -121,12 +122,13 @@ class VisitScreenTest {
     }
 
     @Test
-    fun a_planned_machine_takes_its_first_set_from_its_row() {
+    fun a_planned_machine_takes_its_first_set_from_its_page() {
         planRow()
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
             onNodeWithTag("group-${row.id.value}").performClick()
-            onNodeWithTag("add-set-${row.id.value}").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("add-set").performScrollTo().performClick()
             waitForIdle()
             onNodeWithTag("set-sheet").assertIsDisplayed()
             onNodeWithTag("save-set").performClick()
@@ -137,19 +139,25 @@ class VisitScreenTest {
                 gym.sets.rows.values
                     .count { it.machineId == row.id },
             )
+            onNodeWithTag("unplan").assertDoesNotExist()
+            onNodeWithTag("top-bar-back").performClick()
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
             onNodeWithText("Запланировано").assertDoesNotExist()
         }
     }
 
     @Test
-    fun a_planned_machine_can_be_taken_out() {
+    fun a_planned_machine_can_be_taken_out_from_its_page() {
         planRow()
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
             onNodeWithTag("group-${row.id.value}").performClick()
-            onNodeWithTag("unplan-${row.id.value}").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("unplan").performScrollTo().performClick()
             waitForIdle()
 
+            onNodeWithTag("machine-page").assertDoesNotExist()
             onNodeWithTag("group-${row.id.value}").assertDoesNotExist()
             assertEquals(
                 listOf(press.id),
@@ -184,13 +192,13 @@ class VisitScreenTest {
     }
 
     @Test
-    fun a_fresh_visit_asks_for_a_machine() {
+    fun a_fresh_visit_names_its_day_and_asks_for_a_machine() {
         var picks = 0
         runScreenTest(gym, screen = { visitScreen(onPickMachine = { picks++ }) }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Сегодня")
-            onNodeWithTag("end-visit").assertDoesNotExist()
-            onNodeWithTag("visit-set-count").assertDoesNotExist()
+            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
+            onNodeWithTag("top-bar-title").assertTextEquals("")
             onNodeWithTag("set-sheet").assertDoesNotExist()
+            onNodeWithTag("pick-machine").assertTextEquals("Добавить")
             onNodeWithTag("pick-machine").performScrollTo().performClick()
             waitForIdle()
             assertEquals(1, picks)
@@ -199,12 +207,19 @@ class VisitScreenTest {
 
     @Test
     fun the_visit_screen_speaks_english() =
+        runScreenTestInEnglish(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("pick-machine").assertTextEquals("Add")
+            onNodeWithTag("visit-title").assertTextEquals("Tuesday, 14 November")
+        }
+
+    @Test
+    fun the_set_form_speaks_english() =
         runScreenTestInEnglish(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
-            onNodeWithTag("pick-machine").assertTextEquals("New machine")
-            onNodeWithTag("set-comment").assertTextEquals("Comment")
-            onNodeWithTag("save-set").assertTextEquals("Save set")
-            onNodeWithTag("top-bar-title").assertTextEquals("Today")
+            onNodeWithTag("save-set").assertTextEquals("Add")
+            onNodeWithTag("cancel-set").assertTextEquals("Cancel")
+            onNodeWithTag("set-title").assertTextEquals("New set")
         }
 
     @Test
@@ -224,28 +239,24 @@ class VisitScreenTest {
     }
 
     @Test
-    fun a_machine_row_names_the_machine_and_its_note_above_its_results() {
+    fun a_machine_row_puts_its_note_and_its_results_each_on_a_line_under_the_name() {
         runBlocking { gym.machines.upsert(press.copy(setupNote = "Сиденье на 4")) }
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
             val id = press.id.value
-            onNodeWithTag(
-                "group-note-$id",
-                useUnmergedTree = true,
-            ).assertTextEquals("Сиденье на 4")
-            onNodeWithTag(
-                "group-summary-$id",
-                useUnmergedTree = true,
-            ).assertTextEquals("70кг 1x10")
+            onNodeWithTag("group-note-$id", useUnmergedTree = true)
+                .assertTextEquals("Сиденье на 4")
+            onNodeWithTag("group-summary-$id").assertTextEquals("70кг", "1x10")
             val title = onNodeWithTag("group-title-$id", useUnmergedTree = true).getBoundsInRoot()
-            val summary =
-                onNodeWithTag("group-summary-$id", useUnmergedTree = true).getBoundsInRoot()
-            assertTrue(summary.top >= title.bottom)
+            val note = onNodeWithTag("group-note-$id", useUnmergedTree = true).getBoundsInRoot()
+            val summary = onNodeWithTag("group-summary-$id").getBoundsInRoot()
+            assertTrue(note.top >= title.bottom)
+            assertTrue(summary.top >= note.bottom)
         }
     }
 
     @Test
-    fun a_long_name_takes_the_room_a_short_note_leaves() {
+    fun a_long_name_takes_the_room_of_the_row() {
         val name = "Жим ногами в раме Смита с широкой постановкой стоп ".repeat(3).trim()
         runBlocking { gym.machines.upsert(press.copy(name = name, setupNote = "4")) }
         runScreenTest(gym, screen = { visitScreen() }) {
@@ -285,20 +296,22 @@ class VisitScreenTest {
     fun a_visit_without_sets_offers_no_share() {
         runScreenTest(gym, screen = { visitScreen(day = CalendarDay(2023, 11, 12)) }) {
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 12 ноября")
+            onNodeWithTag("visit-title").assertTextEquals("Воскресенье, 12 ноября")
             onNodeWithTag("share-visit").assertDoesNotExist()
         }
     }
 
     @Test
-    fun the_list_offers_a_new_machine_while_one_is_open() {
+    fun the_list_offers_to_copy_the_machine_last_opened() {
         val picks = mutableListOf<MachineId?>()
         runScreenTest(
             gym,
             screen = { visitScreen(picked = press.id, onPickMachine = { picks += it }) },
         ) {
             waitForIdle()
-            onNodeWithTag("pick-machine").assertTextEquals("Новое упражнение")
+            onNodeWithTag("top-bar-back").performClick()
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
 
             onNodeWithTag("pick-machine").performScrollTo().performClick()
             waitForIdle()
@@ -308,51 +321,45 @@ class VisitScreenTest {
     }
 
     @Test
-    fun tapping_the_machine_name_does_nothing() {
-        var picks = 0
-        runScreenTest(
-            gym,
-            screen = { visitScreen(picked = press.id, onPickMachine = { picks++ }) },
-        ) {
+    fun a_machine_row_opens_its_page_without_the_form() {
+        runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
-            onNodeWithTag("sheet-machine").performClick()
+            onNodeWithTag("group-${press.id.value}").performClick()
             waitForIdle()
 
-            assertEquals(0, picks)
-            onNodeWithTag("save-set").assertIsDisplayed()
+            onNodeWithTag("machine-page").assertIsDisplayed()
+            onNodeWithTag("page-machine-name", useUnmergedTree = true)
+                .assertTextEquals("Жим ногами")
+            onNodeWithTag("page-day-sets").assertTextEquals("СЕГОДНЯ · 1 ПОДХОД")
+            onNodeWithTag("set-sheet").assertDoesNotExist()
         }
     }
 
     @Test
-    fun a_picked_machine_fills_the_sheet_and_a_saved_set_joins_the_list() {
+    fun a_picked_machine_opens_with_the_form_and_a_saved_set_joins_the_page() {
         var consumed = 0
         runScreenTest(
             gym,
             screen = { visitScreen(picked = press.id, onConsumed = { consumed++ }) },
         ) {
             waitForIdle()
-            onNodeWithTag(
-                "sheet-machine-name",
-                useUnmergedTree = true,
-            ).assertTextEquals("Жим ногами")
             onNodeWithTag("weight-value").assertTextEquals("70")
+            onNodeWithTag("set-number").assertTextEquals("#2")
             onNodeWithTag("weight-plus").performClick()
             onNodeWithTag("save-set").performClick()
             waitForIdle()
 
             assertEquals(2, gym.sets.rows.size)
-            onNodeWithTag("sheet-set-number", useUnmergedTree = true).assertTextEquals("подход 3")
+            onNodeWithTag("set-number").assertTextEquals("#3")
+            onNodeWithTag("page-day-sets").assertTextEquals("СЕГОДНЯ · 2 ПОДХОДА")
             onNodeWithTag("rest-timer").assertTextEquals("1:30")
             assertEquals(1, consumed)
         }
     }
 
     @Test
-    fun a_comment_typed_in_the_sheet_shows_in_the_set_s_row() {
+    fun a_comment_typed_in_the_form_shows_in_the_set_s_row() {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
-            waitForIdle()
-            onNodeWithTag("set-comment-field").assertDoesNotExist()
-            onNodeWithTag("set-comment").performClick()
             waitForIdle()
             onNodeWithTag("set-comment-field").performTextReplacement("Тяжело")
             onNodeWithTag("save-set").performClick()
@@ -361,8 +368,6 @@ class VisitScreenTest {
             val saved =
                 gym.sets.rows.values
                     .single { it.id != recorded.id }
-            onNodeWithTag("group-${press.id.value}").performClick()
-            waitForIdle()
             onNodeWithTag("set-comment-${saved.id.value}", useUnmergedTree = true)
                 .assertTextEquals("Тяжело")
         }
@@ -379,6 +384,19 @@ class VisitScreenTest {
         }
         val weights = runBlocking { gym.sets.forVisit(visit.id) }.map { it.weight }
         assertEquals(setOf(70.0, 22.5), weights.toSet())
+    }
+
+    @Test
+    fun reps_are_typed_as_the_weight_is() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("reps-value").performTextReplacement("12")
+            waitForIdle()
+            onNodeWithTag("save-set").performClick()
+            waitForIdle()
+        }
+        val reps = runBlocking { gym.sets.forVisit(visit.id) }.map { it.reps }
+        assertEquals(setOf(10, 12), reps.toSet())
     }
 
     @Test
@@ -410,7 +428,7 @@ class VisitScreenTest {
     }
 
     @Test
-    fun a_pound_machine_is_recorded_in_pounds_with_kilograms_in_brackets() {
+    fun a_pound_machine_is_recorded_in_pounds_with_kilograms_under_them() {
         val cable =
             Machine
                 .new("Кроссовер", null, gym.clock.current)
@@ -424,23 +442,39 @@ class VisitScreenTest {
         runScreenTest(gym, screen = { visitScreen(picked = cable.id) }) {
             waitForIdle()
             onNodeWithTag("weight-value").assertTextEquals("90")
-            onNodeWithText("lb (41кг) всего · ±5lb (2.3кг)").assertIsDisplayed()
+            onNodeWithText("lb").assertIsDisplayed()
+            onNodeWithTag("weight-note").assertTextEquals("41 кг")
+        }
+    }
+
+    @Test
+    fun a_gravitron_s_weight_is_written_negative() {
+        val gravitron =
+            Machine
+                .new("Подтягивания", null, gym.clock.current)
+                .copy(weightMode = WeightMode.Counterweight)
+        runBlocking { gym.machines.upsert(gravitron) }
+        runScreenTest(gym, screen = { visitScreen(picked = gravitron.id) }) {
+            waitForIdle()
+            onNodeWithTag("weight-prefix").assertTextEquals("−")
+            onNodeWithTag("weight-note").assertDoesNotExist()
         }
     }
 
     @Test
     fun another_day_is_titled_with_its_date() {
-        runScreenTest(gym, screen = { visitScreen(day = CalendarDay(2023, 11, 12)) }) {
+        runScreenTest(gym, screen = { visitScreen(day = CalendarDay(2022, 11, 12)) }) {
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визит · 12 ноября")
+            onNodeWithTag("visit-title").assertTextEquals("Суббота, 12 ноября 2022")
         }
     }
 
     @Test
-    fun top_bar_back_closes_the_sheet_before_it_leaves() {
+    fun back_closes_the_form_then_the_page_before_it_leaves() {
         var backs = 0
         runScreenTest(gym, screen = { visitScreen(onBack = { backs++ }) }) {
             onNodeWithTag("group-${press.id.value}").performClick()
+            waitForIdle()
             onNodeWithTag("set-row-${recorded.id.value}").performClick()
             waitForIdle()
             onNodeWithTag("delete-set").assertIsDisplayed()
@@ -448,7 +482,11 @@ class VisitScreenTest {
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
             onNodeWithTag("set-sheet").assertDoesNotExist()
-            onNodeWithTag("sheet-peek").assertDoesNotExist()
+            onNodeWithTag("machine-page").assertIsDisplayed()
+
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-page").assertDoesNotExist()
             assertEquals(0, backs)
 
             onNodeWithTag("top-bar-back").performClick()
@@ -458,7 +496,44 @@ class VisitScreenTest {
     }
 
     @Test
-    fun system_back_closes_the_sheet() {
+    fun an_edited_set_is_corrected_and_the_form_closes() {
+        runScreenTest(gym, screen = { visitScreen() }) {
+            onNodeWithTag("group-${press.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("set-row-${recorded.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("set-title").assertTextEquals("Правка: 70 кг × 10")
+            onNodeWithTag("save-set").assertTextEquals("Сохранить")
+
+            onNodeWithTag("weight-plus").performClick()
+            onNodeWithTag("save-set").performClick()
+            waitForIdle()
+
+            onNodeWithTag("set-sheet").assertDoesNotExist()
+            assertEquals(
+                72.5,
+                gym.sets.rows
+                    .getValue(recorded.id)
+                    .weight,
+            )
+        }
+    }
+
+    @Test
+    fun cancel_closes_the_form_and_records_nothing() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("cancel-set").performClick()
+            waitForIdle()
+
+            onNodeWithTag("set-sheet").assertDoesNotExist()
+            onNodeWithTag("machine-page").assertIsDisplayed()
+            assertEquals(1, gym.sets.rows.size)
+        }
+    }
+
+    @Test
+    fun system_back_closes_the_form() {
         var backs = 0
         val dispatcher = NavigationEventDispatcher()
         val systemBack = DirectNavigationEventInput().also(dispatcher::addInput)
@@ -485,28 +560,26 @@ class VisitScreenTest {
     }
 
     @Test
-    fun swiping_down_closes_the_sheet() {
+    fun swiping_down_closes_the_form() {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
             onNodeWithTag("set-sheet").performTouchInput { swipeDown() }
             waitForIdle()
             onNodeWithTag("set-sheet").assertDoesNotExist()
-            onNodeWithTag("sheet-peek").assertDoesNotExist()
         }
     }
 
     @Test
-    fun an_expanded_machine_adds_its_next_set_from_its_own_row() {
+    fun a_machine_s_page_adds_its_next_set() {
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
-            onNodeWithTag("add-set-${press.id.value}").assertDoesNotExist()
             onNodeWithTag("group-${press.id.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("add-set-${press.id.value}").performScrollTo().performClick()
+            onNodeWithTag("add-set").performScrollTo().performClick()
             waitForIdle()
             onNodeWithTag("set-sheet").assertIsDisplayed()
-            onNodeWithTag("sheet-set-number", useUnmergedTree = true).assertTextEquals("подход 2")
+            onNodeWithTag("set-number").assertTextEquals("#2")
         }
     }
 
@@ -519,18 +592,7 @@ class VisitScreenTest {
     }
 
     @Test
-    fun ordering_hides_the_add_set_rows() {
-        runScreenTest(gym, screen = { visitScreen() }) {
-            waitForIdle()
-            onNodeWithTag("group-${press.id.value}").performClick()
-            onNodeWithTag("reorder-toggle").performClick()
-            waitForIdle()
-            onNodeWithTag("add-set-${press.id.value}").assertDoesNotExist()
-        }
-    }
-
-    @Test
-    fun a_short_slow_drag_leaves_the_sheet_open() {
+    fun a_short_slow_drag_leaves_the_form_open() {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
             onNodeWithTag("set-sheet").performTouchInput {
@@ -542,11 +604,11 @@ class VisitScreenTest {
     }
 
     @Test
-    fun without_a_second_account_the_sheet_shows_no_person_chips() {
+    fun without_a_second_account_the_form_shows_no_person_chips() {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
             onNodeWithTag("person-add").assertDoesNotExist()
-            onNodeWithTag("save-set").assertTextEquals("Сохранить подход")
+            onNodeWithTag("save-set").assertTextEquals("Добавить")
         }
     }
 
@@ -558,12 +620,12 @@ class VisitScreenTest {
         ) {
             waitForIdle()
             onNodeWithTag("person-add").assertExists()
-            onNodeWithTag("save-set").assertTextEquals("Сохранить · Иван")
+            onNodeWithTag("save-set").assertTextEquals("Добавить · Иван")
 
             onNodeWithTag("person-${misha.account.userId.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("save-set").assertTextEquals("Сохранить · Миша")
+            onNodeWithTag("save-set").assertTextEquals("Добавить · Миша")
             onNodeWithTag("save-set").performClick()
             waitForIdle()
             assertEquals(
@@ -610,7 +672,7 @@ class VisitScreenTest {
     }
 
     @Test
-    fun the_sheet_s_picture_opens_the_machine_s_settings() {
+    fun the_page_s_picture_opens_the_machine_s_settings() {
         val opened = mutableListOf<MachineId>()
         runScreenTest(
             gym,
@@ -619,7 +681,9 @@ class VisitScreenTest {
             },
         ) {
             waitForIdle()
-            onNodeWithTag("sheet-thumb").performClick()
+            onNodeWithTag("cancel-set").performClick()
+            waitForIdle()
+            onNodeWithTag("page-thumb").performClick()
             waitForIdle()
         }
         assertEquals(listOf(press.id), opened)
@@ -727,7 +791,7 @@ class VisitScreenTest {
         }
 
     @Test
-    fun friends_results_show_under_the_previous_visit() {
+    fun friends_results_show_on_the_page() {
         val ivanId = checkNotNull(shared.accounts.activeId.value)
         shared.olegTrainedOn(sharedPress, Friend(ivanId, "Иван"))
         runScreenTest(
@@ -735,8 +799,31 @@ class VisitScreenTest {
             screen = { visitScreen(day = shared.today, picked = sharedPress.id) },
         ) {
             waitForIdle()
-            onNodeWithTag("sheet-friends").assertIsDisplayed()
-            onNodeWithText("Олег · вчера · 80-85кг 8-6").assertIsDisplayed()
+            onNodeWithTag("page-friends").assertExists()
+            onNodeWithTag("friend-line-${OLEG.userId.value}").assertExists()
+        }
+    }
+
+    @Test
+    fun the_page_shows_the_record_and_the_previous_visit() {
+        val yesterday = VisitId.random()
+        runBlocking {
+            gym.sets.upsert(
+                recorded.copy(
+                    id = WorkoutSetId.random(),
+                    visitId = yesterday,
+                    weight = 80.0,
+                    reps = 6,
+                    recordedAt = gym.clock.current - 1440.minutes,
+                ),
+            )
+        }
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("page-record").assertExists()
+            onNodeWithText("80 кг × 6").assertExists()
+            onNodeWithTag("page-previous").assertExists()
+            onNodeWithText("80кг 1x6").assertExists()
         }
     }
 
