@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
+import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.PhotoFiles
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
@@ -15,6 +16,7 @@ import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -65,6 +67,11 @@ class SyncPass(
                     WORKOUT_SET_TABLE ->
                         pushRow(entry, owner, db { rows.set(entry.rowId) }, { it.userId }) {
                             gateway.pushSet(it)
+                        }
+
+                    PLAN_TABLE ->
+                        pushRow(entry, owner, db { rows.plan(entry.rowId) }, { it.userId }) {
+                            gateway.pushPlan(it)
                         }
 
                     PROFILE_TABLE ->
@@ -118,6 +125,7 @@ class SyncPass(
                     gateway.pullMeasures(owner, since),
                     gateway.pullMeasurements(owner, since),
                     gateway.pullPhotos(owner, since),
+                    gateway.pullPlans(owner, since),
                 )
         }
         val rowsPulled = pulled ?: return false
@@ -157,6 +165,9 @@ class SyncPass(
                         if (it.deleted) files.delete(it.id)
                     }
                 }
+                rowsPulled.plans.forEach {
+                    if ((PLAN_TABLE to it.id.value) !in pending) rows.writePlan(it)
+                }
                 rowsPulled.newestUpdatedAt?.let { watermarks.advance(owner, it) }
             }
         }
@@ -172,13 +183,15 @@ class SyncPass(
         val measures: List<Measure>,
         val measurements: List<Measurement>,
         val photos: List<Photo>,
+        val plans: List<Plan>,
     ) {
         val newestUpdatedAt: Instant? =
             (
                 machines.map { it.updatedAt } + visits.map { it.updatedAt } +
                     sets.map { it.updatedAt } + profiles.map { it.updatedAt } +
                     links.map { it.updatedAt } + measures.map { it.updatedAt } +
-                    measurements.map { it.updatedAt } + photos.map { it.updatedAt }
+                    measurements.map { it.updatedAt } + photos.map { it.updatedAt } +
+                    plans.map { it.updatedAt }
             ).maxOrNull()
     }
 
@@ -219,12 +232,13 @@ class SyncPass(
     private suspend fun <T> db(read: () -> T): T = withContext(dispatcher) { read() }
 
     private companion object {
-        // The server checks a set's visit and machine. It checks nothing a link or a value
+        // The server checks a set's visit and machine. It checks nothing a link, a plan or a value
         // names, but each follows the rows it names, so a reader never meets it before them.
         val PUSH_RANK =
             listOf(
                 MACHINE_TABLE,
                 VISIT_TABLE,
+                PLAN_TABLE,
                 PROFILE_TABLE,
                 MEASURE_TABLE,
                 MACHINE_LINK_TABLE,

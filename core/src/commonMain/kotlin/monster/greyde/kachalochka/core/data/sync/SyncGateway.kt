@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.data.sync
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -22,6 +23,8 @@ interface SyncGateway {
     suspend fun pushProfile(profile: Profile)
 
     suspend fun pushMachineLink(link: MachineLink)
+
+    suspend fun pushPlan(plan: Plan)
 
     suspend fun pushMeasure(measure: Measure)
 
@@ -72,4 +75,9 @@ interface SyncGateway {
         owner: UserId,
         since: Instant?,
     ): List<Photo>
+
+    suspend fun pullPlans(
+        owner: UserId,
+        since: Instant?,
+    ): List<Plan>
 }

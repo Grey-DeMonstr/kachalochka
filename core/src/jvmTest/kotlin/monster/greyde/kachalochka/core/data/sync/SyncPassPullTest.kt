@@ -2,9 +2,11 @@ package monster.greyde.kachalochka.core.data.sync
 
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
+import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
@@ -18,6 +20,42 @@ import kotlin.time.Duration.Companion.hours
 
 class SyncPassPullTest {
     private val h = SyncHarness()
+
+    @Test
+    fun a_pulled_visit_keeps_the_machines_planned_for_it() =
+        runTest {
+            val theirs = ownedVisit(IVAN).copy(planned = listOf(MachineId.random()))
+            h.gateway.visitsToPull = listOf(theirs)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(theirs, h.visits.byId(theirs.id))
+        }
+
+    @Test
+    fun a_pulled_plan_is_written_locally_and_counts_for_the_watermark() =
+        runTest {
+            val plan = ownedPlan(IVAN, updatedAt = T0 + 5.hours)
+            h.gateway.plansToPull = listOf(plan)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(plan, h.plans.byId(plan.id))
+            assertEquals(T0 + 5.hours, h.watermarks.lastPullAt(IVAN))
+        }
+
+    @Test
+    fun a_plan_waiting_in_the_outbox_survives_the_pull_that_would_overwrite_it() =
+        runTest {
+            val mine = ownedPlan(IVAN)
+            h.plans.upsert(mine)
+            h.gateway.failing = PLAN_TABLE
+            h.gateway.plansToPull = listOf(mine.copy(name = "Спина"))
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(mine, h.plans.byId(mine.id))
+        }
 
     @Test
     fun a_pulled_row_is_written_locally() =

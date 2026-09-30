@@ -11,7 +11,9 @@ import monster.greyde.kachalochka.core.data.gym.MachineLinkRow
 import monster.greyde.kachalochka.core.data.gym.MachineRow
 import monster.greyde.kachalochka.core.data.gym.PHOTO_BUCKET
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
+import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.PhotoRow
+import monster.greyde.kachalochka.core.data.gym.PlanRow
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
@@ -27,6 +29,7 @@ import monster.greyde.kachalochka.core.data.profile.ProfileRow
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -73,6 +76,12 @@ class SupabaseSyncGateway(
         client.value.postgrest
             .from(MACHINE_LINK_TABLE)
             .upsert(MachineLinkRow.of(link))
+    }
+
+    override suspend fun pushPlan(plan: Plan) {
+        client.value.postgrest
+            .from(PLAN_TABLE)
+            .upsert(PlanRow.of(plan))
     }
 
     override suspend fun pushMeasure(measure: Measure) {
@@ -161,6 +170,13 @@ class SupabaseSyncGateway(
     ): List<Photo> =
         pullAll<PhotoRow>(PHOTO_TABLE, owner, since) { it.updatedAt to it.id }
             .map { it.toPhoto() }
+
+    override suspend fun pullPlans(
+        owner: UserId,
+        since: Instant?,
+    ): List<Plan> =
+        pullAll<PlanRow>(PLAN_TABLE, owner, since) { it.updatedAt to it.id }
+            .map { it.toPlan() }
 
     // Each page starts after the previous page's last (updated_at, id), so a row another device
     // edits between two fetches only moves later in the order and never makes the pull skip one.

@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
+import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -35,6 +36,7 @@ class SqlOwnerlessRows(
                 val measureIds = database.measureQueries.ownerlessIds().executeAsList()
                 val measurementIds = database.measurementQueries.ownerlessIds().executeAsList()
                 val photoIds = database.photoQueries.ownerlessIds().executeAsList()
+                val planIds = database.planQueries.ownerlessIds().executeAsList()
 
                 database.visitQueries.claimOwnerless(owner.value, now)
                 database.machineQueries.claimOwnerless(owner.value, now)
@@ -44,6 +46,7 @@ class SqlOwnerlessRows(
                 database.measureQueries.claimOwnerless(owner.value, now)
                 database.measurementQueries.claimOwnerless(owner.value, now)
                 database.photoQueries.claimOwnerless(owner.value, now)
+                database.planQueries.claimOwnerless(owner.value, now)
 
                 enqueue(VISIT_TABLE, visitIds, now)
                 enqueue(MACHINE_TABLE, machineIds, now)
@@ -53,6 +56,7 @@ class SqlOwnerlessRows(
                 enqueue(MEASURE_TABLE, measureIds, now)
                 enqueue(MEASUREMENT_TABLE, measurementIds, now)
                 enqueue(PHOTO_TABLE, photoIds, now)
+                enqueue(PLAN_TABLE, planIds, now)
             }
         }
 

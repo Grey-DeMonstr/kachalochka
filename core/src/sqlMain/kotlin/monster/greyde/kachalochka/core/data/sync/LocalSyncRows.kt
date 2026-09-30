@@ -5,6 +5,7 @@ import monster.greyde.kachalochka.core.data.gym.machineIdsText
 import monster.greyde.kachalochka.core.data.gym.machineLinkOf
 import monster.greyde.kachalochka.core.data.gym.machineOf
 import monster.greyde.kachalochka.core.data.gym.photoOf
+import monster.greyde.kachalochka.core.data.gym.planOf
 import monster.greyde.kachalochka.core.data.gym.tagsText
 import monster.greyde.kachalochka.core.data.gym.visitOf
 import monster.greyde.kachalochka.core.data.gym.wireName
@@ -18,6 +19,7 @@ import monster.greyde.kachalochka.core.data.profile.write
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.measures.Measure
@@ -49,6 +51,8 @@ class LocalSyncRows(
         database.measurementQueries.byId(id, ::measurementOf).executeAsOneOrNull()
 
     fun photo(id: String): Photo? = database.photoQueries.byId(id, ::photoOf).executeAsOneOrNull()
+
+    fun plan(id: String): Plan? = database.planQueries.byId(id, ::planOf).executeAsOneOrNull()
 
     fun writeMachine(machine: Machine) =
         database.machineQueries.upsert(
@@ -92,6 +96,8 @@ class LocalSyncRows(
             set.position.toLong(),
             set.comment,
         )
+
+    fun writePlan(plan: Plan) = database.planQueries.write(plan)
 
     fun writeProfile(profile: Profile) = database.profileQueries.write(profile)
 

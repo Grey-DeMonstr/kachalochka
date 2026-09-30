@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.data.sync
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -21,6 +22,22 @@ import kotlin.time.Duration.Companion.hours
 
 class SyncPassPushTest {
     private val h = SyncHarness()
+
+    @Test
+    fun a_plan_follows_the_visits_and_precedes_profiles() =
+        runTest {
+            val visit = ownedVisit(IVAN)
+            h.plans.upsert(ownedPlan(IVAN))
+            h.profiles.upsert(ownedProfile(IVAN))
+            h.visits.upsert(visit)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(
+                listOf(VISIT_TABLE, PLAN_TABLE, PROFILE_TABLE),
+                h.gateway.pushed.map { it.substringBefore(':') },
+            )
+        }
 
     @Test
     fun sets_are_pushed_after_their_visit_and_machine_even_when_enqueued_first() =

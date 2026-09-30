@@ -22,6 +22,7 @@ class SqlOwnedRowsPurge(
                 database.visitQueries.purgeOwner(id)
                 database.machineLinkQueries.purgeOwner(id)
                 database.photoQueries.purgeOwner(id)
+                database.planQueries.purgeOwner(id)
                 database.machineQueries.purgeOwner(id)
                 database.measurementQueries.purgeOwner(id)
                 database.measureQueries.purgeOwner(id)

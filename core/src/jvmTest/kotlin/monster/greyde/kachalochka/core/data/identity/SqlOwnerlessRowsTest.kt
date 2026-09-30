@@ -7,10 +7,12 @@ import monster.greyde.kachalochka.core.data.gym.InMemoryPhotoFiles
 import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalPhotoRepository
+import monster.greyde.kachalochka.core.data.gym.LocalPlanRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
+import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -24,6 +26,8 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.Plan
+import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -48,6 +52,7 @@ class SqlOwnerlessRowsTest {
     private val visits = LocalVisitRepository(database, outbox, Dispatchers.Unconfined)
     private val machines = LocalMachineRepository(database, outbox, Dispatchers.Unconfined)
     private val sets = LocalWorkoutSetRepository(database, outbox, Dispatchers.Unconfined)
+    private val plans = LocalPlanRepository(database, outbox, Dispatchers.Unconfined)
     private val profiles = LocalProfileRepository(database, outbox, Dispatchers.Unconfined)
     private val links = LocalMachineLinkRepository(database, outbox, Dispatchers.Unconfined)
     private val measures = LocalMeasureRepository(database, outbox, Dispatchers.Unconfined)
@@ -82,6 +87,23 @@ class SqlOwnerlessRowsTest {
 
             assertEquals(owner, visits.byId(unowned.id)?.userId)
             assertEquals(stranger, visits.byId(theirs.id)?.userId)
+        }
+
+    @Test
+    fun claiming_stamps_and_enqueues_ownerless_plans() =
+        runTest {
+            val plan = Plan(PlanId.random(), null, "", emptyList(), t0, t0, false)
+            plans.upsert(plan)
+
+            rows.claim(owner)
+
+            assertEquals(owner, plans.byId(plan.id)?.userId)
+            assertTrue(
+                outbox.pending().any {
+                    it.tableName == PLAN_TABLE &&
+                        it.rowId == plan.id.value
+                },
+            )
         }
 
     @Test

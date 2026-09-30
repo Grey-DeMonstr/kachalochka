@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.data.sync.SyncHarness
 import monster.greyde.kachalochka.core.data.sync.ownedLink
 import monster.greyde.kachalochka.core.data.sync.ownedMeasure
 import monster.greyde.kachalochka.core.data.sync.ownedMeasurement
+import monster.greyde.kachalochka.core.data.sync.ownedPlan
 import monster.greyde.kachalochka.core.data.sync.ownedPress
 import monster.greyde.kachalochka.core.data.sync.ownedProfile
 import monster.greyde.kachalochka.core.data.sync.ownedSet
@@ -32,6 +33,7 @@ class SqlOwnedRowsPurgeTest {
         h.visits.upsert(visit)
         h.machines.upsert(press)
         h.sets.upsert(ownedSet(owner, visit, press))
+        h.plans.upsert(ownedPlan(owner))
         h.profiles.upsert(ownedProfile(owner))
         h.links.upsert(ownedLink(owner))
         h.measures.upsert(neck)
@@ -52,6 +54,7 @@ class SqlOwnedRowsPurgeTest {
             assertEquals(emptyList(), h.visits.all(IVAN))
             assertEquals(emptyList(), h.machines.all(IVAN))
             assertNull(h.profiles.forOwner(IVAN))
+            assertEquals(emptyList(), h.plans.all(IVAN))
             assertEquals(emptyList(), h.links.all(IVAN))
             assertEquals(emptyList(), h.measures.all(IVAN))
             assertEquals(emptyList(), h.measurements.all(IVAN))
@@ -60,6 +63,7 @@ class SqlOwnedRowsPurgeTest {
             assertNull(h.watermarks.lastPullAt(IVAN))
 
             assertEquals(1, h.visits.all(MISHA).size)
+            assertEquals(1, h.plans.all(MISHA).size)
             assertNotNull(h.profiles.forOwner(MISHA))
             assertEquals(1, h.measurements.all(MISHA).size)
             assertNotNull(h.files.read(mishas.id))

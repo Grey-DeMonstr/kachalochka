@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.data.sync
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
+import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -12,6 +13,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
+import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -38,6 +40,7 @@ class FakeSyncGateway(
     var measuresToPull: List<Measure> = emptyList()
     var measurementsToPull: List<Measurement> = emptyList()
     var photosToPull: List<Photo> = emptyList()
+    var plansToPull: List<Plan> = emptyList()
 
     /** The bytes each live photo push carried. */
     val uploaded = mutableMapOf<PhotoId, ByteArray>()
@@ -60,6 +63,8 @@ class FakeSyncGateway(
 
     override suspend fun pushMachineLink(link: MachineLink) =
         record(MACHINE_LINK_TABLE, link.id.value)
+
+    override suspend fun pushPlan(plan: Plan) = record(PLAN_TABLE, plan.id.value)
 
     override suspend fun pushMeasure(measure: Measure) = record(MEASURE_TABLE, measure.id.value)
 
@@ -115,6 +120,11 @@ class FakeSyncGateway(
         owner: UserId,
         since: Instant?,
     ) = pull(owner, since) { photosToPull.filter { it.userId == owner } }
+
+    override suspend fun pullPlans(
+        owner: UserId,
+        since: Instant?,
+    ) = pull(owner, since) { plansToPull.filter { it.userId == owner } }
 
     private fun <T> pull(
         owner: UserId,

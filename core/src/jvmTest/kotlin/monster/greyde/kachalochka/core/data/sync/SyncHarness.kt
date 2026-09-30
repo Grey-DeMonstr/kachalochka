@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.data.gym.InMemoryPhotoFiles
 import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalPhotoRepository
+import monster.greyde.kachalochka.core.data.gym.LocalPlanRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
@@ -17,6 +18,8 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.Plan
+import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -83,6 +86,11 @@ internal fun ownedLink(
     false,
 )
 
+internal fun ownedPlan(
+    owner: UserId,
+    updatedAt: Instant = T0,
+) = Plan(PlanId.random(), owner, "Ноги", listOf(MachineId.random()), T0, updatedAt, false)
+
 internal fun ownedMeasure(
     owner: UserId,
     updatedAt: Instant = T0,
@@ -108,6 +116,7 @@ internal class SyncHarness {
     val visits = LocalVisitRepository(database, outbox, Dispatchers.Unconfined)
     val machines = LocalMachineRepository(database, outbox, Dispatchers.Unconfined)
     val sets = LocalWorkoutSetRepository(database, outbox, Dispatchers.Unconfined)
+    val plans = LocalPlanRepository(database, outbox, Dispatchers.Unconfined)
     val profiles = LocalProfileRepository(database, outbox, Dispatchers.Unconfined)
     val links = LocalMachineLinkRepository(database, outbox, Dispatchers.Unconfined)
     val measures = LocalMeasureRepository(database, outbox, Dispatchers.Unconfined)

@@ -213,12 +213,12 @@ failing a pull.
 - **Push.** Every local write appends the row's id and table to an `outbox`, which names only the
   table and the row, not its owner. A pass reads each row to learn who owns it: an entry for
   another account's row waits for that account's own turn, and an entry whose row is gone or
-  unowned is dropped. A pass pushes entries by table rank: `machine`, `visit`, `profile`,
-  `measure`, `machine_link`, `photo`, `workout_set`, then `measurement`, because the server checks
-  a set's visit and machine, which the local SQLite does not. The server checks nothing a link or a
-  measure's value names, but each follows the rows it names, so a reader never meets it before
-  them. An entry is removed after a successful push only if nothing re-enqueued it in the
-  meantime.
+  unowned is dropped. A pass pushes entries by table rank: `machine`, `visit`, `workout_plan`,
+  `profile`, `measure`, `machine_link`, `photo`, `workout_set`, then `measurement`, because
+  the server checks a set's visit and machine, which the local SQLite does not. The server checks
+  nothing a link, a plan or a measure's value names, but each follows the rows it names, so a
+  reader never meets it before them. An entry is removed after a successful push only if nothing
+  re-enqueued it in the meantime.
 - **Pull.** The sync pass fetches every row of every table newer than the account's pull
   watermark, keyset-paged on `(updated_at, id)` using the values the server returned for the last
   row of the previous page, and stops once a page comes back empty. It writes nothing, and leaves
@@ -369,6 +369,7 @@ array: `startedPlanned` appends the plan's live machines the visit neither recor
 and the visit screen shows `plannedWithoutSets` as planned rows. Readers skip ids that name no
 live machine, so a machine merged away drops out of plans. Migration `0018` and `13.sqm` add
 both; `13.sqm` resets `lastPullAt`.
+
 A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
 member's `linked_machine_id`. Neither column is a foreign key and no policy checks either against
 `machine`: a link may reach the server before its own machine does, and the linked machine is
