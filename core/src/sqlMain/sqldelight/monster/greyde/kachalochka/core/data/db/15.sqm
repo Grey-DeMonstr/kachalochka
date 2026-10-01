@@ -1,0 +1,4 @@
+ALTER TABLE profile ADD COLUMN machine_sort TEXT NOT NULL DEFAULT 'recent';
+
+-- Profiles pulled before this version lost their machine sort.
+UPDATE syncState SET lastPullAt = NULL;

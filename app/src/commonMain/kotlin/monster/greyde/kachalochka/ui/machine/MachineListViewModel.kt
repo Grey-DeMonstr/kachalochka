@@ -11,7 +11,9 @@ import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
+import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.machineOrder
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -26,6 +28,7 @@ import kotlin.time.Clock
 data class MachineListUiState(
     val own: List<MachineCardUi>? = null,
     val friendSections: List<FriendSectionUi> = emptyList(),
+    val sort: MachineSort = MachineSort.Recent,
 ) {
     val friends: List<MachineCardUi> get() = friendSections.flatMap { it.cards }
 }
@@ -53,6 +56,7 @@ class MachineListViewModel(
     private var preferred = PreferredWeightUnit.Kg
     private var loading: Job? = null
     private var loadingFriends: Job? = null
+    private val sorting = MachineSortChoice(profiles, currentUser, clock, sync, viewModelScope)
 
     /** The list follows whoever is active, wherever the switch came from. */
     init {
@@ -70,6 +74,7 @@ class MachineListViewModel(
                 own = catalogue.own(owner)
                 ownPeaks = sets.peaks(owner)
                 preferred = profiles.preferredUnit(owner)
+                sorting.read(owner)
                 publish()
                 owner?.let(::loadFriends)
             }
@@ -91,8 +96,14 @@ class MachineListViewModel(
             }
     }
 
+    fun chooseSort(sort: MachineSort) {
+        sorting.choose(sort)
+        publish()
+    }
+
     private fun publish() {
         val shown = own?.let { ShownMachines(it, group) }
+        val sort = sorting.current
         val now = clock.now()
         val offset = utcOffset.at(now)
         val cards =
@@ -106,10 +117,19 @@ class MachineListViewModel(
                     offset,
                 )
             }
+        val ownOrder = machineOrder(sort, ownPeaks.associateBy { it.machineId })
+        val friendOrder = machineOrder(sort, friendPeaks.associateBy { it.machineId })
         mutableState.value =
             MachineListUiState(
-                own = cards?.let { c -> shown.own.machines.map(c::own) },
-                friendSections = cards?.friendSections(shown.offered, colors).orEmpty(),
+                own =
+                    cards?.let { c ->
+                        shown.own.machines
+                            .sortedWith(ownOrder)
+                            .map(c::own)
+                    },
+                friendSections =
+                    cards?.friendSections(shown.offered, colors, friendOrder).orEmpty(),
+                sort = sort,
             )
     }
 }

@@ -12,7 +12,7 @@ import monster.greyde.kachalochka.core.domain.gym.SetPeak
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Instant
 
-/** One machine's reduction by `machine_peaks`, the server's `machinePeaks`; see 0019. */
+/** One machine's reduction by `machine_peaks`, the server's `machinePeaks`; see 0021. */
 @Serializable
 internal data class MachinePeaksRow(
     @SerialName("machine_id") val machineId: String,
@@ -21,6 +21,7 @@ internal data class MachinePeaksRow(
     val lightest: Double,
     @SerialName("lightest_reps") val lightestReps: Int,
     @SerialName("last_at") val lastAt: String,
+    val visits: Int,
 ) {
     fun toPeaks(): MachinePeaks =
         MachinePeaks(
@@ -28,6 +29,7 @@ internal data class MachinePeaksRow(
             SetPeak(heaviest, heaviestReps),
             SetPeak(lightest, lightestReps),
             Instant.parse(lastAt),
+            visits,
         )
 }
 

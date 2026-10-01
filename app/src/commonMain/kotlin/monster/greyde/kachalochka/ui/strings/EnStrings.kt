@@ -200,6 +200,8 @@ object EnStrings : Strings {
 
     override val nothingFound = "Nothing found"
     override val alreadyInVisit = "Already in the visit"
+    override val sortName = "A–Z"
+    override val sortFrequent = "Most used"
 
     override val addPhoto = "Add photo"
     override val takePhoto = "Take a photo"

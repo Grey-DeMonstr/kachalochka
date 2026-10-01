@@ -133,7 +133,7 @@ class LocalWorkoutSetRepositoryTest {
 
             assertEquals(
                 listOf(
-                    MachinePeaks(press, SetPeak(80.0, 10), SetPeak(60.0, 10), heavy.recordedAt),
+                    MachinePeaks(press, SetPeak(80.0, 10), SetPeak(60.0, 10), heavy.recordedAt, 1),
                 ),
                 repository.peaks(ivan),
             )

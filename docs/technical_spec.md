@@ -401,12 +401,16 @@ Picking a friend's machine, or "Взять себе" on one opened from the mach
 copy (`linkedCopy`) and the link from it to the friend's machine.
 
 A machine's record and last use come from `machinePeaks` in `domain/gym`: per machine, its
-heaviest and lightest weights with the most reps at each, and its last set's instant;
-`MachinePeaks.best` picks the heaviest, or the lightest on a gravitron.
-`WorkoutSetRepository.peaks` reduces the owner's sets locally on Android. The web and
-`FriendsRepository.groupPeaks` ask the server's `machine_peaks` (migration `0019`), which makes
+heaviest and lightest weights with the most reps at each, its last set's instant and the number
+of visits with a live set on it; `MachinePeaks.best` picks the heaviest, or the lightest on a
+gravitron. `WorkoutSetRepository.peaks` reduces the owner's sets locally on Android. The web and
+`FriendsRepository.groupPeaks` ask the server's `machine_peaks` (migration `0021`), which makes
 the same reduction under the invoker's row-level security, so one row per machine comes back
-however long a history is.
+however long a history is. `machineOrder` sorts machines by a `MachineSort` over those peaks; the
+lists read the choice from `profile.machine_sort` (`recent` / `name` / `frequent`, an unknown
+name reading as `recent`) through `MachineSortChoice`, which writes it at once, as the visit
+writes `group_by_tag`. Migration `0021` and `15.sqm` add the column; `15.sqm` resets
+`lastPullAt`.
 
 `MachineCatalogue` in `app/ui/machine` is the one reader of all of this. Its `own` read gives an
 account's live machines, photos and links from the device; its `group` read gives the group

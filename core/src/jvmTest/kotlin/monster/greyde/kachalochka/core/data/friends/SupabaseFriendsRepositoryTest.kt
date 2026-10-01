@@ -378,11 +378,12 @@ class SupabaseFriendsRepositoryTest {
             engine.answer(MEMBERSHIPS)
             engine.answer(
                 """[{"machine_id":"${machine.value}","heaviest":80,"heaviest_reps":8,""" +
-                    """"lightest":60,"lightest_reps":12,"last_at":"2024-01-01T00:00:00+00:00"}]""",
+                    """"lightest":60,"lightest_reps":12,"last_at":"2024-01-01T00:00:00+00:00",""" +
+                    """"visits":4}]""",
             )
 
             assertEquals(
-                listOf(MachinePeaks(machine, SetPeak(80.0, 8), SetPeak(60.0, 12), NOW)),
+                listOf(MachinePeaks(machine, SetPeak(80.0, 8), SetPeak(60.0, 12), NOW, 4)),
                 repositoryOn(engine).groupPeaks(IVAN),
             )
 

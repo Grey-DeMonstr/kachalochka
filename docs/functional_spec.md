@@ -139,7 +139,12 @@ account's chip switches to it: the shown history and the button, which then name
 Every list of machines draws a machine the same way: its photo, its name, its tags, then, for the
 account's own machine, its comment and the day it was last used, and a trophy with its record — the
 heaviest set with the most reps at that weight, the lightest on a gravitron — in the viewer's unit.
-The machine picker lists the account's machines, most recently used first, then, signed in and
+The machine list and the picker sort their machines by the chips at their top, drawn like the tags:
+"Недавние", the last used first (the default), "А–Я", or "Частые", those used on the most visits
+first; unused machines come last. The choice orders the account's machines and each friend's
+section, and is the account's, saved in its profile and synced.
+The machine picker lists the account's machines in that order under "Мои упражнения", then, signed
+in and
 online, one section per friend headed by their avatar and name, with the friend's machines that are
 not yet the same machine as one of the account's. Opened from a visit, the machines the visit
 already holds, with sets or planned, come last of all, dimmed and marked "Уже в визите"; picking
@@ -181,8 +186,8 @@ replaces the list, and unsaved edits in the old form are dropped. The other mach
 to the one that stays. Choosing a friend's machine
 links the two as one physical machine (see Group sharing) and returns to the form.
 
-The "Упражнения" row lists the active account's machines by name, each drawn as every list draws
-it, with its photo: the machine's first photo, or, when it has none, the first photo of a friend's
+The "Упражнения" row lists the active account's machines in the chosen order, each drawn as every
+list draws it, with its photo: the machine's first photo, or, when it has none, the first photo of a friend's
 machine linked with it. Tapping one opens it in the machine form; "Добавить" adds one. Saving
 returns to the list. Signed in and online, the friends' machines follow once the server answers:
 one section per friend, headed by their avatar (or their initial in their calendar colour), name

@@ -12,8 +12,10 @@ import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
+import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.machineOrder
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -46,6 +48,7 @@ data class PickerUiState(
     val inVisitRows: List<MachineCardUi> = emptyList(),
     /** True when a search or a tag leaves nothing to list. */
     val nothingFound: Boolean = false,
+    val sort: MachineSort = MachineSort.Recent,
 ) {
     val friendRows: List<MachineCardUi> get() = friendSections.flatMap { it.cards }
 }
@@ -79,6 +82,7 @@ class MachinePickerViewModel(
     private var inVisit: Set<MachineId> = emptySet()
     private var loading: Job? = null
     private var loadingFriends: Job? = null
+    private val sorting = MachineSortChoice(profiles, currentUser, clock, sync, viewModelScope)
 
     private val shown: ShownMachines? get() = own?.let { ShownMachines(it, group) }
 
@@ -99,6 +103,7 @@ class MachinePickerViewModel(
                 ownPeaks = sets.peaks(owner)
                 inVisit = day?.let { machinesInVisit(owner, it) }.orEmpty()
                 preferred = profiles.preferredUnit(owner)
+                sorting.read(owner)
                 publish()
                 owner?.let(::loadFriends)
             }
@@ -137,6 +142,11 @@ class MachinePickerViewModel(
         publish()
     }
 
+    fun chooseSort(sort: MachineSort) {
+        sorting.choose(sort)
+        publish()
+    }
+
     /** The tags a machine created now starts with. */
     val createTags: List<String> get() = chosenTags.sortedBy { it.lowercase() }
 
@@ -160,8 +170,9 @@ class MachinePickerViewModel(
         val shown = shown
         val ownMachines = shown?.own?.machines.orEmpty()
         val offered = shown?.offered.orEmpty()
-        val lastUsed = ownPeaks.associate { it.machineId to it.lastAt }
-        val ranking = rankMachines(query, ownMachines, lastUsed, chosenTags)
+        val sort = sorting.current
+        val ownOrder = machineOrder(sort, ownPeaks.associateBy { it.machineId })
+        val ranking = rankMachines(query, ownMachines, ownOrder, chosenTags)
         val needle = query.trim()
         val matchingOffered =
             offered.filter {
@@ -185,7 +196,8 @@ class MachinePickerViewModel(
         val rows = cards?.let { c -> notIn.map(c::own) }.orEmpty()
         val inVisitRows =
             cards?.let { c -> alreadyIn.map { c.own(it).copy(inVisit = true) } }.orEmpty()
-        val sections = cards?.friendSections(matchingOffered, colors).orEmpty()
+        val friendOrder = machineOrder(sort, friendPeaks.associateBy { it.machineId })
+        val sections = cards?.friendSections(matchingOffered, colors, friendOrder).orEmpty()
         val strings = AppStrings.current
         mutableState.value =
             PickerUiState(
@@ -197,7 +209,7 @@ class MachinePickerViewModel(
                     } else {
                         strings.withTags(createTags)
                     },
-                sectionLabel = if (query.isBlank()) strings.recent else strings.similar,
+                sectionLabel = if (query.isBlank()) strings.myMachines else strings.similar,
                 tags =
                     (ownMachines + offered.map { it.machine })
                         .flatMap { it.tags }
@@ -213,6 +225,7 @@ class MachinePickerViewModel(
                         rows.isEmpty() &&
                         sections.isEmpty() &&
                         inVisitRows.isEmpty(),
+                sort = sort,
             )
     }
 }

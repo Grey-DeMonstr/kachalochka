@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.components.OutlineButton
+import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.strings
@@ -36,6 +37,10 @@ fun MachineListScreen(
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(strings().machines, onBack = onBack, onOpenSettings = onOpenSettings) {
+        if (!state.own.isNullOrEmpty() || state.friendSections.isNotEmpty()) {
+            SortChips(state.sort, viewModel::chooseSort, Modifier.padding(vertical = 12.dp))
+            Rule()
+        }
         Column(
             Modifier
                 .weight(1f)

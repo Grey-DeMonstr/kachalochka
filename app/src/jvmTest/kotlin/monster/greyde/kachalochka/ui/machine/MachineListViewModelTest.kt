@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -83,7 +84,52 @@ class MachineListViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun the_machines_are_listed_by_name_with_their_tags_comment_last_use_and_record() =
+    fun a_chosen_sort_reorders_the_machines_and_is_kept_in_the_profile() =
+        runTest {
+            val abs = Machine.new("Аб", null, t0)
+            val row = Machine.new("Тяга", null, t0)
+            gym.machines.upsert(abs)
+            gym.machines.upsert(row)
+            gym.sets.upsert(set(row, 50.0, 10))
+            val vm = viewModel().also { it.load() }
+
+            fun names() =
+                vm.state.value.own
+                    ?.map { it.name }
+            assertEquals(listOf("Тяга", "Аб"), names())
+            assertEquals(MachineSort.Recent, vm.state.value.sort)
+
+            vm.chooseSort(MachineSort.Name)
+
+            assertEquals(listOf("Аб", "Тяга"), names())
+            assertEquals(MachineSort.Name, vm.state.value.sort)
+            assertEquals(MachineSort.Name, gym.profiles.forOwner(null)?.machineSort)
+        }
+
+    @Test
+    fun the_profile_s_sort_puts_the_most_used_machine_first() =
+        runTest {
+            gym.profiles.upsert(Profile.new(null, t0).copy(machineSort = MachineSort.Frequent))
+            val abs = Machine.new("Аб", null, t0)
+            val row = Machine.new("Тяга", null, t0)
+            gym.machines.upsert(abs)
+            gym.machines.upsert(row)
+            gym.sets.upsert(set(row, 50.0, 10).copy(recordedAt = t0 + 5.minutes))
+            gym.sets.upsert(set(abs, 50.0, 10))
+            gym.sets.upsert(set(abs, 50.0, 10))
+
+            val vm = viewModel().also { it.load() }
+
+            assertEquals(
+                listOf("Аб", "Тяга"),
+                vm.state.value.own
+                    ?.map { it.name },
+            )
+            assertEquals(MachineSort.Frequent, vm.state.value.sort)
+        }
+
+    @Test
+    fun the_machines_are_listed_most_recent_first_with_their_tags_comment_last_use_and_record() =
         runTest {
             val row = Machine.new("Тяга", null, t0)
             gym.machines.upsert(row)

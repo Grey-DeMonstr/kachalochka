@@ -56,17 +56,22 @@ class MachineCards(
 
     fun friend(machine: Machine): MachineCardUi = card(machine, theirs[machine.id])
 
-    /** [offered] split by owner, the owners by name, each with the colour [colors] gives them. */
+    /**
+     * [offered] split by owner, the owners by name, each with the colour [colors] gives them and
+     * their machines in [order].
+     */
     fun friendSections(
         offered: List<FriendMachine>,
         colors: Map<UserId, Int>,
+        order: Comparator<Machine>,
     ): List<FriendSectionUi> =
         offered
             .groupBy { it.owner.userId }
             .values
             .map { machines ->
                 val owner = machines.first().owner
-                FriendSectionUi(owner, colors[owner.userId], machines.map { friend(it.machine) })
+                val cards = machines.map { it.machine }.sortedWith(order).map(::friend)
+                FriendSectionUi(owner, colors[owner.userId], cards)
             }.sortedBy { it.friend.displayName.lowercase() }
 
     private fun card(

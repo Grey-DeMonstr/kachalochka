@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -190,7 +191,7 @@ class MachinePickerViewModelTest {
             vm.state.value.rows
                 .map { Triple(it.name, it.lastUsed, it.record) },
         )
-        assertEquals("Недавние", vm.state.value.sectionLabel)
+        assertEquals("Мои упражнения", vm.state.value.sectionLabel)
         assertNull(vm.state.value.createLabel)
     }
 
@@ -558,4 +559,27 @@ class MachinePickerViewModelTest {
         )
         assertEquals(emptyList(), vm.state.value.inVisitRows)
     }
+
+    @Test
+    fun a_chosen_sort_reorders_the_rows_and_is_kept_in_the_profile() =
+        runTest {
+            val vm = viewModel().also { it.load() }
+            assertEquals(
+                listOf(press.id, smith.id),
+                vm.state.value.rows
+                    .map { it.id },
+            )
+
+            vm.chooseSort(MachineSort.Frequent)
+            gym.sets.upsert(set(VisitId.random(), smith, 80.0, 8, t0 - 3.days))
+            vm.load()
+
+            assertEquals(
+                listOf(smith.id, press.id),
+                vm.state.value.rows
+                    .map { it.id },
+            )
+            assertEquals(MachineSort.Frequent, vm.state.value.sort)
+            assertEquals(MachineSort.Frequent, gym.profiles.forOwner(null)?.machineSort)
+        }
 }

@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.di.corePlatformModule
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -61,6 +62,17 @@ class LocalProfileRepositoryTest {
             repository.upsert(grouping)
 
             assertEquals(grouping, repository.byId(profile.id))
+        }
+
+    @Test
+    fun the_machine_sort_is_kept_in_the_profile() =
+        runTest {
+            val repository = koin.get<ProfileRepository>()
+            val sorting = profile.copy(machineSort = MachineSort.Name)
+
+            repository.upsert(sorting)
+
+            assertEquals(sorting, repository.byId(profile.id))
         }
 
     @Test

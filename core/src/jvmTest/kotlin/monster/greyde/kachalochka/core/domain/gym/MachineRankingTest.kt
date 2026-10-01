@@ -8,9 +8,18 @@ class MachineRankingTest {
     private val press = machine(PRESS, "Жим ногами")
     private val smith = machine(ROW, "Приседания в Смите")
     private val lastUsed =
-        mapOf(
-            ROW to Instant.fromEpochSeconds(10),
-            PRESS to Instant.fromEpochSeconds(5),
+        machineOrder(
+            MachineSort.Recent,
+            listOf(ROW to 10L, PRESS to 5L).associate { (id, at) ->
+                id to
+                    MachinePeaks(
+                        id,
+                        SetPeak(0.0, 0),
+                        SetPeak(0.0, 0),
+                        Instant.fromEpochSeconds(at),
+                        1,
+                    )
+            },
         )
 
     @Test
@@ -68,5 +77,12 @@ class MachineRankingTest {
         val gone = press.copy(deleted = true)
 
         assertEquals(listOf(smith), rankMachines("", listOf(gone, smith), lastUsed).machines)
+    }
+
+    @Test
+    fun the_machines_keep_the_order_asked_for() {
+        val byName = machineOrder(MachineSort.Name, emptyMap())
+
+        assertEquals(listOf(press, smith), rankMachines("", listOf(smith, press), byName).machines)
     }
 }

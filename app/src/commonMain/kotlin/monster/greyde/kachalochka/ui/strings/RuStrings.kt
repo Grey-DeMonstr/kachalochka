@@ -217,6 +217,8 @@ object RuStrings : Strings {
 
     override val nothingFound = "Ничего не найдено"
     override val alreadyInVisit = "Уже в визите"
+    override val sortName = "А–Я"
+    override val sortFrequent = "Частые"
 
     override val addPhoto = "Добавить фото"
     override val takePhoto = "Снять фото"

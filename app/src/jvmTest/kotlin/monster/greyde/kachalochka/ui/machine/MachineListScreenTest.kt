@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performScrollTo
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
@@ -46,6 +47,18 @@ class MachineListScreenTest {
             assertEquals(listOf(press.id), opened)
             assertEquals(1, added)
         }
+    }
+
+    @Test
+    fun a_sort_chip_orders_the_list_and_is_remembered() {
+        runBlocking { gym.machines.upsert(press) }
+        runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
+            onNodeWithTag("sort-recent").assertTextEquals("Недавние")
+            onNodeWithTag("sort-frequent").assertTextEquals("Частые")
+            onNodeWithTag("sort-name").assertTextEquals("А–Я").performClick()
+            waitForIdle()
+        }
+        assertEquals(MachineSort.Name, runBlocking { gym.profiles.forOwner(null)?.machineSort })
     }
 
     @Test

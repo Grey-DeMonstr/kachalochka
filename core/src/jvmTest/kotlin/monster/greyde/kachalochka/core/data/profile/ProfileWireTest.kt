@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.data.profile
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -31,6 +32,7 @@ class ProfileWireTest {
                 weightUnit = PreferredWeightUnit.Mixed,
                 groupByTag = true,
                 avatarPhoto = PhotoId("9b1f0c3e-0000-4000-8000-000000000003"),
+                machineSort = MachineSort.Frequent,
             )
 
         assertEquals("1990-06-15", ProfileRow.of(profile).birthDate)
@@ -51,6 +53,21 @@ class ProfileWireTest {
     fun a_missing_or_unknown_weight_unit_reads_as_kilograms() {
         assertEquals(PreferredWeightUnit.Kg, weightUnitOf("stone"))
         assertEquals(PreferredWeightUnit.Kg, weightUnitOf(null))
+    }
+
+    @Test
+    fun the_machine_sort_travels_by_its_wire_name() {
+        assertEquals(
+            listOf("recent", "name", "frequent"),
+            MachineSort.entries.map { it.wireName() },
+        )
+        assertEquals(MachineSort.Name, machineSortOf("name"))
+    }
+
+    @Test
+    fun a_missing_or_unknown_machine_sort_reads_as_recent() {
+        assertEquals(MachineSort.Recent, machineSortOf("random"))
+        assertEquals(MachineSort.Recent, machineSortOf(null))
     }
 
     @Test

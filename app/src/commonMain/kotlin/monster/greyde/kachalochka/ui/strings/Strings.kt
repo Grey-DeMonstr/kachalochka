@@ -182,6 +182,8 @@ interface Strings {
 
     val nothingFound: String
     val alreadyInVisit: String
+    val sortName: String
+    val sortFrequent: String
 
     // Photos
     val addPhoto: String

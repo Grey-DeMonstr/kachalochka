@@ -59,8 +59,9 @@ fun MachinePickerScreen(
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(strings().machine, onBack = onBack, onOpenSettings = onOpenSettings) {
-        SearchBar(state.query, viewModel::onQueryChange, rule = state.tags.isEmpty())
-        if (state.tags.isNotEmpty()) TagFilter(state.tags, viewModel::toggleTag)
+        SearchBar(state.query, viewModel::onQueryChange, rule = false)
+        SortChips(state.sort, viewModel::chooseSort, Modifier.padding(bottom = 12.dp))
+        if (state.tags.isNotEmpty()) TagFilter(state.tags, viewModel::toggleTag) else Rule()
         Column(
             Modifier
                 .weight(1f)

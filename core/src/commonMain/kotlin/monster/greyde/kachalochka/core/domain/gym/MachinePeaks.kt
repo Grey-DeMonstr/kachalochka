@@ -8,12 +8,13 @@ data class SetPeak(
     val reps: Int,
 )
 
-/** How far a machine's live sets reach, and when it was last used. */
+/** How far a machine's live sets reach, when it was last used and on how many visits. */
 data class MachinePeaks(
     val machineId: MachineId,
     val heaviest: SetPeak,
     val lightest: SetPeak,
     val lastAt: Instant,
+    val visits: Int,
 ) {
     /** The machine's record: its heaviest set, or on a gravitron, where less is more, lightest. */
     fun best(mode: WeightMode): SetPeak =
@@ -33,6 +34,7 @@ fun machinePeaks(sets: List<WorkoutSet>): List<MachinePeaks> =
                 peakAt(onMachine, onMachine.maxOf { it.weight }),
                 peakAt(onMachine, onMachine.minOf { it.weight }),
                 onMachine.maxOf { it.recordedAt },
+                onMachine.distinctBy { it.visitId }.size,
             )
         }
 

@@ -85,7 +85,8 @@ class GymWireTest {
         val row =
             Json.decodeFromString<MachinePeaksRow>(
                 """{"machine_id":"${machine.value}","heaviest":80,"heaviest_reps":8,""" +
-                    """"lightest":60.5,"lightest_reps":15,"last_at":"2023-11-14T22:13:20+00:00"}""",
+                    """"lightest":60.5,"lightest_reps":15,""" +
+                    """"last_at":"2023-11-14T22:13:20+00:00","visits":3}""",
             )
 
         assertEquals(
@@ -94,6 +95,7 @@ class GymWireTest {
                 SetPeak(80.0, 8),
                 SetPeak(60.5, 15),
                 Instant.fromEpochSeconds(1_700_000_000),
+                3,
             ),
             row.toPeaks(),
         )

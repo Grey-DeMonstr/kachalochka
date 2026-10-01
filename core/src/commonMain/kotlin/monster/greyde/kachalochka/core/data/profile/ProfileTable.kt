@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -62,6 +63,16 @@ internal fun PreferredWeightUnit.wireName(): String =
 internal fun weightUnitOf(wire: String?): PreferredWeightUnit =
     PreferredWeightUnit.entries.firstOrNull { it.wireName() == wire } ?: PreferredWeightUnit.Kg
 
+internal fun MachineSort.wireName(): String =
+    when (this) {
+        MachineSort.Recent -> "recent"
+        MachineSort.Name -> "name"
+        MachineSort.Frequent -> "frequent"
+    }
+
+internal fun machineSortOf(wire: String?): MachineSort =
+    MachineSort.entries.firstOrNull { it.wireName() == wire } ?: MachineSort.Recent
+
 internal fun birthDateOf(iso: String?): CalendarDay? =
     iso?.let {
         try {
@@ -96,6 +107,7 @@ internal data class ProfileRow(
     @SerialName("weight_unit") val weightUnit: String?,
     @SerialName("group_by_tag") val groupByTag: Boolean,
     @SerialName("avatar_photo") val avatarPhoto: String?,
+    @SerialName("machine_sort") val machineSort: String?,
 ) {
     fun toProfile(): Profile =
         Profile(
@@ -111,6 +123,7 @@ internal data class ProfileRow(
             weightUnit = weightUnitOf(weightUnit),
             groupByTag = groupByTag,
             avatarPhoto = avatarPhotoOf(avatarPhoto),
+            machineSort = machineSortOf(machineSort),
         )
 
     companion object {
@@ -128,6 +141,7 @@ internal data class ProfileRow(
                 weightUnit = profile.weightUnit.wireName(),
                 groupByTag = profile.groupByTag,
                 avatarPhoto = profile.avatarPhoto?.value,
+                machineSort = profile.machineSort.wireName(),
             )
     }
 }

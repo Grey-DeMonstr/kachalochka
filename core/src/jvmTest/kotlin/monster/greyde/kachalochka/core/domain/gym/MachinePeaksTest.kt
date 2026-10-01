@@ -16,10 +16,11 @@ class MachinePeaksTest {
         reps: Int,
         minute: Int,
         deleted: Boolean = false,
+        visit: VisitId = VisitId.random(),
     ) = WorkoutSet(
         WorkoutSetId.random(),
         null,
-        VisitId.random(),
+        visit,
         machine,
         weight,
         reps,
@@ -43,7 +44,7 @@ class MachinePeaksTest {
             )
 
         assertEquals(
-            listOf(MachinePeaks(press, SetPeak(80.0, 8), SetPeak(60.0, 15), t0 + 5.minutes)),
+            listOf(MachinePeaks(press, SetPeak(80.0, 8), SetPeak(60.0, 15), t0 + 5.minutes, 5)),
             peaks,
         )
     }
@@ -60,6 +61,22 @@ class MachinePeaksTest {
     }
 
     @Test
+    fun visits_count_the_distinct_visits_with_a_live_set_on_the_machine() {
+        val monday = VisitId.random()
+        val peaks =
+            machinePeaks(
+                listOf(
+                    set(press, 70.0, 10, 1, visit = monday),
+                    set(press, 70.0, 10, 2, visit = monday),
+                    set(press, 70.0, 10, 3),
+                    set(press, 70.0, 10, 4, deleted = true),
+                ),
+            )
+
+        assertEquals(2, peaks.single().visits)
+    }
+
+    @Test
     fun each_machine_peaks_on_its_own() {
         val peaks = machinePeaks(listOf(set(press, 70.0, 10, 1), set(row, 40.0, 12, 2)))
 
@@ -68,7 +85,7 @@ class MachinePeaksTest {
 
     @Test
     fun the_record_is_the_heaviest_except_on_a_gravitron() {
-        val peaks = MachinePeaks(press, SetPeak(30.0, 6), SetPeak(20.0, 10), t0)
+        val peaks = MachinePeaks(press, SetPeak(30.0, 6), SetPeak(20.0, 10), t0, 1)
 
         assertEquals(SetPeak(30.0, 6), peaks.best(WeightMode.Total))
         assertEquals(SetPeak(30.0, 6), peaks.best(WeightMode.PerSide))
