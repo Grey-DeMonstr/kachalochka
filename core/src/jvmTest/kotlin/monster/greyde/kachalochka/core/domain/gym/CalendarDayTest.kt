@@ -46,6 +46,13 @@ class CalendarDayTest {
     }
 
     @Test
+    fun months_back_keep_the_day_of_the_month_or_the_shorter_month_s_last_day() {
+        assertEquals(CalendarDay(2026, 9, 1), CalendarDay(2026, 10, 1).minusMonths(1))
+        assertEquals(CalendarDay(2026, 2, 28), CalendarDay(2026, 3, 31).minusMonths(1))
+        assertEquals(CalendarDay(2025, 11, 15), CalendarDay(2026, 2, 15).minusMonths(3))
+    }
+
+    @Test
     fun days_step_and_compare_in_calendar_order() {
         assertEquals(CalendarDay(2024, 1, 1), CalendarDay(2023, 12, 31).plusDays(1))
         assertTrue(CalendarDay(2023, 12, 1) > CalendarDay(2023, 11, 30))

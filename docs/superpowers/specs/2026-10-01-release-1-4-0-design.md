@@ -55,22 +55,22 @@ as before. A friend's machine shown in a list uses its owner's choice the same w
 visit gets a chart button left of the gear, opening the screen on that machine.
 
 - **Top:** a dropdown with "Общая" first, then every own machine by name with its photo. Under it,
-  period chips: "Месяц", "3 месяца", "6 месяцев", "Год". A period is whole calendar months ending
-  with the current one: "Месяц" in September starts on 1 September, "3 месяца" on 1 July. The
-  chosen machine and period are the screen's own and not remembered.
-- **A machine:** "Лучший подход · сентябрь" ("· с 1 июля" for longer periods), with the period's
-  best set on the right, then a line chart of each visit's best weight over the period, x spanning
-  the whole period. A gravitron's chart is negative with zero on top. A period without sets says
-  "Нет подходов за период". Below, "Все результаты": every visit on the machine, newest first, the
-  date and the visit's results as `setsSummary` writes them, independent of the period.
-- **"Общая":** "Упражнения за период · сентябрь", then one card per machine with a set in the
+  period chips: "Месяц", "3 месяца", "6 месяцев", "Год". A period counts its months back from
+  today, as `inPeriod` does for measures: on 1 October "Месяц" starts on 1 September, "3 месяца"
+  on 1 July. The chosen machine and period are the screen's own and not remembered.
+- **A machine:** "Лучший подход · с 1 сентября", with the period's best set on the right, then a
+  line chart of each visit's best weight over the period, x spanning the whole period. A
+  gravitron's chart is negative with zero on top. A period without sets says "Нет подходов за
+  период". Below, "Все результаты": every visit on the machine, newest first, the date and the
+  visit's results as `setsSummary` writes them, independent of the period.
+- **"Общая":** "Упражнения за период · с 1 сентября", then one card per machine with a set in the
   period, last used first: photo, name, and two boxes joined by an arrow. With a set before the
-  period they hold the best set before it ("До 1 сентября") and the best in it ("Сентябрь" or "С 1
-  июля"); without one, the worst and the best set in the period ("Худший", "Лучший"). A chip on
-  the card gives the change: green "+2.5 кг" when the weight improved, green "+2 повт." when the
-  weight is the same and the reps improved, otherwise grey ("−2.5 кг", "−1 повт.", "Без
-  изменений"). On a gravitron a smaller weight is the improvement, still written "+x кг". Tapping a
-  card opens that machine.
+  period they hold the best set before it ("До 1 сентября") and the best in it ("С 1 сентября");
+  without one, the worst and the best set in the period ("Худший", "Лучший"). A chip on the card
+  gives the change: green "+2.5 кг" when the weight improved, green "+2 повт." when the weight is
+  the same and the reps improved, otherwise grey ("−2.5 кг", "−1 повт.", "Без изменений"). On a
+  gravitron a smaller weight is the improvement, still written "+x кг". Tapping a card opens that
+  machine.
 
 Weights follow the profile's unit. The best set is `bestSet` (§1) and the worst its opposite: the
 lightest weight with the fewest reps at it, the heaviest on a gravitron. The pure functions —

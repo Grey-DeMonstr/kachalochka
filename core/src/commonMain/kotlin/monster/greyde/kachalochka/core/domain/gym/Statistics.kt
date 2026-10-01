@@ -3,7 +3,7 @@ package monster.greyde.kachalochka.core.domain.gym
 import kotlin.time.Duration
 import kotlin.time.Instant
 
-/** Whole calendar months ending with the current one. */
+/** A number of months back from today. */
 enum class StatsPeriod(
     val months: Int,
 ) {
@@ -13,8 +13,7 @@ enum class StatsPeriod(
     Year(12),
     ;
 
-    fun start(today: CalendarDay): CalendarDay =
-        CalendarMonth.of(today).plusMonths(1 - months).first()
+    fun start(today: CalendarDay): CalendarDay = today.minusMonths(months)
 }
 
 /**

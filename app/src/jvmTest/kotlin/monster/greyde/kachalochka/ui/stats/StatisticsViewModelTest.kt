@@ -78,7 +78,7 @@ class StatisticsViewModelTest {
         runTest {
             Dispatchers.setMain(UnconfinedTestDispatcher())
             listOf(press, row, gravitron).forEach { gym.machines.upsert(it) }
-            record(press, CalendarDay(2023, 10, 20), 70.0 to 10)
+            record(press, CalendarDay(2023, 10, 10), 70.0 to 10)
             record(press, CalendarDay(2023, 11, 10), 75.0 to 8, 75.0 to 6)
             record(press, CalendarDay(2023, 11, 12), 72.5 to 10)
             record(row, CalendarDay(2023, 11, 13), 40.0 to 10, 40.0 to 12)
@@ -93,7 +93,7 @@ class StatisticsViewModelTest {
 
         assertNull(state.selected)
         assertEquals(StatsPeriod.Month, state.period)
-        assertEquals("Упражнения за период · ноябрь", state.overallTitle)
+        assertEquals("Упражнения за период · с 14 октября", state.overallTitle)
         assertEquals(
             listOf(
                 ProgressCardUi(
@@ -111,9 +111,9 @@ class StatisticsViewModelTest {
                     press.id,
                     "Жим ногами",
                     null,
-                    "До 1 ноября",
+                    "До 14 октября",
                     "70 кг × 10",
-                    "Ноябрь",
+                    "С 14 октября",
                     "75 кг × 8",
                     "+5 кг",
                     improved = true,
@@ -157,13 +157,23 @@ class StatisticsViewModelTest {
         }
 
     @Test
-    fun a_longer_period_starts_months_earlier() {
+    fun a_month_runs_back_from_today_rather_than_from_the_first() {
+        val card =
+            viewModel()
+                .state.value.overall
+                .single { it.id == press.id }
+
+        assertEquals("До 14 октября" to "70 кг × 10", card.fromLabel to card.from)
+    }
+
+    @Test
+    fun a_longer_period_reaches_further_back() {
         val vm = viewModel()
 
         vm.choosePeriod(StatsPeriod.ThreeMonths)
 
         val state = vm.state.value
-        assertEquals("Упражнения за период · с 1 сентября", state.overallTitle)
+        assertEquals("Упражнения за период · с 14 августа", state.overallTitle)
         val card = state.overall.single { it.id == press.id }
         assertEquals("Худший" to "Лучший", card.fromLabel to card.toLabel)
         assertEquals("70 кг × 10" to "75 кг × 8", card.from to card.to)
@@ -191,19 +201,19 @@ class StatisticsViewModelTest {
             vm.state.value.selected
                 ?.id,
         )
-        assertEquals("Лучший подход · ноябрь", chosen.title)
+        assertEquals("Лучший подход · с 14 октября", chosen.title)
         assertEquals("75 кг × 8", chosen.best)
         assertEquals(
             listOf(CalendarDay(2023, 11, 10) to 75.0, CalendarDay(2023, 11, 12) to 72.5),
             chosen.points,
         )
-        assertEquals(CalendarDay(2023, 11, 1) to gym.today, chosen.start to chosen.end)
+        assertEquals(CalendarDay(2023, 10, 14) to gym.today, chosen.start to chosen.end)
         assertFalse(chosen.zeroOnTop)
         assertEquals(
             listOf(
                 "12 ноября" to "72.5кг 1x10",
                 "10 ноября" to "75кг 8-6",
-                "20 октября" to "70кг 1x10",
+                "10 октября" to "70кг 1x10",
             ),
             chosen.history.map { it.date to it.results },
         )
@@ -216,7 +226,7 @@ class StatisticsViewModelTest {
 
             val chosen = assertNotNull(viewModel(gravitron.id).state.value.machine)
 
-            assertEquals("Лучший подход · противовес · ноябрь", chosen.title)
+            assertEquals("Лучший подход · противовес · с 14 октября", chosen.title)
             assertEquals(listOf(CalendarDay(2023, 11, 2) to -27.5), chosen.points)
             assertTrue(chosen.zeroOnTop)
         }

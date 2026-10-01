@@ -38,6 +38,12 @@ data class CalendarDay(
 
     fun plusDays(days: Long): CalendarDay = ofEpochDay(epochDay + days)
 
+    /** The same day [months] back, or that month's last day when it is shorter. */
+    fun minusMonths(months: Int): CalendarDay {
+        val month = CalendarMonth.of(this).plusMonths(-months)
+        return CalendarDay(month.year, month.month, minOf(day, month.length))
+    }
+
     fun at(
         millisOfDay: Long,
         utcOffset: Duration,

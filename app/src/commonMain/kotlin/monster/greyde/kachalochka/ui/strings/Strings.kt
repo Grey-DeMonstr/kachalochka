@@ -196,9 +196,6 @@ interface Strings {
     val best: String
     val noChange: String
 
-    /** The month a one-month period is, as it reads inside a title. */
-    fun monthInTitle(month: Int): String
-
     fun sinceDay(day: String): String
 
     fun beforeDay(day: String): String

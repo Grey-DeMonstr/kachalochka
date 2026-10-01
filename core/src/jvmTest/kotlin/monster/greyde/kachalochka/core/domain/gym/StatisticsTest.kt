@@ -12,17 +12,14 @@ class StatisticsTest {
     private val day = 86_400L
 
     @Test
-    fun a_period_is_whole_months_ending_with_the_current_one() {
+    fun a_period_runs_back_from_today_by_its_months() {
         val today = CalendarDay(2026, 9, 29)
 
-        assertEquals(CalendarDay(2026, 9, 1), StatsPeriod.Month.start(today))
-        assertEquals(CalendarDay(2026, 7, 1), StatsPeriod.ThreeMonths.start(today))
-        assertEquals(CalendarDay(2026, 4, 1), StatsPeriod.SixMonths.start(today))
-        assertEquals(CalendarDay(2025, 10, 1), StatsPeriod.Year.start(today))
-        assertEquals(
-            CalendarDay(2025, 11, 1),
-            StatsPeriod.ThreeMonths.start(CalendarDay(2026, 1, 15)),
-        )
+        assertEquals(CalendarDay(2026, 8, 29), StatsPeriod.Month.start(today))
+        assertEquals(CalendarDay(2026, 6, 29), StatsPeriod.ThreeMonths.start(today))
+        assertEquals(CalendarDay(2026, 3, 29), StatsPeriod.SixMonths.start(today))
+        assertEquals(CalendarDay(2025, 9, 29), StatsPeriod.Year.start(today))
+        assertEquals(CalendarDay(2026, 9, 1), StatsPeriod.Month.start(CalendarDay(2026, 10, 1)))
     }
 
     @Test

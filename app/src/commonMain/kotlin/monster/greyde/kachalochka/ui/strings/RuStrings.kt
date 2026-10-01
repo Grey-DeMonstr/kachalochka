@@ -231,8 +231,6 @@ object RuStrings : Strings {
     override val best = "Лучший"
     override val noChange = "Без изменений"
 
-    override fun monthInTitle(month: Int) = monthTitle(month).lowercase()
-
     override fun sinceDay(day: String) = "с $day"
 
     override fun beforeDay(day: String) = "До $day"

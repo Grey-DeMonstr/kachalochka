@@ -350,19 +350,20 @@ or "Doing some press" measured in times.
 "Статистика" on the home screen opens the statistics on "Общая"; a machine's page opens them on
 that machine. At the top a dropdown chooses "Общая" or one of the account's machines, listed by
 name with their photos, and chips under it choose the period: "Месяц", "3 месяца", "6 месяцев" or
-"Год". A period is whole calendar months ending with the current one, so "Месяц" in September
-starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
+"Год". A period counts its months back from today, as the measure screen's do: on 1 October
+"Месяц" starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
 
-A machine shows "Лучший подход · сентябрь" ("· с 1 июля" for a longer period, "· противовес"
-before it on a gravitron) with the period's best set beside it, then a line chart of each day's
+A machine shows "Лучший подход · с 1 сентября" ("· противовес" before the date on a gravitron)
+with the period's best set beside it, then a line chart of each day's
 best weight across the whole period. A gravitron's weights are drawn negative, with zero on top.
 A period without sets says "Нет подходов за период". "Все результаты" follows: every visit on the
 machine, newest first, its date and its results written as the visit screen writes them, whatever
 the period.
 
-"Общая" lists, under "Упражнения за период · сентябрь", every machine with a set in the period,
-the last used first: its photo, its name and two boxes joined by an arrow. With a set before the
-period they hold the best set before it ("До 1 сентября") and the best in it ("Сентябрь"); without
+"Общая" lists, under "Упражнения за период · с 1 сентября", every machine with a set in the
+period, the last used first: its photo, its name and two boxes joined by an arrow. With a set
+before the period they hold the best set before it ("До 1 сентября") and the best in it ("С 1
+сентября"); without
 one, the worst and the best set of the period ("Худший", "Лучший"). A chip sums up the change: in
 green "+2.5 кг" when the weight grew, or "+2 повт." when the weight stayed and the reps grew; in
 grey "−2.5 кг", "−1 повт." or "Без изменений". On a gravitron a lighter weight is the growth.

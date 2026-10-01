@@ -214,8 +214,6 @@ object EnStrings : Strings {
     override val best = "Best"
     override val noChange = "No change"
 
-    override fun monthInTitle(month: Int) = monthTitle(month)
-
     override fun sinceDay(day: String) = "since $day"
 
     override fun beforeDay(day: String) = "Before $day"

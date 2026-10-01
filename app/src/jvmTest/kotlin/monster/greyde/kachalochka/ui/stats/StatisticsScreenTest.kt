@@ -52,7 +52,9 @@ class StatisticsScreenTest {
         runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {
             onNodeWithTag("stats-choice").assertTextContains("Общая")
             onNodeWithTag("period-month").assertIsOn()
-            onNodeWithTag("stats-overall-title").assertTextEquals("УПРАЖНЕНИЯ ЗА ПЕРИОД · НОЯБРЬ")
+            onNodeWithTag(
+                "stats-overall-title",
+            ).assertTextEquals("УПРАЖНЕНИЯ ЗА ПЕРИОД · С 14 ОКТЯБРЯ")
             onNodeWithTag("stats-change-${press.id.value}", useUnmergedTree = true)
                 .assertTextContains("+5 кг")
             onNodeWithTag("stats-card-${row.id.value}").assertDoesNotExist()
@@ -61,7 +63,7 @@ class StatisticsScreenTest {
             waitForIdle()
 
             onNodeWithTag("stats-choice").assertTextContains("Жим ногами")
-            onNodeWithTag("stats-chart-title").assertTextEquals("ЛУЧШИЙ ПОДХОД · НОЯБРЬ")
+            onNodeWithTag("stats-chart-title").assertTextEquals("ЛУЧШИЙ ПОДХОД · С 14 ОКТЯБРЯ")
             onNodeWithTag("stats-best").assertTextEquals("75 кг × 8")
             onNodeWithTag("stats-history-date-0").assertTextEquals("13 ноября")
             onNodeWithTag("stats-history-results-1").assertTextEquals("70кг 1x8")
@@ -83,7 +85,7 @@ class StatisticsScreenTest {
 
             onNodeWithTag(
                 "stats-overall-title",
-            ).assertTextEquals("УПРАЖНЕНИЯ ЗА ПЕРИОД · С 1 СЕНТЯБРЯ")
+            ).assertTextEquals("УПРАЖНЕНИЯ ЗА ПЕРИОД · С 14 АВГУСТА")
         }
 
     @Test
@@ -93,6 +95,6 @@ class StatisticsScreenTest {
             onNodeWithTag("period-year").assertTextEquals("Year")
             onNodeWithTag(
                 "stats-overall-title",
-            ).assertTextEquals("MACHINES IN THE PERIOD · NOVEMBER")
+            ).assertTextEquals("MACHINES IN THE PERIOD · SINCE 14 OCTOBER")
         }
 }

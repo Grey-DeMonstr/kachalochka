@@ -165,12 +165,7 @@ class StatisticsViewModel(
     private fun periodLabel(
         start: CalendarDay,
         today: CalendarDay,
-    ): String =
-        if (period == StatsPeriod.Month) {
-            AppStrings.current.monthInTitle(start.month)
-        } else {
-            AppStrings.current.sinceDay(dayMonthLabel(start, today.year))
-        }
+    ): String = AppStrings.current.sinceDay(dayMonthLabel(start, today.year))
 
     /** The card with the instant of its machine's last set, which orders the cards. */
     private fun card(

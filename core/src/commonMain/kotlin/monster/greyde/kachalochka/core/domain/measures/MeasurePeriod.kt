@@ -1,7 +1,6 @@
 package monster.greyde.kachalochka.core.domain.measures
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 
 /** [months] is null for every value ever recorded. */
 enum class MeasurePeriod(
@@ -25,7 +24,6 @@ fun inPeriod(
 ): List<Measurement> {
     val oldestFirst = values.sortedBy { it.day }
     val months = period.months ?: return oldestFirst
-    val month = CalendarMonth.of(today).plusMonths(-months)
-    val start = CalendarDay(month.year, month.month, minOf(today.day, month.length))
+    val start = today.minusMonths(months)
     return oldestFirst.filter { it.day >= start }
 }
