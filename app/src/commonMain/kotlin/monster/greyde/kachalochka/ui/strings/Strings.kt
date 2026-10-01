@@ -182,6 +182,31 @@ interface Strings {
 
     val nothingFound: String
     val alreadyInVisit: String
+    val overallStats: String
+    val statsMonth: String
+    val statsThreeMonths: String
+    val statsSixMonths: String
+    val statsYear: String
+    val bestSetTitle: String
+    val counterweightTitle: String
+    val allResults: String
+    val noSetsInPeriod: String
+    val machinesInPeriod: String
+    val worst: String
+    val best: String
+    val noChange: String
+
+    /** The month a one-month period is, as it reads inside a title. */
+    fun monthInTitle(month: Int): String
+
+    fun sinceDay(day: String): String
+
+    fun beforeDay(day: String): String
+
+    fun moreReps(n: Int): String
+
+    fun fewerReps(n: Int): String
+
     val makeCover: String
     val coverPhoto: String
     val sortName: String

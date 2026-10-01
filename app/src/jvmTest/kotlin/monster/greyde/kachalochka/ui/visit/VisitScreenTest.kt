@@ -672,6 +672,22 @@ class VisitScreenTest {
     }
 
     @Test
+    fun the_page_s_chart_button_opens_the_machine_s_statistics() {
+        val opened = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            visitScreen(picked = press.id, onOpenStatistics = {
+                opened +=
+                    it
+            })
+        }) {
+            waitForIdle()
+            onNodeWithTag("machine-statistics").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(press.id), opened)
+    }
+
+    @Test
     fun the_page_s_picture_opens_the_machine_s_settings() {
         val opened = mutableListOf<MachineId>()
         runScreenTest(
@@ -844,6 +860,7 @@ class VisitScreenTest {
         onConsumed: () -> Unit = {},
         onPickMachine: (MachineId?) -> Unit = {},
         onOpenMachineSettings: (MachineId) -> Unit = {},
+        onOpenStatistics: (MachineId) -> Unit = {},
         onBack: () -> Unit = {},
     ) = VisitScreen(
         day = day,
@@ -853,5 +870,6 @@ class VisitScreenTest {
         onOpenSettings = {},
         onPickMachine = onPickMachine,
         onOpenMachineSettings = onOpenMachineSettings,
+        onOpenStatistics = onOpenStatistics,
     )
 }

@@ -179,6 +179,8 @@ class InMemoryWorkoutSetRepository : WorkoutSetRepository {
     override suspend fun forMachine(machineId: MachineId) =
         live().filter { it.machineId == machineId }
 
+    override suspend fun all(owner: UserId?) = live().filter { it.userId == owner }
+
     override suspend fun latestPerMachine(owner: UserId?) =
         live()
             .filter { it.userId == owner }

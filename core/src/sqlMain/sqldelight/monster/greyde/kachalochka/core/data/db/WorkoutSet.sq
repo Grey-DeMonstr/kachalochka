@@ -46,7 +46,8 @@ WHERE s.deleted = 0
 
 ownedLive:
 SELECT * FROM workout_set
-WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
+WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
+ORDER BY recorded_at, id;
 
 ownerlessIds:
 SELECT id FROM workout_set WHERE user_id IS NULL;

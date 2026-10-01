@@ -41,6 +41,7 @@ import monster.greyde.kachalochka.ui.photos.PhotoLoaders
 import monster.greyde.kachalochka.ui.plans.PlanFormViewModel
 import monster.greyde.kachalochka.ui.plans.PlansViewModel
 import monster.greyde.kachalochka.ui.settings.SettingsViewModel
+import monster.greyde.kachalochka.ui.stats.StatisticsViewModel
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
 import monster.greyde.kachalochka.ui.visit.VisitViewModel
@@ -122,6 +123,9 @@ val appModule =
             )
         }
         viewModel { (plan: PlanId?) -> PlanFormViewModel(plan, get(), get(), get(), get()) }
+        viewModel { (machine: MachineId?) ->
+            StatisticsViewModel(machine, get(), get(), get(), get(), get(), get(), get(), get())
+        }
         viewModel { (args: MachineFormArgs) ->
             MachineFormViewModel(
                 args,

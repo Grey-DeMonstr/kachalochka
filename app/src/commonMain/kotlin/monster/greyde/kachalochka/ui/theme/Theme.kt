@@ -78,6 +78,15 @@ private val DarkFriendColors =
 
 private val LocalFriendColors = staticCompositionLocalOf { LightFriendColors }
 
+private val LightGain = Color(0xFF2E7D4F)
+private val DarkGain = Color(0xFF7FD3A0)
+
+private val LocalGain = staticCompositionLocalOf { LightGain }
+
+/** The green of an improvement in the statistics. */
+@Composable
+fun gainColor(): Color = LocalGain.current
+
 /** Eight hues readable on both schemes; friends' calendar dots take them by index. */
 @Composable
 fun friendColor(index: Int): Color {
@@ -93,6 +102,7 @@ fun KachalochkaTheme(
     val dark = mode.resolvesToDark(isSystemInDarkTheme())
     CompositionLocalProvider(
         LocalFriendColors provides if (dark) DarkFriendColors else LightFriendColors,
+        LocalGain provides if (dark) DarkGain else LightGain,
     ) {
         MaterialTheme(colorScheme = if (dark) DarkColors else LightColors, content = content)
     }

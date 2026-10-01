@@ -65,9 +65,9 @@ The home screen shows today's card: the date, as "Вторник, 29 сентя�
 opening today's visit, "Начать" while today has no visit and "Продолжить" once it has a set or a
 started plan. A visit is one calendar
 day; it has no start or end and comes into being with its first set. Below the card are rows for
-visits, machines, plans, statistics, friends and body measures; statistics is shown but not yet
-available. On Android with nobody signed in, "Войти через Google" sits at the bottom of the
-screen. The very bottom names the app's version, "Версия 1.1.0".
+visits, machines, plans, statistics, friends and body measures. On Android with nobody signed
+in, "Войти через Google" sits at the bottom of the screen. The very bottom names the app's
+version, "Версия 1.1.0".
 
 The visit screen is headed by its day, as "Вторник, 29 сентября" (with the year when it is not
 this one), and lists the day's machines in the order of their first set, ending with "Добавить",
@@ -85,16 +85,17 @@ of the list, and it or the button again hides the handles. When a machine of the
 tags and in the order of their first machine; untagged machines come last without a heading. The
 choice is the account's, saved in its profile and synced, and ordering shows the plain list.
 
-A machine's page covers the list. Its top bar has a gear opening the machine form, whose photo
-opens it too. It shows the photo, the name with the platform, the tags and the comment, then two
-cards: "Рекорд", the best set ever on the machine — the heaviest weight with the most reps at it,
-the lightest on a gravitron — and the previous visit's results, headed by how long ago it was
-("12 дней назад"). Friends' latest visits on the machine follow, each with the friend's avatar
-and name ("Олег  вчера · 80-85кг 8-6"). Under "Сегодня · 3 подхода" (another day's date instead
-of "Сегодня") are the day's sets on the machine, "#1  (-)29.5 кг × 10" with the set's comment;
-tapping one opens it for editing. "Добавить" opens the form for the next set, and a planned
-machine without sets also offers "Убрать", which takes it out of the visit and returns to the
-list. Back, in the top bar or on the phone, closes an open form, then the page.
+A machine's page covers the list. Its top bar has a chart button opening the machine's statistics
+and a gear opening the machine form, whose photo opens it too. It shows the photo, the name with
+the platform, the tags and the comment, then two cards: "Рекорд", the best set ever on the machine
+— the heaviest weight with the most reps at it, the lightest on a gravitron — and the previous
+visit's results, headed by how long ago it was ("12 дней назад"). Friends' latest visits on the
+machine follow, each with the friend's avatar and name ("Олег  вчера · 80-85кг 8-6"). Under
+"Сегодня · 3 подхода" (another day's date instead of "Сегодня") are the day's sets on the machine,
+"#1  (-)29.5 кг × 10" with the set's comment; tapping one opens it for editing. "Добавить" opens
+the form for the next set, and a planned machine without sets also offers "Убрать", which takes it
+out of the visit and returns to the list. Back, in the top bar or on the phone, closes an open
+form, then the page.
 
 A visit with sets has a "Поделиться" button in the top bar that hands the visit over as text:
 Android opens its share sheet, the web copies the text and says "Скопировано" (or "Не удалось
@@ -346,8 +347,28 @@ or "Doing some press" measured in times.
 
 ## Statistics
 
-User should be able to view statistics over month, year or any arbitrary period. Some simple
-graphs - one per exercise.
+"Статистика" on the home screen opens the statistics on "Общая"; a machine's page opens them on
+that machine. At the top a dropdown chooses "Общая" or one of the account's machines, listed by
+name with their photos, and chips under it choose the period: "Месяц", "3 месяца", "6 месяцев" or
+"Год". A period is whole calendar months ending with the current one, so "Месяц" in September
+starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
+
+A machine shows "Лучший подход · сентябрь" ("· с 1 июля" for a longer period, "· противовес"
+before it on a gravitron) with the period's best set beside it, then a line chart of each day's
+best weight across the whole period. A gravitron's weights are drawn negative, with zero on top.
+A period without sets says "Нет подходов за период". "Все результаты" follows: every visit on the
+machine, newest first, its date and its results written as the visit screen writes them, whatever
+the period.
+
+"Общая" lists, under "Упражнения за период · сентябрь", every machine with a set in the period,
+the last used first: its photo, its name and two boxes joined by an arrow. With a set before the
+period they hold the best set before it ("До 1 сентября") and the best in it ("Сентябрь"); without
+one, the worst and the best set of the period ("Худший", "Лучший"). A chip sums up the change: in
+green "+2.5 кг" when the weight grew, or "+2 повт." when the weight stayed and the reps grew; in
+grey "−2.5 кг", "−1 повт." or "Без изменений". On a gravitron a lighter weight is the growth.
+Tapping a card opens its machine. The best set is picked as the record is; the worst is the
+lightest weight with the fewest reps at it, the heaviest on a gravitron. Weights follow the unit
+chosen in the profile.
 
 ## Data import / export
 

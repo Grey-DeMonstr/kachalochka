@@ -121,6 +121,19 @@ class LocalWorkoutSetRepositoryTest {
         }
 
     @Test
+    fun all_holds_the_owner_s_live_sets_in_recording_order() =
+        runTest {
+            val ivan = UserId("11111111-1111-4111-8111-111111111111")
+            val later = set(visitB, row, 2, userId = ivan)
+            val earlier = set(visitA, press, 1, userId = ivan)
+            val gone = set(visitA, press, 3, userId = ivan, deleted = true)
+            val unowned = set(visitA, press, 4)
+            listOf(later, earlier, gone, unowned).forEach { repository.upsert(it) }
+
+            assertEquals(listOf(earlier, later), repository.all(ivan))
+        }
+
+    @Test
     fun peaks_reduce_each_owner_s_own_live_sets() =
         runTest {
             val ivan = UserId("11111111-1111-4111-8111-111111111111")

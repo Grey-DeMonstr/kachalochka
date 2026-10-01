@@ -68,6 +68,9 @@ interface WorkoutSetRepository {
 
     suspend fun forMachine(machineId: MachineId): List<WorkoutSet>
 
+    /** Every set of the owner's, in recording order. */
+    suspend fun all(owner: UserId?): List<WorkoutSet>
+
     /** The most recently recorded set of each of the owner's machines. */
     suspend fun latestPerMachine(owner: UserId?): List<WorkoutSet>
 

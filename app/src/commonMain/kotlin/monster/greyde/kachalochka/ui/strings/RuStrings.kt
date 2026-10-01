@@ -217,6 +217,30 @@ object RuStrings : Strings {
 
     override val nothingFound = "Ничего не найдено"
     override val alreadyInVisit = "Уже в визите"
+    override val overallStats = "Общая"
+    override val statsMonth = "Месяц"
+    override val statsThreeMonths = "3 месяца"
+    override val statsSixMonths = "6 месяцев"
+    override val statsYear = "Год"
+    override val bestSetTitle = "Лучший подход"
+    override val counterweightTitle = "противовес"
+    override val allResults = "Все результаты"
+    override val noSetsInPeriod = "Нет подходов за период"
+    override val machinesInPeriod = "Упражнения за период"
+    override val worst = "Худший"
+    override val best = "Лучший"
+    override val noChange = "Без изменений"
+
+    override fun monthInTitle(month: Int) = monthTitle(month).lowercase()
+
+    override fun sinceDay(day: String) = "с $day"
+
+    override fun beforeDay(day: String) = "До $day"
+
+    override fun moreReps(n: Int) = "+$n повт."
+
+    override fun fewerReps(n: Int) = "−$n повт."
+
     override val makeCover = "Сделать основным"
     override val coverPhoto = "Основное фото"
     override val sortName = "А–Я"

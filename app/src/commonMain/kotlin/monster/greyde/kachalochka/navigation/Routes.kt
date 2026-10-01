@@ -87,6 +87,12 @@ data class MeasureRoute(
 @Serializable
 object PlansRoute
 
+/** [machineId] null opens "Общая". */
+@Serializable
+data class StatisticsRoute(
+    val machineId: String? = null,
+)
+
 /** [planId] null opens a new plan. */
 @Serializable
 data class PlanRoute(

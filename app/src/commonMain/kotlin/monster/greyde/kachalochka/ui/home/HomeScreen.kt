@@ -50,6 +50,7 @@ fun HomeScreen(
     onOpenFriends: () -> Unit,
     onOpenMeasures: () -> Unit,
     onOpenPlans: () -> Unit,
+    onOpenStatistics: () -> Unit = {},
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -88,7 +89,12 @@ fun HomeScreen(
             "section-plans",
             onClick = onOpenPlans,
         )
-        SectionRow(PhosphorIcons.ChartLineUp, s.statistics, "section-stats")
+        SectionRow(
+            PhosphorIcons.ChartLineUp,
+            s.statistics,
+            "section-stats",
+            onClick = onOpenStatistics,
+        )
         SectionRow(
             PhosphorIcons.UsersThree,
             s.friends,

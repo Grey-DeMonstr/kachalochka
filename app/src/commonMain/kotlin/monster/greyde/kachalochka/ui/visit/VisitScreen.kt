@@ -64,6 +64,7 @@ fun VisitScreen(
     onOpenSettings: () -> Unit,
     onPickMachine: (selected: MachineId?) -> Unit,
     onOpenMachineSettings: (MachineId) -> Unit,
+    onOpenStatistics: (MachineId) -> Unit = {},
 ) {
     val viewModel: VisitViewModel = koinViewModel { parametersOf(day) }
     val accountsViewModel: AccountsViewModel = koinViewModel()
@@ -90,6 +91,7 @@ fun VisitScreen(
             onOpenMachineSettings = {
                 viewModel.openMachineSettings(page.machineId, onOpenMachineSettings)
             },
+            onOpenStatistics = { onOpenStatistics(page.machineId) },
             onAddAccount = accountsViewModel::addAccount,
         )
         return

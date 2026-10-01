@@ -47,10 +47,20 @@ class AppTest {
             onNodeWithTag("top-bar-title").assertTextEquals("Качалочка")
             onNodeWithTag("top-bar-back").assertDoesNotExist()
             onNodeWithTag("section-plans").assertIsEnabled()
-            onNodeWithTag("section-stats").assertIsNotEnabled()
+            onNodeWithTag("section-stats").assertIsEnabled()
             onNodeWithTag("section-friends").assertIsNotEnabled()
             onNodeWithTag("section-machines").assertIsEnabled()
             onNodeWithTag("section-measures").assertIsEnabled()
+        }
+
+    @Test
+    fun statistics_open_from_home_on_the_overall_view() =
+        runApp {
+            onNodeWithTag("section-stats").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Статистика")
+            onNodeWithTag("stats-choice").assertIsDisplayed()
         }
 
     @Test

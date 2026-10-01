@@ -43,6 +43,7 @@ import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.navigation.PlanRoute
 import monster.greyde.kachalochka.navigation.PlansRoute
 import monster.greyde.kachalochka.navigation.SettingsRoute
+import monster.greyde.kachalochka.navigation.StatisticsRoute
 import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.navigation.VisitRoute
 import monster.greyde.kachalochka.navigation.screenEnter
@@ -72,6 +73,7 @@ import monster.greyde.kachalochka.ui.measures.MeasuresScreen
 import monster.greyde.kachalochka.ui.plans.PlanFormScreen
 import monster.greyde.kachalochka.ui.plans.PlansScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
+import monster.greyde.kachalochka.ui.stats.StatisticsScreen
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.strings.SystemLanguage
@@ -147,6 +149,15 @@ fun App() {
                         onOpenFriends = { navController.navigate(FriendsRoute) },
                         onOpenMeasures = { navController.navigate(MeasuresRoute) },
                         onOpenPlans = { navController.navigate(PlansRoute) },
+                        onOpenStatistics = { navController.navigate(StatisticsRoute()) },
+                    )
+                }
+                composable<StatisticsRoute> { entry ->
+                    val route = entry.toRoute<StatisticsRoute>()
+                    StatisticsScreen(
+                        initial = route.machineId?.let(::MachineId),
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
                     )
                 }
                 composable<PlansRoute> {
@@ -271,6 +282,7 @@ fun App() {
                                 MachineFormRoute(machineId = it.value),
                             )
                         },
+                        onOpenStatistics = { navController.navigate(StatisticsRoute(it.value)) },
                     )
                 }
                 composable<MachinePickerRoute> { entry ->

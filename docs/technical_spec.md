@@ -1,6 +1,6 @@
 # Kachalochka — Technical Specification
 
-**Last reviewed:** 2026-09-30
+**Last reviewed:** 2026-10-01
 
 The architectural decisions and invariants new work must respect. It is not a description of the
 current code — read the code for that. What is written here is what the code cannot tell you: why
@@ -588,6 +588,20 @@ name reads as `Kg`. Settings saves it with the body fields, with or without an a
 `Profile.groupByTag` is `profile.group_by_tag`, false by default, added by the same migrations as
 machine tags; the visit screen writes it as soon as it is switched.
 
+### 4.7 Statistics
+
+The statistics screen reads the account's live sets once, with `WorkoutSetRepository.all`, and
+leaves the arithmetic to `domain/gym/Statistics.kt`: `StatsPeriod.start` gives a period's first
+day, `machineProgress` the two sets a card compares, `bestPerDay` the chart's points and
+`weightGain` which way a weight counts. `bestSet` and `worstSet` order sets by `setStrength`,
+which the suggested first set shares (§2).
+
+The web reads a long list of sets in pages of 1000 ordered by `(recorded_at, id)`, since PostgREST
+answers at most the project's `max_rows`, 1000 by default, per request. A shorter page ends the
+read, so the page size must not exceed `max_rows`. The chart is Vico, its x range pinned to the
+whole period and its y range hugging the values as on the measure screen, except that a
+gravitron's negative weights keep zero on top.
+
 ---
 
 ## 5. Backend
@@ -785,6 +799,7 @@ chart surfaces follow the theme along with everything else.
 Friends' calendar colours are the one palette outside `ColorScheme`: eight hues per scheme,
 declared in the same file, kept clear of `primary`, and handed out by index through
 `friendColor(index)`, which reads the palette `KachalochkaTheme` provides for the active scheme.
+The statistics' green for an improvement is provided the same way, through `gainColor()`.
 
 The colour schemes themselves are the Nocturne design system's ramps: dark is drawn by the
 design, light is derived from the same tonal ramps. Icons are Phosphor Regular, vendored as

@@ -71,6 +71,7 @@ internal fun MachinePage(
     viewModel: VisitViewModel,
     onOpenSettings: () -> Unit,
     onOpenMachineSettings: () -> Unit,
+    onOpenStatistics: () -> Unit,
     onAddAccount: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -79,6 +80,12 @@ internal fun MachinePage(
         onBack = { viewModel.closeSheet() },
         onOpenSettings = onOpenSettings,
         actions = {
+            SquareIconButton(
+                PhosphorIcons.ChartLineUp,
+                strings().statistics,
+                onOpenStatistics,
+                Modifier.testTag("machine-statistics"),
+            )
             SquareIconButton(
                 PhosphorIcons.Gear,
                 strings().settings,

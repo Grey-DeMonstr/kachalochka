@@ -23,16 +23,34 @@ class RemoteWorkoutSetRepository(
         live { eq("visit_id", visitId.value) }.sortedWith(visitOrder)
 
     override suspend fun forMachine(machineId: MachineId): List<WorkoutSet> =
-        live { eq("machine_id", machineId.value) }
+        paged { eq("machine_id", machineId.value) }
+
+    override suspend fun all(owner: UserId?): List<WorkoutSet> = paged { owned(owner) }
 
     // PostgREST has no per-group maximum, so the newest set of each machine is picked here.
     override suspend fun latestPerMachine(owner: UserId?): List<WorkoutSet> =
-        live { owned(owner) }.sortedByDescending { it.recordedAt }.distinctBy { it.machineId }
+        paged { owned(owner) }.sortedByDescending { it.recordedAt }.distinctBy { it.machineId }
 
     override suspend fun peaks(owner: UserId?): List<MachinePeaks> =
         client.postgrest.machinePeaks(listOfNotNull(owner))
 
     private suspend fun live(match: PostgrestFilterBuilder.() -> Unit): List<WorkoutSet> =
+        readPage(match, null).map { it.toWorkoutSet() }
+
+    /** Reads past the row cap, a page of [PAGE_SIZE] at a time, the project's `max_rows`. */
+    private suspend fun paged(match: PostgrestFilterBuilder.() -> Unit): List<WorkoutSet> {
+        val rows = mutableListOf<WorkoutSetRow>()
+        do {
+            val page = readPage(match, rows.size.toLong())
+            rows += page
+        } while (page.size.toLong() == PAGE_SIZE)
+        return rows.map { it.toWorkoutSet() }
+    }
+
+    private suspend fun readPage(
+        match: PostgrestFilterBuilder.() -> Unit,
+        from: Long?,
+    ): List<WorkoutSetRow> =
         client.postgrest
             .from(WORKOUT_SET_TABLE)
             .select {
@@ -42,6 +60,8 @@ class RemoteWorkoutSetRepository(
                 }
                 order("recorded_at", Order.ASCENDING)
                 order("id", Order.ASCENDING)
+                from?.let { range(it, it + PAGE_SIZE - 1) }
             }.decodeList<WorkoutSetRow>()
-            .map { it.toWorkoutSet() }
 }
+
+private const val PAGE_SIZE = 1000L

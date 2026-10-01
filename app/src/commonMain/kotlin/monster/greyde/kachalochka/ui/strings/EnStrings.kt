@@ -200,6 +200,30 @@ object EnStrings : Strings {
 
     override val nothingFound = "Nothing found"
     override val alreadyInVisit = "Already in the visit"
+    override val overallStats = "Overall"
+    override val statsMonth = "Month"
+    override val statsThreeMonths = "3 months"
+    override val statsSixMonths = "6 months"
+    override val statsYear = "Year"
+    override val bestSetTitle = "Best set"
+    override val counterweightTitle = "counterweight"
+    override val allResults = "All results"
+    override val noSetsInPeriod = "No sets in this period"
+    override val machinesInPeriod = "Machines in the period"
+    override val worst = "Worst"
+    override val best = "Best"
+    override val noChange = "No change"
+
+    override fun monthInTitle(month: Int) = monthTitle(month)
+
+    override fun sinceDay(day: String) = "since $day"
+
+    override fun beforeDay(day: String) = "Before $day"
+
+    override fun moreReps(n: Int) = "+$n reps"
+
+    override fun fewerReps(n: Int) = "−$n reps"
+
     override val makeCover = "Make it the cover"
     override val coverPhoto = "Cover photo"
     override val sortName = "A–Z"
