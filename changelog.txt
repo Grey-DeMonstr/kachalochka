@@ -1,5 +1,11 @@
 Kachalochka - Changelog
 
+1.3.2
+
+- Fixed: on Android, the weight, reps and measure value disappeared, and - and + seemed to do
+  nothing.
+
+
 1.3.1
 
 - Each machine of a visit opens on its own page, with its record, previous visit and friends.
