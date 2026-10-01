@@ -208,6 +208,7 @@ interface Strings {
     val coverPhoto: String
     val sortName: String
     val sortFrequent: String
+    val sortGrowth: String
 
     // Photos
     val addPhoto: String

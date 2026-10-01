@@ -56,7 +56,7 @@ class MachineListViewModel(
     private var preferred = PreferredWeightUnit.Kg
     private var loading: Job? = null
     private var loadingFriends: Job? = null
-    private val sorting = MachineSortChoice(profiles, currentUser, clock, sync, viewModelScope)
+    private val sorting = machineSortChoice(profiles, currentUser, clock, sync, viewModelScope)
 
     /** The list follows whoever is active, wherever the switch came from. */
     init {

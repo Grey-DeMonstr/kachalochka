@@ -243,6 +243,7 @@ object RuStrings : Strings {
     override val coverPhoto = "Основное фото"
     override val sortName = "А–Я"
     override val sortFrequent = "Частые"
+    override val sortGrowth = "Рост"
 
     override val addPhoto = "Добавить фото"
     override val takePhoto = "Снять фото"

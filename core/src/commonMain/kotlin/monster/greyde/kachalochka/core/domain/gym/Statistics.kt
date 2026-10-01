@@ -49,6 +49,46 @@ fun weightGain(
     mode: WeightMode,
 ): Double = if (mode == WeightMode.Counterweight) from - to else to - from
 
+/** The machine sorts, and [Growth]: the best improvement over the period first. */
+enum class StatsSort(
+    val machineSort: MachineSort?,
+) {
+    Recent(MachineSort.Recent),
+    Name(MachineSort.Name),
+    Frequent(MachineSort.Frequent),
+    Growth(null),
+}
+
+/** The weight gained in percent of the starting weight; any gain from nothing is infinite. */
+fun growth(
+    progress: MachineProgress,
+    mode: WeightMode,
+): Double {
+    val gain = weightGain(progress.from.weight, progress.to.weight, mode)
+    return when {
+        progress.from.weight != 0.0 -> gain / progress.from.weight * PERCENT
+        gain > 0 -> Double.POSITIVE_INFINITY
+        else -> 0.0
+    }
+}
+
+private const val PERCENT = 100.0
+
+/**
+ * [StatsSort.Growth] ranks by [growth], then by reps gained, then as [MachineSort.Recent];
+ * machines without progress in the period come last.
+ */
+fun statsOrder(
+    sort: StatsSort,
+    peaks: Map<MachineId, MachinePeaks>,
+    progress: Map<MachineId, MachineProgress>,
+): Comparator<Machine> {
+    sort.machineSort?.let { return machineOrder(it, peaks) }
+    return compareByDescending<Machine> { m -> progress[m.id]?.let { growth(it, m.weightMode) } }
+        .thenByDescending { m -> progress[m.id]?.let { it.to.reps - it.from.reps } }
+        .then(machineOrder(MachineSort.Recent, peaks))
+}
+
 /** Each day's best live set, oldest day first. */
 fun bestPerDay(
     sets: List<WorkoutSet>,

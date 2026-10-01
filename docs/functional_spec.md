@@ -354,22 +354,26 @@ name with their photos, and chips under it choose the period: "Месяц", "3 �
 "Месяц" starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
 
 A machine shows "Лучший подход · с 1 сентября" ("· противовес" before the date on a gravitron)
-with the period's best set beside it, then a line chart of each day's
-best weight across the whole period. A gravitron's weights are drawn negative, with zero on top.
-A period without sets says "Нет подходов за период". "Все результаты" follows: every visit on the
-machine, newest first, its date and its results written as the visit screen writes them, whatever
-the period.
+with the period's best set beside it, then a line chart of each day's best weight across the whole
+period. A gravitron's weights are drawn negative, with zero on top. A period without sets says
+"Нет подходов за период". "Все результаты" follows: every visit on the machine, newest first, its
+date and its results written as the visit screen writes them, whatever the period.
 
-"Общая" lists, under "Упражнения за период · с 1 сентября", every machine with a set in the
-period, the last used first: its photo, its name and two boxes joined by an arrow. With a set
-before the period they hold the best set before it ("До 1 сентября") and the best in it ("С 1
-сентября"); without
-one, the worst and the best set of the period ("Худший", "Лучший"). A chip sums up the change: in
-green "+2.5 кг" when the weight grew, or "+2 повт." when the weight stayed and the reps grew; in
-grey "−2.5 кг", "−1 повт." or "Без изменений". On a gravitron a lighter weight is the growth.
-Tapping a card opens its machine. The best set is picked as the record is; the worst is the
-lightest weight with the fewest reps at it, the heaviest on a gravitron. Weights follow the unit
-chosen in the profile.
+"Общая" starts with sort chips drawn like the tags: "Недавние" (the default), "А–Я" and
+"Частые", as in the machine list, and "Рост", the biggest weight gain in percent of the starting
+weight first, then the most reps gained. The sort is not remembered. When a machine has tags,
+"Группировать по тегам" follows, the same choice as the visit screen's: it splits the cards into
+sections headed by their tags, as the visit does. The sort and the grouping order the dropdown's
+machines too.
+
+Under "Упражнения за период · с 1 сентября" come the machines with a set in the period: each with
+its photo, its name and two boxes joined by an arrow. With a set before the period they hold the
+best set before it ("До 1 сентября") and the best in it ("С 1 сентября"); without one, the worst
+and the best set of the period ("Худший", "Лучший"). A chip sums up the change: in green "+2.5 кг"
+when the weight grew, or "+2 повт." when the weight stayed and the reps grew; in grey "−2.5 кг",
+"−1 повт." or "Без изменений". On a gravitron a lighter weight is the growth. Tapping a card opens
+its machine. The best set is picked as the record is; the worst is the lightest weight with the
+fewest reps at it, the heaviest on a gravitron. Weights follow the unit chosen in the profile.
 
 ## Data import / export
 

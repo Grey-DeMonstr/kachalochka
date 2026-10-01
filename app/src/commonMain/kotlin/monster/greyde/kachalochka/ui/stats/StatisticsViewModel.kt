@@ -11,19 +11,26 @@ import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
+import monster.greyde.kachalochka.core.domain.gym.MachineProgress
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
+import monster.greyde.kachalochka.core.domain.gym.StatsSort
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.bestPerDay
 import monster.greyde.kachalochka.core.domain.gym.bestSet
+import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.machineProgress
+import monster.greyde.kachalochka.core.domain.gym.statsOrder
+import monster.greyde.kachalochka.core.domain.gym.tagSections
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.gym.weightGain
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.ui.account.ProfileChoice
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
@@ -32,12 +39,12 @@ import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.shownLabel
 import monster.greyde.kachalochka.ui.format.shownWeight
+import monster.greyde.kachalochka.ui.format.tagTitle
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.OwnMachines
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
-import kotlin.time.Instant
 
 data class StatsChoiceUi(
     val id: MachineId,
@@ -74,15 +81,28 @@ data class MachineStatsUi(
     val history: List<HistoryRowUi>,
 )
 
+/** A run of [items] under the tags in [title]; without grouping, one section titled null. */
+data class StatsSectionUi<T>(
+    val title: String?,
+    val items: List<T>,
+)
+
 /** A null [selected] is "Общая", whose cards are [overall]. */
 data class StatisticsUiState(
-    val choices: List<StatsChoiceUi> = emptyList(),
+    val choiceSections: List<StatsSectionUi<StatsChoiceUi>> = emptyList(),
     val selected: StatsChoiceUi? = null,
     val period: StatsPeriod = StatsPeriod.Month,
+    val sort: StatsSort = StatsSort.Recent,
+    val groupByTag: Boolean = false,
+    /** True when a machine of the account's has a tag. */
+    val canGroupByTag: Boolean = false,
     val overallTitle: String = "",
-    val overall: List<ProgressCardUi> = emptyList(),
+    val overallSections: List<StatsSectionUi<ProgressCardUi>> = emptyList(),
     val machine: MachineStatsUi? = null,
-)
+) {
+    val choices: List<StatsChoiceUi> get() = choiceSections.flatMap { it.items }
+    val overall: List<ProgressCardUi> get() = overallSections.flatMap { it.items }
+}
 
 class StatisticsViewModel(
     initial: MachineId?,
@@ -100,10 +120,24 @@ class StatisticsViewModel(
 
     private var selected: MachineId? = initial
     private var period = StatsPeriod.Month
+    private var sort = StatsSort.Recent
     private var own: OwnMachines? = null
     private var setsByMachine: Map<MachineId, List<WorkoutSet>> = emptyMap()
+    private var peaks: Map<MachineId, MachinePeaks> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
     private var loading: Job? = null
+
+    /** The account's own choice, which the visit screen shares. */
+    private val grouping =
+        ProfileChoice(
+            profiles,
+            currentUser,
+            clock,
+            sync,
+            viewModelScope,
+            stored = { it?.groupByTag ?: false },
+            written = { profile, grouped -> profile.copy(groupByTag = grouped) },
+        )
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -117,8 +151,11 @@ class StatisticsViewModel(
             viewModelScope.launch {
                 val owner = currentUser.id()
                 own = catalogue.own(owner)
-                setsByMachine = sets.all(owner).groupBy { it.machineId }
+                val all = sets.all(owner)
+                setsByMachine = all.groupBy { it.machineId }
+                peaks = machinePeaks(all).associateBy { it.machineId }
                 preferred = profiles.preferredUnit(owner)
+                grouping.read(owner)
                 publish()
             }
     }
@@ -134,6 +171,16 @@ class StatisticsViewModel(
         publish()
     }
 
+    fun chooseSort(chosen: StatsSort) {
+        sort = chosen
+        publish()
+    }
+
+    fun toggleGroupByTag() {
+        grouping.choose(!grouping.current)
+        publish()
+    }
+
     private fun publish() {
         val read = own ?: return
         val shown = ShownMachines(read, null)
@@ -143,18 +190,29 @@ class StatisticsViewModel(
         val startAt = start.at(0L, utcOffset.at(now))
         val machine = read.machines.firstOrNull { it.id == selected }
         val periodLabel = periodLabel(start, today)
+        val progress =
+            read.machines
+                .mapNotNull { m ->
+                    machineProgress(setsByMachine[m.id].orEmpty(), m.weightMode, startAt)
+                        ?.let { m.id to it }
+                }.toMap()
+        val ordered = read.machines.sortedWith(statsOrder(sort, peaks, progress))
+
+        fun choice(it: Machine) = StatsChoiceUi(it.id, it.name, shown.cover(it.id))
         mutableState.value =
             StatisticsUiState(
-                choices = read.machines.map { StatsChoiceUi(it.id, it.name, shown.cover(it.id)) },
-                selected = machine?.let { StatsChoiceUi(it.id, it.name, shown.cover(it.id)) },
+                choiceSections = sections(ordered, ::choice),
+                selected = machine?.let(::choice),
                 period = period,
+                sort = sort,
+                groupByTag = grouping.current,
+                canGroupByTag = read.machines.any { it.tags.isNotEmpty() },
                 overallTitle = "${AppStrings.current.machinesInPeriod} · $periodLabel",
-                overall =
+                overallSections =
                     if (machine == null) {
-                        read.machines
-                            .mapNotNull { card(it, shown, startAt, start, today) }
-                            .sortedByDescending { it.second }
-                            .map { it.first }
+                        sections(ordered.filter { it.id in progress }) {
+                            card(it, shown, progress.getValue(it.id), start, today)
+                        }
                     } else {
                         emptyList()
                     },
@@ -162,47 +220,59 @@ class StatisticsViewModel(
             )
     }
 
+    /** [machines] keep their order; grouped, they run in [tagSections] as the visit's do. */
+    private fun <T> sections(
+        machines: List<Machine>,
+        item: (Machine) -> T,
+    ): List<StatsSectionUi<T>> =
+        when {
+            machines.isEmpty() -> emptyList()
+            grouping.current ->
+                tagSections(machines) { it.tags }.map { section ->
+                    StatsSectionUi(
+                        section.tags.takeIf { it.isNotEmpty() }?.let(::tagTitle),
+                        section.items.map(item),
+                    )
+                }
+            else -> listOf(StatsSectionUi(null, machines.map(item)))
+        }
+
     private fun periodLabel(
         start: CalendarDay,
         today: CalendarDay,
     ): String = AppStrings.current.sinceDay(dayMonthLabel(start, today.year))
 
-    /** The card with the instant of its machine's last set, which orders the cards. */
     private fun card(
         machine: Machine,
         shown: ShownMachines,
-        startAt: Instant,
+        progress: MachineProgress,
         start: CalendarDay,
         today: CalendarDay,
-    ): Pair<ProgressCardUi, Instant>? {
-        val onMachine = setsByMachine[machine.id].orEmpty()
-        val progress = machineProgress(onMachine, machine.weightMode, startAt) ?: return null
+    ): ProgressCardUi {
         val strings = AppStrings.current
         val (from, to) = progress.from to progress.to
         val (change, improved) = change(machine, from, to)
-        val card =
-            ProgressCardUi(
-                id = machine.id,
-                name = machine.name,
-                photo = shown.cover(machine.id),
-                fromLabel =
-                    if (progress.sinceBefore) {
-                        strings.beforeDay(dayMonthLabel(start, today.year))
-                    } else {
-                        strings.worst
-                    },
-                from = setValue(from.weight, from.reps, machine, preferred),
-                toLabel =
-                    if (progress.sinceBefore) {
-                        periodLabel(start, today).replaceFirstChar { it.uppercase() }
-                    } else {
-                        strings.best
-                    },
-                to = setValue(to.weight, to.reps, machine, preferred),
-                change = change,
-                improved = improved,
-            )
-        return card to onMachine.maxOf { it.recordedAt }
+        return ProgressCardUi(
+            id = machine.id,
+            name = machine.name,
+            photo = shown.cover(machine.id),
+            fromLabel =
+                if (progress.sinceBefore) {
+                    strings.beforeDay(dayMonthLabel(start, today.year))
+                } else {
+                    strings.worst
+                },
+            from = setValue(from.weight, from.reps, machine, preferred),
+            toLabel =
+                if (progress.sinceBefore) {
+                    periodLabel(start, today).replaceFirstChar { it.uppercase() }
+                } else {
+                    strings.best
+                },
+            to = setValue(to.weight, to.reps, machine, preferred),
+            change = change,
+            improved = improved,
+        )
     }
 
     /** Weight first; at the same shown weight, the reps. */

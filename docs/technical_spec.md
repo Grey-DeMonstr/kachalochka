@@ -594,7 +594,10 @@ The statistics screen reads the account's live sets once, with `WorkoutSetReposi
 leaves the arithmetic to `domain/gym/Statistics.kt`: `StatsPeriod.start` gives a period's first
 day, `machineProgress` the two sets a card compares, `bestPerDay` the chart's points and
 `weightGain` which way a weight counts. `bestSet` and `worstSet` order sets by `setStrength`,
-which the suggested first set shares (§2).
+which the suggested first set shares (§2). `statsOrder` sorts the machines by a `StatsSort`: the
+machine sorts over `machinePeaks` of the sets read, or by `growth`, the percent gained. Tag
+grouping is `profile.group_by_tag`, shared with the visit; both choices that are saved go through
+`ProfileChoice`, which writes one profile change at a time.
 
 The web reads a long list of sets in pages of 1000 ordered by `(recorded_at, id)`, since PostgREST
 answers at most the project's `max_rows`, 1000 by default, per request. A shorter page ends the

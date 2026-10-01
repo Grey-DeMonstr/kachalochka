@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -291,6 +293,29 @@ fun ChoiceChip(
             fontSize = 15.sp,
             color = if (chosen) colors.onPrimaryContainer else colors.onBackground,
         )
+    }
+}
+
+/** [options] as one scrolling row of [ChoiceChip]s, [edge] the room before the first and last. */
+@Composable
+fun <T> ChipRow(
+    options: List<Pair<T, String>>,
+    chosen: T,
+    onChoose: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    edge: Dp = 0.dp,
+    tag: (T) -> String,
+) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = edge),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        options.forEach { (option, label) ->
+            ChoiceChip(label, option == chosen, tag(option)) { onChoose(option) }
+        }
     }
 }
 

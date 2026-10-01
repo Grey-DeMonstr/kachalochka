@@ -86,6 +86,62 @@ class StatisticsTest {
     }
 
     @Test
+    fun growth_is_the_weight_gain_in_percent_of_the_starting_weight() {
+        fun progress(
+            from: Double,
+            to: Double,
+        ) = MachineProgress(set(VISIT_A, from, 10, 0), set(VISIT_B, to, 10, 1), true)
+
+        assertEquals(25.0, growth(progress(40.0, 50.0), WeightMode.Total))
+        assertEquals(10.0, growth(progress(30.0, 27.0), WeightMode.Counterweight))
+        assertEquals(-10.0, growth(progress(50.0, 45.0), WeightMode.Total))
+        assertEquals(Double.POSITIVE_INFINITY, growth(progress(0.0, 5.0), WeightMode.Total))
+        assertEquals(0.0, growth(progress(0.0, 0.0), WeightMode.Total))
+    }
+
+    @Test
+    fun growth_orders_by_percent_then_by_reps_gained_then_by_recency_leaving_the_unused_last() {
+        val abs = machine(MachineId("0f000000-0000-4000-8000-00000000000f"), "Аб")
+        val press = machine(PRESS, "Жим ногами")
+        val row = machine(ROW, "Тяга")
+        val bench = machine(MachineId("0c100000-0000-4000-8000-00000000000c"), "Жим лёжа")
+
+        fun progress(
+            on: MachineId,
+            from: Pair<Double, Int>,
+            to: Pair<Double, Int>,
+        ) = on to
+            MachineProgress(
+                set(VISIT_A, from.first, from.second, 0, machine = on),
+                set(VISIT_B, to.first, to.second, 1, machine = on),
+                sinceBefore = true,
+            )
+        val progress =
+            mapOf(
+                progress(PRESS, 100.0 to 10, 110.0 to 8),
+                progress(ROW, 40.0 to 10, 40.0 to 12),
+                progress(bench.id, 40.0 to 10, 40.0 to 10),
+            )
+        val peaks =
+            machinePeaks(progress.values.flatMap { listOf(it.from, it.to) })
+                .associateBy { it.machineId }
+
+        assertEquals(
+            listOf(press, row, bench, abs),
+            listOf(
+                abs,
+                bench,
+                row,
+                press,
+            ).sortedWith(statsOrder(StatsSort.Growth, peaks, progress)),
+        )
+        assertEquals(
+            listOf(abs, bench, press, row),
+            listOf(row, press, bench, abs).sortedWith(statsOrder(StatsSort.Name, peaks, progress)),
+        )
+    }
+
+    @Test
     fun each_day_shows_its_best_set_oldest_first() {
         val utc: (Instant) -> Duration = { Duration.ZERO }
         val sets =

@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
+import monster.greyde.kachalochka.core.domain.gym.StatsSort
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -180,13 +181,78 @@ class StatisticsViewModelTest {
     }
 
     @Test
-    fun the_choices_are_overall_then_every_own_machine_by_name() {
-        val state = viewModel().state.value
+    fun the_sort_orders_both_the_cards_and_the_choices() {
+        val vm = viewModel()
+        assertEquals(StatsSort.Recent, vm.state.value.sort)
+        assertEquals(
+            listOf("Тяга", "Жим ногами", "Гравитрон"),
+            vm.state.value.choices
+                .map { it.name },
+        )
+
+        vm.chooseSort(StatsSort.Name)
 
         assertEquals(
             listOf("Гравитрон", "Жим ногами", "Тяга"),
-            state.choices.map { it.name },
+            vm.state.value.choices
+                .map { it.name },
         )
+        assertEquals(
+            listOf("Жим ногами", "Тяга"),
+            vm.state.value.overall
+                .map { it.name },
+        )
+    }
+
+    @Test
+    fun growth_puts_the_biggest_weight_gain_in_percent_first() =
+        runTest {
+            record(gravitron, CalendarDay(2023, 10, 1), 40.0 to 8)
+            record(gravitron, CalendarDay(2023, 11, 2), 30.0 to 8)
+            val vm = viewModel()
+
+            vm.chooseSort(StatsSort.Growth)
+
+            assertEquals(
+                listOf("Гравитрон", "Жим ногами", "Тяга"),
+                vm.state.value.overall
+                    .map { it.name },
+            )
+        }
+
+    @Test
+    fun grouping_by_tags_splits_the_cards_and_the_choices_and_is_kept_in_the_profile() =
+        runTest {
+            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
+            gym.machines.upsert(gravitron.copy(tags = setOf("Ноги")))
+            val vm = viewModel()
+            assertTrue(vm.state.value.canGroupByTag)
+            assertFalse(vm.state.value.groupByTag)
+            assertEquals(
+                listOf(null),
+                vm.state.value.overallSections
+                    .map { it.title },
+            )
+
+            vm.toggleGroupByTag()
+
+            assertTrue(vm.state.value.groupByTag)
+            assertEquals(
+                listOf("Ноги" to listOf("Жим ногами"), null to listOf("Тяга")),
+                vm.state.value.overallSections
+                    .map { s -> s.title to s.items.map { it.name } },
+            )
+            assertEquals(
+                listOf("Ноги" to listOf("Жим ногами", "Гравитрон"), null to listOf("Тяга")),
+                vm.state.value.choiceSections
+                    .map { s -> s.title to s.items.map { it.name } },
+            )
+            assertEquals(true, gym.profiles.forOwner(null)?.groupByTag)
+        }
+
+    @Test
+    fun without_tags_there_is_nothing_to_group_by() {
+        assertFalse(viewModel().state.value.canGroupByTag)
     }
 
     @Test

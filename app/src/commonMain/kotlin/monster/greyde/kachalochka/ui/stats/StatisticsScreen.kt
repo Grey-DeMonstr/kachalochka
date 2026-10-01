@@ -3,7 +3,6 @@ package monster.greyde.kachalochka.ui.stats
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,8 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -35,11 +36,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
-import monster.greyde.kachalochka.ui.components.ChoiceChip
+import monster.greyde.kachalochka.core.domain.gym.StatsSort
+import monster.greyde.kachalochka.ui.components.ChipRow
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
@@ -77,7 +80,16 @@ fun StatisticsScreen(
                 .padding(16.dp),
         ) {
             val machine = state.machine
-            if (machine == null) Overall(state, viewModel::choose) else MachineStats(machine)
+            if (machine == null) {
+                Overall(
+                    state,
+                    viewModel::choose,
+                    viewModel::chooseSort,
+                    viewModel::toggleGroupByTag,
+                )
+            } else {
+                MachineStats(machine)
+            }
         }
     }
 }
@@ -130,16 +142,19 @@ private fun MachineChoice(
                 open = false
                 onChoose(null)
             }
-            state.choices.forEach { choice ->
-                ChoiceItem(
-                    choice.photo,
-                    choice.name,
-                    choice.id,
-                    choice.id == selected?.id,
-                    "stats-choice-${choice.id.value}",
-                ) {
-                    open = false
-                    onChoose(choice.id)
+            state.choiceSections.forEach { section ->
+                section.title?.let { SectionTitle(it, "stats-choice-section-$it", menu = true) }
+                section.items.forEach { choice ->
+                    ChoiceItem(
+                        choice.photo,
+                        choice.name,
+                        choice.id,
+                        choice.id == selected?.id,
+                        "stats-choice-${choice.id.value}",
+                    ) {
+                        open = false
+                        onChoose(choice.id)
+                    }
                 }
             }
         }
@@ -192,38 +207,91 @@ private fun PeriodChips(
     onChoose: (StatsPeriod) -> Unit,
 ) {
     val s = strings()
-    Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
+    ChipRow(
         listOf(
             StatsPeriod.Month to s.statsMonth,
             StatsPeriod.ThreeMonths to s.statsThreeMonths,
             StatsPeriod.SixMonths to s.statsSixMonths,
             StatsPeriod.Year to s.statsYear,
-        ).forEach { (period, label) ->
-            ChoiceChip(label, period == chosen, "period-${period.name.lowercase()}") {
-                onChoose(period)
-            }
-        }
-    }
+        ),
+        chosen,
+        onChoose,
+    ) { "period-${it.name.lowercase()}" }
 }
 
 @Composable
 private fun Overall(
     state: StatisticsUiState,
     onChoose: (MachineId) -> Unit,
+    onSort: (StatsSort) -> Unit,
+    onToggleGroupByTag: () -> Unit,
 ) {
+    val s = strings()
+    ChipRow(
+        listOf(
+            StatsSort.Recent to s.recent,
+            StatsSort.Name to s.sortName,
+            StatsSort.Frequent to s.sortFrequent,
+            StatsSort.Growth to s.sortGrowth,
+        ),
+        state.sort,
+        onSort,
+        Modifier.padding(bottom = 12.dp),
+    ) { "stats-sort-${it.name.lowercase()}" }
+    if (state.canGroupByTag) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+                .toggleable(value = state.groupByTag, onValueChange = { onToggleGroupByTag() })
+                .testTag("stats-group-by-tag"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(checked = state.groupByTag, onCheckedChange = null)
+            Text(
+                s.groupByTag,
+                modifier = Modifier.padding(start = 8.dp),
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            )
+        }
+    }
     SectionLabel(
         state.overallTitle,
         Modifier.padding(bottom = 10.dp).testTag("stats-overall-title"),
     )
     if (state.overall.isEmpty()) {
-        Muted(strings().noSetsInPeriod, Modifier.testTag("stats-empty"))
+        Muted(s.noSetsInPeriod, Modifier.testTag("stats-empty"))
     }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        state.overall.forEach { card -> ProgressCard(card) { onChoose(card.id) } }
+    state.overallSections.forEach { section ->
+        section.title?.let { SectionTitle(it, "stats-section-$it") }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            section.items.forEach { card -> ProgressCard(card) { onChoose(card.id) } }
+        }
     }
+}
+
+/** A tag group's heading, drawn as the visit's; in the [menu] it is indented like its items. */
+@Composable
+private fun SectionTitle(
+    title: String,
+    tag: String,
+    menu: Boolean = false,
+) {
+    Text(
+        title,
+        modifier =
+            Modifier
+                .padding(
+                    start = if (menu) 12.dp else 0.dp,
+                    end = if (menu) 12.dp else 0.dp,
+                    top = 14.dp,
+                    bottom = 8.dp,
+                ).testTag(tag),
+        fontSize = 13.sp,
+        letterSpacing = 0.09.em,
+        color = MaterialTheme.colorScheme.secondary,
+    )
 }
 
 @Composable

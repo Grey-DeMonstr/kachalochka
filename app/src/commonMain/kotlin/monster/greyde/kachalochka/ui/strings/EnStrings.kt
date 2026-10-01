@@ -226,6 +226,7 @@ object EnStrings : Strings {
     override val coverPhoto = "Cover photo"
     override val sortName = "A–Z"
     override val sortFrequent = "Most used"
+    override val sortGrowth = "Growth"
 
     override val addPhoto = "Add photo"
     override val takePhoto = "Take a photo"

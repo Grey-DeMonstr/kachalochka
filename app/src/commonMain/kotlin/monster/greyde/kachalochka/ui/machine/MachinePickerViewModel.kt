@@ -82,7 +82,7 @@ class MachinePickerViewModel(
     private var inVisit: Set<MachineId> = emptySet()
     private var loading: Job? = null
     private var loadingFriends: Job? = null
-    private val sorting = MachineSortChoice(profiles, currentUser, clock, sync, viewModelScope)
+    private val sorting = machineSortChoice(profiles, currentUser, clock, sync, viewModelScope)
 
     private val shown: ShownMachines? get() = own?.let { ShownMachines(it, group) }
 
