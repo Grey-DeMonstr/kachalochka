@@ -15,6 +15,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 
 class MachineCatalogueTest {
     private val gym = signedInGym()
@@ -70,6 +71,46 @@ class MachineCatalogueTest {
             val group = catalogue.group(ME.userId)
 
             assertEquals(olegPhoto, ShownMachines(own, group).cover(myPress.id))
+        }
+
+    @Test
+    fun a_chosen_friend_s_photo_stands_for_the_machine_while_the_group_read_has_it() =
+        runTest {
+            olegsGym()
+            val mine = Photo.new(myPress.id, ME.userId, t0)
+            val olegPhoto = Photo.new(olegPress.id, OLEG.userId, t0)
+            gym.photos.upsert(mine)
+            gym.friends.photos += olegPhoto
+            gym.machines.upsert(myPress.copy(coverPhoto = olegPhoto.id))
+            val own = catalogue.own(ME.userId)
+
+            assertEquals(mine, ShownMachines(own, null).cover(myPress.id))
+            assertEquals(
+                olegPhoto,
+                ShownMachines(own, catalogue.group(ME.userId)).cover(myPress.id),
+            )
+        }
+
+    @Test
+    fun a_friend_s_machine_shows_the_cover_its_owner_chose() =
+        runTest {
+            val first = Photo.new(olegRow.id, OLEG.userId, t0)
+            val chosen = Photo.new(olegRow.id, OLEG.userId, t0 + 1.minutes)
+            olegsGym()
+            gym.friends.machines.replaceAll {
+                if (it.id ==
+                    olegRow.id
+                ) {
+                    it.copy(coverPhoto = chosen.id)
+                } else {
+                    it
+                }
+            }
+            gym.friends.photos += listOf(first, chosen)
+
+            val shown = ShownMachines(catalogue.own(ME.userId), catalogue.group(ME.userId))
+
+            assertEquals(chosen, shown.cover(olegRow.id))
         }
 
     @Test

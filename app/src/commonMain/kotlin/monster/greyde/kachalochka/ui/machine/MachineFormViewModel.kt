@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -148,6 +149,10 @@ class MachineFormViewModel(
     private var savedPhotos: List<Photo> = emptyList()
     private var removedPhotos: List<Photo> = emptyList()
     private var takenPhotos: List<TakenPhoto> = emptyList()
+
+    /** Photos of the friends' machines in this one's cluster, read online. */
+    private var friendPhotos: List<ShownPhoto> = emptyList()
+    private var coverChoice: PhotoId? = null
     private val mutablePhotos = MutableStateFlow<List<ShownPhoto>>(emptyList())
     val photos: StateFlow<List<ShownPhoto>> = mutablePhotos
 
@@ -163,6 +168,8 @@ class MachineFormViewModel(
                 if (existing == null) {
                     savedPhotos = emptyList()
                     removedPhotos = emptyList()
+                    friendPhotos = emptyList()
+                    coverChoice = null
                     showPhotos()
                 }
                 refreshLinks()
@@ -194,6 +201,7 @@ class MachineFormViewModel(
             val known = machines.all(owner).flatMap { it.tags }.toSet()
             mutableState.value = shown.copy(knownTags = known)
             savedPhotos = current?.let { photoRows.forMachine(it.id) }.orEmpty()
+            coverChoice = current?.coverPhoto
             showPhotos()
             refreshLinks()
             owner?.let { readFriendTags(it) }
@@ -241,6 +249,10 @@ class MachineFormViewModel(
         val group = owner?.let { reading { catalogue.group(it) }.getOrNull() }
         if (accounts.activeId.value != owner || existing?.id != shown.id) return
         val linked = group?.let { linkedFriendMachines(shown.id, it.friends, it.clusters) }
+        if (group != null) {
+            friendPhotos = friendPhotosOf(shown.id, group)
+            showPhotos()
+        }
         mutableLinking.value =
             mutableLinking.value.copy(
                 linkedWith =
@@ -253,6 +265,20 @@ class MachineFormViewModel(
                     },
                 canUnlink = (group?.links ?: ownLinks).any { it.touches(shown.id) },
             )
+    }
+
+    private fun friendPhotosOf(
+        machine: MachineId,
+        group: GroupMachines,
+    ): List<ShownPhoto> {
+        val owners = group.friends.associate { it.machine.id to it.owner }
+        val cluster = group.clusters.of(machine)
+        return group.photos
+            .filter { !it.deleted && it.machineId != machine && it.machineId in cluster }
+            .sortedWith(photoOrder)
+            .mapNotNull { photo ->
+                owners[photo.machineId]?.let { ShownPhoto(photo.id.value, photo, owner = it) }
+            }
     }
 
     private fun MachineLink.touches(machine: MachineId) =
@@ -303,7 +329,14 @@ class MachineFormViewModel(
         showPhotos()
     }
 
+    /** The photo standing for the machine in every list, written on save. */
+    fun makeCover(key: String) {
+        coverChoice = PhotoId(key)
+        showPhotos()
+    }
+
     fun removePhoto(key: String) {
+        if (coverChoice?.value == key) coverChoice = null
         val saved = savedPhotos.firstOrNull { it.id.value == key }
         if (saved != null) {
             savedPhotos = savedPhotos - saved
@@ -313,10 +346,16 @@ class MachineFormViewModel(
         showPhotos()
     }
 
+    /** As `coverPhoto` picks: the chosen photo while shown, else the first own, else a friend's. */
     private fun showPhotos() {
-        mutablePhotos.value =
+        val shown =
             savedPhotos.map { ShownPhoto(it.id.value, it) } +
-            takenPhotos.map { ShownPhoto(it.id.value, it.jpeg) }
+                takenPhotos.map { ShownPhoto(it.id.value, it.jpeg) } +
+                friendPhotos
+        val cover =
+            coverChoice?.value?.takeIf { chosen -> shown.any { it.key == chosen } }
+                ?: shown.firstOrNull()?.key
+        mutablePhotos.value = shown.map { it.copy(cover = it.key == cover) }
     }
 
     fun update(change: (MachineFormState) -> MachineFormState) {
@@ -360,6 +399,7 @@ class MachineFormViewModel(
                     unitLabel = if (form.unit == WeightUnit.Custom) form.unitLabel.trim() else "",
                     weightStep = weightStep,
                     tags = form.tags,
+                    coverPhoto = coverChoice,
                     updatedAt = now,
                 )
             machines.upsert(machine)

@@ -35,6 +35,7 @@ class LocalMachineRepository(
                     machine.deleted,
                     machine.unitLabel,
                     tagsText(machine.tags),
+                    machine.coverPhoto?.value,
                 )
                 if (machine.userId != null) {
                     outbox.enqueue(OutboxEntry(MACHINE_TABLE, machine.id.value, machine.updatedAt))
@@ -80,6 +81,7 @@ internal fun machineOf(
     unitLabel: String,
     linkId: String?,
     tags: String,
+    coverPhoto: String?,
 ) = Machine(
     id = MachineId(id),
     userId = userId?.let(::UserId),
@@ -94,4 +96,5 @@ internal fun machineOf(
     updatedAt = updatedAt,
     deleted = deleted,
     tags = tagsOf(tags),
+    coverPhoto = photoIdOf(coverPhoto),
 )

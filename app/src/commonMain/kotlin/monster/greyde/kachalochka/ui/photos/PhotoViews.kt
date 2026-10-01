@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -35,14 +36,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
+import monster.greyde.kachalochka.core.domain.friends.Friend
+import monster.greyde.kachalochka.ui.account.PersonAvatar
+import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.strings
 
-/** A photo on screen; [model] is a saved `Photo` or the bytes of one not saved yet. */
+/**
+ * A photo on screen; [model] is a saved `Photo` or the bytes of one not saved yet. A friend's
+ * photo names its [owner]; [cover] marks the one standing for the machine.
+ */
 data class ShownPhoto(
     val key: String,
     val model: Any,
+    val owner: Friend? = null,
+    val cover: Boolean = false,
 )
 
 private val ThumbnailShape = RoundedCornerShape(10.dp)
@@ -61,21 +70,54 @@ fun PhotoStrip(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         photos.forEach { photo ->
-            AsyncImage(
-                model = photo.model,
-                contentDescription = strings().photo,
-                imageLoader = photoLoader(),
-                contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier
-                        .size(100.dp)
-                        .clip(ThumbnailShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { onOpen(photo) }
-                        .testTag("photo-thumbnail"),
-            )
+            Box {
+                AsyncImage(
+                    model = photo.model,
+                    contentDescription = strings().photo,
+                    imageLoader = photoLoader(),
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier
+                            .size(100.dp)
+                            .clip(ThumbnailShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { onOpen(photo) }
+                            .testTag("photo-thumbnail"),
+                )
+                photo.owner?.let {
+                    PersonAvatar(
+                        it.userId,
+                        it.displayName,
+                        it.avatar,
+                        size = 24.dp,
+                        modifier = Modifier.align(Alignment.BottomStart).padding(6.dp),
+                    )
+                }
+                if (photo.cover && photos.size > 1) CoverBadge(Modifier.align(Alignment.TopEnd))
+            }
         }
         launchers?.let { AddPhotoTile(it) }
+    }
+}
+
+@Composable
+private fun CoverBadge(modifier: Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier
+            .padding(6.dp)
+            .size(24.dp)
+            .clip(CircleShape)
+            .background(colors.background.copy(alpha = 0.8f))
+            .testTag("photo-cover"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            PhosphorIcons.Star,
+            strings().coverPhoto,
+            tint = colors.secondary,
+            modifier = Modifier.size(16.dp),
+        )
     }
 }
 
@@ -123,12 +165,16 @@ private fun AddPhotoTile(launchers: PhotoLaunchers) {
     }
 }
 
-/** [photo] over the whole screen; [onDelete] adds the button removing it. */
+/**
+ * [photo] over the whole screen; [onDelete] adds the button removing it, [onMakeCover] the one
+ * making it the machine's cover.
+ */
 @Composable
 fun PhotoViewer(
     photo: ShownPhoto,
     onClose: () -> Unit,
     onDelete: (() -> Unit)? = null,
+    onMakeCover: (() -> Unit)? = null,
 ) {
     Dialog(
         onDismissRequest = onClose,
@@ -166,6 +212,19 @@ fun PhotoViewer(
                         Modifier.testTag("delete-photo"),
                     )
                 }
+            }
+            if (onMakeCover != null) {
+                OutlineButton(
+                    strings().makeCover,
+                    PhosphorIcons.Star,
+                    onMakeCover,
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .systemBarsPadding()
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                        .testTag("make-cover"),
+                )
             }
         }
     }

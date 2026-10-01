@@ -54,8 +54,17 @@ class ShownMachines(
 
     val offered: List<FriendMachine> = this.group?.offered(own.machines).orEmpty()
 
-    fun cover(machine: MachineId): Photo? =
-        coverPhoto(machine, own.photos + group?.photos.orEmpty(), clusters)
+    /** An own machine's chosen cover counts, and a friend's machine's as its owner chose it. */
+    fun cover(machine: MachineId): Photo? {
+        val chosen =
+            own.machines.firstOrNull { it.id == machine }?.coverPhoto
+                ?: group
+                    ?.friends
+                    ?.firstOrNull { it.machine.id == machine }
+                    ?.machine
+                    ?.coverPhoto
+        return coverPhoto(machine, own.photos + group?.photos.orEmpty(), clusters, chosen)
+    }
 }
 
 /**

@@ -63,6 +63,28 @@ class PhotoTest {
         assertNull(coverPhoto(PRESS, listOf(stranger, friends), MachineClusters(emptyList())))
     }
 
+    @Test
+    fun a_chosen_photo_of_the_machine_s_cluster_is_its_cover() {
+        val own = Photo.new(PRESS, ivan, T0)
+        val friends = Photo.new(ROW, oleg, T0 + 1.minutes)
+        val clusters = MachineClusters(listOf(link(PRESS, ROW)))
+
+        assertEquals(friends, coverPhoto(PRESS, listOf(own, friends), clusters, friends.id))
+    }
+
+    @Test
+    fun a_chosen_photo_that_is_gone_or_outside_the_cluster_leaves_the_usual_cover() {
+        val own = Photo.new(PRESS, ivan, T0)
+        val gone = Photo.new(PRESS, ivan, T0 + 1.minutes).copy(deleted = true)
+        val stranger = Photo.new(MachineId.random(), oleg, T0)
+        val photos = listOf(own, gone, stranger)
+        val clusters = MachineClusters(emptyList())
+
+        assertEquals(own, coverPhoto(PRESS, photos, clusters, gone.id))
+        assertEquals(own, coverPhoto(PRESS, photos, clusters, stranger.id))
+        assertEquals(own, coverPhoto(PRESS, photos, clusters, PhotoId.random()))
+    }
+
     private fun link(
         from: MachineId,
         to: MachineId,

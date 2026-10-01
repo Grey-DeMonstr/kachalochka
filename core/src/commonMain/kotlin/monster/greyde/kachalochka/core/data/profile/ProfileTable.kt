@@ -7,9 +7,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
+import monster.greyde.kachalochka.core.data.gym.photoIdOf
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
-import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -82,15 +82,6 @@ internal fun birthDateOf(iso: String?): CalendarDay? =
         }
     }
 
-internal fun avatarPhotoOf(id: String?): PhotoId? =
-    id?.let {
-        try {
-            PhotoId(it.lowercase())
-        } catch (_: IllegalArgumentException) {
-            null
-        }
-    }
-
 // Postgres names its columns with underscores and stores the instant as a timestamptz string,
 // so the wire shape is its own type and the domain entity stays serialization-neutral.
 @Serializable
@@ -122,7 +113,7 @@ internal data class ProfileRow(
             heightCm = heightCm,
             weightUnit = weightUnitOf(weightUnit),
             groupByTag = groupByTag,
-            avatarPhoto = avatarPhotoOf(avatarPhoto),
+            avatarPhoto = photoIdOf(avatarPhoto),
             machineSort = machineSortOf(machineSort),
         )
 

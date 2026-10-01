@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.gym.SetPeak
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -77,6 +78,20 @@ class GymWireTest {
 
         assertEquals("""["Ноги","Жим"]""", MachineRow.of(machine).tags)
         assertEquals(machine, MachineRow.of(machine).toMachine())
+    }
+
+    @Test
+    fun a_machine_s_chosen_cover_travels_by_its_photo_id() {
+        val cover = PhotoId.random()
+        val machine =
+            Machine
+                .new("Жим ногами", null, Instant.fromEpochSeconds(1_700_000_000))
+                .copy(coverPhoto = cover)
+
+        assertEquals(cover.value, MachineRow.of(machine).coverPhoto)
+        assertEquals(machine, MachineRow.of(machine).toMachine())
+        val unreadable = MachineRow.of(machine).copy(coverPhoto = "nonsense")
+        assertEquals(null, unreadable.toMachine().coverPhoto)
     }
 
     @Test

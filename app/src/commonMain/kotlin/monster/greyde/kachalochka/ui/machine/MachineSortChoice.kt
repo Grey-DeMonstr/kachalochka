@@ -22,7 +22,7 @@ import monster.greyde.kachalochka.ui.components.ChoiceChip
 import monster.greyde.kachalochka.ui.strings.strings
 import kotlin.time.Clock
 
-/** The account's machine sort, kept in its profile so it follows the account (spec §4.6). */
+/** The account's machine sort, kept in its profile so it follows the account (spec §4.5). */
 class MachineSortChoice(
     private val profiles: ProfileRepository,
     private val currentUser: CurrentUser,

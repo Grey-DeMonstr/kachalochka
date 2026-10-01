@@ -9,6 +9,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -41,6 +42,15 @@ fun WeightUnit.wireName(): String =
     }
 
 internal fun tagsText(tags: Set<String>): String = Json.encodeToString(tags.toList())
+
+internal fun photoIdOf(id: String?): PhotoId? =
+    id?.let {
+        try {
+            PhotoId(it.lowercase())
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
 
 // Another client's text is outside this one's control, and one unreadable entry must not stop a
 // pull or cost the tags that can be read.
@@ -95,6 +105,7 @@ internal data class MachineRow(
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
     val tags: String,
+    @SerialName("cover_photo") val coverPhoto: String?,
 ) {
     fun toMachine(): Machine =
         Machine(
@@ -111,6 +122,7 @@ internal data class MachineRow(
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
             tags = tagsOf(tags),
+            coverPhoto = photoIdOf(coverPhoto),
         )
 
     companion object {
@@ -129,6 +141,7 @@ internal data class MachineRow(
                 updatedAt = machine.updatedAt.toString(),
                 deleted = machine.deleted,
                 tags = tagsText(machine.tags),
+                coverPhoto = machine.coverPhoto?.value,
             )
     }
 }

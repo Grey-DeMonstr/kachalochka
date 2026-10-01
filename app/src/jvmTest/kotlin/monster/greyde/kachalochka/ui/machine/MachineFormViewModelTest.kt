@@ -225,6 +225,101 @@ class MachineFormViewModelTest {
             )
         }
 
+    /** Иван's press, linked to Миша's; each has a photo, Миша's the older. */
+    private suspend fun pressWithFriendsPhoto(): Triple<Machine, Photo, Photo> {
+        gym.withAccounts(ivan, active = ivan)
+        gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
+        val hers = Machine.new("Жим ногами", misha.account.userId, t0)
+        val (press, link) = linkedCopy(hers, ivan.account.userId, t0)
+        gym.machines.upsert(press)
+        gym.machineLinks.upsert(link)
+        gym.friends.machines += hers
+        val mine = Photo.new(press.id, ivan.account.userId, t0)
+        gym.photos.add(mine, byteArrayOf(1))
+        val theirs = Photo.new(hers.id, misha.account.userId, t0 - 1.minutes)
+        gym.friends.photos += theirs
+        return Triple(press, mine, theirs)
+    }
+
+    @Test
+    fun friends_photos_of_the_machine_follow_its_own_with_their_owner() =
+        runTest {
+            val (press, mine, theirs) = pressWithFriendsPhoto()
+
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            assertEquals(
+                listOf(mine.id.value to null, theirs.id.value to "Миша"),
+                vm.photos.value.map { it.key to it.owner?.displayName },
+            )
+            assertEquals(listOf(true, false), vm.photos.value.map { it.cover })
+        }
+
+    @Test
+    fun a_friend_s_photo_made_the_cover_is_saved_with_the_machine() =
+        runTest {
+            val (press, _, theirs) = pressWithFriendsPhoto()
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            vm.makeCover(theirs.id.value)
+
+            assertEquals(listOf(false, true), vm.photos.value.map { it.cover })
+            assertEquals(null, gym.machines.byId(press.id)?.coverPhoto)
+            vm.save {}
+            assertEquals(theirs.id, gym.machines.byId(press.id)?.coverPhoto)
+        }
+
+    @Test
+    fun a_friend_s_photo_cannot_be_removed() =
+        runTest {
+            val (press, _, theirs) = pressWithFriendsPhoto()
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            vm.removePhoto(theirs.id.value)
+
+            assertEquals(2, vm.photos.value.size)
+        }
+
+    @Test
+    fun offline_a_friend_s_photo_chosen_before_stays_the_cover() =
+        runTest {
+            val (press, _, theirs) = pressWithFriendsPhoto()
+            gym.machines.upsert(press.copy(coverPhoto = theirs.id))
+            gym.friends.offline = true
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            vm.save {}
+
+            assertEquals(theirs.id, gym.machines.byId(press.id)?.coverPhoto)
+        }
+
+    @Test
+    fun removing_the_chosen_cover_leaves_the_machine_its_usual_one() =
+        runTest {
+            val (press, mine, _) = pressWithFriendsPhoto()
+            val later = Photo.new(press.id, ivan.account.userId, t0 + 1.minutes)
+            gym.photos.add(later, byteArrayOf(2))
+            gym.machines.upsert(press.copy(coverPhoto = later.id))
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            assertEquals(
+                later.id.value,
+                vm.photos.value
+                    .single { it.cover }
+                    .key,
+            )
+
+            vm.removePhoto(later.id.value)
+            vm.save {}
+
+            assertEquals(
+                mine.id.value,
+                vm.photos.value
+                    .single { it.cover }
+                    .key,
+            )
+            assertEquals(null, gym.machines.byId(press.id)?.coverPhoto)
+        }
+
     @Test
     fun a_copied_machine_starts_without_the_source_s_photos() =
         runTest {

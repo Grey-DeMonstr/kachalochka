@@ -1,0 +1,4 @@
+ALTER TABLE machine ADD COLUMN cover_photo TEXT;
+
+-- Machines pulled before this version lost their chosen cover.
+UPDATE syncState SET lastPullAt = NULL;

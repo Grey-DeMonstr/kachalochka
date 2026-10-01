@@ -22,6 +22,8 @@ data class Machine(
     val updatedAt: Instant,
     val deleted: Boolean,
     val tags: Set<String> = emptySet(),
+    /** The photo chosen to stand for the machine; see [coverPhoto]. */
+    val coverPhoto: PhotoId? = null,
 ) {
     companion object {
         fun new(

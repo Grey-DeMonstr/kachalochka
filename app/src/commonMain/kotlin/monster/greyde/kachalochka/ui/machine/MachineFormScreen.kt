@@ -215,10 +215,16 @@ fun MachineFormScreen(
         PhotoViewer(
             photo,
             onClose = { opened = null },
-            onDelete = {
-                viewModel.removePhoto(photo.key)
-                opened = null
-            },
+            onDelete =
+                {
+                    viewModel.removePhoto(photo.key)
+                    opened = null
+                }.takeIf { photo.owner == null },
+            onMakeCover =
+                {
+                    viewModel.makeCover(photo.key)
+                    opened = null
+                }.takeIf { !photo.cover },
         )
     }
     if (linking.confirmingUnlink) {

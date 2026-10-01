@@ -5,6 +5,7 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -45,6 +46,16 @@ class LocalMachineRepositoryTest {
             repository.upsert(tagged)
 
             assertEquals(tagged, repository.byId(sled.id))
+        }
+
+    @Test
+    fun a_machine_keeps_its_chosen_cover() =
+        runTest {
+            val covered = sled.copy(coverPhoto = PhotoId.random())
+
+            repository.upsert(covered)
+
+            assertEquals(covered, repository.byId(sled.id))
         }
 
     @Test

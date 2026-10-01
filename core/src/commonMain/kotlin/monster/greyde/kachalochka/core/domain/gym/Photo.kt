@@ -39,15 +39,20 @@ data class Photo(
 
 val photoOrder: Comparator<Photo> = compareBy<Photo> { it.takenAt }.thenBy { it.id.value }
 
-/** The photo standing for [machine]: its own first, else the first of a machine linked to it. */
+/**
+ * The photo standing for [machine]: the [chosen] one while it is live in the machine's cluster,
+ * else its own first, else the first of a machine linked to it.
+ */
 fun coverPhoto(
     machine: MachineId,
     photos: List<Photo>,
     clusters: MachineClusters,
+    chosen: PhotoId? = null,
 ): Photo? {
     val live = photos.filterNot { it.deleted }
     val cluster = clusters.of(machine)
-    return live.filter { it.machineId == machine }.minWithOrNull(photoOrder)
+    return live.firstOrNull { it.id == chosen && it.machineId in cluster }
+        ?: live.filter { it.machineId == machine }.minWithOrNull(photoOrder)
         ?: live.filter { it.machineId in cluster }.minWithOrNull(photoOrder)
 }
 

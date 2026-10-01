@@ -69,6 +69,7 @@ class LocalSyncRows(
             machine.deleted,
             machine.unitLabel,
             tagsText(machine.tags),
+            machine.coverPhoto?.value,
         )
 
     fun writeVisit(visit: Visit) =

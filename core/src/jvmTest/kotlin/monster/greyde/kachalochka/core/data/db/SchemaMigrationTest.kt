@@ -580,6 +580,23 @@ class SchemaMigrationTest {
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
+    @Test
+    fun version_16_machines_choose_no_cover_and_are_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        version12MachineTable()
+        exec("ALTER TABLE machine ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'")
+        exec(
+            "INSERT INTO machine(id, name, weight_mode, unit, weight_step, updated_at) " +
+                "VALUES ('press', 'Жим', 'total', 'kg', 2.5, 1)",
+        )
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 16, 17)
+
+        assertEquals(null, text("SELECT cover_photo FROM machine WHERE id = 'press'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
     /** Versions 5 to 12 declare the machine table this way. */
     private fun version12MachineTable() {
         exec("DROP TABLE machine")

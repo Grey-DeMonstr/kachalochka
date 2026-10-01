@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.db.ProfileQueries
+import monster.greyde.kachalochka.core.data.gym.photoIdOf
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -85,6 +86,6 @@ internal fun profileOf(
     heightCm = heightCm,
     weightUnit = weightUnitOf(weightUnit),
     groupByTag = groupByTag,
-    avatarPhoto = avatarPhotoOf(avatarPhoto),
+    avatarPhoto = photoIdOf(avatarPhoto),
     machineSort = machineSortOf(machineSort),
 )

@@ -53,6 +53,16 @@ class MachineTest {
     }
 
     @Test
+    fun a_linked_copy_keeps_the_friend_s_cover_which_stays_in_its_cluster() {
+        val cover = PhotoId.random()
+        val theirs = Machine.new("Жим ногами", oleg, T0).copy(coverPhoto = cover)
+
+        val (mine, _) = linkedCopy(theirs, ivan, T0)
+
+        assertEquals(cover, mine.coverPhoto)
+    }
+
+    @Test
     fun a_linked_copy_comes_with_the_owner_s_link_to_the_friend_s_machine() {
         val theirs = Machine.new("Жим ногами", oleg, T0)
         val later = T0 + 1.hours

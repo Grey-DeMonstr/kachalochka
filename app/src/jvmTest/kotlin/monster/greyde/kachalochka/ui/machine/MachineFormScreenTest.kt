@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -129,6 +130,34 @@ class MachineFormScreenTest {
                 .assertTextEquals("The weight counts as negative: the less, the better.")
             onNodeWithTag("save-machine").assertTextEquals("Save")
         }
+
+    @Test
+    fun a_friend_s_photo_can_be_made_the_cover_but_not_deleted() {
+        val on = signedInGym()
+        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val olegs = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
+        val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current)
+        val olegsPhoto = Photo.new(olegs.id, OLEG.userId, on.clock.current)
+        runBlocking {
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+            on.photos.add(Photo.new(mine.id, ME.userId, on.clock.current), byteArrayOf(1))
+        }
+        on.friends.machines += olegs
+        on.friends.photos += olegsPhoto
+        var saved: MachineId? = null
+        runScreenTest(on, screen = {
+            MachineFormScreen(MachineFormArgs(mine.id, null, ""), {}, {}, onSaved = { saved = it })
+        }) {
+            onAllNodesWithTag("photo-thumbnail")[1].performClick()
+            onNodeWithTag("delete-photo").assertDoesNotExist()
+            onNodeWithTag("make-cover").assertTextEquals("Сделать основным").performClick()
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+        }
+        assertEquals(mine.id, saved)
+        assertEquals(olegsPhoto.id, runBlocking { on.machines.byId(mine.id)?.coverPhoto })
+    }
 
     @Test
     fun a_photo_taken_in_the_form_is_saved_with_the_machine() {

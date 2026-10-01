@@ -2,7 +2,7 @@ package monster.greyde.kachalochka.core.data.friends
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import monster.greyde.kachalochka.core.data.profile.avatarPhotoOf
+import monster.greyde.kachalochka.core.data.gym.photoIdOf
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.identity.Avatar
@@ -34,7 +34,7 @@ internal data class GroupMemberRow(
     @SerialName("picture_url") val pictureUrl: String? = null,
 ) {
     val avatar: Avatar
-        get() = Avatar(avatarPhotoOf(avatarPhoto), pictureUrl?.takeIf { it.isNotBlank() })
+        get() = Avatar(photoIdOf(avatarPhoto), pictureUrl?.takeIf { it.isNotBlank() })
 }
 
 @Serializable

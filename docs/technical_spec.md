@@ -356,7 +356,11 @@ the session's `avatar_url` or `picture` claim, kept with the account in the acco
 drawn.
 
 `coverPhoto` picks the photo standing for a machine in the machine list, the picker and the visit:
-its own first, else the first of any machine in its cluster (§4.5). Own photos are read locally
+`machine.cover_photo` while that photo is live in the machine's cluster (§4.5), else its own first,
+else the first of any machine in its cluster. A friend's machine is drawn with its owner's choice.
+Offline a chosen friend's photo is not at hand, so the own first stands in, and the form keeps
+the choice on save unless that photo was removed in it. Migration `0022` and `16.sqm` add the
+column; `16.sqm` resets `lastPullAt`. Own photos are read locally
 (`PhotoRepository.all`); group mates' come in one read, `FriendsRepository.groupPhotos`, beside the
 friends' machines, and "Упражнение друга" reads its machine's with `photos`.
 
