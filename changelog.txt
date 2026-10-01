@@ -1,5 +1,14 @@
 Kachalochka - Changelog
 
+1.4.0
+
+- Statistics added.
+- Machine lists can be sorted by recent use, name or how often a machine is used.
+- Machines already in the visit are listed last when adding one.
+- Friends' photos of a machine are shown in its settings, and any photo can be its main one.
+- Fixed: the first set on a machine now starts from the previous visit's best set.
+
+
 1.3.2
 
 - Fixed: on Android, the weight, reps and measure value disappeared, and - and + seemed to do
