@@ -38,8 +38,30 @@ class SetSuggestionTest {
     }
 
     @Test
-    fun the_first_set_takes_the_first_set_of_the_previous_visit() {
-        assertEquals(SetValues(70.0, 10), suggestNextSet(machine(), yesterday, emptyList()))
+    fun the_first_set_takes_the_heaviest_set_of_the_previous_visit_with_its_most_reps() {
+        val previous =
+            listOf(
+                set(VISIT_A, 70.0, 10, 0),
+                set(VISIT_A, 75.0, 8, 60),
+                set(VISIT_A, 75.0, 9, 120),
+                set(VISIT_A, 72.5, 12, 180),
+            )
+
+        assertEquals(SetValues(75.0, 9), suggestNextSet(machine(), previous, emptyList()))
+    }
+
+    @Test
+    fun on_a_gravitron_the_first_set_takes_the_lightest_set_of_the_previous_visit() {
+        val gravitron = machine().copy(weightMode = WeightMode.Counterweight)
+        val previous =
+            listOf(
+                set(VISIT_A, 30.0, 8, 0),
+                set(VISIT_A, 25.0, 6, 60),
+                set(VISIT_A, 25.0, 7, 120),
+                set(VISIT_A, 27.5, 10, 180),
+            )
+
+        assertEquals(SetValues(25.0, 7), suggestNextSet(gravitron, previous, emptyList()))
     }
 
     @Test

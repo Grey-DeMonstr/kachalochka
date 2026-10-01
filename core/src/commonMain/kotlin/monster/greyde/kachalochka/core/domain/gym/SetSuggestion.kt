@@ -26,7 +26,7 @@ fun suggestNextSet(
     previousVisit: List<WorkoutSet>,
     thisVisit: List<WorkoutSet>,
 ): SetValues {
-    val pattern = thisVisit.lastOrNull() ?: previousVisit.firstOrNull()
+    val pattern = thisVisit.lastOrNull() ?: bestSet(previousVisit, machine.weightMode)
     return pattern?.let { SetValues(it.weight, it.reps) }
         ?: SetValues(if (machine.platformIncluded) machine.platformWeight else 0.0, DEFAULT_REPS)
 }

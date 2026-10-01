@@ -262,7 +262,7 @@ class VisitViewModelTest {
     }
 
     @Test
-    fun choosing_a_machine_seeds_the_steppers_from_the_previous_visit() {
+    fun choosing_a_machine_seeds_the_steppers_from_the_best_set_of_the_previous_visit() {
         val vm = viewModel().also { it.selectMachine(press.id) }
 
         val page = assertNotNull(vm.state.value?.page)
@@ -273,10 +273,10 @@ class VisitViewModelTest {
         assertEquals("70-70-75кг 10-10-8", page.previous)
         val form = assertNotNull(page.form)
         assertEquals("#1", form.number)
-        assertEquals("70", form.weight)
+        assertEquals("75", form.weight)
         assertEquals("кг", form.weightUnit)
         assertNull(form.converted)
-        assertEquals("10", form.reps)
+        assertEquals("8", form.reps)
     }
 
     @Test
@@ -292,8 +292,8 @@ class VisitViewModelTest {
                     ?.page
                     ?.form,
             )
-        assertEquals("72.5", sheet.weight)
-        assertEquals("9", sheet.reps)
+        assertEquals("77.5", sheet.weight)
+        assertEquals("7", sheet.reps)
     }
 
     @Test
@@ -521,8 +521,8 @@ class VisitViewModelTest {
                     ?.page
                     ?.form,
             )
-        assertEquals("72.5", sheet.weight)
-        assertEquals("9", sheet.reps)
+        assertEquals("77.5", sheet.weight)
+        assertEquals("7", sheet.reps)
     }
 
     @Test
@@ -534,14 +534,14 @@ class VisitViewModelTest {
             vm.save()
 
             val saved = gym.sets.forVisit(visit.id).single()
-            assertEquals(67.5 to 10, saved.weight to saved.reps)
+            assertEquals(72.5 to 8, saved.weight to saved.reps)
             assertEquals(t0, timer.startedAt.value)
             val state = assertNotNull(vm.state.value)
             assertEquals(1, state.groups.sumOf { it.sets.size })
             assertEquals("#2", state.page?.form?.number)
-            assertEquals("67.5", state.page?.form?.weight)
+            assertEquals("72.5", state.page?.form?.weight)
             assertEquals(
-                listOf("Жим ногами (+20 кг)" to listOf("67.5кг", "1x10")),
+                listOf("Жим ногами (+20 кг)" to listOf("72.5кг", "1x8")),
                 state.groups.map { it.title to it.summary },
             )
         }
@@ -992,9 +992,9 @@ class VisitViewModelTest {
             )
             assertEquals("(+44 lb)", page.platformSuffix)
             assertEquals("154.5-154.5-165.5lb 10-10-8", page.previous)
-            assertEquals("70", page.form?.weight)
+            assertEquals("75", page.form?.weight)
             assertEquals("кг", page.form?.weightUnit)
-            assertEquals("154.5 lb", page.form?.converted)
+            assertEquals("165.5 lb", page.form?.converted)
 
             vm.share()
 

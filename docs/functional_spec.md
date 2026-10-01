@@ -128,8 +128,8 @@ before it, and when the profile's unit is "кг" or "lb" and differs from it, th
 follows under it ("29.5 кг"), to the nearest half unit. The page's other weights follow the
 profile's unit. A "Комментарий" field of several lines takes up to 200 characters, saved with the
 set and shown after its number; a shared visit never includes them. The first set on a machine
-starts from the previous visit's first set; each later one repeats the weight and the reps of the
-set just recorded. "Добавить" records the set and keeps the form open for the next one, without a
+starts from the previous visit's best set, picked as the record is; each later one repeats the
+weight and the reps of the set just recorded. "Добавить" records the set and keeps the form open for the next one, without a
 comment; until it is written, the button shows progress and takes no taps. Editing offers
 "Сохранить", which closes the form, and a trash button that deletes the set. "Отмена", swiping the
 form down, or back, closes it, leaving any edit; starting to order closes the page. Tapping another
