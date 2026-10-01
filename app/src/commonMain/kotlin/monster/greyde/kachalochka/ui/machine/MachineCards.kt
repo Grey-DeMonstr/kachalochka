@@ -22,6 +22,8 @@ data class MachineCardUi(
     val comment: String,
     val lastUsed: String?,
     val record: String?,
+    /** Drawn dimmed, noting that the visit already holds it. */
+    val inVisit: Boolean = false,
 )
 
 /** One friend's machines, headed by the friend and, without a picture, their calendar colour. */

@@ -141,7 +141,9 @@ account's own machine, its comment and the day it was last used, and a trophy wi
 heaviest set with the most reps at that weight, the lightest on a gravitron — in the viewer's unit.
 The machine picker lists the account's machines, most recently used first, then, signed in and
 online, one section per friend headed by their avatar and name, with the friend's machines that are
-not yet the same machine as one of the account's. A search keeps the machines whose name holds what
+not yet the same machine as one of the account's. Opened from a visit, the machines the visit
+already holds, with sets or planned, come last of all, dimmed and marked "Уже в визите"; picking
+one opens its page with the form for its next set. A search keeps the machines whose name holds what
 is typed. The tags of all these machines follow the search field as chips, and the chosen ones keep
 only the machines carrying every one of them. With nothing left, the picker says "Ничего не
 найдено". "Создать «…»" opens the machine form pre-filled with the typed name and the chosen tags

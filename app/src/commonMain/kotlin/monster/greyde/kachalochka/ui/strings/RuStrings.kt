@@ -216,6 +216,7 @@ object RuStrings : Strings {
         (if (tags.size == 1) "С тегом " else "С тегами ") + tags.joinToString(", ") { "«$it»" }
 
     override val nothingFound = "Ничего не найдено"
+    override val alreadyInVisit = "Уже в визите"
 
     override val addPhoto = "Добавить фото"
     override val takePhoto = "Снять фото"

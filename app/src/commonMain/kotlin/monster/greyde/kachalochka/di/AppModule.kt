@@ -105,7 +105,22 @@ val appModule =
                 get(),
             )
         }
-        viewModelOf(::MachinePickerViewModel)
+        viewModel { (day: CalendarDay?) ->
+            MachinePickerViewModel(
+                day,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
+        }
         viewModel { (plan: PlanId?) -> PlanFormViewModel(plan, get(), get(), get(), get()) }
         viewModel { (args: MachineFormArgs) ->
             MachineFormViewModel(

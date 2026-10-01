@@ -42,6 +42,7 @@ import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /** A null [day] picks for a plan, where the copy row is not offered. */
 @Composable
@@ -54,7 +55,7 @@ fun MachinePickerScreen(
     onCreate: (name: String, tags: List<String>) -> Unit,
     onCopy: (source: MachineId, name: String) -> Unit,
 ) {
-    val viewModel: MachinePickerViewModel = koinViewModel()
+    val viewModel: MachinePickerViewModel = koinViewModel { parametersOf(day) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(strings().machine, onBack = onBack, onOpenSettings = onOpenSettings) {
@@ -100,6 +101,9 @@ fun MachinePickerScreen(
                         viewModel.pickFriend(card.id, onPicked)
                     }
                 }
+            }
+            state.inVisitRows.forEach { card ->
+                MachineCard(card, "machine-row-${card.id.value}") { onPicked(card.id) }
             }
             if (selectedMachineId != null && day != null) {
                 SectionLabel(

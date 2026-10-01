@@ -199,6 +199,7 @@ object EnStrings : Strings {
     override fun withTags(tags: List<String>) = "Tagged " + tags.joinToString(", ") { "\"$it\"" }
 
     override val nothingFound = "Nothing found"
+    override val alreadyInVisit = "Already in the visit"
 
     override val addPhoto = "Add photo"
     override val takePhoto = "Take a photo"

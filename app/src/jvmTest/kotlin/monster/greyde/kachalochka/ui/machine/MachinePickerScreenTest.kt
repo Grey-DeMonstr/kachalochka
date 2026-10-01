@@ -65,6 +65,29 @@ class MachinePickerScreenTest {
     }
 
     @Test
+    fun a_machine_already_in_the_visit_says_so_and_is_still_picked() {
+        runBlocking { gym.visits.upsert(visit.copy(planned = listOf(press.id))) }
+        val picked = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            MachinePickerScreen(
+                gym.today,
+                null,
+                {},
+                {},
+                { picked += it },
+                { _, _ -> },
+                { _, _ -> },
+            )
+        }) {
+            onNodeWithTag("card-in-visit-${press.id.value}", useUnmergedTree = true)
+                .assertTextEquals("Уже в визите")
+            onNodeWithTag("machine-row-${press.id.value}").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(press.id), picked)
+    }
+
+    @Test
     fun without_a_chosen_machine_there_is_nothing_to_copy() =
         runScreenTest(
             gym,

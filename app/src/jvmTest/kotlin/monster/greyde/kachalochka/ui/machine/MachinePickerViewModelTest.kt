@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -84,19 +85,23 @@ class MachinePickerViewModelTest {
 
     private fun viewModel() = pickerOn(gym)
 
-    private fun pickerOn(on: FakeGym) =
-        MachinePickerViewModel(
-            on.sets,
-            on.currentUser,
-            on.accounts,
-            on.clock,
-            on.utcOffset,
-            on.sync,
-            on.profiles,
-            on.catalogue,
-            on.friends,
-            FriendColorStore(on.profiles, on.clock, on.friends),
-        )
+    private fun pickerOn(
+        on: FakeGym,
+        day: CalendarDay? = null,
+    ) = MachinePickerViewModel(
+        day,
+        on.visits,
+        on.sets,
+        on.currentUser,
+        on.accounts,
+        on.clock,
+        on.utcOffset,
+        on.sync,
+        on.profiles,
+        on.catalogue,
+        on.friends,
+        FriendColorStore(on.profiles, on.clock, on.friends),
+    )
 
     @Test
     fun a_machine_without_its_own_photo_shows_a_linked_friend_s_one() =
@@ -497,4 +502,60 @@ class MachinePickerViewModelTest {
                 link.machineId to link.linkedMachineId,
             )
         }
+
+    @Test
+    fun machines_already_in_the_visit_follow_everything_else() =
+        runTest {
+            val bench = Machine.new("Жим лёжа", null, t0)
+            gym.machines.upsert(bench)
+            gym.visits.upsert(visit.copy(planned = listOf(smith.id)))
+
+            val vm = pickerOn(gym, gym.today).also { it.load() }
+
+            assertEquals(
+                listOf(bench.id),
+                vm.state.value.rows
+                    .map { it.id },
+            )
+            assertEquals(
+                listOf(press.id, smith.id),
+                vm.state.value.inVisitRows
+                    .map { it.id },
+            )
+        }
+
+    @Test
+    fun the_search_narrows_the_machines_already_in_the_visit_too() {
+        val vm = pickerOn(gym, gym.today).also { it.load() }
+
+        vm.onQueryChange("смит")
+
+        assertEquals(emptyList(), vm.state.value.inVisitRows)
+        assertEquals(
+            listOf(smith.id),
+            vm.state.value.rows
+                .map { it.id },
+        )
+    }
+
+    @Test
+    fun a_machine_already_in_the_visit_still_counts_as_found() {
+        val vm = pickerOn(gym, gym.today).also { it.load() }
+
+        vm.onQueryChange("жим")
+
+        assertEquals(false, vm.state.value.nothingFound)
+    }
+
+    @Test
+    fun a_plan_s_picker_keeps_every_machine_in_its_place() {
+        val vm = pickerOn(gym).also { it.load() }
+
+        assertEquals(
+            listOf(press.id, smith.id),
+            vm.state.value.rows
+                .map { it.id },
+        )
+        assertEquals(emptyList(), vm.state.value.inVisitRows)
+    }
 }

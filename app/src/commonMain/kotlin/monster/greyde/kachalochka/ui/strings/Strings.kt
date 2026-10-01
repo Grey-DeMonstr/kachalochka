@@ -181,6 +181,7 @@ interface Strings {
     fun withTags(tags: List<String>): String
 
     val nothingFound: String
+    val alreadyInVisit: String
 
     // Photos
     val addPhoto: String

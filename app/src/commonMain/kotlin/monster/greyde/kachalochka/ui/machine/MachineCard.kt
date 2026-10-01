@@ -14,14 +14,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.ui.account.PersonAvatar
+import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
+import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.friendColor
 import monster.greyde.kachalochka.ui.visit.TagChip
 
@@ -39,6 +42,7 @@ fun MachineCard(
             Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
+                .alpha(if (card.inVisit) DISABLED_ALPHA else 1f)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
                 .testTag(tag),
             horizontalArrangement = Arrangement.spacedBy(13.dp),
@@ -46,6 +50,14 @@ fun MachineCard(
             MachineThumbnail(card.photo, PhosphorIcons.Barbell, size = 58.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(card.name, fontSize = 17.sp, color = colors.onBackground)
+                if (card.inVisit) {
+                    Text(
+                        strings().alreadyInVisit,
+                        modifier = Modifier.testTag("card-in-visit-$id"),
+                        fontSize = 14.sp,
+                        color = colors.secondary,
+                    )
+                }
                 if (card.tags.isNotEmpty()) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
