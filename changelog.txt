@@ -1,5 +1,10 @@
 Kachalochka - Changelog
 
+1.4.2
+
+- In the statistics, a new machine's first set is labelled "Start" instead of "Worst".
+
+
 1.4.1
 
 - Statistics can be sorted, including by best growth, and grouped by tags.
