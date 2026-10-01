@@ -1,5 +1,11 @@
 Kachalochka - Changelog
 
+1.4.1
+
+- Statistics can be sorted, including by best growth, and grouped by tags.
+- Fixed: a statistics period now counts back from today instead of from the start of the month.
+
+
 1.4.0
 
 - Statistics added.
