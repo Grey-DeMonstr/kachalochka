@@ -210,7 +210,7 @@ object EnStrings : Strings {
     override val allResults = "All results"
     override val noSetsInPeriod = "No sets in this period"
     override val machinesInPeriod = "Machines in the period"
-    override val worst = "Worst"
+    override val startSet = "Start"
     override val best = "Best"
     override val noChange = "No change"
 

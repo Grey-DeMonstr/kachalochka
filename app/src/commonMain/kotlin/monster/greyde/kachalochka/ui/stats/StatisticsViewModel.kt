@@ -260,7 +260,7 @@ class StatisticsViewModel(
                 if (progress.sinceBefore) {
                     strings.beforeDay(dayMonthLabel(start, today.year))
                 } else {
-                    strings.worst
+                    strings.startSet
                 },
             from = setValue(from.weight, from.reps, machine, preferred),
             toLabel =

@@ -192,7 +192,7 @@ interface Strings {
     val allResults: String
     val noSetsInPeriod: String
     val machinesInPeriod: String
-    val worst: String
+    val startSet: String
     val best: String
     val noChange: String
 

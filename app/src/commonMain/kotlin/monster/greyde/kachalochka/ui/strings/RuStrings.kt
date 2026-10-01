@@ -227,7 +227,7 @@ object RuStrings : Strings {
     override val allResults = "Все результаты"
     override val noSetsInPeriod = "Нет подходов за период"
     override val machinesInPeriod = "Упражнения за период"
-    override val worst = "Худший"
+    override val startSet = "Начальный"
     override val best = "Лучший"
     override val noChange = "Без изменений"
 

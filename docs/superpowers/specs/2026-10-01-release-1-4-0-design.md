@@ -66,7 +66,7 @@ visit gets a chart button left of the gear, opening the screen on that machine.
 - **"Общая":** "Упражнения за период · с 1 сентября", then one card per machine with a set in the
   period, last used first: photo, name, and two boxes joined by an arrow. With a set before the
   period they hold the best set before it ("До 1 сентября") and the best in it ("С 1 сентября");
-  without one, the worst and the best set in the period ("Худший", "Лучший"). A chip on the card
+  without one, the worst and the best set in the period ("Начальный", "Лучший"). A chip on the card
   gives the change: green "+2.5 кг" when the weight improved, green "+2 повт." when the weight is
   the same and the reps improved, otherwise grey ("−2.5 кг", "−1 повт.", "Без изменений"). On a
   gravitron a smaller weight is the improvement, still written "+x кг". Tapping a card opens that

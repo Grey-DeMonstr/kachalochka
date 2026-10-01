@@ -101,7 +101,7 @@ class StatisticsViewModelTest {
                     row.id,
                     "Тяга",
                     null,
-                    "Худший",
+                    "Начальный",
                     "40 кг × 10",
                     "Лучший",
                     "40 кг × 12",
@@ -176,7 +176,7 @@ class StatisticsViewModelTest {
         val state = vm.state.value
         assertEquals("Упражнения за период · с 14 августа", state.overallTitle)
         val card = state.overall.single { it.id == press.id }
-        assertEquals("Худший" to "Лучший", card.fromLabel to card.toLabel)
+        assertEquals("Начальный" to "Лучший", card.fromLabel to card.toLabel)
         assertEquals("70 кг × 10" to "75 кг × 8", card.from to card.to)
     }
 

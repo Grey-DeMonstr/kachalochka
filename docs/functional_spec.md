@@ -369,11 +369,12 @@ machines too.
 Under "Упражнения за период · с 1 сентября" come the machines with a set in the period: each with
 its photo, its name and two boxes joined by an arrow. With a set before the period they hold the
 best set before it ("До 1 сентября") and the best in it ("С 1 сентября"); without one, the worst
-and the best set of the period ("Худший", "Лучший"). A chip sums up the change: in green "+2.5 кг"
-when the weight grew, or "+2 повт." when the weight stayed and the reps grew; in grey "−2.5 кг",
-"−1 повт." or "Без изменений". On a gravitron a lighter weight is the growth. Tapping a card opens
-its machine. The best set is picked as the record is; the worst is the lightest weight with the
-fewest reps at it, the heaviest on a gravitron. Weights follow the unit chosen in the profile.
+and the best set of the period ("Начальный", "Лучший"). A chip sums up the change: in green
+"+2.5 кг" when the weight grew, or "+2 повт." when the weight stayed and the reps grew; in grey
+"−2.5 кг", "−1 повт." or "Без изменений". On a gravitron a lighter weight is the growth. Tapping a
+card opens its machine. The best set is picked as the record is; the worst is the lightest weight
+with the fewest reps at it, the heaviest on a gravitron. Weights follow the unit chosen in the
+profile.
 
 ## Data import / export
 
