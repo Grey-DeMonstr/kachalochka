@@ -1,5 +1,12 @@
 Kachalochka - Changelog
 
+1.4.3
+
+- The app has its own icon.
+- Starting a plan asks for confirmation first.
+- A visit can be saved as a new plan.
+
+
 1.4.2
 
 - In the statistics, a new machine's first set is labelled "Start" instead of "Worst".
