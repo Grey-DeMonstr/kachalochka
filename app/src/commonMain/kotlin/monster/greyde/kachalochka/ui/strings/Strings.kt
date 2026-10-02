@@ -99,6 +99,9 @@ interface Strings {
     val deletePlan: String
     val deletePlanTitle: String
     val deletePlanText: String
+    val startPlanTitle: String
+    val startPlanText: String
+    val saveAsPlan: String
     val reps: String
     val comment: String
     val deleteSet: String

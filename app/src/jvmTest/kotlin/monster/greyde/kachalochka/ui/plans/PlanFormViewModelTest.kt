@@ -7,9 +7,14 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
+import monster.greyde.kachalochka.core.domain.gym.Visit
+import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -25,8 +30,20 @@ class PlanFormViewModelTest {
     private val row = Machine.new("Тяга", null, t0)
     private val legs = Plan(PlanId.random(), null, "Ноги", listOf(press.id, row.id), t0, t0, false)
 
-    private fun viewModel(id: PlanId?) =
-        PlanFormViewModel(id, gym.plans, gym.accounts, gym.clock, gym.catalogue)
+    private fun viewModel(
+        id: PlanId?,
+        fromVisit: CalendarDay? = null,
+    ) = PlanFormViewModel(
+        id,
+        fromVisit,
+        gym.plans,
+        gym.visits,
+        gym.sets,
+        gym.utcOffset,
+        gym.accounts,
+        gym.clock,
+        gym.catalogue,
+    )
 
     @BeforeTest
     fun setUp() =
@@ -39,6 +56,47 @@ class PlanFormViewModelTest {
 
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun a_plan_from_a_visit_takes_its_machines_in_visit_order_and_saves_as_new() =
+        runTest {
+            val today = gym.today
+            val visit = Visit(VisitId.random(), null, today, t0, t0, false, listOf(press.id))
+            gym.visits.upsert(visit)
+            gym.sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    visit.id,
+                    row.id,
+                    50.0,
+                    10,
+                    0,
+                    t0,
+                    t0,
+                    false,
+                ),
+            )
+            val vm = viewModel(null, today)
+
+            assertEquals(
+                listOf(row.id, press.id),
+                vm.state.value.rows
+                    .map { it.id },
+            )
+            vm.save()
+
+            val saved =
+                gym.plans.rows.values
+                    .single { it.id != legs.id }
+            assertEquals(listOf(row.id, press.id), saved.machineIds)
+            assertEquals(
+                listOf(press.id),
+                gym.visits.rows
+                    .getValue(visit.id)
+                    .planned,
+            )
+        }
 
     @Test
     fun a_reordered_plan_is_saved_in_its_new_order() {

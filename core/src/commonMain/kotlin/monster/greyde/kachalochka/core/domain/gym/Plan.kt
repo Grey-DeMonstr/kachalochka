@@ -55,3 +55,9 @@ fun plannedWithoutSets(
     val recorded = sets.map { it.machineId }.toSet()
     return planned.distinct().filter { it in live && it !in recorded }
 }
+
+/** A visit's machines in the order it lists them: by their first set, then the planned ones. */
+fun visitMachines(
+    sets: List<WorkoutSet>,
+    planned: List<MachineId>,
+): List<MachineId> = (sets.map { it.machineId } + planned).distinct()

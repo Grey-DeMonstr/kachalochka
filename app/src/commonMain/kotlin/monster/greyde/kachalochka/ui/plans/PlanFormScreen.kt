@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.ui.components.AccentButton
@@ -56,8 +57,9 @@ fun PlanFormScreen(
     onOpenSettings: () -> Unit,
     onAddMachine: () -> Unit,
     onDone: () -> Unit,
+    fromVisit: CalendarDay? = null,
 ) {
-    val viewModel: PlanFormViewModel = koinViewModel { parametersOf(planId) }
+    val viewModel: PlanFormViewModel = koinViewModel { parametersOf(planId, fromVisit) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(pickedMachineId) {
         if (pickedMachineId != null) {

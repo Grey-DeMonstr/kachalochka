@@ -321,8 +321,9 @@ lists the account's plans, oldest first: each by its name, or by its machines' n
 none, with how many machines it holds and a "Начать" button. "Планов пока нет" stands in for an
 empty list, and "Новый план" makes one.
 
-"Начать" adds the plan's machines to today's visit, creating it when there is none, deletes the
-plan and opens the visit; back from it returns home. A machine the visit already has is not
+"Начать" asks "Начать план?", since a started plan cannot be taken back. Confirmed, it adds the
+plan's machines to today's visit, creating it when there is none, deletes the plan and opens the
+visit; back from it returns home. A machine the visit already has is not
 added again. In the visit the added machines follow the ones with sets, each saying
 "Запланировано"; tapping one opens its page, where "Добавить" opens the form for its first set
 and "Убрать" takes it out of the visit. A machine with a set is listed like any
@@ -339,6 +340,10 @@ last result and offers no "Скопировать упражнение"; a machi
 twice. "Сохранить план" saves and returns to the list; a plan without machines cannot be saved.
 Leaving without saving drops the edits. The menu of a saved plan has "Удалить план", which asks
 "Удалить план?". Switching accounts returns to the list.
+
+The menu in the top bar of a visit with machines has "Сохранить как план". It opens the form of a
+new plan holding the visit's machines in the visit's order, planned ones included; saving returns
+to the visit, which stays as it was.
 
 ## Custom exercsies
 

@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 
@@ -97,6 +98,8 @@ class PlansScreenTest {
             waitForIdle()
             onNodeWithTag("start-plan-${unnamed.id.value}").performClick()
             waitForIdle()
+            onNodeWithTag("confirm-start-plan").performClick()
+            waitForIdle()
         }
         assertEquals(listOf(gym.today), started)
         val visit =
@@ -106,6 +109,27 @@ class PlansScreenTest {
         assertTrue(
             gym.plans.rows
                 .getValue(unnamed.id)
+                .deleted,
+        )
+    }
+
+    @Test
+    fun a_cancelled_start_keeps_the_plan_and_writes_no_visit() {
+        val started = mutableListOf<CalendarDay>()
+        runScreenTest(gym, screen = plans(started = started)) {
+            waitForIdle()
+            onNodeWithTag("start-plan-${legs.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("cancel-start-plan").performClick()
+            waitForIdle()
+            onNodeWithTag("confirm-start-plan").assertDoesNotExist()
+            onNodeWithTag("plan-row-${legs.id.value}").assertIsDisplayed()
+        }
+        assertTrue(started.isEmpty())
+        assertTrue(gym.visits.rows.isEmpty())
+        assertFalse(
+            gym.plans.rows
+                .getValue(legs.id)
                 .deleted,
         )
     }

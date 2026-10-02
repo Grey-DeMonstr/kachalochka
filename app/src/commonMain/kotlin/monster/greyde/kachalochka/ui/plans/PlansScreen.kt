@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.PlanId
+import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
@@ -54,7 +55,7 @@ fun PlansScreen(
                 PlanRow(
                     row,
                     onOpen = { onOpenPlan(row.id) },
-                    onStart = { viewModel.start(row.id, onStarted) },
+                    onStart = { viewModel.askToStart(row.id) },
                 )
             }
             OutlineButton(
@@ -64,6 +65,17 @@ fun PlansScreen(
                 Modifier.fillMaxWidth().padding(16.dp).testTag("new-plan"),
             )
         }
+    }
+    if (state.confirmingStart != null) {
+        ConfirmDialog(
+            title = strings().startPlanTitle,
+            text = strings().startPlanText,
+            confirmLabel = strings().startPlan,
+            confirmTag = "confirm-start-plan",
+            cancelTag = "cancel-start-plan",
+            onConfirm = { viewModel.start(onStarted) },
+            onCancel = viewModel::cancelStart,
+        )
     }
 }
 

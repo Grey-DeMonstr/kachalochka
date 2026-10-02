@@ -28,6 +28,7 @@ import kotlin.time.Clock
 data class PlansUiState(
     val rows: List<PlanRowUi> = emptyList(),
     val loaded: Boolean = false,
+    val confirmingStart: PlanId? = null,
 )
 
 data class PlanRowUi(
@@ -71,7 +72,7 @@ class PlansViewModel(
                 shown = found
                 shownFor = owner
                 mutableState.value =
-                    PlansUiState(
+                    mutableState.value.copy(
                         rows =
                             found.map { plan ->
                                 val live = plan.machineIds.mapNotNull { names[it] }
@@ -82,15 +83,29 @@ class PlansViewModel(
                                 )
                             },
                         loaded = true,
+                        confirmingStart =
+                            mutableState.value.confirmingStart?.takeIf { id ->
+                                found.any { it.id == id }
+                            },
                     )
             }
     }
 
-    /** The visit is written before the plan is deleted, so a failed write keeps the plan. */
-    fun start(
-        id: PlanId,
-        onStarted: (CalendarDay) -> Unit,
-    ) {
+    fun askToStart(id: PlanId) {
+        mutableState.value = mutableState.value.copy(confirmingStart = id)
+    }
+
+    fun cancelStart() {
+        mutableState.value = mutableState.value.copy(confirmingStart = null)
+    }
+
+    /**
+     * Starts the plan [askToStart] asked about. The visit is written before the plan is deleted,
+     * so a failed write keeps the plan.
+     */
+    fun start(onStarted: (CalendarDay) -> Unit) {
+        val id = mutableState.value.confirmingStart ?: return
+        cancelStart()
         val plan = shown.firstOrNull { it.id == id } ?: return
         val shownTo = shownFor
         writes.launch {

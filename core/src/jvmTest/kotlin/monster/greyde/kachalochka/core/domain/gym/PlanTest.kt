@@ -62,4 +62,16 @@ class PlanTest {
             plannedWithoutSets(listOf(PRESS, ROW, squat, ROW), sets, setOf(PRESS, ROW)),
         )
     }
+
+    @Test
+    fun a_visit_lists_its_machines_by_first_set_then_the_planned_ones() {
+        val sets =
+            listOf(
+                set(VISIT_A, 60.0, atSeconds = 0, machine = ROW),
+                set(VISIT_A, 70.0, atSeconds = 1, machine = PRESS),
+                set(VISIT_A, 65.0, atSeconds = 2, machine = ROW),
+            )
+
+        assertEquals(listOf(ROW, PRESS, squat), visitMachines(sets, listOf(PRESS, squat)))
+    }
 }

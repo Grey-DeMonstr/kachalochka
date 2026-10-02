@@ -54,12 +54,13 @@ class PlansViewModelTest {
                 gym.sync,
             )
         assertEquals(1, vm.state.value.rows.size)
+        vm.askToStart(legs.id)
         val reload = CompletableDeferred<Unit>()
         gym.machines.readGate = reload
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
         var started = false
 
-        vm.start(legs.id) { started = true }
+        vm.start { started = true }
         reload.complete(Unit)
 
         assertFalse(started)

@@ -7,14 +7,20 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.PLAN_NAME_LENGTH
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.PlanRepository
+import monster.greyde.kachalochka.core.domain.gym.VisitRepository
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.shownOn
+import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.OwnMachines
 import monster.greyde.kachalochka.ui.machine.ShownMachines
@@ -36,10 +42,17 @@ data class PlanMachineUi(
     val photo: Photo?,
 )
 
-/** Edits stay in the form until saved; a switch of account closes it unsaved. */
+/**
+ * Edits stay in the form until saved; a switch of account closes it unsaved. A new plan starts
+ * with the machines of the account's visit on [fromVisit], when given.
+ */
 class PlanFormViewModel(
     private val planId: PlanId?,
+    private val fromVisit: CalendarDay?,
     private val plans: PlanRepository,
+    private val visits: VisitRepository,
+    private val sets: WorkoutSetRepository,
+    private val utcOffset: UtcOffset,
     private val accounts: Accounts,
     private val clock: Clock,
     private val catalogue: MachineCatalogue,
@@ -84,6 +97,9 @@ class PlanFormViewModel(
             machineIds = found.machineIds
         } else if (planId != null) {
             done = true
+        } else if (fromVisit != null) {
+            val shown = visits.shownOn(owner, fromVisit, sets, utcOffset::at)
+            if (shown != null) machineIds = visitMachines(shown.sets, shown.visit.planned)
         }
         publish()
     }

@@ -519,6 +519,8 @@ class AppTest {
             waitForIdle()
             onNodeWithText("Начать").performClick()
             waitForIdle()
+            onNodeWithTag("confirm-start-plan").performClick()
+            waitForIdle()
 
             onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
             onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Запланировано")

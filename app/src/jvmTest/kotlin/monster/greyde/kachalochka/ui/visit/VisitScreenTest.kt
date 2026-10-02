@@ -206,6 +206,28 @@ class VisitScreenTest {
     }
 
     @Test
+    fun the_menu_saves_the_visit_as_a_plan() {
+        var saves = 0
+        runScreenTest(gym, screen = { visitScreen(onSaveAsPlan = { saves++ }) }) {
+            waitForIdle()
+            onNodeWithTag("visit-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("save-as-plan").assertTextEquals("Сохранить как план").performClick()
+            waitForIdle()
+        }
+        assertEquals(1, saves)
+    }
+
+    @Test
+    fun an_empty_visit_offers_no_plan() {
+        runBlocking { gym.sets.upsert(recorded.copy(deleted = true)) }
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("visit-menu").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun the_visit_screen_speaks_english() =
         runScreenTestInEnglish(gym, screen = { visitScreen() }) {
             waitForIdle()
@@ -862,6 +884,7 @@ class VisitScreenTest {
         onOpenMachineSettings: (MachineId) -> Unit = {},
         onOpenStatistics: (MachineId) -> Unit = {},
         onBack: () -> Unit = {},
+        onSaveAsPlan: () -> Unit = {},
     ) = VisitScreen(
         day = day,
         pickedMachineId = picked,
@@ -871,5 +894,6 @@ class VisitScreenTest {
         onPickMachine = onPickMachine,
         onOpenMachineSettings = onOpenMachineSettings,
         onOpenStatistics = onOpenStatistics,
+        onSaveAsPlan = onSaveAsPlan,
     )
 }

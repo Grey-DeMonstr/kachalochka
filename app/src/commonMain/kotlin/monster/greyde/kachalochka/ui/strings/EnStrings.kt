@@ -116,6 +116,10 @@ object EnStrings : Strings {
     override val deletePlan = "Delete plan"
     override val deletePlanTitle = "Delete the plan?"
     override val deletePlanText = "The plan will disappear from the list."
+    override val startPlanTitle = "Start the plan?"
+    override val startPlanText =
+        "Its machines will be added to today's visit, and the plan will disappear from the list."
+    override val saveAsPlan = "Save as plan"
     override val reps = "reps"
     override val comment = "Comment"
     override val deleteSet = "Delete set"

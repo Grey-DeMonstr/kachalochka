@@ -188,6 +188,7 @@ fun App() {
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onAddMachine = { navController.navigate(MachinePickerRoute()) },
                         onDone = { navController.popBackStack() },
+                        fromVisit = route.fromVisit?.let(CalendarDay::parse),
                     )
                 }
                 composable<MeasuresRoute> {
@@ -283,6 +284,9 @@ fun App() {
                             )
                         },
                         onOpenStatistics = { navController.navigate(StatisticsRoute(it.value)) },
+                        onSaveAsPlan = {
+                            navController.navigate(PlanRoute(fromVisit = route.day))
+                        },
                     )
                 }
                 composable<MachinePickerRoute> { entry ->

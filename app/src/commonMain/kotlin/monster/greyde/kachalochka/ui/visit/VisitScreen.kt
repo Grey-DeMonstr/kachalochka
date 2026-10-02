@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.ui.visit
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,8 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +23,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +71,7 @@ fun VisitScreen(
     onPickMachine: (selected: MachineId?) -> Unit,
     onOpenMachineSettings: (MachineId) -> Unit,
     onOpenStatistics: (MachineId) -> Unit = {},
+    onSaveAsPlan: () -> Unit = {},
 ) {
     val viewModel: VisitViewModel = koinViewModel { parametersOf(day) }
     val accountsViewModel: AccountsViewModel = koinViewModel()
@@ -117,6 +124,9 @@ fun VisitScreen(
                     viewModel::share,
                     Modifier.testTag("share-visit"),
                 )
+            }
+            if (current != null && current.groups.isNotEmpty() && !current.ordering) {
+                VisitMenu(onSaveAsPlan)
             }
         },
     ) {
@@ -427,6 +437,29 @@ internal fun SetRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).testTag("set-comment-${row.id.value}"),
+            )
+        }
+    }
+}
+
+@Composable
+private fun VisitMenu(onSaveAsPlan: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        SquareIconButton(
+            PhosphorIcons.DotsThreeVertical,
+            strings().more,
+            { expanded = true },
+            Modifier.testTag("visit-menu"),
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(strings().saveAsPlan) },
+                onClick = {
+                    expanded = false
+                    onSaveAsPlan()
+                },
+                modifier = Modifier.testTag("save-as-plan"),
             )
         }
     }
