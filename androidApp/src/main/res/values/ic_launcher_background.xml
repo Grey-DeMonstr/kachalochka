@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The outer ring of the icon's badge, so any launcher mask shape continues it. -->
+    <color name="ic_launcher_background">#1C0704</color>
+</resources>

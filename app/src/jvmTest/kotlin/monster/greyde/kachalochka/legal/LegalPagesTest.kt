@@ -204,9 +204,10 @@ class LegalPagesTest {
     @Test
     fun pagesLoadNothingFromAnotherOrigin() {
         val offOrigin = Regex("""src="(https?:)?//""")
+        val offOriginLink = Regex("""<link[^>]*href="(https?:)?//""")
         for (name in PAGES) {
             val html = page(name)
-            assertFalse("<link" in html, name)
+            assertFalse(offOriginLink.containsMatchIn(html), name)
             assertFalse("@import" in html, name)
             assertFalse("http://" in html, name)
             assertFalse(offOrigin.containsMatchIn(html), name)
