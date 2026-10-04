@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.friends
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.components.Rule
@@ -39,6 +41,7 @@ fun FriendVisitScreen(
     day: CalendarDay,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenMachine: (MachineId) -> Unit,
 ) {
     val viewModel: FriendVisitViewModel = koinViewModel { parametersOf(member, name, day) }
     LaunchedEffect(Unit) { viewModel.speak() }
@@ -65,13 +68,16 @@ fun FriendVisitScreen(
         if (offline) {
             OfflineNotice(onRetry = viewModel::refresh)
         } else if (current != null) {
-            FriendVisitList(current)
+            FriendVisitList(current, onOpenMachine)
         }
     }
 }
 
 @Composable
-private fun FriendVisitList(state: FriendVisitUiState) {
+private fun FriendVisitList(
+    state: FriendVisitUiState,
+    onOpenMachine: (MachineId) -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
     Column(
         Modifier
@@ -106,6 +112,7 @@ private fun FriendVisitList(state: FriendVisitUiState) {
             Row(
                 Modifier
                     .fillMaxWidth()
+                    .clickable { onOpenMachine(group.machineId) }
                     .padding(vertical = 12.dp)
                     .testTag("friend-group-$id"),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),

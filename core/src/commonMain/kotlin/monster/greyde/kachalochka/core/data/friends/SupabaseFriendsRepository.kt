@@ -53,6 +53,9 @@ private const val NOT_FOUND = 404
 
 private const val FRIEND_RESULTS = 3
 
+/** The project's `max_rows`: a page this long may be cut, a shorter one is the last. */
+private const val SETS_PAGE = 1000L
+
 /**
  * One implementation for both platforms (tech spec §3): friends are read online and nothing here
  * is written to SQLite. Row-level security decides whose rows come back, so every read names the
@@ -156,6 +159,31 @@ class SupabaseFriendsRepository(
             eq("visit_id", visit.id.value)
             eq("user_id", owner.value)
         }.sortedWith(visitOrder)
+    }
+
+    /** Paged past the row cap, as the web reads an account's own sets (tech spec §4.7). */
+    override suspend fun setsOn(
+        member: UserId,
+        machine: MachineId,
+    ): List<WorkoutSet> {
+        val rows = mutableListOf<WorkoutSetRow>()
+        do {
+            val page =
+                postgrest
+                    .from(WORKOUT_SET_TABLE)
+                    .select {
+                        filter {
+                            eq("user_id", member.value)
+                            eq("machine_id", machine.value)
+                            eq("deleted", false)
+                        }
+                        order("recorded_at", Order.ASCENDING)
+                        order("id", Order.ASCENDING)
+                        range(rows.size.toLong(), rows.size + SETS_PAGE - 1)
+                    }.decodeList<WorkoutSetRow>()
+            rows += page
+        } while (page.size.toLong() == SETS_PAGE)
+        return rows.map { it.toWorkoutSet() }
     }
 
     override suspend fun machines(member: UserId): List<Machine> =

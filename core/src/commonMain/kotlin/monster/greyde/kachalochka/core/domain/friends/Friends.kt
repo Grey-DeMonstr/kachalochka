@@ -93,6 +93,12 @@ interface FriendsRepository {
     /** [visit]'s live sets in visit order. */
     suspend fun sets(visit: Visit): List<WorkoutSet>
 
+    /** Every live set of [member] on [machine], oldest first, however long the history. */
+    suspend fun setsOn(
+        member: UserId,
+        machine: MachineId,
+    ): List<WorkoutSet>
+
     suspend fun machines(member: UserId): List<Machine>
 
     /** A group mate's live photos of [machine], in [photoOrder]. */

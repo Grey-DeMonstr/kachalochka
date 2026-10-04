@@ -517,6 +517,50 @@ class SupabaseFriendsRepositoryTest {
         }
 
     @Test
+    fun a_member_s_sets_on_a_machine_are_read_past_the_row_cap_oldest_first() =
+        runTest {
+            val machine = MachineId.random()
+            val visit = VisitId.random()
+            val firstPage = (0 until 1000).map { olegSet(visit, machine, 80.0, it) }
+            val last = olegSet(visit, machine, 85.0, 1000)
+            val engine = MockEngine.Queue()
+            engine.answer(Json.encodeToString(firstPage.map(WorkoutSetRow::of)))
+            engine.answer(Json.encodeToString(listOf(WorkoutSetRow.of(last))))
+
+            assertEquals(firstPage + last, repositoryOn(engine).setsOn(OLEG, machine))
+
+            val (first, second) = engine.requestHistory
+            listOf(first, second).forEach {
+                assertEquals("workout_set", it.table())
+                assertEquals("eq.${OLEG.value}", it.url.parameters["user_id"])
+                assertEquals("eq.${machine.value}", it.url.parameters["machine_id"])
+                assertEquals("eq.false", it.url.parameters["deleted"])
+                val order = it.url.parameters["order"].orEmpty()
+                assertTrue(order.startsWith("recorded_at.asc") && ",id.asc" in order, order)
+            }
+            assertEquals(
+                "0" to "1000",
+                first.url.parameters["offset"] to first.url.parameters["limit"],
+            )
+            assertEquals(
+                "1000" to "1000",
+                second.url.parameters["offset"] to second.url.parameters["limit"],
+            )
+        }
+
+    @Test
+    fun a_short_page_of_a_member_s_sets_ends_the_read() =
+        runTest {
+            val machine = MachineId.random()
+            val set = olegSet(VisitId.random(), machine, 80.0, 0)
+            val engine = MockEngine.Queue()
+            engine.answer(Json.encodeToString(listOf(WorkoutSetRow.of(set))))
+
+            assertEquals(listOf(set), repositoryOn(engine).setsOn(OLEG, machine))
+            assertEquals(1, engine.requestHistory.size)
+        }
+
+    @Test
     fun members_list_the_owner_first_then_everyone_by_name() =
         runTest {
             val anna = UserId("44444444-4444-4444-8444-444444444444")

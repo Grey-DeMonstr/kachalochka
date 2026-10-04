@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.ui.machine
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -28,7 +29,10 @@ import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.PhotoStrip
 import monster.greyde.kachalochka.ui.photos.PhotoViewer
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
+import monster.greyde.kachalochka.ui.stats.MachineStats
+import monster.greyde.kachalochka.ui.stats.PeriodChips
 import monster.greyde.kachalochka.ui.strings.strings
+import monster.greyde.kachalochka.ui.visit.TagChip
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -72,6 +76,16 @@ fun FriendMachineScreen(
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
+                if (current.tags.isNotEmpty()) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        current.tags.forEach {
+                            TagChip(it, Modifier.testTag("friend-machine-tag-$it"))
+                        }
+                    }
+                }
                 PhotoStrip(current.photos, launchers = null, onOpen = { opened = it })
                 if (current.note.isNotBlank()) {
                     Setting(strings().setupNote, current.note, "friend-machine-note")
@@ -84,6 +98,8 @@ fun FriendMachineScreen(
                         "friend-machine-platform",
                     )
                 }
+                PeriodChips(current.period, viewModel::choosePeriod)
+                Column { MachineStats(current.stats) }
             }
             if (current.canTake) {
                 Box(Modifier.padding(16.dp)) {

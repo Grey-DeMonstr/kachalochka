@@ -12,7 +12,12 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
+import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -30,6 +35,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FriendMachineViewModelTest {
@@ -59,7 +66,32 @@ class FriendMachineViewModelTest {
             gym.currentUser,
             gym.accounts,
             gym.profiles,
+            gym.clock,
+            gym.utcOffset,
         )
+
+    /** One of Oleg's visits on his press, [daysAgo], as sets of weight to reps. */
+    private fun olegTrained(
+        daysAgo: Int,
+        vararg sets: Pair<Double, Int>,
+    ) {
+        val visit = VisitId.random()
+        on.friends.sets +=
+            sets.mapIndexed { i, (weight, reps) ->
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    OLEG.userId,
+                    visit,
+                    olegPress.id,
+                    weight,
+                    reps,
+                    i + 1,
+                    t0 - daysAgo.days + i.minutes,
+                    t0,
+                    false,
+                )
+            }
+    }
 
     @BeforeTest
     fun setUp() {
@@ -73,19 +105,90 @@ class FriendMachineViewModelTest {
     fun the_friend_s_settings_are_shown() {
         val vm = viewModel()
 
+        val state = assertNotNull(vm.state.value)
         assertEquals(
-            FriendMachineUi(
-                name = "Жим ногами",
-                owner = "Олег",
-                note = "Спинка на 4",
-                caption = "кг на сторону · ±5",
-                platform = "25 кг · рядом с названием",
-                canTake = true,
-            ),
-            vm.state.value,
+            listOf("Жим ногами", "Олег", "Спинка на 4", "кг на сторону · ±5"),
+            listOf(state.name, state.owner, state.note, state.caption),
         )
+        assertEquals("25 кг · рядом с названием", state.platform)
+        assertTrue(state.canTake)
         assertFalse(vm.offline.value)
     }
+
+    @Test
+    fun the_friend_s_tags_are_shown_in_their_order() {
+        on.friends.machines.clear()
+        on.friends.machines += olegPress.copy(tags = setOf("Ноги", "База"))
+
+        assertEquals(listOf("База", "Ноги"), viewModel().state.value?.tags)
+    }
+
+    @Test
+    fun the_photo_the_friend_chose_is_the_cover_else_the_first() {
+        val first = Photo.new(olegPress.id, OLEG.userId, t0)
+        val second = Photo.new(olegPress.id, OLEG.userId, t0 + 1.minutes)
+        on.friends.photos += listOf(first, second)
+        on.friends.machines.clear()
+        on.friends.machines += olegPress.copy(coverPhoto = second.id)
+
+        assertEquals(
+            listOf(first.id.value to false, second.id.value to true),
+            viewModel()
+                .state.value
+                ?.photos
+                ?.map { it.key to it.cover },
+        )
+
+        on.friends.machines.clear()
+        on.friends.machines += olegPress
+        assertEquals(
+            listOf(true, false),
+            viewModel()
+                .state.value
+                ?.photos
+                ?.map { it.cover },
+        )
+    }
+
+    @Test
+    fun the_friend_s_statistics_on_the_machine_read_as_the_viewer_s_own_would() {
+        olegTrained(40, 70.0 to 10)
+        olegTrained(1, 80.0 to 8, 85.0 to 6)
+        val vm = viewModel()
+
+        val month = assertNotNull(vm.state.value).stats
+        assertEquals("Лучший подход · с 14 октября", month.title)
+        assertEquals("85 кг × 6", month.best)
+        assertEquals(listOf(on.today.plusDays(-1) to 85.0), month.points)
+        assertEquals(
+            listOf("13 ноября" to "80-85кг на каждую, 8-6", "5 октября" to "70кг на каждую, 1x10"),
+            month.history.map { it.date to it.results },
+        )
+
+        val reads = on.friends.reads
+        vm.choosePeriod(StatsPeriod.ThreeMonths)
+
+        val quarter = assertNotNull(vm.state.value)
+        assertEquals(StatsPeriod.ThreeMonths, quarter.period)
+        assertEquals("Лучший подход · с 14 августа", quarter.stats.title)
+        assertEquals(2, quarter.stats.points.size)
+        // The period is chosen over what was read: no second round trip.
+        assertEquals(reads, on.friends.reads)
+    }
+
+    @Test
+    fun the_friend_s_statistics_read_in_the_viewer_s_unit() =
+        runTest {
+            olegTrained(1, 80.0 to 8, 85.0 to 6)
+            on.profiles.upsert(
+                Profile.new(ME.userId, t0).copy(weightUnit = PreferredWeightUnit.Lb),
+            )
+
+            val stats = assertNotNull(viewModel().state.value).stats
+
+            assertEquals("187.5 lb × 6", stats.best)
+            assertEquals("176.5-187.5lb на каждую, 8-6", stats.history.single().results)
+        }
 
     @Test
     fun the_friend_s_weights_read_in_the_viewer_s_unit() =

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.runScreenTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -22,7 +23,7 @@ class FriendVisitScreenTest {
     @Test
     fun a_friend_s_visit_is_read_only() {
         runScreenTest(gym, screen = {
-            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {})
+            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {}, {})
         }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Олег")
             onNodeWithTag("friend-visit-day").assertTextEquals("Понедельник, 13 ноября")
@@ -39,9 +40,21 @@ class FriendVisitScreenTest {
     }
 
     @Test
+    fun tapping_a_machine_opens_the_friend_s_machine() {
+        val opened = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {}, { opened += it })
+        }) {
+            onNodeWithTag("friend-group-${fixture.olegPress.id.value}").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(fixture.olegPress.id), opened)
+    }
+
+    @Test
     fun a_friend_s_machine_shows_its_results_as_an_own_row_does() {
         runScreenTest(gym, screen = {
-            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {})
+            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {}, {})
         }) {
             onNodeWithTag("group-summary-${fixture.olegPress.id.value}")
                 .assertTextEquals("80-85кг", "8-6")
@@ -52,7 +65,7 @@ class FriendVisitScreenTest {
     fun offline_it_offers_a_retry() {
         gym.friends.offline = true
         runScreenTest(gym, screen = {
-            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {})
+            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {}, {})
         }) {
             onNodeWithTag("friends-offline").assertTextEquals("Нет связи с сервером")
             gym.friends.offline = false

@@ -198,11 +198,14 @@ machine form; "Добавить" adds one. Saving returns to the list. Signed in
 friends' machines follow once the server answers: one section per friend, headed by their avatar
 (or their initial in their calendar colour), name and machine count, one machine per physical
 machine that is not yet the same machine as one of the account's. Tapping one opens "Упражнение
-друга", its settings to read — name, owner, photos, setup note, how its weight is counted and its
-platform — with "Взять себе", which saves the account's own copy linked to it (see Group sharing)
-and opens that copy in the machine form; a machine already linked to one of the account's,
-directly or through friends' links, is shown without it. Offline that view says "Нет связи с
-сервером" and offers a retry.
+друга", the friend's machine to read: its name and owner, its tags, its photos with the one the
+friend chose starred, its setup note, how its weight is counted and its platform, then the
+friend's statistics on it as the statistics screen shows a machine's — the period chips, the
+period's best set, the chart and "Все результаты" — in the viewer's unit. Nothing on it can be
+edited. "Взять себе" saves the account's own copy linked to it (see Group sharing) and opens that
+copy in the machine form; a machine already linked to one of the account's, directly or through
+friends' links, is shown without it. Offline that view says "Нет связи с сервером" and offers a
+retry.
 
 The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
 visit are marked, today and the chosen day are highlighted, and future days cannot be chosen. Below
@@ -221,9 +224,10 @@ account's own dot, at most four dots a day. Below the chosen day's own visit is 
 who trained that day, drawn as the own one — the friend's avatar, or their initial in their colour,
 then, once read, the day's tags and machines; tapping it opens that friend's visit, read-only: the
 friend's avatar and name in the top bar, the day and how many machines they did, then one row per
-machine as on the visit screen — photo, name, tags, comment and results — without its sets. Friends
-are read again on entering the calendar, on changing the month and after switching accounts;
-without a network the calendar shows only the account's own visits. Each friend gets a colour at
+machine as on the visit screen — photo, name, tags, comment and results — without its sets; a
+row opens "Упражнение друга" for that machine. Friends are read again on entering the calendar,
+on changing the month and after switching accounts; without a network the calendar shows only
+the account's own visits. Each friend gets a colour at
 random at first, and the account can change it on the group screen. The colours are personal to the
 account: friends never see them, and they follow the account to its other devices.
 

@@ -371,6 +371,9 @@ fun App() {
                         day = CalendarDay.parse(route.day),
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenMachine = {
+                            navController.navigate(FriendMachineRoute(it.value, route.userId))
+                        },
                     )
                 }
                 composable<FriendCalendarRoute> { entry ->

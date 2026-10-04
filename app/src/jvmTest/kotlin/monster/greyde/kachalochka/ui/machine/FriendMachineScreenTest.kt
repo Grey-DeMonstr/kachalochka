@@ -10,12 +10,17 @@ import androidx.compose.ui.test.performClick
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalTestApi::class)
 class FriendMachineScreenTest {
@@ -63,6 +68,47 @@ class FriendMachineScreenTest {
 
             onNodeWithTag("photo-viewer").assertExists()
             onNodeWithTag("delete-photo").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun the_tags_the_starred_cover_and_the_statistics_are_the_friend_s() {
+        val first = Photo.new(olegPress.id, OLEG.userId, on.clock.current)
+        val second = Photo.new(olegPress.id, OLEG.userId, on.clock.current + 1.minutes)
+        on.friends.photos += listOf(first, second)
+        on.friends.machines.clear()
+        on.friends.machines += olegPress.copy(tags = setOf("Ноги"), coverPhoto = second.id)
+        val visit = VisitId.random()
+        on.friends.sets +=
+            listOf(80.0 to 8, 85.0 to 6).mapIndexed { i, (weight, reps) ->
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    OLEG.userId,
+                    visit,
+                    olegPress.id,
+                    weight,
+                    reps,
+                    i + 1,
+                    on.clock.current - 1.days + i.minutes,
+                    on.clock.current,
+                    false,
+                )
+            }
+        runScreenTest(on, screen = {
+            FriendMachineScreen(olegPress.id, OLEG.userId, {}, {}, {})
+        }) {
+            onNodeWithTag("friend-machine-tag-Ноги").assertTextEquals("Ноги")
+            onAllNodesWithTag("photo-cover", useUnmergedTree = true).assertCountEquals(1)
+            onNodeWithTag("stats-chart-title").assertTextEquals("ЛУЧШИЙ ПОДХОД · С 14 ОКТЯБРЯ")
+            onNodeWithTag("stats-best").assertTextEquals("85 кг × 6")
+            onNodeWithTag("stats-history-date-0").assertTextEquals("13 ноября")
+            onNodeWithTag("stats-history-results-0").assertTextEquals("80-85кг 8-6")
+            onAllNodes(hasSetTextAction()).assertCountEquals(0)
+
+            onNodeWithTag("period-threemonths").performClick()
+            waitForIdle()
+
+            onNodeWithTag("stats-chart-title").assertTextEquals("ЛУЧШИЙ ПОДХОД · С 14 АВГУСТА")
         }
     }
 

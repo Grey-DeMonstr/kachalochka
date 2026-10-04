@@ -16,15 +16,11 @@ import monster.greyde.kachalochka.core.domain.gym.MachineProgress
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
 import monster.greyde.kachalochka.core.domain.gym.StatsSort
-import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
-import monster.greyde.kachalochka.core.domain.gym.bestPerDay
-import monster.greyde.kachalochka.core.domain.gym.bestSet
 import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.machineProgress
 import monster.greyde.kachalochka.core.domain.gym.statsOrder
-import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.gym.weightGain
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -36,7 +32,6 @@ import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.headedTagSections
 import monster.greyde.kachalochka.ui.format.setValue
-import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.shownLabel
 import monster.greyde.kachalochka.ui.format.shownWeight
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
@@ -62,22 +57,6 @@ data class ProgressCardUi(
     val to: String,
     val change: String,
     val improved: Boolean,
-)
-
-data class HistoryRowUi(
-    val date: String,
-    val results: String,
-)
-
-/** [points] are each day's best weight, negative on a gravitron, over [start]..[end]. */
-data class MachineStatsUi(
-    val title: String,
-    val best: String?,
-    val points: List<Pair<CalendarDay, Double>>,
-    val start: CalendarDay,
-    val end: CalendarDay,
-    val zeroOnTop: Boolean,
-    val history: List<HistoryRowUi>,
 )
 
 /** A run of [items] under the tags in [title]; without grouping, one section titled null. */
@@ -215,7 +194,17 @@ class StatisticsViewModel(
                     } else {
                         emptyList()
                     },
-                machine = machine?.let { machineStats(it, start, today, periodLabel) },
+                machine =
+                    machine?.let {
+                        machineStatsUi(
+                            it,
+                            setsByMachine[it.id].orEmpty(),
+                            period,
+                            today,
+                            preferred,
+                            utcOffset,
+                        )
+                    },
             )
     }
 
@@ -232,11 +221,6 @@ class StatisticsViewModel(
                 }
             else -> listOf(StatsSectionUi(null, machines.map(item)))
         }
-
-    private fun periodLabel(
-        start: CalendarDay,
-        today: CalendarDay,
-    ): String = AppStrings.current.sinceDay(dayMonthLabel(start, today.year))
 
     private fun card(
         machine: Machine,
@@ -293,48 +277,5 @@ class StatisticsViewModel(
             reps < 0 -> strings.fewerReps(-reps) to false
             else -> strings.noChange to false
         }
-    }
-
-    private fun machineStats(
-        machine: Machine,
-        start: CalendarDay,
-        today: CalendarDay,
-        periodLabel: String,
-    ): MachineStatsUi {
-        val onMachine = setsByMachine[machine.id].orEmpty()
-        val strings = AppStrings.current
-        val counterweight = machine.weightMode == WeightMode.Counterweight
-        val inPeriod =
-            bestPerDay(onMachine, machine.weightMode, utcOffset::at).filter { it.first >= start }
-        val best = bestSet(inPeriod.map { it.second }, machine.weightMode)
-        val sign = if (counterweight) -1 else 1
-        return MachineStatsUi(
-            title =
-                listOfNotNull(
-                    strings.bestSetTitle,
-                    strings.counterweightTitle.takeIf { counterweight },
-                    periodLabel,
-                ).joinToString(" · "),
-            best = best?.let { setValue(it.weight, it.reps, machine, preferred) },
-            points =
-                inPeriod.map { (day, set) ->
-                    day to sign * shownWeight(set.weight, machine, preferred)
-                },
-            start = start,
-            end = today,
-            zeroOnTop = counterweight,
-            history =
-                onMachine
-                    .groupBy { it.visitId }
-                    .values
-                    .sortedByDescending { visit -> visit.maxOf { it.recordedAt } }
-                    .map { visit ->
-                        val first = visit.minOf { it.recordedAt }
-                        HistoryRowUi(
-                            dayMonthLabel(CalendarDay.of(first, utcOffset.at(first)), today.year),
-                            setsSummary(machine, visit.sortedWith(visitOrder), preferred),
-                        )
-                    },
-        )
     }
 }

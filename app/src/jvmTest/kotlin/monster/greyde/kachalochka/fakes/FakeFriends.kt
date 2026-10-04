@@ -158,6 +158,16 @@ class FakeFriends(
                 .sortedWith(visitOrder)
         }
 
+    override suspend fun setsOn(
+        member: UserId,
+        machine: MachineId,
+    ) = online {
+        if (!visibleMember(member)) return@online emptyList()
+        sets
+            .filter { it.userId == member && it.machineId == machine && !it.deleted }
+            .sortedWith(compareBy<WorkoutSet> { it.recordedAt }.thenBy { it.id.value })
+    }
+
     override suspend fun machines(member: UserId) =
         online {
             if (!visibleMember(member)) return@online emptyList()

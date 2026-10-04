@@ -608,6 +608,12 @@ read, so the page size must not exceed `max_rows`. The chart is Vico, its x rang
 whole period and its y range hugging the values as on the measure screen, except that a
 gravitron's negative weights keep zero on top.
 
+A machine's statistics — the period's best set, the chart's points and the history — are built by
+`machineStatsUi` in `ui/stats` and drawn by `MachineStats`, so "Упражнение друга" shows a
+friend's machine through the same two, over the friend's live sets on it read with
+`FriendsRepository.setsOn`, paged the same way. The friend's machine carries the unit the sets
+are in, and the viewer's preference converts them as everywhere else.
+
 ---
 
 ## 5. Backend

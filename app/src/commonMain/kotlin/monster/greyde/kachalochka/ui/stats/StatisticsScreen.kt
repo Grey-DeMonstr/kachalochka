@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,7 +39,6 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
-import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
 import monster.greyde.kachalochka.core.domain.gym.StatsSort
 import monster.greyde.kachalochka.ui.components.ChipRow
 import monster.greyde.kachalochka.ui.components.Screen
@@ -53,7 +51,6 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 private val CardShape = RoundedCornerShape(12.dp)
-private val BoxShape = RoundedCornerShape(8.dp)
 
 /** Opens on [initial], or on "Общая" when it is null. */
 @Composable
@@ -199,24 +196,6 @@ private fun ChoiceThumbnail(
         if (overall) PhosphorIcons.ChartLineUp else PhosphorIcons.Barbell,
         size = size.dp,
     )
-}
-
-@Composable
-private fun PeriodChips(
-    chosen: StatsPeriod,
-    onChoose: (StatsPeriod) -> Unit,
-) {
-    val s = strings()
-    ChipRow(
-        listOf(
-            StatsPeriod.Month to s.statsMonth,
-            StatsPeriod.ThreeMonths to s.statsThreeMonths,
-            StatsPeriod.SixMonths to s.statsSixMonths,
-            StatsPeriod.Year to s.statsYear,
-        ),
-        chosen,
-        onChoose,
-    ) { "period-${it.name.lowercase()}" }
 }
 
 @Composable
@@ -385,72 +364,4 @@ private fun SetBox(
             color = colors.onBackground,
         )
     }
-}
-
-@Composable
-private fun MachineStats(machine: MachineStatsUi) {
-    val colors = MaterialTheme.colorScheme
-    Row(
-        Modifier.fillMaxWidth().padding(bottom = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        SectionLabel(machine.title, Modifier.weight(1f).testTag("stats-chart-title"))
-        machine.best?.let {
-            Text(
-                it,
-                modifier = Modifier.testTag("stats-best"),
-                fontSize = 14.sp,
-                color = colors.onBackground.copy(alpha = 0.7f),
-            )
-        }
-    }
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(230.dp)
-            .clip(BoxShape)
-            .border(1.dp, colors.outlineVariant, BoxShape)
-            .padding(start = 4.dp, end = 8.dp, top = 12.dp, bottom = 6.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (machine.points.isEmpty()) {
-            Muted(strings().noSetsInPeriod, Modifier.testTag("stats-empty"))
-        } else {
-            StatsChart(machine.points, machine.start, machine.end, machine.zeroOnTop)
-        }
-    }
-    SectionLabel(strings().allResults, Modifier.padding(top = 24.dp, bottom = 8.dp))
-    machine.history.forEachIndexed { i, row ->
-        Row(
-            Modifier.fillMaxWidth().padding(vertical = 11.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                row.date,
-                modifier = Modifier.width(112.dp).testTag("stats-history-date-$i"),
-                fontSize = 14.sp,
-                color = colors.onBackground.copy(alpha = 0.55f),
-            )
-            Text(
-                row.results,
-                modifier = Modifier.testTag("stats-history-results-$i"),
-                fontSize = 15.sp,
-                color = colors.onBackground,
-            )
-        }
-    }
-}
-
-@Composable
-private fun Muted(
-    text: String,
-    modifier: Modifier,
-) {
-    Text(
-        text,
-        modifier = modifier,
-        fontSize = 14.sp,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-    )
 }
