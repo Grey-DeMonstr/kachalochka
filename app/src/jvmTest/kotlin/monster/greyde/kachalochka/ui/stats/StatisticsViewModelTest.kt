@@ -238,12 +238,15 @@ class StatisticsViewModelTest {
 
             assertTrue(vm.state.value.groupByTag)
             assertEquals(
-                listOf("Ноги" to listOf("Жим ногами"), null to listOf("Тяга")),
+                listOf("Ноги" to listOf("Жим ногами"), "Остальное" to listOf("Тяга")),
                 vm.state.value.overallSections
                     .map { s -> s.title to s.items.map { it.name } },
             )
             assertEquals(
-                listOf("Ноги" to listOf("Жим ногами", "Гравитрон"), null to listOf("Тяга")),
+                listOf(
+                    "Ноги" to listOf("Жим ногами", "Гравитрон"),
+                    "Остальное" to listOf("Тяга"),
+                ),
                 vm.state.value.choiceSections
                     .map { s -> s.title to s.items.map { it.name } },
             )

@@ -762,7 +762,7 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun grouped_the_visit_splits_by_tag_set_with_untagged_machines_last() =
+    fun grouped_the_visit_splits_by_tag_set_with_untagged_machines_last_under_other() =
         runTest {
             taggedVisit(grouped = true)
             val vm = viewModel().also { it.refresh() }
@@ -771,7 +771,7 @@ class VisitViewModelTest {
                 listOf(
                     "Жим, Ноги" to listOf(press.id),
                     "Руки" to listOf(curl.id),
-                    null to listOf(row.id),
+                    "Остальное" to listOf(row.id),
                 ),
                 assertNotNull(vm.state.value).sectionIds(),
             )
@@ -840,7 +840,7 @@ class VisitViewModelTest {
 
             assertEquals(
                 "вт\n\nЖим, Ноги\nЖим ногами (+20кг) 80кг 1x8\n\nРуки\nБицепс 14кг 1x12\n\n" +
-                    "Тяга верхнего блока 45кг 1x12",
+                    "Остальное\nТяга верхнего блока 45кг 1x12",
                 gym.texts.shared.single(),
             )
         }

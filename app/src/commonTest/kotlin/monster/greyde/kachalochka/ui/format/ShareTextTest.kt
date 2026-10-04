@@ -300,7 +300,7 @@ class ShareTextTest {
     }
 
     @Test
-    fun grouped_by_tag_the_text_splits_into_headed_sections_untagged_last() {
+    fun grouped_by_tag_the_text_splits_into_headed_sections_untagged_last_under_other() {
         val press = machine("Жим ногами", platform = 76.0).copy(tags = setOf("Ноги"))
         val curl = machine("Бицепс").copy(tags = setOf("Руки"))
         val abs = machine("Пресс сидя")
@@ -315,7 +315,7 @@ class ShareTextTest {
 
         assertEquals(
             "ГДМ, чт\n\nНоги\nЖим ногами (+76кг) 20-30кг 2x10\n\nРуки\nБицепс 14кг 1x12\n" +
-                "Трицепс 5кг 1x10\n\nПресс сидя 41кг 1x10",
+                "Трицепс 5кг 1x10\n\nОстальное\nПресс сидя 41кг 1x10",
             visitShareText("ГДМ", thursday, shared, kg, groupByTag = true),
         )
     }

@@ -82,7 +82,7 @@ machine and set; dragging a machine's handle moves the machine with its sets, dr
 handle moves it among its machine's sets. While it is on, "Готово" replaces "Добавить" at the end
 of the list, and it or the button again hides the handles. When a machine of the visit has tags,
 "Группировать по тегам" splits the list into sections, one per distinct set of tags, headed by the
-tags and in the order of their first machine; untagged machines come last without a heading. The
+tags and in the order of their first machine; untagged machines come last under "Остальное". The
 choice is the account's, saved in its profile and synced, and ordering shows the plain list.
 
 A machine's page covers the list. Its top bar has a chart button opening the machine's statistics

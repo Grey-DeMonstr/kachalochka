@@ -103,6 +103,7 @@ object EnStrings : Strings {
 
     override val share = "Share"
     override val groupByTag = "Group by tag"
+    override val untaggedSection = "Other"
     override val planned = "Planned"
     override val unplan = "Remove"
     override val noPlansYet = "No plans yet"

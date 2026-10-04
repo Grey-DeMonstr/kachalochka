@@ -24,7 +24,6 @@ import monster.greyde.kachalochka.core.domain.gym.bestSet
 import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.machineProgress
 import monster.greyde.kachalochka.core.domain.gym.statsOrder
-import monster.greyde.kachalochka.core.domain.gym.tagSections
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.gym.weightGain
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -35,11 +34,11 @@ import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
+import monster.greyde.kachalochka.ui.format.headedTagSections
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.shownLabel
 import monster.greyde.kachalochka.ui.format.shownWeight
-import monster.greyde.kachalochka.ui.format.tagTitle
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.OwnMachines
 import monster.greyde.kachalochka.ui.machine.ShownMachines
@@ -228,11 +227,8 @@ class StatisticsViewModel(
         when {
             machines.isEmpty() -> emptyList()
             grouping.current ->
-                tagSections(machines) { it.tags }.map { section ->
-                    StatsSectionUi(
-                        section.tags.takeIf { it.isNotEmpty() }?.let(::tagTitle),
-                        section.items.map(item),
-                    )
+                headedTagSections(machines) { it.tags }.map { (title, items) ->
+                    StatsSectionUi(title, items.map(item))
                 }
             else -> listOf(StatsSectionUi(null, machines.map(item)))
         }

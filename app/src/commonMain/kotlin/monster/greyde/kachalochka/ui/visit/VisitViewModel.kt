@@ -35,7 +35,6 @@ import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.stepReps
 import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
-import monster.greyde.kachalochka.core.domain.gym.tagSections
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -52,6 +51,7 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
+import monster.greyde.kachalochka.ui.format.headedTagSections
 import monster.greyde.kachalochka.ui.format.machineTitle
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.platformSuffix
@@ -61,7 +61,6 @@ import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.setsSummaryParts
-import monster.greyde.kachalochka.ui.format.tagTitle
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.format.weekdayDate
@@ -744,11 +743,8 @@ class VisitViewModel(
 
     private fun sections(groups: List<SetGroupUi>): List<VisitSectionUi> =
         if (groupByTag && !ordering) {
-            tagSections(groups) { it.tags.toSet() }.map { section ->
-                VisitSectionUi(
-                    section.tags.takeIf { it.isNotEmpty() }?.let(::tagTitle),
-                    section.items,
-                )
+            headedTagSections(groups) { it.tags.toSet() }.map { (title, items) ->
+                VisitSectionUi(title, items)
             }
         } else {
             listOf(VisitSectionUi(null, groups))

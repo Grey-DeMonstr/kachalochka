@@ -2,7 +2,6 @@ package monster.greyde.kachalochka.ui.format
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.TagSection
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -29,23 +28,33 @@ fun visitShareText(
             .joinToString(", ")
     val shown = machines.filter { it.sets.isNotEmpty() }
     val sections =
-        if (groupByTag) {
-            tagSections(
-                shown,
-            ) { it.machine.tags }
-        } else {
-            listOf(TagSection(emptySet(), shown))
-        }
+        if (groupByTag) headedTagSections(shown) { it.machine.tags } else listOf(null to shown)
     val body =
-        sections.joinToString("\n\n") { section ->
-            val title = if (section.tags.isEmpty()) emptyList() else listOf(tagTitle(section.tags))
-            (title + section.items.map { shareLine(it, preferred) }).joinToString("\n")
+        sections.joinToString("\n\n") { (title, items) ->
+            (listOfNotNull(title) + items.map { shareLine(it, preferred) }).joinToString("\n")
         }
     return "$header\n\n$body"
 }
 
 /** A tag set's heading, the same wherever it is read. */
 fun tagTitle(tags: Set<String>): String = tags.sortedBy { it.lowercase() }.joinToString(", ")
+
+/** [tagSections] with their headings; untagged items are headed only beside tagged ones. */
+fun <T> headedTagSections(
+    items: List<T>,
+    tagsOf: (T) -> Set<String>,
+): List<Pair<String?, List<T>>> {
+    val sections = tagSections(items, tagsOf)
+    return sections.map { section ->
+        val title =
+            when {
+                section.tags.isNotEmpty() -> tagTitle(section.tags)
+                sections.size > 1 -> AppStrings.current.untaggedSection
+                else -> null
+            }
+        title to section.items
+    }
+}
 
 private fun sharedUnit(
     machine: Machine,
