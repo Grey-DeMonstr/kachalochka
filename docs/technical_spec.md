@@ -753,9 +753,13 @@ repositories, a fixed clock and a ticker that only advances when the test tells 
   :app:wasmJsBrowserDistribution` — then uploads the web distribution as the Pages artifact.
   `deploy` needs `check` and publishes that same artifact to GitHub Pages on a push to `master`,
   so nothing reaches Pages that the gate has not passed.
-- **`release.yml`**: on a `v*` tag, runs `check`, then builds a signed release APK from secrets
-  and creates a GitHub Release with it attached as `kachalochka-X.Y.Z.apk`. No tag ships without
-  the gate passing.
+- **`release.yml`**: on a `v*` tag, runs `check`, then builds a signed release APK and app bundle
+  from secrets, creates a GitHub Release with the APK attached as `kachalochka-X.Y.Z.apk`, and
+  uploads the bundle to the Google Play internal testing track. No tag ships without the gate
+  passing. Promotion beyond internal testing is done by hand in the Play Console.
+- Play App Signing holds the same key that signs the GitHub APK, uploaded from the release
+  keystore. A Play install and a sideloaded one therefore upgrade each other, and Google sign-in
+  needs one Android OAuth client fingerprint. That keystore also serves as the upload key.
   `versionName` comes from the tag and `versionCode` is derived
   from it as `major * 10000 + minor * 100 + patch`, so rebuilding a tag reproduces the number it
   shipped; the release notes are that version's section of `changelog.txt`, and a tag whose

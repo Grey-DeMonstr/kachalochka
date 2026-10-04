@@ -137,7 +137,9 @@ git push origin vX.Y.Z
 
 **Order matters.** The tagged commit must be on `origin/master` before the tag
 arrives, or the release is cut from a commit nobody can see. Pushing the tag
-starts the signed build and creates the GitHub Release - both irreversible.
+starts the signed build, creates the GitHub Release and uploads the bundle to
+Google Play internal testing - all irreversible, since Play never accepts a
+version code twice.
 
 ## Quick reference
 

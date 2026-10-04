@@ -56,13 +56,22 @@ jobs:
 
       - run: ./gradlew check
 
-      - name: Build the signed APK
+      - name: Build the signed APK and app bundle
         env:
           KEYSTORE_PATH: ${{ runner.temp }}/release.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew :androidApp:assembleRelease -PversionName="${GITHUB_REF_NAME#v}"
+        run: |
+          ./gradlew :androidApp:assembleRelease :androidApp:bundleRelease \
+            -PversionName="${GITHUB_REF_NAME#v}"
+
+      # Lets a failed Play upload be retried by hand without rebuilding the tag.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: kachalochka-${{ github.ref_name }}-aab
+          path: androidApp/build/outputs/bundle/release/androidApp-release.aab
+          if-no-files-found: error
 
       - name: Name the APK after the version
         run: |
@@ -73,3 +82,14 @@ jobs:
         with:
           body_path: ${{ runner.temp }}/release-notes.txt
           files: ${{ runner.temp }}/kachalochka-*.apk
+
+      # Pinned to a commit: this action receives the service account key.
+      - name: Upload to Google Play internal testing
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: monster.greyde.kachalochka
+          releaseFiles: androidApp/build/outputs/bundle/release/androidApp-release.aab
+          # Without a track the action releases to production.
+          tracks: internal
+          status: completed
