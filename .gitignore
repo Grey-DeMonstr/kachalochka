@@ -18,3 +18,7 @@ local.properties
 build/
 .kotlin/
 **/build/
+
+# Python cache
+__pycache__/
+*.pyc
