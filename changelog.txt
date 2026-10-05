@@ -1,5 +1,11 @@
 Kachalochka - Changelog
 
+1.6.2
+
+- Linking to a friend's machine can copy its settings.
+- Fixed: a friend's machine no longer shows its unit and step converted to yours.
+
+
 1.6.1
 
 - Linking a machine starts the search with the machine's name.
