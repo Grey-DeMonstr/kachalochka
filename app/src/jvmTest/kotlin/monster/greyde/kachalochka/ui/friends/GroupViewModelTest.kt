@@ -308,7 +308,7 @@ class GroupViewModelTest {
         assertEquals(
             listOf(
                 Invite(
-                    "Зал на Лесной",
+                    "Вступай в группу «Зал на Лесной» в Качалочке",
                     "ABCD2345",
                     "https://example.test/kachalochka/?join=ABCD2345",
                 ),
@@ -326,7 +326,8 @@ class GroupViewModelTest {
 
         val vm = viewModel(group).also { it.invite() }
 
-        assertEquals(listOf(Invite("Зал на Лесной", "ABCD2345", null)), gym.invites.shared)
+        val call = "Вступай в группу «Зал на Лесной» в Качалочке"
+        assertEquals(listOf(Invite(call, "ABCD2345", null)), gym.invites.shared)
         // The share sheet speaks for itself, so the screen adds no notice.
         assertNull(assertNotNull(vm.state.value).notice)
     }

@@ -21,7 +21,7 @@ import monster.greyde.kachalochka.ui.account.sessionFromRedirect
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.joinCodeOf
 import monster.greyde.kachalochka.ui.friends.warmGroups
-import monster.greyde.kachalochka.ui.friends.withoutJoinCode
+import monster.greyde.kachalochka.ui.friends.withoutInviteCodes
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import kotlin.time.Duration.Companion.seconds
@@ -59,7 +59,7 @@ fun main() {
 private fun keepJoinCode(store: JoinCodeStore) {
     val href = window.location.href
     joinCodeOf(href)?.let(store::save)
-    val cleaned = withoutJoinCode(href)
+    val cleaned = withoutInviteCodes(href)
     if (cleaned != href) window.history.replaceState(null, "", cleaned)
 }
 

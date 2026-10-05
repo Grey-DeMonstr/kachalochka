@@ -139,7 +139,8 @@ class GroupViewModel(
         val shown = group ?: return
         writes.launch {
             val link = invites.pageAddress?.let { inviteLink(it, shown.inviteCode) }
-            val invite = Invite(shown.name, shown.inviteCode, link)
+            val call = AppStrings.current.inviteMessage(shown.name)
+            val invite = Invite(call, shown.inviteCode, link)
             notice = reading { invites.share(invite) }.getOrNull()
             publish()
         }
