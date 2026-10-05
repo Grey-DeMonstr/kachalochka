@@ -1,5 +1,17 @@
 Kachalochka - Changelog
 
+1.6.0
+
+- Statistics can show only improvements, and a new machine is marked "New machine".
+- Statistics can be exported as text.
+- A visit can be saved as a plan from the calendar.
+- The rest timer is only on a machine's page in a visit.
+- The machine form is simpler: friends' tags are with your own tags.
+- When a visit is grouped by tags, its machines do not repeat their tags.
+- Fixed: on Android, the bar at the bottom of the screen is no longer light in the dark theme.
+- Fixed: the avatar is no longer narrow in the top bar of a visit.
+
+
 1.5.0
 
 - Child accounts added: a parent can link a child's account and record the child's workouts.
