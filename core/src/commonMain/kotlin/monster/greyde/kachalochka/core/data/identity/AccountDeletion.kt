@@ -31,8 +31,18 @@ class AccountDeletion(
         check(all.none { it.userId == owner && it.guardianId != null }) {
             "A managed account cannot be deleted from the device"
         }
+        // Another signed-in parent may guard the same child; its rows stay for the family follow.
+        val onlyParent = all.none { it.userId != owner && it.guardianId == null }
         // Read first: signing out takes them off the account list.
-        val children = all.filter { it.guardianId == owner }.map { it.userId }
+        val children =
+            if (onlyParent) {
+                all
+                    .filter {
+                        it.guardianId == owner
+                    }.map { it.userId }
+            } else {
+                emptyList()
+            }
         server.deleteEverything(owner)
         purge.purge(owner)
         children.forEach { purge.purge(it) }

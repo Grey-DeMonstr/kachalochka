@@ -28,6 +28,8 @@ private class RecordingPurge(
 
 class AccountDeletionTest {
     private val ivan = accountSession("11111111-1111-4111-8111-111111111111", "Ivan")
+    private val misha = accountSession("22222222-2222-4222-8222-222222222222", "Misha")
+    private val signIns = mutableListOf(ivan)
     private val steps = mutableListOf<String>()
     private val server = RecordingServer(steps)
     private val store = PersistedAccountStore(InMemoryAccountStorage())
@@ -35,7 +37,7 @@ class AccountDeletionTest {
         Accounts(
             store,
             object : GoogleSignIn {
-                override suspend fun signIn() = ivan
+                override suspend fun signIn() = signIns.removeFirst()
             },
             object : SessionActivation {
                 override suspend fun activate(session: AccountSession) = Unit
@@ -88,6 +90,22 @@ class AccountDeletionTest {
                 steps,
             )
             assertEquals(emptyList(), store.accounts.value)
+        }
+
+    @Test
+    fun a_child_stays_while_another_signed_in_parent_may_guard_it() =
+        runTest {
+            signIns += misha
+            accounts.addAccount()
+            accounts.addAccount()
+            store.setManaged(listOf(managedChild(ivan)))
+            steps.clear()
+
+            deletion.delete(ivan.account.userId)
+
+            val id = ivan.account.userId.value
+            assertEquals(listOf("server $id", "device $id"), steps)
+            assertEquals(listOf(misha.account.userId), store.accounts.value.map { it.userId })
         }
 
     @Test
