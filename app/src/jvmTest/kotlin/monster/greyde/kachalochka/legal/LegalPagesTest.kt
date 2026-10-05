@@ -108,6 +108,10 @@ class LegalPagesTest {
         assertTrue("<strong>Guardian links:</strong>" in html)
         assertTrue("never see your body measures, your profile details or your groups" in html)
         assertTrue("You or the guardian can end the link at any time" in html)
+        assertTrue("nobody but you, or a guardian you link, can change your data" in html)
+        assertTrue("your account’s rows are removed from the guardian’s devices" in html)
+        assertTrue("and your workout plans" in html)
+        assertFalse("not directed at children under 13" in html)
     }
 
     @Test
@@ -115,6 +119,8 @@ class LegalPagesTest {
         val html = page("terms.html")
         assertTrue("for people aged 13 and over" in html)
         assertTrue("A guardian you link by entering their code" in html)
+        assertTrue("members of the groups you join and to a guardian you link" in html)
+        assertTrue("what your groups and your guardian links show you" in html)
     }
 
     @Test
