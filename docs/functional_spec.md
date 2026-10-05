@@ -7,7 +7,7 @@ An Android / Web app to save sport results, share them with friends and collect 
 Online data storage (for web app to be synced with android one), login using Google OAuth.
 Android app should be local-first (can work offline and without login), but sync all the data
 online whenever possible, for every account signed in on the device. The web app cannot work
-without an account.
+without an account. The app is for users aged 13 and over.
 
 Several accounts can be signed in on one device at once, with one of them active. Everything is
 recorded into the active account, and each account keeps its own visits, machines and history.

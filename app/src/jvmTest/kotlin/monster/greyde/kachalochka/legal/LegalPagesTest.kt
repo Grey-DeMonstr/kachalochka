@@ -102,6 +102,22 @@ class LegalPagesTest {
     }
 
     @Test
+    fun privacyPolicySetsTheAgeAndExplainsGuardianLinks() {
+        val html = page("privacy.html")
+        assertTrue("for people aged 13 and over" in html)
+        assertTrue("<strong>Guardian links:</strong>" in html)
+        assertTrue("never see your body measures, your profile details or your groups" in html)
+        assertTrue("You or the guardian can end the link at any time" in html)
+    }
+
+    @Test
+    fun termsSetTheAgeAndExplainGuardianLinks() {
+        val html = page("terms.html")
+        assertTrue("for people aged 13 and over" in html)
+        assertTrue("A guardian you link by entering their code" in html)
+    }
+
+    @Test
     fun termsSayBodyFatIsAnEstimate() {
         assertTrue("estimates, not measurements" in page("terms.html"))
     }

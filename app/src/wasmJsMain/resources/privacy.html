@@ -49,15 +49,15 @@
     <p class="meta">
         App: Kachalochka (<code>monster.greyde.kachalochka</code>) for Android and the web<br>
         Provided by Sergei Ivanov, an individual developer (“we”, “us”)<br>
-        Effective date: <time datetime="2026-09-29">29 September 2026</time>
+        Effective date: <time datetime="2026-10-05">5 October 2026</time>
     </p>
 
     <h2>Summary</h2>
     <p>
         Kachalochka keeps a log of your gym workouts and body measures. When you sign in, we
         store them so they sync between your devices, and show your workouts, never your
-        measures, to the members of groups you join. We use your data only to provide that
-        service.
+        measures, to the members of groups you join and to a parent you link as your guardian.
+        We use your data only to provide that service.
     </p>
     <p>
         There are no ads, no analytics and no crash reporting, and we never sell your data or
@@ -94,6 +94,11 @@
             Google name if you set none.
         </li>
         <li>
+            <strong>Guardian links:</strong> whom you link as a guardian, or who links you, and
+            when, and the one-time codes that make a link until they are used or expire a day
+            later.
+        </li>
+        <li>
             <strong>Technical data:</strong> the sign-in tokens that keep you signed in, and
             the request logs, including IP addresses, that our hosting providers keep to run
             and secure their services.
@@ -123,7 +128,16 @@
         read-only; they never
         see your body measures or your profile details, and nobody but you can change your
         data. Leaving a group, or its owner deleting it, stops the sharing. There is no public
-        profile, and nothing is shared outside the groups you join.
+        profile, and nothing is shared outside the groups you join and a guardian you link.
+    </p>
+    <p>
+        If you enter a parent’s code in “Родители” (Parents), that person becomes your guardian
+        in the app: they can see and record your visits, sets, machines with their photos and
+        links, and plans, as your own account does, and nothing else; they never see your body
+        measures, your profile details or your groups. A code works once, within a day, and
+        links only the account that enters it. You or the guardian can end the link at any
+        time, in “Родители” or “Дети” (Children); what the guardian recorded stays in your
+        account and leaves the guardian’s devices.
     </p>
     <p>
         When you share a visit as text, the app hands it, headed by your nickname, to the app or
@@ -171,7 +185,8 @@
             To delete your account and all the data tied to it, choose “Удалить аккаунт” (Delete
             account) in the app’s settings, on Android or on the web. Your photos, your account
             and everything recorded under it are deleted from our servers at once, and on
-            Android from that device too. If you can no longer sign in,
+            Android from that device too. Deleting an account also ends its guardian links. If
+            you can no longer sign in,
             <a href="https://github.com/Grey-DeMonstr/kachalochka/issues/new">open an issue</a>
             asking for deletion. Do not put your e-mail address or any other personal data in
             the issue: we reply there and confirm the account with you privately before
@@ -187,8 +202,8 @@
     <h2>Security</h2>
     <p>
         Every request between the app and our backend is encrypted with HTTPS. Row-level
-        security in the database lets an account read only its own data and that of the groups
-        it belongs to.
+        security in the database lets an account read only its own data, that of the groups it
+        belongs to and that of the accounts it is the guardian of.
     </p>
 
     <h2>Permissions</h2>
@@ -201,9 +216,10 @@
 
     <h2>Children</h2>
     <p>
-        Kachalochka is not directed at children under 13. A child may use it only with a parent
-        or guardian who sets it up and supervises its use, including a child’s own account
-        signed in beside the parent’s on one device.
+        Kachalochka is for people aged 13 and over. A teenager signs in with their own Google
+        account on their own device; where Google’s Family Link supervises that account, their
+        parent may need to allow the app once. A parent who trains with them can then be linked
+        as their guardian, as described under “Who can see it”.
     </p>
 
     <h2>Changes</h2>
