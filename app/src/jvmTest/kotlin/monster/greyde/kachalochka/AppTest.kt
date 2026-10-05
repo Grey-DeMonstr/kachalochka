@@ -707,6 +707,7 @@ class AppTest {
     @Test
     fun switching_to_a_managed_child_closes_the_children_and_lands_on_settings() {
         val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+        signed.family.link(SASHA, IVAN_MEMBER)
         runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-settings").performClick()

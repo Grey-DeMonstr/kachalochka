@@ -5,6 +5,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountDeletion
@@ -392,6 +393,10 @@ class FakeGym(
         FakeFamily {
             accounts.accounts.value.firstOrNull { it.userId == accounts.activeId.value }
         }
+
+    /** Owners the follower removed from the device with their rows, in order. */
+    val purged = mutableListOf<UserId>()
+    val follower = FamilyFollower(accountStore, family, NoOpSessionActivation()) { purged += it }
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
     val catalogue = MachineCatalogue(machines, photos, machineLinks, friends, clock, sync)

@@ -1,7 +1,9 @@
 package monster.greyde.kachalochka.ui.family
 
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.family.Family
 import monster.greyde.kachalochka.core.domain.family.FamilyMember
 import monster.greyde.kachalochka.core.domain.family.FamilyRepository
@@ -27,9 +29,16 @@ data class ChildrenUiState(
 
 internal class ChildrenViewModel(
     family: FamilyRepository,
+    follower: FamilyFollower,
     private val invites: InviteSharing,
     accounts: Accounts,
-) : FamilyViewModel<ChildrenUiState>(family, accounts, ChildrenUiState()) {
+    sync: SyncTrigger,
+) : FamilyViewModel<ChildrenUiState>(
+        family,
+        accounts,
+        ChildrenUiState(),
+        afterRead = { follow(follower, sync) },
+    ) {
     fun addChild() =
         writes.launch {
             reading { family.offer() }
@@ -66,4 +75,12 @@ internal class ChildrenViewModel(
         me: UserId,
         person: UserId,
     ) = family.end(person, me)
+}
+
+// The device's children follow what the server has just said; a new one needs a pass.
+private suspend fun follow(
+    follower: FamilyFollower,
+    sync: SyncTrigger,
+) {
+    reading { follower.follow() }.onSuccess { changed -> if (changed) sync.request() }
 }

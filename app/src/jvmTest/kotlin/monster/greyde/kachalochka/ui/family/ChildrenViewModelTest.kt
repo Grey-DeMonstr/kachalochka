@@ -25,7 +25,8 @@ class ChildrenViewModelTest {
 
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel() = ChildrenViewModel(gym.family, gym.invites, gym.accounts)
+    private fun viewModel() =
+        ChildrenViewModel(gym.family, gym.follower, gym.invites, gym.accounts, gym.sync)
 
     @Test
     fun the_list_shows_the_account_s_children() {
@@ -137,7 +138,9 @@ class ChildrenViewModelTest {
     fun switching_accounts_drops_the_shown_children_and_code() {
         val two = FakeGym().withAccounts(IVAN_SESSION, OLGA_SESSION, active = IVAN_SESSION)
         two.family.link(SASHA, IVAN_MEMBER)
-        val vm = ChildrenViewModel(two.family, two.invites, two.accounts).also { it.addChild() }
+        val vm =
+            ChildrenViewModel(two.family, two.follower, two.invites, two.accounts, two.sync)
+                .also { it.addChild() }
         assertEquals(listOf(SASHA), vm.state.value.children)
 
         runBlocking { two.accounts.switchTo(OLGA_SESSION.account.userId) }
@@ -156,5 +159,35 @@ class ChildrenViewModelTest {
 
         assertNull(vm.state.value.removing)
         assertEquals(1, gym.family.links.size)
+    }
+
+    @Test
+    fun entering_the_screen_brings_a_linked_child_onto_the_device_and_syncs_it() {
+        gym.family.link(SASHA, IVAN_MEMBER)
+
+        viewModel()
+
+        assertEquals(
+            listOf(SASHA.userId),
+            gym.accounts.accounts.value
+                .filter { it.isManaged }
+                .map { it.userId },
+        )
+        assertEquals(1, gym.sync.requests)
+    }
+
+    @Test
+    fun removing_a_child_takes_it_and_its_rows_off_the_device() {
+        gym.family.link(SASHA, IVAN_MEMBER)
+        val vm = viewModel()
+
+        vm.askToRemove(SASHA)
+        vm.confirmRemove()
+
+        assertTrue(
+            gym.accounts.accounts.value
+                .none { it.isManaged },
+        )
+        assertEquals(listOf(SASHA.userId), gym.purged)
     }
 }

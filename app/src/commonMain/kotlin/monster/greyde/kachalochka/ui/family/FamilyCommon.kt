@@ -130,12 +130,14 @@ internal fun GuardianProblemDialog(
 /**
  * One side of the account's guardian links: read while the screen is open, reset when another
  * account becomes active, and ended after a question. The overrides are pure functions of their
- * arguments, because the first read starts while the base class is constructed.
+ * arguments, and [afterRead] reaches only constructor arguments, because the first read starts
+ * while the base class is constructed.
  */
 internal abstract class FamilyViewModel<S : Any>(
     protected val family: FamilyRepository,
     protected val accounts: Accounts,
     private val empty: S,
+    private val afterRead: suspend () -> Unit = {},
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(empty)
     val state: StateFlow<S> = mutableState
@@ -192,7 +194,9 @@ internal abstract class FamilyViewModel<S : Any>(
 
     protected suspend fun read() {
         reading { peopleOf(family.family()) }
-            .onSuccess { found -> change { withPeople(found) } }
-            .onFailure { change { withOffline() } }
+            .onSuccess { found ->
+                change { withPeople(found) }
+                afterRead()
+            }.onFailure { change { withOffline() } }
     }
 }

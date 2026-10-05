@@ -175,9 +175,9 @@ Migration `0024_guardian_writes.sql`:
   writes the same rows, and the two converge as two devices of one account do (technical spec
   §4.2: the device's outbox wins, the server otherwise).
 - Managed entries follow the link. `my_family` is read for every Google account on the device
-  after sign-in, after each sync pass and on entering "Дети"; an entry whose link is gone is
-  removed from the device with its rows (`OwnedRowsPurge`), a new one is added, and the same
-  child under two parents on one device is one entry.
+  after sign-in, at the start of each sync pass and on entering "Дети"; an entry whose link is
+  gone is removed from the device with its rows (`OwnedRowsPurge`), a new one is added, and the
+  same child under two parents on one device is one entry.
 
 ### 4.3 Screens while a managed child is active
 

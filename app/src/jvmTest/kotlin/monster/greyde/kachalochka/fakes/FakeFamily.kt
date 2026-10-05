@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.fakes
 
+import monster.greyde.kachalochka.core.data.family.FamilyReads
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.domain.family.Acceptance
 import monster.greyde.kachalochka.core.domain.family.Family
@@ -10,7 +11,8 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 /** Guardian links as the server keeps them, acting as the active account; fails [offline]. */
 class FakeFamily(
     private val active: () -> Account?,
-) : FamilyRepository {
+) : FamilyRepository,
+    FamilyReads {
     val people = linkedMapOf<UserId, FamilyMember>()
 
     /** Each link as (child, guardian). */
@@ -59,6 +61,8 @@ class FakeFamily(
     }
 
     override suspend fun family(): Family = online { linksOf(acting().userId) }
+
+    override suspend fun familyOf(owner: UserId): Family = online { linksOf(owner) }
 
     override suspend fun offer(): String =
         online {

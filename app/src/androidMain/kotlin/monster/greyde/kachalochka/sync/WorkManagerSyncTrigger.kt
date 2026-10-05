@@ -13,6 +13,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import monster.greyde.kachalochka.FailureLog
+import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncPass
@@ -61,13 +62,18 @@ class SyncWorker(
         val failures = get<FailureLog>()
         val clean =
             try {
-                val accounts = get<AccountStore>().accounts.value
-                get<SyncPass>().runAndNormalize(
-                    accounts.map { it.userId },
-                    get(),
-                    failures::record,
-                    accounts.filter { it.isManaged }.map { it.userId }.toSet(),
-                )
+                // The family first, so a child linked since the last pass syncs in this one and
+                // one whose link ended leaves before its rows could be pushed again; no other
+                // follow runs until the pass is over.
+                get<FamilyFollower>().followThen {
+                    val accounts = get<AccountStore>().accounts.value
+                    get<SyncPass>().runAndNormalize(
+                        accounts.map { it.userId },
+                        get(),
+                        failures::record,
+                        accounts.filter { it.isManaged }.map { it.userId }.toSet(),
+                    )
+                }
             } catch (stopped: CancellationException) {
                 throw stopped
             } catch (failed: Exception) {

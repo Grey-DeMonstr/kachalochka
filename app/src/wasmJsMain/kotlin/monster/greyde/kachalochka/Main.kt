@@ -5,9 +5,11 @@ import androidx.compose.ui.window.ComposeViewport
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.di.corePlatformModule
@@ -52,6 +54,7 @@ fun main() {
         koin.warmGroups()
         // The active account, reached through its id, is the only owner the web reads.
         koin.startVisitNormalization(emptyList())
+        followFamily(koin.get())
         ComposeViewport(document.getElementById("app")!!) { App() }
     }
 }
@@ -68,6 +71,19 @@ private fun keepInviteCodes(
     parentCodeOf(href)?.let(parent::save)
     val cleaned = withoutInviteCodes(href)
     if (cleaned != href) window.history.replaceState(null, "", cleaned)
+}
+
+// Each page load reads the family once; a sign-in's redirect is one.
+private fun followFamily(follower: FamilyFollower) {
+    MainScope().launch {
+        try {
+            follower.follow()
+        } catch (stopped: CancellationException) {
+            throw stopped
+        } catch (failure: Exception) {
+            report("Could not read the family: $failure")
+        }
+    }
 }
 
 // The bound is what stops a Supabase that never answers from costing the user the page.

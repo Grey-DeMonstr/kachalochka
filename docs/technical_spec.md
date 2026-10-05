@@ -345,6 +345,15 @@ refreshes their names and avatars; and removes a child no family names any more,
 (`OwnedRowsPurge`), since the device could never sync them again. A family that cannot be read is
 not an empty one: while any is unread no child leaves the device, and a child whose guardian's
 family is unread keeps that guardian. `AccountTokens` serves both platforms for these reads.
+Android follows at the start of every sync pass, so a child linked since the last pass syncs in
+this one and a child whose link ended leaves before its rows could be pushed again, and on
+entering "Дети"; a sign-in reaches it through the pass it requests. The web follows once per page
+load, which a sign-in's redirect also is, and on entering "Дети".
+
+A follow holds a lock the pass shares (`followThen`): a follow during a pass could purge a child
+whose rows the pass then pulls back. An account signed in while the families are read counts as
+an unread family. When the active child moves to another guardian, that guardian's session goes
+live.
 
 ### 4.4 Photos
 

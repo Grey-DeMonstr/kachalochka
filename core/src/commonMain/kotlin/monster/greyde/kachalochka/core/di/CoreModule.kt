@@ -55,7 +55,7 @@ val coreModule =
                 )
             }
         }
-        single { FamilyFollower(get(), get(), get()) }
+        single { FamilyFollower(get(), get(), get(), get()) }
     }
 
 /** A build without credentials has no live session to follow, and must not build a client. */

@@ -1,10 +1,15 @@
 package monster.greyde.kachalochka.core.data.family
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountKind
+import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
+import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.identity.accountSession
 import monster.greyde.kachalochka.core.domain.family.Family
 import monster.greyde.kachalochka.core.domain.family.FamilyMember
@@ -15,6 +20,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+
+private class RecordingActivation : SessionActivation {
+    val activated = mutableListOf<UserId>()
+
+    override suspend fun activate(session: AccountSession) {
+        activated += session.account.userId
+    }
+
+    override suspend fun clear() = Unit
+}
 
 private class ScriptedReads : FamilyReads {
     val families = mutableMapOf<UserId, Family>()
@@ -41,7 +56,8 @@ class FamilyFollowerTest {
     private val store = PersistedAccountStore(InMemoryAccountStorage())
     private val reads = ScriptedReads()
     private val purged = mutableListOf<UserId>()
-    private val follower = FamilyFollower(store, reads) { purged += it }
+    private val sessions = RecordingActivation()
+    private val follower = FamilyFollower(store, reads, sessions) { purged += it }
 
     private fun ScriptedReads.children(
         guardian: UserId,
@@ -223,6 +239,84 @@ class FamilyFollowerTest {
             follower.follow()
 
             assertEquals(misha.account.userId, store.activeId.value)
+        }
+
+    @Test
+    fun a_parent_signed_in_during_the_reads_keeps_a_child_its_family_may_name() =
+        runTest {
+            store.add(ivan)
+            reads.children(ivan.account.userId, sasha)
+            follower.follow()
+            reads.families.remove(ivan.account.userId)
+            reads.children(misha.account.userId, sasha)
+            reads.whileReading = { store.add(misha) }
+
+            follower.follow()
+
+            assertEquals(listOf(sasha.userId), managedAccounts().map { it.userId })
+            assertTrue(purged.isEmpty())
+        }
+
+    @Test
+    fun the_active_child_moving_to_its_other_parent_makes_that_parent_s_session_live() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            reads.children(ivan.account.userId, sasha)
+            reads.children(misha.account.userId, sasha)
+            follower.follow()
+            store.switch(sasha.userId)
+            reads.families.remove(ivan.account.userId)
+
+            follower.follow()
+
+            assertEquals(sasha.userId, store.activeId.value)
+            assertEquals(listOf(misha.account.userId), sessions.activated)
+        }
+
+    @Test
+    fun the_active_child_keeping_its_parent_leaves_the_live_session_alone() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            reads.children(ivan.account.userId, sasha)
+            reads.children(misha.account.userId, sasha)
+            follower.follow()
+            store.switch(sasha.userId)
+
+            follower.follow()
+
+            assertTrue(sessions.activated.isEmpty())
+        }
+
+    @Test
+    fun the_pass_after_a_follow_has_the_child_linked_since_the_last_one() =
+        runTest {
+            store.add(ivan)
+            reads.children(ivan.account.userId, sasha)
+
+            val listed = follower.followThen { managedAccounts().map { it.userId } }
+
+            assertEquals(listOf(sasha.userId), listed)
+        }
+
+    @Test
+    fun a_follow_waits_for_the_pass_in_progress_before_purging() =
+        runTest {
+            store.add(ivan)
+            reads.children(ivan.account.userId, sasha)
+            val passing = CompletableDeferred<Unit>()
+            launch { follower.followThen { passing.await() } }
+            runCurrent()
+            reads.families.remove(ivan.account.userId)
+
+            launch { follower.follow() }
+            runCurrent()
+            assertTrue(purged.isEmpty())
+
+            passing.complete(Unit)
+            runCurrent()
+            assertEquals(listOf(sasha.userId), purged)
         }
 
     @Test
