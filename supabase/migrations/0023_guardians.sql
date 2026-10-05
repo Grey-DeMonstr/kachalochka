@@ -24,7 +24,7 @@ create policy guardian_select_party on public.guardian
     for select using ((select auth.uid()) in (child_id, guardian_id));
 grant select on public.guardian to authenticated;
 
--- Definer rights read guardian past its own policy; the policies of 0024 call this per row.
+-- Definer rights read guardian past its own policy; the guardian write policies call this per row.
 create or replace function public.guards(other uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
     select exists (
@@ -55,8 +55,9 @@ declare
     typed  text := upper(regexp_replace(code, '^\s+|\s+$', '', 'g'));
     parent uuid;
 begin
-    select i.guardian_id into parent from public.guardian_invite as i
-    where i.code = typed and i.expires_at > now();
+    delete from public.guardian_invite as i
+    where i.code = typed and i.expires_at > now()
+    returning i.guardian_id into parent;
     if parent is null then
         -- PostgREST answers a PTxyz code with HTTP status xyz.
         raise exception 'unknown guardian code' using errcode = 'PT404';
@@ -67,7 +68,6 @@ begin
     insert into public.guardian (child_id, guardian_id)
     values ((select auth.uid()), parent)
     on conflict (child_id, guardian_id) do nothing;
-    delete from public.guardian_invite as i where i.code = typed;
     return parent;
 end;
 $$;
