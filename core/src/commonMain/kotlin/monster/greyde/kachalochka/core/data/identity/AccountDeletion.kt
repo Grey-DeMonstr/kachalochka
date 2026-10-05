@@ -26,8 +26,16 @@ class AccountDeletion(
     private val accounts: Accounts,
 ) {
     suspend fun delete(owner: UserId) {
+        val all = accounts.accounts.value
+        // A child's requests carry its guardian's token, so deleting it would delete the guardian.
+        check(all.none { it.userId == owner && it.guardianId != null }) {
+            "A managed account cannot be deleted from the device"
+        }
+        // Read first: signing out takes them off the account list.
+        val children = all.filter { it.guardianId == owner }.map { it.userId }
         server.deleteEverything(owner)
         purge.purge(owner)
+        children.forEach { purge.purge(it) }
         accounts.signOut(owner)
     }
 }

@@ -307,4 +307,28 @@ class AccountsTest {
             assertEquals(misha.account.userId, service.activeId.value)
             assertEquals(misha.account.userId, activation.activated.last())
         }
+
+    @Test
+    fun signing_out_another_account_keeps_the_active_child_and_its_guardian_live() =
+        runTest {
+            val store = PersistedAccountStore(InMemoryAccountStorage())
+            val activation = RecordingActivation()
+            val service =
+                Accounts(
+                    store,
+                    QueuedSignIn(mutableListOf(ivan, misha)),
+                    activation,
+                    RecordingOwnerless(),
+                )
+            service.addAccount()
+            service.addAccount()
+            store.setManaged(listOf(managedChild(ivan)))
+            service.switchTo(SASHA_ID)
+
+            service.signOut(misha.account.userId)
+
+            assertEquals(SASHA_ID, service.activeId.value)
+            assertEquals(ivan.account.userId, activation.activated.last())
+            assertFalse(activation.cleared)
+        }
 }

@@ -73,4 +73,35 @@ class AccountDeletionTest {
             assertEquals(emptyList(), steps)
             assertEquals(ivan.account.userId, store.activeId.value)
         }
+
+    @Test
+    fun the_children_the_deleted_account_acted_for_leave_the_device_too() =
+        runTest {
+            accounts.addAccount()
+            store.setManaged(listOf(managedChild(ivan)))
+
+            deletion.delete(ivan.account.userId)
+
+            val id = ivan.account.userId.value
+            assertEquals(
+                listOf("server $id", "device $id", "device ${SASHA_ID.value}", "signed out"),
+                steps,
+            )
+            assertEquals(emptyList(), store.accounts.value)
+        }
+
+    @Test
+    fun a_managed_child_is_never_deleted_as_its_guardian() =
+        runTest {
+            accounts.addAccount()
+            store.setManaged(listOf(managedChild(ivan)))
+            accounts.switchTo(SASHA_ID)
+            steps.clear()
+
+            assertFailsWith<IllegalStateException> { deletion.delete(SASHA_ID) }
+
+            assertEquals(emptyList(), steps)
+            assertEquals(SASHA_ID, store.activeId.value)
+            assertEquals(2, store.accounts.value.size)
+        }
 }
