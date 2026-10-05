@@ -15,8 +15,9 @@ suspend fun SyncPass.runAndNormalize(
     owners: List<UserId>,
     normalizer: VisitNormalizer,
     failed: (Throwable) -> Unit,
+    managed: Set<UserId> = emptySet(),
 ): Boolean {
-    val clean = owners.filter { run(listOf(it)) }
+    val clean = owners.filter { run(listOf(it), managed) }
     // A copy that has not pulled may be older than the server's rows its writes would replace.
     val wrote =
         clean
@@ -30,5 +31,5 @@ suspend fun SyncPass.runAndNormalize(
                     false
                 }
             }.any { it }
-    return if (wrote) run(owners) else clean.size == owners.size
+    return if (wrote) run(owners, managed) else clean.size == owners.size
 }

@@ -36,20 +36,30 @@ class SyncPass(
     private val files: PhotoFiles,
     private val dispatcher: CoroutineDispatcher,
 ) {
-    /** True only when every push and every pull succeeded. */
-    suspend fun run(owners: List<UserId>): Boolean =
+    /**
+     * True only when every push and every pull succeeded. A [managed] owner's guardian may write
+     * its gym rows and plans, nothing else (technical spec §4.2).
+     */
+    suspend fun run(
+        owners: List<UserId>,
+        managed: Set<UserId> = emptySet(),
+    ): Boolean =
         owners
             .map { owner ->
                 session.owner = owner
                 try {
-                    val pushed = push(owner)
-                    pull(owner) && pushed
+                    val guarded = owner in managed
+                    val pushed = push(owner, guarded)
+                    pull(owner, guarded) && pushed
                 } finally {
                     session.owner = null
                 }
             }.all { it }
 
-    private suspend fun push(owner: UserId): Boolean {
+    private suspend fun push(
+        owner: UserId,
+        guarded: Boolean,
+    ): Boolean {
         val entries = db { outbox.pending() }.sortedBy { rank(it.tableName) }
         return entries
             .map { entry ->
@@ -75,9 +85,13 @@ class SyncPass(
                         }
 
                     PROFILE_TABLE ->
-                        pushRow(entry, owner, db { rows.profile(entry.rowId) }, { it.userId }) {
-                            gateway.pushProfile(it)
-                        }
+                        pushRow(
+                            entry,
+                            owner,
+                            db { rows.profile(entry.rowId) },
+                            { it.userId },
+                            kept = guarded,
+                        ) { gateway.pushProfile(it) }
 
                     MACHINE_LINK_TABLE ->
                         pushRow(
@@ -88,9 +102,13 @@ class SyncPass(
                         ) { gateway.pushMachineLink(it) }
 
                     MEASURE_TABLE ->
-                        pushRow(entry, owner, db { rows.measure(entry.rowId) }, { it.userId }) {
-                            gateway.pushMeasure(it)
-                        }
+                        pushRow(
+                            entry,
+                            owner,
+                            db { rows.measure(entry.rowId) },
+                            { it.userId },
+                            kept = guarded,
+                        ) { gateway.pushMeasure(it) }
 
                     MEASUREMENT_TABLE ->
                         pushRow(
@@ -98,6 +116,7 @@ class SyncPass(
                             owner,
                             db { rows.measurement(entry.rowId) },
                             { it.userId },
+                            kept = guarded,
                         ) { gateway.pushMeasurement(it) }
 
                     PHOTO_TABLE ->
@@ -111,7 +130,10 @@ class SyncPass(
             }.all { it }
     }
 
-    private suspend fun pull(owner: UserId): Boolean {
+    private suspend fun pull(
+        owner: UserId,
+        guarded: Boolean,
+    ): Boolean {
         val since = db { watermarks.lastPullAt(owner) }
         var pulled: PulledRows? = null
         attempt {
@@ -120,10 +142,10 @@ class SyncPass(
                     gateway.pullMachines(owner, since),
                     gateway.pullVisits(owner, since),
                     gateway.pullSets(owner, since),
-                    gateway.pullProfiles(owner, since),
+                    if (guarded) emptyList() else gateway.pullProfiles(owner, since),
                     gateway.pullMachineLinks(owner, since),
-                    gateway.pullMeasures(owner, since),
-                    gateway.pullMeasurements(owner, since),
+                    if (guarded) emptyList() else gateway.pullMeasures(owner, since),
+                    if (guarded) emptyList() else gateway.pullMeasurements(owner, since),
                     gateway.pullPhotos(owner, since),
                     gateway.pullPlans(owner, since),
                 )
@@ -203,6 +225,7 @@ class SyncPass(
         owner: UserId,
         row: T?,
         ownerOf: (T) -> UserId?,
+        kept: Boolean = false,
         send: suspend (T) -> Unit,
     ): Boolean {
         val rowOwner = row?.let(ownerOf)
@@ -212,6 +235,11 @@ class SyncPass(
             return true
         }
         if (rowOwner != owner) return true
+        // The guardian's session may not write it, so it stays on this device only.
+        if (kept) {
+            db { outbox.removePushed(entry) }
+            return true
+        }
         return attempt {
             send(row)
             db { outbox.removePushed(entry) }

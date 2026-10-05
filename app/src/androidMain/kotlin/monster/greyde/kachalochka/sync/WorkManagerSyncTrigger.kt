@@ -61,10 +61,12 @@ class SyncWorker(
         val failures = get<FailureLog>()
         val clean =
             try {
+                val accounts = get<AccountStore>().accounts.value
                 get<SyncPass>().runAndNormalize(
-                    get<AccountStore>().accounts.value.map { it.userId },
+                    accounts.map { it.userId },
                     get(),
                     failures::record,
+                    accounts.filter { it.isManaged }.map { it.userId }.toSet(),
                 )
             } catch (stopped: CancellationException) {
                 throw stopped

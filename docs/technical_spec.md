@@ -249,10 +249,15 @@ failing a pull.
   `refreshSession`, and the session that comes back is written to the store before use. A refresh
   the server refuses with a 4xx other than 429 leaves that account unsynced for the pass; a 429
   or a network failure fails the pass instead.
-- **Every account.** A pass covers every account signed in on the device, not only the active
-  one. `syncState` holds one row per `user_id`, created by the first local schema migration
-  (`1.sqm`), so each account has its own pull watermark. Pushing only the active account would
-  leave a guest's sets enqueued until somebody happened to switch back to them.
+- **Every account.** A pass covers every account on the device, not only the active one: the
+  signed-in accounts, then the managed ones (§4.3), each under the token `AccountTokens` gives it,
+  which for a managed account is its guardian's. `syncState` holds one row per `user_id`, created
+  by the first local schema migration (`1.sqm`), so each account, managed ones included, has its
+  own pull watermark. Pushing only the active account would leave a guest's sets enqueued until
+  somebody happened to switch back to them. A managed account's pass pushes and pulls only
+  `machine`, `visit`, `workout_set`, `machine_link`, `photo` and `workout_plan`, the tables its
+  guardian may write; an entry of its `profile`, `measure` or `measurement` leaves the outbox
+  unpushed, since the server would refuse it on every pass.
 
 Sync runs on a second `SupabaseClient` that installs no `Auth`; its `accessToken` resolver asks
 for the token of the account the pass is currently on. The UI's client and its active session are

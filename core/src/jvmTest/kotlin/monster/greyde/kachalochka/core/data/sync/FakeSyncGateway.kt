@@ -32,6 +32,9 @@ class FakeSyncGateway(
     val pushedAs = mutableListOf<UserId?>()
 
     val pulledSince = mutableListOf<Pair<UserId, Instant?>>()
+
+    /** Each pull as (owner, table), in order. */
+    val pulledTables = mutableListOf<Pair<UserId, String>>()
     var machinesToPull: List<Machine> = emptyList()
     var visitsToPull: List<Visit> = emptyList()
     var setsToPull: List<WorkoutSet> = emptyList()
@@ -84,55 +87,59 @@ class FakeSyncGateway(
     override suspend fun pullMachines(
         owner: UserId,
         since: Instant?,
-    ) = pull(owner, since) { machinesToPull.filter { it.userId == owner } }
+    ) = pull(MACHINE_TABLE, owner, since) { machinesToPull.filter { it.userId == owner } }
 
     override suspend fun pullVisits(
         owner: UserId,
         since: Instant?,
-    ) = pull(owner, since) { visitsToPull.filter { it.userId == owner } }
+    ) = pull(VISIT_TABLE, owner, since) { visitsToPull.filter { it.userId == owner } }
 
     override suspend fun pullSets(
         owner: UserId,
         since: Instant?,
-    ) = pull(owner, since) { setsToPull.filter { it.userId == owner } }
+    ) = pull(WORKOUT_SET_TABLE, owner, since) { setsToPull.filter { it.userId == owner } }
 
     override suspend fun pullProfiles(
         owner: UserId,
         since: Instant?,
-    ) = pull(owner, since) { profilesToPull.filter { it.userId == owner } }
+    ) = pull(PROFILE_TABLE, owner, since) { profilesToPull.filter { it.userId == owner } }
 
     override suspend fun pullMachineLinks(
         owner: UserId,
         since: Instant?,
-    ) = pull(owner, since) { linksToPull.filter { it.userId == owner } }
+    ) = pull(MACHINE_LINK_TABLE, owner, since) { linksToPull.filter { it.userId == owner } }
 
     override suspend fun pullMeasures(
         owner: UserId,
         since: Instant?,
-    ) = pull(owner, since) { measuresToPull.filter { it.userId == owner } }
+    ) = pull(MEASURE_TABLE, owner, since) { measuresToPull.filter { it.userId == owner } }
 
     override suspend fun pullMeasurements(
         owner: UserId,
         since: Instant?,
-    ) = pull(owner, since) { measurementsToPull.filter { it.userId == owner } }
+    ) = pull(MEASUREMENT_TABLE, owner, since) {
+        measurementsToPull.filter { it.userId == owner }
+    }
 
     override suspend fun pullPhotos(
         owner: UserId,
         since: Instant?,
-    ) = pull(owner, since) { photosToPull.filter { it.userId == owner } }
+    ) = pull(PHOTO_TABLE, owner, since) { photosToPull.filter { it.userId == owner } }
 
     override suspend fun pullPlans(
         owner: UserId,
         since: Instant?,
-    ) = pull(owner, since) { plansToPull.filter { it.userId == owner } }
+    ) = pull(PLAN_TABLE, owner, since) { plansToPull.filter { it.userId == owner } }
 
     private fun <T> pull(
+        table: String,
         owner: UserId,
         since: Instant?,
         rows: () -> List<T>,
     ): List<T> {
         if (pullFails) error("no connection")
         pulledSince += owner to since
+        pulledTables += owner to table
         return rows()
     }
 
