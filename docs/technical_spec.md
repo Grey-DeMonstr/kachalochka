@@ -115,6 +115,10 @@ the UI client. Android runs it on a client that, like the sync client (§4.2), a
 session only after a sign-in or a switch in the same process. Concurrent refreshes of one
 account's token share one request. The active account's groups are read ahead into a
 process-wide `GroupsCache` whenever it becomes active, so the friends screen opens with them.
+Mates are the members of the groups that hold the viewer. While a managed child is active
+(§4.3) the reads go out under its guardian's session, which sees the guardian's groups, so the
+child's friends are the people the guardian and the child share a group with, the guardian
+included; for a Google account every group it sees holds it.
 
 The calendar reads group mates' visits for the shown month with one `groupVisits` request, far
 under PostgREST's row cap. It reads them after its own rows, again on entering the screen, after

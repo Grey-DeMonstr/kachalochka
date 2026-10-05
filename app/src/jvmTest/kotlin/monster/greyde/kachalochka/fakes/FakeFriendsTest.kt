@@ -1,11 +1,16 @@
 package monster.greyde.kachalochka.fakes
 
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
@@ -44,5 +49,24 @@ class FakeFriendsTest {
             assertEquals(emptyList(), gym.friends.visits(PASHA.userId))
             assertEquals(emptyList(), gym.friends.sets(pashaVisit))
             assertEquals(emptyList(), gym.friends.machines(PASHA.userId))
+        }
+
+    @Test
+    fun a_managed_child_s_mates_are_its_parent_s_group_mates_in_groups_holding_it() =
+        runTest {
+            val family = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+            val sasha = Friend(SASHA.userId, SASHA.displayName)
+            family.friends.group("Семья", owner = ME, sasha, OLEG)
+            family.friends.group("Работа", owner = PASHA, ME)
+            family.friends.group("Чужая", owner = PASHA, sasha)
+            runBlocking { family.accounts.switchTo(SASHA.userId) }
+
+            assertEquals(
+                setOf(ME.userId, OLEG.userId),
+                family.friends
+                    .mates(SASHA.userId)
+                    .map { it.userId }
+                    .toSet(),
+            )
         }
 }

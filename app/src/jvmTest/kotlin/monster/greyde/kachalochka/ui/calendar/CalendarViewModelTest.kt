@@ -22,6 +22,8 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.AccountAvatars
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
@@ -823,6 +825,24 @@ class CalendarViewModelTest {
                     ?.day(10)
                     ?.friendDots
                     ?.size,
+            )
+        }
+
+    @Test
+    fun a_managed_child_sees_only_the_friends_its_parent_shares_a_group_with() =
+        runTest {
+            val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+            signed.friends.group("Семья", owner = ME, Friend(SASHA.userId, "Саша"), OLEG)
+            signed.friends.group("Работа", owner = PASHA, ME)
+            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press)
+            signed.friendVisit(PASHA, twelfth, t0 - 2.days, press)
+            signed.accounts.switchTo(SASHA.userId)
+
+            val vm = viewModel(signed).also { it.selectDay(twelfth) }
+
+            assertEquals(
+                listOf("Олег"),
+                assertNotNull(vm.state.value).friendVisits.map { it.name },
             )
         }
 

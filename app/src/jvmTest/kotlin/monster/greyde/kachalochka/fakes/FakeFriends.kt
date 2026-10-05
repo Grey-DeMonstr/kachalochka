@@ -63,7 +63,9 @@ class FakeFriends(
         return counted(groups.getValue(id))
     }
 
-    private fun me(): Friend? = active()?.let { Friend(it.userId, it.displayName) }
+    // A managed child's reads go out under its guardian's session.
+    private fun me(): Friend? =
+        active()?.let { Friend(it.guardianId ?: it.userId, it.displayName) }
 
     private suspend fun <T> online(read: () -> T): T {
         reads++
@@ -78,7 +80,9 @@ class FakeFriends(
     private fun visible(id: GroupId) = members[id].orEmpty().any { it.userId == me()?.userId }
 
     private fun matesById(viewer: UserId): Map<UserId, Friend> =
-        members.values
+        members
+            .filterKeys(::visible)
+            .values
             .filter { list -> list.any { it.userId == viewer } }
             .flatten()
             .filter { it.userId != viewer }

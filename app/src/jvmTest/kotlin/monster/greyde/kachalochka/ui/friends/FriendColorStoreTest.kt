@@ -56,6 +56,8 @@ class FriendColorStoreTest {
     @Test
     fun a_friend_s_drawn_colour_is_the_same_whichever_friends_a_screen_asks_about() =
         runTest {
+            val gym = signedInGym()
+            val store = FriendColorStore(gym.profiles, gym.clock, gym.friends)
             gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
 
             val everyone = store.colorsFor(owner, listOf(OLEG.userId, PASHA.userId))

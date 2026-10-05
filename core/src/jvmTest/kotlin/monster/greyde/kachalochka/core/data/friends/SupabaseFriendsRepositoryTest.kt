@@ -695,4 +695,38 @@ class SupabaseFriendsRepositoryTest {
             val body = request.bodyText()
             assertTrue("\"deleted\":true" in body, body)
         }
+
+    @Test
+    fun mates_are_the_members_of_the_groups_holding_the_viewer() =
+        runTest {
+            val work = "88888888-8888-4888-8888-888888888888"
+            val sasha = UserId("66666666-6666-4666-8666-666666666666")
+            val pasha = UserId("44444444-4444-4444-8444-444444444444")
+
+            fun member(
+                group: String,
+                user: UserId,
+                name: String,
+            ) = """{"group_id":"$group","user_id":"${user.value}","display_name":"$name",""" +
+                """"deleted":false}"""
+            val rows =
+                listOf(
+                    member(GROUP, IVAN, "Иван"),
+                    member(GROUP, sasha, "Саша"),
+                    member(GROUP, OLEG, "Олег"),
+                    member(work, IVAN, "Иван"),
+                    member(work, pasha, "Паша"),
+                ).joinToString(",", "[", "]")
+            val repository =
+                repositoryOn(MockEngine { respond(rows, HttpStatusCode.OK, jsonHeaders()) })
+
+            assertEquals(
+                listOf(Friend(IVAN, "Иван"), Friend(OLEG, "Олег")),
+                repository.mates(sasha),
+            )
+            assertEquals(
+                setOf(sasha, OLEG, pasha),
+                repository.mates(IVAN).map { it.userId }.toSet(),
+            )
+        }
 }

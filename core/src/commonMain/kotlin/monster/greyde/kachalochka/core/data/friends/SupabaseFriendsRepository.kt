@@ -346,14 +346,17 @@ class SupabaseFriendsRepository(
                 }
             }.decodeList<GroupMemberRow>()
 
-    private suspend fun matesById(viewer: UserId): Map<UserId, Friend> =
-        memberships()
-            .filter { it.userId != viewer.value }
+    // A managed child's reads go out under its guardian's session, which sees the guardian's
+    // groups; only those holding the viewer are the viewer's to show.
+    private suspend fun matesById(viewer: UserId): Map<UserId, Friend> {
+        val rows = memberships()
+        val shared = rows.filter { it.userId == viewer.value }.map { it.groupId }.toSet()
+        return rows
+            .filter { it.groupId in shared && it.userId != viewer.value }
             .associate {
-                UserId(
-                    it.userId,
-                ) to Friend(UserId(it.userId), it.displayName, it.avatar)
+                UserId(it.userId) to Friend(UserId(it.userId), it.displayName, it.avatar)
             }
+    }
 
     private suspend fun liveMachines(match: PostgrestFilterBuilder.() -> Unit): List<Machine> =
         postgrest
