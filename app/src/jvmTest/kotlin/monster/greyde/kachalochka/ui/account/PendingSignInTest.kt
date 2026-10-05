@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.account
 
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
@@ -164,5 +165,23 @@ class PendingSignInTest {
             assertNull(reloaded.activeId.value)
             assertTrue(activation.cleared)
             assertEquals(listOf(ivan.account), reloaded.accounts.value)
+        }
+
+    @Test
+    fun an_active_managed_child_resumes_through_its_guardian_s_session() =
+        runTest {
+            val store = PersistedAccountStore(InMemoryAccountStorage())
+            val activation = RecordingActivation()
+            store.add(ivan)
+            val sasha = UserId("66666666-6666-4666-8666-666666666666")
+            store.setManaged(
+                listOf(
+                    Account(sasha, "", "Саша", kind = AccountKind.Managed(ivan.account.userId)),
+                ),
+            )
+            store.switch(sasha)
+
+            assertTrue(resumeActiveAccount(store, activation))
+            assertEquals(listOf(ivan.account.userId), activation.activated)
         }
 }

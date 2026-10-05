@@ -33,6 +33,7 @@ class AccountTokens(
     private val inFlight = mutableMapOf<UserId, CompletableDeferred<String?>>()
 
     suspend fun tokenFor(owner: UserId): String? {
+        guardianOf(owner)?.let { return tokenFor(it) }
         live.liveSessionOf(owner)?.let {
             return if (usable(it)) it.accessToken else once(owner) { live.refreshLive(owner) }
         }
@@ -40,6 +41,12 @@ class AccountTokens(
         if (usable(session)) return session.accessToken
         return once(owner) { renewStored(owner) }
     }
+
+    // A managed account has no session; its guardian's acts for it.
+    private fun guardianOf(owner: UserId): UserId? =
+        store.accounts.value
+            .firstOrNull { it.userId == owner }
+            ?.guardianId
 
     // Read again: a refresh that finished since the caller looked has already rotated the token.
     private suspend fun renewStored(owner: UserId): String? {

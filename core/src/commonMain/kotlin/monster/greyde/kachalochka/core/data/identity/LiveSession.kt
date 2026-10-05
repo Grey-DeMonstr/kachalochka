@@ -98,7 +98,7 @@ class LiveSession(
                 seen = null
                 if (gone == null || gone != intended) return
                 store.remove(gone)
-                val next = store.activeId.value?.let { store.sessionOf(it) }
+                val next = store.activeId.value?.let { store.actingSessionOf(it) }
                 if (next == null) clear() else activateOrDisown(next)
             }
             LiveSessionChange.Reloading -> seen = null

@@ -261,4 +261,50 @@ class AccountsTest {
         assertFalse(isUserCancellation(IllegalStateException("Sign-in needs a visible screen")))
         assertFalse(isUserCancellation(CancellationException("stopped")))
     }
+
+    @Test
+    fun switching_to_a_managed_child_makes_its_guardian_s_session_live() =
+        runTest {
+            val store = PersistedAccountStore(InMemoryAccountStorage())
+            val activation = RecordingActivation()
+            val service =
+                Accounts(
+                    store,
+                    QueuedSignIn(mutableListOf(ivan, misha)),
+                    activation,
+                    RecordingOwnerless(),
+                )
+            service.addAccount()
+            service.addAccount()
+            store.setManaged(listOf(managedChild(ivan)))
+
+            service.switchTo(SASHA_ID)
+
+            assertEquals(SASHA_ID, service.activeId.value)
+            assertEquals(ivan.account.userId, activation.activated.last())
+        }
+
+    @Test
+    fun signing_out_the_guardian_of_the_active_child_activates_the_session_left() =
+        runTest {
+            val store = PersistedAccountStore(InMemoryAccountStorage())
+            val activation = RecordingActivation()
+            val service =
+                Accounts(
+                    store,
+                    QueuedSignIn(mutableListOf(ivan, misha)),
+                    activation,
+                    RecordingOwnerless(),
+                )
+            service.addAccount()
+            service.addAccount()
+            store.setManaged(listOf(managedChild(ivan)))
+            service.switchTo(SASHA_ID)
+
+            service.signOut(ivan.account.userId)
+
+            assertEquals(listOf(misha.account), service.accounts.value)
+            assertEquals(misha.account.userId, service.activeId.value)
+            assertEquals(misha.account.userId, activation.activated.last())
+        }
 }

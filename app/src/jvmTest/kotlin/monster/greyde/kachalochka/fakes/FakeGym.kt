@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.AccountServer
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.identity.ActiveAccountUser
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
@@ -371,17 +372,15 @@ class FakeGym(
     val photoImages = PhotoImages { photos.bytes[it.id] }
     val photoCapture = InstantPhotoCapture(byteArrayOf(1, 2, 3))
     private val signIn = QueuedGoogleSignIn()
+    private val accountStore = PersistedAccountStore(InMemoryAccountStorage())
     val accounts =
         Accounts(
-            PersistedAccountStore(InMemoryAccountStorage()),
+            accountStore,
             signIn,
             NoOpSessionActivation(),
             NoOpOwnerlessRows(),
         )
-    val currentUser =
-        object : CurrentUser {
-            override suspend fun id(): UserId? = accounts.activeId.value
-        }
+    val currentUser: CurrentUser = ActiveAccountUser(accountStore)
     val friends =
         FakeFriends {
             accounts.accounts.value.firstOrNull { it.userId == accounts.activeId.value }

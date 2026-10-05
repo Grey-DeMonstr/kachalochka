@@ -252,4 +252,20 @@ class LiveSessionTest {
 
             assertNull(live.refreshLive(ivan.account.userId))
         }
+
+    @Test
+    fun the_end_of_a_guardian_s_live_session_takes_its_active_child_along() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            store.setManaged(listOf(managedChild(misha)))
+            live.activate(misha)
+            store.switch(SASHA_ID)
+
+            live.follow(flowOf(Renewed(misha), Ended))
+
+            assertEquals(listOf(ivan.account), store.accounts.value)
+            assertEquals(ivan.account.userId, store.activeId.value)
+            assertEquals(ivan.account.userId, inner.activated.last())
+        }
 }

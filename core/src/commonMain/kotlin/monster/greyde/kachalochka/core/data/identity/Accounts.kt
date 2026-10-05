@@ -33,7 +33,7 @@ class Accounts(
     // The store moves only once the session is live, so the avatar can never name an account the
     // app is not talking to the server as.
     suspend fun switchTo(id: UserId) {
-        val session = store.sessionOf(id) ?: return
+        val session = store.actingSessionOf(id) ?: return
         reporting {
             sessions.activate(session)
             store.switch(id)
@@ -42,7 +42,7 @@ class Accounts(
 
     suspend fun signOut(id: UserId) {
         store.remove(id)
-        val next = store.activeId.value?.let { store.sessionOf(it) }
+        val next = store.activeId.value?.let { store.actingSessionOf(it) }
         reporting { if (next == null) sessions.clear() else sessions.activate(next) }
     }
 

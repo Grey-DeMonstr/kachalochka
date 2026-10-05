@@ -4,7 +4,9 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 private class MemoryStorage : AccountStorage {
@@ -48,5 +50,20 @@ class ActiveAccountUserTest {
             assertEquals(misha.account.userId, user.id())
             store.switch(ivan.account.userId)
             assertEquals(ivan.account.userId, user.id())
+        }
+
+    @Test
+    fun a_managed_child_s_profile_and_measures_are_never_written_here() =
+        runTest {
+            val store = PersistedAccountStore(MemoryStorage())
+            val user = ActiveAccountUser(store)
+            assertTrue(user.writesPrivateRows())
+            store.add(ivan)
+            assertTrue(user.writesPrivateRows())
+            store.setManaged(listOf(managedChild(ivan)))
+
+            store.switch(SASHA_ID)
+
+            assertFalse(user.writesPrivateRows())
         }
 }

@@ -222,4 +222,32 @@ class AccountTokensTest {
 
             assertNull(tokens.tokenFor(misha))
         }
+
+    @Test
+    fun a_managed_account_borrows_its_guardian_s_token() =
+        runTest {
+            store.add(ivan)
+            store.setManaged(listOf(managedChild(ivan)))
+            val tokens =
+                AccountTokens(store, neverLive, mustNotRefresh, clockAt(FIXTURE_EXPIRY - 1.hours))
+
+            assertEquals(ivan.accessToken, tokens.tokenFor(SASHA_ID))
+        }
+
+    @Test
+    fun a_managed_account_borrows_the_live_token_while_its_guardian_is_live() =
+        runTest {
+            store.add(ivan)
+            store.setManaged(listOf(managedChild(ivan)))
+            val live = ivan.copy(accessToken = "live")
+            val tokens =
+                AccountTokens(
+                    store,
+                    FakeLiveTokens(live),
+                    mustNotRefresh,
+                    clockAt(FIXTURE_EXPIRY - 1.hours),
+                )
+
+            assertEquals("live", tokens.tokenFor(SASHA_ID))
+        }
 }

@@ -52,7 +52,7 @@ suspend fun resumeActiveAccount(
     store: AccountStore,
     sessions: SessionActivation,
 ): Boolean {
-    val session = store.activeId.value?.let { store.sessionOf(it) } ?: return false
+    val session = store.activeId.value?.let { store.actingSessionOf(it) } ?: return false
     sessions.activate(session)
     return true
 }

@@ -318,6 +318,17 @@ switching to it again is a retry rather than adding it back.
 
 `CurrentUser` is one `commonMain` implementation reading that store's active id, on both targets.
 
+A managed account is a child linked to one of the device's Google accounts (§5.2). It has no
+session: its entry in the account store names the guardian whose session acts for it,
+`actingSessionOf` answers with that session, and a switch to the child makes the guardian's
+session live before the child becomes active. The UI client, `AccountTokens` and every client
+that resolves the active account's token therefore act as the guardian, whom row-level security
+lets write the child's gym rows, while every row recorded meanwhile carries the child's id.
+`CurrentUser.writesPrivateRows` is false while a managed account is active, because its profile
+and measures are the child's alone. A managed entry never stands in for a Google account signed
+in on the device, and leaves the device's list with its guardian; when two guardians of one child
+are signed in on the device, the first one acts.
+
 ### 4.4 Photos
 
 A photo belongs to a machine: the synced `photo` table (`machine_id`, `taken_at`), sorted by

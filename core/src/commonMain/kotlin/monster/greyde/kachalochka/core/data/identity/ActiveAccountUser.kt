@@ -8,4 +8,9 @@ class ActiveAccountUser(
     private val store: AccountStore,
 ) : CurrentUser {
     override suspend fun id(): UserId? = store.activeId.value
+
+    override suspend fun writesPrivateRows(): Boolean {
+        val active = store.activeId.value
+        return store.accounts.value.none { it.userId == active && it.isManaged }
+    }
 }
