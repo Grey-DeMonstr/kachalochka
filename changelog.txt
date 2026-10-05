@@ -1,5 +1,11 @@
 Kachalochka - Changelog
 
+1.6.1
+
+- Linking a machine starts the search with the machine's name.
+- A search field has a cross that clears it.
+
+
 1.6.0
 
 - Statistics can show only improvements, and a new machine is marked "New machine".
