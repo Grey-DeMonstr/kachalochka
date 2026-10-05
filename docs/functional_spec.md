@@ -245,6 +245,14 @@ Signing out of an account removes it from the device but keeps what it recorded,
 in finds it again. On Android, signing out of the last account returns the app to working without
 one. Friends stay locked until an account is signed in.
 
+Settings has "Дети" while an account is signed in. It lists the children linked to the account,
+each with their avatar, name and "Убрать", which asks "Убрать ребёнка?" before it ends the link.
+"Добавить ребёнка" shows a new code, "Код для ребёнка: …", and on the web its link too, with
+"Поделиться", which hands it over as a group invite is handed over. The child enters it on their
+own device within a day, and a code works once; a new code replaces the last one. Family Link may
+ask the parent once to let the child sign in to the app. Without a network the screen says "Нет
+связи с сервером" and changes nothing.
+
 Settings ends with "Дополнительно", a heading that opens, for the active account, a red "Удалить
 аккаунт". Its question, "Удалить аккаунт?", asks to type DELETE, in any case, before "Удалить"
 works; then it deletes the account and everything it recorded — visits, machines with their photos,

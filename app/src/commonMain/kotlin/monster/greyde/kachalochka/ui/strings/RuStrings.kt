@@ -292,6 +292,23 @@ object RuStrings : Strings {
     override val copied = "Скопировано"
     override val copyFailed = "Не удалось скопировать"
 
+    override val children = "Дети"
+    override val noChildren = "Детей пока нет"
+    override val addChild = "Добавить ребёнка"
+
+    override fun childCode(code: String) = "Код для ребёнка: $code"
+
+    override val childCodeHint =
+        "Ребёнок вводит этот код на своём устройстве: Настройки → Родители. Код работает один " +
+            "раз в течение суток. Family Link может один раз попросить вас разрешить ребёнку " +
+            "вход в Качалочку."
+    override val removeLink = "Убрать"
+    override val removeChildTitle = "Убрать ребёнка?"
+    override val removeChildText =
+        "Вы больше не сможете записывать тренировки ребёнка, и записанное для него пропадёт с " +
+            "этого устройства. У ребёнка всё останется."
+    override val guardianInviteMessage = "Добавь меня родителем в Качалочке"
+
     override val measurement = "Замер"
     override val deleteMeasurement = "Удалить замер"
     override val deleteMeasurementTitle = "Удалить замер?"

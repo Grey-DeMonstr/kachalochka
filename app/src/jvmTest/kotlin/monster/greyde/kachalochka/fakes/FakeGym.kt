@@ -386,6 +386,10 @@ class FakeGym(
         FakeFriends {
             accounts.accounts.value.firstOrNull { it.userId == accounts.activeId.value }
         }
+    val family =
+        FakeFamily {
+            accounts.accounts.value.firstOrNull { it.userId == accounts.activeId.value }
+        }
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
     val catalogue = MachineCatalogue(machines, photos, machineLinks, friends, clock, sync)

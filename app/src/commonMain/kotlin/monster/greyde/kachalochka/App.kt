@@ -26,6 +26,7 @@ import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.navigation.CalendarRoute
+import monster.greyde.kachalochka.navigation.ChildrenRoute
 import monster.greyde.kachalochka.navigation.FriendCalendarRoute
 import monster.greyde.kachalochka.navigation.FriendMachineRoute
 import monster.greyde.kachalochka.navigation.FriendVisitRoute
@@ -52,6 +53,7 @@ import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.SignInScreen
 import monster.greyde.kachalochka.ui.calendar.CalendarScreen
+import monster.greyde.kachalochka.ui.family.ChildrenScreen
 import monster.greyde.kachalochka.ui.friends.FriendCalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
 import monster.greyde.kachalochka.ui.friends.GroupScreen
@@ -260,7 +262,13 @@ fun App() {
                     )
                 }
                 composable<SettingsRoute> {
-                    SettingsScreen(onBack = { navController.popBackStack() })
+                    SettingsScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenChildren = { navController.navigate(ChildrenRoute) },
+                    )
+                }
+                composable<ChildrenRoute> {
+                    ChildrenScreen(onBack = { navController.popBackStack() })
                 }
                 composable<VisitRoute> { entry ->
                     val route = entry.toRoute<VisitRoute>()

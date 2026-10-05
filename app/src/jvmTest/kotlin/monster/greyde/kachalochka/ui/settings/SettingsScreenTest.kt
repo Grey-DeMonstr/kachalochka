@@ -43,6 +43,26 @@ class SettingsScreenTest {
     private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
 
     @Test
+    fun a_signed_in_account_opens_its_children_from_settings() {
+        val gym = FakeGym().withAccounts(ivan, active = ivan)
+        var opened = 0
+        runScreenTest(
+            gym,
+            screen = { SettingsScreen(onBack = {}, onOpenChildren = { opened++ }) },
+        ) {
+            onNodeWithTag("settings-children").performScrollTo().performClick()
+        }
+        assertEquals(1, opened)
+    }
+
+    @Test
+    fun without_an_account_there_are_no_children_to_open() {
+        runScreenTest(FakeGym(), screen = { settings() }) {
+            onNodeWithTag("settings-children").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun the_transition_field_shows_the_stored_length() {
         runScreenTest(FakeGym(), screen = { settings() }) {
             onNodeWithTag("transition-millis").assertTextEquals("150")

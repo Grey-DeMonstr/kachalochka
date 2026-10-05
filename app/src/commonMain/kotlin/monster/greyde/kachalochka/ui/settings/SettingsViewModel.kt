@@ -130,6 +130,10 @@ class SettingsViewModel(
 
     private val mutableDeletion = MutableStateFlow(DeletionUi())
     val deletion: StateFlow<DeletionUi> = mutableDeletion
+    private val mutableFamily = MutableStateFlow(false)
+
+    /** "Дети" and "Родители" are there for a signed-in account. */
+    val familyAvailable: StateFlow<Boolean> = mutableFamily
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -142,6 +146,7 @@ class SettingsViewModel(
     private suspend fun load() {
         val owner = currentUser.id()
         mutableDeletion.value = DeletionUi(available = owner != null)
+        mutableFamily.value = owner != null
         val stored = profiles.forOwner(owner)
         val account = accounts.accounts.value.firstOrNull { it.userId == owner }
         val placeholder = account?.displayName.orEmpty()

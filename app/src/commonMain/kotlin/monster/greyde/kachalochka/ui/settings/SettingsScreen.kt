@@ -62,13 +62,18 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onOpenChildren: () -> Unit = {},
+    onOpenGuardians: () -> Unit = {},
+) {
     val viewModel: SettingsViewModel = koinViewModel()
     val profile by viewModel.profile.collectAsState()
     val device by viewModel.device.collectAsState()
     val canApply by viewModel.canApply.collectAsState()
     val confirmingLeave by viewModel.confirmingLeave.collectAsState()
     val deletion by viewModel.deletion.collectAsState()
+    val familyAvailable by viewModel.familyAvailable.collectAsState()
     val leave = { if (viewModel.requestLeave()) onBack() }
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
@@ -119,6 +124,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                 Modifier.testTag("apply-settings"),
                 enabled = canApply,
             )
+            if (familyAvailable) {
+                NavRow(strings().children, "settings-children", onOpenChildren)
+            }
             if (deletion.available) AdvancedSection(deletion, viewModel)
         }
     }
@@ -157,6 +165,31 @@ private fun SectionTitle(
     modifier: Modifier = Modifier,
 ) {
     Text(text = text, style = MaterialTheme.typography.headlineSmall, modifier = modifier)
+}
+
+@Composable
+private fun NavRow(
+    text: String,
+    tag: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp)
+            .testTag(tag),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text, style = MaterialTheme.typography.headlineSmall)
+        Icon(
+            PhosphorIcons.CaretRight,
+            null,
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
+            modifier = Modifier.size(20.dp),
+        )
+    }
 }
 
 @Composable

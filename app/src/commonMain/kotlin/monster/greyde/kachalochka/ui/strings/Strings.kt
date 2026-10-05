@@ -258,6 +258,19 @@ interface Strings {
     val copied: String
     val copyFailed: String
 
+    // Family
+    val children: String
+    val noChildren: String
+    val addChild: String
+
+    fun childCode(code: String): String
+
+    val childCodeHint: String
+    val removeLink: String
+    val removeChildTitle: String
+    val removeChildText: String
+    val guardianInviteMessage: String
+
     // Measures
     val measurement: String
     val deleteMeasurement: String

@@ -14,6 +14,7 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.family.FamilyRepository
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -70,6 +71,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<Accounts> { gym.accounts }
         single<AccountDeletion> { gym.deletion }
         single<FriendsRepository> { gym.friends }
+        single<FamilyRepository> { gym.family }
         single<SupabaseCredentials> { gym.credentials }
         single<SyncTrigger> { gym.sync }
         single<InviteSharing> { gym.invites }

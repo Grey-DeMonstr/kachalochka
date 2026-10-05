@@ -99,3 +99,6 @@ data class PlanRoute(
     val planId: String? = null,
     val fromVisit: String? = null,
 )
+
+@Serializable
+object ChildrenRoute

@@ -275,6 +275,23 @@ object EnStrings : Strings {
     override val copied = "Copied"
     override val copyFailed = "Couldn't copy"
 
+    override val children = "Children"
+    override val noChildren = "No children yet"
+    override val addChild = "Add a child"
+
+    override fun childCode(code: String) = "Code for your child: $code"
+
+    override val childCodeHint =
+        "Your child enters this code on their own device: Settings → Parents. It works once, " +
+            "within a day. Family Link may ask you once to let your child sign in to " +
+            "Kachalochka."
+    override val removeLink = "Remove"
+    override val removeChildTitle = "Remove the child?"
+    override val removeChildText =
+        "You will no longer record your child's workouts, and what you recorded for them " +
+            "leaves this device. Your child keeps everything."
+    override val guardianInviteMessage = "Add me as your parent in Kachalochka"
+
     override val measurement = "Measurement"
     override val deleteMeasurement = "Delete measurement"
     override val deleteMeasurementTitle = "Delete the measurement?"
