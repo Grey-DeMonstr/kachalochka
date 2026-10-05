@@ -18,6 +18,7 @@ import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.family.ChildrenViewModel
+import monster.greyde.kachalochka.ui.family.GuardiansViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendCalendarViewModel
@@ -82,6 +83,7 @@ val appModule =
         viewModelOf(::MeasuresViewModel)
         viewModelOf(::PlansViewModel)
         viewModelOf(::ChildrenViewModel)
+        viewModelOf(::GuardiansViewModel)
         viewModel { (day: CalendarDay?) ->
             MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get())
         }

@@ -2,9 +2,12 @@ package monster.greyde.kachalochka.ui.family
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.Invite
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.AfterTest
@@ -128,5 +131,30 @@ class ChildrenViewModelTest {
 
         assertEquals(1, gym.family.links.size)
         assertEquals("Нет связи с сервером", vm.state.value.notice)
+    }
+
+    @Test
+    fun switching_accounts_drops_the_shown_children_and_code() {
+        val two = FakeGym().withAccounts(IVAN_SESSION, OLGA_SESSION, active = IVAN_SESSION)
+        two.family.link(SASHA, IVAN_MEMBER)
+        val vm = ChildrenViewModel(two.family, two.invites, two.accounts).also { it.addChild() }
+        assertEquals(listOf(SASHA), vm.state.value.children)
+
+        runBlocking { two.accounts.switchTo(OLGA_SESSION.account.userId) }
+
+        assertEquals(emptyList(), vm.state.value.children)
+        assertNull(vm.state.value.code)
+    }
+
+    @Test
+    fun cancelling_a_removal_closes_the_question_and_keeps_the_link() {
+        gym.family.link(SASHA, IVAN_MEMBER)
+        val vm = viewModel()
+
+        vm.askToRemove(SASHA)
+        vm.cancelRemove()
+
+        assertNull(vm.state.value.removing)
+        assertEquals(1, gym.family.links.size)
     }
 }

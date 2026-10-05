@@ -291,6 +291,17 @@ object EnStrings : Strings {
         "You will no longer record your child's workouts, and what you recorded for them " +
             "leaves this device. Your child keeps everything."
     override val guardianInviteMessage = "Add me as your parent in Kachalochka"
+    override val guardians = "Parents"
+    override val noGuardians = "No parents yet"
+    override val addGuardian = "Add a parent"
+    override val guardianCode = "Code from your parent"
+    override val guardianRights =
+        "A parent records and sees your visits, machines, photos and plans, but never your " +
+            "profile, measurements or groups."
+    override val guardianCodeUnknown = "Code not found or expired"
+    override val ownGuardianCode = "That is your own code"
+    override val removeGuardianTitle = "Remove the parent?"
+    override val removeGuardianText = "The parent will no longer record or see your workouts."
 
     override val measurement = "Measurement"
     override val deleteMeasurement = "Delete measurement"

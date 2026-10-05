@@ -32,6 +32,7 @@ import monster.greyde.kachalochka.navigation.FriendMachineRoute
 import monster.greyde.kachalochka.navigation.FriendVisitRoute
 import monster.greyde.kachalochka.navigation.FriendsRoute
 import monster.greyde.kachalochka.navigation.GroupRoute
+import monster.greyde.kachalochka.navigation.GuardiansRoute
 import monster.greyde.kachalochka.navigation.HomeRoute
 import monster.greyde.kachalochka.navigation.LinkChooserRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
@@ -54,6 +55,7 @@ import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.SignInScreen
 import monster.greyde.kachalochka.ui.calendar.CalendarScreen
 import monster.greyde.kachalochka.ui.family.ChildrenScreen
+import monster.greyde.kachalochka.ui.family.GuardiansScreen
 import monster.greyde.kachalochka.ui.friends.FriendCalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
 import monster.greyde.kachalochka.ui.friends.GroupScreen
@@ -265,10 +267,14 @@ fun App() {
                     SettingsScreen(
                         onBack = { navController.popBackStack() },
                         onOpenChildren = { navController.navigate(ChildrenRoute) },
+                        onOpenGuardians = { navController.navigate(GuardiansRoute) },
                     )
                 }
                 composable<ChildrenRoute> {
                     ChildrenScreen(onBack = { navController.popBackStack() })
+                }
+                composable<GuardiansRoute> {
+                    GuardiansScreen(onBack = { navController.popBackStack() })
                 }
                 composable<VisitRoute> { entry ->
                     val route = entry.toRoute<VisitRoute>()

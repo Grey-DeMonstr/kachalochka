@@ -102,3 +102,6 @@ data class PlanRoute(
 
 @Serializable
 object ChildrenRoute
+
+@Serializable
+object GuardiansRoute

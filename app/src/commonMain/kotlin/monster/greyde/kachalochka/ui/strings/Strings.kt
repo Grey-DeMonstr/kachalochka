@@ -270,6 +270,15 @@ interface Strings {
     val removeChildTitle: String
     val removeChildText: String
     val guardianInviteMessage: String
+    val guardians: String
+    val noGuardians: String
+    val addGuardian: String
+    val guardianCode: String
+    val guardianRights: String
+    val guardianCodeUnknown: String
+    val ownGuardianCode: String
+    val removeGuardianTitle: String
+    val removeGuardianText: String
 
     // Measures
     val measurement: String

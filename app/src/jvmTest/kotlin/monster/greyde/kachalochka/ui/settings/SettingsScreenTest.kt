@@ -56,6 +56,19 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun a_signed_in_account_opens_its_parents_from_settings() {
+        val gym = FakeGym().withAccounts(ivan, active = ivan)
+        var opened = 0
+        runScreenTest(
+            gym,
+            screen = { SettingsScreen(onBack = {}, onOpenGuardians = { opened++ }) },
+        ) {
+            onNodeWithTag("settings-guardians").performScrollTo().performClick()
+        }
+        assertEquals(1, opened)
+    }
+
+    @Test
     fun without_an_account_there_are_no_children_to_open() {
         runScreenTest(FakeGym(), screen = { settings() }) {
             onNodeWithTag("settings-children").assertDoesNotExist()

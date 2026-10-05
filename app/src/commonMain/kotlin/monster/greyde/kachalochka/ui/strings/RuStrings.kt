@@ -308,6 +308,18 @@ object RuStrings : Strings {
         "Вы больше не сможете записывать тренировки ребёнка, и записанное для него пропадёт с " +
             "этого устройства. У ребёнка всё останется."
     override val guardianInviteMessage = "Добавь меня родителем в Качалочке"
+    override val guardians = "Родители"
+    override val noGuardians = "Родителей пока нет"
+    override val addGuardian = "Добавить родителя"
+    override val guardianCode = "Код от родителя"
+    override val guardianRights =
+        "Родитель записывает и видит ваши визиты, упражнения, фото и планы. Ваш профиль, " +
+            "замеры и группы он не видит."
+    override val guardianCodeUnknown = "Код не найден или устарел"
+    override val ownGuardianCode = "Это ваш собственный код"
+    override val removeGuardianTitle = "Убрать родителя?"
+    override val removeGuardianText =
+        "Родитель больше не сможет записывать ваши тренировки и видеть их."
 
     override val measurement = "Замер"
     override val deleteMeasurement = "Удалить замер"

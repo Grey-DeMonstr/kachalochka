@@ -126,6 +126,7 @@ fun SettingsScreen(
             )
             if (familyAvailable) {
                 NavRow(strings().children, "settings-children", onOpenChildren)
+                NavRow(strings().guardians, "settings-guardians", onOpenGuardians)
             }
             if (deletion.available) AdvancedSection(deletion, viewModel)
         }

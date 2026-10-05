@@ -1,16 +1,11 @@
 package monster.greyde.kachalochka.ui.family
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.domain.family.Family
 import monster.greyde.kachalochka.core.domain.family.FamilyMember
 import monster.greyde.kachalochka.core.domain.family.FamilyRepository
-import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.friends.Invite
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.guardianLink
@@ -30,71 +25,45 @@ data class ChildrenUiState(
     val removing: FamilyMember? = null,
 )
 
-class ChildrenViewModel(
-    private val family: FamilyRepository,
+internal class ChildrenViewModel(
+    family: FamilyRepository,
     private val invites: InviteSharing,
-    private val accounts: Accounts,
-) : ViewModel() {
-    private val mutableState = MutableStateFlow(ChildrenUiState())
-    val state: StateFlow<ChildrenUiState> = mutableState
-    private val writes = WriteGuard(viewModelScope)
-    private var loading: Job? = null
-
-    /** A code offered for one account is never shown for another. */
-    init {
-        viewModelScope.launch {
-            accounts.activeId.collect {
-                mutableState.value = ChildrenUiState()
-                load()
-            }
-        }
-    }
-
-    fun load() {
-        loading?.cancel()
-        loading = viewModelScope.launch { read() }
-    }
-
+    accounts: Accounts,
+) : FamilyViewModel<ChildrenUiState>(family, accounts, ChildrenUiState()) {
     fun addChild() =
         writes.launch {
             reading { family.offer() }
                 .onSuccess { code ->
                     val link = invites.pageAddress?.let { guardianLink(it, code) }
-                    mutableState.update { it.copy(code = code, link = link, notice = null) }
-                }.onFailure { offline() }
+                    change { copy(code = code, link = link, notice = null) }
+                }.onFailure { change { withFailure() } }
         }
 
     fun share() {
         val code = state.value.code ?: return
+        val link = state.value.link
         writes.launch {
-            val link = invites.pageAddress?.let { guardianLink(it, code) }
             val invite = Invite(AppStrings.current.guardianInviteMessage, code, link)
             val notice = reading { invites.share(invite) }.getOrNull()
-            mutableState.update { it.copy(notice = notice) }
+            change { copy(notice = notice) }
         }
     }
 
-    fun askToRemove(child: FamilyMember) = mutableState.update { it.copy(removing = child) }
+    override fun peopleOf(family: Family) = family.children
 
-    fun cancelRemove() = mutableState.update { it.copy(removing = null) }
+    override fun ChildrenUiState.withPeople(people: List<FamilyMember>) =
+        copy(children = people, offline = false)
 
-    fun confirmRemove() {
-        val child = state.value.removing ?: return
-        val me = accounts.activeId.value ?: return
-        mutableState.update { it.copy(removing = null) }
-        writes.launch {
-            reading { family.end(child.userId, me) }
-                .onSuccess { read() }
-                .onFailure { offline() }
-        }
-    }
+    override fun ChildrenUiState.withOffline() = copy(offline = true)
 
-    private suspend fun read() {
-        reading { family.family().children }
-            .onSuccess { found ->
-                mutableState.update { it.copy(children = found, offline = false) }
-            }.onFailure { mutableState.update { it.copy(offline = true) } }
-    }
+    override fun ChildrenUiState.withRemoving(person: FamilyMember?) = copy(removing = person)
 
-    private fun offline() = mutableState.update { it.copy(notice = AppStrings.current.offline) }
+    override fun ChildrenUiState.withFailure() = copy(notice = AppStrings.current.offline)
+
+    override fun removingOf(state: ChildrenUiState) = state.removing
+
+    override suspend fun end(
+        me: UserId,
+        person: UserId,
+    ) = family.end(person, me)
 }

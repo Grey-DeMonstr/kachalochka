@@ -253,6 +253,13 @@ own device within a day, and a code works once; a new code replaces the last one
 ask the parent once to let the child sign in to the app. Without a network the screen says "Нет
 связи с сервером" and changes nothing.
 
+A signed-in account's Settings also have "Родители": the account's parents, each with "Убрать",
+which asks "Убрать родителя?" first, and under "Добавить родителя" a field for the code from a
+parent and "Добавить". The screen says what a parent can do: record and see the account's
+visits, machines, photos and plans, never its profile, measures or groups. An unknown or expired
+code says "Код не найден или устарел", and the account's own code "Это ваш собственный код".
+Linking and removing need the network, as on "Дети".
+
 Settings ends with "Дополнительно", a heading that opens, for the active account, a red "Удалить
 аккаунт". Its question, "Удалить аккаунт?", asks to type DELETE, in any case, before "Удалить"
 works; then it deletes the account and everything it recorded — visits, machines with their photos,

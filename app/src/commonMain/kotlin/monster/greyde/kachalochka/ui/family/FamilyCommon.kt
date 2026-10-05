@@ -13,9 +13,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.domain.family.Family
 import monster.greyde.kachalochka.core.domain.family.FamilyMember
+import monster.greyde.kachalochka.core.domain.family.FamilyRepository
+import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.components.Rule
+import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.strings
 
 /** The other ends of the account's links, each with "Убрать"; [tag] starts every test tag. */
@@ -70,5 +83,75 @@ private fun FamilyRow(
             onClick = { onRemove(person) },
             modifier = Modifier.testTag("$tag-remove-${person.userId.value}"),
         ) { Text(strings().removeLink) }
+    }
+}
+
+/**
+ * One side of the account's guardian links: read while the screen is open, reset when another
+ * account becomes active, and ended after a question. The overrides are pure functions of their
+ * arguments, because the first read starts while the base class is constructed.
+ */
+internal abstract class FamilyViewModel<S : Any>(
+    protected val family: FamilyRepository,
+    protected val accounts: Accounts,
+    private val empty: S,
+) : ViewModel() {
+    private val mutableState = MutableStateFlow(empty)
+    val state: StateFlow<S> = mutableState
+    protected val writes = WriteGuard(viewModelScope)
+    private var loading: Job? = null
+
+    init {
+        viewModelScope.launch {
+            accounts.activeId.collect {
+                mutableState.value = empty
+                load()
+            }
+        }
+    }
+
+    protected abstract fun peopleOf(family: Family): List<FamilyMember>
+
+    protected abstract fun S.withPeople(people: List<FamilyMember>): S
+
+    protected abstract fun S.withOffline(): S
+
+    protected abstract fun S.withRemoving(person: FamilyMember?): S
+
+    protected abstract fun S.withFailure(): S
+
+    protected abstract fun removingOf(state: S): FamilyMember?
+
+    protected abstract suspend fun end(
+        me: UserId,
+        person: UserId,
+    )
+
+    protected fun change(transform: S.() -> S) = mutableState.update { it.transform() }
+
+    fun load() {
+        loading?.cancel()
+        loading = viewModelScope.launch { read() }
+    }
+
+    fun askToRemove(person: FamilyMember) = change { withRemoving(person) }
+
+    fun cancelRemove() = change { withRemoving(null) }
+
+    fun confirmRemove() {
+        val person = removingOf(state.value) ?: return
+        change { withRemoving(null) }
+        val me = accounts.activeId.value ?: return
+        writes.launch {
+            reading { end(me, person.userId) }
+                .onSuccess { read() }
+                .onFailure { change { withFailure() } }
+        }
+    }
+
+    protected suspend fun read() {
+        reading { peopleOf(family.family()) }
+            .onSuccess { found -> change { withPeople(found) } }
+            .onFailure { change { withOffline() } }
     }
 }
