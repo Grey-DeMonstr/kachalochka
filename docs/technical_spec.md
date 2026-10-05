@@ -323,10 +323,10 @@ switching to it again is a retry rather than adding it back.
 A photo belongs to a machine: the synced `photo` table (`machine_id`, `taken_at`), sorted by
 `photoOrder`, `(taken_at, id)`. `machine_id` is not a foreign key, as on `machine_link`. Photo bytes
 are not rows: they are a JPEG in the private `photos` Storage bucket at `<user_id>/<photo_id>`
-(`Photo.storagePath`), whose policies let the owner write, read and delete their own folder and
-group mates read it. Both platforms shrink a new photo to 1600 px on its long edge, upright, as JPEG
-quality 85, before anything stores it: Android with `BitmapFactory` and the EXIF orientation, the
-web on a canvas.
+(`Photo.storagePath`), whose policies let the owner and their guardians write, read and delete
+the owner's folder, and group mates read it. Both platforms shrink a new photo to 1600 px on its
+long edge, upright, as JPEG quality 85, before anything stores it: Android with `BitmapFactory` and
+the EXIF orientation, the web on a canvas.
 
 Android keeps the bytes in `PhotoFiles` (`filesDir/photos/<id>.jpg`, written aside and renamed)
 and records the row; `LocalPhotoRepository` writes the file before the row and removes the file
@@ -641,19 +641,24 @@ cannot map, such as the unit `custom`, fails their pull.
 
 Row-level security enforces every visibility rule from the functional spec:
 
-- A user writes only rows with their own `user_id`, a set only into their own visit and on
-  their own machine, and a photo only of their own machine.
+- A user writes only rows with their own `user_id` or that of a child they guard (`guards`), a
+  set only into a visit and on a machine of the set's own owner, and a photo only of a machine or
+  profile of the photo's own owner.
 - A user reads their own rows and the live `machine`, `visit`, `workout_set`, `machine_link` and
   `photo` rows of everyone who shares a live group with them, through the security-definer
   function `shares_group_with`; the `photos` bucket's read policy applies it to the first folder
-  of an object's name. `profile`, `measure`, `measurement` and `workout_plan` stay readable by
-  their owner alone: each has one owner-only policy and no group policy.
+  of an object's name. A guardian also reads every `machine`, `visit`, `workout_set`,
+  `machine_link`, `photo` and `workout_plan` row of the children they guard, deleted ones
+  included, since their device syncs them (§4.2), and the `photos` bucket admits them to those
+  children's folders. `profile`, `measure` and `measurement` stay readable by their owner alone,
+  and `workout_plan` by its owner and their guardians; none of them has a group policy.
 - A friend's link into one's own machine is changed only through two security-definer
   functions, called by `FriendsRepository.breakLinks` and `repointLinks`.
   `break_machine_links(machine)` soft-deletes the live links pointing at `machine`
-  when the caller owns it on the server. `repoint_machine_links(removed, kept)` moves friends'
-  live links pointing at `removed` to `kept` when the caller owns `removed` and nobody else owns
-  `kept`; `kept` need not exist yet, since it may have been created offline.
+  when the caller owns it on the server or guards its owner. `repoint_machine_links(removed,
+  kept)` moves friends' live links pointing at `removed` to `kept` when the caller owns `removed`
+  or guards its owner, and nobody but that owner owns `kept`; `kept` need not exist yet, since it
+  may have been created offline.
 - An account deletes itself through the security-definer `delete_my_account`, which deletes the
   caller from `auth.users`; every owned table cascades from it. Storage objects are not among
   them, so `SupabaseAccountServer` removes the caller's photos through the Storage API right
