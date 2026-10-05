@@ -430,12 +430,19 @@ fun App() {
                     )
                 }
             }
+            // Close the screens a managed child may not use.
+            LaunchedEffect(accounts.managedActive) {
+                if (accounts.managedActive) navController.leaveChildHidden()
+            }
             val pendingJoin: PendingJoin = koinInject()
             var inviteOffered by remember { mutableStateOf(false) }
             var inviteMissing by remember { mutableStateOf(false) }
             // A code saved while signed out goes to whichever account signs in next, so it asks.
-            LaunchedEffect(accounts.activeId) {
-                inviteOffered = accounts.activeId != null && pendingJoin.waiting
+            LaunchedEffect(accounts.activeId, accounts.managedActive) {
+                inviteOffered =
+                    accounts.activeId != null &&
+                    !accounts.managedActive &&
+                    pendingJoin.waiting
             }
             if (inviteOffered) {
                 InviteConfirmDialog(
@@ -461,8 +468,11 @@ fun App() {
             var guardianOffered by remember { mutableStateOf(false) }
             var guardianProblem by remember { mutableStateOf<String?>(null) }
             // A parent's code kept while signed out goes to whichever account signs in next.
-            LaunchedEffect(accounts.activeId) {
-                guardianOffered = accounts.activeId != null && pendingGuardian.waiting
+            LaunchedEffect(accounts.activeId, accounts.managedActive) {
+                guardianOffered =
+                    accounts.activeId != null &&
+                    !accounts.managedActive &&
+                    pendingGuardian.waiting
             }
             if (guardianOffered) {
                 GuardianInviteDialog(
@@ -490,4 +500,18 @@ fun App() {
             }
         }
     }
+}
+
+/** Closes every screen a managed child has no business on, with whatever was opened from it. */
+private fun NavController.leaveChildHidden() {
+    popBackStack<MeasuresRoute>(inclusive = true)
+    popBackStack<MeasureRoute>(inclusive = true)
+    popBackStack<MeasurementFormRoute>(inclusive = true)
+    popBackStack<FriendsRoute>(inclusive = true)
+    popBackStack<GroupRoute>(inclusive = true)
+    popBackStack<FriendCalendarRoute>(inclusive = true)
+    popBackStack<FriendVisitRoute>(inclusive = true)
+    popBackStack<FriendMachineRoute>(inclusive = true)
+    popBackStack<ChildrenRoute>(inclusive = true)
+    popBackStack<GuardiansRoute>(inclusive = true)
 }

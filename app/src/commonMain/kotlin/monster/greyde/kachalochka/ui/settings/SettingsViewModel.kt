@@ -145,10 +145,20 @@ class SettingsViewModel(
 
     private suspend fun load() {
         val owner = currentUser.id()
-        mutableDeletion.value = DeletionUi(available = owner != null)
-        mutableFamily.value = owner != null
-        val stored = profiles.forOwner(owner)
         val account = accounts.accounts.value.firstOrNull { it.userId == owner }
+        val ownsAccount = owner != null && account?.isManaged != true
+        mutableDeletion.value = DeletionUi(available = ownsAccount)
+        mutableFamily.value = ownsAccount
+        // A managed child' s profile is the child' s own; only the device settings stay.
+        if (account?.isManaged == true) {
+            savedAvatar = null
+            mutableAvatar.value = null
+            saved = null
+            mutableProfile.value = null
+            refreshApply()
+            return
+        }
+        val stored = profiles.forOwner(owner)
         val placeholder = account?.displayName.orEmpty()
         savedAvatar =
             account?.let {
@@ -262,6 +272,7 @@ class SettingsViewModel(
         shown: ProfileUi?,
         avatar: AvatarUi?,
     ) {
+        if (!currentUser.writesPrivateRows()) return
         val owner = currentUser.id()
         val now = clock.now()
         // Read afresh so a friend colour saved meanwhile survives.

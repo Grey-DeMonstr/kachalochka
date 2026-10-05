@@ -125,6 +125,7 @@ class GroupViewModel(
         colorPicker = null
         publish()
         writes.launch {
+            if (!currentUser.writesPrivateRows()) return@launch
             val owner = currentUser.id() ?: return@launch
             reading { colorStore.set(owner, member, index) }
                 .onSuccess {

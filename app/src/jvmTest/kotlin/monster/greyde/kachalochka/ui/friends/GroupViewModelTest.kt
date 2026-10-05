@@ -16,6 +16,8 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -331,4 +333,23 @@ class GroupViewModelTest {
         // The share sheet speaks for itself, so the screen adds no notice.
         assertNull(assertNotNull(vm.state.value).notice)
     }
+
+    @Test
+    fun a_managed_child_s_friend_colour_is_not_written() =
+        runTest {
+            val family = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+            family.accounts.switchTo(SASHA.userId)
+            val group =
+                family.friends.group(
+                    "Зал на Лесной",
+                    owner = OLEG,
+                    Friend(SASHA.userId, SASHA.displayName),
+                )
+            val vm = viewModel(group, family)
+
+            vm.pickColor(OLEG.userId)
+            vm.chooseColor(2)
+
+            assertNull(family.profiles.forOwner(SASHA.userId))
+        }
 }

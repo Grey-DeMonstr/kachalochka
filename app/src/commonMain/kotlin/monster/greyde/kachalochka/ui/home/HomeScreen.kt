@@ -58,6 +58,7 @@ fun HomeScreen(
     val accounts by accountsViewModel.state.collectAsState()
     val signInAvailable: SignInAvailable = koinInject()
     val signedIn = accounts.activeId != null
+    val managed = accounts.managedActive
     LaunchedEffect(Unit) { viewModel.refresh() }
     val s = strings()
     Screen(s.appName, onBack = null, onOpenSettings = onOpenSettings) {
@@ -77,12 +78,14 @@ fun HomeScreen(
             "section-machines",
             onClick = onOpenMachines,
         )
-        SectionRow(
-            PhosphorIcons.Ruler,
-            s.measurements,
-            "section-measures",
-            onClick = onOpenMeasures,
-        )
+        if (!managed) {
+            SectionRow(
+                PhosphorIcons.Ruler,
+                s.measurements,
+                "section-measures",
+                onClick = onOpenMeasures,
+            )
+        }
         SectionRow(
             PhosphorIcons.ListChecks,
             s.plans,
@@ -95,13 +98,15 @@ fun HomeScreen(
             "section-stats",
             onClick = onOpenStatistics,
         )
-        SectionRow(
-            PhosphorIcons.UsersThree,
-            s.friends,
-            "section-friends",
-            locked = !signedIn,
-            onClick = onOpenFriends.takeIf { signedIn },
-        )
+        if (!managed) {
+            SectionRow(
+                PhosphorIcons.UsersThree,
+                s.friends,
+                "section-friends",
+                locked = !signedIn,
+                onClick = onOpenFriends.takeIf { signedIn },
+            )
+        }
         Rule()
         if (!signedIn && signInAvailable.value) {
             Box(Modifier.padding(16.dp)) {

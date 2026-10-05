@@ -19,6 +19,8 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.runScreenTestInEnglish
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -224,5 +226,17 @@ class HomeScreenTest {
             waitForIdle()
         }
         assertEquals(1, opened)
+    }
+
+    @Test
+    fun a_managed_child_has_no_measures_or_friends_on_home() {
+        val gym = FakeGym().withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
+        runBlocking { gym.accounts.switchTo(SASHA.userId) }
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}) }) {
+            onNodeWithTag("section-measures").assertDoesNotExist()
+            onNodeWithTag("section-friends").assertDoesNotExist()
+            onNodeWithTag("section-plans").assertExists()
+            onNodeWithTag("section-stats").assertExists()
+        }
     }
 }

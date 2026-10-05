@@ -25,6 +25,8 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.family.IVAN_MEMBER
 import monster.greyde.kachalochka.ui.family.PAPA
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -602,4 +604,85 @@ class AppTest {
             val created = runBlocking { gym.machines.all(null) }.single()
             onNodeWithTag("plan-machine-${created.id.value}").assertIsDisplayed()
         }
+
+    @Test
+    fun switching_to_a_managed_child_closes_its_measures() {
+        val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            onNodeWithTag("section-measures").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-${SASHA.userId.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Качалочка")
+            onNodeWithTag("section-measures").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun switching_to_a_managed_child_closes_a_friend_s_machine() {
+        val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+        signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val olegPress = Machine.new("Жим ногами", OLEG.userId, signed.clock.current)
+        signed.friends.machines += olegPress
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            onNodeWithTag("section-machines").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-list-friend-${olegPress.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("take-machine").assertExists()
+
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-${SASHA.userId.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("take-machine").assertDoesNotExist()
+            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
+        }
+    }
+
+    @Test
+    fun switching_to_a_managed_child_closes_a_friend_s_visit() {
+        val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+        signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val t0 = signed.clock.current
+        signed.friends.visits +=
+            Visit(VisitId.random(), OLEG.userId, signed.today, t0 - 2.hours, t0, false)
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            onNodeWithTag("section-visits").performClick()
+            waitForIdle()
+            onNodeWithTag("day-${signed.today.iso}").performClick()
+            waitForIdle()
+            onNodeWithTag("friend-visit-${OLEG.userId.value}").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextContains("Олег")
+
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-${SASHA.userId.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Визиты")
+        }
+    }
+
+    @Test
+    fun a_kept_group_invite_waits_while_a_managed_child_is_active() {
+        val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+        runBlocking { signed.accounts.switchTo(SASHA.userId) }
+        signed.friends.group("Зал на Лесной", owner = OLEG, code = "ABCD2345")
+        signed.joinCodes.save("ABCD2345")
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            waitForIdle()
+            onNodeWithTag("invite-confirm").assertDoesNotExist()
+
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-${IVAN_SESSION.account.userId.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("invite-confirm").assertExists()
+        }
+    }
 }

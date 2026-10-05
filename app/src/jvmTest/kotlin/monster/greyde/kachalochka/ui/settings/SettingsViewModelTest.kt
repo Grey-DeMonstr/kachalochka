@@ -18,6 +18,8 @@ import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
 import monster.greyde.kachalochka.ui.account.AccountAvatars
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.strings.AppLanguage
 import monster.greyde.kachalochka.ui.strings.InMemoryLanguagePreference
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
@@ -517,5 +519,33 @@ class SettingsViewModelTest {
             assertTrue(vm.canApply.value)
             vm.apply()
             assertEquals(AppLanguage.English, languages.language.value)
+        }
+
+    @Test
+    fun a_managed_child_keeps_only_the_settings_of_the_device() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
+            gym.accounts.switchTo(SASHA.userId)
+
+            val vm = viewModel()
+
+            assertNull(vm.profile.value)
+            assertNull(vm.avatar.value)
+            assertFalse(vm.deletion.value.available)
+            assertFalse(vm.familyAvailable.value)
+        }
+
+    @Test
+    fun applying_for_a_managed_child_changes_the_device_and_writes_no_profile() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
+            gym.accounts.switchTo(SASHA.userId)
+            val vm = viewModel()
+
+            vm.chooseLanguage(AppLanguage.English)
+            vm.apply()
+
+            assertEquals(AppLanguage.English, languages.language.value)
+            assertNull(gym.profiles.forOwner(SASHA.userId))
         }
 }
