@@ -91,7 +91,6 @@ fun MachineFormScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onSaved: (MachineId) -> Unit,
-    inVisit: Boolean = true,
     onLink: () -> Unit = {},
     onOpenFriendMachine: (MachineId, UserId) -> Unit = { _, _ -> },
 ) {
@@ -105,7 +104,7 @@ fun MachineFormScreen(
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(
-        strings().machine,
+        "",
         onBack = onBack,
         onOpenSettings = onOpenSettings,
         actions = { if (linking.canUnlink) MachineMenu(viewModel::askToUnlink) },
@@ -117,9 +116,9 @@ fun MachineFormScreen(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            FieldLabel(strings().name)
             FormField(
                 value = state.name,
+                placeholder = strings().name,
                 onValueChange = { name -> viewModel.update { it.copy(name = name) } },
                 tag = "machine-name",
                 minHeight = 50.dp,
@@ -142,9 +141,9 @@ fun MachineFormScreen(
                     LinkedWith(linking.linkedWith, onOpenFriendMachine)
                 }
             }
-            FieldLabel(strings().setupNote)
             FormField(
                 value = state.setupNote,
+                placeholder = strings().setupNote,
                 onValueChange = { note -> viewModel.update { it.copy(setupNote = note) } },
                 tag = "machine-note",
                 minHeight = 62.dp,
@@ -168,6 +167,7 @@ fun MachineFormScreen(
                 FieldLabel(strings().unitName)
                 FormField(
                     value = state.unitLabel,
+                    placeholder = "",
                     onValueChange = { label ->
                         viewModel.update {
                             it.copy(unitLabel = label.take(MachineFormState.UNIT_LABEL_LENGTH))
@@ -198,7 +198,6 @@ fun MachineFormScreen(
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-            if (inVisit) HintRow()
         }
         Column(
             Modifier.padding(top = 12.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
@@ -302,6 +301,7 @@ private fun FieldLabel(text: String) {
 @Composable
 private fun FormField(
     value: String,
+    placeholder: String,
     onValueChange: (String) -> Unit,
     tag: String,
     minHeight: Dp,
@@ -310,22 +310,32 @@ private fun FormField(
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(8.dp)
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = singleLine,
-        textStyle = TextStyle(fontSize = fontSize, color = colors.onBackground),
-        cursorBrush = SolidColor(colors.secondary),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = minHeight)
-                .clip(shape)
-                .background(colors.surfaceVariant)
-                .border(1.dp, colors.onBackground.copy(alpha = 0.16f), shape)
-                .padding(horizontal = 12.dp, vertical = 12.dp)
-                .testTag(tag),
-    )
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = minHeight)
+            .clip(shape)
+            .background(colors.surfaceVariant)
+            .border(1.dp, colors.onBackground.copy(alpha = 0.16f), shape)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+    ) {
+        if (value.isEmpty() && placeholder.isNotEmpty()) {
+            Text(
+                placeholder,
+                modifier = Modifier.testTag("$tag-placeholder"),
+                fontSize = fontSize,
+                color = colors.onBackground.copy(alpha = 0.48f),
+            )
+        }
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = singleLine,
+            textStyle = TextStyle(fontSize = fontSize, color = colors.onBackground),
+            cursorBrush = SolidColor(colors.secondary),
+            modifier = Modifier.fillMaxWidth().testTag(tag),
+        )
+    }
 }
 
 @Composable
@@ -333,8 +343,6 @@ private fun TagsSection(
     state: MachineFormState,
     viewModel: MachineFormViewModel,
 ) {
-    val colors = MaterialTheme.colorScheme
-    FieldLabel(strings().tags)
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -342,21 +350,8 @@ private fun TagsSection(
         state.shownTags.forEach { tag ->
             ChoiceChip(tag, tag in state.tags, "tag-$tag") { viewModel.toggleTag(tag) }
         }
+        state.offeredFriendTags.forEach { FriendTagChip(it) { viewModel.toggleTag(it.tag) } }
         NewTagChip(state.newTag, viewModel::typeNewTag, viewModel::addNewTag)
-    }
-    val offered = state.offeredFriendTags
-    if (offered.isNotEmpty()) {
-        Text(
-            strings().friendsTags,
-            fontSize = 12.sp,
-            color = colors.onBackground.copy(alpha = 0.48f),
-        )
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            offered.forEach { FriendTagChip(it) { viewModel.toggleTag(it.tag) } }
-        }
     }
 }
 
@@ -619,28 +614,6 @@ private fun WeightStepRow(
             onChange,
             unitLabel(state.unit, state.unitLabel),
             "weight-step",
-        )
-    }
-}
-
-@Composable
-private fun HintRow() {
-    val colors = MaterialTheme.colorScheme
-    Row(
-        Modifier.testTag("machine-visit-hint"),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            PhosphorIcons.Info,
-            null,
-            tint = colors.onBackground.copy(alpha = 0.50f),
-            modifier = Modifier.size(18.dp),
-        )
-        Text(
-            strings().afterSaveHint,
-            fontSize = 13.sp,
-            color = colors.onBackground.copy(alpha = 0.50f),
         )
     }
 }

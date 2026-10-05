@@ -221,6 +221,8 @@ private fun VisitList(
                     index = state.groups.indexOf(group),
                     order = machineOrder,
                     ordering = state.ordering,
+                    // A titled section already names the tags.
+                    showTags = section.title == null,
                     onOpen = onOpen,
                     onOpenSettings = onOpenSettings,
                     onDropMachine = {
@@ -257,6 +259,7 @@ private fun MachineBlock(
     index: Int,
     order: ReorderState,
     ordering: Boolean,
+    showTags: Boolean,
     onOpen: (MachineId) -> Unit,
     onOpenSettings: (MachineId) -> Unit,
     onDropMachine: (from: Int, to: Int) -> Unit,
@@ -291,7 +294,7 @@ private fun MachineBlock(
             )
             MachineLines(
                 title = group.title,
-                tags = group.tags,
+                tags = if (showTags) group.tags else emptyList(),
                 note = group.setupNote,
                 summary = group.summary,
                 tag = id,

@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.account.Nickname
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -72,6 +73,8 @@ class StatisticsViewModelTest {
             gym.profiles,
             gym.clock,
             gym.utcOffset,
+            Nickname(gym.profiles, gym.accounts),
+            gym.texts,
         ).also { it.load() }
 
     @BeforeTest
@@ -147,15 +150,104 @@ class StatisticsViewModelTest {
             record(gravitron, CalendarDay(2023, 10, 1), 30.0 to 8)
             record(gravitron, CalendarDay(2023, 11, 2), 30.0 to 8)
 
+            val vm = viewModel()
+            vm.toggleImprovementsOnly()
             val cards =
-                viewModel()
-                    .state.value.overall
+                vm.state.value.overall
                     .associateBy { it.id }
 
             assertEquals("−5 кг", cards.getValue(row.id).change)
             assertFalse(cards.getValue(row.id).improved)
             assertEquals("Без изменений", cards.getValue(gravitron.id).change)
         }
+
+    @Test
+    fun improvements_only_is_on_at_first_and_hides_the_machines_without_a_gain() =
+        runTest {
+            record(row, CalendarDay(2023, 10, 1), 45.0 to 10)
+            record(gravitron, CalendarDay(2023, 10, 1), 30.0 to 8)
+            record(gravitron, CalendarDay(2023, 11, 2), 30.0 to 8)
+            val vm = viewModel()
+
+            assertTrue(vm.state.value.improvementsOnly)
+            assertEquals(
+                listOf("Жим ногами"),
+                vm.state.value.overall
+                    .map { it.name },
+            )
+
+            vm.toggleImprovementsOnly()
+
+            assertFalse(vm.state.value.improvementsOnly)
+            assertEquals(
+                listOf("Тяга", "Жим ногами", "Гравитрон"),
+                vm.state.value.overall
+                    .map { it.name },
+            )
+        }
+
+    @Test
+    fun a_machine_new_in_the_period_without_a_change_is_shown_as_new() =
+        runTest {
+            record(gravitron, CalendarDay(2023, 11, 2), 27.5 to 8)
+
+            val card =
+                viewModel()
+                    .state.value.overall
+                    .single { it.id == gravitron.id }
+
+            assertEquals("Новое упражнение", card.change)
+            assertTrue(card.improved)
+            assertTrue(card.newMachine)
+        }
+
+    @Test
+    fun nothing_improved_says_so_instead_of_an_empty_list() =
+        runTest {
+            gym.sets.rows.values
+                .toList()
+                .forEach { gym.sets.upsert(it.copy(deleted = true)) }
+            record(row, CalendarDay(2023, 10, 1), 45.0 to 10)
+            record(row, CalendarDay(2023, 11, 2), 40.0 to 10)
+            val vm = viewModel()
+
+            assertEquals(emptyList(), vm.state.value.overall)
+            assertTrue(vm.state.value.nothingImproved)
+
+            vm.toggleImprovementsOnly()
+            assertFalse(vm.state.value.nothingImproved)
+        }
+
+    @Test
+    fun export_writes_the_shown_cards_under_the_period_and_their_tags() =
+        runTest {
+            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
+            record(gravitron, CalendarDay(2023, 11, 2), 27.5 to 8)
+            val vm = viewModel()
+            vm.toggleGroupByTag()
+
+            vm.export()
+
+            assertEquals(
+                listOf(
+                    "за месяц\n\n" +
+                        "Ноги\n" +
+                        "Жим ногами +5 кг (75 кг × 8)\n\n" +
+                        "Остальное\n" +
+                        "Тяга +2 повт. (40 кг × 12)\n" +
+                        "Гравитрон — новое упражнение ((-)27.5 кг × 8)",
+                ),
+                gym.texts.shared,
+            )
+            assertEquals("Скопировано", vm.state.value.notice)
+        }
+
+    @Test
+    fun export_starts_with_the_nickname_and_names_the_period() {
+        val text = statsExportText("ГДМ", StatsPeriod.SixMonths, emptyList())
+
+        assertEquals("ГДМ, за 6 месяцев", text.substringBefore("\n"))
+    }
 
     @Test
     fun a_month_runs_back_from_today_rather_than_from_the_first() {

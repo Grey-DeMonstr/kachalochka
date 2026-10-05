@@ -303,6 +303,7 @@ class VisitScreenTest {
             waitForIdle()
 
             onNodeWithTag("section-Ноги").assertTextEquals("Ноги")
+            onNodeWithTag("group-tag-$id-Ноги", useUnmergedTree = true).assertDoesNotExist()
         }
     }
 
@@ -346,6 +347,7 @@ class VisitScreenTest {
     fun a_machine_row_opens_its_page_without_the_form() {
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
+            onNodeWithTag("rest-timer").assertDoesNotExist()
             onNodeWithTag("group-${press.id.value}").performClick()
             waitForIdle()
 
@@ -595,6 +597,7 @@ class VisitScreenTest {
     fun a_machine_s_page_adds_its_next_set() {
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
+            onNodeWithTag("rest-timer").assertDoesNotExist()
             onNodeWithTag("group-${press.id.value}").performClick()
             waitForIdle()
 

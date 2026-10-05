@@ -136,7 +136,8 @@ the same platform call. A shared visit's text comes from the pure `visitShareTex
 sums up a machine's sets calls it, so they read exactly like the shared text; `setsSummaryParts`
 gives the same text as its weights and its reps, which a row wraps apart when they do not fit.
 `VisitViewModel` reads the nickname ahead of the tap, because a browser accepts a clipboard write
-only shortly after the user's gesture.
+only shortly after the user's gesture. The statistics export does the same; its text comes from
+`statsExportText` in `app/ui/stats`, built from the cards as shown.
 
 Every gym weight shown passes through `app/ui/format/WeightUnits.kt`: `shownUnit` picks the unit
 for a machine's unit and the profile's `PreferredWeightUnit`, `shownWeight` converts to the
@@ -655,7 +656,9 @@ day, `machineProgress` the two sets a card compares, `bestPerDay` the chart's po
 which the suggested first set shares (§2). `statsOrder` sorts the machines by a `StatsSort`: the
 machine sorts over `machinePeaks` of the sets read, or by `growth`, the percent gained. Tag
 grouping is `profile.group_by_tag`, shared with the visit; both choices that are saved go through
-`ProfileChoice`, which writes one profile change at a time.
+`ProfileChoice`, which writes one profile change at a time. "Только улучшения" lives in the view
+model only. A machine without a set before the period always reads as improved, because its change
+runs from the period's worst set to its best.
 
 The web reads a long list of sets in pages of 1000 ordered by `(recorded_at, id)`, since PostgREST
 answers at most the project's `max_rows`, 1000 by default, per request. A shorter page ends the

@@ -134,7 +134,19 @@ val appModule =
             PlanFormViewModel(plan, fromVisit, get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (machine: MachineId?) ->
-            StatisticsViewModel(machine, get(), get(), get(), get(), get(), get(), get(), get())
+            StatisticsViewModel(
+                machine,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
         }
         viewModel { (args: MachineFormArgs) ->
             MachineFormViewModel(

@@ -48,12 +48,27 @@ class CalendarScreenTest {
         onBack: () -> Unit = {},
         onOpenVisit: (CalendarDay) -> Unit = {},
         onOpenFriendVisit: (UserId, String, CalendarDay) -> Unit = { _, _, _ -> },
+        onSaveAsPlan: (CalendarDay) -> Unit = {},
     ) = CalendarScreen(
         onBack = onBack,
         onOpenSettings = {},
         onOpenVisit = onOpenVisit,
         onOpenFriendVisit = onOpenFriendVisit,
+        onSaveAsPlan = onSaveAsPlan,
     )
+
+    @Test
+    fun the_visit_menu_saves_the_visit_as_a_plan() {
+        var saved: CalendarDay? = null
+        runScreenTest(gym, screen = { calendar(onSaveAsPlan = { saved = it }) }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("save-as-plan-${sunday.id.value}").performClick()
+            waitForIdle()
+        }
+        assertEquals(CalendarDay(2023, 11, 12), saved)
+    }
 
     /** Иван signed in, with [trained] in his group each having a visit on the 12th. */
     private fun friendsGym(vararg trained: Friend): FakeGym {

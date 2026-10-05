@@ -62,6 +62,8 @@ fun Screen(
     actions: @Composable RowScope.() -> Unit = {},
     /** Drawn before [title], such as the avatar of whoever the screen is about. */
     leading: (@Composable () -> Unit)? = null,
+    /** The rest timer, on the screen where sets are added. */
+    timer: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -91,7 +93,7 @@ fun Screen(
                     color = colors.onBackground,
                 )
                 actions()
-                RestTimerChip(Modifier.testTag("rest-timer"))
+                if (timer) RestTimerChip(Modifier.testTag("rest-timer"))
                 AccountMenu(onOpenSettings, Modifier.testTag("account-avatar"))
             }
             Rule()

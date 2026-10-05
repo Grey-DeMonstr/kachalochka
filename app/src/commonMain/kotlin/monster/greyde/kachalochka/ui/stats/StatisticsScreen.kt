@@ -43,6 +43,7 @@ import monster.greyde.kachalochka.core.domain.gym.StatsSort
 import monster.greyde.kachalochka.ui.components.ChipRow
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
+import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
 import monster.greyde.kachalochka.ui.strings.strings
@@ -62,7 +63,21 @@ fun StatisticsScreen(
     val viewModel: StatisticsViewModel = koinViewModel { parametersOf(initial) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
-    Screen(strings().statistics, onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(
+        strings().statistics,
+        onBack = onBack,
+        onOpenSettings = onOpenSettings,
+        actions = {
+            if (state.selected == null && state.overall.isNotEmpty()) {
+                SquareIconButton(
+                    PhosphorIcons.ShareNetwork,
+                    strings().export,
+                    viewModel::export,
+                    Modifier.testTag("stats-export"),
+                )
+            }
+        },
+    ) {
         Column(
             Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -83,6 +98,8 @@ fun StatisticsScreen(
                     viewModel::choose,
                     viewModel::chooseSort,
                     viewModel::toggleGroupByTag,
+                    viewModel::toggleImprovementsOnly,
+                    viewModel::dismissNotice,
                 )
             } else {
                 MachineStats(machine)
@@ -204,6 +221,8 @@ private fun Overall(
     onChoose: (MachineId) -> Unit,
     onSort: (StatsSort) -> Unit,
     onToggleGroupByTag: () -> Unit,
+    onToggleImprovementsOnly: () -> Unit,
+    onDismissNotice: () -> Unit,
 ) {
     val s = strings()
     ChipRow(
@@ -218,35 +237,67 @@ private fun Overall(
         Modifier.padding(bottom = 12.dp),
     ) { "stats-sort-${it.name.lowercase()}" }
     if (state.canGroupByTag) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp)
-                .toggleable(value = state.groupByTag, onValueChange = { onToggleGroupByTag() })
-                .testTag("stats-group-by-tag"),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(checked = state.groupByTag, onCheckedChange = null)
-            Text(
-                s.groupByTag,
-                modifier = Modifier.padding(start = 8.dp),
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-            )
-        }
+        CheckRow(s.groupByTag, state.groupByTag, onToggleGroupByTag, "stats-group-by-tag")
+    }
+    CheckRow(
+        s.improvementsOnly,
+        state.improvementsOnly,
+        onToggleImprovementsOnly,
+        "stats-improvements-only",
+    )
+    state.notice?.let {
+        Text(
+            it,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onDismissNotice)
+                    .padding(bottom = 12.dp)
+                    .testTag("stats-notice"),
+            fontSize = 15.sp,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+        )
     }
     SectionLabel(
         state.overallTitle,
         Modifier.padding(bottom = 10.dp).testTag("stats-overall-title"),
     )
     if (state.overall.isEmpty()) {
-        Muted(s.noSetsInPeriod, Modifier.testTag("stats-empty"))
+        Muted(
+            if (state.nothingImproved) s.noImprovements else s.noSetsInPeriod,
+            Modifier.testTag("stats-empty"),
+        )
     }
     state.overallSections.forEach { section ->
         section.title?.let { SectionTitle(it, "stats-section-$it") }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             section.items.forEach { card -> ProgressCard(card) { onChoose(card.id) } }
         }
+    }
+}
+
+@Composable
+private fun CheckRow(
+    text: String,
+    checked: Boolean,
+    onToggle: () -> Unit,
+    tag: String,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(bottom = 12.dp)
+            .toggleable(value = checked, onValueChange = { onToggle() })
+            .testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null)
+        Text(
+            text,
+            modifier = Modifier.padding(start = 8.dp),
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+        )
     }
 }
 

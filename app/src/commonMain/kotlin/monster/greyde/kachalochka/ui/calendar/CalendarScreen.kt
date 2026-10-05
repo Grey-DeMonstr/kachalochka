@@ -53,6 +53,7 @@ fun CalendarScreen(
     onOpenSettings: () -> Unit,
     onOpenVisit: (CalendarDay) -> Unit,
     onOpenFriendVisit: (UserId, String, CalendarDay) -> Unit,
+    onSaveAsPlan: (CalendarDay) -> Unit,
 ) {
     val viewModel: CalendarViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -99,6 +100,7 @@ fun CalendarScreen(
                     editable = !current.moving,
                     onOpen = { onOpenVisit(current.day) },
                     onMove = { viewModel.startMove(visit.id) },
+                    onSaveAsPlan = { onSaveAsPlan(current.day) },
                     onRemove = { viewModel.askToRemove(visit.id) },
                 )
             }
@@ -194,7 +196,8 @@ private fun FriendVisitCard(
 
 /**
  * Frame 7m: the own visit and a friend's are the same card — avatar, the day's tags, then its
- * machines in a small light font; the own one has a menu to move or delete it.
+ * machines in a small light font; the own one has a menu to move it, save it as a plan or delete
+ * it.
  */
 @Composable
 private fun VisitCard(
@@ -203,6 +206,7 @@ private fun VisitCard(
     editable: Boolean,
     onOpen: () -> Unit,
     onMove: () -> Unit,
+    onSaveAsPlan: () -> Unit,
     onRemove: () -> Unit,
 ) {
     DayCard(
@@ -213,7 +217,7 @@ private fun VisitCard(
         onOpen = onOpen,
         menu =
             if (editable) {
-                { VisitMenu(visit, onMove, onRemove) }
+                { VisitMenu(visit, onMove, onSaveAsPlan, onRemove) }
             } else {
                 null
             },
@@ -270,6 +274,7 @@ private fun DayCard(
 private fun VisitMenu(
     visit: CalendarVisitUi,
     onMove: () -> Unit,
+    onSaveAsPlan: () -> Unit,
     onRemove: () -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
@@ -298,6 +303,15 @@ private fun VisitMenu(
                     onMove()
                 },
                 modifier = Modifier.testTag("move-visit-${visit.id.value}"),
+            )
+            DropdownMenuItem(
+                text = { Text(strings().saveAsPlan) },
+                leadingIcon = { Icon(PhosphorIcons.ListChecks, null, Modifier.size(20.dp)) },
+                onClick = {
+                    open = false
+                    onSaveAsPlan()
+                },
+                modifier = Modifier.testTag("save-as-plan-${visit.id.value}"),
             )
             DropdownMenuItem(
                 text = { Text(strings().delete) },

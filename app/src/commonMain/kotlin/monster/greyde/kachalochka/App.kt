@@ -271,6 +271,7 @@ fun App() {
                         onOpenFriendVisit = { userId, name, day ->
                             navController.navigate(FriendVisitRoute(userId.value, name, day.iso))
                         },
+                        onSaveAsPlan = { navController.navigate(PlanRoute(fromVisit = it.iso)) },
                     )
                 }
                 composable<SettingsRoute> {
@@ -353,7 +354,6 @@ fun App() {
                                 navController.returnMachine(it, route.forPlan)
                             }
                         },
-                        inVisit = !route.fromList && !route.forPlan,
                         onLink = {
                             route.machineId?.let {
                                 navController.navigate(LinkChooserRoute(it, route.fromList))

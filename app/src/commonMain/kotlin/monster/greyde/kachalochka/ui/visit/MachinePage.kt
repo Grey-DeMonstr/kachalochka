@@ -93,6 +93,7 @@ internal fun MachinePage(
                 Modifier.testTag("machine-settings"),
             )
         },
+        timer = true,
     ) {
         Box(Modifier.weight(1f).fillMaxWidth().testTag("machine-page")) {
             Column(

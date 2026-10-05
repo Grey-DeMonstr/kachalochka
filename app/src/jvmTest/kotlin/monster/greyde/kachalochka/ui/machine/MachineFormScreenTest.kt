@@ -8,8 +8,10 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performFirstLinkClick
 import androidx.compose.ui.test.performScrollTo
@@ -163,7 +165,6 @@ class MachineFormScreenTest {
         runScreenTestInEnglish(gym, screen = {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = {})
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Machine")
             onNodeWithTag("mode-total").assertTextEquals("Total")
             onNodeWithTag("mode-counterweight").performClick()
             onNodeWithTag("mode-counterweight-hint")
@@ -292,20 +293,43 @@ class MachineFormScreenTest {
     }
 
     @Test
-    fun a_form_opened_from_a_visit_says_where_the_machine_goes() =
+    fun the_form_has_no_title_and_names_its_empty_fields_inside_them() =
         runScreenTest(gym, screen = {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = {})
         }) {
-            onNodeWithTag("machine-visit-hint").assertExists()
+            onNodeWithTag("top-bar-title").assertTextEquals("")
+            onNodeWithTag("machine-name-placeholder").assertTextEquals("Название")
+            onNodeWithTag("machine-note-placeholder").assertTextEquals("Комментарий")
+            onNodeWithText("Теги").assertDoesNotExist()
+            onNodeWithText("После сохранения", substring = true).assertDoesNotExist()
+
+            onNodeWithTag("machine-name").performTextInput("Гакк")
+            waitForIdle()
+            onNodeWithTag("machine-name-placeholder").assertDoesNotExist()
         }
 
     @Test
-    fun a_form_opened_from_the_list_has_no_visit_hint() =
-        runScreenTest(gym, screen = {
-            MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, {}, inVisit = false)
-        }) {
-            onNodeWithTag("machine-visit-hint").assertDoesNotExist()
+    fun friends_tags_follow_the_own_tags_before_the_new_tag_field() {
+        val on = signedInGym()
+        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        on.friends.machines +=
+            Machine.new("Жим", OLEG.userId, on.clock.current).copy(tags = setOf("Плечи"))
+        runBlocking {
+            on.machines.upsert(
+                Machine.new("Присед", ME.userId, on.clock.current).copy(tags = setOf("Ноги")),
+            )
         }
+        runScreenTest(on, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, "Гакк"), {}, {}, onSaved = {})
+        }) {
+            onNodeWithText("Теги друзей", substring = true).assertDoesNotExist()
+            val own = onNodeWithTag("tag-Ноги").getUnclippedBoundsInRoot()
+            val friends = onNodeWithTag("friend-tag-Плечи").getUnclippedBoundsInRoot()
+            val field = onNodeWithTag("new-tag").getUnclippedBoundsInRoot()
+            assertTrue(own.right <= friends.left || own.bottom <= friends.top)
+            assertTrue(friends.right <= field.left || friends.bottom <= field.top)
+        }
+    }
 
     @Test
     fun the_menu_unlinks_only_after_a_confirmation() {

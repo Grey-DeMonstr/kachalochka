@@ -198,9 +198,7 @@ object EnStrings : Strings {
     override val unlinkText = "Friends' results on this machine will no longer show for you."
     override val unlink = "Unlink"
     override val linkedWith = "Linked with: "
-    override val tags = "Tags"
     override val newTag = "New tag"
-    override val friendsTags = "Friends' tags — become yours once chosen"
     override val choiceTotal = "Total"
     override val choicePerSide = "Per side"
     override val choiceCounterweight = "Gravitron"
@@ -212,7 +210,6 @@ object EnStrings : Strings {
             "\"Leg press (+25 kg) 70 kg × 10\"."
     override val customUnit = "Own unit"
     override val weightStep = "Weight step"
-    override val afterSaveHint = "Once saved, the machine appears in this visit."
     override val unlinkFromFriends = "Unlink from friends"
     override val basedOnExisting = "Based on an existing one"
     override val photoNoteAndSetup = "Photos, comment and weight setup"
@@ -240,6 +237,17 @@ object EnStrings : Strings {
     override val startSet = "Start"
     override val best = "Best"
     override val noChange = "No change"
+    override val newMachine = "New machine"
+    override val improvementsOnly = "Improvements only"
+    override val noImprovements = "No improvements in the period"
+    override val export = "Export"
+
+    override fun forPeriod(months: Int) =
+        when (months) {
+            1 -> "past month"
+            12 -> "past year"
+            else -> "past $months months"
+        }
 
     override fun sinceDay(day: String) = "since $day"
 

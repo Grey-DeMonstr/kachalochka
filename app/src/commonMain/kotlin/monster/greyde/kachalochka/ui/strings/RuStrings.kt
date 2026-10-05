@@ -214,9 +214,7 @@ object RuStrings : Strings {
     override val unlinkText = "Результаты друзей в этом упражнении перестанут показываться у вас."
     override val unlink = "Отвязать"
     override val linkedWith = "Связано с: "
-    override val tags = "Теги"
     override val newTag = "Новый тег"
-    override val friendsTags = "Теги друзей — добавятся к вашим после выбора"
     override val choiceTotal = "Всего"
     override val choicePerSide = "На сторону"
     override val choiceCounterweight = "Гравитрон"
@@ -228,7 +226,6 @@ object RuStrings : Strings {
             "названием — «Жим ногами (+25 кг) 70 кг × 10»."
     override val customUnit = "Своя единица"
     override val weightStep = "Шаг веса"
-    override val afterSaveHint = "После сохранения упражнение появится в этом визите."
     override val unlinkFromFriends = "Отвязать от друзей"
     override val basedOnExisting = "На основе существующего"
     override val photoNoteAndSetup = "Фото, комментарий и настройка веса"
@@ -257,6 +254,17 @@ object RuStrings : Strings {
     override val startSet = "Начальный"
     override val best = "Лучший"
     override val noChange = "Без изменений"
+    override val newMachine = "Новое упражнение"
+    override val improvementsOnly = "Только улучшения"
+    override val noImprovements = "Нет улучшений за период"
+    override val export = "Экспорт"
+
+    override fun forPeriod(months: Int) =
+        when (months) {
+            1 -> "за месяц"
+            12 -> "за год"
+            else -> "за $months ${plural(months, "месяц", "месяца", "месяцев")}"
+        }
 
     override fun sinceDay(day: String) = "с $day"
 

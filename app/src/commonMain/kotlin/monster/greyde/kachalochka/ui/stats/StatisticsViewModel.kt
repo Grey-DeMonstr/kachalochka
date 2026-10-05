@@ -25,6 +25,7 @@ import monster.greyde.kachalochka.core.domain.gym.weightGain
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.ProfileChoice
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
@@ -34,9 +35,11 @@ import monster.greyde.kachalochka.ui.format.headedTagSections
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.shownLabel
 import monster.greyde.kachalochka.ui.format.shownWeight
+import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.OwnMachines
 import monster.greyde.kachalochka.ui.machine.ShownMachines
+import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
@@ -57,6 +60,8 @@ data class ProgressCardUi(
     val to: String,
     val change: String,
     val improved: Boolean,
+    /** First used in the period, with no change to show; [change] then says so. */
+    val newMachine: Boolean = false,
 )
 
 /** A run of [items] under the tags in [title]; without grouping, one section titled null. */
@@ -76,6 +81,12 @@ data class StatisticsUiState(
     val canGroupByTag: Boolean = false,
     val overallTitle: String = "",
     val overallSections: List<StatsSectionUi<ProgressCardUi>> = emptyList(),
+    /** Hides the cards without a gain; a machine new in the period always counts as one. */
+    val improvementsOnly: Boolean = true,
+    /** True when the period has cards, but [improvementsOnly] hides them all. */
+    val nothingImproved: Boolean = false,
+    /** What the export left to confirm, as the web's "copied". */
+    val notice: String? = null,
     val machine: MachineStatsUi? = null,
 ) {
     val choices: List<StatsChoiceUi> get() = choiceSections.flatMap { it.items }
@@ -92,6 +103,8 @@ class StatisticsViewModel(
     private val profiles: ProfileRepository,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
+    private val nickname: Nickname,
+    private val sharing: TextSharing,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(StatisticsUiState())
     val state: StateFlow<StatisticsUiState> = mutableState
@@ -103,7 +116,15 @@ class StatisticsViewModel(
     private var setsByMachine: Map<MachineId, List<WorkoutSet>> = emptyMap()
     private var peaks: Map<MachineId, MachinePeaks> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
+    private var improvementsOnly = true
+    private var notice: String? = null
     private var loading: Job? = null
+
+    /**
+     * Read ahead of the tap: a browser lets the clipboard be written only while a tap is recent,
+     * which a network read of the profile could outlast.
+     */
+    private var sharer = ""
 
     /** The account's own choice, which the visit screen shares. */
     private val grouping =
@@ -134,6 +155,7 @@ class StatisticsViewModel(
                 peaks = machinePeaks(all).associateBy { it.machineId }
                 preferred = profiles.preferredUnit(owner)
                 grouping.read(owner)
+                sharer = reading { nickname.of(owner) }.getOrDefault("")
                 publish()
             }
     }
@@ -159,6 +181,27 @@ class StatisticsViewModel(
         publish()
     }
 
+    fun toggleImprovementsOnly() {
+        improvementsOnly = !improvementsOnly
+        publish()
+    }
+
+    /** Hands the overall cards, as shown, to the platform's sharing. */
+    fun export() {
+        val shown = mutableState.value
+        if (shown.selected != null || shown.overall.isEmpty()) return
+        val text = statsExportText(sharer, period, shown.overallSections)
+        viewModelScope.launch {
+            notice = reading { sharing.share(text) }.getOrNull()
+            publish()
+        }
+    }
+
+    fun dismissNotice() {
+        notice = null
+        publish()
+    }
+
     private fun publish() {
         val read = own ?: return
         val shown = ShownMachines(read, null)
@@ -176,6 +219,14 @@ class StatisticsViewModel(
                 }.toMap()
         val ordered = read.machines.sortedWith(statsOrder(sort, peaks, progress))
 
+        val cards =
+            ordered
+                .filter { it.id in progress }
+                .associate { it.id to card(it, shown, progress.getValue(it.id), start, today) }
+        val listed =
+            ordered.filter { m -> cards[m.id]?.let { !improvementsOnly || it.improved } == true }
+        val overall = if (machine == null) listed else emptyList()
+
         fun choice(it: Machine) = StatsChoiceUi(it.id, it.name, shown.cover(it.id))
         mutableState.value =
             StatisticsUiState(
@@ -186,14 +237,10 @@ class StatisticsViewModel(
                 groupByTag = grouping.current,
                 canGroupByTag = read.machines.any { it.tags.isNotEmpty() },
                 overallTitle = "${AppStrings.current.machinesInPeriod} · $periodLabel",
-                overallSections =
-                    if (machine == null) {
-                        sections(ordered.filter { it.id in progress }) {
-                            card(it, shown, progress.getValue(it.id), start, today)
-                        }
-                    } else {
-                        emptyList()
-                    },
+                overallSections = sections(overall) { cards.getValue(it.id) },
+                improvementsOnly = improvementsOnly,
+                nothingImproved = cards.isNotEmpty() && listed.isEmpty(),
+                notice = notice,
                 machine =
                     machine?.let {
                         machineStatsUi(
@@ -232,6 +279,7 @@ class StatisticsViewModel(
         val strings = AppStrings.current
         val (from, to) = progress.from to progress.to
         val (change, improved) = change(machine, from, to)
+        val newMachine = !progress.sinceBefore && change == strings.noChange
         return ProgressCardUi(
             id = machine.id,
             name = machine.name,
@@ -250,8 +298,9 @@ class StatisticsViewModel(
                     strings.best
                 },
             to = setValue(to.weight, to.reps, machine, preferred),
-            change = change,
-            improved = improved,
+            change = if (newMachine) strings.newMachine else change,
+            improved = improved || newMachine,
+            newMachine = newMachine,
         )
     }
 

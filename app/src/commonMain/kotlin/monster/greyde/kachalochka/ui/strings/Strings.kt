@@ -180,9 +180,7 @@ interface Strings {
     val unlinkText: String
     val unlink: String
     val linkedWith: String
-    val tags: String
     val newTag: String
-    val friendsTags: String
     val choiceTotal: String
     val choicePerSide: String
     val choiceCounterweight: String
@@ -192,7 +190,6 @@ interface Strings {
     val platformApartHint: String
     val customUnit: String
     val weightStep: String
-    val afterSaveHint: String
     val unlinkFromFriends: String
     val basedOnExisting: String
     val photoNoteAndSetup: String
@@ -220,6 +217,13 @@ interface Strings {
     val startSet: String
     val best: String
     val noChange: String
+    val newMachine: String
+    val improvementsOnly: String
+    val noImprovements: String
+    val export: String
+
+    /** "за месяц", the period an export covers. */
+    fun forPeriod(months: Int): String
 
     fun sinceDay(day: String): String
 

@@ -23,6 +23,7 @@ class TopBarTest {
                     "Тренажёр",
                     onBack = { backs++ },
                     onOpenSettings = { settings++ },
+                    timer = true,
                 ) {}
             },
         ) {
@@ -44,9 +45,15 @@ class TopBarTest {
         }
 
     @Test
+    fun a_bar_shows_the_timer_only_when_asked() =
+        runScreenTest(FakeGym(), screen = { Screen("Визит", {}, {}) {} }) {
+            onNodeWithTag("rest-timer").assertDoesNotExist()
+        }
+
+    @Test
     fun tapping_the_timer_starts_a_countdown_that_follows_the_clock() {
         val gym = FakeGym()
-        runScreenTest(gym, screen = { Screen("Визит", {}, {}) {} }) {
+        runScreenTest(gym, screen = { Screen("Визит", {}, {}, timer = true) {} }) {
             onNodeWithTag("rest-timer").performClick()
             gym.clock.current += 20.seconds
             gym.ticker.tick()

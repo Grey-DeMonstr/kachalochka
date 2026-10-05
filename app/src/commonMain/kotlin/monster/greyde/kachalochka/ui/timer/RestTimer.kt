@@ -7,7 +7,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
 
-/** One timer for the whole app, so every screen's top bar shows the same rest. */
+/** One timer for the whole app, so the rest goes on from one machine page to the next. */
 class RestTimer(
     private val clock: Clock,
     val duration: Duration = REST_DURATION,

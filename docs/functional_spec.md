@@ -53,9 +53,10 @@ Comments to exercise AND to the whole day / visit should be allowed.
 
 ### Screens
 
-Every screen shares a top bar: a back arrow (except on the home screen), the screen title, a
-rest timer chip and the avatar of the active account. The timer counts down from 1:30; tapping
-the chip, or saving a set, restarts it, and it shows the full 1:30 when idle. Tapping the avatar
+Every screen shares a top bar: a back arrow (except on the home screen), the screen title and the
+avatar of the active account. Only a machine's page in a visit adds a rest timer chip before the
+avatar. The timer counts down from 1:30; tapping the chip, or saving a set, restarts it, and it
+shows the full 1:30 when idle. Tapping the avatar
 opens the account menu: the signed-in accounts with the active one marked, then adding another
 account, the settings and signing out. With nobody signed in the avatar is an empty outline. An
 avatar, wherever a person is shown, is the photo they chose in Settings, else their Google
@@ -82,12 +83,14 @@ machine and set; dragging a machine's handle moves the machine with its sets, dr
 handle moves it among its machine's sets. While it is on, "Готово" replaces "Добавить" at the end
 of the list, and it or the button again hides the handles. When a machine of the visit has tags,
 "Группировать по тегам" splits the list into sections, one per distinct set of tags, headed by the
-tags and in the order of their first machine; untagged machines come last under "Остальное". The
-choice is the account's, saved in its profile and synced, and ordering shows the plain list.
+tags and in the order of their first machine; untagged machines come last under "Остальное". A
+row under a heading does not repeat its tags. The choice is the account's, saved in its profile
+and synced, and ordering shows the plain list.
 
-A machine's page covers the list. Its top bar has a chart button opening the machine's statistics
-and a gear opening the machine form, whose photo opens it too. It shows the photo, the name with
-the platform, the tags and the comment, then two cards: "Рекорд", the best set ever on the machine
+A machine's page covers the list. Its top bar has a chart button opening the machine's statistics,
+a gear opening the machine form, whose photo opens it too, and the rest timer. It shows the photo,
+the name with the platform, the tags and the comment, then two cards: "Рекорд", the best set ever
+on the machine
 — the heaviest weight with the most reps at it, the lightest on a gravitron — and the previous
 visit's results, headed by how long ago it was ("12 дней назад"). Friends' latest visits on the
 machine follow, each with the friend's avatar and name ("Олег  вчера · 80-85кг 8-6"). Under
@@ -157,17 +160,18 @@ ones keep only the machines carrying every one of them. With nothing left, the p
 chosen tags ("С тегом «Руки»"). When a machine was opened in the visit, "Скопировать упражнение"
 opens the form pre-filled from that machine, with the typed name instead of its own.
 
-The machine form collects a name, a comment ("Комментарий", its setup note), how the weight is
+The machine form has no title. It collects a name, a comment (its setup note), how the weight is
 counted ("Всего", "На сторону" or "Гравитрон", which explains that the weight counts as negative,
 the less the better), the platform weight and whether it is added to the recorded weight, the unit
-and the weight step. The unit is kg, lb or an own unit such as "плитка", whose name is then written
+and the weight step. The empty name and comment fields show "Название" and "Комментарий" inside
+them. The unit is kg, lb or an own unit such as "плитка", whose name is then written
 after every weight on that machine, with no conversion. The weight step is any positive number,
-typed in its field. Under the comment, "Теги" shows every tag of the account's machines as a chip
-to tap on or off, and a "Новый тег" chip that adds what is typed in it; a machine has any number of
-tags, and they are the account's own: a machine taken from a friend starts without any. Signed in
-and online, the tags of friends' machines the account has not got follow under "Теги друзей —
-добавятся к вашим после выбора", as dashed chips with the friend's avatar; tapping one gives it to
-the machine, and saving makes it the account's own.
+typed in its field. Under the comment, every tag of the account's machines is a chip to tap on or
+off, and a last "Новый тег" chip adds what is typed in it; a machine has any number of tags, and
+they are the account's own: a machine taken from a friend starts without any. Signed in and online,
+the tags of friends' machines the account has not got come between the account's tags and "Новый
+тег", as dashed chips with the friend's avatar; tapping one gives it to the machine, and saving
+makes it the account's own.
 
 A set's total weight is its weight plus the platform when the platform is not added to the record.
 When "Сохранить" changes that for a machine with recorded sets (for example, a platform typed in
@@ -225,9 +229,10 @@ the month is the chosen day's visit as a card: the account's avatar, every tag i
 Tapping it opens it on the visit screen, where its sets are added, edited, deleted and ordered as
 today's are. A day without a visit offers "Добавить визит". The card's "⋮" menu has "Перенести",
 which moves the visit, with its sets, to the day tapped next; if that day already has a visit, the
-app asks whether to replace it, and replacing removes it with its sets. Its "Удалить" asks
-"Удалить визит?" under the visit's date, then removes the visit and its sets from the history and
-the statistics.
+app asks whether to replace it, and replacing removes it with its sets. Its "Сохранить как план"
+opens the form of a new plan with the visit's machines, as the visit's own menu does. Its "Удалить"
+asks "Удалить визит?" under the visit's date, then removes the visit and its sets from the history
+and the statistics.
 
 With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
 group with it: each friend who trained on a day adds a dot in that friend's colour after the
@@ -419,17 +424,24 @@ date and its results written as the visit screen writes them, whatever the perio
 weight first, then the most reps gained. The sort is not remembered. When a machine has tags,
 "Группировать по тегам" follows, the same choice as the visit screen's: it splits the cards into
 sections headed by their tags, as the visit does. The sort and the grouping order the dropdown's
-machines too.
+machines too. "Только улучшения", on each time the screen opens, keeps only the cards with a green
+chip; with none left, the list says "Нет улучшений за период".
 
 Under "Упражнения за период · с 1 сентября" come the machines with a set in the period: each with
 its photo, its name and two boxes joined by an arrow. With a set before the period they hold the
 best set before it ("До 1 сентября") and the best in it ("С 1 сентября"); without one, the worst
 and the best set of the period ("Начальный", "Лучший"). A chip sums up the change: in green
 "+2.5 кг" when the weight grew, or "+2 повт." when the weight stayed and the reps grew; in grey
-"−2.5 кг", "−1 повт." or "Без изменений". On a gravitron a lighter weight is the growth. Tapping a
-card opens its machine. The best set is picked as the record is; the worst is the lightest weight
-with the fewest reps at it, the heaviest on a gravitron. Weights follow the unit chosen in the
-profile.
+"−2.5 кг", "−1 повт." or "Без изменений". A machine first used in the period without a change
+shows "Новое упражнение" in green. On a gravitron a lighter weight is the growth. Tapping a card
+opens its machine. The best set is picked as the record is; the worst is the lightest weight with
+the fewest reps at it, the heaviest on a gravitron. Weights follow the unit chosen in the profile.
+
+With cards shown, "Общая" has an export button in the top bar. It hands the cards over as text, as
+"Поделиться" hands a visit: the nickname and the period ("ГДМ, за месяц"), an empty line, then one
+line per card with its name, its change and its best set in brackets ("Пресс сидя +3 повт. (45 кг
+× 15)", "Бицепс в тренажёре — новое упражнение (32 кг × 12)"). Grouped by tags, the lines form the
+visit's sections, separated by an empty line, each tagged one starting with a line of its tags.
 
 ## Data import / export
 

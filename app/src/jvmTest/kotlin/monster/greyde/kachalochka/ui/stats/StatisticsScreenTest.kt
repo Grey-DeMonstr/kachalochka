@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.runScreenTestInEnglish
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days
 
 @OptIn(ExperimentalTestApi::class)
@@ -67,6 +68,22 @@ class StatisticsScreenTest {
             onNodeWithTag("stats-best").assertTextEquals("75 кг × 8")
             onNodeWithTag("stats-history-date-0").assertTextEquals("13 ноября")
             onNodeWithTag("stats-history-results-1").assertTextEquals("70кг 1x8")
+        }
+
+    @Test
+    fun the_overall_view_shows_improvements_only_at_first_and_exports_its_cards() =
+        runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {
+            onNodeWithTag("stats-improvements-only").assertIsOn()
+            onNodeWithTag("stats-export").performClick()
+            waitForIdle()
+
+            assertEquals(listOf("за месяц\n\nЖим ногами +5 кг (75 кг × 8)"), gym.texts.shared)
+            onNodeWithTag("stats-notice").assertTextEquals("Скопировано")
+
+            onNodeWithTag("stats-card-${press.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("stats-export").assertDoesNotExist()
+            onNodeWithTag("stats-improvements-only").assertDoesNotExist()
         }
 
     @Test
