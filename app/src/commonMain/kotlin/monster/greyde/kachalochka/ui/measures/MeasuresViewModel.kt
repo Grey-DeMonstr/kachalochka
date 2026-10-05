@@ -102,7 +102,7 @@ class MeasuresViewModel(
             viewModelScope.launch {
                 val owner = currentUser.id()
                 profile = profiles.forOwner(owner)
-                upkeep(owner)
+                if (currentUser.writesPrivateRows()) upkeep(owner)
                 shown = measures.all(owner)
                 values = measurements.all(owner).groupBy { it.measureId }
                 publish()

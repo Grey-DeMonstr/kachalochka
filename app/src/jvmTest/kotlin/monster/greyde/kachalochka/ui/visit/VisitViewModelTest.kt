@@ -2138,4 +2138,19 @@ class VisitViewModelTest {
                 saved.machineId,
             )
         }
+
+    @Test
+    fun grouping_while_a_managed_child_is_active_writes_no_profile() =
+        runTest {
+            val family =
+                FakeGym().withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
+            family.accounts.switchTo(SASHA.userId)
+            val vm = viewModel(family).also { it.refresh() }
+            val before = family.sync.requests
+
+            vm.toggleGroupByTag()
+
+            assertNull(family.profiles.forOwner(SASHA.userId))
+            assertEquals(before, family.sync.requests)
+        }
 }

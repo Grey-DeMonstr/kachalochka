@@ -41,6 +41,8 @@ class ProfileChoice<T>(
             scope.launch {
                 // One write at a time, so the last choice is the one the server keeps.
                 previous?.join()
+                // A managed child's profile is the child's own; the choice holds here only.
+                if (!currentUser.writesPrivateRows()) return@launch
                 val owner = currentUser.id()
                 val now = clock.now()
                 val profile = profiles.forOwner(owner) ?: Profile.new(owner, now)

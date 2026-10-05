@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.measures
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -24,6 +25,8 @@ import monster.greyde.kachalochka.core.domain.measures.missingDefaults
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -91,6 +94,17 @@ class MeasuresViewModelTest {
 
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun a_managed_child_s_measures_are_never_seeded() {
+        val family =
+            FakeGym().withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
+        runBlocking { family.accounts.switchTo(SASHA.userId) }
+
+        viewModel(family)
+
+        assertTrue(runBlocking { family.measures.predefined(SASHA.userId) }.isEmpty())
+    }
 
     @Test
     fun a_second_claimed_set_merges_into_the_account_s_own_with_its_values() =

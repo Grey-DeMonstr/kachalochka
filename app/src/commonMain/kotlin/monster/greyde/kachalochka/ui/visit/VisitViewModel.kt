@@ -428,6 +428,7 @@ class VisitViewModel(
     }
 
     private suspend fun writeGroupByTag(wanted: Boolean) {
+        if (!currentUser.writesPrivateRows()) return
         val owner = currentUser.id()
         val now = clock.now()
         val stored = profiles.forOwner(owner) ?: Profile.new(owner, now)
