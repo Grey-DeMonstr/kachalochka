@@ -80,8 +80,10 @@ cannot be one: AGP 9 will not apply `com.android.application` to a multiplatform
 only what an APK has and a library does not — the launcher manifest and icon, `MainActivity`, the
 `Application` subclass, the signing config and the version numbers. The icon is an adaptive one:
 the round badge art on a background of its outer ring's colour, so every launcher mask continues
-the ring; the web page uses the same art as `icon.png`. Android code that is not application code,
-such as the DataStore theme preference, stays in `app/src/androidMain`.
+the ring; the web page uses the same art as `icon.png`. The source art is `design/logo.png`, and
+`design/play/` holds the Play listing's icon, feature graphic and texts, uploaded by hand to the
+Play Console. Android code that is not application code, such as the DataStore theme preference,
+stays in `app/src/androidMain`.
 
 `core` and `app` have a `jvm` target for one reason: tests. `core` tests run on the host JVM with
 the SQLDelight JVM driver; `app` tests run as Compose desktop UI tests. Neither needs an emulator

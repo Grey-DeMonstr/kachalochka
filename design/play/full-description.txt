@@ -1,0 +1,31 @@
+Kachalochka is a gym log. Record each set in a few taps and see how your weights grow.
+Share your visits with friends and train together.
+
+At the gym:
+• Add a set with one tap: the app suggests the weight from your last visit
+• See your previous results and your friends' results on the same machine
+• Keep your machines with photos, tags and setup notes
+• Record weight, distance, time or a simple count; assisted machines count weight down
+• Set the platform weight, and whether a weight is total or for each side
+• Use the rest timer, which restarts when you save a set
+• Write comments for a machine or for the whole visit
+• Prepare a plan of machines for your next visit
+
+Progress:
+• Charts of your best weight per machine for a month, 3 months, 6 months or a year
+• A calendar of your visits
+• Body measures: weight and girths, with the body fat they imply. Only you see them
+
+Friends and family:
+• Make a group and invite friends with a code or a link
+• See the calendars, visits and machine photos of your group, in a colour for each friend
+• Use several accounts on one phone: record your sets and your child's sets in one visit
+
+The Android app works offline and without an account.
+Sign in with Google to sync your data and to use the web app.
+
+English and Russian. Dark and light theme.
+
+Open source
+Kachalochka is free software, licensed under the GPL v3. The full source is at:
+https://github.com/Grey-DeMonstr/kachalochka

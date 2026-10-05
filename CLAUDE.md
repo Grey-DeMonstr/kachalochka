@@ -68,6 +68,7 @@ app/                  Compose Multiplatform library (android, jvm, wasmJs)
   src/jvmTest/        Compose desktop UI tests with fake repositories
 androidApp/           Android application: manifest, MainActivity, signing, versioning
 supabase/migrations/  Postgres schema and RLS policies
+design/               source art; design/play/ holds the Play listing's graphics and texts
 gradle/libs.versions.toml   the only place library versions are declared
 ```
 
