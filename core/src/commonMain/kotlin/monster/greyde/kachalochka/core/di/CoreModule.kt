@@ -7,20 +7,28 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import monster.greyde.kachalochka.core.data.family.AccountFamilyReads
+import monster.greyde.kachalochka.core.data.family.FamilyFollower
+import monster.greyde.kachalochka.core.data.family.FamilyReads
+import monster.greyde.kachalochka.core.data.family.SupabaseFamilyRepository
 import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.AccountStore
+import monster.greyde.kachalochka.core.data.identity.AccountTokens
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.ActiveAccountUser
 import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
+import monster.greyde.kachalochka.core.data.identity.SessionRefresh
 import monster.greyde.kachalochka.core.data.identity.SupabaseSessions
 import monster.greyde.kachalochka.core.data.identity.liveSessionChanges
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import monster.greyde.kachalochka.core.data.supabase.actingSupabaseClient
 import monster.greyde.kachalochka.core.data.supabase.supabaseClient
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import org.koin.core.Koin
 import org.koin.dsl.module
+import kotlin.time.Clock
 
 val coreModule =
     module {
@@ -36,6 +44,18 @@ val coreModule =
         single<CurrentUser> { ActiveAccountUser(get()) }
         single { Accounts(get(), get(), get(), get()) }
         single { AccountDeletion(get(), get(), get()) }
+        single<SessionRefresh> { SupabaseSessions(inject()) }
+        single { AccountTokens(get(), get<LiveSession>(), get(), Clock.System) }
+        single<FamilyReads> {
+            val credentials: SupabaseCredentials = get()
+            val tokens: AccountTokens = get()
+            AccountFamilyReads { acting ->
+                SupabaseFamilyRepository(
+                    lazy { actingSupabaseClient(credentials, tokens) { acting.owner } },
+                )
+            }
+        }
+        single { FamilyFollower(get(), get(), get()) }
     }
 
 /** A build without credentials has no live session to follow, and must not build a client. */

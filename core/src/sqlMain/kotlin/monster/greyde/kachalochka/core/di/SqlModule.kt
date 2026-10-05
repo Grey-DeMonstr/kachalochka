@@ -15,14 +15,11 @@ import monster.greyde.kachalochka.core.data.gym.StoragePhotoImages
 import monster.greyde.kachalochka.core.data.identity.AccountServer
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.AccountTokens
-import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.OwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
-import monster.greyde.kachalochka.core.data.identity.SessionRefresh
 import monster.greyde.kachalochka.core.data.identity.SqlOwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.SqlOwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.SupabaseAccountServer
-import monster.greyde.kachalochka.core.data.identity.SupabaseSessions
 import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
@@ -72,8 +69,6 @@ internal fun sqlModule(): Module =
         single { SyncWatermarks(get()) }
         single { LocalSyncRows(get()) }
         single { SyncSession() }
-        single<SessionRefresh> { SupabaseSessions(inject()) }
-        single { AccountTokens(get(), get<LiveSession>(), get(), Clock.System) }
         single<SyncGateway> {
             val credentials: SupabaseCredentials = get()
             val tokens: AccountTokens = get()

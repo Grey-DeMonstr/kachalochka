@@ -20,8 +20,9 @@ interface SessionRefresh {
 }
 
 /**
- * Sync's source of access tokens: the live session first, the store otherwise. Sync and the
- * friends client ask for the same owner at once on a cold start, so they share one refresh.
+ * The access token of an owner's requests. A managed owner's is its guardian's; either comes
+ * from the live session first, the store otherwise. Sync and the friends client ask for the same
+ * owner at once on a cold start, so they share one refresh.
  */
 class AccountTokens(
     private val store: AccountStore,

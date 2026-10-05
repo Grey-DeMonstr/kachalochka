@@ -81,3 +81,16 @@ fun ownerSupabaseClient(
         install(Storage)
     }
 }
+
+// The family follower reads as each account in turn, one at a time, as the sync pass does.
+fun actingSupabaseClient(
+    credentials: SupabaseCredentials,
+    tokens: AccountTokens,
+    acting: () -> UserId?,
+): SupabaseClient {
+    requireConfigured(credentials)
+    return createSupabaseClient(credentials.url, credentials.anonKey) {
+        accessToken = { acting()?.let { tokens.tokenFor(it) } }
+        install(Postgrest)
+    }
+}

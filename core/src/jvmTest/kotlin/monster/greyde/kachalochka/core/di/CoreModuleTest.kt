@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.core.di
 
+import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.Accounts
@@ -87,5 +88,11 @@ class CoreModuleTest {
     @Test
     fun the_family_repository_is_built_without_supabase_credentials() {
         assertNotNull(credentialLessKoin().get<FamilyRepository>())
+    }
+
+    /** The family is read online, but a clone without credentials must still build the graph. */
+    @Test
+    fun the_family_follower_is_built_without_supabase_credentials() {
+        assertNotNull(credentialLessKoin().get<FamilyFollower>())
     }
 }

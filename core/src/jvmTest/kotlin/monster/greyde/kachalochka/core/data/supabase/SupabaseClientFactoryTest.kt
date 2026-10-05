@@ -17,6 +17,7 @@ import monster.greyde.kachalochka.core.data.identity.SessionRefresh
 import monster.greyde.kachalochka.core.data.identity.accountSession
 import monster.greyde.kachalochka.core.data.identity.clockAt
 import monster.greyde.kachalochka.core.data.sync.SyncSession
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -85,6 +86,18 @@ class SupabaseClientFactoryTest {
             val client = activeAccountSupabaseClient(credentials, tokens(store), store)
 
             assertNull(client.accessToken?.invoke())
+        }
+
+    @Test
+    fun the_family_client_resolves_the_token_of_the_account_it_reads_as() =
+        runTest {
+            var acting: UserId? = null
+            val client = actingSupabaseClient(credentials, tokens(ivanStore())) { acting }
+
+            assertNull(client.accessToken?.invoke())
+            acting = ivan.account.userId
+            assertEquals(ivan.accessToken, client.accessToken?.invoke())
+            assertNull(client.pluginManager.getPluginOrNull(Auth))
         }
 
     @Test
