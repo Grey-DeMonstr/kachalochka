@@ -35,6 +35,8 @@ import monster.greyde.kachalochka.ui.strings.DataStoreLanguagePreference
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.strings.SystemLanguage
 import monster.greyde.kachalochka.ui.theme.DataStoreThemePreference
+import monster.greyde.kachalochka.ui.theme.EdgeToEdgeSystemBars
+import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import okio.Path.Companion.toPath
 import org.koin.android.ext.koin.androidContext
@@ -90,6 +92,10 @@ actual fun platformModule(): Module =
         single<JoinCodeStore>(named(PARENT_CODE)) { InMemoryJoinCodeStore() }
         single<PhotoCapture> { SystemPhotoCapture(androidContext()) }
         single<PageFooter> { PageFooter {} }
+        single<SystemBars> {
+            val activities: ActivityHolder = get()
+            EdgeToEdgeSystemBars { activities.current }
+        }
         single<GoogleSignIn> {
             val activities: ActivityHolder = get()
             CredentialManagerGoogleSignIn(

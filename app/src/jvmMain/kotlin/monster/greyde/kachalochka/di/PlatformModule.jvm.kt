@@ -24,6 +24,7 @@ import monster.greyde.kachalochka.ui.strings.InMemoryLanguagePreference
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.strings.SystemLanguage
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
+import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
@@ -49,4 +50,5 @@ actual fun platformModule(): Module =
         single<PhotoCapture> { NoPhotoCapture }
         single<FailureLog> { FailureLog {} }
         single<PageFooter> { PageFooter {} }
+        single<SystemBars> { SystemBars {} }
     }

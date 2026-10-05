@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -87,7 +88,9 @@ import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.strings.SystemLanguage
 import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
+import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.theme.ThemePreference
+import monster.greyde.kachalochka.ui.theme.resolvesToDark
 import monster.greyde.kachalochka.ui.visit.VisitScreen
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -126,6 +129,9 @@ fun App() {
     val accounts by accountsViewModel.state.collectAsState()
 
     val footer: PageFooter = koinInject()
+    val systemBars: SystemBars = koinInject()
+    val dark = mode.resolvesToDark(isSystemInDarkTheme())
+    LaunchedEffect(dark) { systemBars.follow(dark) }
 
     KachalochkaTheme(mode) {
         if (signInRequired.value && accounts.activeId == null) {

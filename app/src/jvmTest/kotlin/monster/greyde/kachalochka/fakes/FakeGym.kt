@@ -68,6 +68,8 @@ import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoLaunchers
 import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
+import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.timer.Ticker
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -357,6 +359,15 @@ class RecordingPageFooter : PageFooter {
     }
 }
 
+class RecordingSystemBars : SystemBars {
+    /** Null until the app first says. */
+    var dark: Boolean? = null
+
+    override fun follow(dark: Boolean) {
+        this.dark = dark
+    }
+}
+
 class FakeGym(
     now: Instant = Instant.fromEpochSeconds(1_700_000_000),
     val credentials: SupabaseCredentials =
@@ -409,6 +420,8 @@ class FakeGym(
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()
     val footer = RecordingPageFooter()
+    val themes = InMemoryThemePreference()
+    val systemBars = RecordingSystemBars()
     val joinCodes = InMemoryJoinCodeStore()
     val parentCodes = InMemoryJoinCodeStore()
     val accountServer = RecordingAccountServer()

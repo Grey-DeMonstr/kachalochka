@@ -875,6 +875,11 @@ whose value is already the stored one when the graph is built, so the first fram
 the chosen scheme. A store that cannot be read or written falls back to `System` instead of
 failing the launch.
 
+`App` hands the resolved scheme to the platform's `SystemBars`. On Android it makes the status and
+navigation bars transparent, with icons that match the scheme, so the screen's `background` shows
+behind them. Without an explicit style, Android draws a contrast scrim that follows the light
+window theme.
+
 The screen transition length is a device setting stored the same way, as `TransitionPreference`.
 `NavHost` fades by it, or switches instantly at 0, over a box painted with the scheme's
 `background`: the Android window theme is light, and a fade over a bare window shows it through

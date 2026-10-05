@@ -3,6 +3,7 @@ package monster.greyde.kachalochka
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import monster.greyde.kachalochka.ui.account.ActivityHolder
 import org.koin.android.ext.android.inject
 
@@ -10,6 +11,8 @@ class MainActivity : ComponentActivity() {
     private val activities: ActivityHolder by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Lays out the first frame edge to edge; App then gives the bars the chosen theme.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         activities.current = this
         setContent { App() }

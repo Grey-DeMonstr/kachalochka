@@ -33,6 +33,7 @@ import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.RuStrings
+import monster.greyde.kachalochka.ui.theme.ThemeMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -66,6 +67,18 @@ class AppTest {
 
             onNodeWithTag("top-bar-title").assertTextEquals("Статистика")
             onNodeWithTag("stats-choice").assertIsDisplayed()
+        }
+
+    @Test
+    fun the_system_bars_follow_the_chosen_theme() =
+        runApp {
+            runBlocking { gym.themes.set(ThemeMode.Dark) }
+            waitForIdle()
+            assertEquals(true, gym.systemBars.dark)
+
+            runBlocking { gym.themes.set(ThemeMode.Light) }
+            waitForIdle()
+            assertEquals(false, gym.systemBars.dark)
         }
 
     @Test
