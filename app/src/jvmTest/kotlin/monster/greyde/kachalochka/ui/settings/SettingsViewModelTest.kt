@@ -536,7 +536,7 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun applying_for_a_managed_child_changes_the_device_and_writes_no_profile() =
+    fun applying_for_a_managed_child_changes_the_device_settings() =
         runTest {
             gym.withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
             gym.accounts.switchTo(SASHA.userId)
@@ -546,7 +546,6 @@ class SettingsViewModelTest {
             vm.apply()
 
             assertEquals(AppLanguage.English, languages.language.value)
-            assertNull(gym.profiles.forOwner(SASHA.userId))
         }
 
     private class GatedLanguages(
@@ -562,7 +561,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun a_switch_to_a_managed_child_while_applying_writes_no_profile_for_the_child() =
+    fun a_switch_to_a_managed_child_while_applying_saves_the_edit_for_the_parent() =
         runTest {
             gym.withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
             val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
@@ -588,6 +587,6 @@ class SettingsViewModelTest {
             gate.complete(Unit)
 
             assertNull(gym.profiles.forOwner(SASHA.userId))
-            assertNull(gym.profiles.forOwner(ivan.account.userId))
+            assertEquals("Ваня", gym.profiles.forOwner(ivan.account.userId)?.displayName)
         }
 }

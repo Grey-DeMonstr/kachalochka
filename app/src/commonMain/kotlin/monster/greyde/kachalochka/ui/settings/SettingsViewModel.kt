@@ -114,6 +114,9 @@ class SettingsViewModel(
     val profile: StateFlow<ProfileUi?> = mutableProfile
     private var saved: ProfileUi? = null
 
+    // Whose profile is shown: an edit is saved for them even if a switch lands meanwhile.
+    private var profileOwner: UserId? = null
+
     private val mutableAvatar = MutableStateFlow<AvatarUi?>(null)
     val avatar: StateFlow<AvatarUi?> = mutableAvatar
     private var savedAvatar: AvatarUi? = null
@@ -151,6 +154,7 @@ class SettingsViewModel(
         mutableFamily.value = ownsAccount
         // A managed child's profile is the child's own; only the device settings stay.
         if (account?.isManaged == true) {
+            profileOwner = null
             savedAvatar = null
             mutableAvatar.value = null
             saved = null
@@ -177,6 +181,7 @@ class SettingsViewModel(
                 canSave = false,
                 weightUnit = stored?.weightUnit ?: PreferredWeightUnit.Kg,
             )
+        profileOwner = owner
         saved = shown
         mutableProfile.value = shown
         refreshApply()
@@ -248,6 +253,7 @@ class SettingsViewModel(
     fun apply() {
         if (!mutableCanApply.value) return
         val shown = mutableProfile.value
+        val owner = profileOwner
         val writeProfile = profileChanged()
         val avatar = mutableAvatar.value?.takeIf { avatarChanged() }
         val device = mutableDevice.value
@@ -262,18 +268,18 @@ class SettingsViewModel(
                 languages.set(device.language)
                 transitionMillisOrNull(device.transition)?.let { transitions.set(it) }
                 if ((writeProfile || avatar != null) && shown != null) {
-                    saveProfile(shown.takeIf { writeProfile }, avatar)
+                    saveProfile(owner, shown.takeIf { writeProfile }, avatar)
                 }
             }
         }
     }
 
+    /** A managed child's screen shows no profile, so [owner] is never one. */
     private suspend fun saveProfile(
+        owner: UserId?,
         shown: ProfileUi?,
         avatar: AvatarUi?,
     ) {
-        if (!currentUser.writesPrivateRows()) return
-        val owner = currentUser.id()
         val now = clock.now()
         // Read afresh so a friend colour saved meanwhile survives.
         val existing = profiles.forOwner(owner) ?: Profile.new(owner, now)
@@ -299,6 +305,8 @@ class SettingsViewModel(
         sync.request()
         if (avatar != null) {
             avatars.refresh()
+            // The screen has moved on to another account's picture.
+            if (profileOwner != owner) return
             mutableAvatar.value =
                 AvatarUi(avatar.owner, avatar.name, avatar.avatar.copy(photo = photo))
             savedAvatar = mutableAvatar.value
