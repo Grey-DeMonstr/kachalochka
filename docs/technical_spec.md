@@ -643,7 +643,8 @@ Row-level security enforces every visibility rule from the functional spec:
 
 - A user writes only rows with their own `user_id` or that of a child they guard (`guards`), a
   set only into a visit and on a machine of the set's own owner, and a photo only of a machine or
-  profile of the photo's own owner.
+  profile of the photo's own owner; a `before update` trigger keeps a row's `user_id` from
+  changing.
 - A user reads their own rows and the live `machine`, `visit`, `workout_set`, `machine_link` and
   `photo` rows of everyone who shares a live group with them, through the security-definer
   function `shares_group_with`; the `photos` bucket's read policy applies it to the first folder

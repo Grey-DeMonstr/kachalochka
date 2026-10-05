@@ -110,7 +110,10 @@ create policy photos_insert_own_or_guarded on storage.objects
     with check (
         bucket_id = 'photos' and (
             (storage.foldername(name))[1] = (select auth.uid())::text
-            or public.guards(((storage.foldername(name))[1])::uuid)
+            or (storage.foldername(name))[1] in (
+                select g.child_id::text from public.guardian g
+                where g.guardian_id = (select auth.uid())
+            )
         )
     );
 drop policy if exists photos_update_own on storage.objects;
@@ -119,13 +122,19 @@ create policy photos_update_own_or_guarded on storage.objects
     using (
         bucket_id = 'photos' and (
             (storage.foldername(name))[1] = (select auth.uid())::text
-            or public.guards(((storage.foldername(name))[1])::uuid)
+            or (storage.foldername(name))[1] in (
+                select g.child_id::text from public.guardian g
+                where g.guardian_id = (select auth.uid())
+            )
         )
     )
     with check (
         bucket_id = 'photos' and (
             (storage.foldername(name))[1] = (select auth.uid())::text
-            or public.guards(((storage.foldername(name))[1])::uuid)
+            or (storage.foldername(name))[1] in (
+                select g.child_id::text from public.guardian g
+                where g.guardian_id = (select auth.uid())
+            )
         )
     );
 drop policy if exists photos_delete_own on storage.objects;
@@ -134,7 +143,10 @@ create policy photos_delete_own_or_guarded on storage.objects
     using (
         bucket_id = 'photos' and (
             (storage.foldername(name))[1] = (select auth.uid())::text
-            or public.guards(((storage.foldername(name))[1])::uuid)
+            or (storage.foldername(name))[1] in (
+                select g.child_id::text from public.guardian g
+                where g.guardian_id = (select auth.uid())
+            )
         )
     );
 drop policy if exists photos_select_own_or_group on storage.objects;
@@ -143,7 +155,10 @@ create policy photos_select_own_guarded_or_group on storage.objects
     using (
         bucket_id = 'photos' and (
             (storage.foldername(name))[1] = (select auth.uid())::text
-            or public.guards(((storage.foldername(name))[1])::uuid)
+            or (storage.foldername(name))[1] in (
+                select g.child_id::text from public.guardian g
+                where g.guardian_id = (select auth.uid())
+            )
             or public.shares_group_with(((storage.foldername(name))[1])::uuid)
         )
     );
@@ -177,3 +192,30 @@ begin
     where linked_machine_id = removed and not deleted and user_id <> holder;
 end;
 $$;
+
+-- A guardian may write both sides of an update, so an owner could otherwise move a row between
+-- them.
+create or replace function public.user_id_stays() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+    if new.user_id is distinct from old.user_id then
+        raise exception 'user_id cannot change' using errcode = 'P0001';
+    end if;
+    return new;
+end;
+$$;
+
+create trigger machine_user_id_stays before update on public.machine
+    for each row execute function public.user_id_stays();
+create trigger visit_user_id_stays before update on public.visit
+    for each row execute function public.user_id_stays();
+create trigger workout_set_user_id_stays before update on public.workout_set
+    for each row execute function public.user_id_stays();
+create trigger machine_link_user_id_stays before update on public.machine_link
+    for each row execute function public.user_id_stays();
+create trigger photo_user_id_stays before update on public.photo
+    for each row execute function public.user_id_stays();
+create trigger workout_plan_user_id_stays before update on public.workout_plan
+    for each row execute function public.user_id_stays();
+
+revoke execute on function public.user_id_stays() from public, anon, authenticated;
