@@ -1,5 +1,15 @@
 Kachalochka - Changelog
 
+1.5.0
+
+- Child accounts added: a parent can link a child's account and record the child's workouts.
+- A friend's machine opens from their visit.
+- When machines are grouped by tags, machines without a tag are under "Other".
+- When two machines are merged, you choose which one stays, and the one used last is suggested.
+- A changed platform weight can also change the weights of the sets already recorded.
+- The privacy policy and terms describe child accounts.
+
+
 1.4.3
 
 - The app has its own icon.
