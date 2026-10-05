@@ -19,8 +19,10 @@ import kotlin.test.assertTrue
 private class ScriptedReads : FamilyReads {
     val families = mutableMapOf<UserId, Family>()
     val failing = mutableSetOf<UserId>()
+    var whileReading: suspend () -> Unit = {}
 
     override suspend fun familyOf(owner: UserId): Family {
+        whileReading()
         if (owner in failing) error("no connection")
         return families[owner] ?: Family(emptyList(), emptyList())
     }
@@ -102,6 +104,52 @@ class FamilyFollowerTest {
         }
 
     @Test
+    fun a_child_let_go_by_one_parent_stays_while_the_other_parent_s_read_fails() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            reads.children(ivan.account.userId, sasha)
+            reads.children(misha.account.userId, sasha)
+            follower.follow()
+            reads.families.remove(ivan.account.userId)
+            reads.failing += misha.account.userId
+
+            assertFalse(follower.follow())
+
+            assertEquals(listOf(sasha.userId), managedAccounts().map { it.userId })
+            assertTrue(purged.isEmpty())
+        }
+
+    @Test
+    fun a_child_keeps_its_parent_while_that_parent_s_read_fails() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            reads.children(ivan.account.userId, sasha)
+            reads.children(misha.account.userId, sasha)
+            follower.follow()
+            reads.failing += ivan.account.userId
+
+            assertFalse(follower.follow())
+
+            assertEquals(listOf(ivan.account.userId), managedAccounts().map { it.guardianId })
+        }
+
+    @Test
+    fun a_child_signed_in_with_google_during_the_reads_keeps_its_rows() =
+        runTest {
+            store.add(ivan)
+            reads.children(ivan.account.userId, sasha)
+            follower.follow()
+            reads.families.remove(ivan.account.userId)
+            reads.whileReading = { store.add(accountSession(sasha.userId.value, "Sasha")) }
+
+            follower.follow()
+
+            assertTrue(purged.isEmpty())
+        }
+
+    @Test
     fun a_child_of_two_parents_here_is_one_account_under_the_first() =
         runTest {
             store.add(ivan)
@@ -167,14 +215,14 @@ class FamilyFollowerTest {
         runTest {
             store.add(ivan)
             store.add(misha)
-            reads.children(ivan.account.userId, sasha)
+            reads.children(misha.account.userId, sasha)
             follower.follow()
             store.switch(sasha.userId)
-            reads.families.remove(ivan.account.userId)
+            reads.families.remove(misha.account.userId)
 
             follower.follow()
 
-            assertEquals(ivan.account.userId, store.activeId.value)
+            assertEquals(misha.account.userId, store.activeId.value)
         }
 
     @Test

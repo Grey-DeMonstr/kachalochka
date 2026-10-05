@@ -86,13 +86,10 @@ class CoreModuleTest {
 
     /** Guardian links are read online, but a clone without credentials must build the graph. */
     @Test
-    fun the_family_repository_is_built_without_supabase_credentials() {
-        assertNotNull(credentialLessKoin().get<FamilyRepository>())
-    }
+    fun the_family_graph_is_built_without_supabase_credentials() {
+        val koin = credentialLessKoin()
 
-    /** The family is read online, but a clone without credentials must still build the graph. */
-    @Test
-    fun the_family_follower_is_built_without_supabase_credentials() {
-        assertNotNull(credentialLessKoin().get<FamilyFollower>())
+        assertNotNull(koin.get<FamilyRepository>())
+        assertNotNull(koin.get<FamilyFollower>())
     }
 }

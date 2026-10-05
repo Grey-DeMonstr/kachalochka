@@ -7,6 +7,7 @@ import monster.greyde.kachalochka.core.domain.family.FamilyRepository
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 private val IVAN = UserId("11111111-1111-4111-8111-111111111111")
@@ -44,6 +45,34 @@ class AccountFamilyReadsTest {
             reads.familyOf(MISHA)
 
             assertEquals(listOf<UserId?>(IVAN, MISHA), askedAs)
+            assertNull(acting.owner)
+        }
+
+    @Test
+    fun a_read_that_fails_reads_as_nobody_after() =
+        runTest {
+            lateinit var acting: ActingAccount
+            val reads =
+                AccountFamilyReads { holder ->
+                    acting = holder
+                    object : FamilyRepository {
+                        override suspend fun family(): Family = error("no connection")
+
+                        override suspend fun offer(): String = error("unused")
+
+                        override suspend fun accept(code: String): Acceptance = error("unused")
+
+                        override suspend fun end(
+                            child: UserId,
+                            guardian: UserId,
+                        ) {
+                            error("unused")
+                        }
+                    }
+                }
+
+            assertFailsWith<IllegalStateException> { reads.familyOf(IVAN) }
+
             assertNull(acting.owner)
         }
 }

@@ -12,7 +12,8 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 
 /**
  * Keeps the device's managed accounts in step with the guardian links of its Google accounts.
- * A family that cannot be read keeps its children; a child no family names any more leaves the
+ * A family that cannot be read may still name any child, so while one is unread no child leaves
+ * and none changes guardian away from it. Otherwise a child no family names any more leaves the
  * device with its rows, which the device could never sync again.
  */
 class FamilyFollower(
@@ -31,6 +32,9 @@ class FamilyFollower(
             val before = listed.filter { it.isManaged }
             val children = signedIn.associate { it.userId to childrenOf(it.userId) }
             val after = linkedMapOf<UserId, Account>()
+            before
+                .filter { it.guardianId?.let(children::get) == null }
+                .forEach { after[it.userId] = it }
             for (guardian in signedIn) {
                 children[guardian.userId]?.forEach { child ->
                     if (child.userId !in signedInIds && child.userId !in after) {
@@ -38,13 +42,18 @@ class FamilyFollower(
                     }
                 }
             }
-            before
-                .filter { it.userId !in after && it.guardianId?.let(children::get) == null }
-                .forEach { after[it.userId] = it }
+            val everyFamilyRead = children.values.none { it == null }
+            if (!everyFamilyRead) {
+                before.filter { it.userId !in after }.forEach { after[it.userId] = it }
+            }
             store.setManaged(after.values.toList())
+            val signedInNow =
+                store.accounts.value
+                    .filterNot { it.isManaged }
+                    .map { it.userId }
             before
                 .map { it.userId }
-                .filter { it !in after && it !in signedInIds }
+                .filter { it !in after && it !in signedInNow }
                 .forEach { purge.purge(it) }
             before.map { it.userId to it.guardianId }.toSet() !=
                 after.values.map { it.userId to it.guardianId }.toSet()

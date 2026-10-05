@@ -334,8 +334,8 @@ Google account on the device, one at a time on one client, as the sync pass move
 accounts (§4.2); lists every child a family names, once, under the first guardian signed in here;
 refreshes their names and avatars; and removes a child no family names any more, with its rows
 (`OwnedRowsPurge`), since the device could never sync them again. A family that cannot be read is
-not an empty one: its children stay as they are. `AccountTokens` serves both platforms for these
-reads.
+not an empty one: while any is unread no child leaves the device, and a child whose guardian's
+family is unread keeps that guardian. `AccountTokens` serves both platforms for these reads.
 
 ### 4.4 Photos
 
