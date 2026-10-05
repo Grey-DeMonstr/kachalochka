@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.identity.SessionRefresh
 import monster.greyde.kachalochka.core.data.identity.SupabaseSessions
+import monster.greyde.kachalochka.core.data.identity.WatermarkReset
 import monster.greyde.kachalochka.core.data.identity.liveSessionChanges
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.supabase.actingSupabaseClient
@@ -34,8 +35,12 @@ val coreModule =
     module {
         single { SupabaseCredentials.fromBuild() }
         single<SupabaseClient> { supabaseClient(get()) }
-        // Built while Koin starts, so the stored accounts are in hand before the first frame.
-        single<AccountStore>(createdAtStart = true) { PersistedAccountStore(get()) }
+        // Built while Koin starts, so the stored accounts are in hand before the first frame; the
+        // database behind the watermarks waits for the first sign-out.
+        single<AccountStore>(createdAtStart = true) {
+            val watermarks = inject<WatermarkReset>()
+            PersistedAccountStore(get(), WatermarkReset { watermarks.value.forget(it) })
+        }
         single {
             val sessions = SupabaseSessions(inject())
             LiveSession(sessions, sessions, get())

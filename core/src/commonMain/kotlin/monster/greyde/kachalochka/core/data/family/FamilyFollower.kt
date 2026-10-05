@@ -100,11 +100,27 @@ class FamilyFollower(
     // A child acts through its guardian's session; one that failed to go live is retried here.
     private suspend fun keepActingSessionLive() {
         val active = store.activeId.value ?: return
-        val guardian =
-            store.accounts.value
-                .firstOrNull { it.userId == active }
-                ?.guardianId ?: return
-        if (live.liveId != guardian) store.actingSessionOf(active)?.let { live.activate(it) }
+        if (store.accounts.value.none { it.userId == active && it.isManaged }) return
+        if (!putLive(active)) return
+        // A switch made while this activation ran went live first, and this one replaced it.
+        store.activeId.value
+            ?.takeIf { it != active }
+            ?.let { putLive(it) }
+    }
+
+    /** False when [id]'s acting session was live already or did not go live. */
+    private suspend fun putLive(id: UserId): Boolean {
+        val session = store.actingSessionOf(id) ?: return false
+        if (live.liveId == session.account.userId) return false
+        return try {
+            live.activate(session)
+            true
+        } catch (stopped: CancellationException) {
+            throw stopped
+        } catch (refused: Exception) {
+            // The next follow retries; a refusal here must not keep the sync pass from running.
+            false
+        }
     }
 
     // Null, unlike an empty list, says nothing about the family.

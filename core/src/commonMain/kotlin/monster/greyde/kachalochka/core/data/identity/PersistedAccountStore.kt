@@ -41,6 +41,7 @@ private data class StoredAccounts(
 
 class PersistedAccountStore(
     private val storage: AccountStorage,
+    private val watermarks: WatermarkReset = NoWatermarkReset,
 ) : AccountStore {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -83,16 +84,21 @@ class PersistedAccountStore(
         }
     }
 
+    /** A child leaving with its guardian keeps its rows; signed in itself, it pulls in full. */
     override suspend fun remove(id: UserId) {
-        lock.withLock {
-            sessions.removeAll { it.account.userId == id }
-            managed.removeAll { it.userId == id || it.guardianId == id }
-            val active = activeState.value
-            if (active != null && !isListed(active)) {
-                activeState.value = sessions.firstOrNull()?.account?.userId
+        val children =
+            lock.withLock {
+                sessions.removeAll { it.account.userId == id }
+                val children = managed.filter { it.guardianId == id }.map { it.userId }
+                managed.removeAll { it.userId == id || it.guardianId == id }
+                val active = activeState.value
+                if (active != null && !isListed(active)) {
+                    activeState.value = sessions.firstOrNull()?.account?.userId
+                }
+                publish()
+                children
             }
-            publish()
-        }
+        children.forEach { watermarks.forget(it) }
     }
 
     override suspend fun replaceSession(session: AccountSession) {

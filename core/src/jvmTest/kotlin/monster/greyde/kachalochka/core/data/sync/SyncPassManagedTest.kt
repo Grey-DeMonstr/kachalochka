@@ -7,6 +7,8 @@ import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
+import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -43,7 +45,13 @@ class SyncPassManagedTest {
             assertTrue(h.pass.run(listOf(MISHA), managed = setOf(MISHA)))
 
             assertTrue(h.gateway.pushed.isEmpty())
-            assertTrue(h.outbox.pending().isEmpty())
+            assertEquals(
+                setOf(PROFILE_TABLE, MEASURE_TABLE, MEASUREMENT_TABLE),
+                h.outbox
+                    .pending()
+                    .map { it.tableName }
+                    .toSet(),
+            )
             assertEquals(profile, h.profiles.forOwner(MISHA))
         }
 
@@ -95,7 +103,7 @@ class SyncPassManagedTest {
 
             assertEquals(listOf("$PROFILE_TABLE:${ivan.id.value}"), h.gateway.pushed)
             assertEquals(listOf<UserId?>(IVAN), h.gateway.pushedAs)
-            assertTrue(h.outbox.pending().isEmpty())
+            assertEquals(listOf(misha.id.value), h.outbox.pending().map { it.rowId })
         }
 
     @Test
@@ -115,6 +123,12 @@ class SyncPassManagedTest {
             )
 
             assertTrue(h.gateway.pushed.isEmpty())
-            assertTrue(h.outbox.pending().isEmpty())
+            assertEquals(
+                setOf(PROFILE_TABLE, MEASURE_TABLE),
+                h.outbox
+                    .pending()
+                    .map { it.tableName }
+                    .toSet(),
+            )
         }
 }

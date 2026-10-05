@@ -82,7 +82,8 @@ fun ownerSupabaseClient(
     }
 }
 
-// The family follower reads as each account in turn, one at a time, as the sync pass does.
+// The family follower reads as each account in turn, one at a time, as the sync pass does. A read
+// without a token would go out as anon and find no children, so it fails instead.
 fun actingSupabaseClient(
     credentials: SupabaseCredentials,
     tokens: AccountTokens,
@@ -90,7 +91,10 @@ fun actingSupabaseClient(
 ): SupabaseClient {
     requireConfigured(credentials)
     return createSupabaseClient(credentials.url, credentials.anonKey) {
-        accessToken = { acting()?.let { tokens.tokenFor(it) } }
+        accessToken = {
+            val owner = checkNotNull(acting()) { "A family read names no account" }
+            checkNotNull(tokens.tokenFor(owner)) { "No token to read the family as" }
+        }
         install(Postgrest)
     }
 }

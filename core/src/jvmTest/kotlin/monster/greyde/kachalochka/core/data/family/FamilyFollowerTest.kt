@@ -1,5 +1,7 @@
 package monster.greyde.kachalochka.core.data.family
 
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.annotations.SupabaseInternal
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
@@ -7,13 +9,22 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.data.identity.AccountTokens
+import monster.greyde.kachalochka.core.data.identity.FIXTURE_EXPIRY
+import monster.greyde.kachalochka.core.data.identity.FakeLiveTokens
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
+import monster.greyde.kachalochka.core.data.identity.SessionRefresh
 import monster.greyde.kachalochka.core.data.identity.accountSession
+import monster.greyde.kachalochka.core.data.identity.clockAt
+import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import monster.greyde.kachalochka.core.data.supabase.actingSupabaseClient
+import monster.greyde.kachalochka.core.domain.family.Acceptance
 import monster.greyde.kachalochka.core.domain.family.Family
 import monster.greyde.kachalochka.core.domain.family.FamilyMember
+import monster.greyde.kachalochka.core.domain.family.FamilyRepository
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -21,12 +32,19 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.hours
 
 private class RecordingActivation : SessionActivation {
     val activated = mutableListOf<UserId>()
     var refusal: Exception? = null
 
+    /** Runs once, inside the next activation. */
+    var whileActivating: suspend () -> Unit = {}
+
     override suspend fun activate(session: AccountSession) {
+        val during = whileActivating
+        whileActivating = {}
+        during()
         refusal?.let { throw it }
         activated += session.account.userId
     }
@@ -43,6 +61,28 @@ private class ScriptedReads : FamilyReads {
         whileReading()
         if (owner in failing) error("no connection")
         return families[owner] ?: Family(emptyList(), emptyList())
+    }
+}
+
+/** Asks for the token as each PostgREST request does, then finds nobody linked. */
+@OptIn(SupabaseInternal::class)
+private class TokenFirstFamily(
+    private val client: SupabaseClient,
+) : FamilyRepository {
+    override suspend fun family(): Family {
+        client.accessToken?.invoke()
+        return Family(emptyList(), emptyList())
+    }
+
+    override suspend fun offer(): String = error("unused")
+
+    override suspend fun accept(code: String): Acceptance = error("unused")
+
+    override suspend fun end(
+        child: UserId,
+        guardian: UserId,
+    ) {
+        error("unused")
     }
 }
 
@@ -327,6 +367,73 @@ class FamilyFollowerTest {
             follower.follow()
 
             assertEquals(misha.account.userId, live.liveId)
+        }
+
+    @Test
+    fun a_refused_activation_still_runs_the_pass() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            reads.children(ivan.account.userId, sasha)
+            reads.children(misha.account.userId, sasha)
+            follower.follow()
+            switchTo(sasha.userId)
+            reads.families.remove(ivan.account.userId)
+            sessions.refusal = IllegalStateException("no connection")
+
+            val passed = follower.followThen { true }
+
+            assertTrue(passed)
+        }
+
+    @Test
+    fun a_switch_landing_while_the_child_s_parent_goes_live_leaves_the_switched_to_account_live() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            reads.children(ivan.account.userId, sasha)
+            reads.children(misha.account.userId, sasha)
+            follower.follow()
+            switchTo(sasha.userId)
+            reads.families.remove(ivan.account.userId)
+            sessions.whileActivating = { switchTo(ivan.account.userId) }
+
+            follower.follow()
+
+            assertEquals(ivan.account.userId, store.activeId.value)
+            assertEquals(ivan.account.userId, live.liveId)
+        }
+
+    @Test
+    fun a_parent_whose_refresh_is_refused_reads_no_family_and_keeps_the_child() =
+        runTest {
+            store.add(ivan)
+            reads.children(ivan.account.userId, sasha)
+            follower.follow()
+            val refused =
+                AccountTokens(
+                    store,
+                    FakeLiveTokens(),
+                    object : SessionRefresh {
+                        override suspend fun refresh(session: AccountSession): AccountSession? =
+                            null
+                    },
+                    clockAt(FIXTURE_EXPIRY + 1.hours),
+                )
+            val asParent =
+                AccountFamilyReads { acting ->
+                    val client =
+                        actingSupabaseClient(
+                            SupabaseCredentials("https://example.test", "anon-key"),
+                            refused,
+                        ) { acting.owner }
+                    TokenFirstFamily(client)
+                }
+
+            FamilyFollower(store, asParent, live) { purged += it }.follow()
+
+            assertEquals(listOf(sasha.userId), managedAccounts().map { it.userId })
+            assertTrue(purged.isEmpty())
         }
 
     @Test

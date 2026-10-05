@@ -53,14 +53,6 @@ private class RecordingOwnerless : OwnerlessRows {
     }
 }
 
-private class RecordingWatermarkReset : WatermarkReset {
-    val forgotten = mutableListOf<UserId>()
-
-    override suspend fun forget(owner: UserId) {
-        forgotten += owner
-    }
-}
-
 private fun session(
     id: String,
     name: String,

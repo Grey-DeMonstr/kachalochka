@@ -234,12 +234,9 @@ class SyncPass(
             db { outbox.removePushed(entry) }
             return true
         }
-        if (rowOwner != owner) return true
-        // The guardian's session may not write it, so it stays on this device only.
-        if (kept) {
-            db { outbox.removePushed(entry) }
-            return true
-        }
+        // The guardian's session may not write it. It predates the guardian, so it waits for its
+        // owner's own session; a guarded owner never pulls these tables, so nothing overwrites it.
+        if (rowOwner != owner || kept) return true
         return attempt {
             send(row)
             db { outbox.removePushed(entry) }

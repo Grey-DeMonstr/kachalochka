@@ -284,6 +284,21 @@ class PersistedAccountStoreTest {
         }
 
     @Test
+    fun signing_out_a_guardian_forgets_only_its_children_s_pull_watermarks() =
+        runTest {
+            val reset = RecordingWatermarkReset()
+            val store = PersistedAccountStore(FakeStorage(), reset)
+            val kolya = UserId("77777777-7777-4777-8777-777777777777")
+            store.add(ivan)
+            store.add(misha)
+            store.setManaged(listOf(managedChild(misha), managedChild(ivan, kolya, "Kolya")))
+
+            store.remove(misha.account.userId)
+
+            assertEquals(listOf(SASHA_ID), reset.forgotten)
+        }
+
+    @Test
     fun an_active_child_dropped_leaves_its_guardian_active() =
         runTest {
             val store = PersistedAccountStore(FakeStorage())

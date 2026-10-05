@@ -260,8 +260,9 @@ failing a pull.
   own pull watermark. Pushing only the active account would leave a guest's sets enqueued until
   somebody happened to switch back to them. A managed account's pass pushes and pulls only
   `machine`, `visit`, `workout_set`, `machine_link`, `photo` and `workout_plan`, the tables its
-  guardian may write; an entry of its `profile`, `measure` or `measurement` leaves the outbox
-  unpushed, since the server would refuse it on every pass.
+  guardian may write. An entry of its `profile`, `measure` or `measurement`, which only the
+  account itself can have written before it became managed, stays in the outbox unpushed, since
+  the server would refuse it; it goes out once the account signs in on the device itself.
 
 Sync runs on a second `SupabaseClient` that installs no `Auth`; its `accessToken` resolver asks
 for the token of the account the pass is currently on. The UI's client and its active session are
@@ -335,8 +336,9 @@ that resolves the active account's token therefore act as the guardian, whom row
 lets write the child's gym rows, while every row recorded meanwhile carries the child's id.
 `CurrentUser.writesPrivateRows` is false while a managed account is active, because its profile
 and measures are the child's alone. A managed entry never stands in for a Google account signed
-in on the device, and leaves the device's list with its guardian; when two guardians of one child
-are signed in on the device, the first one acts.
+in on the device, and leaves the device's list with its guardian, keeping its rows but not its
+pull watermark, so the child signing in here later pulls everything; when two guardians of one
+child are signed in on the device, the first one acts.
 
 `FamilyFollower` keeps the managed entries in step with the server. It reads `my_family` as each
 Google account on the device, one at a time on one client, as the sync pass moves between
@@ -344,7 +346,8 @@ accounts (§4.2); lists every child a family names, once, under the first guardi
 refreshes their names and avatars; and removes a child no family names any more, with its rows
 (`OwnedRowsPurge`), since the device could never sync them again. A family that cannot be read is
 not an empty one: while any is unread no child leaves the device, and a child whose guardian's
-family is unread keeps that guardian. `AccountTokens` serves both platforms for these reads.
+family is unread keeps that guardian. `AccountTokens` serves both platforms for these reads; a
+read with no token for its account fails rather than going out as anon and finding nobody.
 Android follows at the start of every sync pass, so a child linked since the last pass syncs in
 this one and a child whose link ended leaves before its rows could be pushed again, and on
 entering "Дети"; a sign-in reaches it through the pass it requests. The web follows once per page
@@ -355,7 +358,8 @@ whose rows the pass then pulls back. An account signed in after the families wer
 an unread family until the last purge. A leaving child is purged while still listed and leaves
 the store only after, so a failed purge is retried by the next follow; once the purges start,
 cancellation waits for the store and the live session. Each follow makes the active child's
-guardian the live session if it is not already, so a refused activation is retried.
+guardian the live session if it is not already, so a refused activation is retried by the next
+follow without holding up the pass, and a switch made while it activates is put live after it.
 
 ### 4.4 Photos
 

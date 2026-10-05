@@ -17,7 +17,6 @@ import monster.greyde.kachalochka.core.data.identity.SessionRefresh
 import monster.greyde.kachalochka.core.data.identity.accountSession
 import monster.greyde.kachalochka.core.data.identity.clockAt
 import monster.greyde.kachalochka.core.data.sync.SyncSession
-import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -26,6 +25,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Instant
 
 class SupabaseClientFactoryTest {
     private val ivan = accountSession("11111111-1111-4111-8111-111111111111", "Ivan")
@@ -34,12 +34,15 @@ class SupabaseClientFactoryTest {
     private suspend fun ivanStore(): AccountStore =
         PersistedAccountStore(InMemoryAccountStorage()).also { it.add(ivan) }
 
-    private fun tokens(store: AccountStore): AccountTokens {
+    private fun tokens(
+        store: AccountStore,
+        at: Instant = FIXTURE_EXPIRY - 1.hours,
+    ): AccountTokens {
         val noRefresh =
             object : SessionRefresh {
                 override suspend fun refresh(session: AccountSession): AccountSession? = null
             }
-        return AccountTokens(store, FakeLiveTokens(), noRefresh, clockAt(FIXTURE_EXPIRY - 1.hours))
+        return AccountTokens(store, FakeLiveTokens(), noRefresh, clockAt(at))
     }
 
     @Test
@@ -91,13 +94,29 @@ class SupabaseClientFactoryTest {
     @Test
     fun the_family_client_resolves_the_token_of_the_account_it_reads_as() =
         runTest {
-            var acting: UserId? = null
-            val client = actingSupabaseClient(credentials, tokens(ivanStore())) { acting }
+            val tokens = tokens(ivanStore())
+            val client = actingSupabaseClient(credentials, tokens) { ivan.account.userId }
 
-            assertNull(client.accessToken?.invoke())
-            acting = ivan.account.userId
             assertEquals(ivan.accessToken, client.accessToken?.invoke())
             assertNull(client.pluginManager.getPluginOrNull(Auth))
+        }
+
+    // Read as anon, a family would come back empty and every child would leave the device.
+    @Test
+    fun the_family_client_refuses_to_read_as_nobody() =
+        runTest {
+            val client = actingSupabaseClient(credentials, tokens(ivanStore())) { null }
+
+            assertFailsWith<IllegalStateException> { client.accessToken?.invoke() }
+        }
+
+    @Test
+    fun the_family_client_refuses_to_read_as_an_account_whose_refresh_is_refused() =
+        runTest {
+            val expired = tokens(ivanStore(), at = FIXTURE_EXPIRY + 1.hours)
+            val client = actingSupabaseClient(credentials, expired) { ivan.account.userId }
+
+            assertFailsWith<IllegalStateException> { client.accessToken?.invoke() }
         }
 
     @Test

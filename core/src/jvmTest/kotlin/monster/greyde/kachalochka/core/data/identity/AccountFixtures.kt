@@ -43,6 +43,14 @@ internal class FakeLiveTokens(
     }
 }
 
+internal class RecordingWatermarkReset : WatermarkReset {
+    val forgotten = mutableListOf<UserId>()
+
+    override suspend fun forget(owner: UserId) {
+        forgotten += owner
+    }
+}
+
 internal val SASHA_ID = UserId("66666666-6666-4666-8666-666666666666")
 
 /** A child [guardian] acts for, as `FamilyFollower` lists one. */
