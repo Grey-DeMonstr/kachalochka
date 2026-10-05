@@ -8,8 +8,10 @@ import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncPass
+import monster.greyde.kachalochka.core.domain.family.FamilyRepository
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.koinApplication
@@ -22,6 +24,18 @@ import kotlin.test.assertSame
 private object UnusedSignIn : GoogleSignIn {
     override suspend fun signIn(): AccountSession = error("the graph is only built, never used")
 }
+
+private fun credentialLessKoin(): Koin =
+    koinApplication {
+        modules(
+            coreModule,
+            corePlatformModule(),
+            module {
+                single { SupabaseCredentials("", "") }
+                single<GoogleSignIn> { UnusedSignIn }
+            },
+        )
+    }.koin
 
 class CoreModuleTest {
     @AfterTest
@@ -47,17 +61,7 @@ class CoreModuleTest {
     /** A clone with no `local.properties` has to reach the screens and work anonymously (§5.3). */
     @Test
     fun the_account_graph_is_built_without_supabase_credentials() {
-        val koin =
-            koinApplication {
-                modules(
-                    coreModule,
-                    corePlatformModule(),
-                    module {
-                        single { SupabaseCredentials("", "") }
-                        single<GoogleSignIn> { UnusedSignIn }
-                    },
-                )
-            }.koin
+        val koin = credentialLessKoin()
 
         assertNotNull(koin.get<Accounts>())
         assertSame<SessionActivation>(koin.get<LiveSession>(), koin.get<SessionActivation>())
@@ -66,17 +70,7 @@ class CoreModuleTest {
     /** No client may be built on resolution, or a clone without `local.properties` would crash. */
     @Test
     fun the_sync_pass_is_built_without_supabase_credentials() {
-        val koin =
-            koinApplication {
-                modules(
-                    coreModule,
-                    corePlatformModule(),
-                    module {
-                        single { SupabaseCredentials("", "") }
-                        single<GoogleSignIn> { UnusedSignIn }
-                    },
-                )
-            }.koin
+        val koin = credentialLessKoin()
 
         assertNotNull(koin.get<SyncPass>())
     }
@@ -84,18 +78,14 @@ class CoreModuleTest {
     /** Friends are read online, but a clone without credentials must still build the graph. */
     @Test
     fun the_friends_repository_is_built_without_supabase_credentials() {
-        val koin =
-            koinApplication {
-                modules(
-                    coreModule,
-                    corePlatformModule(),
-                    module {
-                        single { SupabaseCredentials("", "") }
-                        single<GoogleSignIn> { UnusedSignIn }
-                    },
-                )
-            }.koin
+        val koin = credentialLessKoin()
 
         assertNotNull(koin.get<FriendsRepository>())
+    }
+
+    /** Guardian links are read online, but a clone without credentials must build the graph. */
+    @Test
+    fun the_family_repository_is_built_without_supabase_credentials() {
+        assertNotNull(credentialLessKoin().get<FamilyRepository>())
     }
 }

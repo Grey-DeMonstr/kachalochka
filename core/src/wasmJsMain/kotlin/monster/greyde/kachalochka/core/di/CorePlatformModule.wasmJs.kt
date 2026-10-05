@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.di
 
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.Dispatchers
+import monster.greyde.kachalochka.core.data.family.SupabaseFamilyRepository
 import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
 import monster.greyde.kachalochka.core.data.gym.NoPhotoFiles
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
@@ -23,6 +24,7 @@ import monster.greyde.kachalochka.core.data.identity.SupabaseAccountServer
 import monster.greyde.kachalochka.core.data.measures.RemoteMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.RemoteMeasurementRepository
 import monster.greyde.kachalochka.core.data.profile.RemoteProfileRepository
+import monster.greyde.kachalochka.core.domain.family.FamilyRepository
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -52,6 +54,7 @@ actual fun corePlatformModule(): Module =
         }
         single<MeasurementRepository> { RemoteMeasurementRepository(get()) }
         single<FriendsRepository> { SupabaseFriendsRepository(inject(), Clock.System) }
+        single<FamilyRepository> { SupabaseFamilyRepository(inject()) }
         single<AccountStorage> { LocalStorageAccountStorage() }
         single<OwnerlessRows> { NoOwnerlessRows }
         single<OwnedRowsPurge> { NoOwnedRowsPurge }

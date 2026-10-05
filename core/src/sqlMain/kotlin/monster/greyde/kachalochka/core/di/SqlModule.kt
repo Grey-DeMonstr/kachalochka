@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.di
 
 import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.db.kachalochkaDatabase
+import monster.greyde.kachalochka.core.data.family.SupabaseFamilyRepository
 import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
@@ -36,6 +37,7 @@ import monster.greyde.kachalochka.core.data.sync.SyncGateway
 import monster.greyde.kachalochka.core.data.sync.SyncPass
 import monster.greyde.kachalochka.core.data.sync.SyncSession
 import monster.greyde.kachalochka.core.data.sync.SyncWatermarks
+import monster.greyde.kachalochka.core.domain.family.FamilyRepository
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
@@ -86,6 +88,14 @@ internal fun sqlModule(): Module =
             SupabaseFriendsRepository(
                 lazy { activeAccountSupabaseClient(credentials, tokens, store) },
                 Clock.System,
+            )
+        }
+        single<FamilyRepository> {
+            val credentials: SupabaseCredentials = get()
+            val tokens: AccountTokens = get()
+            val store: AccountStore = get()
+            SupabaseFamilyRepository(
+                lazy { activeAccountSupabaseClient(credentials, tokens, store) },
             )
         }
         single<OwnedRowsPurge> { SqlOwnedRowsPurge(get(), get(), Dispatchers.IO) }
