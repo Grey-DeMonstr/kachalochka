@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.ActiveAccountUser
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
+import monster.greyde.kachalochka.core.data.identity.NoWatermarkReset
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
@@ -379,6 +380,7 @@ class FakeGym(
             signIn,
             NoOpSessionActivation(),
             NoOpOwnerlessRows(),
+            NoWatermarkReset,
         )
     val currentUser: CurrentUser = ActiveAccountUser(accountStore)
     val friends =

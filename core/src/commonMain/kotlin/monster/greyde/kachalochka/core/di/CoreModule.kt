@@ -42,7 +42,7 @@ val coreModule =
         }
         single<SessionActivation> { get<LiveSession>() }
         single<CurrentUser> { ActiveAccountUser(get()) }
-        single { Accounts(get(), get(), get(), get()) }
+        single { Accounts(get(), get(), get(), get(), get()) }
         single { AccountDeletion(get(), get(), get()) }
         single<SessionRefresh> { SupabaseSessions(inject()) }
         single { AccountTokens(get(), get<LiveSession>(), get(), Clock.System) }

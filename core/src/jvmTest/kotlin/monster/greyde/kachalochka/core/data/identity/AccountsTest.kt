@@ -53,6 +53,14 @@ private class RecordingOwnerless : OwnerlessRows {
     }
 }
 
+private class RecordingWatermarkReset : WatermarkReset {
+    val forgotten = mutableListOf<UserId>()
+
+    override suspend fun forget(owner: UserId) {
+        forgotten += owner
+    }
+}
+
 private fun session(
     id: String,
     name: String,
@@ -76,6 +84,7 @@ class AccountsTest {
         QueuedSignIn(queue),
         activation,
         ownerless,
+        NoWatermarkReset,
     )
 
     private fun refusing(error: Throwable) =
@@ -84,6 +93,7 @@ class AccountsTest {
             FailingSignIn(error),
             RecordingActivation(),
             RecordingOwnerless(),
+            NoWatermarkReset,
         )
 
     @Test
@@ -273,6 +283,7 @@ class AccountsTest {
                     QueuedSignIn(mutableListOf(ivan, misha)),
                     activation,
                     RecordingOwnerless(),
+                    NoWatermarkReset,
                 )
             service.addAccount()
             service.addAccount()
@@ -295,6 +306,7 @@ class AccountsTest {
                     QueuedSignIn(mutableListOf(ivan, misha)),
                     activation,
                     RecordingOwnerless(),
+                    NoWatermarkReset,
                 )
             service.addAccount()
             service.addAccount()
@@ -319,6 +331,7 @@ class AccountsTest {
                     QueuedSignIn(mutableListOf(ivan, misha)),
                     activation,
                     RecordingOwnerless(),
+                    NoWatermarkReset,
                 )
             service.addAccount()
             service.addAccount()
@@ -330,5 +343,47 @@ class AccountsTest {
             assertEquals(SASHA_ID, service.activeId.value)
             assertEquals(ivan.account.userId, activation.activated.last())
             assertFalse(activation.cleared)
+        }
+
+    @Test
+    fun a_managed_child_signing_in_forgets_its_pull_watermark() =
+        runTest {
+            val store = PersistedAccountStore(InMemoryAccountStorage())
+            val reset = RecordingWatermarkReset()
+            val sasha = session(SASHA_ID.value, "Sasha")
+            val service =
+                Accounts(
+                    store,
+                    QueuedSignIn(mutableListOf(ivan, sasha)),
+                    RecordingActivation(),
+                    RecordingOwnerless(),
+                    reset,
+                )
+            service.addAccount()
+            store.setManaged(listOf(managedChild(ivan)))
+
+            service.addAccount()
+
+            assertEquals(listOf(SASHA_ID), reset.forgotten)
+        }
+
+    @Test
+    fun a_google_account_that_was_not_managed_keeps_its_pull_watermark() =
+        runTest {
+            val reset = RecordingWatermarkReset()
+            val service =
+                Accounts(
+                    PersistedAccountStore(InMemoryAccountStorage()),
+                    QueuedSignIn(mutableListOf(ivan, misha, ivan)),
+                    RecordingActivation(),
+                    RecordingOwnerless(),
+                    reset,
+                )
+
+            service.addAccount()
+            service.addAccount()
+            service.addAccount()
+
+            assertTrue(reset.forgotten.isEmpty())
         }
 }

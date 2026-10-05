@@ -49,6 +49,7 @@ class AccountDeletionTest {
             object : OwnerlessRows {
                 override suspend fun claim(owner: UserId) = Unit
             },
+            NoWatermarkReset,
         )
     private val deletion = AccountDeletion(server, RecordingPurge(steps), accounts)
 

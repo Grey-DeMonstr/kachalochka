@@ -18,4 +18,8 @@ class SyncWatermarks(
     ) {
         queries.setLastPullAt(owner.value, to)
     }
+
+    fun forget(owner: UserId) {
+        queries.forgetWatermark(owner.value)
+    }
 }

@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
+import monster.greyde.kachalochka.core.data.identity.NoWatermarkReset
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
@@ -71,6 +72,7 @@ class AccountsViewModelTest {
                 signIn,
                 NoOpSessionActivation(),
                 NoOpOwnerlessRows(),
+                NoWatermarkReset,
             )
         return AccountsViewModel(accounts, sync, AccountAvatars(accounts, profiles))
     }

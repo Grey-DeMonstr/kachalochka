@@ -18,9 +18,11 @@ import monster.greyde.kachalochka.core.data.identity.AccountStorage
 import monster.greyde.kachalochka.core.data.identity.LocalStorageAccountStorage
 import monster.greyde.kachalochka.core.data.identity.NoOwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.NoOwnerlessRows
+import monster.greyde.kachalochka.core.data.identity.NoWatermarkReset
 import monster.greyde.kachalochka.core.data.identity.OwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.SupabaseAccountServer
+import monster.greyde.kachalochka.core.data.identity.WatermarkReset
 import monster.greyde.kachalochka.core.data.measures.RemoteMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.RemoteMeasurementRepository
 import monster.greyde.kachalochka.core.data.profile.RemoteProfileRepository
@@ -57,6 +59,7 @@ actual fun corePlatformModule(): Module =
         single<FamilyRepository> { SupabaseFamilyRepository(inject()) }
         single<AccountStorage> { LocalStorageAccountStorage() }
         single<OwnerlessRows> { NoOwnerlessRows }
+        single<WatermarkReset> { NoWatermarkReset }
         single<OwnedRowsPurge> { NoOwnedRowsPurge }
         // The web's client holds one session, the active account's, which is the one deleted.
         single<AccountServer> { SupabaseAccountServer { get<SupabaseClient>() } }

@@ -7,6 +7,7 @@ import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
+import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
@@ -80,5 +81,40 @@ class SyncPassManagedTest {
 
             assertEquals(T0 + 1.hours, h.watermarks.lastPullAt(MISHA))
             assertEquals(null, h.watermarks.lastPullAt(IVAN))
+        }
+
+    @Test
+    fun a_pass_mixing_signed_in_and_managed_owners_pushes_only_what_each_may_write() =
+        runTest {
+            val ivan = ownedProfile(IVAN)
+            val misha = ownedProfile(MISHA)
+            h.profiles.upsert(ivan)
+            h.profiles.upsert(misha)
+
+            assertTrue(h.pass.run(listOf(IVAN, MISHA), managed = setOf(MISHA)))
+
+            assertEquals(listOf("$PROFILE_TABLE:${ivan.id.value}"), h.gateway.pushed)
+            assertEquals(listOf<UserId?>(IVAN), h.gateway.pushedAs)
+            assertTrue(h.outbox.pending().isEmpty())
+        }
+
+    @Test
+    fun running_and_normalizing_keeps_a_managed_owner_s_private_rows_on_the_device() =
+        runTest {
+            val measure = ownedMeasure(MISHA)
+            h.profiles.upsert(ownedProfile(MISHA))
+            h.measures.upsert(measure)
+
+            assertTrue(
+                h.pass.runAndNormalize(
+                    listOf(MISHA),
+                    h.normalizer,
+                    h.failures::add,
+                    managed = setOf(MISHA),
+                ),
+            )
+
+            assertTrue(h.gateway.pushed.isEmpty())
+            assertTrue(h.outbox.pending().isEmpty())
         }
 }

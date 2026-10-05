@@ -19,7 +19,9 @@ import monster.greyde.kachalochka.core.data.identity.OwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.SqlOwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.SqlOwnerlessRows
+import monster.greyde.kachalochka.core.data.identity.SqlWatermarkReset
 import monster.greyde.kachalochka.core.data.identity.SupabaseAccountServer
+import monster.greyde.kachalochka.core.data.identity.WatermarkReset
 import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
 import monster.greyde.kachalochka.core.data.profile.LocalProfileRepository
@@ -67,6 +69,7 @@ internal fun sqlModule(): Module =
         }
         single<OwnerlessRows> { SqlOwnerlessRows(get(), get(), Clock.System, Dispatchers.IO) }
         single { SyncWatermarks(get()) }
+        single<WatermarkReset> { SqlWatermarkReset(get(), Dispatchers.IO) }
         single { LocalSyncRows(get()) }
         single { SyncSession() }
         single<SyncGateway> {

@@ -10,6 +10,7 @@ class Accounts(
     private val signIn: GoogleSignIn,
     private val sessions: SessionActivation,
     private val ownerless: OwnerlessRows,
+    private val watermarks: WatermarkReset,
 ) {
     private val failure = MutableStateFlow<String?>(null)
 
@@ -24,7 +25,10 @@ class Accounts(
         reporting {
             val first = store.accounts.value.isEmpty()
             val session = signIn.signIn()
+            val id = session.account.userId
+            val wasManaged = store.accounts.value.any { it.userId == id && it.isManaged }
             store.add(session)
+            if (wasManaged) watermarks.forget(id)
             sessions.activate(session)
             if (first) ownerless.claim(session.account.userId)
         }
