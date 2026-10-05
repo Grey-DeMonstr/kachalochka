@@ -169,6 +169,12 @@ and online, the tags of friends' machines the account has not got follow under "
 добавятся к вашим после выбора", as dashed chips with the friend's avatar; tapping one gives it to
 the machine, and saving makes it the account's own.
 
+A set's total weight is its weight plus the platform when the platform is not added to the record.
+When "Сохранить" changes that for a machine with recorded sets (for example, a platform typed in
+after imported totals), "Пересчитать историю?" asks first and names the change, such as "−25 кг"
+for "2 подхода". "Пересчитать" changes every recorded weight by it, so that the totals stay the
+same, never below zero; "Оставить как есть" keeps the recorded weights. Both save the machine.
+
 Under the name, the machine's photos run in a row, oldest first, then, signed in and online, the
 photos of the friends' machines it is linked with, each with its owner's avatar; the row ends with
 a camera tile, which offers "Снять фото" and "Из галереи". With no photo yet, the machines it is
@@ -183,9 +189,14 @@ pixels on its long edge before it is kept.
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
 search field: "Мои упражнения", the account's other machines, and, signed in and online,
 "Упражнения друзей", one row per friends' machine that is not yet the same machine as one of the
-account's. Choosing an own machine removes a duplicate: after "Объединить упражнения?" the machine
-used first stays (a machine with no sets counts as the newest, and of two equal ones the edited
-one stays), the other one's sets move to it, and the other one disappears. Friends who linked to
+account's. Choosing an own machine removes a duplicate. "Объединить упражнения?" shows both
+machines under "Оставить", each with its set count and the day of its last set, and the user
+chooses the one that stays. The machine used last is chosen first and marked "Рекомендуется" (a
+machine with no sets counts as the oldest, and of two equal ones the edited one is marked):
+imported history adds duplicates with older sets. The other one's sets move to the machine that
+stays, and the other one disappears. When the two platforms differ (see below), a check box
+"Пересчитать подходы «…» под платформу «…»: −5 кг", on at first, changes the moved weights so
+that their totals stay the same. Friends who linked to
 the removed machine are linked to the one that stays. The form of the machine that stays then
 replaces the list, and unsaved edits in the old form are dropped. The other machine's photos move
 to the one that stays. Choosing a friend's machine

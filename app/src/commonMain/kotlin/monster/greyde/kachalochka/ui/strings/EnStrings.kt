@@ -171,6 +171,28 @@ object EnStrings : Strings {
         removed: String,
     ) = "\"$kept\" stays and the sets of \"$removed\" move to it. This cannot be undone."
 
+    override val mergeKeep = "Keep"
+    override val suggestedKeep = "Suggested"
+
+    override fun lastSetOn(day: String) = "last on $day"
+
+    override fun mergeAdjust(
+        removed: String,
+        kept: String,
+        shift: String,
+    ) = "Recalculate the sets of \"$removed\" for the platform of \"$kept\": $shift"
+
+    override val recalculateTitle = "Recalculate the history?"
+
+    override fun recalculateText(
+        sets: String,
+        shift: String,
+    ) = "The platform changed. Change the weight of the recorded sets ($sets) by $shift, so " +
+        "that their totals stay the same?"
+
+    override val recalculate = "Recalculate"
+    override val keepAsRecorded = "Keep as recorded"
+
     override val unitName = "Unit name"
     override val unlinkTitle = "Unlink the machine?"
     override val unlinkText = "Friends' results on this machine will no longer show for you."

@@ -2,15 +2,18 @@ package monster.greyde.kachalochka.core.domain.gym
 
 import kotlin.time.Instant
 
-/** The machine a merge keeps: the one used first; one never used counts as newest. */
-fun olderMachine(
+/**
+ * Imported history makes duplicates whose sets are older, so the machine used last is the one in
+ * use; one never used counts as oldest.
+ */
+fun suggestedToKeep(
     edited: Machine,
     other: Machine,
-    firstSetAt: (MachineId) -> Instant?,
+    lastSetAt: (MachineId) -> Instant?,
 ): Machine {
-    val otherFirst = firstSetAt(other.id) ?: return edited
-    val editedFirst = firstSetAt(edited.id) ?: return other
-    return if (otherFirst < editedFirst) other else edited
+    val otherLast = lastSetAt(other.id) ?: return edited
+    val editedLast = lastSetAt(edited.id) ?: return other
+    return if (otherLast > editedLast) other else edited
 }
 
 data class MergedRows(
@@ -20,7 +23,10 @@ data class MergedRows(
     val photos: List<Photo> = emptyList(),
 )
 
-/** Everything of [removed]'s that the owner holds moves to [kept]; [removed] is deleted. */
+/**
+ * Everything of [removed]'s that the owner holds moves to [kept]; [removed] is deleted. The moved
+ * sets' weights change by [weightShift].
+ */
 fun mergedMachines(
     kept: Machine,
     removed: Machine,
@@ -28,6 +34,7 @@ fun mergedMachines(
     ownLinks: List<MachineLink>,
     now: Instant,
     removedPhotos: List<Photo> = emptyList(),
+    weightShift: Double = 0.0,
 ): MergedRows {
     val linked =
         ownLinks
@@ -47,7 +54,7 @@ fun mergedMachines(
                 }
             }
     return MergedRows(
-        sets = removedSets.map { it.copy(machineId = kept.id, updatedAt = now) },
+        sets = shiftedSets(removedSets, weightShift, now).map { it.copy(machineId = kept.id) },
         links = links,
         removed = removed.copy(deleted = true, updatedAt = now),
         photos = removedPhotos.map { it.copy(machineId = kept.id, updatedAt = now) },

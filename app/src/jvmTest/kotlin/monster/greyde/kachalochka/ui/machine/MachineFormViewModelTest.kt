@@ -15,8 +15,11 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
@@ -30,6 +33,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
@@ -59,6 +63,7 @@ class MachineFormViewModelTest {
             gym.sync,
             gym.photos,
             gym.catalogue,
+            gym.sets,
         )
 
     @BeforeTest
@@ -110,6 +115,7 @@ class MachineFormViewModelTest {
         on.sync,
         on.photos,
         on.catalogue,
+        on.sets,
     )
 
     @Test
@@ -461,6 +467,117 @@ class MachineFormViewModelTest {
             assertEquals(10.0, saved.weightStep)
             assertEquals(gym.clock.current, saved.updatedAt)
             assertEquals(1, gym.machines.all(null).size)
+        }
+
+    /** A machine with imported totals and two sets, its platform then typed beside the name. */
+    private suspend fun platformTyped(): Triple<MachineFormViewModel, Machine, List<WorkoutSet>> {
+        val press = Machine.new("Жим ногами", null, t0)
+        gym.machines.upsert(press)
+        val recorded =
+            listOf(70.0, 90.0).map { weight ->
+                val visit = VisitId.random()
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    visit,
+                    press.id,
+                    weight,
+                    10,
+                    0,
+                    t0,
+                    t0,
+                    false,
+                )
+            }
+        recorded.forEach { gym.sets.upsert(it) }
+        gym.clock.current += 1.minutes
+        val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+        vm.update { it.copy(platformWeight = "25") }
+        return Triple(vm, press, recorded)
+    }
+
+    @Test
+    fun a_platform_change_over_recorded_sets_asks_to_recalculate_them() =
+        runTest {
+            val (vm, press, recorded) = platformTyped()
+            var saved: MachineId? = null
+
+            vm.save { saved = it }
+
+            assertEquals(
+                RecalculationUi(
+                    "Платформа изменилась. Изменить вес записанных подходов (2 подхода) на " +
+                        "−25 кг, чтобы итоговый вес остался прежним?",
+                ),
+                vm.recalculation.value,
+            )
+            assertEquals(0.0, gym.machines.byId(press.id)?.platformWeight)
+
+            vm.recalculate()
+
+            assertEquals(press.id, saved)
+            assertNull(vm.recalculation.value)
+            assertEquals(25.0, gym.machines.byId(press.id)?.platformWeight)
+            assertEquals(
+                recorded.map { it.copy(weight = it.weight - 25, updatedAt = gym.clock.current) },
+                recorded.map { gym.sets.rows.getValue(it.id) },
+            )
+        }
+
+    @Test
+    fun the_recorded_sets_can_stay_as_they_are() =
+        runTest {
+            val (vm, press, recorded) = platformTyped()
+            var saved: MachineId? = null
+
+            vm.save { saved = it }
+            vm.keepRecorded()
+
+            assertEquals(press.id, saved)
+            assertEquals(25.0, gym.machines.byId(press.id)?.platformWeight)
+            assertEquals(recorded, recorded.map { gym.sets.rows.getValue(it.id) })
+        }
+
+    @Test
+    fun a_dismissed_recalculation_writes_nothing() =
+        runTest {
+            val (vm, press, _) = platformTyped()
+            var saved: MachineId? = null
+
+            vm.save { saved = it }
+            vm.dismissRecalculation()
+
+            assertNull(saved)
+            assertNull(vm.recalculation.value)
+            assertEquals(0.0, gym.machines.byId(press.id)?.platformWeight)
+        }
+
+    @Test
+    fun a_platform_added_to_the_record_saves_at_once() =
+        runTest {
+            val (vm, press, _) = platformTyped()
+            vm.update { it.copy(platformIncluded = true) }
+            var saved: MachineId? = null
+
+            vm.save { saved = it }
+
+            assertEquals(press.id, saved)
+            assertNull(vm.recalculation.value)
+        }
+
+    @Test
+    fun a_platform_change_without_recorded_sets_saves_at_once() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.machines.upsert(press)
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            vm.update { it.copy(platformWeight = "25") }
+            var saved: MachineId? = null
+
+            vm.save { saved = it }
+
+            assertEquals(press.id, saved)
+            assertNull(vm.recalculation.value)
         }
 
     @Test

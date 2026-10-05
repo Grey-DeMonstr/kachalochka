@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -23,6 +24,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -33,6 +35,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
@@ -86,6 +89,7 @@ class LinkChooserViewModelTest {
         gym.profiles,
         gym.photos,
         gym.catalogue,
+        gym.utcOffset,
     ).also { it.load() }
 
     /** Олег's machines: his copy of [press], linked to it, and one of his own. */
@@ -208,17 +212,29 @@ class LinkChooserViewModelTest {
     }
 
     @Test
-    fun choosing_an_own_machine_asks_which_one_stays() {
+    fun choosing_an_own_machine_asks_which_one_stays_and_suggests_the_one_used_last() {
         runBlocking { gym.sets.upsert(set(duplicate, 0)) }
         val vm = viewModel()
 
         vm.chooseOwn(duplicate.id)
 
+        val lastDay = dayMonthLabel(CalendarDay.of(t0, Duration.ZERO), gym.today.year)
         assertEquals(
             MergeUi(
-                "Объединить упражнения?",
-                "Останется «Жим ногами 2», подходы «Жим ногами» перейдут к нему. " +
-                    "Это нельзя отменить.",
+                choices =
+                    listOf(
+                        MergeChoiceUi(press.id, "Жим ногами", "0 подходов", suggested = false),
+                        MergeChoiceUi(
+                            duplicate.id,
+                            "Жим ногами 2",
+                            "1 подход · последний $lastDay",
+                            suggested = true,
+                        ),
+                    ),
+                kept = duplicate.id,
+                text =
+                    "Останется «Жим ногами 2», подходы «Жим ногами» перейдут к нему. " +
+                        "Это нельзя отменить.",
             ),
             vm.state.value.merge,
         )
@@ -227,12 +243,121 @@ class LinkChooserViewModelTest {
     }
 
     @Test
-    fun a_merge_keeps_the_older_machine_and_moves_everything_to_it() {
-        val older = set(duplicate, 0)
-        val newer = set(press, 10)
+    fun the_machine_not_suggested_can_be_kept_instead() {
+        val moved = set(duplicate, 0)
+        runBlocking { gym.sets.upsert(moved) }
+        val vm = viewModel()
+        var kept: MachineId? = null
+
+        vm.chooseOwn(duplicate.id)
+        vm.keep(press.id)
+        vm.confirmMerge { kept = it }
+
+        assertEquals(press.id, kept)
+        assertEquals(
+            press.id,
+            gym.sets.rows
+                .getValue(moved.id)
+                .machineId,
+        )
+        assertTrue(
+            gym.machines.rows
+                .getValue(duplicate.id)
+                .deleted,
+        )
+    }
+
+    @Test
+    fun keeping_the_other_machine_turns_the_text_around() {
+        val vm = viewModel()
+
+        vm.chooseOwn(duplicate.id)
+        vm.keep(duplicate.id)
+
+        assertEquals(
+            "Останется «Жим ногами 2», подходы «Жим ногами» перейдут к нему. " +
+                "Это нельзя отменить.",
+            vm.state.value.merge
+                ?.text,
+        )
+    }
+
+    /** [duplicate] holds imported totals; [press], used last, has its platform beside the name. */
+    private fun platformsDiffer(): WorkoutSet {
+        val imported = set(duplicate, 0)
         runBlocking {
-            gym.sets.upsert(older)
-            gym.sets.upsert(newer)
+            gym.machines.upsert(press.copy(platformWeight = 25.0))
+            gym.sets.upsert(imported)
+            gym.sets.upsert(set(press, 10))
+        }
+        return imported
+    }
+
+    @Test
+    fun differing_platforms_offer_to_keep_the_moved_sets_totals() {
+        val imported = platformsDiffer()
+        gym.clock.current += 1.days
+        val vm = viewModel()
+
+        vm.chooseOwn(duplicate.id)
+
+        val merge = vm.state.value.merge!!
+        assertEquals(
+            "Пересчитать подходы «Жим ногами 2» под платформу «Жим ногами»: −25 кг",
+            merge.adjustText,
+        )
+        assertTrue(merge.adjust)
+        vm.confirmMerge {}
+        assertEquals(
+            45.0,
+            gym.sets.rows
+                .getValue(imported.id)
+                .weight,
+        )
+    }
+
+    @Test
+    fun the_moved_sets_keep_their_weights_when_asked_to() {
+        val imported = platformsDiffer()
+        val vm = viewModel()
+
+        vm.chooseOwn(duplicate.id)
+        vm.setAdjust(false)
+        vm.confirmMerge {}
+
+        assertEquals(
+            70.0,
+            gym.sets.rows
+                .getValue(imported.id)
+                .weight,
+        )
+        assertEquals(
+            press.id,
+            gym.sets.rows
+                .getValue(imported.id)
+                .machineId,
+        )
+    }
+
+    @Test
+    fun equal_platforms_offer_no_recalculation() {
+        val vm = viewModel()
+
+        vm.chooseOwn(duplicate.id)
+
+        assertNull(
+            vm.state.value.merge
+                ?.adjustText,
+        )
+    }
+
+    @Test
+    fun a_merge_keeps_the_machine_used_last_and_moves_everything_to_it() {
+        val stays = set(duplicate, 10)
+        val moved = set(press, 0)
+        runBlocking {
+            gym.sets.upsert(stays)
+            gym.sets.upsert(moved)
         }
         val ownLink =
             MachineLink(MachineLinkId.random(), me, press.id, MachineId.random(), t0, false)
@@ -247,10 +372,10 @@ class LinkChooserViewModelTest {
 
         assertEquals(duplicate.id, kept)
         assertEquals(
-            newer.copy(machineId = duplicate.id, updatedAt = now),
-            gym.sets.rows[newer.id],
+            moved.copy(machineId = duplicate.id, updatedAt = now),
+            gym.sets.rows[moved.id],
         )
-        assertEquals(older, gym.sets.rows[older.id])
+        assertEquals(stays, gym.sets.rows[stays.id])
         assertEquals(
             ownLink.copy(machineId = duplicate.id, updatedAt = now),
             gym.machineLinks.rows[ownLink.id],
@@ -303,8 +428,8 @@ class LinkChooserViewModelTest {
     @Test
     fun a_merge_writes_the_sets_then_the_links_and_the_machine_last() {
         runBlocking {
-            gym.sets.upsert(set(duplicate, 0))
-            gym.sets.upsert(set(press, 10))
+            gym.sets.upsert(set(duplicate, 10))
+            gym.sets.upsert(set(press, 0))
             gym.machineLinks.upsert(
                 MachineLink(MachineLinkId.random(), me, press.id, MachineId.random(), t0, false),
             )

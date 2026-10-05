@@ -21,13 +21,19 @@ import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.photoOrder
+import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
+import monster.greyde.kachalochka.core.domain.gym.shiftedSets
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
+import monster.greyde.kachalochka.ui.format.setCount
+import monster.greyde.kachalochka.ui.format.weightShift
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
 import monster.greyde.kachalochka.ui.strings.AppStrings
@@ -119,6 +125,10 @@ data class MachineFormState(
     }
 }
 
+data class RecalculationUi(
+    val text: String,
+)
+
 /** A photo taken in the form, written with the machine when it is saved. */
 private class TakenPhoto(
     val id: PhotoId,
@@ -137,13 +147,17 @@ class MachineFormViewModel(
     private val sync: SyncTrigger,
     private val photoRows: PhotoRepository,
     private val catalogue: MachineCatalogue,
+    private val sets: WorkoutSetRepository,
 ) : ViewModel() {
     private val mutableState =
         MutableStateFlow(MachineFormState(name = args.name, tags = args.tags.toSet()))
     val state: StateFlow<MachineFormState> = mutableState
     private val mutableLinking = MutableStateFlow(LinkingUi())
     val linking: StateFlow<LinkingUi> = mutableLinking
+    private val mutableRecalculation = MutableStateFlow<RecalculationUi?>(null)
+    val recalculation: StateFlow<RecalculationUi?> = mutableRecalculation
     private val writes = WriteGuard(viewModelScope)
+    private var pendingSave: Pair<MachineFormState, (MachineId) -> Unit>? = null
 
     /** The saved machine's photos the form still shows, then the ones taken since. */
     private var savedPhotos: List<Photo> = emptyList()
@@ -377,39 +391,104 @@ class MachineFormViewModel(
             form.copy(tags = tags, newTag = "")
         }
 
+    /**
+     * A platform change over recorded sets waits for [recalculate] or [keepRecorded], since only
+     * the user knows whether the recorded weights held the platform.
+     */
     fun save(onSaved: (MachineId) -> Unit) {
         val form = mutableState.value
-        val platformWeight = form.platformWeightValue ?: return
-        val weightStep = form.weightStepValue ?: return
+        if (form.platformWeightValue == null || form.weightStepValue == null) return
         if (!form.canSave) return
         writes.launch {
-            val now = clock.now()
             val owner = currentUser.id()
-            val base =
-                existing?.takeIf { it.userId == owner }
-                    ?: Machine.new(form.name.trim(), owner, now)
-            val machine =
-                base.copy(
-                    name = form.name.trim(),
-                    setupNote = form.setupNote.trim(),
-                    weightMode = form.weightMode,
-                    platformWeight = platformWeight,
-                    platformIncluded = form.platformIncluded,
-                    unit = form.unit,
-                    unitLabel = if (form.unit == WeightUnit.Custom) form.unitLabel.trim() else "",
-                    weightStep = weightStep,
-                    tags = form.tags,
-                    coverPhoto = coverChoice,
-                    updatedAt = now,
-                )
-            machines.upsert(machine)
-            takenPhotos.forEach {
-                photoRows.add(Photo(it.id, owner, machine.id, it.takenAt, now, false), it.jpeg)
+            val (base, machine) = edited(form, owner)
+            val shift = platformShift(base, machine)
+            val recorded = if (shift == 0.0) emptyList() else recordedSets(base, owner)
+            if (recorded.isEmpty()) {
+                write(form, onSaved, recalculate = false)
+                return@launch
             }
-            removedPhotos
-                .filter { it.userId == owner }
-                .forEach { photoRows.upsert(it.copy(deleted = true, updatedAt = now)) }
-            onSaved(machine.id)
+            pendingSave = form to onSaved
+            mutableRecalculation.value =
+                RecalculationUi(
+                    AppStrings.current.recalculateText(
+                        setCount(recorded.size),
+                        weightShift(shift, machine),
+                    ),
+                )
         }
+    }
+
+    fun recalculate() = finishSave(recalculate = true)
+
+    fun keepRecorded() = finishSave(recalculate = false)
+
+    fun dismissRecalculation() {
+        pendingSave = null
+        mutableRecalculation.value = null
+    }
+
+    private fun finishSave(recalculate: Boolean) {
+        val (form, onSaved) = pendingSave ?: return
+        dismissRecalculation()
+        writes.launch { write(form, onSaved, recalculate) }
+    }
+
+    private suspend fun recordedSets(
+        machine: Machine,
+        owner: UserId?,
+    ): List<WorkoutSet> =
+        if (machine.id != existing?.id) {
+            emptyList()
+        } else {
+            sets.forMachine(machine.id).filter { !it.deleted && it.userId == owner }
+        }
+
+    /** The machine the form edits as stored, then with the form's values. */
+    private fun edited(
+        form: MachineFormState,
+        owner: UserId?,
+    ): Pair<Machine, Machine> {
+        val now = clock.now()
+        val base =
+            existing?.takeIf { it.userId == owner }
+                ?: Machine.new(form.name.trim(), owner, now)
+        val machine =
+            base.copy(
+                name = form.name.trim(),
+                setupNote = form.setupNote.trim(),
+                weightMode = form.weightMode,
+                platformWeight = form.platformWeightValue ?: base.platformWeight,
+                platformIncluded = form.platformIncluded,
+                unit = form.unit,
+                unitLabel = if (form.unit == WeightUnit.Custom) form.unitLabel.trim() else "",
+                weightStep = form.weightStepValue ?: base.weightStep,
+                tags = form.tags,
+                coverPhoto = coverChoice,
+                updatedAt = now,
+            )
+        return base to machine
+    }
+
+    private suspend fun write(
+        form: MachineFormState,
+        onSaved: (MachineId) -> Unit,
+        recalculate: Boolean,
+    ) {
+        val owner = currentUser.id()
+        val (base, machine) = edited(form, owner)
+        val now = machine.updatedAt
+        machines.upsert(machine)
+        if (recalculate) {
+            shiftedSets(recordedSets(base, owner), platformShift(base, machine), now)
+                .forEach { sets.upsert(it) }
+        }
+        takenPhotos.forEach {
+            photoRows.add(Photo(it.id, owner, machine.id, it.takenAt, now, false), it.jpeg)
+        }
+        removedPhotos
+            .filter { it.userId == owner }
+            .forEach { photoRows.upsert(it.copy(deleted = true, updatedAt = now)) }
+        onSaved(machine.id)
     }
 }

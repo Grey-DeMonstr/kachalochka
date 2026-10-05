@@ -15,7 +15,7 @@ class MachineMergeTest {
     private val friendsMachine = MachineId.random()
     private val anotherFriendsMachine = MachineId.random()
 
-    private fun firstSets(vararg pairs: Pair<Machine, Instant>): (MachineId) -> Instant? {
+    private fun lastSets(vararg pairs: Pair<Machine, Instant>): (MachineId) -> Instant? {
         val byId = pairs.associate { (machine, at) -> machine.id to at }
         return { byId[it] }
     }
@@ -51,23 +51,32 @@ class MachineMergeTest {
     }
 
     @Test
-    fun the_machine_used_first_is_kept() {
-        val older = firstSets(edited to T0 + 5.minutes, other to T0)
+    fun the_machine_used_last_is_suggested() {
+        val used = lastSets(edited to T0, other to T0 + 5.minutes)
 
-        assertEquals(other, olderMachine(edited, other, older))
-        assertEquals(other, olderMachine(other, edited, older))
+        assertEquals(other, suggestedToKeep(edited, other, used))
+        assertEquals(other, suggestedToKeep(other, edited, used))
     }
 
     @Test
-    fun a_machine_never_used_counts_as_newest() {
-        assertEquals(other, olderMachine(edited, other, firstSets(other to T0)))
-        assertEquals(edited, olderMachine(edited, other, firstSets(edited to T0)))
+    fun a_machine_never_used_counts_as_oldest() {
+        assertEquals(other, suggestedToKeep(edited, other, lastSets(other to T0)))
+        assertEquals(edited, suggestedToKeep(edited, other, lastSets(edited to T0)))
     }
 
     @Test
-    fun a_tie_keeps_the_edited_machine() {
-        assertEquals(edited, olderMachine(edited, other, firstSets()))
-        assertEquals(edited, olderMachine(edited, other, firstSets(edited to T0, other to T0)))
+    fun a_tie_suggests_the_edited_machine() {
+        assertEquals(edited, suggestedToKeep(edited, other, lastSets()))
+        assertEquals(edited, suggestedToKeep(edited, other, lastSets(edited to T0, other to T0)))
+    }
+
+    @Test
+    fun the_moved_sets_take_the_weight_shift() {
+        val sets = listOf(set(other, 0))
+
+        val rows = mergedMachines(edited, other, sets, emptyList(), now, weightShift = -25.0)
+
+        assertEquals(listOf(45.0), rows.sets.map { it.weight })
     }
 
     @Test

@@ -1,21 +1,30 @@
 package monster.greyde.kachalochka.ui.machine
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.strings.strings
@@ -68,15 +77,89 @@ fun LinkChooserScreen(
         }
     }
     state.merge?.let { merge ->
-        ConfirmDialog(
-            title = merge.title,
-            text = merge.text,
-            confirmLabel = strings().merge,
-            confirmTag = "confirm-merge",
-            cancelTag = "cancel-merge",
+        MergeDialog(
+            merge,
+            onKeep = viewModel::keep,
+            onAdjust = viewModel::setAdjust,
             onConfirm = { viewModel.confirmMerge(onMerged) },
             onCancel = viewModel::cancelMerge,
         )
+    }
+}
+
+@Composable
+private fun MergeDialog(
+    merge: MergeUi,
+    onKeep: (MachineId) -> Unit,
+    onAdjust: (Boolean) -> Unit,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(strings().mergeTitle) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(strings().mergeKeep, fontSize = 13.sp, color = colors.onSurfaceVariant)
+                merge.choices.forEach { choice ->
+                    KeepChoice(choice, selected = choice.id == merge.kept) { onKeep(choice.id) }
+                }
+                Text(merge.text)
+                merge.adjustText?.let {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .toggleable(merge.adjust, onValueChange = onAdjust)
+                            .testTag("merge-adjust"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = merge.adjust, onCheckedChange = null)
+                        Text(it, Modifier.padding(start = 8.dp), fontSize = 14.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm, modifier = Modifier.testTag("confirm-merge")) {
+                Text(strings().merge, color = colors.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel, modifier = Modifier.testTag("cancel-merge")) {
+                Text(strings().cancel)
+            }
+        },
+    )
+}
+
+@Composable
+private fun KeepChoice(
+    choice: MergeChoiceUi,
+    selected: Boolean,
+    onSelect: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .selectable(selected, onClick = onSelect)
+            .testTag("merge-keep-${choice.id.value}"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Column(Modifier.padding(start = 8.dp)) {
+            Text(choice.name, fontSize = 15.sp)
+            Text(choice.detail, fontSize = 13.sp, color = colors.onSurfaceVariant)
+            if (choice.suggested) {
+                Text(
+                    strings().suggestedKeep,
+                    Modifier.testTag("merge-suggested-${choice.id.value}"),
+                    fontSize = 13.sp,
+                    color = colors.tertiary,
+                )
+            }
+        }
     }
 }
 

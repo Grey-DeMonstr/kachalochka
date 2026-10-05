@@ -24,12 +24,14 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -97,6 +99,7 @@ fun MachineFormScreen(
     val state by viewModel.state.collectAsState()
     val linking by viewModel.linking.collectAsState()
     val photos by viewModel.photos.collectAsState()
+    val recalculation by viewModel.recalculation.collectAsState()
     val capture: PhotoCapture = koinInject()
     val launchers = capture.rememberLaunchers(viewModel::addPhoto)
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
@@ -225,6 +228,25 @@ fun MachineFormScreen(
                     viewModel.makeCover(photo.key)
                     opened = null
                 }.takeIf { !photo.cover },
+        )
+    }
+    recalculation?.let {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissRecalculation,
+            title = { Text(strings().recalculateTitle) },
+            text = { Text(it.text) },
+            confirmButton = {
+                TextButton(
+                    onClick = viewModel::recalculate,
+                    modifier = Modifier.testTag("recalculate-sets"),
+                ) { Text(strings().recalculate) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = viewModel::keepRecorded,
+                    modifier = Modifier.testTag("keep-recorded-sets"),
+                ) { Text(strings().keepAsRecorded) }
+            },
         )
     }
     if (linking.confirmingUnlink) {

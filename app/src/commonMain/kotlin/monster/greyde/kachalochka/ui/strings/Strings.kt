@@ -154,6 +154,27 @@ interface Strings {
         removed: String,
     ): String
 
+    val mergeKeep: String
+    val suggestedKeep: String
+
+    fun lastSetOn(day: String): String
+
+    fun mergeAdjust(
+        removed: String,
+        kept: String,
+        shift: String,
+    ): String
+
+    val recalculateTitle: String
+
+    fun recalculateText(
+        sets: String,
+        shift: String,
+    ): String
+
+    val recalculate: String
+    val keepAsRecorded: String
+
     val unitName: String
     val unlinkTitle: String
     val unlinkText: String

@@ -187,6 +187,28 @@ object RuStrings : Strings {
         removed: String,
     ) = "Останется «$kept», подходы «$removed» перейдут к нему. Это нельзя отменить."
 
+    override val mergeKeep = "Оставить"
+    override val suggestedKeep = "Рекомендуется"
+
+    override fun lastSetOn(day: String) = "последний $day"
+
+    override fun mergeAdjust(
+        removed: String,
+        kept: String,
+        shift: String,
+    ) = "Пересчитать подходы «$removed» под платформу «$kept»: $shift"
+
+    override val recalculateTitle = "Пересчитать историю?"
+
+    override fun recalculateText(
+        sets: String,
+        shift: String,
+    ) = "Платформа изменилась. Изменить вес записанных подходов ($sets) на $shift, чтобы " +
+        "итоговый вес остался прежним?"
+
+    override val recalculate = "Пересчитать"
+    override val keepAsRecorded = "Оставить как есть"
+
     override val unitName = "Название единицы"
     override val unlinkTitle = "Отвязать упражнение?"
     override val unlinkText = "Результаты друзей в этом упражнении перестанут показываться у вас."

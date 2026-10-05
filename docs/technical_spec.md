@@ -477,10 +477,13 @@ each owner with the colour `FriendColorStore` gives them.
 
 The machine form's "Привязать к…" chooser (`LinkChooserViewModel`) links an own machine to a
 friend's by writing one own link, and merges two own machines. A merge removes a duplicate and
-writes no link: `olderMachine` keeps the machine whose earliest live set is earlier, one without
-sets counting as newest and a tie keeping the edited one, and `mergedMachines` returns the rows to
-write — the removed machine's sets, photos and own links moved to the kept one (a link the kept one
-already has, or one into it, is soft-deleted instead) and the removed machine soft-deleted. Signed
+writes no link. The dialog lets the user choose the machine that stays and preselects
+`suggestedToKeep`: the machine whose latest live set is later, one without sets counting as oldest
+and a tie suggesting the edited one. Imported history makes duplicates with older sets, so this
+suggests the machine in use. `mergedMachines` returns the rows to write — the removed machine's
+sets, photos and own links moved to the kept one (a link the kept one already has, or one into it,
+is soft-deleted instead) and the removed machine soft-deleted. With the dialog's recalculation on,
+the moved sets also take `platformShift(removed, kept)` (see below). Signed
 in, friends' links into the removed machine are moved first through
 `FriendsRepository.repointLinks`, called only when `groupLinks` shows one; if the server does not
 answer nothing is written. The rows are then written sets first and the machine last, and a sync is
@@ -490,6 +493,13 @@ reads the links again whenever it is shown, and the machine's page reads friends
 `refresh()` and after a sync pass, because the chooser changes links on another screen. A merge
 started from a visit hands the kept machine to the visit's page, and the page closes on an own
 machine that has been deleted rather than record a set on it.
+
+A set's total is its weight plus the platform when the platform is not added to the record.
+`platformShift(from, to)` is what every weight recorded under `from`'s platform changes by to keep
+its total under `to`'s, and `shiftedSets` applies it, with no weight below zero. The machine form
+compares the stored machine with the edited one on save: when the shift is not zero and the machine
+has live own sets, it asks first, and "Пересчитать" writes the machine and then the shifted sets.
+Sets keep the machine's unit, so the shift is in that unit.
 
 1.0.2 linked machines by a shared key, `machine.link_id`, which stays in both schemas for its
 clients. It is never written or read: `MachineRow` has no such field, so an upsert leaves the

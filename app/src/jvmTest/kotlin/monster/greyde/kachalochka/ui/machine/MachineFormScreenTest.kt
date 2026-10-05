@@ -22,7 +22,10 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
@@ -71,6 +74,43 @@ class MachineFormScreenTest {
             val machine = runBlocking { gym.machines.byId(saved.single()) }
             assertEquals(2.5, machine?.weightStep)
         }
+    }
+
+    @Test
+    fun a_platform_typed_over_recorded_sets_recalculates_them_when_asked() {
+        val t0 = gym.clock.current
+        val press = Machine.new("Жим ногами", null, t0)
+        val visit = VisitId.random()
+        val recorded =
+            WorkoutSet(WorkoutSetId.random(), null, visit, press.id, 70.0, 10, 0, t0, t0, false)
+        runBlocking {
+            gym.machines.upsert(press)
+            gym.sets.upsert(recorded)
+        }
+        val saved = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            MachineFormScreen(
+                MachineFormArgs(press.id, null, ""),
+                {},
+                {},
+                onSaved = { saved += it },
+            )
+        }) {
+            onNodeWithTag("platform-weight").performScrollTo().performTextReplacement("25")
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+            assertEquals(emptyList(), saved)
+
+            onNodeWithTag("recalculate-sets").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(press.id), saved)
+        assertEquals(
+            45.0,
+            gym.sets.rows
+                .getValue(recorded.id)
+                .weight,
+        )
     }
 
     @Test

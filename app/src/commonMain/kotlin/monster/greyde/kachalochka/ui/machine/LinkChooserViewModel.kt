@@ -12,6 +12,7 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -19,17 +20,23 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.mergedMachines
-import monster.greyde.kachalochka.core.domain.gym.olderMachine
+import monster.greyde.kachalochka.core.domain.gym.platformShift
+import monster.greyde.kachalochka.core.domain.gym.suggestedToKeep
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.preferredUnit
+import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.friendMachineDetail
+import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.weightCaption
+import monster.greyde.kachalochka.ui.format.weightShift
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
@@ -48,9 +55,20 @@ data class LinkChooserUiState(
     val error: String? = null,
 )
 
+data class MergeChoiceUi(
+    val id: MachineId,
+    val name: String,
+    val detail: String,
+    val suggested: Boolean,
+)
+
 data class MergeUi(
-    val title: String,
+    val choices: List<MergeChoiceUi>,
+    val kept: MachineId,
     val text: String,
+    /** The switch that keeps the moved sets' totals, offered when the platforms differ. */
+    val adjustText: String? = null,
+    val adjust: Boolean = true,
 )
 
 /** What [machineId], an own saved machine, can be merged with or linked to. */
@@ -67,6 +85,7 @@ class LinkChooserViewModel(
     private val profiles: ProfileRepository,
     private val photos: PhotoRepository,
     private val catalogue: MachineCatalogue,
+    private val utcOffset: UtcOffset,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(LinkChooserUiState())
     val state: StateFlow<LinkChooserUiState> = mutableState
@@ -78,8 +97,8 @@ class LinkChooserViewModel(
     private var group: GroupMachines? = null
     private var loading: Job? = null
 
-    /** The merge the dialog asks about: the machine kept, then the one removed. */
-    private var pending: Pair<MachineId, MachineId>? = null
+    /** The two machines the merge dialog asks about. */
+    private var pending: List<Machine> = emptyList()
 
     private val offeredFriends: List<FriendMachine>?
         get() {
@@ -121,26 +140,70 @@ class LinkChooserViewModel(
         val edited = own.firstOrNull { it.id == machineId } ?: return
         val other = own.firstOrNull { it.id == id && id != machineId } ?: return
         viewModelScope.launch {
-            val firstSets =
+            val now = clock.now()
+            val year = CalendarDay.of(now, utcOffset.at(now)).year
+
+            fun detail(rows: List<WorkoutSet>): String {
+                val last = rows.maxOfOrNull { it.recordedAt } ?: return setCount(0)
+                val day = dayMonthLabel(CalendarDay.of(last, utcOffset.at(last)), year)
+                return setCount(rows.size) + " · " + AppStrings.current.lastSetOn(day)
+            }
+            val used =
                 listOf(edited, other).associate { machine ->
-                    machine.id to sets.forMachine(machine.id).minOfOrNull { it.recordedAt }
+                    machine.id to sets.forMachine(machine.id).filter { !it.deleted }
                 }
-            val kept = olderMachine(edited, other) { firstSets[it] }
-            val removed = if (kept == edited) other else edited
-            pending = kept.id to removed.id
-            val merge =
-                MergeUi(
-                    AppStrings.current.mergeTitle,
-                    AppStrings.current.mergeText(kept.name, removed.name),
+            val suggested =
+                suggestedToKeep(edited, other) { id -> used[id]?.maxOfOrNull { it.recordedAt } }
+            val choices =
+                listOf(edited, other).map { machine ->
+                    MergeChoiceUi(
+                        machine.id,
+                        machine.name,
+                        detail(used[machine.id].orEmpty()),
+                        suggested = machine == suggested,
+                    )
+                }
+            pending = listOf(edited, other)
+            mutableState.value =
+                mutableState.value.copy(
+                    merge = mergeUi(MergeUi(choices, suggested.id, text = "")),
+                    error = null,
                 )
-            mutableState.value = mutableState.value.copy(merge = merge, error = null)
         }
+    }
+
+    /** The texts follow the machine chosen to stay. */
+    private fun mergeUi(merge: MergeUi): MergeUi {
+        val kept = pending.first { it.id == merge.kept }
+        val removed = pending.first { it.id != merge.kept }
+        val shift = platformShift(removed, kept)
+        val strings = AppStrings.current
+        return merge.copy(
+            text = strings.mergeText(kept.name, removed.name),
+            adjustText =
+                if (shift == 0.0) {
+                    null
+                } else {
+                    strings.mergeAdjust(removed.name, kept.name, weightShift(shift, kept))
+                },
+        )
+    }
+
+    fun keep(id: MachineId) {
+        val merge = mutableState.value.merge ?: return
+        if (merge.choices.none { it.id == id }) return
+        mutableState.value = mutableState.value.copy(merge = mergeUi(merge.copy(kept = id)))
+    }
+
+    fun setAdjust(adjust: Boolean) {
+        val merge = mutableState.value.merge ?: return
+        mutableState.value = mutableState.value.copy(merge = merge.copy(adjust = adjust))
     }
 
     fun cancelMerge() = closeMerge(error = null)
 
     private fun closeMerge(error: String?) {
-        pending = null
+        pending = emptyList()
         mutableState.value = mutableState.value.copy(merge = null, error = error)
     }
 
@@ -150,7 +213,9 @@ class LinkChooserViewModel(
      * screen must not stop the local rows halfway.
      */
     fun confirmMerge(onDone: (kept: MachineId) -> Unit) {
-        val (keptId, removedId) = pending ?: return
+        val merge = mutableState.value.merge ?: return
+        val keptId = merge.kept
+        val removedId = merge.choices.first { it.id != keptId }.id
         val mergedFor = shownFor
         writes.launch {
             val owner = currentUser.id()
@@ -181,6 +246,7 @@ class LinkChooserViewModel(
                         machineLinks.all(owner),
                         clock.now(),
                         photos.forMachine(removed.id).filter { it.userId == owner },
+                        if (merge.adjust) platformShift(removed, kept) else 0.0,
                     )
                 rows.sets.forEach { sets.upsert(it) }
                 rows.links.forEach { machineLinks.upsert(it) }

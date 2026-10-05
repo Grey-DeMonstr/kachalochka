@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.ui.strings.AppStrings
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
@@ -88,6 +89,12 @@ fun platformSuffix(
     } else {
         null
     }
+
+/** In the machine's own unit, since a shift applies to the weights as recorded. */
+fun weightShift(
+    shift: Double,
+    machine: Machine,
+): String = "${if (shift < 0) "−" else "+"}${formatNumber(abs(shift))} ${unitLabel(machine)}"
 
 fun machineTitle(
     machine: Machine,
