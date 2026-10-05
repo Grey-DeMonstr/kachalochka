@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
+import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.identity.accountSession
@@ -23,8 +24,10 @@ import kotlin.test.assertTrue
 
 private class RecordingActivation : SessionActivation {
     val activated = mutableListOf<UserId>()
+    var refusal: Exception? = null
 
     override suspend fun activate(session: AccountSession) {
+        refusal?.let { throw it }
         activated += session.account.userId
     }
 
@@ -53,11 +56,28 @@ class FamilyFollowerTest {
             "Sasha",
             Avatar(photo, "https://example.test/s.png"),
         )
+    private val kolya = FamilyMember(UserId("77777777-7777-4777-8777-777777777777"), "Kolya")
     private val store = PersistedAccountStore(InMemoryAccountStorage())
     private val reads = ScriptedReads()
     private val purged = mutableListOf<UserId>()
+    private var purgeGate: CompletableDeferred<Unit>? = null
+    private var purgeFailure: Exception? = null
+    private var whilePurging: suspend () -> Unit = {}
     private val sessions = RecordingActivation()
-    private val follower = FamilyFollower(store, reads, sessions) { purged += it }
+    private val live = LiveSession(sessions, { null }, store)
+    private val follower =
+        FamilyFollower(store, reads, live) {
+            whilePurging()
+            purgeGate?.await()
+            purgeFailure?.let { failure -> throw failure }
+            purged += it
+        }
+
+    // As Accounts.switchTo: the acting session goes live before the account becomes active.
+    private suspend fun switchTo(id: UserId) {
+        store.actingSessionOf(id)?.let { live.activate(it) }
+        store.switch(id)
+    }
 
     private fun ScriptedReads.children(
         guardian: UserId,
@@ -265,13 +285,13 @@ class FamilyFollowerTest {
             reads.children(ivan.account.userId, sasha)
             reads.children(misha.account.userId, sasha)
             follower.follow()
-            store.switch(sasha.userId)
+            switchTo(sasha.userId)
             reads.families.remove(ivan.account.userId)
 
             follower.follow()
 
             assertEquals(sasha.userId, store.activeId.value)
-            assertEquals(listOf(misha.account.userId), sessions.activated)
+            assertEquals(misha.account.userId, live.liveId)
         }
 
     @Test
@@ -282,11 +302,89 @@ class FamilyFollowerTest {
             reads.children(ivan.account.userId, sasha)
             reads.children(misha.account.userId, sasha)
             follower.follow()
-            store.switch(sasha.userId)
+            switchTo(sasha.userId)
 
             follower.follow()
 
-            assertTrue(sessions.activated.isEmpty())
+            assertEquals(listOf(ivan.account.userId), sessions.activated)
+        }
+
+    @Test
+    fun a_refused_activation_of_the_active_child_s_new_parent_is_retried_by_the_next_follow() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            reads.children(ivan.account.userId, sasha)
+            reads.children(misha.account.userId, sasha)
+            follower.follow()
+            switchTo(sasha.userId)
+            reads.families.remove(ivan.account.userId)
+            sessions.refusal = IllegalStateException("no connection")
+            runCatching { follower.follow() }
+            assertEquals(ivan.account.userId, live.liveId)
+            sessions.refusal = null
+
+            follower.follow()
+
+            assertEquals(misha.account.userId, live.liveId)
+        }
+
+    @Test
+    fun a_follow_cancelled_while_purging_never_leaves_the_child_unlisted_with_its_rows() =
+        runTest {
+            store.add(ivan)
+            reads.children(ivan.account.userId, sasha)
+            follower.follow()
+            reads.families.remove(ivan.account.userId)
+            val purging = CompletableDeferred<Unit>()
+            purgeGate = purging
+            val following = launch { follower.follow() }
+            runCurrent()
+
+            following.cancel()
+            runCurrent()
+            assertEquals(listOf(sasha.userId), managedAccounts().map { it.userId })
+
+            purging.complete(Unit)
+            runCurrent()
+            assertEquals(listOf(sasha.userId), purged)
+            assertTrue(managedAccounts().isEmpty())
+        }
+
+    @Test
+    fun a_failed_purge_keeps_the_child_listed_until_a_follow_purges_it() =
+        runTest {
+            store.add(ivan)
+            reads.children(ivan.account.userId, sasha)
+            follower.follow()
+            reads.families.remove(ivan.account.userId)
+            purgeFailure = IllegalStateException("disk full")
+            runCatching { follower.follow() }
+            assertEquals(listOf(sasha.userId), managedAccounts().map { it.userId })
+            purgeFailure = null
+
+            follower.follow()
+
+            assertEquals(listOf(sasha.userId), purged)
+            assertTrue(managedAccounts().isEmpty())
+        }
+
+    @Test
+    fun a_parent_signed_in_during_the_purges_keeps_the_children_not_yet_purged() =
+        runTest {
+            store.add(ivan)
+            reads.children(ivan.account.userId, sasha, kolya)
+            follower.follow()
+            reads.families.remove(ivan.account.userId)
+            whilePurging = { store.add(misha) }
+
+            follower.follow()
+
+            assertEquals(1, purged.size)
+            assertEquals(
+                listOf(sasha.userId, kolya.userId) - purged.toSet(),
+                managedAccounts().map { it.userId },
+            )
         }
 
     @Test

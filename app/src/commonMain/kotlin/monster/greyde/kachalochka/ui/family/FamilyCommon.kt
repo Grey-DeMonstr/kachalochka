@@ -196,7 +196,8 @@ internal abstract class FamilyViewModel<S : Any>(
         reading { peopleOf(family.family()) }
             .onSuccess { found ->
                 change { withPeople(found) }
-                afterRead()
+                // Outside the write guard: it may wait out a sync pass, and taps meanwhile count.
+                viewModelScope.launch { afterRead() }
             }.onFailure { change { withOffline() } }
     }
 }

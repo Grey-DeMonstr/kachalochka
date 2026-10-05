@@ -1,7 +1,10 @@
 package monster.greyde.kachalochka.ui.family
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -189,5 +192,22 @@ class ChildrenViewModelTest {
                 .none { it.isManaged },
         )
         assertEquals(listOf(SASHA.userId), gym.purged)
+    }
+
+    @Test
+    fun a_tap_is_not_dropped_while_the_follow_after_a_removal_waits_for_a_sync_pass() {
+        gym.family.link(SASHA, IVAN_MEMBER)
+        val vm = viewModel()
+        val passing = CompletableDeferred<Unit>()
+        CoroutineScope(Dispatchers.Unconfined).launch {
+            gym.follower.followThen { passing.await() }
+        }
+        vm.askToRemove(SASHA)
+        vm.confirmRemove()
+
+        vm.addChild()
+
+        assertEquals("PAPA2345", vm.state.value.code)
+        passing.complete(Unit)
     }
 }

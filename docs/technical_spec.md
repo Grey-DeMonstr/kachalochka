@@ -351,9 +351,11 @@ entering "Дети"; a sign-in reaches it through the pass it requests. The web 
 load, which a sign-in's redirect also is, and on entering "Дети".
 
 A follow holds a lock the pass shares (`followThen`): a follow during a pass could purge a child
-whose rows the pass then pulls back. An account signed in while the families are read counts as
-an unread family. When the active child moves to another guardian, that guardian's session goes
-live.
+whose rows the pass then pulls back. An account signed in after the families were read counts as
+an unread family until the last purge. A leaving child is purged while still listed and leaves
+the store only after, so a failed purge is retried by the next follow; once the purges start,
+cancellation waits for the store and the live session. Each follow makes the active child's
+guardian the live session if it is not already, so a refused activation is retried.
 
 ### 4.4 Photos
 

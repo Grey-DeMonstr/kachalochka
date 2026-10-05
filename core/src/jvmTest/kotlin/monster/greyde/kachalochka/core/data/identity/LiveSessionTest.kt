@@ -62,6 +62,19 @@ class LiveSessionTest {
         }
 
     @Test
+    fun the_session_the_library_restored_is_live_until_another_goes_live() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            live.follow(flowOf(Renewed(ivan)))
+            assertEquals(ivan.account.userId, live.liveId)
+
+            live.activate(misha)
+
+            assertEquals(misha.account.userId, live.liveId)
+        }
+
+    @Test
     fun a_session_signed_in_but_not_yet_stored_is_left_out() =
         runTest {
             store.add(ivan)

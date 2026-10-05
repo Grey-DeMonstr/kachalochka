@@ -52,6 +52,9 @@ class LiveSession(
 
     @Volatile private var seen: AccountSession? = null
 
+    /** The account the UI client acts as: the last one put live, else the one it restored. */
+    val liveId: UserId? get() = intended ?: seen?.account?.userId
+
     // A refused switch leaves the previous account live, so the guard stays on it.
     override suspend fun activate(session: AccountSession) {
         sessions.activate(session)

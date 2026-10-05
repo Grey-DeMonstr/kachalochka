@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.ActiveAccountUser
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
+import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.NoWatermarkReset
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
@@ -396,7 +397,12 @@ class FakeGym(
 
     /** Owners the follower removed from the device with their rows, in order. */
     val purged = mutableListOf<UserId>()
-    val follower = FamilyFollower(accountStore, family, NoOpSessionActivation()) { purged += it }
+    val follower =
+        FamilyFollower(
+            accountStore,
+            family,
+            LiveSession(NoOpSessionActivation(), { null }, accountStore),
+        ) { purged += it }
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
     val catalogue = MachineCatalogue(machines, photos, machineLinks, friends, clock, sync)

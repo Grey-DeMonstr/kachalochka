@@ -1,13 +1,15 @@
 package monster.greyde.kachalochka.core.data.family
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountStore
+import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.OwnedRowsPurge
-import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.domain.family.FamilyMember
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
@@ -20,7 +22,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 class FamilyFollower(
     private val store: AccountStore,
     private val reads: FamilyReads,
-    private val sessions: SessionActivation,
+    private val live: LiveSession,
     private val purge: OwnedRowsPurge,
 ) {
     private val lock = Mutex()
@@ -55,37 +57,54 @@ class FamilyFollower(
                 }
             }
         }
-        // An account signed in during the reads has a family nobody read.
-        val signedInMeanwhile =
-            store.accounts.value.any { !it.isManaged && it.userId !in signedInIds }
-        val everyFamilyRead = !signedInMeanwhile && children.values.none { it == null }
-        if (!everyFamilyRead) {
+        if (children.values.any { it == null }) {
             before.filter { it.userId !in after }.forEach { after[it.userId] = it }
         }
-        store.setManaged(after.values.toList())
-        val signedInNow =
-            store.accounts.value
-                .filterNot { it.isManaged }
-                .map { it.userId }
-        before
-            .map { it.userId }
-            .filter { it !in after && it !in signedInNow }
-            .forEach { purge.purge(it) }
-        keepActingSessionLive(before)
-        return before.map { it.userId to it.guardianId }.toSet() !=
-            after.values.map { it.userId to it.guardianId }.toSet()
+        // A cancellation between a purge and the store would leave rows no account lists.
+        return withContext(NonCancellable) {
+            leave(before.filter { it.userId !in after }, signedInIds, after)
+            store.setManaged(after.values.toList())
+            keepActingSessionLive()
+            before.map { it.userId to it.guardianId }.toSet() !=
+                after.values.map { it.userId to it.guardianId }.toSet()
+        }
     }
 
-    // The live session acts for the active account, so a child that changed guardian needs the
-    // new guardian's.
-    private suspend fun keepActingSessionLive(before: List<Account>) {
+    /**
+     * Purges each of [gone] while it is still listed, so a failed purge leaves it for the next
+     * follow. An account signed in after the families of [read] were read has a family nobody
+     * read, and keeps every child not yet purged.
+     */
+    private suspend fun leave(
+        gone: List<Account>,
+        read: Set<UserId>,
+        after: MutableMap<UserId, Account>,
+    ) {
+        for (child in gone) {
+            val signedInMeanwhile =
+                store.accounts.value.any { !it.isManaged && it.userId !in read }
+            if (signedInMeanwhile || !purged(child.userId)) after[child.userId] = child
+        }
+    }
+
+    private suspend fun purged(owner: UserId): Boolean =
+        try {
+            purge.purge(owner)
+            true
+        } catch (stopped: CancellationException) {
+            throw stopped
+        } catch (failed: Exception) {
+            false
+        }
+
+    // A child acts through its guardian's session; one that failed to go live is retried here.
+    private suspend fun keepActingSessionLive() {
         val active = store.activeId.value ?: return
-        val was = before.firstOrNull { it.userId == active }?.guardianId ?: return
-        val now =
+        val guardian =
             store.accounts.value
                 .firstOrNull { it.userId == active }
                 ?.guardianId ?: return
-        if (now != was) store.actingSessionOf(active)?.let { sessions.activate(it) }
+        if (live.liveId != guardian) store.actingSessionOf(active)?.let { live.activate(it) }
     }
 
     // Null, unlike an empty list, says nothing about the family.
