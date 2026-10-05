@@ -306,7 +306,7 @@ object RuStrings : Strings {
     override val removeChildTitle = "Убрать ребёнка?"
     override val removeChildText =
         "Вы больше не сможете записывать тренировки ребёнка, и записанное для него пропадёт с " +
-            "этого устройства. У ребёнка всё останется."
+            "этого устройства. Уже синхронизированное останется у ребёнка."
     override val guardianInviteMessage = "Добавь меня родителем в Качалочке"
     override val guardians = "Родители"
     override val noGuardians = "Родителей пока нет"

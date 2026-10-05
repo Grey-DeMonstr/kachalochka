@@ -289,7 +289,7 @@ object EnStrings : Strings {
     override val removeChildTitle = "Remove the child?"
     override val removeChildText =
         "You will no longer record your child's workouts, and what you recorded for them " +
-            "leaves this device. Your child keeps everything."
+            "leaves this device. Your child keeps what has already synced."
     override val guardianInviteMessage = "Add me as your parent in Kachalochka"
     override val guardians = "Parents"
     override val noGuardians = "No parents yet"

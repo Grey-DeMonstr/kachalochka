@@ -276,9 +276,9 @@ closes, Settings keeps only the settings of the device, and sorting or grouping 
 saved. The friends' visits, machines, results and photos shown beside the child's are those of
 the people the parent and the child share a group with, the parent included. A child has no
 sign-out of its own: removing it in "Дети" takes it, with what was recorded for it, off the
-parent's device, and the child keeps everything. Signing a parent out takes their children off
-that device's menu until the parent signs back in. A child signs in on their own phone or browser
-with their own Google account, as anyone does.
+parent's device, and the child keeps what has already synced. Signing a parent out takes their
+children off that device's menu until the parent signs back in. A child signs in on their own
+phone or browser with their own Google account, as anyone does.
 
 Settings ends with "Дополнительно", a heading that opens, for the active account, a red "Удалить
 аккаунт". Its question, "Удалить аккаунт?", asks to type DELETE, in any case, before "Удалить"
