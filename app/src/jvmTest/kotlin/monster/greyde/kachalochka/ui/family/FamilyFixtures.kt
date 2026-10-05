@@ -1,6 +1,8 @@
 package monster.greyde.kachalochka.ui.family
 
 import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountKind
+import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.family.FamilyMember
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
@@ -18,3 +20,14 @@ internal val OLGA_SESSION =
 internal val IVAN_MEMBER = FamilyMember(IVAN_SESSION.account.userId, "Иван")
 internal val SASHA = FamilyMember(UserId("66666666-6666-4666-8666-666666666666"), "Саша")
 internal val PAPA = FamilyMember(UserId("77777777-7777-4777-8777-777777777777"), "Папа")
+
+/** [child] as a managed account [guardian] acts for. */
+internal fun childAccount(
+    child: FamilyMember,
+    guardian: AccountSession,
+) = Account(
+    child.userId,
+    "",
+    child.displayName,
+    kind = AccountKind.Managed(guardian.account.userId),
+)

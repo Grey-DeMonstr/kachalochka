@@ -321,6 +321,7 @@ object RuStrings : Strings {
     override val removeGuardianText =
         "Родитель больше не сможет записывать ваши тренировки и видеть их."
     override val guardianInviteTitle = "Добавить родителя по приглашению?"
+    override val childAccount = "Ребёнок"
 
     override val measurement = "Замер"
     override val deleteMeasurement = "Удалить замер"

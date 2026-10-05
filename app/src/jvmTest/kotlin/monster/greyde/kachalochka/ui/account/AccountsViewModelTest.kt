@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
@@ -28,6 +29,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 private class GetCredentialCancellationException : Exception("the user backed out")
@@ -160,4 +162,23 @@ class AccountsViewModelTest {
 
             assertEquals(1, sync.requests)
         }
+
+    @Test
+    fun a_managed_child_is_marked_and_shows_the_photo_it_chose() {
+        val photo = PhotoId.random()
+        val child =
+            Account(
+                UserId("66666666-6666-4666-8666-666666666666"),
+                "",
+                "Саша",
+                "https://example.test/s.png",
+                AccountKind.Managed(UserId("11111111-1111-4111-8111-111111111111"), photo),
+            )
+
+        val shown = accountsUi(listOf(child), child.userId).single()
+
+        assertTrue(shown.managed)
+        assertEquals(Avatar(photo, "https://example.test/s.png"), shown.avatar)
+        assertTrue(AccountsUi(listOf(shown), child.userId).managedActive)
+    }
 }

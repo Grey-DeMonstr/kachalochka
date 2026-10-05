@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
@@ -20,7 +21,10 @@ data class AccountsUi(
     val accounts: List<AccountUi>,
     val activeId: UserId?,
     val failure: String? = null,
-)
+) {
+    /** A managed child is active, so its private sections stay hidden. */
+    val managedActive: Boolean get() = accounts.any { it.active && it.managed }
+}
 
 data class AccountUi(
     val id: UserId,
@@ -29,21 +33,25 @@ data class AccountUi(
     val monogram: String,
     val active: Boolean,
     val avatar: Avatar = Avatar(),
+    val managed: Boolean = false,
 )
 
+// A child's profile is not on the parent's device, so its chosen photo comes with its entry.
 fun accountsUi(
     accounts: List<Account>,
     activeId: UserId?,
     chosen: Map<UserId, PhotoId> = emptyMap(),
 ): List<AccountUi> =
     accounts.map {
+        val managed = it.kind as? AccountKind.Managed
         AccountUi(
             it.userId,
             it.displayName,
             it.email,
             monogram(it.displayName),
             it.userId == activeId,
-            Avatar(chosen[it.userId], it.pictureUrl),
+            Avatar(chosen[it.userId] ?: managed?.avatarPhoto, it.pictureUrl),
+            managed = managed != null,
         )
     }
 

@@ -15,6 +15,8 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.home.HomeScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
 import kotlin.test.Test
@@ -105,5 +107,22 @@ class AccountMenuTest {
             onNodeWithTag("account-avatar-empty").assertExists()
         }
         assertEquals(1, gym.sets.rows.size)
+    }
+
+    @Test
+    fun a_managed_child_is_listed_as_a_child_and_has_no_sign_out() {
+        val gym = FakeGym().withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
+        runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}) }) {
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-${SASHA.userId.value}")
+                .assertTextContains("Ребёнок", substring = true)
+
+            onNodeWithTag("account-${SASHA.userId.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("account-avatar").performClick()
+
+            onNodeWithTag("account-${SASHA.userId.value}-active").assertExists()
+            onNodeWithTag("account-sign-out").assertDoesNotExist()
+        }
     }
 }

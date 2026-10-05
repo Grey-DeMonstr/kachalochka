@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
+import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.AccountServer
 import monster.greyde.kachalochka.core.data.identity.AccountSession
@@ -373,7 +374,7 @@ class FakeGym(
     val photoImages = PhotoImages { photos.bytes[it.id] }
     val photoCapture = InstantPhotoCapture(byteArrayOf(1, 2, 3))
     private val signIn = QueuedGoogleSignIn()
-    private val accountStore = PersistedAccountStore(InMemoryAccountStorage())
+    val accountStore = PersistedAccountStore(InMemoryAccountStorage())
     val accounts =
         Accounts(
             accountStore,
@@ -414,6 +415,13 @@ class FakeGym(
                 accounts.addAccount()
             }
             accounts.switchTo(active.account.userId)
+            this@FakeGym
+        }
+
+    /** Lists [child], a managed account, beside the accounts signed in. */
+    fun withChild(child: Account): FakeGym =
+        runBlocking {
+            accountStore.setManaged(accounts.accounts.value.filter { it.isManaged } + child)
             this@FakeGym
         }
 }

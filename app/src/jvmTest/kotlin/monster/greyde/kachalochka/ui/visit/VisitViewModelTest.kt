@@ -28,6 +28,8 @@ import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.Nickname
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -2101,6 +2103,39 @@ class VisitViewModelTest {
                     ?.page
                     ?.friends
                     ?.map { "${it.name} · ${it.text}" },
+            )
+        }
+
+    @Test
+    fun a_managed_child_is_a_chip_and_a_set_saved_as_it_is_the_child_s() =
+        runTest {
+            val family =
+                FakeGym().withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
+            family.visits.upsert(ivanVisit)
+            family.machines.upsert(ivanPress)
+            val vm = viewModel(family).also { it.selectMachine(ivanPress.id) }
+
+            vm.switchTo(SASHA.userId)
+            val sheet =
+                assertNotNull(
+                    vm.state.value
+                        ?.page
+                        ?.form,
+                )
+            vm.save()
+
+            assertEquals(
+                listOf("Иван" to false, "Саша" to true),
+                sheet.people.map { it.displayName to it.active },
+            )
+            val saved =
+                family.sets.rows.values
+                    .single()
+            assertEquals(SASHA.userId, saved.userId)
+            assertEquals(family.visits.onDay(SASHA.userId, today)?.id, saved.visitId)
+            assertEquals(
+                assertNotNull(family.machines.named(SASHA.userId, "Жим ногами")).id,
+                saved.machineId,
             )
         }
 }

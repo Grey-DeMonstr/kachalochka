@@ -280,6 +280,7 @@ interface Strings {
     val removeGuardianTitle: String
     val removeGuardianText: String
     val guardianInviteTitle: String
+    val childAccount: String
 
     // Measures
     val measurement: String

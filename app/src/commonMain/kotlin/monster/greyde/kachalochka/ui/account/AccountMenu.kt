@@ -73,7 +73,7 @@ fun AccountMenu(
                     modifier = Modifier.testTag("account-settings"),
                 )
             }
-            if (active != null) {
+            if (active != null && !active.managed) {
                 DropdownMenuItem(
                     text = { Text(strings().signOutOf(active.displayName)) },
                     onClick = {
@@ -128,7 +128,11 @@ private fun AccountRow(
         text = {
             Column {
                 Text(account.displayName, color = colors.onSurface)
-                Text(account.email, fontSize = 13.sp, color = colors.onSurface.copy(alpha = 0.6f))
+                Text(
+                    if (account.managed) strings().childAccount else account.email,
+                    fontSize = 13.sp,
+                    color = colors.onSurface.copy(alpha = 0.6f),
+                )
             }
         },
         leadingIcon = { PersonAvatar(account.id, account.displayName, account.avatar) },
