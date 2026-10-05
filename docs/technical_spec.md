@@ -663,6 +663,15 @@ Row-level security enforces every visibility rule from the functional spec:
 - A group's current members are readable by its members. Membership changes only through the
   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
   and soft-deletes the group directly, and a deleted group stays deleted.
+- A guardian link is a `guardian` row (`child_id`, `guardian_id`), readable by both parties and
+  written only through security-definer functions (migration `0023`). `offer_guardianship` gives
+  the caller a new `guardian_invite` code, valid for 24 hours, and retires the caller's earlier
+  one; `accept_guardian(code)` makes the caller a child of the code's owner and spends the code,
+  answering an unknown or expired code with `PT404` and the caller's own with `P0001`;
+  `end_guardianship(child, guardian)` deletes the link for either party. `my_family` lists the
+  caller's children and guardians with `member_display_name`, `member_avatar_photo` and
+  `google_picture`, since profiles stay private. `guards(other)` tells whether the caller guards
+  `other`. Deleting either account cascades through both tables.
 - A member's `group_member.display_name` follows one rule, `member_display_name`: the nickname
   of their newest live profile when not blank, else the Google name (`google_display_name`).
   `my_display_name` applies it when a group is created or joined, and a security-definer trigger
