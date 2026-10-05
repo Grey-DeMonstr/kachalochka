@@ -548,4 +548,46 @@ class SettingsViewModelTest {
             assertEquals(AppLanguage.English, languages.language.value)
             assertNull(gym.profiles.forOwner(SASHA.userId))
         }
+
+    private class GatedLanguages(
+        val gate: kotlinx.coroutines.CompletableDeferred<Unit>,
+    ) : monster.greyde.kachalochka.ui.strings.LanguagePreference {
+        private val state = kotlinx.coroutines.flow.MutableStateFlow(AppLanguage.System)
+        override val language: kotlinx.coroutines.flow.StateFlow<AppLanguage> = state
+
+        override suspend fun set(language: AppLanguage) {
+            gate.await()
+            state.value = language
+        }
+    }
+
+    @Test
+    fun a_switch_to_a_managed_child_while_applying_writes_no_profile_for_the_child() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
+            val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+            val vm =
+                SettingsViewModel(
+                    gym.profiles,
+                    gym.accounts,
+                    gym.currentUser,
+                    gym.clock,
+                    gym.utcOffset,
+                    gym.sync,
+                    gym.deletion,
+                    themes,
+                    transitions,
+                    GatedLanguages(gate),
+                    gym.photos,
+                    AccountAvatars(gym.accounts, gym.profiles),
+                )
+            vm.type("Ваня")
+            vm.apply()
+
+            gym.accounts.switchTo(SASHA.userId)
+            gate.complete(Unit)
+
+            assertNull(gym.profiles.forOwner(SASHA.userId))
+            assertNull(gym.profiles.forOwner(ivan.account.userId))
+        }
 }

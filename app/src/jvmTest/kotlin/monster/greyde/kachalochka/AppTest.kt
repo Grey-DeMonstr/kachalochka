@@ -685,4 +685,41 @@ class AppTest {
             onNodeWithTag("invite-confirm").assertExists()
         }
     }
+
+    @Test
+    fun a_kept_parent_code_waits_while_a_managed_child_is_active() {
+        val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+        runBlocking { signed.accounts.switchTo(SASHA.userId) }
+        signed.family.offered("PAPA2345", PAPA)
+        signed.parentCodes.save("PAPA2345")
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            waitForIdle()
+            onNodeWithTag("guardian-invite-confirm").assertDoesNotExist()
+
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-${IVAN_SESSION.account.userId.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("guardian-invite-confirm").assertExists()
+        }
+    }
+
+    @Test
+    fun switching_to_a_managed_child_closes_the_children_and_lands_on_settings() {
+        val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-settings").performClick()
+            waitForIdle()
+            onNodeWithTag("settings-children").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Дети")
+
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-${SASHA.userId.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("settings-title").assertIsDisplayed()
+        }
+    }
 }

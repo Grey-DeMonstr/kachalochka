@@ -149,7 +149,7 @@ class SettingsViewModel(
         val ownsAccount = owner != null && account?.isManaged != true
         mutableDeletion.value = DeletionUi(available = ownsAccount)
         mutableFamily.value = ownsAccount
-        // A managed child' s profile is the child' s own; only the device settings stay.
+        // A managed child's profile is the child's own; only the device settings stay.
         if (account?.isManaged == true) {
             savedAvatar = null
             mutableAvatar.value = null
