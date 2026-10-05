@@ -32,6 +32,7 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
+import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
@@ -45,6 +46,7 @@ import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.timer.Ticker
 import org.koin.compose.KoinApplication
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.koinConfiguration
 import org.koin.dsl.module
 import kotlin.time.Clock
@@ -77,6 +79,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<InviteSharing> { gym.invites }
         single<TextSharing> { gym.texts }
         single<JoinCodeStore> { gym.joinCodes }
+        single<JoinCodeStore>(named(PARENT_CODE)) { gym.parentCodes }
         single<PageFooter> { gym.footer }
         viewModelOf(::AccountsViewModel)
     }

@@ -397,6 +397,7 @@ class FakeGym(
     val texts = RecordingTextSharing()
     val footer = RecordingPageFooter()
     val joinCodes = InMemoryJoinCodeStore()
+    val parentCodes = InMemoryJoinCodeStore()
     val accountServer = RecordingAccountServer()
     val deletion = AccountDeletion(accountServer, {}, accounts)
     val today: CalendarDay get() = CalendarDay.of(clock.current, utcOffset.at(clock.current))

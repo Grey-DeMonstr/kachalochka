@@ -302,6 +302,7 @@ object EnStrings : Strings {
     override val ownGuardianCode = "That is your own code"
     override val removeGuardianTitle = "Remove the parent?"
     override val removeGuardianText = "The parent will no longer record or see your workouts."
+    override val guardianInviteTitle = "Add a parent from the invitation?"
 
     override val measurement = "Measurement"
     override val deleteMeasurement = "Delete measurement"

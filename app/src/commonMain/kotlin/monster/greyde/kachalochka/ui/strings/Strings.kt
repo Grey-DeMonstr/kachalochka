@@ -279,6 +279,7 @@ interface Strings {
     val ownGuardianCode: String
     val removeGuardianTitle: String
     val removeGuardianText: String
+    val guardianInviteTitle: String
 
     // Measures
     val measurement: String

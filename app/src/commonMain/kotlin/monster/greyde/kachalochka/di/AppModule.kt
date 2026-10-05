@@ -19,6 +19,8 @@ import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.family.ChildrenViewModel
 import monster.greyde.kachalochka.ui.family.GuardiansViewModel
+import monster.greyde.kachalochka.ui.family.PARENT_CODE
+import monster.greyde.kachalochka.ui.family.PendingGuardian
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendCalendarViewModel
@@ -49,6 +51,7 @@ import monster.greyde.kachalochka.ui.timer.Ticker
 import monster.greyde.kachalochka.ui.visit.VisitViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
@@ -66,6 +69,7 @@ val appModule =
         }
         single { VisitNormalization(get(), get(), get(), get(), get()) }
         single { PendingJoin(get(), get()) }
+        single { PendingGuardian(get(named(PARENT_CODE)), get()) }
         single { Nickname(get(), get()) }
         single { FriendColorStore(get(), get(), get()) }
         single { PhotoLoaders(get()) }

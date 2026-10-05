@@ -18,12 +18,15 @@ import monster.greyde.kachalochka.sync.startVisitNormalization
 import monster.greyde.kachalochka.ui.account.disownActiveAccount
 import monster.greyde.kachalochka.ui.account.restoreSession
 import monster.greyde.kachalochka.ui.account.sessionFromRedirect
+import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.joinCodeOf
+import monster.greyde.kachalochka.ui.friends.parentCodeOf
 import monster.greyde.kachalochka.ui.friends.warmGroups
 import monster.greyde.kachalochka.ui.friends.withoutInviteCodes
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
+import org.koin.core.qualifier.named
 import kotlin.time.Duration.Companion.seconds
 
 private val SESSION_RESTORE_LIMIT = 10.seconds
@@ -35,7 +38,7 @@ private val SESSION_RESTORE_LIMIT = 10.seconds
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     val koin = startKoin { modules(appModule, corePlatformModule(), platformModule()) }.koin
-    keepJoinCode(koin.get())
+    keepInviteCodes(koin.get(), koin.get(named(PARENT_CODE)))
     MainScope().launch {
         // The net under the reporting in restoreSession, not a substitute for it: a start-up
         // that goes wrong in a way nobody foresaw still owes the user a page to look at.
@@ -54,11 +57,15 @@ fun main() {
 }
 
 // Google returns to the page without its query, so an invite's code waits in storage; the
-// address loses only `join`, before the Auth plugin reads its own parameters.
+// address loses only the invite parameters, before the Auth plugin reads its own.
 @OptIn(ExperimentalWasmJsInterop::class)
-private fun keepJoinCode(store: JoinCodeStore) {
+private fun keepInviteCodes(
+    join: JoinCodeStore,
+    parent: JoinCodeStore,
+) {
     val href = window.location.href
-    joinCodeOf(href)?.let(store::save)
+    joinCodeOf(href)?.let(join::save)
+    parentCodeOf(href)?.let(parent::save)
     val cleaned = withoutInviteCodes(href)
     if (cleaned != href) window.history.replaceState(null, "", cleaned)
 }

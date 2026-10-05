@@ -260,6 +260,11 @@ visits, machines, photos and plans, never its profile, measures or groups. An un
 code says "Код не найден или устарел", and the account's own code "Это ваш собственный код".
 Linking and removing need the network, as on "Дети".
 
+A parent's code shared from the web, or from an Android build that knows the web app's address,
+carries a link to the web app. Opening it asks "Добавить родителя по приглашению?" before
+linking, and a link opened while signed out is offered to whichever account signs in next in
+that browser.
+
 Settings ends with "Дополнительно", a heading that opens, for the active account, a red "Удалить
 аккаунт". Its question, "Удалить аккаунт?", asks to type DELETE, in any case, before "Удалить"
 works; then it deletes the account and everything it recorded — visits, machines with their photos,

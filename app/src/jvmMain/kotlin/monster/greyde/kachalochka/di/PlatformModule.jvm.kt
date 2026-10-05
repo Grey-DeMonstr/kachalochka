@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.UnavailableGoogleSignIn
+import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
@@ -25,6 +26,7 @@ import monster.greyde.kachalochka.ui.strings.SystemLanguage
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /** The screen tests stand in for Android here, so sign-in is bound as Android binds it. */
@@ -42,6 +44,7 @@ actual fun platformModule(): Module =
         single<InviteSharing> { UnavailableInviteSharing }
         single<TextSharing> { UnavailableTextSharing }
         single<JoinCodeStore> { InMemoryJoinCodeStore() }
+        single<JoinCodeStore>(named(PARENT_CODE)) { InMemoryJoinCodeStore() }
         single { VisitStore.Device }
         single<PhotoCapture> { NoPhotoCapture }
         single<FailureLog> { FailureLog {} }

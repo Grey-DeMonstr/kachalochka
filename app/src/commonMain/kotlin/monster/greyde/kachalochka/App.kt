@@ -19,6 +19,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.domain.family.Acceptance
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -55,7 +56,10 @@ import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.SignInScreen
 import monster.greyde.kachalochka.ui.calendar.CalendarScreen
 import monster.greyde.kachalochka.ui.family.ChildrenScreen
+import monster.greyde.kachalochka.ui.family.GuardianInviteDialog
+import monster.greyde.kachalochka.ui.family.GuardianProblemDialog
 import monster.greyde.kachalochka.ui.family.GuardiansScreen
+import monster.greyde.kachalochka.ui.family.PendingGuardian
 import monster.greyde.kachalochka.ui.friends.FriendCalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
 import monster.greyde.kachalochka.ui.friends.GroupScreen
@@ -453,6 +457,37 @@ fun App() {
                 )
             }
             if (inviteMissing) InviteMissingDialog(onDismiss = { inviteMissing = false })
+            val pendingGuardian: PendingGuardian = koinInject()
+            var guardianOffered by remember { mutableStateOf(false) }
+            var guardianProblem by remember { mutableStateOf<String?>(null) }
+            // A parent's code kept while signed out goes to whichever account signs in next.
+            LaunchedEffect(accounts.activeId) {
+                guardianOffered = accounts.activeId != null && pendingGuardian.waiting
+            }
+            if (guardianOffered) {
+                GuardianInviteDialog(
+                    onAccept = {
+                        guardianOffered = false
+                        scope.launch {
+                            when (pendingGuardian.consume()) {
+                                is Acceptance.Linked -> navController.navigate(GuardiansRoute)
+                                Acceptance.UnknownCode ->
+                                    guardianProblem = AppStrings.current.guardianCodeUnknown
+                                Acceptance.OwnCode ->
+                                    guardianProblem = AppStrings.current.ownGuardianCode
+                                null -> Unit
+                            }
+                        }
+                    },
+                    onCancel = {
+                        guardianOffered = false
+                        pendingGuardian.decline()
+                    },
+                )
+            }
+            guardianProblem?.let {
+                GuardianProblemDialog(it, onDismiss = { guardianProblem = null })
+            }
         }
     }
 }

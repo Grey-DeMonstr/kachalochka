@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.ui.account.RedirectGoogleSignIn
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
+import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.friends.ClipboardInviteSharing
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
@@ -29,6 +30,7 @@ import monster.greyde.kachalochka.ui.strings.SystemLanguage
 import monster.greyde.kachalochka.ui.theme.LocalStorageThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 actual fun platformModule(): Module =
@@ -44,6 +46,9 @@ actual fun platformModule(): Module =
         single<InviteSharing> { ClipboardInviteSharing() }
         single<TextSharing> { ClipboardTextSharing() }
         single<JoinCodeStore> { LocalStorageJoinCodeStore() }
+        single<JoinCodeStore>(named(PARENT_CODE)) {
+            LocalStorageJoinCodeStore("kachalochka.parentCode")
+        }
         single { VisitStore.Server }
         single<PhotoCapture> { BrowserPhotoCapture() }
         single<FailureLog> { FailureLog { report(it.toString()) } }

@@ -22,6 +22,7 @@ import monster.greyde.kachalochka.ui.account.ActivityHolder
 import monster.greyde.kachalochka.ui.account.CredentialManagerGoogleSignIn
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
+import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
@@ -38,6 +39,7 @@ import monster.greyde.kachalochka.ui.theme.ThemePreference
 import okio.Path.Companion.toPath
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import java.util.Locale
@@ -85,6 +87,7 @@ actual fun platformModule(): Module =
             ShareSheetInviteSharing(get(), webAppUrlFromBuild().ifBlank { null })
         }
         single<JoinCodeStore> { InMemoryJoinCodeStore() }
+        single<JoinCodeStore>(named(PARENT_CODE)) { InMemoryJoinCodeStore() }
         single<PhotoCapture> { SystemPhotoCapture(androidContext()) }
         single<PageFooter> { PageFooter {} }
         single<GoogleSignIn> {

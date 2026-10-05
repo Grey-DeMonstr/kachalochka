@@ -23,9 +23,12 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.family.IVAN_MEMBER
+import monster.greyde.kachalochka.ui.family.PAPA
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.signedInGym
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.RuStrings
 import kotlin.test.Test
@@ -494,6 +497,34 @@ class AppTest {
             onNodeWithTag("invite-missing-ok").performClick()
             waitForIdle()
             onNodeWithTag("invite-missing").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun a_kept_parent_code_asks_first_then_opens_the_parents() {
+        val signed = signedInGym()
+        signed.family.offered("PAPA2345", PAPA)
+        signed.parentCodes.save("PAPA2345")
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            waitForIdle()
+            onNodeWithTag("guardian-invite-confirm").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Родители")
+        }
+        assertEquals(listOf(IVAN_MEMBER.userId to PAPA.userId), signed.family.links)
+    }
+
+    @Test
+    fun an_expired_parent_code_is_reported() {
+        val signed = signedInGym()
+        signed.parentCodes.save("ZZZZ2345")
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            waitForIdle()
+            onNodeWithTag("guardian-invite-confirm").performClick()
+            waitForIdle()
+
+            onNodeWithTag("guardian-problem").assertExists()
         }
     }
 
