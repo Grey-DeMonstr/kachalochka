@@ -19,7 +19,7 @@ private fun page(name: String): String =
     File(webResources, name).readText().replace(Regex("\\s+"), " ")
 
 private fun headings(html: String): List<String> =
-    Regex("<h2>(.*?)</h2>").findAll(html).map { it.groupValues[1] }.toList()
+    Regex("<h2[^>]*>(.*?)</h2>").findAll(html).map { it.groupValues[1] }.toList()
 
 class LegalPagesTest {
     @Test
@@ -48,6 +48,12 @@ class LegalPagesTest {
         assertTrue("“Удалить аккаунт” (Delete account) in the app’s settings" in html)
         assertTrue("$ISSUES/new" in html)
         assertTrue("within 30 days" in html)
+    }
+
+    // The Play listing's account deletion link points to this anchor.
+    @Test
+    fun privacyPolicyDeletionSectionHasAStableAnchor() {
+        assertTrue("<h2 id=\"deletion\">Retention and deletion</h2>" in page("privacy.html"))
     }
 
     @Test
