@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.data.identity
 
 import kotlinx.coroutines.test.runTest
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -201,4 +202,135 @@ class PersistedAccountStoreTest {
             assertEquals(emptyList(), store.accounts.value)
             assertNull(store.activeId.value)
         }
+
+    @Test
+    fun a_managed_account_is_listed_after_the_sessions_and_acts_through_its_guardian() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            store.add(misha)
+            val sasha = managedChild(ivan)
+
+            store.setManaged(listOf(sasha))
+
+            assertEquals(listOf(ivan.account, misha.account, sasha), store.accounts.value)
+            assertNull(store.sessionOf(sasha.userId))
+            assertEquals(ivan, store.actingSessionOf(sasha.userId))
+            assertEquals(misha, store.actingSessionOf(misha.account.userId))
+        }
+
+    @Test
+    fun a_managed_account_can_be_made_active() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            store.setManaged(listOf(managedChild(ivan)))
+
+            store.switch(SASHA_ID)
+
+            assertEquals(SASHA_ID, store.activeId.value)
+        }
+
+    @Test
+    fun a_managed_account_whose_guardian_is_not_here_is_left_out() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+
+            store.setManaged(listOf(managedChild(misha)))
+
+            assertEquals(listOf(ivan.account), store.accounts.value)
+        }
+
+    @Test
+    fun a_google_account_here_is_never_shadowed_by_a_managed_one() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            store.add(misha)
+
+            store.setManaged(listOf(managedChild(ivan, misha.account.userId, "Misha")))
+
+            assertEquals(listOf(ivan.account, misha.account), store.accounts.value)
+        }
+
+    @Test
+    fun signing_in_as_a_managed_child_replaces_the_managed_entry() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            store.setManaged(listOf(managedChild(ivan)))
+            val sashaSession = accountSession(SASHA_ID.value, "Sasha")
+
+            store.add(sashaSession)
+
+            assertEquals(listOf(ivan.account, sashaSession.account), store.accounts.value)
+            assertEquals(sashaSession, store.actingSessionOf(SASHA_ID))
+        }
+
+    @Test
+    fun signing_out_a_guardian_takes_its_children_and_activates_the_first_session() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            store.add(misha)
+            store.setManaged(listOf(managedChild(misha)))
+            store.switch(SASHA_ID)
+
+            store.remove(misha.account.userId)
+
+            assertEquals(listOf(ivan.account), store.accounts.value)
+            assertEquals(ivan.account.userId, store.activeId.value)
+        }
+
+    @Test
+    fun an_active_child_dropped_leaves_its_guardian_active() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            store.add(misha)
+            store.setManaged(listOf(managedChild(ivan)))
+            store.switch(SASHA_ID)
+
+            store.setManaged(emptyList())
+
+            assertEquals(ivan.account.userId, store.activeId.value)
+        }
+
+    @Test
+    fun managed_accounts_and_an_active_one_survive_a_new_store_over_the_same_storage() =
+        runTest {
+            val storage = FakeStorage()
+            val sasha =
+                managedChild(ivan).copy(
+                    pictureUrl = "https://example.test/s.png",
+                    kind = AccountKind.Managed(ivan.account.userId, PhotoId.random()),
+                )
+            PersistedAccountStore(storage).apply {
+                add(ivan)
+                setManaged(listOf(sasha))
+                switch(SASHA_ID)
+            }
+
+            val reopened = PersistedAccountStore(storage)
+
+            assertEquals(listOf(ivan.account, sasha), reopened.accounts.value)
+            assertEquals(SASHA_ID, reopened.activeId.value)
+        }
+
+    @Test
+    fun a_store_without_managed_entries_reads_its_active_account() {
+        val storage =
+            FakeStorage(
+                """{"accounts":[{"userId":"${ivan.account.userId.value}",""" +
+                    """"email":"Ivan@example.test","displayName":"Ivan",""" +
+                    """"accessToken":"a","refreshToken":"r","expiresAtMillis":0}],""" +
+                    """"activeId":"${ivan.account.userId.value}"}""",
+            )
+
+        val store = PersistedAccountStore(storage)
+
+        assertEquals(listOf(ivan.account), store.accounts.value)
+        assertEquals(ivan.account.userId, store.activeId.value)
+    }
 }

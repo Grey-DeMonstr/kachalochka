@@ -42,3 +42,12 @@ internal class FakeLiveTokens(
         return renewed
     }
 }
+
+internal val SASHA_ID = UserId("66666666-6666-4666-8666-666666666666")
+
+/** A child [guardian] acts for, as `FamilyFollower` lists one. */
+internal fun managedChild(
+    guardian: AccountSession,
+    id: UserId = SASHA_ID,
+    name: String = "Sasha",
+) = Account(id, "", name, kind = AccountKind.Managed(guardian.account.userId))
