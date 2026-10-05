@@ -97,6 +97,9 @@ class LinkChooserViewModel(
     private var group: GroupMachines? = null
     private var loading: Job? = null
 
+    /** The search starts with the machine's name once; a reload keeps what was typed. */
+    private var seeded = false
+
     /** The two machines the merge dialog asks about. */
     private var pending: List<Machine> = emptyList()
 
@@ -119,6 +122,12 @@ class LinkChooserViewModel(
                 val owner = currentUser.id()
                 val mine = machines.all(owner)
                 own = mine
+                if (!seeded) {
+                    mine.firstOrNull { it.id == machineId }?.let {
+                        seeded = true
+                        mutableState.value = mutableState.value.copy(query = it.name)
+                    }
+                }
                 preferred = profiles.preferredUnit(owner)
                 shownFor = owner
                 group = null

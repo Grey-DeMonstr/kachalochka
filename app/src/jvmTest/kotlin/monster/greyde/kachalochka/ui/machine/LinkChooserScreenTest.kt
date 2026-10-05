@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -78,6 +79,9 @@ class LinkChooserScreenTest {
         runScreenTest(gym, screen = {
             LinkChooserScreen(press.id, {}, {}, onMerged = {}, onLinked = { linked = true })
         }) {
+            onNodeWithTag("machine-search").assertTextEquals(press.name)
+            onNodeWithTag("clear-search").performClick()
+            waitForIdle()
             onNodeWithTag("chooser-friends").performScrollTo().assertIsDisplayed()
             onNodeWithTag("chooser-friend-${bench.id.value}").performScrollTo().performClick()
             waitForIdle()

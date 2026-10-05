@@ -254,6 +254,7 @@ object RuStrings : Strings {
     override val startSet = "Начальный"
     override val best = "Лучший"
     override val noChange = "Без изменений"
+    override val clearSearch = "Очистить поиск"
     override val newMachine = "Новое упражнение"
     override val improvementsOnly = "Только улучшения"
     override val noImprovements = "Нет улучшений за период"

@@ -154,7 +154,7 @@ online, one section per friend headed by their avatar and name, with the friend'
 not yet the same machine as one of the account's. Opened from a visit, the machines the visit
 already holds, with sets or planned, come last of all, dimmed and marked "Уже в визите"; picking
 one opens its page with the form for its next set. A search keeps the machines whose name holds
-what is typed. The tags of all these machines follow the search field as chips, and the chosen
+what is typed; a cross at its end, shown while it holds text, empties it. The tags of all these machines follow the search field as chips, and the chosen
 ones keep only the machines carrying every one of them. With nothing left, the picker says
 "Ничего не найдено". "Создать «…»" opens the machine form pre-filled with the typed name and the
 chosen tags ("С тегом «Руки»"). When a machine was opened in the visit, "Скопировать упражнение"
@@ -191,7 +191,7 @@ writes them, and leaving the form drops them. A photo is shrunk to at most 1600
 pixels on its long edge before it is kept.
 
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
-search field: "Мои упражнения", the account's other machines, and, signed in and online,
+search field, which starts with the machine's name: "Мои упражнения", the account's other machines, and, signed in and online,
 "Упражнения друзей", one row per friends' machine that is not yet the same machine as one of the
 account's. Choosing an own machine removes a duplicate. "Объединить упражнения?" shows both
 machines under "Оставить", each with its set count and the day of its last set, and the user

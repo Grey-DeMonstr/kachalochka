@@ -65,6 +65,24 @@ class MachinePickerScreenTest {
     }
 
     @Test
+    fun a_cross_clears_the_typed_search() =
+        runScreenTest(gym, screen = {
+            MachinePickerScreen(gym.today, null, {}, {}, {}, { _, _ -> }, { _, _ -> })
+        }) {
+            onNodeWithTag("clear-search").assertDoesNotExist()
+            onNodeWithTag("machine-search").performTextInput("гакк")
+            waitForIdle()
+            onNodeWithTag("machine-row-${press.id.value}").assertDoesNotExist()
+
+            onNodeWithTag("clear-search").performClick()
+            waitForIdle()
+
+            onNodeWithTag("machine-search").assertTextEquals("")
+            onNodeWithTag("clear-search").assertDoesNotExist()
+            onNodeWithTag("machine-row-${press.id.value}").assertIsDisplayed()
+        }
+
+    @Test
     fun a_machine_already_in_the_visit_says_so_and_is_still_picked() {
         runBlocking { gym.visits.upsert(visit.copy(planned = listOf(press.id))) }
         val picked = mutableListOf<MachineId>()

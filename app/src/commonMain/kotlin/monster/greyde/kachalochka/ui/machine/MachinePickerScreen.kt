@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -184,6 +185,23 @@ internal fun SearchBar(
                 cursorBrush = SolidColor(colors.secondary),
                 modifier = Modifier.weight(1f).testTag("machine-search"),
             )
+            if (query.isNotEmpty()) {
+                Box(
+                    Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .clickable { onQueryChange("") }
+                        .testTag("clear-search"),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        PhosphorIcons.X,
+                        strings().clearSearch,
+                        tint = colors.onBackground.copy(alpha = 0.6f),
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
         }
         if (rule) Rule()
     }

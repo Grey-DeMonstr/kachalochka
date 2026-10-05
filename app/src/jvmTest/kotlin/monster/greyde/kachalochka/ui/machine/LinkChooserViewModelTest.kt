@@ -76,6 +76,8 @@ class LinkChooserViewModelTest {
         machines: MachineRepository = gym.machines,
         sets: WorkoutSetRepository = gym.sets,
         links: MachineLinkRepository = gym.machineLinks,
+        /** Replaces the search the chooser starts with; null keeps it. */
+        query: String? = "",
     ) = LinkChooserViewModel(
         machine,
         machines,
@@ -90,7 +92,10 @@ class LinkChooserViewModelTest {
         gym.photos,
         gym.catalogue,
         gym.utcOffset,
-    ).also { it.load() }
+    ).also { vm ->
+        vm.load()
+        query?.let(vm::onQueryChange)
+    }
 
     /** Олег's machines: his copy of [press], linked to it, and one of his own. */
     private fun olegsMachines(): Pair<Machine, Machine> {
@@ -110,6 +115,23 @@ class LinkChooserViewModelTest {
 
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun the_search_starts_with_the_machine_s_name_and_keeps_what_is_typed() {
+        val vm = viewModel(query = null)
+
+        assertEquals("Жим ногами", vm.state.value.query)
+        assertEquals(
+            listOf(duplicate.id),
+            vm.state.value.own
+                .map { it.id },
+        )
+
+        vm.onQueryChange("смит")
+        vm.load()
+
+        assertEquals("смит", vm.state.value.query)
+    }
 
     @Test
     fun the_own_section_lists_every_other_own_machine() {

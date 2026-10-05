@@ -217,6 +217,7 @@ interface Strings {
     val startSet: String
     val best: String
     val noChange: String
+    val clearSearch: String
     val newMachine: String
     val improvementsOnly: String
     val noImprovements: String
