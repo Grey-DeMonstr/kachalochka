@@ -37,7 +37,7 @@ fun LinkChooserScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onMerged: (kept: MachineId) -> Unit,
-    onLinked: () -> Unit,
+    onLinked: (copyFrom: MachineId?) -> Unit,
 ) {
     val viewModel: LinkChooserViewModel = koinViewModel { parametersOf(machineId) }
     val state by viewModel.state.collectAsState()
@@ -68,6 +68,17 @@ fun LinkChooserScreen(
             }
             state.friends?.takeIf { it.isNotEmpty() }?.let { rows ->
                 ChooserSection(strings().friendsMachines, "chooser-friends")
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .toggleable(state.copySettings, onValueChange = viewModel::setCopySettings)
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .testTag("copy-settings"),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = state.copySettings, onCheckedChange = null)
+                    Text(strings().copySettings, Modifier.padding(start = 8.dp), fontSize = 15.sp)
+                }
                 rows.forEach { row ->
                     MachineRow(row.name, row.detail, "chooser-friend-${row.id.value}") {
                         viewModel.chooseFriend(row.id, onLinked)

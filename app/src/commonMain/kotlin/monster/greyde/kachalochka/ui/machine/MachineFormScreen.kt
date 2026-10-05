@@ -93,6 +93,9 @@ fun MachineFormScreen(
     onSaved: (MachineId) -> Unit,
     onLink: () -> Unit = {},
     onOpenFriendMachine: (MachineId, UserId) -> Unit = { _, _ -> },
+    /** A friend's machine whose settings the link chooser handed back. */
+    copySettingsFrom: MachineId? = null,
+    onCopyConsumed: () -> Unit = {},
 ) {
     val viewModel: MachineFormViewModel = koinViewModel { parametersOf(args) }
     val state by viewModel.state.collectAsState()
@@ -103,6 +106,12 @@ fun MachineFormScreen(
     val launchers = capture.rememberLaunchers(viewModel::addPhoto)
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
     LaunchedEffect(Unit) { viewModel.load() }
+    LaunchedEffect(copySettingsFrom) {
+        if (copySettingsFrom != null) {
+            viewModel.copySettings(copySettingsFrom)
+            onCopyConsumed()
+        }
+    }
     Screen(
         "",
         onBack = onBack,

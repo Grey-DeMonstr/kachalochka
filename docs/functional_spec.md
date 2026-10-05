@@ -204,7 +204,10 @@ that their totals stay the same. Friends who linked to
 the removed machine are linked to the one that stays. The form of the machine that stays then
 replaces the list, and unsaved edits in the old form are dropped. The other machine's photos move
 to the one that stays. Choosing a friend's machine
-links the two as one physical machine (see Group sharing) and returns to the form.
+links the two as one physical machine (see Group sharing) and returns to the form. Over the
+friends' machines, "Скопировать настройки", off at first, also takes the chosen machine's weight
+counting, platform, unit and weight step into the form; saving it then asks about recorded sets
+as any other edit does.
 
 The "Упражнения" row lists the active account's machines in the chosen order, each drawn as every
 list draws it, with its photo: the one chosen in its form, else the machine's first photo, or, when
@@ -214,7 +217,8 @@ friends' machines follow once the server answers: one section per friend, headed
 (or their initial in their calendar colour), name and machine count, one machine per physical
 machine that is not yet the same machine as one of the account's. Tapping one opens "Упражнение
 друга", the friend's machine to read: its name and owner, its tags, its photos with the one the
-friend chose starred, its setup note, how its weight is counted and its platform, then the
+friend chose starred, its setup note, how its weight is counted and its platform in the machine's
+own unit, then the
 friend's statistics on it as the statistics screen shows a machine's — the period chips, the
 period's best set, the chart and "Все результаты" — in the viewer's unit. Nothing on it can be
 edited. "Взять себе" saves the account's own copy linked to it (see Group sharing) and opens that

@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -191,7 +192,7 @@ class FriendMachineViewModelTest {
         }
 
     @Test
-    fun the_friend_s_weights_read_in_the_viewer_s_unit() =
+    fun the_friend_s_settings_keep_the_machine_s_own_unit() =
         runTest {
             on.profiles.upsert(
                 Profile.new(ME.userId, t0).copy(weightUnit = PreferredWeightUnit.Lb),
@@ -199,9 +200,21 @@ class FriendMachineViewModelTest {
 
             val state = assertNotNull(viewModel().state.value)
 
-            assertEquals("lb на сторону · ±11", state.caption)
-            assertEquals("55 lb · рядом с названием", state.platform)
+            assertEquals("кг на сторону · ±5", state.caption)
+            assertEquals("25 кг · рядом с названием", state.platform)
         }
+
+    @Test
+    fun a_friend_s_machine_in_pounds_reads_in_pounds_for_a_viewer_in_kilograms() {
+        on.friends.machines.clear()
+        on.friends.machines +=
+            olegPress.copy(unit = WeightUnit.Lb, weightStep = 5.0, platformWeight = 45.0)
+
+        val state = assertNotNull(viewModel().state.value)
+
+        assertEquals("lb на сторону · ±5", state.caption)
+        assertEquals("45 lb · рядом с названием", state.platform)
+    }
 
     @Test
     fun a_platform_added_to_the_record_says_so_and_none_shows_nothing() {

@@ -469,6 +469,68 @@ class MachineFormViewModelTest {
             assertEquals(1, gym.machines.all(null).size)
         }
 
+    @Test
+    fun a_friend_s_settings_copied_into_the_form_ask_to_recalculate_on_save() =
+        runTest {
+            val on = signedInGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val olegs =
+                Machine.new("Жим", OLEG.userId, t0).copy(
+                    weightMode = WeightMode.PerSide,
+                    platformWeight = 20.0,
+                    weightStep = 5.0,
+                )
+            on.friends.machines += olegs
+            val mine = Machine.new("Жим ногами", ME.userId, t0)
+            on.machines.upsert(mine)
+            on.sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    ME.userId,
+                    VisitId.random(),
+                    mine.id,
+                    70.0,
+                    10,
+                    0,
+                    t0,
+                    t0,
+                    false,
+                ),
+            )
+            val vm = formOn(on, MachineFormArgs(mine.id, null, "")).also { it.load() }
+
+            vm.copySettings(olegs.id)
+
+            val form = vm.state.value
+            assertEquals("Жим ногами", form.name)
+            assertEquals(WeightMode.PerSide to "20", form.weightMode to form.platformWeight)
+            assertEquals("5", form.weightStep)
+            vm.save {}
+            assertNotNull(vm.recalculation.value)
+        }
+
+    @Test
+    fun a_friend_s_unit_is_copied_with_its_name() =
+        runTest {
+            val on = signedInGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val olegs =
+                Machine
+                    .new("Блок", OLEG.userId, t0)
+                    .copy(unit = WeightUnit.Custom, unitLabel = "плитка", weightStep = 1.0)
+            on.friends.machines += olegs
+            val mine = Machine.new("Блок", ME.userId, t0)
+            on.machines.upsert(mine)
+            val vm = formOn(on, MachineFormArgs(mine.id, null, "")).also { it.load() }
+
+            vm.copySettings(olegs.id)
+
+            assertEquals(
+                WeightUnit.Custom to "плитка",
+                vm.state.value.unit to vm.state.value.unitLabel,
+            )
+        }
+
     /** A machine with imported totals and two sets, its platform then typed beside the name. */
     private suspend fun platformTyped(): Triple<MachineFormViewModel, Machine, List<WorkoutSet>> {
         val press = Machine.new("Жим ногами", null, t0)

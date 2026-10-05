@@ -74,10 +74,9 @@ fun recordingConversion(
         unitLabel(shown, machine.unitLabel)
 }
 
-fun friendMachineDetail(
-    friend: FriendMachine,
-    preferred: PreferredWeightUnit,
-): String = "${friend.owner.displayName} · ${weightCaption(friend.machine, preferred)}"
+/** A friend's settings, in the machine's own unit. */
+fun friendMachineDetail(friend: FriendMachine): String =
+    "${friend.owner.displayName} · ${weightCaption(friend.machine, PreferredWeightUnit.Mixed)}"
 
 fun platformSuffix(
     machine: Machine,

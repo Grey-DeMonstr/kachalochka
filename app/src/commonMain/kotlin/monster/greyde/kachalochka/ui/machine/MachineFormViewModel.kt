@@ -222,6 +222,30 @@ class MachineFormViewModel(
         }
     }
 
+    /**
+     * Takes how a friend's machine counts its weight into the form, as typed edits: saving then
+     * asks about recorded sets as any other edit does.
+     */
+    fun copySettings(friendMachine: MachineId) {
+        viewModelScope.launch {
+            val owner = currentUser.id() ?: return@launch
+            val group = reading { catalogue.group(owner) }.getOrNull() ?: return@launch
+            if (accounts.activeId.value != owner) return@launch
+            val source = group.friends.firstOrNull { it.machine.id == friendMachine }?.machine
+            source ?: return@launch
+            update {
+                it.copy(
+                    weightMode = source.weightMode,
+                    platformWeight = formatNumber(source.platformWeight),
+                    platformIncluded = source.platformIncluded,
+                    unit = source.unit,
+                    unitLabel = source.unitLabel,
+                    weightStep = formatNumber(source.weightStep),
+                )
+            }
+        }
+    }
+
     /** Each friend's tag once, from the first friend by name who has it. */
     private suspend fun readFriendTags(owner: UserId) {
         val group = reading { catalogue.group(owner) }.getOrNull() ?: return

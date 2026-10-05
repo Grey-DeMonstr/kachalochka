@@ -23,8 +23,7 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.formatNumber
-import monster.greyde.kachalochka.ui.format.shownLabel
-import monster.greyde.kachalochka.ui.format.shownWeight
+import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
@@ -33,7 +32,10 @@ import monster.greyde.kachalochka.ui.stats.machineStatsUi
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
-/** [stats] are the friend's own results on the machine over [period], in the viewer's unit. */
+/**
+ * [stats] are the friend's own results on the machine over [period], in the viewer's unit; the
+ * settings, [caption] and [platform], stay in the machine's own unit.
+ */
 data class FriendMachineUi(
     val name: String,
     val owner: String,
@@ -161,8 +163,8 @@ class FriendMachineViewModel(
             name = machine.name,
             owner = read.friend.owner.displayName,
             note = machine.setupNote,
-            caption = weightCaption(machine, read.preferred),
-            platform = platformText(machine, read.preferred),
+            caption = weightCaption(machine, PreferredWeightUnit.Mixed),
+            platform = platformText(machine),
             canTake = !read.had,
             photos = read.photos.map { ShownPhoto(it.id.value, it, cover = it == cover) },
             tags = machine.tags.sortedBy { it.lowercase() },
@@ -171,14 +173,10 @@ class FriendMachineViewModel(
         )
     }
 
-    private fun platformText(
-        machine: Machine,
-        preferred: PreferredWeightUnit,
-    ): String? {
+    private fun platformText(machine: Machine): String? {
         if (machine.platformWeight <= 0) return null
         val strings = AppStrings.current
         val added = if (machine.platformIncluded) strings.platformAdded else strings.platformBeside
-        val weight = formatNumber(shownWeight(machine.platformWeight, machine, preferred))
-        return "$weight ${shownLabel(machine, preferred)} · $added"
+        return "${formatNumber(machine.platformWeight)} ${unitLabel(machine)} · $added"
     }
 }

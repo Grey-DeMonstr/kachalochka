@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -76,17 +77,24 @@ class LinkChooserScreenTest {
     @Test
     fun a_friend_s_machine_is_linked_at_once() {
         var linked = false
+        var copyFrom: MachineId? = null
         runScreenTest(gym, screen = {
-            LinkChooserScreen(press.id, {}, {}, onMerged = {}, onLinked = { linked = true })
+            LinkChooserScreen(press.id, {}, {}, onMerged = {}, onLinked = {
+                linked = true
+                copyFrom = it
+            })
         }) {
             onNodeWithTag("machine-search").assertTextEquals(press.name)
             onNodeWithTag("clear-search").performClick()
+            waitForIdle()
+            onNodeWithTag("copy-settings").assertIsOff().performClick()
             waitForIdle()
             onNodeWithTag("chooser-friends").performScrollTo().assertIsDisplayed()
             onNodeWithTag("chooser-friend-${bench.id.value}").performScrollTo().performClick()
             waitForIdle()
         }
         assertTrue(linked)
+        assertEquals(bench.id, copyFrom)
         assertEquals(
             bench.id,
             runBlocking { gym.machineLinks.all(ME.userId) }.single().linkedMachineId,

@@ -53,6 +53,8 @@ data class LinkChooserUiState(
     val friends: List<ChooserRowUi>? = null,
     val merge: MergeUi? = null,
     val error: String? = null,
+    /** A friend's machine chosen with it hands its settings to the form. */
+    val copySettings: Boolean = false,
 )
 
 data class MergeChoiceUi(
@@ -143,6 +145,10 @@ class LinkChooserViewModel(
     fun onQueryChange(query: String) {
         mutableState.value = mutableState.value.copy(query = query)
         publish()
+    }
+
+    fun setCopySettings(copy: Boolean) {
+        mutableState.value = mutableState.value.copy(copySettings = copy)
     }
 
     fun chooseOwn(id: MachineId) {
@@ -273,12 +279,14 @@ class LinkChooserViewModel(
         owner: UserId?,
     ): Machine? = machines.byId(id)?.takeIf { !it.deleted && it.userId == owner }
 
+    /** [onDone] gets [id] back when its settings are to be copied. */
     fun chooseFriend(
         id: MachineId,
-        onDone: () -> Unit,
+        onDone: (copyFrom: MachineId?) -> Unit,
     ) {
         if (offeredFriends.orEmpty().none { it.machine.id == id }) return
         val offeredTo = shownFor
+        val copyFrom = id.takeIf { mutableState.value.copySettings }
         writes.launch {
             val owner = currentUser.id() ?: return@launch
             if (owner != offeredTo) return@launch
@@ -287,7 +295,7 @@ class LinkChooserViewModel(
                 MachineLink(MachineLinkId.random(), owner, machineId, id, clock.now(), false),
             )
             sync.request()
-            onDone()
+            onDone(copyFrom)
         }
     }
 
@@ -308,7 +316,7 @@ class LinkChooserViewModel(
                             ChooserRowUi(
                                 it.machine.id,
                                 it.machine.name,
-                                friendMachineDetail(it, preferred),
+                                friendMachineDetail(it),
                             )
                         },
             )

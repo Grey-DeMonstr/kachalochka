@@ -98,6 +98,9 @@ import org.koin.compose.viewmodel.koinViewModel
 /** The saved-state key a visit or a plan reads a picked machine from. */
 const val PICKED_MACHINE = "pickedMachine"
 
+/** The friend's machine whose settings the link chooser hands to the machine form. */
+private const val COPIED_SETTINGS = "copiedSettings"
+
 /** Hands a picked machine to the visit or plan that opened the picker, and returns to it. */
 private fun NavController.returnMachine(
     id: MachineId,
@@ -337,7 +340,12 @@ fun App() {
                 }
                 composable<MachineFormRoute> { entry ->
                     val route = entry.toRoute<MachineFormRoute>()
+                    val copyFrom by entry.savedStateHandle
+                        .getStateFlow<String?>(COPIED_SETTINGS, null)
+                        .collectAsState()
                     MachineFormScreen(
+                        copySettingsFrom = copyFrom?.let(::MachineId),
+                        onCopyConsumed = { entry.savedStateHandle[COPIED_SETTINGS] = null },
                         args =
                             MachineFormArgs(
                                 machineId = route.machineId?.let(::MachineId),
@@ -384,7 +392,14 @@ fun App() {
                                 ),
                             ) { popUpTo<MachineFormRoute> { inclusive = true } }
                         },
-                        onLinked = { navController.popBackStack() },
+                        onLinked = { copyFrom ->
+                            copyFrom?.let {
+                                navController.previousBackStackEntry
+                                    ?.savedStateHandle
+                                    ?.set(COPIED_SETTINGS, it.value)
+                            }
+                            navController.popBackStack()
+                        },
                     )
                 }
                 composable<FriendVisitRoute> { entry ->

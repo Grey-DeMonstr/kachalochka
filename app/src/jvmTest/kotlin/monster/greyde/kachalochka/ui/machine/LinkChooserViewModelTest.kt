@@ -134,6 +134,19 @@ class LinkChooserViewModelTest {
     }
 
     @Test
+    fun copy_settings_hands_the_chosen_friend_s_machine_back() {
+        val (_, bench) = olegsMachines()
+        val vm = viewModel()
+        assertEquals(false, vm.state.value.copySettings)
+        var copyFrom: MachineId? = null
+
+        vm.setCopySettings(true)
+        vm.chooseFriend(bench.id) { copyFrom = it }
+
+        assertEquals(bench.id, copyFrom)
+    }
+
+    @Test
     fun the_own_section_lists_every_other_own_machine() {
         val state = viewModel().state.value
 
@@ -221,8 +234,13 @@ class LinkChooserViewModelTest {
         val (_, bench) = olegsMachines()
         gym.clock.current += 1.minutes
         var done = false
+        var copyFrom: MachineId? = MachineId.random()
 
-        viewModel().chooseFriend(bench.id) { done = true }
+        viewModel().chooseFriend(bench.id) {
+            done = true
+            copyFrom = it
+        }
+        assertNull(copyFrom)
 
         val link = runBlocking { gym.machineLinks.all(me) }.single()
         assertEquals(

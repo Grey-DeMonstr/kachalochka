@@ -218,6 +218,7 @@ interface Strings {
     val best: String
     val noChange: String
     val clearSearch: String
+    val copySettings: String
     val newMachine: String
     val improvementsOnly: String
     val noImprovements: String
