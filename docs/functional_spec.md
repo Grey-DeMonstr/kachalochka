@@ -162,7 +162,8 @@ ones keep only the machines carrying every one of them. With nothing left, the p
 chosen tags ("С тегом «Руки»"). When a machine was opened in the visit, "Скопировать упражнение"
 opens the form pre-filled from that machine, with the typed name instead of its own.
 
-The machine form has no title. It collects a name, a comment (its setup note), how the weight is
+The machine form has no title; for a saved machine, a chart button in its top bar opens the
+machine's statistics. It collects a name, a comment (its setup note), how the weight is
 counted ("Всего", "На сторону" or "Гравитрон", which explains that the weight counts as negative,
 the less the better), the platform weight and whether it is added to the recorded weight, the unit
 and the weight step. The empty name and comment fields show "Название" and "Комментарий" inside
@@ -430,8 +431,8 @@ or "Doing some press" measured in times.
 
 ## Statistics
 
-"Статистика" on the home screen opens the statistics on "Общая"; a machine's page opens them on
-that machine. At the top a dropdown chooses "Общая" or one of the account's machines, listed by
+"Статистика" on the home screen opens the statistics on "Общая"; a machine's page and its form
+open them on that machine. At the top a dropdown chooses "Общая" or one of the account's machines, listed by
 name with their photos, and chips under it choose the period: "Месяц", "3 месяца", "6 месяцев" or
 "Год". A period counts its months back from today, as the measure screen's do: on 1 October
 "Месяц" starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.

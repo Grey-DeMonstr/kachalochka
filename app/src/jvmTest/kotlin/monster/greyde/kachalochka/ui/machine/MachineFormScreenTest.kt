@@ -63,6 +63,7 @@ class MachineFormScreenTest {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = { saved += it })
         }) {
             onNodeWithTag("save-machine").assertIsNotEnabled()
+            onNodeWithTag("machine-statistics").assertDoesNotExist()
             onNodeWithTag("per-limb").assertDoesNotExist()
             onNodeWithTag("mode-total").assertIsSelected()
             onNodeWithTag("mode-counterweight-hint").assertDoesNotExist()
@@ -75,6 +76,27 @@ class MachineFormScreenTest {
             assertEquals(1, saved.size)
             val machine = runBlocking { gym.machines.byId(saved.single()) }
             assertEquals(2.5, machine?.weightStep)
+        }
+    }
+
+    @Test
+    fun a_saved_machine_opens_its_statistics() {
+        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        runBlocking { gym.machines.upsert(press) }
+        val opened = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            MachineFormScreen(
+                MachineFormArgs(press.id, null, ""),
+                {},
+                {},
+                onSaved = {},
+                onOpenStatistics = { opened += it },
+            )
+        }) {
+            onNodeWithTag("machine-statistics").performClick()
+            waitForIdle()
+
+            assertEquals(listOf(press.id), opened)
         }
     }
 

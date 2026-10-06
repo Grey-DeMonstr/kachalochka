@@ -370,6 +370,7 @@ fun App() {
                         onOpenFriendMachine = { machine, owner ->
                             navController.navigate(FriendMachineRoute(machine.value, owner.value))
                         },
+                        onOpenStatistics = { navController.navigate(StatisticsRoute(it.value)) },
                     )
                 }
                 composable<LinkChooserRoute> { entry ->

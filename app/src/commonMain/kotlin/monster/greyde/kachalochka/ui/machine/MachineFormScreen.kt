@@ -93,6 +93,7 @@ fun MachineFormScreen(
     onSaved: (MachineId) -> Unit,
     onLink: () -> Unit = {},
     onOpenFriendMachine: (MachineId, UserId) -> Unit = { _, _ -> },
+    onOpenStatistics: (MachineId) -> Unit = {},
     /** A friend's machine whose settings the link chooser handed back. */
     copySettingsFrom: MachineId? = null,
     onCopyConsumed: () -> Unit = {},
@@ -116,7 +117,17 @@ fun MachineFormScreen(
         "",
         onBack = onBack,
         onOpenSettings = onOpenSettings,
-        actions = { if (linking.canUnlink) MachineMenu(viewModel::askToUnlink) },
+        actions = {
+            args.machineId?.let { id ->
+                SquareIconButton(
+                    PhosphorIcons.ChartLineUp,
+                    strings().statistics,
+                    { onOpenStatistics(id) },
+                    Modifier.testTag("machine-statistics"),
+                )
+            }
+            if (linking.canUnlink) MachineMenu(viewModel::askToUnlink)
+        },
     ) {
         Column(
             Modifier
