@@ -170,6 +170,26 @@ class FriendResultsTest {
     }
 
     @Test
+    fun every_friends_machine_is_offered_with_its_cluster_original_first() {
+        val pashas = pasha.owns("Жим ногами")
+        val (olegs, link) = linkedCopy(pashas.machine, oleg.userId, T0)
+        val olegsCopy = FriendMachine(olegs, oleg)
+        val row = oleg.owns("Гакк")
+        val mine = Machine.new("Тяга", me, T0)
+        val (olegsRow, rowLink) = linkedCopy(mine, oleg.userId, T0)
+
+        assertEquals(
+            listOf(listOf(row), listOf(pashas, olegsCopy)),
+            friendMachineGroups(
+                listOf(olegsCopy, row, pashas, FriendMachine(olegsRow, oleg)),
+                listOf(mine),
+                MachineClusters(listOf(link, rowLink)),
+                listOf(link, rowLink),
+            ),
+        )
+    }
+
+    @Test
     fun a_machine_is_linked_with_its_cluster_s_friends_machines_by_owner_then_name() {
         val mine = Machine.new("Жим ногами", me, T0)
         val (pashas, pashaLink) = linkedCopy(mine, pasha.userId, T0)

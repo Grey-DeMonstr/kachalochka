@@ -10,9 +10,11 @@ import androidx.compose.ui.test.performScrollTo
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -72,6 +74,26 @@ class LinkChooserScreenTest {
         }
         assertEquals(listOf(duplicate.id), merged)
         assertTrue(runBlocking { gym.machines.byId(press.id) }!!.deleted)
+    }
+
+    @Test
+    fun any_machine_of_a_linked_group_can_be_chosen() {
+        val (pashas, link) = linkedCopy(bench, PASHA.userId, gym.clock.current)
+        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        gym.friends.machines += pashas
+        gym.friends.links += link
+        var copyFrom: MachineId? = null
+        runScreenTest(gym, screen = {
+            LinkChooserScreen(press.id, {}, {}, onMerged = {}, onLinked = { copyFrom = it })
+        }) {
+            onNodeWithTag("clear-search").performClick()
+            onNodeWithTag("copy-settings").performClick()
+            waitForIdle()
+            onNodeWithTag("chooser-group-${bench.id.value}").performScrollTo().assertIsDisplayed()
+            onNodeWithTag("chooser-friend-${pashas.id.value}").performScrollTo().performClick()
+            waitForIdle()
+        }
+        assertEquals(pashas.id, copyFrom)
     }
 
     @Test

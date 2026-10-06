@@ -70,7 +70,21 @@ fun friendMachineRows(
     own: List<Machine>,
     clusters: MachineClusters,
     links: List<MachineLink>,
-): List<FriendMachine> {
+): List<FriendMachine> =
+    friendMachineGroups(friendMachines, own, clusters, links).map {
+        it.first()
+    }
+
+/**
+ * The friends' clusters without an own machine, each original-most machine first, ordered by the
+ * name of that machine.
+ */
+fun friendMachineGroups(
+    friendMachines: List<FriendMachine>,
+    own: List<Machine>,
+    clusters: MachineClusters,
+    links: List<MachineLink>,
+): List<List<FriendMachine>> {
     val ownClusters = own.flatMap { clusters.of(it.id) }.toSet()
     val outgoing = links.filterNot { it.deleted }.groupingBy { it.machineId }.eachCount()
     val originalFirst =
@@ -81,6 +95,11 @@ fun friendMachineRows(
         .filter { it.machine.id !in ownClusters }
         .groupBy { clusters.of(it.machine.id) }
         .values
-        .map { cluster -> cluster.minWith(originalFirst) }
-        .sortedBy { it.machine.name.lowercase() }
+        .map { cluster -> cluster.sortedWith(originalFirst) }
+        .sortedBy {
+            it
+                .first()
+                .machine.name
+                .lowercase()
+        }
 }

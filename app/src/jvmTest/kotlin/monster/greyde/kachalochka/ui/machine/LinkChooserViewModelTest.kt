@@ -28,6 +28,7 @@ import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -187,6 +188,60 @@ class LinkChooserViewModelTest {
                 ),
             ),
             friends,
+        )
+    }
+
+    @Test
+    fun linked_friends_machines_are_each_offered_together() {
+        val (_, bench) = olegsMachines()
+        val pashas = Machine.new("Жим на скамье", PASHA.userId, t0)
+        val (olegsBench, link) = linkedCopy(bench, PASHA.userId, t0)
+        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        gym.friends.machines += listOf(pashas, olegsBench.copy(name = "Скамья"))
+        gym.friends.links += link
+
+        val groups = viewModel().state.value.friendGroups
+
+        assertEquals(
+            listOf(listOf(bench.id, olegsBench.id), listOf(pashas.id)),
+            groups?.map { group -> group.map { it.id } },
+        )
+    }
+
+    @Test
+    fun a_search_keeps_a_whole_group_when_one_of_it_matches() {
+        val (_, bench) = olegsMachines()
+        val (pashasBench, link) = linkedCopy(bench, PASHA.userId, t0)
+        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        gym.friends.machines += pashasBench.copy(name = "Скамья")
+        gym.friends.links += link
+        val vm = viewModel()
+
+        vm.onQueryChange("скамья")
+
+        assertEquals(
+            listOf(bench.id, pashasBench.id),
+            vm.state.value.friends
+                ?.map { it.id },
+        )
+    }
+
+    @Test
+    fun the_rows_show_the_machines_photos() {
+        val (_, bench) = olegsMachines()
+        val own = Photo.new(duplicate.id, me, t0)
+        val olegs = Photo.new(bench.id, OLEG.userId, t0)
+        runBlocking { gym.photos.add(own, byteArrayOf(1)) }
+        gym.friends.photos += olegs
+
+        val state = viewModel().state.value
+
+        assertEquals(own, state.own.first().photo)
+        assertEquals(
+            olegs,
+            state.friends
+                ?.single()
+                ?.photo,
         )
     }
 

@@ -5,6 +5,7 @@ import kotlinx.coroutines.coroutineScope
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
+import monster.greyde.kachalochka.core.domain.friends.friendMachineGroups
 import monster.greyde.kachalochka.core.domain.friends.friendMachineRows
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineClusters
@@ -40,6 +41,10 @@ data class GroupMachines(
     /** One friend's machine per cluster that holds none of [own]. */
     fun offered(own: List<Machine>): List<FriendMachine> =
         friendMachineRows(friends, own, clusters, links)
+
+    /** Every friend's machine in a cluster that holds none of [own], with its cluster. */
+    fun offeredGroups(own: List<Machine>): List<List<FriendMachine>> =
+        friendMachineGroups(friends, own, clusters, links)
 }
 
 /** What the account sees: its own machines, and the group's once a read for it has landed. */

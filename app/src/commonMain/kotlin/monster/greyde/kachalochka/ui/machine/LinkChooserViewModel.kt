@@ -19,6 +19,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
@@ -46,17 +47,21 @@ data class ChooserRowUi(
     val id: MachineId,
     val name: String,
     val detail: String?,
+    val photo: Photo? = null,
 )
 
 data class LinkChooserUiState(
     val query: String = "",
     val own: List<ChooserRowUi> = emptyList(),
-    val friends: List<ChooserRowUi>? = null,
+    /** Friends' machines already linked to each other share a group. */
+    val friendGroups: List<List<ChooserRowUi>>? = null,
     val merge: MergeUi? = null,
     val error: String? = null,
     /** A friend's machine chosen with it hands its settings to the form. */
     val copySettings: Boolean = false,
-)
+) {
+    val friends: List<ChooserRowUi>? get() = friendGroups?.flatten()
+}
 
 data class MergeChoiceUi(
     val id: MachineId,
@@ -94,7 +99,8 @@ class LinkChooserViewModel(
     val state: StateFlow<LinkChooserUiState> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
-    private var own: List<Machine> = emptyList()
+    private var ownRead: OwnMachines? = null
+    private val own: List<Machine> get() = ownRead?.machines.orEmpty()
     private var preferred = PreferredWeightUnit.Kg
     private var shownFor: UserId? = null
     private var group: GroupMachines? = null
@@ -106,11 +112,8 @@ class LinkChooserViewModel(
     /** The two machines the merge dialog asks about. */
     private var pending: List<Machine> = emptyList()
 
-    private val offeredFriends: List<FriendMachine>?
-        get() {
-            val read = group ?: return null
-            return read.offered(own)
-        }
+    private val offeredGroups: List<List<FriendMachine>>?
+        get() = group?.offeredGroups(own)
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -123,8 +126,9 @@ class LinkChooserViewModel(
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                val mine = machines.all(owner)
-                own = mine
+                val read = catalogue.own(owner)
+                val mine = read.machines
+                ownRead = read
                 if (!seeded) {
                     mine.firstOrNull { it.id == machineId }?.let {
                         seeded = true
@@ -285,7 +289,7 @@ class LinkChooserViewModel(
         id: MachineId,
         onDone: (copyFrom: MachineId?) -> Unit,
     ) {
-        if (offeredFriends.orEmpty().none { it.machine.id == id }) return
+        if (offeredGroups.orEmpty().flatten().none { it.machine.id == id }) return
         val offeredTo = shownFor
         val copyFrom = id.takeIf { mutableState.value.copySettings }
         writes.launch {
@@ -302,6 +306,7 @@ class LinkChooserViewModel(
 
     private fun publish() {
         val needle = mutableState.value.query.trim()
+        val shown = ownRead?.let { ShownMachines(it, group) }
 
         fun matches(name: String) = nameMatches(name, needle)
         mutableState.value =
@@ -309,16 +314,26 @@ class LinkChooserViewModel(
                 own =
                     own
                         .filter { it.id != machineId && matches(it.name) }
-                        .map { ChooserRowUi(it.id, it.name, weightCaption(it, preferred)) },
-                friends =
-                    offeredFriends
-                        ?.filter { matches(it.machine.name) }
-                        ?.map {
+                        .map {
                             ChooserRowUi(
-                                it.machine.id,
-                                it.machine.name,
-                                friendMachineDetail(it),
+                                it.id,
+                                it.name,
+                                weightCaption(it, preferred),
+                                shown?.cover(it.id),
                             )
+                        },
+                friendGroups =
+                    offeredGroups
+                        ?.filter { group -> group.any { matches(it.machine.name) } }
+                        ?.map { group ->
+                            group.map {
+                                ChooserRowUi(
+                                    it.machine.id,
+                                    it.machine.name,
+                                    friendMachineDetail(it),
+                                    shown?.cover(it.machine.id),
+                                )
+                            }
                         },
             )
     }

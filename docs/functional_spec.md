@@ -195,7 +195,9 @@ pixels on its long edge before it is kept.
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
 search field, which starts with the machine's name: "Мои упражнения", the account's other machines, and, signed in and online,
 "Упражнения друзей", one row per friends' machine that is not yet the same machine as one of the
-account's. Choosing an own machine removes a duplicate. "Объединить упражнения?" shows both
+account's. Every row shows the machine's photo, as every list does. Friends' machines already
+linked with each other stand together in one frame, the original first, so any of them can be
+chosen; a search keeps the whole frame when one machine in it matches. Choosing an own machine removes a duplicate. "Объединить упражнения?" shows both
 machines under "Оставить", each with its set count and the day of its last set, and the user
 chooses the one that stays. The machine used last is chosen first and marked "Рекомендуется" (a
 machine with no sets counts as the oldest, and of two equal ones the edited one is marked):

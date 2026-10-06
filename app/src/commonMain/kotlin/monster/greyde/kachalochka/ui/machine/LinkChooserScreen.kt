@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.machine
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,10 +22,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.strings.strings
@@ -62,11 +65,11 @@ fun LinkChooserScreen(
             }
             if (state.own.isNotEmpty()) ChooserSection(strings().myMachines, "chooser-own")
             state.own.forEach { row ->
-                MachineRow(row.name, row.detail, "chooser-own-${row.id.value}") {
+                MachineRow(row.name, row.detail, "chooser-own-${row.id.value}", row.photo) {
                     viewModel.chooseOwn(row.id)
                 }
             }
-            state.friends?.takeIf { it.isNotEmpty() }?.let { rows ->
+            state.friendGroups?.takeIf { it.isNotEmpty() }?.let { groups ->
                 ChooserSection(strings().friendsMachines, "chooser-friends")
                 Row(
                     Modifier
@@ -79,9 +82,16 @@ fun LinkChooserScreen(
                     Checkbox(checked = state.copySettings, onCheckedChange = null)
                     Text(strings().copySettings, Modifier.padding(start = 8.dp), fontSize = 15.sp)
                 }
-                rows.forEach { row ->
-                    MachineRow(row.name, row.detail, "chooser-friend-${row.id.value}") {
-                        viewModel.chooseFriend(row.id, onLinked)
+                groups.forEach { group ->
+                    LinkedGroup(group.size > 1, "chooser-group-${group.first().id.value}") {
+                        group.forEach { row ->
+                            MachineRow(
+                                row.name,
+                                row.detail,
+                                "chooser-friend-${row.id.value}",
+                                row.photo,
+                            ) { viewModel.chooseFriend(row.id, onLinked) }
+                        }
                     }
                 }
             }
@@ -172,6 +182,26 @@ private fun KeepChoice(
             }
         }
     }
+}
+
+/** Machines already linked to each other, framed as one physical machine. */
+@Composable
+private fun LinkedGroup(
+    framed: Boolean,
+    tag: String,
+    content: @Composable () -> Unit,
+) {
+    if (!framed) {
+        content()
+        return
+    }
+    Column(
+        Modifier
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .clip(ControlShape)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, ControlShape)
+            .testTag(tag),
+    ) { content() }
 }
 
 @Composable
