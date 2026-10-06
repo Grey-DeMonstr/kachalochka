@@ -60,6 +60,7 @@ import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.navigation.PageFooter
+import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.Invite
@@ -417,6 +418,7 @@ class FakeGym(
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
     val catalogue = MachineCatalogue(machines, photos, machineLinks, friends, clock, sync)
+    val unsaved = UnsavedChoices()
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()
     val footer = RecordingPageFooter()

@@ -26,7 +26,8 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.Nickname
-import monster.greyde.kachalochka.ui.account.ProfileChoice
+import monster.greyde.kachalochka.ui.account.UnsavedChoices
+import monster.greyde.kachalochka.ui.account.groupByTagChoice
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
@@ -105,6 +106,7 @@ class StatisticsViewModel(
     private val utcOffset: UtcOffset,
     private val nickname: Nickname,
     private val sharing: TextSharing,
+    unsaved: UnsavedChoices,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(StatisticsUiState())
     val state: StateFlow<StatisticsUiState> = mutableState
@@ -128,15 +130,7 @@ class StatisticsViewModel(
 
     /** The account's own choice, which the visit screen shares. */
     private val grouping =
-        ProfileChoice(
-            profiles,
-            currentUser,
-            clock,
-            sync,
-            viewModelScope,
-            stored = { it?.groupByTag ?: false },
-            written = { profile, grouped -> profile.copy(groupByTag = grouped) },
-        )
+        groupByTagChoice(profiles, currentUser, clock, sync, unsaved, viewModelScope)
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {

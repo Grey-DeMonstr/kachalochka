@@ -293,7 +293,7 @@ the calendar, the statistics and the plans are the child's, and they sync betwee
 devices and the child's own. The child's profile, measures and groups stay the child's: while the
 child is chosen, "Замеры" and "Друзья" leave the home screen, a screen of them that was open
 closes, Settings keeps only the settings of the device, and sorting or grouping choices are not
-saved. The friends' visits, machines, results and photos shown beside the child's are those of
+saved: they hold for the child on every screen until the app closes. The friends' visits, machines, results and photos shown beside the child's are those of
 the people the parent and the child share a group with, the parent included. A child has no
 sign-out of its own: removing it in "Дети" takes it, with what was recorded for it, off the
 parent's device, and the child keeps what has already synced. Signing a parent out takes their

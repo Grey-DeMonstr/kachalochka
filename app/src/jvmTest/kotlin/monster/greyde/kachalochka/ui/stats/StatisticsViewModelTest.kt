@@ -75,6 +75,7 @@ class StatisticsViewModelTest {
             gym.utcOffset,
             Nickname(gym.profiles, gym.accounts),
             gym.texts,
+            gym.unsaved,
         ).also { it.load() }
 
     @BeforeTest

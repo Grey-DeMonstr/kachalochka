@@ -87,6 +87,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<PageFooter> { gym.footer }
         single<ThemePreference> { gym.themes }
         single<SystemBars> { gym.systemBars }
+        single { gym.unsaved }
         viewModelOf(::AccountsViewModel)
     }
 

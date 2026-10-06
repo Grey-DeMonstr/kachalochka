@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.Nickname
+import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.family.ChildrenViewModel
 import monster.greyde.kachalochka.ui.family.GuardiansViewModel
@@ -75,6 +76,7 @@ val appModule =
         single { PhotoLoaders(get()) }
         single { AccountAvatars(get(), get()) }
         single { MachineCatalogue(get(), get(), get(), get(), get(), get()) }
+        single { UnsavedChoices() }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }
@@ -112,11 +114,13 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
             )
         }
         viewModel { (day: CalendarDay?) ->
             MachinePickerViewModel(
                 day,
+                get(),
                 get(),
                 get(),
                 get(),
@@ -136,6 +140,7 @@ val appModule =
         viewModel { (machine: MachineId?) ->
             StatisticsViewModel(
                 machine,
+                get(),
                 get(),
                 get(),
                 get(),

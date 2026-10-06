@@ -461,8 +461,10 @@ gravitron. `WorkoutSetRepository.peaks` reduces the owner's sets locally on Andr
 the same reduction under the invoker's row-level security, so one row per machine comes back
 however long a history is. `machineOrder` sorts machines by a `MachineSort` over those peaks; the
 lists read the choice from `profile.machine_sort` (`recent` / `name` / `frequent`, an unknown
-name reading as `recent`) through `MachineSortChoice`, which writes it at once, as the visit
-writes `group_by_tag`. Migration `0021` and `15.sqm` add the column; `15.sqm` resets
+name reading as `recent`) through `machineSortChoice`, which writes it at once, as
+`groupByTagChoice` writes `group_by_tag`. Both are a `ProfileChoice`; for a managed child, whose
+profile the device may not write, the shared `UnsavedChoices` holds the choice in memory, and every
+read takes it before the profile, so a reload after a sync keeps it. Migration `0021` and `15.sqm` add the column; `15.sqm` resets
 `lastPullAt`.
 
 `MachineCatalogue` in `app/ui/machine` is the one reader of all of this. Its `own` read gives an

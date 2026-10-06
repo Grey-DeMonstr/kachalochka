@@ -136,6 +136,7 @@ class VisitViewModelTest {
         gym.catalogue,
         gym.profiles,
         AccountAvatars(gym.accounts, gym.profiles),
+        gym.unsaved,
     )
 
     @BeforeTest

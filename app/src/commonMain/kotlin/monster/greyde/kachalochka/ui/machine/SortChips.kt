@@ -9,6 +9,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.ProfileChoice
+import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.components.ChipRow
 import monster.greyde.kachalochka.ui.strings.strings
 import kotlin.time.Clock
@@ -19,6 +20,7 @@ fun machineSortChoice(
     currentUser: CurrentUser,
     clock: Clock,
     sync: SyncTrigger,
+    unsaved: UnsavedChoices,
     scope: CoroutineScope,
 ): ProfileChoice<MachineSort> =
     ProfileChoice(
@@ -26,7 +28,9 @@ fun machineSortChoice(
         currentUser,
         clock,
         sync,
+        unsaved,
         scope,
+        key = "machine_sort",
         stored = { it?.machineSort ?: MachineSort.Recent },
         written = { profile, sort -> profile.copy(machineSort = sort) },
     )

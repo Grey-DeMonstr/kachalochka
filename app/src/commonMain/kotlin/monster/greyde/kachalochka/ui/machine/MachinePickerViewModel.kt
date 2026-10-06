@@ -23,6 +23,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
@@ -67,6 +68,7 @@ class MachinePickerViewModel(
     private val catalogue: MachineCatalogue,
     private val friends: FriendsRepository,
     private val friendColors: FriendColorStore,
+    unsaved: UnsavedChoices,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PickerUiState())
     val state: StateFlow<PickerUiState> = mutableState
@@ -82,7 +84,8 @@ class MachinePickerViewModel(
     private var inVisit: Set<MachineId> = emptySet()
     private var loading: Job? = null
     private var loadingFriends: Job? = null
-    private val sorting = machineSortChoice(profiles, currentUser, clock, sync, viewModelScope)
+    private val sorting =
+        machineSortChoice(profiles, currentUser, clock, sync, unsaved, viewModelScope)
 
     private val shown: ShownMachines? get() = own?.let { ShownMachines(it, group) }
 

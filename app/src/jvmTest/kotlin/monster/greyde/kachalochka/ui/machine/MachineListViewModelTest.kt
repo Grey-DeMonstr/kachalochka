@@ -25,6 +25,8 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
@@ -62,6 +64,7 @@ class MachineListViewModelTest {
             FriendColorStore(on.profiles, on.clock, on.friends),
             on.clock,
             on.utcOffset,
+            on.unsaved,
         )
 
     private fun olegsGym(): Pair<FakeGym, Machine> {
@@ -104,6 +107,26 @@ class MachineListViewModelTest {
             assertEquals(listOf("Аб", "Тяга"), names())
             assertEquals(MachineSort.Name, vm.state.value.sort)
             assertEquals(MachineSort.Name, gym.profiles.forOwner(null)?.machineSort)
+        }
+
+    @Test
+    fun a_managed_child_s_sort_survives_a_finished_sync() =
+        runTest {
+            val on = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+            on.accounts.switchTo(SASHA.userId)
+            on.machines.upsert(Machine.new("Тяга", SASHA.userId, t0))
+            on.machines.upsert(Machine.new("Аб", SASHA.userId, t0))
+            val vm = viewModel(on).also { it.load() }
+
+            vm.chooseSort(MachineSort.Name)
+            on.sync.completePass()
+
+            assertEquals(MachineSort.Name, vm.state.value.sort)
+            assertEquals(
+                listOf("Аб", "Тяга"),
+                vm.state.value.own
+                    ?.map { it.name },
+            )
         }
 
     @Test

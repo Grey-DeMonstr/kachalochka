@@ -18,6 +18,7 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
@@ -44,6 +45,7 @@ class MachineListViewModel(
     private val friendColors: FriendColorStore,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
+    unsaved: UnsavedChoices,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineListUiState())
     val state: StateFlow<MachineListUiState> = mutableState
@@ -56,7 +58,8 @@ class MachineListViewModel(
     private var preferred = PreferredWeightUnit.Kg
     private var loading: Job? = null
     private var loadingFriends: Job? = null
-    private val sorting = machineSortChoice(profiles, currentUser, clock, sync, viewModelScope)
+    private val sorting =
+        machineSortChoice(profiles, currentUser, clock, sync, unsaved, viewModelScope)
 
     /** The list follows whoever is active, wherever the switch came from. */
     init {

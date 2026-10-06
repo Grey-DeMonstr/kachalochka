@@ -39,13 +39,14 @@ import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
-import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.AccountUi
 import monster.greyde.kachalochka.ui.account.Nickname
+import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.accountsUi
+import monster.greyde.kachalochka.ui.account.groupByTagChoice
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
@@ -185,6 +186,7 @@ class VisitViewModel(
     private val catalogue: MachineCatalogue,
     private val profiles: ProfileRepository,
     private val avatars: AccountAvatars,
+    unsaved: UnsavedChoices,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
@@ -219,11 +221,9 @@ class VisitViewModel(
     private var friendsStale = false
     private var notice: String? = null
     private var preferred = PreferredWeightUnit.Kg
-    private var groupByTag = false
-
-    /** Counts switches, so a profile read before the latest one cannot undo it. */
-    private var groupByTagSwitches = 0
-    private var groupByTagWrite: Job? = null
+    private val grouping =
+        groupByTagChoice(profiles, currentUser, clock, sync, unsaved, viewModelScope)
+    private val groupByTag: Boolean get() = grouping.current
 
     /**
      * Read ahead of the tap: a browser lets the clipboard be written only while a tap is recent,
@@ -414,26 +414,8 @@ class VisitViewModel(
 
     /** Kept in the account's profile, so the choice follows it to its other devices. */
     fun toggleGroupByTag() {
-        groupByTag = !groupByTag
-        groupByTagSwitches++
+        grouping.choose(!groupByTag)
         publish()
-        val wanted = groupByTag
-        val previous = groupByTagWrite
-        groupByTagWrite =
-            viewModelScope.launch {
-                // One write at a time, so the last switch is the one the server keeps.
-                previous?.join()
-                writeGroupByTag(wanted)
-            }
-    }
-
-    private suspend fun writeGroupByTag(wanted: Boolean) {
-        if (!currentUser.writesPrivateRows()) return
-        val owner = currentUser.id()
-        val now = clock.now()
-        val stored = profiles.forOwner(owner) ?: Profile.new(owner, now)
-        profiles.upsert(stored.copy(groupByTag = wanted, updatedAt = now))
-        sync.request()
     }
 
     fun toggleOrdering() {
@@ -557,10 +539,8 @@ class VisitViewModel(
     private suspend fun reload(reseed: Boolean) {
         val owner = currentUser.id()
         val shown = visits.shownOn(owner, day, sets, utcOffset::at)
-        val switches = groupByTagSwitches
-        val profile = profiles.forOwner(owner)
-        preferred = profile?.weightUnit ?: PreferredWeightUnit.Kg
-        if (switches == groupByTagSwitches) groupByTag = profile?.groupByTag ?: false
+        preferred = profiles.forOwner(owner)?.weightUnit ?: PreferredWeightUnit.Kg
+        grouping.read(owner)
         val ownRead = catalogue.own(owner)
         own = ownRead
         machinesById = ownRead.machines.associateBy { it.id }

@@ -102,6 +102,7 @@ class MachinePickerViewModelTest {
         on.catalogue,
         on.friends,
         FriendColorStore(on.profiles, on.clock, on.friends),
+        on.unsaved,
     )
 
     @Test
