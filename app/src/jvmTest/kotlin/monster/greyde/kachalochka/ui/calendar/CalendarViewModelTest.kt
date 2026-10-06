@@ -9,10 +9,12 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -844,6 +846,20 @@ class CalendarViewModelTest {
                 listOf("Олег"),
                 assertNotNull(vm.state.value).friendVisits.map { it.name },
             )
+        }
+
+    @Test
+    fun a_managed_child_shows_the_photo_it_chose_on_its_own_card() =
+        runTest {
+            val photo = PhotoId.random()
+            val sasha = childAccount(SASHA, IVAN_SESSION)
+            val child = sasha.copy(kind = AccountKind.Managed(IVAN_SESSION.account.userId, photo))
+            val signed = signedInGym().withChild(child)
+            signed.accounts.switchTo(SASHA.userId)
+
+            val vm = viewModel(signed).also { it.refresh() }
+
+            assertEquals(Avatar(photo), assertNotNull(vm.state.value?.me).avatar)
         }
 
     private fun session(

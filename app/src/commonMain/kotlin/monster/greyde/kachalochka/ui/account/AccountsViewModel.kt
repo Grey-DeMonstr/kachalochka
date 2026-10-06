@@ -36,24 +36,31 @@ data class AccountUi(
     val managed: Boolean = false,
 )
 
-// A child's profile is not on the parent's device, so its chosen photo comes with its entry.
 fun accountsUi(
     accounts: List<Account>,
     activeId: UserId?,
     chosen: Map<UserId, PhotoId> = emptyMap(),
 ): List<AccountUi> =
     accounts.map {
-        val managed = it.kind as? AccountKind.Managed
         AccountUi(
             it.userId,
             it.displayName,
             it.email,
             monogram(it.displayName),
             it.userId == activeId,
-            Avatar(chosen[it.userId] ?: managed?.avatarPhoto, it.pictureUrl),
-            managed = managed != null,
+            accountAvatar(it, chosen),
+            managed = it.isManaged,
         )
     }
+
+// A child's profile is not on the parent's device, so its chosen photo comes with its entry.
+fun accountAvatar(
+    account: Account,
+    chosen: Map<UserId, PhotoId>,
+): Avatar {
+    val managed = account.kind as? AccountKind.Managed
+    return Avatar(chosen[account.userId] ?: managed?.avatarPhoto, account.pictureUrl)
+}
 
 /**
  * Resolved at more than one `ViewModelStoreOwner` (the app-level sign-in gate and each screen),

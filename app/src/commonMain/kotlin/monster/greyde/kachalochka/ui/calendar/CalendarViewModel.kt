@@ -34,6 +34,7 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountAvatars
+import monster.greyde.kachalochka.ui.account.accountAvatar
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.monthTitle
@@ -453,8 +454,8 @@ class CalendarViewModel(
     private fun me(): PersonUi? {
         val account =
             accounts.accounts.value.firstOrNull { it.userId == shownFor } ?: return null
-        val chosen = avatars.photos.value[account.userId]
-        return PersonUi(account.userId, account.displayName, Avatar(chosen, account.pictureUrl))
+        val avatar = accountAvatar(account, avatars.photos.value)
+        return PersonUi(account.userId, account.displayName, avatar)
     }
 
     private fun removalUi(
