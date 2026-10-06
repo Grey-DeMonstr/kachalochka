@@ -37,9 +37,15 @@ fun MachineListScreen(
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(strings().machines, onBack = onBack, onOpenSettings = onOpenSettings) {
-        if (!state.own.isNullOrEmpty() || state.friendSections.isNotEmpty()) {
-            SortChips(state.sort, viewModel::chooseSort, Modifier.padding(vertical = 12.dp))
-            Rule()
+        val filtering = state.query.isNotEmpty() || state.tags.any { it.chosen }
+        if (!state.own.isNullOrEmpty() || state.friendSections.isNotEmpty() || filtering) {
+            SearchBar(state.query, viewModel::onQueryChange, rule = false)
+            SortChips(state.sort, viewModel::chooseSort, Modifier.padding(bottom = 12.dp))
+            if (state.tags.isNotEmpty()) {
+                TagFilter(state.tags, viewModel::toggleTag, testTagPrefix = "list-tag")
+            } else {
+                Rule()
+            }
         }
         Column(
             Modifier
@@ -48,8 +54,15 @@ fun MachineListScreen(
         ) {
             val cards = state.own
             when {
+                state.nothingFound ->
+                    Text(
+                        strings().nothingFound,
+                        modifier = Modifier.padding(16.dp).testTag("machine-list-nothing"),
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                    )
                 cards == null -> Unit
-                cards.isEmpty() ->
+                cards.isEmpty() && !filtering ->
                     Text(
                         strings().noMachinesYet,
                         modifier = Modifier.padding(16.dp).testTag("machine-list-empty"),

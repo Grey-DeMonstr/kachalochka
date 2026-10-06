@@ -216,7 +216,10 @@ asks about recorded sets as any other edit does.
 
 The "Упражнения" row lists the active account's machines in the chosen order, each drawn as every
 list draws it, with its photo: the one chosen in its form, else the machine's first photo, or, when
-it has none, the first photo of a friend's machine linked with it. Tapping one opens it in the
+it has none, the first photo of a friend's machine linked with it. Over the list stand a search
+field as in the picker, the sort chips, and the tags of all listed machines as chips; the search
+and the chosen tags keep the own and the friends' machines as they do in the picker, and with
+nothing left the list says "Ничего не найдено". Tapping one opens it in the
 machine form; "Добавить" adds one. Saving returns to the list. Signed in and online, the
 friends' machines follow once the server answers: one section per friend, headed by their avatar
 (or their initial in their calendar colour), name and machine count, one machine per physical

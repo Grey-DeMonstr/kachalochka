@@ -10,10 +10,12 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.machineOrder
+import monster.greyde.kachalochka.core.domain.gym.nameMatches
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -30,6 +32,10 @@ data class MachineListUiState(
     val own: List<MachineCardUi>? = null,
     val friendSections: List<FriendSectionUi> = emptyList(),
     val sort: MachineSort = MachineSort.Recent,
+    val query: String = "",
+    val tags: List<TagChoiceUi> = emptyList(),
+    /** True when a search or a tag leaves nothing to list. */
+    val nothingFound: Boolean = false,
 ) {
     val friends: List<MachineCardUi> get() = friendSections.flatMap { it.cards }
 }
@@ -56,6 +62,8 @@ class MachineListViewModel(
     private var friendPeaks: List<MachinePeaks> = emptyList()
     private var colors: Map<UserId, Int> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
+    private var query = ""
+    private var chosenTags: Set<String> = emptySet()
     private var loading: Job? = null
     private var loadingFriends: Job? = null
     private val sorting =
@@ -104,9 +112,23 @@ class MachineListViewModel(
         publish()
     }
 
+    fun onQueryChange(text: String) {
+        query = text
+        publish()
+    }
+
+    fun toggleTag(tag: String) {
+        chosenTags = if (tag in chosenTags) chosenTags - tag else chosenTags + tag
+        publish()
+    }
+
+    private fun Machine.kept(): Boolean = nameMatches(name, query) && tags.containsAll(chosenTags)
+
     private fun publish() {
         val shown = own?.let { ShownMachines(it, group) }
         val sort = sorting.current
+        val ownMachines = shown?.own?.machines.orEmpty()
+        val offered = shown?.offered.orEmpty()
         val now = clock.now()
         val offset = utcOffset.at(now)
         val cards =
@@ -122,17 +144,32 @@ class MachineListViewModel(
             }
         val ownOrder = machineOrder(sort, ownPeaks.associateBy { it.machineId })
         val friendOrder = machineOrder(sort, friendPeaks.associateBy { it.machineId })
+        val ownCards =
+            cards?.let { c ->
+                ownMachines
+                    .filter { it.kept() }
+                    .sortedWith(ownOrder)
+                    .map(c::own)
+            }
+        val sections =
+            cards
+                ?.friendSections(offered.filter { it.machine.kept() }, colors, friendOrder)
+                .orEmpty()
+        val filtering = query.isNotBlank() || chosenTags.isNotEmpty()
         mutableState.value =
             MachineListUiState(
-                own =
-                    cards?.let { c ->
-                        shown.own.machines
-                            .sortedWith(ownOrder)
-                            .map(c::own)
-                    },
-                friendSections =
-                    cards?.friendSections(shown.offered, colors, friendOrder).orEmpty(),
+                own = ownCards,
+                friendSections = sections,
                 sort = sort,
+                query = query,
+                tags =
+                    (ownMachines + offered.map { it.machine })
+                        .flatMap { it.tags }
+                        .plus(chosenTags)
+                        .distinct()
+                        .sortedBy { it.lowercase() }
+                        .map { TagChoiceUi(it, it in chosenTags) },
+                nothingFound = filtering && ownCards.isNullOrEmpty() && sections.isEmpty(),
             )
     }
 }

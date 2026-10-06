@@ -124,11 +124,12 @@ fun MachinePickerScreen(
     }
 }
 
-/** Tags under the search field; the chosen ones narrow the list and go to a created machine. */
+/** Tags under the search field; the chosen ones narrow the list. */
 @Composable
-private fun TagFilter(
+internal fun TagFilter(
     tags: List<TagChoiceUi>,
     onToggle: (String) -> Unit,
+    testTagPrefix: String = "picker-tag",
 ) {
     Column {
         Row(
@@ -142,7 +143,7 @@ private fun TagFilter(
                 ChoiceChip(
                     it.name,
                     it.chosen,
-                    "picker-tag-${it.name}",
+                    "$testTagPrefix-${it.name}",
                 ) { onToggle(it.name) }
             }
         }

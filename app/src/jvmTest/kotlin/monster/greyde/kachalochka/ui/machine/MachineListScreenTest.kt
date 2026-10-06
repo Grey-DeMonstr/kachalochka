@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -59,6 +60,26 @@ class MachineListScreenTest {
             waitForIdle()
         }
         assertEquals(MachineSort.Name, runBlocking { gym.profiles.forOwner(null)?.machineSort })
+    }
+
+    @Test
+    fun a_search_and_a_tag_narrow_the_list() {
+        val row = Machine.new("Тяга", null, gym.clock.current).copy(tags = setOf("Спина"))
+        runBlocking {
+            gym.machines.upsert(press)
+            gym.machines.upsert(row)
+        }
+        runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
+            onNodeWithTag("machine-search").performTextInput("гакк")
+            waitForIdle()
+            onNodeWithTag("machine-list-nothing").assertTextEquals("Ничего не найдено")
+            onNodeWithTag("clear-search").performClick()
+            onNodeWithTag("list-tag-Спина").performClick()
+            waitForIdle()
+
+            onNodeWithTag("machine-list-row-${row.id.value}").assertIsDisplayed()
+            onNodeWithTag("machine-list-row-${press.id.value}").assertDoesNotExist()
+        }
     }
 
     @Test

@@ -110,6 +110,77 @@ class MachineListViewModelTest {
         }
 
     @Test
+    fun a_search_keeps_the_own_and_friends_machines_whose_name_matches() =
+        runTest {
+            val (on, olegPress) = olegsGym()
+            on.machines.upsert(Machine.new("Тяга", ME.userId, t0))
+            on.machines.upsert(Machine.new("Жим лёжа", ME.userId, t0))
+            val vm = viewModel(on).also { it.load() }
+
+            vm.onQueryChange("жим")
+
+            assertEquals("жим", vm.state.value.query)
+            assertEquals(
+                listOf("Жим лёжа"),
+                vm.state.value.own
+                    ?.map { it.name },
+            )
+            assertEquals(
+                listOf(olegPress.id),
+                vm.state.value.friends
+                    .map { it.id },
+            )
+            assertEquals(false, vm.state.value.nothingFound)
+
+            vm.onQueryChange("гакк")
+
+            assertEquals(emptyList(), vm.state.value.own)
+            assertEquals(emptyList(), vm.state.value.friends)
+            assertEquals(true, vm.state.value.nothingFound)
+        }
+
+    @Test
+    fun chosen_tags_keep_the_machines_carrying_every_one_of_them() =
+        runTest {
+            val (on, olegPress) = olegsGym()
+            on.friends.machines.replaceAll {
+                if (it.id == olegPress.id) it.copy(tags = setOf("Ноги")) else it
+            }
+            on.machines.upsert(Machine.new("Тяга", ME.userId, t0).copy(tags = setOf("Спина")))
+            on.machines.upsert(
+                Machine.new("Присед", ME.userId, t0).copy(tags = setOf("Ноги", "База")),
+            )
+            val vm = viewModel(on).also { it.load() }
+            assertEquals(
+                listOf("База" to false, "Ноги" to false, "Спина" to false),
+                vm.state.value.tags
+                    .map { it.name to it.chosen },
+            )
+
+            vm.toggleTag("Ноги")
+
+            assertEquals(
+                listOf("Присед"),
+                vm.state.value.own
+                    ?.map { it.name },
+            )
+            assertEquals(
+                listOf(olegPress.id),
+                vm.state.value.friends
+                    .map { it.id },
+            )
+
+            vm.toggleTag("База")
+
+            assertEquals(
+                listOf("Присед"),
+                vm.state.value.own
+                    ?.map { it.name },
+            )
+            assertEquals(emptyList(), vm.state.value.friends)
+        }
+
+    @Test
     fun a_managed_child_s_sort_survives_a_finished_sync() =
         runTest {
             val on = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
