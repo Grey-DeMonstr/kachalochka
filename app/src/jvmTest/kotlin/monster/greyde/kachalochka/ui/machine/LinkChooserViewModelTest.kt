@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
@@ -431,6 +432,66 @@ class LinkChooserViewModelTest {
             gym.sets.rows
                 .getValue(imported.id)
                 .machineId,
+        )
+    }
+
+    /** [duplicate] is in kilograms, with sets; [press], used last, is a 5 lb machine. */
+    private fun unitsDiffer(): WorkoutSet {
+        val imported = set(duplicate, 0).copy(weight = 22.7)
+        runBlocking {
+            gym.machines.upsert(press.copy(unit = WeightUnit.Lb, weightStep = 5.0))
+            gym.sets.upsert(imported)
+            gym.sets.upsert(set(press, 10))
+        }
+        return imported
+    }
+
+    @Test
+    fun differing_units_offer_to_convert_the_moved_sets() {
+        val imported = unitsDiffer()
+        gym.clock.current += 1.days
+        val vm = viewModel()
+
+        vm.chooseOwn(duplicate.id)
+
+        val merge = vm.state.value.merge!!
+        assertEquals("Перевести подходы «Жим ногами 2» из кг в lb", merge.convertText)
+        assertTrue(merge.convert)
+        vm.confirmMerge {}
+        assertEquals(
+            50.0,
+            gym.sets.rows
+                .getValue(imported.id)
+                .weight,
+        )
+    }
+
+    @Test
+    fun the_moved_sets_keep_their_numbers_when_not_converted() {
+        val imported = unitsDiffer()
+        val vm = viewModel()
+
+        vm.chooseOwn(duplicate.id)
+        vm.setConvert(false)
+        vm.confirmMerge {}
+
+        assertEquals(
+            22.7,
+            gym.sets.rows
+                .getValue(imported.id)
+                .weight,
+        )
+    }
+
+    @Test
+    fun equal_units_offer_no_conversion() {
+        val vm = viewModel()
+
+        vm.chooseOwn(duplicate.id)
+
+        assertNull(
+            vm.state.value.merge
+                ?.convertText,
         )
     }
 

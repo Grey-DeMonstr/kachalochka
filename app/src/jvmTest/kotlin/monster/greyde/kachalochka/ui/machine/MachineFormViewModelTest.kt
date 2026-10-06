@@ -644,6 +644,133 @@ class MachineFormViewModelTest {
             assertNull(vm.recalculation.value)
         }
 
+    /** A kilogram machine with a 20 kg platform and sets read off a 5 lb stack. */
+    private suspend fun kgMachine(): Pair<MachineFormViewModel, List<WorkoutSet>> {
+        val press =
+            Machine.new("Жим ногами", null, t0).copy(platformWeight = 20.0, weightStep = 2.5)
+        gym.machines.upsert(press)
+        val recorded =
+            listOf(22.7, 27.2).map { weight ->
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    VisitId.random(),
+                    press.id,
+                    weight,
+                    10,
+                    0,
+                    t0,
+                    t0,
+                    false,
+                )
+            }
+        recorded.forEach { gym.sets.upsert(it) }
+        gym.clock.current += 1.minutes
+        return viewModel(MachineFormArgs(press.id, null, "")).also { it.load() } to recorded
+    }
+
+    @Test
+    fun choosing_pounds_converts_the_platform_and_guesses_the_step_from_the_sets() =
+        runTest {
+            val (vm, _) = kgMachine()
+
+            vm.chooseUnit(WeightUnit.Lb)
+
+            val form = vm.state.value
+            assertEquals(
+                Triple(WeightUnit.Lb, "45", "5"),
+                Triple(form.unit, form.platformWeight, form.weightStep),
+            )
+        }
+
+    @Test
+    fun choosing_kilograms_converts_the_platform_and_the_step_to_a_tenth() =
+        runTest {
+            val press =
+                Machine
+                    .new("Жим ногами", null, t0)
+                    .copy(unit = WeightUnit.Lb, platformWeight = 45.0, weightStep = 5.0)
+            gym.machines.upsert(press)
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            vm.chooseUnit(WeightUnit.Kg)
+
+            val form = vm.state.value
+            assertEquals(
+                Triple(WeightUnit.Kg, "20.4", "2.3"),
+                Triple(form.unit, form.platformWeight, form.weightStep),
+            )
+        }
+
+    @Test
+    fun an_own_unit_keeps_the_numbers() =
+        runTest {
+            val (vm, _) = kgMachine()
+
+            vm.chooseUnit(WeightUnit.Custom)
+
+            val form = vm.state.value
+            assertEquals(
+                Triple(WeightUnit.Custom, "20", "2.5"),
+                Triple(form.unit, form.platformWeight, form.weightStep),
+            )
+        }
+
+    @Test
+    fun a_unit_change_over_recorded_sets_offers_to_convert_them() =
+        runTest {
+            val (vm, recorded) = kgMachine()
+            vm.chooseUnit(WeightUnit.Lb)
+
+            vm.save {}
+
+            assertEquals(
+                RecalculationUi(
+                    "Единица изменилась: кг → lb. Перевести вес записанных подходов " +
+                        "(2 подхода) в новую единицу?",
+                ),
+                vm.recalculation.value,
+            )
+
+            vm.recalculate()
+
+            assertEquals(
+                recorded.zip(listOf(50.0, 60.0)).map { (set, weight) ->
+                    set.copy(weight = weight, updatedAt = gym.clock.current)
+                },
+                recorded.map { gym.sets.rows.getValue(it.id) },
+            )
+        }
+
+    @Test
+    fun a_unit_and_platform_change_names_both_and_applies_both() =
+        runTest {
+            val (vm, recorded) = kgMachine()
+            vm.chooseUnit(WeightUnit.Lb)
+            vm.update { it.copy(platformWeight = "35") }
+
+            vm.save {}
+
+            assertEquals(
+                RecalculationUi(
+                    "Единица изменилась: кг → lb. Перевести вес записанных подходов " +
+                        "(2 подхода) в новую единицу и изменить его на +10 lb под платформу?",
+                ),
+                vm.recalculation.value,
+            )
+
+            vm.recalculate()
+
+            assertEquals(
+                listOf(60.0, 70.0),
+                recorded.map {
+                    gym.sets.rows
+                        .getValue(it.id)
+                        .weight
+                },
+            )
+        }
+
     @Test
     fun a_platform_change_without_recorded_sets_saves_at_once() =
         runTest {

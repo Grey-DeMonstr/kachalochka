@@ -23,6 +23,10 @@ import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.convertedSets
+import monster.greyde.kachalochka.core.domain.gym.convertedWeight
+import monster.greyde.kachalochka.core.domain.gym.convertible
+import monster.greyde.kachalochka.core.domain.gym.guessedLbStep
 import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
@@ -33,6 +37,7 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.setCount
+import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightShift
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
@@ -407,6 +412,42 @@ class MachineFormViewModel(
         mutableState.value = change(mutableState.value)
     }
 
+    /**
+     * Between kilograms and pounds the platform and the step convert at once. A pound step is
+     * guessed from the sets recorded in kilograms, which were read off the pound stack.
+     */
+    fun chooseUnit(unit: WeightUnit) {
+        val from = mutableState.value.unit
+        if (!convertible(from, unit)) {
+            update { it.copy(unit = unit) }
+            return
+        }
+        viewModelScope.launch {
+            val saved = existing?.takeIf { it.unit == from }
+            val recorded = saved?.let { recordedSets(it, currentUser.id()) }.orEmpty()
+            update { form ->
+                if (form.unit != from) return@update form
+                val step =
+                    form.weightStepValue?.let {
+                        if (unit == WeightUnit.Lb) {
+                            guessedLbStep(recorded.map { set -> set.weight }, it)
+                        } else {
+                            convertedWeight(it, from, unit, lbStep = it).coerceAtLeast(0.1)
+                        }
+                    }
+                val platform =
+                    form.platformWeightValue?.let {
+                        convertedWeight(it, from, unit, lbStep = step ?: 1.25)
+                    }
+                form.copy(
+                    unit = unit,
+                    weightStep = step?.let(::formatNumber) ?: form.weightStep,
+                    platformWeight = platform?.let(::formatNumber) ?: form.platformWeight,
+                )
+            }
+        }
+    }
+
     fun toggleTag(tag: String) =
         update { it.copy(tags = if (tag in it.tags) it.tags - tag else it.tags + tag) }
 
@@ -423,8 +464,8 @@ class MachineFormViewModel(
         }
 
     /**
-     * A platform change over recorded sets waits for [recalculate] or [keepRecorded], since only
-     * the user knows whether the recorded weights held the platform.
+     * A platform or unit change over recorded sets waits for [recalculate] or [keepRecorded],
+     * since only the user knows whether the recorded weights held the platform or the new unit.
      */
     fun save(onSaved: (MachineId) -> Unit) {
         val form = mutableState.value
@@ -434,18 +475,29 @@ class MachineFormViewModel(
             val owner = currentUser.id()
             val (base, machine) = edited(form, owner)
             val shift = platformShift(base, machine)
-            val recorded = if (shift == 0.0) emptyList() else recordedSets(base, owner)
+            val converted = convertible(base.unit, machine.unit)
+            val recorded =
+                if (shift == 0.0 && !converted) emptyList() else recordedSets(base, owner)
             if (recorded.isEmpty()) {
                 write(form, onSaved, recalculate = false)
                 return@launch
             }
             pendingSave = form to onSaved
+            val strings = AppStrings.current
+            val sets = setCount(recorded.size)
+            val shiftText = weightShift(shift, machine).takeIf { shift != 0.0 }
             mutableRecalculation.value =
                 RecalculationUi(
-                    AppStrings.current.recalculateText(
-                        setCount(recorded.size),
-                        weightShift(shift, machine),
-                    ),
+                    if (converted) {
+                        strings.recalculateUnitText(
+                            sets,
+                            unitLabel(base),
+                            unitLabel(machine),
+                            shiftText,
+                        )
+                    } else {
+                        strings.recalculateText(sets, weightShift(shift, machine))
+                    },
                 )
         }
     }
@@ -511,8 +563,10 @@ class MachineFormViewModel(
         val now = machine.updatedAt
         machines.upsert(machine)
         if (recalculate) {
-            shiftedSets(recordedSets(base, owner), platformShift(base, machine), now)
-                .forEach { sets.upsert(it) }
+            val recorded = recordedSets(base, owner)
+            val converted =
+                convertedSets(recorded, base.unit, machine.unit, machine.weightStep, now)
+            shiftedSets(converted, platformShift(base, machine), now).forEach { sets.upsert(it) }
         }
         takenPhotos.forEach {
             photoRows.add(Photo(it.id, owner, machine.id, it.takenAt, now, false), it.jpeg)

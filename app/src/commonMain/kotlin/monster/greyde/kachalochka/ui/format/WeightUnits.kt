@@ -1,11 +1,10 @@
 package monster.greyde.kachalochka.ui.format
 
+import monster.greyde.kachalochka.core.domain.gym.KG_PER_LB
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import kotlin.math.round
-
-private const val KG_PER_LB = 0.45359237
 
 /** The unit a machine's weights in [unit] are shown in; an own unit never converts. */
 fun shownUnit(

@@ -6,11 +6,17 @@ import kotlin.time.Instant
 private val Machine.platformOffset: Double
     get() = if (platformIncluded) 0.0 else platformWeight
 
-/** What every weight recorded on [from] changes by to keep its total under [to]'s platform. */
+/**
+ * What every weight recorded on [from], in [to]'s unit, changes by to keep its total under [to]'s
+ * platform.
+ */
 fun platformShift(
     from: Machine,
     to: Machine,
-): Double = roundWeight(from.platformOffset - to.platformOffset)
+): Double {
+    val offset = convertedWeight(from.platformOffset, from.unit, to.unit, to.weightStep)
+    return roundWeight(offset - to.platformOffset)
+}
 
 fun shiftedSets(
     sets: List<WorkoutSet>,

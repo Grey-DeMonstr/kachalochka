@@ -23,6 +23,8 @@ import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.convertedSets
+import monster.greyde.kachalochka.core.domain.gym.convertible
 import monster.greyde.kachalochka.core.domain.gym.mergedMachines
 import monster.greyde.kachalochka.core.domain.gym.nameMatches
 import monster.greyde.kachalochka.core.domain.gym.platformShift
@@ -37,6 +39,7 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.friendMachineDetail
 import monster.greyde.kachalochka.ui.format.setCount
+import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.format.weightShift
 import monster.greyde.kachalochka.ui.friends.reading
@@ -77,6 +80,9 @@ data class MergeUi(
     /** The switch that keeps the moved sets' totals, offered when the platforms differ. */
     val adjustText: String? = null,
     val adjust: Boolean = true,
+    /** The switch that converts the moved sets, offered between kilograms and pounds. */
+    val convertText: String? = null,
+    val convert: Boolean = true,
 )
 
 /** What [machineId], an own saved machine, can be merged with or linked to. */
@@ -206,6 +212,10 @@ class LinkChooserViewModel(
                 } else {
                     strings.mergeAdjust(removed.name, kept.name, weightShift(shift, kept))
                 },
+            convertText =
+                strings
+                    .mergeConvert(removed.name, unitLabel(removed), unitLabel(kept))
+                    .takeIf { convertible(removed.unit, kept.unit) },
         )
     }
 
@@ -218,6 +228,11 @@ class LinkChooserViewModel(
     fun setAdjust(adjust: Boolean) {
         val merge = mutableState.value.merge ?: return
         mutableState.value = mutableState.value.copy(merge = merge.copy(adjust = adjust))
+    }
+
+    fun setConvert(convert: Boolean) {
+        val merge = mutableState.value.merge ?: return
+        mutableState.value = mutableState.value.copy(merge = merge.copy(convert = convert))
     }
 
     fun cancelMerge() = closeMerge(error = null)
@@ -258,13 +273,19 @@ class LinkChooserViewModel(
                 }
             }
             withContext(NonCancellable) {
+                val now = clock.now()
+                val moved = sets.forMachine(removed.id).filter { it.userId == owner }
                 val rows =
                     mergedMachines(
                         kept,
                         removed,
-                        sets.forMachine(removed.id).filter { it.userId == owner },
+                        if (merge.convert) {
+                            convertedSets(moved, removed.unit, kept.unit, kept.weightStep, now)
+                        } else {
+                            moved
+                        },
                         machineLinks.all(owner),
-                        clock.now(),
+                        now,
                         photos.forMachine(removed.id).filter { it.userId == owner },
                         if (merge.adjust) platformShift(removed, kept) else 0.0,
                     )

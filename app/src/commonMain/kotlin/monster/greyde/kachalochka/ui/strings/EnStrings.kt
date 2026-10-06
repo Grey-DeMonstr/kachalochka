@@ -188,6 +188,20 @@ object EnStrings : Strings {
     ) = "The platform changed. Change the weight of the recorded sets ($sets) by $shift, so " +
         "that their totals stay the same?"
 
+    override fun recalculateUnitText(
+        sets: String,
+        from: String,
+        to: String,
+        shift: String?,
+    ) = "The unit changed: $from → $to. Convert the weight of the recorded sets ($sets) to the " +
+        "new unit" + shift?.let { " and change it by $it for the platform" }.orEmpty() + "?"
+
+    override fun mergeConvert(
+        removed: String,
+        from: String,
+        to: String,
+    ) = "Convert the sets of \"$removed\" from $from to $to"
+
     override val recalculate = "Recalculate"
     override val keepAsRecorded = "Keep as recorded"
 

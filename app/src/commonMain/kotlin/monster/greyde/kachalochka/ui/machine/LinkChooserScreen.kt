@@ -102,6 +102,7 @@ fun LinkChooserScreen(
             merge,
             onKeep = viewModel::keep,
             onAdjust = viewModel::setAdjust,
+            onConvert = viewModel::setConvert,
             onConfirm = { viewModel.confirmMerge(onMerged) },
             onCancel = viewModel::cancelMerge,
         )
@@ -113,6 +114,7 @@ private fun MergeDialog(
     merge: MergeUi,
     onKeep: (MachineId) -> Unit,
     onAdjust: (Boolean) -> Unit,
+    onConvert: (Boolean) -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -127,17 +129,11 @@ private fun MergeDialog(
                     KeepChoice(choice, selected = choice.id == merge.kept) { onKeep(choice.id) }
                 }
                 Text(merge.text)
+                merge.convertText?.let {
+                    MergeSwitch(it, merge.convert, onConvert, "merge-convert")
+                }
                 merge.adjustText?.let {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .toggleable(merge.adjust, onValueChange = onAdjust)
-                            .testTag("merge-adjust"),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(checked = merge.adjust, onCheckedChange = null)
-                        Text(it, Modifier.padding(start = 8.dp), fontSize = 14.sp)
-                    }
+                    MergeSwitch(it, merge.adjust, onAdjust, "merge-adjust")
                 }
             }
         },
@@ -152,6 +148,25 @@ private fun MergeDialog(
             }
         },
     )
+}
+
+@Composable
+private fun MergeSwitch(
+    text: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+    tag: String,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .toggleable(checked, onValueChange = onChange)
+            .testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null)
+        Text(text, Modifier.padding(start = 8.dp), fontSize = 14.sp)
+    }
 }
 
 @Composable

@@ -467,6 +467,12 @@ profile the device may not write, the shared `UnsavedChoices` holds the choice i
 read takes it before the profile, so a reload after a sync keeps it. Migration `0021` and `15.sqm` add the column; `15.sqm` resets
 `lastPullAt`.
 
+`UnitConversion` in `domain/gym` converts recorded weights between kg and lb: `convertedWeight`
+rounds pounds to 0.1 kg and kilograms to a multiple of a pound step, which `guessedLbStep` finds
+from the sets recorded in kg. `platformShift` compares the two platforms in the new machine's unit.
+The machine form converts its fields on a unit switch and the recorded sets on save; a merge
+converts the moved sets before it shifts them.
+
 Every machine search filters names with `nameMatches` in `domain/gym`: the smallest Levenshtein
 distance from the typed text to any part of the name (Sellers' algorithm), in lower case, against
 a limit that grows with the typed length.

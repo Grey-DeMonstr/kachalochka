@@ -170,6 +170,20 @@ interface Strings {
         shift: String,
     ): String
 
+    /** [shift] is the platform's change in the new unit, when there is one. */
+    fun recalculateUnitText(
+        sets: String,
+        from: String,
+        to: String,
+        shift: String?,
+    ): String
+
+    fun mergeConvert(
+        removed: String,
+        from: String,
+        to: String,
+    ): String
+
     val recalculate: String
     val keepAsRecorded: String
 

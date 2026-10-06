@@ -181,6 +181,14 @@ after imported totals), "Пересчитать историю?" asks first and 
 for "2 подхода". "Пересчитать" changes every recorded weight by it, so that the totals stay the
 same, never below zero; "Оставить как есть" keeps the recorded weights. Both save the machine.
 
+Switching the unit between kg and lb converts the platform and the step in the form at once.
+Pounds become kilograms to 0.1 kg. Kilograms become pounds on a pound step: the largest of 5, 2.5
+and 1.25 lb that every set recorded in kg lies within 1 lb of, or, with no sets, the one nearest
+to the old step; the platform rounds to that step. An own unit never converts. "Сохранить" then
+asks "Пересчитать историю?" for a machine with recorded sets and names the change ("кг → lb"):
+"Пересчитать" converts every recorded weight the same way, to the form's step, and then applies a
+platform change, which the question names too.
+
 Under the name, the machine's photos run in a row, oldest first, then, signed in and online, the
 photos of the friends' machines it is linked with, each with its owner's avatar; the row ends with
 a camera tile, which offers "Снять фото" and "Из галереи". With no photo yet, the machines it is
@@ -204,7 +212,10 @@ machine with no sets counts as the oldest, and of two equal ones the edited one 
 imported history adds duplicates with older sets. The other one's sets move to the machine that
 stays, and the other one disappears. When the two platforms differ (see below), a check box
 "Пересчитать подходы «…» под платформу «…»: −5 кг", on at first, changes the moved weights so
-that their totals stay the same. Friends who linked to
+that their totals stay the same. When one machine is in kg and the other in lb, a check box
+"Перевести подходы «…» из кг в lb", on at first, converts the moved weights to the unit of the
+machine that stays, as a unit change in the form does; the platforms are compared in that unit.
+Friends who linked to
 the removed machine are linked to the one that stays. The form of the machine that stays then
 replaces the list, and unsaved edits in the old form are dropped. The other machine's photos move
 to the one that stays. Choosing a friend's machine

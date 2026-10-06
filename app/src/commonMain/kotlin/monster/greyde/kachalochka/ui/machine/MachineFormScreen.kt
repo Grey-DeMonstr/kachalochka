@@ -171,7 +171,7 @@ fun MachineFormScreen(
                 state.platformIncluded,
                 onChange = { v -> viewModel.update { it.copy(platformIncluded = v) } },
             )
-            UnitRow(state.unit, onSelect = { unit -> viewModel.update { it.copy(unit = unit) } })
+            UnitRow(state.unit, onSelect = viewModel::chooseUnit)
             if (state.unit == WeightUnit.Custom) {
                 FieldLabel(strings().unitName)
                 FormField(

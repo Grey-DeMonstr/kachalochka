@@ -204,6 +204,20 @@ object RuStrings : Strings {
     ) = "Платформа изменилась. Изменить вес записанных подходов ($sets) на $shift, чтобы " +
         "итоговый вес остался прежним?"
 
+    override fun recalculateUnitText(
+        sets: String,
+        from: String,
+        to: String,
+        shift: String?,
+    ) = "Единица изменилась: $from → $to. Перевести вес записанных подходов ($sets) в новую " +
+        "единицу" + shift?.let { " и изменить его на $it под платформу" }.orEmpty() + "?"
+
+    override fun mergeConvert(
+        removed: String,
+        from: String,
+        to: String,
+    ) = "Перевести подходы «$removed» из $from в $to"
+
     override val recalculate = "Пересчитать"
     override val keepAsRecorded = "Оставить как есть"
 
