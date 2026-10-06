@@ -11,6 +11,7 @@ import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
+import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
@@ -79,6 +80,24 @@ class MachineListScreenTest {
 
             onNodeWithTag("machine-list-row-${row.id.value}").assertIsDisplayed()
             onNodeWithTag("machine-list-row-${press.id.value}").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun a_machine_names_the_friends_machines_it_is_linked_with() {
+        val on = signedInGym()
+        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
+        val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current)
+        on.friends.machines += olegs
+        runBlocking {
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+        }
+        runScreenTest(on, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
+            waitForIdle()
+            onNodeWithTag("card-linked-${mine.id.value}", useUnmergedTree = true)
+                .assertTextEquals("Гакк-машина (Олег)")
         }
     }
 

@@ -127,6 +127,28 @@ class MachinePickerViewModelTest {
             )
         }
 
+    @Test
+    fun a_search_finds_an_own_machine_by_the_name_of_a_linked_friend_s_one() =
+        runTest {
+            val on = signedInGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
+            val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current)
+            val mine = copy.copy(name = "Присед в тренажёре")
+            on.friends.machines += olegs
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+            val vm = pickerOn(on).also { it.load() }
+
+            vm.onQueryChange("гакк")
+
+            assertEquals(
+                listOf(mine.id to "Гакк-машина (Олег)"),
+                vm.state.value.rows
+                    .map { it.id to it.linkedWith },
+            )
+        }
+
     private fun olegsGym(): Pair<FakeGym, Machine> {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME)

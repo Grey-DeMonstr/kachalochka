@@ -5,12 +5,16 @@ data class MachineRanking(
     val machines: List<Machine>,
 )
 
-/** The machines whose name [nameMatches] [query] and that carry every one of [tags], in [order]. */
+/**
+ * The machines whose name, or one of the names it [alsoGoesBy], [nameMatches] [query] and that
+ * carry every one of [tags], in [order].
+ */
 fun rankMachines(
     query: String,
     machines: List<Machine>,
     order: Comparator<Machine>,
     tags: Set<String> = emptySet(),
+    alsoGoesBy: (Machine) -> List<String> = { emptyList() },
 ): MachineRanking {
     val needle = query.trim()
     val live = machines.filterNot { it.deleted }.sortedWith(order)
@@ -18,6 +22,9 @@ fun rankMachines(
     return MachineRanking(
         offerCreate = needle.isNotEmpty() && !exists,
         machines =
-            live.filter { nameMatches(it.name, needle) && it.tags.containsAll(tags) },
+            live.filter {
+                anyNameMatches(listOf(it.name) + alsoGoesBy(it), needle) &&
+                    it.tags.containsAll(tags)
+            },
     )
 }

@@ -176,7 +176,10 @@ class MachinePickerViewModel(
         val offered = shown?.offered.orEmpty()
         val sort = sorting.current
         val ownOrder = machineOrder(sort, ownPeaks.associateBy { it.machineId })
-        val ranking = rankMachines(query, ownMachines, ownOrder, chosenTags)
+        val ranking =
+            rankMachines(query, ownMachines, ownOrder, chosenTags) {
+                shown?.linkedNames(it).orEmpty()
+            }
         val needle = query.trim()
         val matchingOffered =
             offered.filter {

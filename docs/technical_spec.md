@@ -475,7 +475,8 @@ converts the moved sets before it shifts them.
 
 Every machine search filters names with `nameMatches` in `domain/gym`: the smallest Levenshtein
 distance from the typed text to any part of the name (Sellers' algorithm), in lower case, against
-a limit that grows with the typed length.
+a limit that grows with the typed length. An own machine also matches by the names of the
+friends' machines in its cluster (`ShownMachines.linkedNames`), known only after the group read.
 
 `MachineCatalogue` in `app/ui/machine` is the one reader of all of this. Its `own` read gives an
 account's live machines, photos and links from the device; its `group` read gives the group

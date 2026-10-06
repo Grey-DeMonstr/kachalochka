@@ -14,8 +14,8 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.anyNameMatches
 import monster.greyde.kachalochka.core.domain.gym.machineOrder
-import monster.greyde.kachalochka.core.domain.gym.nameMatches
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -122,7 +122,8 @@ class MachineListViewModel(
         publish()
     }
 
-    private fun Machine.kept(): Boolean = nameMatches(name, query) && tags.containsAll(chosenTags)
+    private fun Machine.kept(alsoGoesBy: List<String> = emptyList()): Boolean =
+        anyNameMatches(listOf(name) + alsoGoesBy, query) && tags.containsAll(chosenTags)
 
     private fun publish() {
         val shown = own?.let { ShownMachines(it, group) }
@@ -147,7 +148,7 @@ class MachineListViewModel(
         val ownCards =
             cards?.let { c ->
                 ownMachines
-                    .filter { it.kept() }
+                    .filter { it.kept(shown?.linkedNames(it).orEmpty()) }
                     .sortedWith(ownOrder)
                     .map(c::own)
             }

@@ -44,6 +44,16 @@ class MachineRankingTest {
     }
 
     @Test
+    fun a_query_keeps_a_machine_by_another_name_it_goes_by() {
+        val ranking =
+            rankMachines("гакк", listOf(press, smith), lastUsed, alsoGoesBy = {
+                if (it == smith) listOf("Гакк-машина") else emptyList()
+            })
+
+        assertEquals(MachineRanking(offerCreate = true, machines = listOf(smith)), ranking)
+    }
+
+    @Test
     fun a_query_nothing_contains_lists_nothing() {
         val ranking = rankMachines("гакк", listOf(press, smith), lastUsed)
 

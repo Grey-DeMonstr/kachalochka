@@ -7,6 +7,7 @@ import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.friendMachineGroups
 import monster.greyde.kachalochka.core.domain.friends.friendMachineRows
+import monster.greyde.kachalochka.core.domain.friends.linkedFriendMachines
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -59,6 +60,17 @@ class ShownMachines(
 
     val offered: List<FriendMachine> = this.group?.offered(own.machines).orEmpty()
 
+    /** The friends' machines [machine] is linked with, read online. */
+    fun linked(machine: MachineId): List<FriendMachine> =
+        group?.let { linkedFriendMachines(machine, it.friends, it.clusters) }.orEmpty()
+
+    /** The names of the friends' machines [machine] is linked with, for a search. */
+    fun linkedNames(machine: Machine): List<String> = linked(machine.id).map { it.machine.name }
+
+    /** "Гакк-машина (Олег)" for each friend's machine [machine] is linked with; null for none. */
+    fun linkedCaption(machine: MachineId): String? =
+        linked(machine).takeIf { it.isNotEmpty() }?.joinToString(", ", transform = ::friendLabel)
+
     /** An own machine's chosen cover counts, and a friend's machine's as its owner chose it. */
     fun cover(machine: MachineId): Photo? {
         val chosen =
@@ -71,6 +83,10 @@ class ShownMachines(
         return coverPhoto(machine, own.photos + group?.photos.orEmpty(), clusters, chosen)
     }
 }
+
+/** A friend's machine with its owner: "Гакк-машина (Олег)". */
+fun friendLabel(friend: FriendMachine): String =
+    "${friend.machine.name} (${friend.owner.displayName})"
 
 /**
  * The machines an account sees: its own, read from the device, and its group mates', read online

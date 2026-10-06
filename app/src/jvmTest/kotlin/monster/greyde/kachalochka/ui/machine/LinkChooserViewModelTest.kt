@@ -136,6 +136,22 @@ class LinkChooserViewModelTest {
     }
 
     @Test
+    fun a_search_finds_an_own_machine_by_the_name_of_a_linked_friend_s_one() {
+        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val (olegs, link) = linkedCopy(smith, OLEG.userId, t0)
+        gym.friends.machines += olegs.copy(name = "Гакк-машина")
+        gym.friends.links += link
+
+        val vm = viewModel(query = "гакк")
+
+        assertEquals(
+            listOf(smith.id to "Гакк-машина (Олег)"),
+            vm.state.value.own
+                .map { it.id to it.linkedWith },
+        )
+    }
+
+    @Test
     fun copy_settings_hands_the_chosen_friend_s_machine_back() {
         val (_, bench) = olegsMachines()
         val vm = viewModel()

@@ -65,9 +65,13 @@ fun LinkChooserScreen(
             }
             if (state.own.isNotEmpty()) ChooserSection(strings().myMachines, "chooser-own")
             state.own.forEach { row ->
-                MachineRow(row.name, row.detail, "chooser-own-${row.id.value}", row.photo) {
-                    viewModel.chooseOwn(row.id)
-                }
+                MachineRow(
+                    row.name,
+                    row.detail,
+                    "chooser-own-${row.id.value}",
+                    row.photo,
+                    row.linkedWith,
+                ) { viewModel.chooseOwn(row.id) }
             }
             state.friendGroups?.takeIf { it.isNotEmpty() }?.let { groups ->
                 ChooserSection(strings().friendsMachines, "chooser-friends")

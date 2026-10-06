@@ -13,6 +13,11 @@ fun nameMatches(
     return closestPartDistance(name.lowercase(), needle) <= typosAllowed(needle.length)
 }
 
+fun anyNameMatches(
+    names: List<String>,
+    query: String,
+): Boolean = names.any { nameMatches(it, query) }
+
 private fun typosAllowed(length: Int): Int =
     when {
         length <= 3 -> 0

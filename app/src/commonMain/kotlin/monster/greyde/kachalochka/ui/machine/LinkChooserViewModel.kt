@@ -23,6 +23,7 @@ import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.anyNameMatches
 import monster.greyde.kachalochka.core.domain.gym.convertedSets
 import monster.greyde.kachalochka.core.domain.gym.convertible
 import monster.greyde.kachalochka.core.domain.gym.mergedMachines
@@ -51,6 +52,7 @@ data class ChooserRowUi(
     val name: String,
     val detail: String?,
     val photo: Photo? = null,
+    val linkedWith: String? = null,
 )
 
 data class LinkChooserUiState(
@@ -334,13 +336,16 @@ class LinkChooserViewModel(
             mutableState.value.copy(
                 own =
                     own
-                        .filter { it.id != machineId && matches(it.name) }
-                        .map {
+                        .filter {
+                            val linked = shown?.linkedNames(it).orEmpty()
+                            it.id != machineId && anyNameMatches(listOf(it.name) + linked, needle)
+                        }.map {
                             ChooserRowUi(
                                 it.id,
                                 it.name,
                                 weightCaption(it, preferred),
                                 shown?.cover(it.id),
+                                shown?.linkedCaption(it.id),
                             )
                         },
                 friendGroups =

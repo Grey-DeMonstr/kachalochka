@@ -337,6 +337,28 @@ class MachineListViewModelTest {
         }
 
     @Test
+    fun a_search_finds_an_own_machine_by_the_name_of_a_linked_friend_s_one() =
+        runTest {
+            val on = signedInGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
+            val (copy, link) = linkedCopy(olegs, ME.userId, t0)
+            val mine = copy.copy(name = "Присед в тренажёре")
+            on.friends.machines += olegs
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+            val vm = viewModel(on).also { it.load() }
+
+            vm.onQueryChange("гакк")
+
+            val card =
+                vm.state.value.own
+                    ?.single()
+            assertEquals(mine.id, card?.id)
+            assertEquals("Гакк-машина (Олег)", card?.linkedWith)
+        }
+
+    @Test
     fun a_friend_s_record_reads_in_the_viewer_s_unit() =
         runTest {
             val (on, olegPress) = olegsGym()

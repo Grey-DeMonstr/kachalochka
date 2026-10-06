@@ -307,11 +307,7 @@ class MachineFormViewModel(
             mutableLinking.value.copy(
                 linkedWith =
                     linked.orEmpty().map {
-                        LinkedMachineUi(
-                            it.machine.id,
-                            it.owner.userId,
-                            "${it.machine.name} (${it.owner.displayName})",
-                        )
+                        LinkedMachineUi(it.machine.id, it.owner.userId, friendLabel(it))
                     },
                 canUnlink = (group?.links ?: ownLinks).any { it.touches(shown.id) },
             )

@@ -142,8 +142,10 @@ account's chip switches to it: the shown history follows that person, and the se
 into their own visit. The chips show who records, so the button stays "Добавить".
 
 Every list of machines draws a machine the same way: its photo, its name, its tags, then, for the
-account's own machine, its comment and the day it was last used, and a trophy with its record — the
-heaviest set with the most reps at that weight, the lightest on a gravitron — in the viewer's unit.
+account's own machine, signed in and online, a link icon with the friends' machines it is linked
+with ("Гакк-машина (Олег)"), its comment and the day it was last used, and a trophy with its
+record — the heaviest set with the most reps at that weight, the lightest on a gravitron — in the
+viewer's unit.
 The machine list and the picker sort their machines by the chips at their top, drawn like the tags:
 "Недавние", the last used first (the default), "А–Я", or "Частые", those used on the most visits
 first; unused machines come last. The choice orders the account's machines and each friend's
@@ -155,7 +157,8 @@ not yet the same machine as one of the account's. Opened from a visit, the machi
 already holds, with sets or planned, come last of all, dimmed and marked "Уже в визите"; picking
 one opens its page with the form for its next set. A search keeps the machines whose name holds
 what is typed, in any letter case and with a few typos: none for up to 3 letters, one for 4-5, two
-for 6-8 and three for more; every machine search in the app works so. A cross at its end, shown
+for 6-8 and three for more; every machine search in the app works so. An own machine is also
+found by the names of the friends' machines it is linked with. A cross at its end, shown
 while it holds text, empties it. The tags of all these machines follow the search field as chips, and the chosen
 ones keep only the machines carrying every one of them. With nothing left, the picker says
 "Ничего не найдено". "Создать «…»" opens the machine form pre-filled with the typed name and the
@@ -204,7 +207,8 @@ pixels on its long edge before it is kept.
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
 search field, which starts with the machine's name: "Мои упражнения", the account's other machines, and, signed in and online,
 "Упражнения друзей", one row per friends' machine that is not yet the same machine as one of the
-account's. Every row shows the machine's photo, as every list does. Friends' machines already
+account's. Every row shows the machine's photo, as every list does, and an own row the friends'
+machines it is linked with. Friends' machines already
 linked with each other stand together in one frame, the original first, so any of them can be
 chosen; a search keeps the whole frame when one machine in it matches. Choosing an own machine removes a duplicate. "Объединить упражнения?" shows both
 machines under "Оставить", each with its set count and the day of its last set, and the user
@@ -432,16 +436,17 @@ or "Doing some press" measured in times.
 ## Statistics
 
 "Статистика" on the home screen opens the statistics on "Общая"; a machine's page and its form
-open them on that machine. At the top a dropdown chooses "Общая" or one of the account's machines, listed by
-name with their photos, and chips under it choose the period: "Месяц", "3 месяца", "6 месяцев" or
-"Год". A period counts its months back from today, as the measure screen's do: on 1 October
+open them on that machine. At the top a dropdown chooses "Общая" or one of the account's
+machines, listed by name with their photos, and chips under it choose the period: "Месяц",
+"3 месяца", "6 месяцев" or "Год". A period counts its months back from today, as the measure screen's do: on 1 October
 "Месяц" starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
 
 A machine shows a trophy with the period's best set, then a line chart of each day's best weight
-across the whole period. A gravitron's weights are drawn negative, with zero on top. A period without sets says
-"Нет подходов за период". "Все результаты" follows: every visit on the machine, newest first, its
-date and its results written as the visit screen writes them, whatever the period. Tapping a visit
-opens it on the visit screen with the machine's page, where its sets can be edited.
+across the whole period. A gravitron's weights are drawn negative, with zero on top. A period
+without sets says "Нет подходов за период". "Все результаты" follows: every visit on the
+machine, newest first, its date and its results written as the visit screen writes them,
+whatever the period. Tapping a visit opens it on the visit screen with the machine's page, where
+its sets can be edited.
 
 "Общая" starts with sort chips drawn like the tags: "Недавние" (the default), "А–Я" and
 "Частые", as in the machine list, and "Рост", the biggest weight gain in percent of the starting
