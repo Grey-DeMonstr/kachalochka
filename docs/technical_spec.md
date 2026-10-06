@@ -467,6 +467,10 @@ profile the device may not write, the shared `UnsavedChoices` holds the choice i
 read takes it before the profile, so a reload after a sync keeps it. Migration `0021` and `15.sqm` add the column; `15.sqm` resets
 `lastPullAt`.
 
+Every machine search filters names with `nameMatches` in `domain/gym`: the smallest Levenshtein
+distance from the typed text to any part of the name (Sellers' algorithm), in lower case, against
+a limit that grows with the typed length.
+
 `MachineCatalogue` in `app/ui/machine` is the one reader of all of this. Its `own` read gives an
 account's live machines, photos and links from the device; its `group` read gives the group
 mates' machines, links and photos from the network, in one parallel request; `clusters` reads

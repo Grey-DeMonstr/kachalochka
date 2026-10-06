@@ -23,6 +23,7 @@ import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.mergedMachines
+import monster.greyde.kachalochka.core.domain.gym.nameMatches
 import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.gym.suggestedToKeep
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -302,7 +303,7 @@ class LinkChooserViewModel(
     private fun publish() {
         val needle = mutableState.value.query.trim()
 
-        fun matches(name: String) = name.contains(needle, ignoreCase = true)
+        fun matches(name: String) = nameMatches(name, needle)
         mutableState.value =
             mutableState.value.copy(
                 own =

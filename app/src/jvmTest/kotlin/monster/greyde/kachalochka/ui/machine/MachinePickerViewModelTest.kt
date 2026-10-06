@@ -236,6 +236,19 @@ class MachinePickerViewModelTest {
         }
 
     @Test
+    fun a_search_with_a_typo_still_finds_the_machine() {
+        val vm = viewModel().also { it.load() }
+
+        vm.onQueryChange("присидания")
+
+        assertEquals(
+            listOf("Приседания в Смите"),
+            vm.state.value.rows
+                .map { it.name },
+        )
+    }
+
+    @Test
     fun typing_a_new_name_offers_to_create_it_and_finds_nothing() {
         val vm = viewModel().also { it.load() }
 

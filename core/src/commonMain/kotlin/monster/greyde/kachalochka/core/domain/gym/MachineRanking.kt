@@ -5,7 +5,7 @@ data class MachineRanking(
     val machines: List<Machine>,
 )
 
-/** The machines whose name holds [query] and that carry every one of [tags], in [order]. */
+/** The machines whose name [nameMatches] [query] and that carry every one of [tags], in [order]. */
 fun rankMachines(
     query: String,
     machines: List<Machine>,
@@ -18,8 +18,6 @@ fun rankMachines(
     return MachineRanking(
         offerCreate = needle.isNotEmpty() && !exists,
         machines =
-            live.filter {
-                it.name.contains(needle, ignoreCase = true) && it.tags.containsAll(tags)
-            },
+            live.filter { nameMatches(it.name, needle) && it.tags.containsAll(tags) },
     )
 }

@@ -37,6 +37,13 @@ class MachineRankingTest {
     }
 
     @Test
+    fun a_query_with_a_typo_still_keeps_the_machine() {
+        val ranking = rankMachines("ногпм", listOf(press, smith), lastUsed)
+
+        assertEquals(listOf(press), ranking.machines)
+    }
+
+    @Test
     fun a_query_nothing_contains_lists_nothing() {
         val ranking = rankMachines("гакк", listOf(press, smith), lastUsed)
 

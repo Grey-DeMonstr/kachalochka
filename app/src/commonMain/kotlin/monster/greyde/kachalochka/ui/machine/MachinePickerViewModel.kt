@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.machineOrder
+import monster.greyde.kachalochka.core.domain.gym.nameMatches
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -179,7 +180,7 @@ class MachinePickerViewModel(
         val needle = query.trim()
         val matchingOffered =
             offered.filter {
-                it.machine.name.contains(needle, ignoreCase = true) &&
+                nameMatches(it.machine.name, needle) &&
                     it.machine.tags.containsAll(chosenTags)
             }
         val now = clock.now()
