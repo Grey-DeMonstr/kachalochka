@@ -1,5 +1,16 @@
 Kachalochka - Changelog
 
+1.6.3
+
+- The machine list has a search field and tag filters.
+- Machine search finds names with a few typos.
+- The link screen shows machine photos and every linked friend's machine.
+- Copying a friend's settings also copies the machine's name and tags.
+- Changing a machine's unit between kg and lb offers to convert its weights, also when merging.
+- The add button of a set no longer shows the account name.
+- Fixed: a child's sort order and tag grouping no longer reset after a sync.
+
+
 1.6.2
 
 - Linking to a friend's machine can copy its settings.
