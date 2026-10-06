@@ -645,12 +645,12 @@ class VisitScreenTest {
         ) {
             waitForIdle()
             onNodeWithTag("person-add").assertExists()
-            onNodeWithTag("save-set").assertTextEquals("Добавить · Иван")
+            onNodeWithTag("save-set").assertTextEquals("Добавить")
 
             onNodeWithTag("person-${misha.account.userId.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("save-set").assertTextEquals("Добавить · Миша")
+            onNodeWithTag("save-set").assertTextEquals("Добавить")
             onNodeWithTag("save-set").performClick()
             waitForIdle()
             assertEquals(
