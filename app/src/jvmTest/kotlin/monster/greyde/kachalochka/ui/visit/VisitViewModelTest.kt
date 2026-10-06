@@ -1308,12 +1308,12 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun the_sheet_names_the_account_a_save_would_record_as() =
+    fun the_sheet_saves_as_the_chosen_account_without_naming_it_on_the_button() =
         runTest {
             val two = twoAccountGym()
             val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
             assertEquals(
-                "Добавить · Иван",
+                "Добавить",
                 vm.state.value
                     ?.page
                     ?.form
@@ -1328,7 +1328,7 @@ class VisitViewModelTest {
                         ?.page
                         ?.form,
                 )
-            assertEquals("Добавить · Миша", sheet.saveLabel)
+            assertEquals("Добавить", sheet.saveLabel)
             assertEquals(
                 listOf("Иван" to false, "Миша" to true),
                 sheet.people.map {

@@ -55,8 +55,8 @@ class EnglishFormatsTest {
             assertEquals("Tuesday", weekdayName(2))
             assertEquals("Mo", weekdayLabels().first())
             assertEquals(
-                listOf("Save", "Add", "Add · Ivan"),
-                listOf(saveLabel(null, true), saveLabel(null, false), saveLabel("Ivan", false)),
+                listOf("Save", "Add"),
+                listOf(saveLabel(editing = true), saveLabel(editing = false)),
             )
         }
 

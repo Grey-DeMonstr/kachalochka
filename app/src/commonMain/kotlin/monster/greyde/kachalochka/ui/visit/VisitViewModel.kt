@@ -823,11 +823,7 @@ class VisitViewModel(
             comment = commentText,
             editing = edited != null,
             people = people,
-            saveLabel =
-                saveLabel(
-                    people.takeIf { it.size > 1 }?.firstOrNull { it.active }?.displayName,
-                    edited != null,
-                ),
+            saveLabel = saveLabel(edited != null),
             canSave = weightValid && repsValid && !saving,
             saving = saving,
         )

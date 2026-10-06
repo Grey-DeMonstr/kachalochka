@@ -126,8 +126,6 @@ object EnStrings : Strings {
     override val deleteSet = "Delete set"
     override val saveSet = "Add"
 
-    override fun saveAs(person: String) = "Add · $person"
-
     override val newSet = "New set"
 
     override fun editOf(set: String) = "Edit: $set"

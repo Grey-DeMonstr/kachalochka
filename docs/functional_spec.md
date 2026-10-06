@@ -138,8 +138,8 @@ for the next one, without a comment; until it is written, the button shows progr
 taps. Editing offers
 "Сохранить", which closes the form, and a trash button that deletes the set. "Отмена", swiping the
 form down, or back, closes it, leaving any edit; starting to order closes the page. Tapping another
-account's chip switches to it: the shown history and the button, which then names the person
-("Добавить · Миша"), follow that person, and the set is recorded into their own visit.
+account's chip switches to it: the shown history follows that person, and the set is recorded
+into their own visit. The chips show who records, so the button stays "Добавить".
 
 Every list of machines draws a machine the same way: its photo, its name, its tags, then, for the
 account's own machine, its comment and the day it was last used, and a trophy with its record — the

@@ -143,8 +143,6 @@ object RuStrings : Strings {
     override val deleteSet = "Удалить подход"
     override val saveSet = "Добавить"
 
-    override fun saveAs(person: String) = "Добавить · $person"
-
     override val newSet = "Новый подход"
 
     override fun editOf(set: String) = "Правка: $set"

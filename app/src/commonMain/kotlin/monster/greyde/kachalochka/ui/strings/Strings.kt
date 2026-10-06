@@ -108,8 +108,6 @@ interface Strings {
     val deleteSet: String
     val saveSet: String
 
-    fun saveAs(person: String): String
-
     val newSet: String
 
     fun editOf(set: String): String
