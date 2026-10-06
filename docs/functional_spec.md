@@ -209,9 +209,10 @@ the removed machine are linked to the one that stays. The form of the machine th
 replaces the list, and unsaved edits in the old form are dropped. The other machine's photos move
 to the one that stays. Choosing a friend's machine
 links the two as one physical machine (see Group sharing) and returns to the form. Over the
-friends' machines, "Скопировать настройки", off at first, also takes the chosen machine's weight
-counting, platform, unit and weight step into the form; saving it then asks about recorded sets
-as any other edit does.
+friends' machines, "Скопировать настройки", off at first, also takes the chosen machine's name,
+weight counting, platform, unit and weight step into the form and adds its tags to the machine's
+(a tag the account has in another letter case is taken in the account's spelling); saving it then
+asks about recorded sets as any other edit does.
 
 The "Упражнения" row lists the active account's machines in the chosen order, each drawn as every
 list draws it, with its photo: the one chosen in its form, else the machine's first photo, or, when

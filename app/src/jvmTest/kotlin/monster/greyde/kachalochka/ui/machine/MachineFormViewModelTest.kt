@@ -502,11 +502,28 @@ class MachineFormViewModelTest {
             vm.copySettings(olegs.id)
 
             val form = vm.state.value
-            assertEquals("Жим ногами", form.name)
             assertEquals(WeightMode.PerSide to "20", form.weightMode to form.platformWeight)
             assertEquals("5", form.weightStep)
             vm.save {}
             assertNotNull(vm.recalculation.value)
+        }
+
+    @Test
+    fun copied_settings_take_the_friend_s_name_and_add_its_tags() =
+        runTest {
+            val on = signedInGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val olegs =
+                Machine.new("Жим платформой", OLEG.userId, t0).copy(tags = setOf("ноги", "Жим"))
+            on.friends.machines += olegs
+            val mine = Machine.new("Жим ногами", ME.userId, t0).copy(tags = setOf("Ноги"))
+            on.machines.upsert(mine)
+            val vm = formOn(on, MachineFormArgs(mine.id, null, "")).also { it.load() }
+
+            vm.copySettings(olegs.id)
+
+            assertEquals("Жим платформой", vm.state.value.name)
+            assertEquals(setOf("Ноги", "Жим"), vm.state.value.tags)
         }
 
     @Test

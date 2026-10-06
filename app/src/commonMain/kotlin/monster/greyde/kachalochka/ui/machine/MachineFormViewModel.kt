@@ -223,8 +223,9 @@ class MachineFormViewModel(
     }
 
     /**
-     * Takes how a friend's machine counts its weight into the form, as typed edits: saving then
-     * asks about recorded sets as any other edit does.
+     * Takes a friend's machine's name, tags and how it counts its weight into the form, as typed
+     * edits: saving then asks about recorded sets as any other edit does. A tag the form has in
+     * another letter case is not added again.
      */
     fun copySettings(friendMachine: MachineId) {
         viewModelScope.launch {
@@ -233,8 +234,14 @@ class MachineFormViewModel(
             if (accounts.activeId.value != owner) return@launch
             val source = group.friends.firstOrNull { it.machine.id == friendMachine }?.machine
             source ?: return@launch
-            update {
-                it.copy(
+            update { form ->
+                val tags =
+                    source.tags.map { tag ->
+                        form.shownTags.firstOrNull { it.equals(tag, ignoreCase = true) } ?: tag
+                    }
+                form.copy(
+                    name = source.name,
+                    tags = form.tags + tags,
                     weightMode = source.weightMode,
                     platformWeight = formatNumber(source.platformWeight),
                     platformIncluded = source.platformIncluded,
