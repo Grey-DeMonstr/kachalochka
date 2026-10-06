@@ -1,5 +1,15 @@
 Kachalochka - Changelog
 
+1.6.4
+
+- Machine search also finds a machine by the names of the friends' machines it is linked with.
+- A machine shows the friends' machines it is linked with in the lists.
+- Tapping a result in a machine's statistics opens that visit on the machine.
+- The machine form has a statistics button.
+- A machine's statistics show a trophy with the best set instead of a long title.
+- Fixed: a child's photo is missing on its visit card in the calendar.
+
+
 1.6.3
 
 - The machine list has a search field and tag filters.
