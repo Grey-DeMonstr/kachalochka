@@ -99,16 +99,12 @@ class FriendMachineScreenTest {
         }) {
             onNodeWithTag("friend-machine-tag-Ноги").assertTextEquals("Ноги")
             onAllNodesWithTag("photo-cover", useUnmergedTree = true).assertCountEquals(1)
-            onNodeWithTag("stats-chart-title").assertTextEquals("ЛУЧШИЙ ПОДХОД · С 14 ОКТЯБРЯ")
+            onNodeWithTag("stats-chart-title").assertDoesNotExist()
+            onNodeWithTag("stats-best-trophy", useUnmergedTree = true).assertExists()
             onNodeWithTag("stats-best").assertTextEquals("85 кг × 6")
             onNodeWithTag("stats-history-date-0").assertTextEquals("13 ноября")
             onNodeWithTag("stats-history-results-0").assertTextEquals("80-85кг 8-6")
             onAllNodes(hasSetTextAction()).assertCountEquals(0)
-
-            onNodeWithTag("period-threemonths").performClick()
-            waitForIdle()
-
-            onNodeWithTag("stats-chart-title").assertTextEquals("ЛУЧШИЙ ПОДХОД · С 14 АВГУСТА")
         }
     }
 

@@ -158,7 +158,6 @@ class FriendMachineViewModelTest {
         val vm = viewModel()
 
         val month = assertNotNull(vm.state.value).stats
-        assertEquals("Лучший подход · с 14 октября", month.title)
         assertEquals("85 кг × 6", month.best)
         assertEquals(listOf(on.today.plusDays(-1) to 85.0), month.points)
         assertEquals(
@@ -171,7 +170,7 @@ class FriendMachineViewModelTest {
 
         val quarter = assertNotNull(vm.state.value)
         assertEquals(StatsPeriod.ThreeMonths, quarter.period)
-        assertEquals("Лучший подход · с 14 августа", quarter.stats.title)
+        assertEquals(on.today.minusMonths(3), quarter.stats.start)
         assertEquals(2, quarter.stats.points.size)
         // The period is chosen over what was read: no second round trip.
         assertEquals(reads, on.friends.reads)

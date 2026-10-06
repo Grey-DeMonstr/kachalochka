@@ -258,8 +258,6 @@ object RuStrings : Strings {
     override val statsThreeMonths = "3 месяца"
     override val statsSixMonths = "6 месяцев"
     override val statsYear = "Год"
-    override val bestSetTitle = "Лучший подход"
-    override val counterweightTitle = "противовес"
     override val allResults = "Все результаты"
     override val noSetsInPeriod = "Нет подходов за период"
     override val machinesInPeriod = "Упражнения за период"

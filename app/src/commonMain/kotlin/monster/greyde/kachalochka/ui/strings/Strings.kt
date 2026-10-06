@@ -221,8 +221,6 @@ interface Strings {
     val statsThreeMonths: String
     val statsSixMonths: String
     val statsYear: String
-    val bestSetTitle: String
-    val counterweightTitle: String
     val allResults: String
     val noSetsInPeriod: String
     val machinesInPeriod: String

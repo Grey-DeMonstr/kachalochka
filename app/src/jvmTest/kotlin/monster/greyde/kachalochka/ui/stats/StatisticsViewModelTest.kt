@@ -363,7 +363,6 @@ class StatisticsViewModelTest {
             vm.state.value.selected
                 ?.id,
         )
-        assertEquals("Лучший подход · с 14 октября", chosen.title)
         assertEquals("75 кг × 8", chosen.best)
         assertEquals(
             listOf(CalendarDay(2023, 11, 10) to 75.0, CalendarDay(2023, 11, 12) to 72.5),
@@ -388,7 +387,6 @@ class StatisticsViewModelTest {
 
             val chosen = assertNotNull(viewModel(gravitron.id).state.value.machine)
 
-            assertEquals("Лучший подход · противовес · с 14 октября", chosen.title)
             assertEquals(listOf(CalendarDay(2023, 11, 2) to -27.5), chosen.points)
             assertTrue(chosen.zeroOnTop)
         }

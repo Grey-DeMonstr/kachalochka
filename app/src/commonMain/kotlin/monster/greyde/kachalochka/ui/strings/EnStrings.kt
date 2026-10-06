@@ -241,8 +241,6 @@ object EnStrings : Strings {
     override val statsThreeMonths = "3 months"
     override val statsSixMonths = "6 months"
     override val statsYear = "Year"
-    override val bestSetTitle = "Best set"
-    override val counterweightTitle = "counterweight"
     override val allResults = "All results"
     override val noSetsInPeriod = "No sets in this period"
     override val machinesInPeriod = "Machines in the period"

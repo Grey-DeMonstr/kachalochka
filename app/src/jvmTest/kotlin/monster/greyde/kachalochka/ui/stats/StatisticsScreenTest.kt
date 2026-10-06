@@ -64,7 +64,8 @@ class StatisticsScreenTest {
             waitForIdle()
 
             onNodeWithTag("stats-choice").assertTextContains("Жим ногами")
-            onNodeWithTag("stats-chart-title").assertTextEquals("ЛУЧШИЙ ПОДХОД · С 14 ОКТЯБРЯ")
+            onNodeWithTag("stats-chart-title").assertDoesNotExist()
+            onNodeWithTag("stats-best-trophy", useUnmergedTree = true).assertExists()
             onNodeWithTag("stats-best").assertTextEquals("75 кг × 8")
             onNodeWithTag("stats-history-date-0").assertTextEquals("13 ноября")
             onNodeWithTag("stats-history-results-1").assertTextEquals("70кг 1x8")

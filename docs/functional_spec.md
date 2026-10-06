@@ -436,9 +436,8 @@ name with their photos, and chips under it choose the period: "Месяц", "3 �
 "Год". A period counts its months back from today, as the measure screen's do: on 1 October
 "Месяц" starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
 
-A machine shows "Лучший подход · с 1 сентября" ("· противовес" before the date on a gravitron)
-with the period's best set beside it, then a line chart of each day's best weight across the whole
-period. A gravitron's weights are drawn negative, with zero on top. A period without sets says
+A machine shows a trophy with the period's best set, then a line chart of each day's best weight
+across the whole period. A gravitron's weights are drawn negative, with zero on top. A period without sets says
 "Нет подходов за период". "Все результаты" follows: every visit on the machine, newest first, its
 date and its results written as the visit screen writes them, whatever the period.
 

@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +36,7 @@ import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.shownWeight
+import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.strings
 
@@ -46,7 +49,6 @@ data class HistoryRowUi(
 
 /** [points] are each day's best weight, negative on a gravitron, over [start]..[end]. */
 data class MachineStatsUi(
-    val title: String,
     val best: String?,
     val points: List<Pair<CalendarDay, Double>>,
     val start: CalendarDay,
@@ -74,19 +76,12 @@ internal fun machineStatsUi(
     utcOffset: UtcOffset,
 ): MachineStatsUi {
     val start = period.start(today)
-    val strings = AppStrings.current
     val counterweight = machine.weightMode == WeightMode.Counterweight
     val inPeriod =
         bestPerDay(sets, machine.weightMode, utcOffset::at).filter { it.first >= start }
     val best = bestSet(inPeriod.map { it.second }, machine.weightMode)
     val sign = if (counterweight) -1 else 1
     return MachineStatsUi(
-        title =
-            listOfNotNull(
-                strings.bestSetTitle,
-                strings.counterweightTitle.takeIf { counterweight },
-                periodLabel(start, today),
-            ).joinToString(" · "),
         best = best?.let { setValue(it.weight, it.reps, machine, preferred) },
         points =
             inPeriod.map { (day, set) ->
@@ -133,13 +128,18 @@ internal fun PeriodChips(
 @Composable
 internal fun MachineStats(machine: MachineStatsUi) {
     val colors = MaterialTheme.colorScheme
-    Row(
-        Modifier.fillMaxWidth().padding(bottom = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        SectionLabel(machine.title, Modifier.weight(1f).testTag("stats-chart-title"))
-        machine.best?.let {
+    machine.best?.let {
+        Row(
+            Modifier.fillMaxWidth().padding(bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                PhosphorIcons.Trophy,
+                null,
+                tint = colors.secondary,
+                modifier = Modifier.size(16.dp).testTag("stats-best-trophy"),
+            )
             Text(
                 it,
                 modifier = Modifier.testTag("stats-best"),
