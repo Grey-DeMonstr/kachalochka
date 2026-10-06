@@ -7,7 +7,9 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -67,9 +69,23 @@ class StatisticsScreenTest {
             onNodeWithTag("stats-chart-title").assertDoesNotExist()
             onNodeWithTag("stats-best-trophy", useUnmergedTree = true).assertExists()
             onNodeWithTag("stats-best").assertTextEquals("75 кг × 8")
-            onNodeWithTag("stats-history-date-0").assertTextEquals("13 ноября")
-            onNodeWithTag("stats-history-results-1").assertTextEquals("70кг 1x8")
+            onNodeWithTag("stats-history-date-0", useUnmergedTree = true)
+                .assertTextEquals("13 ноября")
+            onNodeWithTag("stats-history-results-1", useUnmergedTree = true)
+                .assertTextEquals("70кг 1x8")
         }
+
+    @Test
+    fun a_result_row_opens_its_visit_on_the_machine() {
+        val opened = mutableListOf<Pair<CalendarDay, MachineId>>()
+        runScreenTest(gym, screen = {
+            StatisticsScreen(press.id, {}, {}, onOpenVisit = { day, id -> opened += day to id })
+        }) {
+            onNodeWithTag("stats-history-1").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(gym.today.plusDays(-40) to press.id), opened)
+    }
 
     @Test
     fun the_overall_view_shows_improvements_only_at_first_and_exports_its_cards() =

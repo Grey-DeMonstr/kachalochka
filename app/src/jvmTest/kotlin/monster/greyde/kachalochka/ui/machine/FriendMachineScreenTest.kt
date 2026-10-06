@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -105,6 +106,7 @@ class FriendMachineScreenTest {
             onNodeWithTag("stats-history-date-0").assertTextEquals("13 ноября")
             onNodeWithTag("stats-history-results-0").assertTextEquals("80-85кг 8-6")
             onAllNodes(hasSetTextAction()).assertCountEquals(0)
+            onNodeWithTag("stats-history-0").assertHasNoClickAction()
         }
     }
 

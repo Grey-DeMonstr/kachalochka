@@ -101,6 +101,9 @@ const val PICKED_MACHINE = "pickedMachine"
 /** The friend's machine whose settings the link chooser hands to the machine form. */
 private const val COPIED_SETTINGS = "copiedSettings"
 
+/** The machine whose page a visit opens once, from [VisitRoute.machineId]. */
+private const val OPENED_MACHINE = "openedMachine"
+
 /** Hands a picked machine to the visit or plan that opened the picker, and returns to it. */
 private fun NavController.returnMachine(
     id: MachineId,
@@ -175,6 +178,9 @@ fun App() {
                         initial = route.machineId?.let(::MachineId),
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenVisit = { day, machine ->
+                            navController.navigate(VisitRoute(day.iso, machine.value))
+                        },
                     )
                 }
                 composable<PlansRoute> {
@@ -295,11 +301,18 @@ fun App() {
                     val picked by entry.savedStateHandle
                         .getStateFlow<String?>(PICKED_MACHINE, null)
                         .collectAsState()
+                    val opened by entry.savedStateHandle
+                        .getStateFlow(OPENED_MACHINE, route.machineId)
+                        .collectAsState()
                     VisitScreen(
                         day = CalendarDay.parse(route.day),
                         pickedMachineId = picked?.let(::MachineId),
                         onPickedMachineConsumed = {
                             entry.savedStateHandle[PICKED_MACHINE] = null
+                        },
+                        openedMachineId = opened?.let(::MachineId),
+                        onOpenedMachineConsumed = {
+                            entry.savedStateHandle[OPENED_MACHINE] = null
                         },
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },

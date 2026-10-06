@@ -440,7 +440,8 @@ name with their photos, and chips under it choose the period: "Месяц", "3 �
 A machine shows a trophy with the period's best set, then a line chart of each day's best weight
 across the whole period. A gravitron's weights are drawn negative, with zero on top. A period without sets says
 "Нет подходов за период". "Все результаты" follows: every visit on the machine, newest first, its
-date and its results written as the visit screen writes them, whatever the period.
+date and its results written as the visit screen writes them, whatever the period. Tapping a visit
+opens it on the visit screen with the machine's page, where its sets can be edited.
 
 "Общая" starts with sort chips drawn like the tags: "Недавние" (the default), "А–Я" and
 "Частые", as in the machine list, and "Рост", the biggest weight gain in percent of the starting

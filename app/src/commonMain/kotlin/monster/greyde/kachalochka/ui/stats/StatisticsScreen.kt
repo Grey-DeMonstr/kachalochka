@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.StatsSort
@@ -59,6 +60,7 @@ fun StatisticsScreen(
     initial: MachineId?,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenVisit: (CalendarDay, MachineId) -> Unit = { _, _ -> },
 ) {
     val viewModel: StatisticsViewModel = koinViewModel { parametersOf(initial) }
     val state by viewModel.state.collectAsState()
@@ -102,7 +104,8 @@ fun StatisticsScreen(
                     viewModel::dismissNotice,
                 )
             } else {
-                MachineStats(machine)
+                val id = state.selected?.id
+                MachineStats(machine, onOpenDay = id?.let { { day -> onOpenVisit(day, it) } })
             }
         }
     }

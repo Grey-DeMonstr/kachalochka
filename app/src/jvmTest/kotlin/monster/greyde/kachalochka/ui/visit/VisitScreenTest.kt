@@ -713,6 +713,19 @@ class VisitScreenTest {
     }
 
     @Test
+    fun a_machine_opened_from_its_statistics_shows_its_page_without_the_form() {
+        var consumed = false
+        runScreenTest(gym, screen = {
+            visitScreen(opened = press.id, onOpenedConsumed = { consumed = true })
+        }) {
+            waitForIdle()
+            onNodeWithTag("machine-page").assertExists()
+            onNodeWithTag("cancel-set").assertDoesNotExist()
+        }
+        assertTrue(consumed)
+    }
+
+    @Test
     fun the_page_s_picture_opens_the_machine_s_settings() {
         val opened = mutableListOf<MachineId>()
         runScreenTest(
@@ -883,6 +896,8 @@ class VisitScreenTest {
         day: CalendarDay = gym.today,
         picked: MachineId? = null,
         onConsumed: () -> Unit = {},
+        opened: MachineId? = null,
+        onOpenedConsumed: () -> Unit = {},
         onPickMachine: (MachineId?) -> Unit = {},
         onOpenMachineSettings: (MachineId) -> Unit = {},
         onOpenStatistics: (MachineId) -> Unit = {},
@@ -892,6 +907,8 @@ class VisitScreenTest {
         day = day,
         pickedMachineId = picked,
         onPickedMachineConsumed = onConsumed,
+        openedMachineId = opened,
+        onOpenedMachineConsumed = onOpenedConsumed,
         onBack = onBack,
         onOpenSettings = {},
         onPickMachine = onPickMachine,

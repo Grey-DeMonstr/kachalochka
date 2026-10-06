@@ -72,6 +72,9 @@ fun VisitScreen(
     onOpenMachineSettings: (MachineId) -> Unit,
     onOpenStatistics: (MachineId) -> Unit = {},
     onSaveAsPlan: () -> Unit = {},
+    /** A machine whose page opens without the set form, as a tap on its row opens it. */
+    openedMachineId: MachineId? = null,
+    onOpenedMachineConsumed: () -> Unit = {},
 ) {
     val viewModel: VisitViewModel = koinViewModel { parametersOf(day) }
     val accountsViewModel: AccountsViewModel = koinViewModel()
@@ -81,6 +84,12 @@ fun VisitScreen(
         if (pickedMachineId != null) {
             viewModel.selectMachine(pickedMachineId)
             onPickedMachineConsumed()
+        }
+    }
+    LaunchedEffect(openedMachineId) {
+        if (openedMachineId != null) {
+            viewModel.openMachine(openedMachineId)
+            onOpenedMachineConsumed()
         }
     }
     val current = state

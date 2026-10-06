@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.ui.stats
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -43,6 +44,7 @@ import monster.greyde.kachalochka.ui.strings.strings
 internal val BoxShape = RoundedCornerShape(8.dp)
 
 data class HistoryRowUi(
+    val day: CalendarDay,
     val date: String,
     val results: String,
 )
@@ -98,8 +100,10 @@ internal fun machineStatsUi(
                 .sortedByDescending { visit -> visit.maxOf { it.recordedAt } }
                 .map { visit ->
                     val first = visit.minOf { it.recordedAt }
+                    val day = CalendarDay.of(first, utcOffset.at(first))
                     HistoryRowUi(
-                        dayMonthLabel(CalendarDay.of(first, utcOffset.at(first)), today.year),
+                        day,
+                        dayMonthLabel(day, today.year),
                         setsSummary(machine, visit.sortedWith(visitOrder), preferred),
                     )
                 },
@@ -126,7 +130,10 @@ internal fun PeriodChips(
 
 /** The period's best set over its chart, then every visit on the machine. */
 @Composable
-internal fun MachineStats(machine: MachineStatsUi) {
+internal fun MachineStats(
+    machine: MachineStatsUi,
+    onOpenDay: ((CalendarDay) -> Unit)? = null,
+) {
     val colors = MaterialTheme.colorScheme
     machine.best?.let {
         Row(
@@ -165,8 +172,13 @@ internal fun MachineStats(machine: MachineStatsUi) {
     }
     SectionLabel(strings().allResults, Modifier.padding(top = 24.dp, bottom = 8.dp))
     machine.history.forEachIndexed { i, row ->
+        val opening = onOpenDay?.let { Modifier.clickable { it(row.day) } } ?: Modifier
         Row(
-            Modifier.fillMaxWidth().padding(vertical = 11.dp),
+            Modifier
+                .fillMaxWidth()
+                .then(opening)
+                .padding(vertical = 11.dp)
+                .testTag("stats-history-$i"),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(

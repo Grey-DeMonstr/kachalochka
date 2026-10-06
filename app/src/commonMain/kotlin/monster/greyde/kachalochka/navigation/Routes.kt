@@ -14,9 +14,11 @@ object CalendarRoute
 @Serializable
 object MachineListRoute
 
+/** [machineId] opens that machine's page once. */
 @Serializable
 data class VisitRoute(
     val day: String,
+    val machineId: String? = null,
 )
 
 /** [day] null picks for the plan below it on the back stack. */
