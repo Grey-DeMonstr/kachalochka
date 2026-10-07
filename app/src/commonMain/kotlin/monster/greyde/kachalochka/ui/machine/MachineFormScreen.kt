@@ -229,20 +229,19 @@ fun MachineFormScreen(
             )
         }
     }
-    opened?.let { photo ->
+    opened?.let {
         PhotoViewer(
-            photo,
+            photos,
+            it,
             onClose = { opened = null },
-            onDelete =
-                {
-                    viewModel.removePhoto(photo.key)
-                    opened = null
-                }.takeIf { photo.owner == null },
-            onMakeCover =
-                {
-                    viewModel.makeCover(photo.key)
-                    opened = null
-                }.takeIf { !photo.cover },
+            onDelete = { photo ->
+                viewModel.removePhoto(photo.key)
+                opened = null
+            },
+            onMakeCover = { photo ->
+                viewModel.makeCover(photo.key)
+                opened = null
+            },
         )
     }
     recalculation?.let {

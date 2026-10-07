@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -166,16 +168,22 @@ private fun AddPhotoTile(launchers: PhotoLaunchers) {
 }
 
 /**
- * [photo] over the whole screen; [onDelete] adds the button removing it, [onMakeCover] the one
- * making it the machine's cover.
+ * [photos] over the whole screen, a swipe apart, starting at [opened]. [onDelete] adds the button
+ * removing an own photo, [onMakeCover] the one making any but the cover the machine's cover.
  */
 @Composable
 fun PhotoViewer(
-    photo: ShownPhoto,
+    photos: List<ShownPhoto>,
+    opened: ShownPhoto,
     onClose: () -> Unit,
-    onDelete: (() -> Unit)? = null,
-    onMakeCover: (() -> Unit)? = null,
+    onDelete: ((ShownPhoto) -> Unit)? = null,
+    onMakeCover: ((ShownPhoto) -> Unit)? = null,
 ) {
+    val pager =
+        rememberPagerState(photos.indexOfFirst { it.key == opened.key }.coerceAtLeast(0)) {
+            photos.size
+        }
+    val photo = photos.getOrNull(pager.currentPage) ?: return
     Dialog(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -186,13 +194,15 @@ fun PhotoViewer(
                 .background(MaterialTheme.colorScheme.background)
                 .testTag("photo-viewer"),
         ) {
-            AsyncImage(
-                model = photo.model,
-                contentDescription = strings().photo,
-                imageLoader = photoLoader(),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize(),
-            )
+            HorizontalPager(pager, Modifier.fillMaxSize(), key = { photos[it].key }) {
+                AsyncImage(
+                    model = photos[it].model,
+                    contentDescription = strings().photo,
+                    imageLoader = photoLoader(),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
             Row(
                 Modifier.fillMaxWidth().systemBarsPadding().padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -204,20 +214,20 @@ fun PhotoViewer(
                     Modifier.testTag("close-photo"),
                 )
                 Spacer(Modifier.weight(1f))
-                if (onDelete != null) {
+                if (onDelete != null && photo.owner == null) {
                     SquareIconButton(
                         PhosphorIcons.Trash,
                         strings().delete,
-                        onDelete,
+                        { onDelete(photo) },
                         Modifier.testTag("delete-photo"),
                     )
                 }
             }
-            if (onMakeCover != null) {
+            if (onMakeCover != null && !photo.cover) {
                 OutlineButton(
                     strings().makeCover,
                     PhosphorIcons.Star,
-                    onMakeCover,
+                    { onMakeCover(photo) },
                     Modifier
                         .align(Alignment.BottomCenter)
                         .systemBarsPadding()

@@ -16,6 +16,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
@@ -39,6 +41,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalTestApi::class)
 class MachineFormScreenTest {
@@ -218,6 +221,33 @@ class MachineFormScreenTest {
         }
         assertEquals(mine.id, saved)
         assertEquals(olegsPhoto.id, runBlocking { on.machines.byId(mine.id)?.coverPhoto })
+    }
+
+    @Test
+    fun a_swipe_in_the_opened_photo_shows_the_next_one() {
+        val on = signedInGym()
+        val machine = Machine.new("Жим ногами", ME.userId, on.clock.current)
+        val first = Photo.new(machine.id, ME.userId, on.clock.current)
+        val second = Photo.new(machine.id, ME.userId, on.clock.current + 1.minutes)
+        runBlocking {
+            on.machines.upsert(machine.copy(coverPhoto = first.id))
+            on.photos.add(first, byteArrayOf(1))
+            on.photos.add(second, byteArrayOf(2))
+        }
+        runScreenTest(on, screen = {
+            MachineFormScreen(MachineFormArgs(machine.id, null, ""), {}, {}, onSaved = {})
+        }) {
+            onAllNodesWithTag("photo-thumbnail")[0].performClick()
+            waitForIdle()
+            onNodeWithTag("make-cover").assertDoesNotExist()
+
+            onNodeWithTag("photo-viewer").performTouchInput { swipeLeft() }
+            waitForIdle()
+            onNodeWithTag("make-cover").performClick()
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+        }
+        assertEquals(second.id, runBlocking { on.machines.byId(machine.id)?.coverPhoto })
     }
 
     @Test

@@ -206,10 +206,10 @@ a camera tile, which offers "Снять фото" and "Из галереи". Wit
 linked with stand beside the tile. On Android they open the phone's camera and its photo picker; on
 the web the first opens a phone's camera and the second picks a file, and a computer picks a file
 for both. A star marks the photo standing for the machine in every list. Tapping a photo opens it
-over the whole screen, with "Удалить" for an own photo and "Сделать основным" for any but the
-starred one. New and removed photos and the chosen one are part of the form's edits: "Сохранить"
-writes them, and leaving the form drops them. A photo is shrunk to at most 1600
-pixels on its long edge before it is kept.
+over the whole screen, where a swipe shows the next or the previous photo of the row, with
+"Удалить" for an own photo and "Сделать основным" for any but the starred one. New and removed
+photos and the chosen one are part of the form's edits: "Сохранить" writes them, and leaving the
+form drops them. A photo is shrunk to at most 1600 pixels on its long edge before it is kept.
 
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
 search field, which starts with the machine's name: "Мои упражнения", the account's other machines, and, signed in and online,

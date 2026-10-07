@@ -144,7 +144,7 @@ fun FriendMachineScreen(
             }
         }
     }
-    opened?.let { PhotoViewer(it, onClose = { opened = null }) }
+    opened?.let { PhotoViewer(state?.photos.orEmpty(), it, onClose = { opened = null }) }
 }
 
 @Composable
