@@ -1,5 +1,10 @@
 Kachalochka - Changelog
 
+1.6.7
+
+- An opened photo of a machine can be swiped to the next one.
+
+
 1.6.6
 
 - The Android app is smaller.
