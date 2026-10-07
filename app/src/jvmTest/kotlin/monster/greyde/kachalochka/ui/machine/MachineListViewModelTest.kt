@@ -359,6 +359,54 @@ class MachineListViewModelTest {
         }
 
     @Test
+    fun own_machines_of_the_same_name_suggest_each_other_and_the_chip_keeps_only_them() =
+        runTest {
+            val (on, _) = olegsGym()
+            val press = Machine.new("Жим ногами", ME.userId, t0)
+            val twin = Machine.new("жим ногами", ME.userId, t0)
+            val row = Machine.new("Тяга", ME.userId, t0)
+            listOf(press, twin, row).forEach { on.machines.upsert(it) }
+            val vm = viewModel(on).also { it.load() }
+
+            assertEquals(true, vm.state.value.hasSuggestions)
+            assertEquals(
+                mapOf(press.id to "жим ногами", twin.id to "Жим ногами", row.id to null),
+                vm.state.value.own
+                    ?.associate { it.id to it.suggestion },
+            )
+            assertEquals(1, vm.state.value.friendSections.size)
+
+            vm.toggleSuggested()
+
+            assertEquals(true, vm.state.value.onlySuggested)
+            assertEquals(
+                setOf(press.id, twin.id),
+                vm.state.value.own
+                    ?.map { it.id }
+                    ?.toSet(),
+            )
+            assertEquals(emptyList(), vm.state.value.friendSections)
+        }
+
+    @Test
+    fun without_suggestions_there_is_no_chip_and_nothing_is_kept_out() =
+        runTest {
+            val row = Machine.new("Тяга", null, t0)
+            gym.machines.upsert(row)
+            val vm = viewModel().also { it.load() }
+
+            vm.toggleSuggested()
+
+            assertEquals(false, vm.state.value.hasSuggestions)
+            assertEquals(false, vm.state.value.onlySuggested)
+            assertEquals(
+                listOf(row.id),
+                vm.state.value.own
+                    ?.map { it.id },
+            )
+        }
+
+    @Test
     fun a_card_names_the_own_machine_joined_through_a_friend_s_with_the_account() =
         runTest {
             val on = signedInGym()

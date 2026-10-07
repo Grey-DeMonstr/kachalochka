@@ -19,6 +19,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.coverPhoto
+import monster.greyde.kachalochka.core.domain.gym.linkSuggestions
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountAvatars
@@ -52,6 +53,18 @@ data class GroupMachines(
     /** Every friend's machine in a cluster that holds none of [own], with its cluster. */
     fun offeredGroups(own: List<Machine>): List<List<FriendMachine>> =
         friendMachineGroups(friends, own, clusters, links)
+
+    fun suggestions(own: List<Machine>): Map<MachineId, List<Machine>> =
+        linkSuggestions(own, friends.map { it.machine }, links)
+
+    /** The friends' machines suggested for [machine] to link to directly. */
+    fun suggestedLinks(
+        machine: MachineId,
+        own: List<Machine>,
+    ): List<FriendMachine> {
+        val byId = friends.associateBy { it.machine.id }
+        return suggestions(own)[machine].orEmpty().mapNotNull { byId[it.id] }
+    }
 }
 
 /** What the account sees: its own machines, and the group's once a read for it has landed. */
@@ -65,6 +78,11 @@ class ShownMachines(
     val clusters: MachineClusters = this.group?.clusters ?: MachineClusters(own.links)
 
     val offered: List<FriendMachine> = this.group?.offered(own.machines).orEmpty()
+
+    /** Offline, only the account's own links and machine names suggest anything. */
+    val suggestions: Map<MachineId, List<Machine>> =
+        this.group?.suggestions(own.machines)
+            ?: linkSuggestions(own.machines, emptyList(), own.links)
 
     /** The friends' machines [machine] is linked with, read online. */
     fun linked(machine: MachineId): List<FriendMachine> =

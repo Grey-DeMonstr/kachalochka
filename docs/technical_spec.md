@@ -456,6 +456,14 @@ the account's own links, read locally, with its group mates' live links, read on
 machine list, writes the own copy (`linkedCopy`) and the link from it to the friend's machine;
 "Привязать к моему" (`MineChooserRoute`) writes only the link, from the chosen own machine.
 
+`linkSuggestions` in `domain/gym` gives each own machine what it could still be joined with: own
+machines of the same trimmed, case-blind name or of its cluster, to merge, then one machine per
+friend who has machines in its cluster but none linked to it directly, so links stay direct when a
+middle machine goes. `ShownMachines.suggestions` runs it over the group's machines and links, or,
+before the group is read, over the own ones. The machine list's link button opens
+`LinkChooserRoute.suggested`, which starts the chooser's search and sends it back to the list; the
+chooser offers the suggested friends' machines (`GroupMachines.suggestedLinks`) as its first group.
+
 A machine's record and last use come from `machinePeaks` in `domain/gym`: per machine, its
 heaviest and lightest weights with the most reps at each, its last set's instant and the number
 of visits with a live set on it; `MachinePeaks.best` picks the heaviest, or the lightest on a

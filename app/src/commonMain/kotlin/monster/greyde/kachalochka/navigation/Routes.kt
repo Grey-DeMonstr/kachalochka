@@ -38,11 +38,15 @@ data class MachineFormRoute(
     val tags: List<String> = emptyList(),
 )
 
-/** [fromList] is the form's own, handed on to the kept machine's form after a merge. */
+/**
+ * [fromList] is the form's own, handed on to the kept machine's form after a merge. A [suggested]
+ * machine's name comes from a suggestion in the machine list, which the chooser returns to.
+ */
 @Serializable
 data class LinkChooserRoute(
     val machineId: String,
     val fromList: Boolean,
+    val suggested: String? = null,
 )
 
 @Serializable

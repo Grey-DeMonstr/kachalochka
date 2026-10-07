@@ -145,6 +145,8 @@ interface Strings {
     val platformBeside: String
     val linkTo: String
     val linkToMine: String
+    val suggestedLinks: String
+    val suggestedLink: String
     val merge: String
     val mergeTitle: String
 

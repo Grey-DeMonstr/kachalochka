@@ -87,6 +87,26 @@ class MachineListScreenTest {
     }
 
     @Test
+    fun a_suggestion_opens_the_link_chooser_and_the_chip_keeps_only_suggested_machines() {
+        val twin = Machine.new("жим ногами", null, gym.clock.current)
+        val row = Machine.new("Тяга", null, gym.clock.current)
+        runBlocking { listOf(press, twin, row).forEach { gym.machines.upsert(it) } }
+        val suggested = mutableListOf<Pair<MachineId, String>>()
+        runScreenTest(gym, screen = {
+            MachineListScreen({}, {}, {}, {}, { _, _ -> }) { id, name -> suggested += id to name }
+        }) {
+            onNodeWithTag("card-suggestion-${row.id.value}").assertDoesNotExist()
+            onNodeWithTag("card-suggestion-${press.id.value}").performClick()
+            onNodeWithTag("only-suggested").performClick()
+            waitForIdle()
+
+            onNodeWithTag("machine-list-row-${row.id.value}").assertDoesNotExist()
+            onNodeWithTag("machine-list-row-${twin.id.value}").assertIsDisplayed()
+        }
+        assertEquals(listOf(press.id to "жим ногами"), suggested)
+    }
+
+    @Test
     fun a_machine_names_the_friends_machines_it_is_linked_with() {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME)

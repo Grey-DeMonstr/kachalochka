@@ -26,6 +26,8 @@ data class MachineCardUi(
     val inVisit: Boolean = false,
     /** What an own machine is linked with, as [ShownMachines.linkedWith]. */
     val linkedWith: List<LinkedMachineUi> = emptyList(),
+    /** The name of the first machine an own one could be merged with or linked to. */
+    val suggestion: String? = null,
 )
 
 /** One friend's machines, headed by the friend and, without a picture, their calendar colour. */
@@ -54,6 +56,7 @@ class MachineCards(
             lastUsed =
                 peaks?.let { dayMonthLabel(CalendarDay.of(it.lastAt, offset), today.year) },
             linkedWith = shown.linkedWith(machine.id),
+            suggestion = shown.suggestions[machine.id]?.firstOrNull()?.name,
         )
     }
 

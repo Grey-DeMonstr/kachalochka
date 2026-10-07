@@ -87,9 +87,13 @@ data class MergeUi(
     val convert: Boolean = true,
 )
 
-/** What [machineId], an own saved machine, can be merged with or linked to. */
+/**
+ * What [machineId], an own saved machine, can be merged with or linked to. The search starts with
+ * [start], a suggested machine's name, else with the machine's own.
+ */
 class LinkChooserViewModel(
     private val machineId: MachineId,
+    private val start: String?,
     private val machines: MachineRepository,
     private val sets: WorkoutSetRepository,
     private val machineLinks: MachineLinkRepository,
@@ -120,8 +124,13 @@ class LinkChooserViewModel(
     /** The two machines the merge dialog asks about. */
     private var pending: List<Machine> = emptyList()
 
+    /** The friends' machines suggested for this one first, then the clusters without own ones. */
     private val offeredGroups: List<List<FriendMachine>>?
-        get() = group?.offeredGroups(own)
+        get() =
+            group?.let { read ->
+                val suggested = read.suggestedLinks(machineId, own)
+                listOf(suggested).filter { it.isNotEmpty() } + read.offeredGroups(own)
+            }
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -140,7 +149,7 @@ class LinkChooserViewModel(
                 if (!seeded) {
                     mine.firstOrNull { it.id == machineId }?.let {
                         seeded = true
-                        mutableState.value = mutableState.value.copy(query = it.name)
+                        mutableState.value = mutableState.value.copy(query = start ?: it.name)
                     }
                 }
                 preferred = profiles.preferredUnit(owner)

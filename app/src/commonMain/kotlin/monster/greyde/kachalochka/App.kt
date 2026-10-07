@@ -261,6 +261,11 @@ fun App() {
                         onOpenFriendMachine = { machine, owner ->
                             navController.navigate(FriendMachineRoute(machine.value, owner.value))
                         },
+                        onSuggestion = { machine, name ->
+                            navController.navigate(
+                                LinkChooserRoute(machine.value, fromList = true, suggested = name),
+                            )
+                        },
                     )
                 }
                 composable<FriendMachineRoute> { entry ->
@@ -431,9 +436,14 @@ fun App() {
                     val route = entry.toRoute<LinkChooserRoute>()
                     LinkChooserScreen(
                         machineId = MachineId(route.machineId),
+                        start = route.suggested,
                         onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
-                        onMerged = { kept ->
+                        onMerged = onMerged@{ kept ->
+                            if (route.suggested != null) {
+                                navController.popBackStack()
+                                return@onMerged
+                            }
                             // The visit's sheet may be on the removed machine, saved or not.
                             if (!route.fromList) {
                                 navController

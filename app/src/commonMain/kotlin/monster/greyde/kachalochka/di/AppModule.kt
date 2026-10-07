@@ -169,9 +169,10 @@ val appModule =
                 get(),
             )
         }
-        viewModel { (machine: MachineId) ->
+        viewModel { (machine: MachineId, start: String?) ->
             LinkChooserViewModel(
                 machine,
+                start,
                 get(),
                 get(),
                 get(),

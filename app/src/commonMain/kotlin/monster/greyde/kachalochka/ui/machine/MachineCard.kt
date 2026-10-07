@@ -2,12 +2,14 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -15,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +36,8 @@ import monster.greyde.kachalochka.ui.visit.TagChip
 fun MachineCard(
     card: MachineCardUi,
     tag: String,
+    /** Given, a link button at the title's end hands on the card's suggestion. */
+    onSuggestion: ((String) -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -49,7 +54,32 @@ fun MachineCard(
         ) {
             MachineThumbnail(card.photo, PhosphorIcons.Barbell, size = 58.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(card.name, fontSize = 17.sp, color = colors.onBackground)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        card.name,
+                        modifier = Modifier.weight(1f),
+                        fontSize = 17.sp,
+                        color = colors.onBackground,
+                    )
+                    val suggestion = card.suggestion
+                    if (suggestion != null && onSuggestion != null) {
+                        Box(
+                            Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .clickable { onSuggestion(suggestion) }
+                                .testTag("card-suggestion-$id"),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                PhosphorIcons.LinkSimple,
+                                strings().suggestedLink,
+                                tint = colors.secondary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                }
                 if (card.linkedWith.isNotEmpty()) {
                     LinkedMachines(card.linkedWith, "card-linked-$id")
                 }

@@ -207,7 +207,8 @@ pixels on its long edge before it is kept.
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
 search field, which starts with the machine's name: "Мои упражнения", the account's other machines, and, signed in and online,
 "Упражнения друзей", one row per friends' machine that is not yet the same machine as one of the
-account's. Every row shows the machine's photo, as every list does, and an own row the friends'
+account's, after the friends' machines suggested for it (see below), which are already the same
+machine but not linked to it directly. Every row shows the machine's photo, as every list does, and an own row the friends'
 machines it is linked with. Friends' machines already
 linked with each other stand together in one frame, the original first, so any of them can be
 chosen; a search keeps the whole frame when one machine in it matches. Choosing an own machine removes a duplicate. "Объединить упражнения?" shows both
@@ -236,7 +237,20 @@ it has none, the first photo of a friend's machine linked with it. Over the list
 field as in the picker, the sort chips, and the tags of all listed machines as chips; the search
 and the chosen tags keep the own and the friends' machines as they do in the picker, and with
 nothing left the list says "Ничего не найдено". Tapping one opens it in the
-machine form; "Добавить" adds one. Saving returns to the list. Signed in and online, the
+machine form; "Добавить" adds one. Saving returns to the list.
+
+The list suggests links for the account's machines. Another own machine is suggested, to merge
+with, when it has the same name (in any letter case) or is already the same machine through
+friends' links. A friend's machine is suggested, to link to, when it is already the same machine
+through other friends' links but the own machine has no direct link to any of that friend's
+machines: one machine per such friend. Offline, only the account's own machines and links suggest
+anything. A machine with a suggestion has a link button at the end of its name; it opens
+"Привязать к…" with the search starting with the first suggested machine's name, merges come
+first. There "Скопировать настройки" is not offered, and merging or linking returns to the list.
+While any machine has a suggestion, a chip with a link icon follows the sort chips; chosen, it keeps
+only the account's machines with a suggestion and hides the friends' sections.
+
+Signed in and online, the
 friends' machines follow once the server answers: one section per friend, headed by their avatar
 (or their initial in their calendar colour), name and machine count, one machine per physical
 machine that is not yet the same machine as one of the account's. Tapping one opens "Упражнение

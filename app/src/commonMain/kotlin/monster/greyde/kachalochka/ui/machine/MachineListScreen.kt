@@ -32,6 +32,8 @@ fun MachineListScreen(
     onOpenMachine: (MachineId) -> Unit,
     onNewMachine: () -> Unit,
     onOpenFriendMachine: (MachineId, owner: UserId) -> Unit,
+    /** Opens the link chooser for a machine, searching for the suggested machine's name. */
+    onSuggestion: (MachineId, name: String) -> Unit = { _, _ -> },
 ) {
     val viewModel: MachineListViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -40,7 +42,13 @@ fun MachineListScreen(
         val filtering = state.query.isNotEmpty() || state.tags.any { it.chosen }
         if (!state.own.isNullOrEmpty() || state.friendSections.isNotEmpty() || filtering) {
             SearchBar(state.query, viewModel::onQueryChange, rule = false)
-            SortChips(state.sort, viewModel::chooseSort, Modifier.padding(bottom = 12.dp))
+            SortChips(
+                state.sort,
+                viewModel::chooseSort,
+                Modifier.padding(bottom = 12.dp),
+                onlySuggested = state.onlySuggested.takeIf { state.hasSuggestions },
+                onToggleSuggested = viewModel::toggleSuggested,
+            )
             if (state.tags.isNotEmpty()) {
                 TagFilter(state.tags, viewModel::toggleTag, testTagPrefix = "list-tag")
             } else {
@@ -71,9 +79,11 @@ fun MachineListScreen(
                     )
                 else ->
                     cards.forEach { card ->
-                        MachineCard(card, "machine-list-row-${card.id.value}") {
-                            onOpenMachine(card.id)
-                        }
+                        MachineCard(
+                            card,
+                            "machine-list-row-${card.id.value}",
+                            onSuggestion = { onSuggestion(card.id, it) },
+                        ) { onOpenMachine(card.id) }
                     }
             }
             state.friendSections.forEach { section ->

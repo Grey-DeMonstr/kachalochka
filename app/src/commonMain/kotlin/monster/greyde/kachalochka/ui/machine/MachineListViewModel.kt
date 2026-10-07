@@ -36,6 +36,10 @@ data class MachineListUiState(
     val tags: List<TagChoiceUi> = emptyList(),
     /** True when a search or a tag leaves nothing to list. */
     val nothingFound: Boolean = false,
+    /** Some own machine could be merged with or linked to another. */
+    val hasSuggestions: Boolean = false,
+    /** Only the own machines with a suggestion are listed. */
+    val onlySuggested: Boolean = false,
 ) {
     val friends: List<MachineCardUi> get() = friendSections.flatMap { it.cards }
 }
@@ -64,6 +68,7 @@ class MachineListViewModel(
     private var preferred = PreferredWeightUnit.Kg
     private var query = ""
     private var chosenTags: Set<String> = emptySet()
+    private var onlySuggested = false
     private var loading: Job? = null
     private var loadingFriends: Job? = null
     private val sorting =
@@ -122,6 +127,11 @@ class MachineListViewModel(
         publish()
     }
 
+    fun toggleSuggested() {
+        onlySuggested = !onlySuggested
+        publish()
+    }
+
     private fun Machine.kept(alsoGoesBy: List<String> = emptyList()): Boolean =
         anyNameMatches(listOf(name) + alsoGoesBy, query) && tags.containsAll(chosenTags)
 
@@ -143,12 +153,15 @@ class MachineListViewModel(
                     offset,
                 )
             }
+        val suggested = shown?.suggestions.orEmpty()
+        if (suggested.isEmpty()) onlySuggested = false
         val ownOrder = machineOrder(sort, ownPeaks.associateBy { it.machineId })
         val friendOrder = machineOrder(sort, friendPeaks.associateBy { it.machineId })
         val ownCards =
             cards?.let { c ->
                 ownMachines
                     .filter { it.kept(shown?.linkedNames(it).orEmpty()) }
+                    .filter { !onlySuggested || it.id in suggested }
                     .sortedWith(ownOrder)
                     .map(c::own)
             }
@@ -156,7 +169,9 @@ class MachineListViewModel(
             cards
                 ?.friendSections(offered.filter { it.machine.kept() }, colors, friendOrder)
                 .orEmpty()
-        val filtering = query.isNotBlank() || chosenTags.isNotEmpty()
+                .takeUnless { onlySuggested }
+                .orEmpty()
+        val filtering = query.isNotBlank() || chosenTags.isNotEmpty() || onlySuggested
         mutableState.value =
             MachineListUiState(
                 own = ownCards,
@@ -171,6 +186,8 @@ class MachineListViewModel(
                         .sortedBy { it.lowercase() }
                         .map { TagChoiceUi(it, it in chosenTags) },
                 nothingFound = filtering && ownCards.isNullOrEmpty() && sections.isEmpty(),
+                hasSuggestions = suggested.isNotEmpty(),
+                onlySuggested = onlySuggested,
             )
     }
 }

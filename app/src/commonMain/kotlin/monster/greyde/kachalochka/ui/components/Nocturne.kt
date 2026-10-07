@@ -271,6 +271,28 @@ fun ChoiceChip(
     chosen: Boolean,
     tag: String,
     onToggle: () -> Unit,
+) = ChipFrame(chosen, tag, onToggle) { color ->
+    Text(label, fontSize = 15.sp, color = color)
+}
+
+/** A [ChoiceChip] that shows [icon] alone, described by [description]. */
+@Composable
+fun IconChoiceChip(
+    icon: ImageVector,
+    description: String,
+    chosen: Boolean,
+    tag: String,
+    onToggle: () -> Unit,
+) = ChipFrame(chosen, tag, onToggle) { color ->
+    Icon(icon, description, tint = color, modifier = Modifier.size(18.dp))
+}
+
+@Composable
+private fun ChipFrame(
+    chosen: Boolean,
+    tag: String,
+    onToggle: () -> Unit,
+    content: @Composable (Color) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(20.dp)
@@ -288,15 +310,14 @@ fun ChoiceChip(
             .testTag(tag),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            label,
-            fontSize = 15.sp,
-            color = if (chosen) colors.onPrimaryContainer else colors.onBackground,
-        )
+        content(if (chosen) colors.onPrimaryContainer else colors.onBackground)
     }
 }
 
-/** [options] as one scrolling row of [ChoiceChip]s, [edge] the room before the first and last. */
+/**
+ * [options] as one scrolling row of [ChoiceChip]s, [edge] the room before the first and last;
+ * [extra] chips follow them.
+ */
 @Composable
 fun <T> ChipRow(
     options: List<Pair<T, String>>,
@@ -304,6 +325,7 @@ fun <T> ChipRow(
     onChoose: (T) -> Unit,
     modifier: Modifier = Modifier,
     edge: Dp = 0.dp,
+    extra: @Composable () -> Unit = {},
     tag: (T) -> String,
 ) {
     Row(
@@ -316,6 +338,7 @@ fun <T> ChipRow(
         options.forEach { (option, label) ->
             ChoiceChip(label, option == chosen, tag(option)) { onChoose(option) }
         }
+        extra()
     }
 }
 

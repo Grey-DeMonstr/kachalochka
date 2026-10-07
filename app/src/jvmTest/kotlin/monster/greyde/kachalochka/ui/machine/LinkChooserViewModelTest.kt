@@ -80,8 +80,10 @@ class LinkChooserViewModelTest {
         links: MachineLinkRepository = gym.machineLinks,
         /** Replaces the search the chooser starts with; null keeps it. */
         query: String? = "",
+        start: String? = null,
     ) = LinkChooserViewModel(
         machine,
+        start,
         machines,
         sets,
         links,
@@ -133,6 +135,43 @@ class LinkChooserViewModelTest {
         vm.load()
 
         assertEquals("смит", vm.state.value.query)
+    }
+
+    @Test
+    fun a_suggestion_starts_the_search_with_the_suggested_machine_s_name() {
+        val vm = viewModel(query = null, start = "Смит")
+
+        assertEquals("Смит", vm.state.value.query)
+        assertEquals(
+            listOf(smith.id),
+            vm.state.value.own
+                .map { it.id },
+        )
+    }
+
+    @Test
+    fun a_friend_s_machine_reached_through_another_friend_s_is_offered_and_linked() {
+        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        val (olegs, link) = linkedCopy(press, OLEG.userId, t0)
+        val pashas = Machine.new("Платформа", PASHA.userId, t0)
+        gym.friends.machines += listOf(olegs, pashas)
+        gym.friends.links += link
+        gym.friends.links +=
+            MachineLink(MachineLinkId.random(), PASHA.userId, pashas.id, olegs.id, t0, false)
+        val vm = viewModel(query = null, start = "Платформа")
+
+        assertEquals(
+            listOf(listOf(pashas.id)),
+            vm.state.value.friendGroups
+                ?.map { g -> g.map { it.id } },
+        )
+
+        vm.chooseFriend(pashas.id) {}
+
+        val written =
+            gym.machineLinks.rows.values
+                .single()
+        assertEquals(press.id to pashas.id, written.machineId to written.linkedMachineId)
     }
 
     @Test

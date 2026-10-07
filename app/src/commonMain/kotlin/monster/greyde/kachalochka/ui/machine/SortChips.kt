@@ -11,6 +11,8 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.ProfileChoice
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.components.ChipRow
+import monster.greyde.kachalochka.ui.components.IconChoiceChip
+import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.strings
 import kotlin.time.Clock
 
@@ -45,12 +47,34 @@ fun machineSortLabels(): List<Pair<MachineSort, String>> {
     )
 }
 
-/** The sort orders as chips, drawn like the tags. */
+/**
+ * The sort orders as chips, drawn like the tags; with [onlySuggested] given, a link chip follows
+ * them, which keeps only the machines with a suggested link.
+ */
 @Composable
 fun SortChips(
     chosen: MachineSort,
     onChoose: (MachineSort) -> Unit,
     modifier: Modifier = Modifier,
-) = ChipRow(machineSortLabels(), chosen, onChoose, modifier, edge = 16.dp) {
+    onlySuggested: Boolean? = null,
+    onToggleSuggested: () -> Unit = {},
+) = ChipRow(
+    machineSortLabels(),
+    chosen,
+    onChoose,
+    modifier,
+    edge = 16.dp,
+    extra = {
+        onlySuggested?.let {
+            IconChoiceChip(
+                PhosphorIcons.LinkSimple,
+                strings().suggestedLinks,
+                it,
+                "only-suggested",
+                onToggleSuggested,
+            )
+        }
+    },
+) {
     "sort-${it.name.lowercase()}"
 }

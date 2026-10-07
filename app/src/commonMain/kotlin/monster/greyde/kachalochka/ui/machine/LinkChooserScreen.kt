@@ -41,8 +41,10 @@ fun LinkChooserScreen(
     onOpenSettings: () -> Unit,
     onMerged: (kept: MachineId) -> Unit,
     onLinked: (copyFrom: MachineId?) -> Unit,
+    /** A suggested machine's name, which the search starts with. */
+    start: String? = null,
 ) {
-    val viewModel: LinkChooserViewModel = koinViewModel { parametersOf(machineId) }
+    val viewModel: LinkChooserViewModel = koinViewModel { parametersOf(machineId, start) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(strings().linkTo, onBack = onBack, onOpenSettings = onOpenSettings) {
@@ -75,16 +77,25 @@ fun LinkChooserScreen(
             }
             state.friendGroups?.takeIf { it.isNotEmpty() }?.let { groups ->
                 ChooserSection(strings().friendsMachines, "chooser-friends")
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .toggleable(state.copySettings, onValueChange = viewModel::setCopySettings)
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                        .testTag("copy-settings"),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(checked = state.copySettings, onCheckedChange = null)
-                    Text(strings().copySettings, Modifier.padding(start = 8.dp), fontSize = 15.sp)
+                // Opened from the machine list, there is no form to take the settings into.
+                if (start == null) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                state.copySettings,
+                                onValueChange = viewModel::setCopySettings,
+                            ).padding(horizontal = 16.dp, vertical = 4.dp)
+                            .testTag("copy-settings"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = state.copySettings, onCheckedChange = null)
+                        Text(
+                            strings().copySettings,
+                            Modifier.padding(start = 8.dp),
+                            fontSize = 15.sp,
+                        )
+                    }
                 }
                 groups.forEach { group ->
                     LinkedGroup(group.size > 1, "chooser-group-${group.first().id.value}") {
