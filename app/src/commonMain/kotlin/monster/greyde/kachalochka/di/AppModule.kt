@@ -75,7 +75,7 @@ val appModule =
         single { FriendColorStore(get(), get(), get()) }
         single { PhotoLoaders(get()) }
         single { AccountAvatars(get(), get()) }
-        single { MachineCatalogue(get(), get(), get(), get(), get(), get()) }
+        single { MachineCatalogue(get(), get(), get(), get(), get(), get(), get(), get()) }
         single { UnsavedChoices() }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))

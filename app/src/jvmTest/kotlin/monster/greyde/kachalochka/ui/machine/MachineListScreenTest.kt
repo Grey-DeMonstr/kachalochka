@@ -3,6 +3,9 @@ package monster.greyde.kachalochka.ui.machine
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -96,8 +99,9 @@ class MachineListScreenTest {
         }
         runScreenTest(on, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
             waitForIdle()
-            onNodeWithTag("card-linked-${mine.id.value}", useUnmergedTree = true)
-                .assertTextEquals("Гакк-машина (Олег)")
+            val row = hasAnyAncestor(hasTestTag("card-linked-${mine.id.value}-${olegs.id.value}"))
+            onNode(hasText("Гакк-машина") and row, useUnmergedTree = true).assertIsDisplayed()
+            onNode(hasText("О") and row, useUnmergedTree = true).assertIsDisplayed()
         }
     }
 

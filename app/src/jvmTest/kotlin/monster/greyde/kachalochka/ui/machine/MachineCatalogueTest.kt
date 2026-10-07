@@ -32,6 +32,8 @@ class MachineCatalogueTest {
             gym.friends,
             gym.clock,
             gym.sync,
+            gym.accounts,
+            gym.avatars,
         )
 
     /** Олег shares a group with Иван; his copy of the press links to Иван's, his row to nothing. */
@@ -55,7 +57,10 @@ class MachineCatalogueTest {
 
             val own = catalogue.own(ME.userId)
 
-            assertEquals(OwnMachines(ME.userId, listOf(myPress), listOf(photo), listOf(link)), own)
+            assertEquals(
+                OwnMachines(ME.userId, listOf(myPress), listOf(photo), listOf(link), me = ME),
+                own,
+            )
         }
 
     @Test

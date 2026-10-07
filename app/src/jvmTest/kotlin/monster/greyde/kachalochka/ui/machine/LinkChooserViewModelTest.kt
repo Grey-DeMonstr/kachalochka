@@ -145,7 +145,7 @@ class LinkChooserViewModelTest {
         val vm = viewModel(query = "гакк")
 
         assertEquals(
-            listOf(smith.id to "Гакк-машина (Олег)"),
+            listOf(smith.id to listOf(LinkedMachineUi(olegs.id, OLEG, "Гакк-машина"))),
             vm.state.value.own
                 .map { it.id to it.linkedWith },
         )

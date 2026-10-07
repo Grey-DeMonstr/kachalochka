@@ -2,7 +2,9 @@ package monster.greyde.kachalochka.ui.machine
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.friendMachineGroups
@@ -19,6 +21,8 @@ import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.coverPhoto
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.account.AccountAvatars
+import monster.greyde.kachalochka.ui.account.accountAvatar
 import kotlin.time.Clock
 
 /** The account's live machines, with the photos and links that place them. */
@@ -27,6 +31,8 @@ data class OwnMachines(
     val machines: List<Machine>,
     val photos: List<Photo>,
     val links: List<MachineLink>,
+    /** The signed-in account as its friends see it. */
+    val me: Friend? = null,
 )
 
 /** Group mates' live machines, links and photos, as read online for [owner]. */
@@ -67,9 +73,23 @@ class ShownMachines(
     /** The names of the friends' machines [machine] is linked with, for a search. */
     fun linkedNames(machine: Machine): List<String> = linked(machine.id).map { it.machine.name }
 
-    /** "Гакк-машина (Олег)" for each friend's machine [machine] is linked with; null for none. */
-    fun linkedCaption(machine: MachineId): String? =
-        linked(machine).takeIf { it.isNotEmpty() }?.joinToString(", ", transform = ::friendLabel)
+    /** The machines [machine] is linked with: the account's own, then the friends' by owner. */
+    fun linkedWith(machine: MachineId): List<LinkedMachineUi> {
+        val cluster = clusters.of(machine)
+        val mine =
+            own.me
+                ?.let { me ->
+                    own.machines
+                        .filter { it.id != machine && it.id in cluster }
+                        .sortedBy { it.name.lowercase() }
+                        .map { LinkedMachineUi(it.id, me, it.name, own = true) }
+                }.orEmpty()
+        val theirs =
+            linked(machine)
+                .filter { it.machine.id != machine }
+                .map { LinkedMachineUi(it.machine.id, it.owner, it.machine.name) }
+        return mine + theirs
+    }
 
     /** An own machine's chosen cover counts, and a friend's machine's as its owner chose it. */
     fun cover(machine: MachineId): Photo? {
@@ -84,10 +104,6 @@ class ShownMachines(
     }
 }
 
-/** A friend's machine with its owner: "Гакк-машина (Олег)". */
-fun friendLabel(friend: FriendMachine): String =
-    "${friend.machine.name} (${friend.owner.displayName})"
-
 /**
  * The machines an account sees: its own, read from the device, and its group mates', read online
  * and joined to them by links (spec §4.5).
@@ -99,9 +115,17 @@ class MachineCatalogue(
     private val friends: FriendsRepository,
     private val clock: Clock,
     private val sync: SyncTrigger,
+    private val accounts: Accounts,
+    private val avatars: AccountAvatars,
 ) {
     suspend fun own(owner: UserId?): OwnMachines =
-        OwnMachines(owner, machines.all(owner), photos.all(owner), links.all(owner))
+        OwnMachines(owner, machines.all(owner), photos.all(owner), links.all(owner), me(owner))
+
+    private fun me(owner: UserId?): Friend? {
+        val account = accounts.accounts.value.firstOrNull { it.userId == owner } ?: return null
+        val avatar = accountAvatar(account, avatars.photos.value)
+        return Friend(account.userId, account.displayName, avatar)
+    }
 
     /** Machines joined by the owner's live links and the group mates', the latter read online. */
     suspend fun clusters(owner: UserId): MachineClusters = MachineClusters(visibleLinks(owner))

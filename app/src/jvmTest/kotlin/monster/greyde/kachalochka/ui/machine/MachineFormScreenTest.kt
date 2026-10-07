@@ -13,11 +13,9 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performFirstLinkClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.ui.text.LinkAnnotation
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
@@ -422,7 +420,9 @@ class MachineFormScreenTest {
                 onLink = { linking++ },
             )
         }) {
-            onNodeWithTag("machine-linked-with").assertTextEquals("Связано с: Жим ногами (Олег)")
+            onNodeWithTag(
+                "machine-linked-with-${olegs.id.value}",
+            ).assertTextEquals("О", "Жим ногами")
             onNodeWithTag("link-machine").performScrollTo().performClick()
             waitForIdle()
         }
@@ -453,11 +453,12 @@ class MachineFormScreenTest {
                 onOpenFriendMachine = { machine, owner -> opened += machine to owner },
             )
         }) {
-            onNodeWithTag("machine-linked-with")
-                .assertTextEquals("Связано с: Жим ногами (Олег), Платформа (Паша)")
-                .performFirstLinkClick {
-                    (it.item as LinkAnnotation.Clickable).tag == pashas.id.value
-                }
+            onNodeWithTag(
+                "machine-linked-with-${olegs.id.value}",
+            ).assertTextEquals("О", "Жим ногами")
+            onNodeWithTag("machine-linked-with-${pashas.id.value}")
+                .assertTextEquals("П", "Платформа")
+                .performClick()
             waitForIdle()
         }
         assertEquals(listOf(pashas.id to PASHA.userId), opened)

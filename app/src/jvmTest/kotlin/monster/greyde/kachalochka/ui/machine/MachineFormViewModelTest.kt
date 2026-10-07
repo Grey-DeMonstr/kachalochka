@@ -904,9 +904,9 @@ class MachineFormViewModelTest {
 
             assertEquals(
                 listOf(
-                    LinkedMachineUi(hers.id, misha.account.userId, "Платформа (Миша)"),
-                    LinkedMachineUi(hisOther.id, oleg.userId, "Жим (Олег)"),
-                    LinkedMachineUi(his.id, oleg.userId, "Жим ногами (Олег)"),
+                    LinkedMachineUi(hers.id, mishaFriend, "Платформа"),
+                    LinkedMachineUi(hisOther.id, oleg, "Жим"),
+                    LinkedMachineUi(his.id, oleg, "Жим ногами"),
                 ),
                 vm.linking.value.linkedWith,
             )
@@ -1001,9 +1001,9 @@ class MachineFormViewModelTest {
 
             assertTrue(vm.linking.value.canUnlink)
             assertEquals(
-                listOf("Жим ногами (Миша)"),
+                listOf("Жим ногами" to "Миша"),
                 vm.linking.value.linkedWith
-                    .map { it.label },
+                    .map { it.name to it.owner.displayName },
             )
         }
 
@@ -1095,9 +1095,9 @@ class MachineFormViewModelTest {
             vm.load()
 
             assertEquals(
-                listOf("Жим ногами (Миша)"),
+                listOf("Жим ногами" to "Миша"),
                 vm.linking.value.linkedWith
-                    .map { it.label },
+                    .map { it.name to it.owner.displayName },
             )
             assertEquals("Сиденье на 4", vm.state.value.setupNote)
         }

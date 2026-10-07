@@ -447,8 +447,10 @@ own machine (`friendMachineRows`, the machine with the fewest outgoing links, th
 and id), the machine's page asks `FriendsRepository.latestOn` for the friends' machines of the open
 machine's cluster (each `FriendResult` carries the friend's machine, whose unit its sets are
 written in), a friend's visit names each machine after the viewer's own in its cluster
-(`namesForViewer`), and the machine form lists the friends' machines of its cluster by owner name,
-then machine name (`linkedFriendMachines`). The clusters combine the account's own links, read
+(`namesForViewer`), and every list of linked machines comes from `ShownMachines.linkedWith`: the
+cluster's other own machines, then its friends' machines by owner name and machine name
+(`linkedFriendMachines`), each a `LinkedMachineUi` with its owner as a `Friend`. The account itself
+is `OwnMachines.me`, built from the signed-in account and `AccountAvatars`. The clusters combine the account's own links, read
 locally, with its group mates' live links, read online through `FriendsRepository.groupLinks`.
 Picking a friend's machine, or "Взять себе" on one opened from the machine list, writes the own
 copy (`linkedCopy`) and the link from it to the friend's machine.

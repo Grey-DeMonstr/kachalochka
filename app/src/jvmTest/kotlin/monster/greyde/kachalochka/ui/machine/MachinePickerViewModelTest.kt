@@ -143,7 +143,7 @@ class MachinePickerViewModelTest {
             vm.onQueryChange("гакк")
 
             assertEquals(
-                listOf(mine.id to "Гакк-машина (Олег)"),
+                listOf(mine.id to listOf(LinkedMachineUi(olegs.id, OLEG, "Гакк-машина"))),
                 vm.state.value.rows
                     .map { it.id to it.linkedWith },
             )

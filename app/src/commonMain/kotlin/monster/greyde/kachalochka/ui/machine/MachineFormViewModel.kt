@@ -10,7 +10,6 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
-import monster.greyde.kachalochka.core.domain.friends.linkedFriendMachines
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -57,12 +56,6 @@ data class MachineFormArgs(
 data class FriendTagUi(
     val tag: String,
     val friend: Friend,
-)
-
-data class LinkedMachineUi(
-    val machineId: MachineId,
-    val ownerId: UserId,
-    val label: String,
 )
 
 data class LinkingUi(
@@ -297,18 +290,15 @@ class MachineFormViewModel(
                 )
             }
         val group = owner?.let { reading { catalogue.group(it) }.getOrNull() }
+        val own = catalogue.own(owner)
         if (accounts.activeId.value != owner || existing?.id != shown.id) return
-        val linked = group?.let { linkedFriendMachines(shown.id, it.friends, it.clusters) }
         if (group != null) {
             friendPhotos = friendPhotosOf(shown.id, group)
             showPhotos()
         }
         mutableLinking.value =
             mutableLinking.value.copy(
-                linkedWith =
-                    linked.orEmpty().map {
-                        LinkedMachineUi(it.machine.id, it.owner.userId, friendLabel(it))
-                    },
+                linkedWith = group?.let { ShownMachines(own, it).linkedWith(shown.id) }.orEmpty(),
                 canUnlink = (group?.links ?: ownLinks).any { it.touches(shown.id) },
             )
     }

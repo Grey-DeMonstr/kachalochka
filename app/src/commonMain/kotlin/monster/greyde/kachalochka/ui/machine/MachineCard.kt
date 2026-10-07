@@ -50,7 +50,9 @@ fun MachineCard(
             MachineThumbnail(card.photo, PhosphorIcons.Barbell, size = 58.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(card.name, fontSize = 17.sp, color = colors.onBackground)
-                card.linkedWith?.let { LinkedCaption(it, Modifier.testTag("card-linked-$id")) }
+                if (card.linkedWith.isNotEmpty()) {
+                    LinkedMachines(card.linkedWith, "card-linked-$id")
+                }
                 if (card.inVisit) {
                     Text(
                         strings().alreadyInVisit,
@@ -112,22 +114,6 @@ fun MachineCard(
     }
 }
 
-/** The friends' machines a machine is linked with, after a link icon. */
-@Composable
-private fun LinkedCaption(
-    text: String,
-    modifier: Modifier,
-) {
-    val muted = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.52f)
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(PhosphorIcons.LinkSimple, null, tint = muted, modifier = Modifier.size(14.dp))
-        Text(text, modifier = modifier, fontSize = 13.sp, color = muted)
-    }
-}
-
 /** A plain machine row, where a card's record and tags would not help the choice. */
 @Composable
 internal fun MachineRow(
@@ -135,7 +121,7 @@ internal fun MachineRow(
     detail: String?,
     tag: String,
     photo: Photo? = null,
-    linkedWith: String? = null,
+    linkedWith: List<LinkedMachineUi> = emptyList(),
     onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -152,7 +138,7 @@ internal fun MachineRow(
             MachineThumbnail(photo, PhosphorIcons.Image)
             Column(Modifier.weight(1f)) {
                 Text(name, fontSize = 17.sp, color = colors.onBackground)
-                linkedWith?.let { LinkedCaption(it, Modifier.testTag("$tag-linked")) }
+                if (linkedWith.isNotEmpty()) LinkedMachines(linkedWith, "$tag-linked")
                 detail?.let {
                     Text(it, fontSize = 13.sp, color = colors.onBackground.copy(alpha = 0.52f))
                 }

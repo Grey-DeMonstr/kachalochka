@@ -209,7 +209,6 @@ object EnStrings : Strings {
     override val unlinkTitle = "Unlink the machine?"
     override val unlinkText = "Friends' results on this machine will no longer show for you."
     override val unlink = "Unlink"
-    override val linkedWith = "Linked with: "
     override val newTag = "New tag"
     override val choiceTotal = "Total"
     override val choicePerSide = "Per side"

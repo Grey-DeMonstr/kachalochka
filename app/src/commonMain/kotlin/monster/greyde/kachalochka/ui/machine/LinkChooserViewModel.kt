@@ -52,7 +52,7 @@ data class ChooserRowUi(
     val name: String,
     val detail: String?,
     val photo: Photo? = null,
-    val linkedWith: String? = null,
+    val linkedWith: List<LinkedMachineUi> = emptyList(),
 )
 
 data class LinkChooserUiState(
@@ -345,7 +345,7 @@ class LinkChooserViewModel(
                                 it.name,
                                 weightCaption(it, preferred),
                                 shown?.cover(it.id),
-                                shown?.linkedCaption(it.id),
+                                shown?.linkedWith(it.id).orEmpty(),
                             )
                         },
                 friendGroups =

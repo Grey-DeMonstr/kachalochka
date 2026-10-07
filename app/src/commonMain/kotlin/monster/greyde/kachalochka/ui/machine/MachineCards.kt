@@ -24,8 +24,8 @@ data class MachineCardUi(
     val record: String?,
     /** Drawn dimmed, noting that the visit already holds it. */
     val inVisit: Boolean = false,
-    /** The friends' machines an own machine is linked with, as [ShownMachines.linkedCaption]. */
-    val linkedWith: String? = null,
+    /** What an own machine is linked with, as [ShownMachines.linkedWith]. */
+    val linkedWith: List<LinkedMachineUi> = emptyList(),
 )
 
 /** One friend's machines, headed by the friend and, without a picture, their calendar colour. */
@@ -53,7 +53,7 @@ class MachineCards(
             comment = machine.setupNote.trim(),
             lastUsed =
                 peaks?.let { dayMonthLabel(CalendarDay.of(it.lastAt, offset), today.year) },
-            linkedWith = shown.linkedCaption(machine.id),
+            linkedWith = shown.linkedWith(machine.id),
         )
     }
 

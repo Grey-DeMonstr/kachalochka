@@ -355,7 +355,34 @@ class MachineListViewModelTest {
                 vm.state.value.own
                     ?.single()
             assertEquals(mine.id, card?.id)
-            assertEquals("Гакк-машина (Олег)", card?.linkedWith)
+            assertEquals(listOf(LinkedMachineUi(olegs.id, OLEG, "Гакк-машина")), card?.linkedWith)
+        }
+
+    @Test
+    fun a_card_names_the_own_machine_joined_through_a_friend_s_with_the_account() =
+        runTest {
+            val on = signedInGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
+            val (first, firstLink) = linkedCopy(olegs, ME.userId, t0)
+            val (second, secondLink) = linkedCopy(olegs, ME.userId, t0)
+            on.friends.machines += olegs
+            on.machines.upsert(first.copy(name = "Гакк"))
+            on.machines.upsert(second.copy(name = "Присед"))
+            on.machineLinks.upsert(firstLink)
+            on.machineLinks.upsert(secondLink)
+            val vm = viewModel(on).also { it.load() }
+
+            val card =
+                vm.state.value.own
+                    ?.single { it.id == first.id }
+            assertEquals(
+                listOf(
+                    LinkedMachineUi(second.id, ME, "Присед", own = true),
+                    LinkedMachineUi(olegs.id, OLEG, "Гакк-машина"),
+                ),
+                card?.linkedWith,
+            )
         }
 
     @Test

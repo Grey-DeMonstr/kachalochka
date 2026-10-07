@@ -191,7 +191,6 @@ interface Strings {
     val unlinkTitle: String
     val unlinkText: String
     val unlink: String
-    val linkedWith: String
     val newTag: String
     val choiceTotal: String
     val choicePerSide: String

@@ -383,6 +383,11 @@ fun App() {
                         onOpenFriendMachine = { machine, owner ->
                             navController.navigate(FriendMachineRoute(machine.value, owner.value))
                         },
+                        onOpenMachine = {
+                            navController.navigate(
+                                MachineFormRoute(machineId = it.value, fromList = true),
+                            )
+                        },
                         onOpenStatistics = { navController.navigate(StatisticsRoute(it.value)) },
                     )
                 }

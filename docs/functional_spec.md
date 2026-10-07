@@ -142,8 +142,8 @@ account's chip switches to it: the shown history follows that person, and the se
 into their own visit. The chips show who records, so the button stays "Добавить".
 
 Every list of machines draws a machine the same way: its photo, its name, its tags, then, for the
-account's own machine, signed in and online, a link icon with the friends' machines it is linked
-with ("Гакк-машина (Олег)"), its comment and the day it was last used, and a trophy with its
+account's own machine, signed in and online, a link icon with the machines it is linked with, each
+name after its owner's avatar (see Group sharing), its comment and the day it was last used, and a trophy with its
 record — the heaviest set with the most reps at that weight, the lightest on a gravitron — in the
 viewer's unit.
 The machine list and the picker sort their machines by the chips at their top, drawn like the tags:
@@ -496,9 +496,11 @@ to the friend's machine as one physical machine. An own machine can also be link
 with "Привязать к…". Machines linked directly or through other friends' links are one machine: the
 picker no longer offers the friend's machine beside the user's own, the machine's page shows each
 friend's latest visit on it ("Олег  вчера · 80-85кг 8-6"), a friend's visit shows their results on
-it under the user's own machine name, and the machine form lists the friends' machines it is linked
-with, by owner and then by name ("Связано с: Жим ногами (Олег), Платформа (Паша)"). Tapping one
-opens that friend's machine, as from the machine list. "Отвязать от друзей" in the form's menu,
+it under the user's own machine name, and the machine form lists the machines it is linked with.
+Every list of linked machines starts with a link icon and puts the owner's avatar before each
+machine name: the user's own machines first, then the friends' by owner and then by name. In the
+form, tapping one opens it: an own machine in its form, a friend's as from the machine list.
+"Отвязать от друзей" in the form's menu,
 after a confirmation, breaks every link between the machine and friends' machines, whichever side
 made it.
 

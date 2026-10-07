@@ -45,15 +45,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -93,6 +88,7 @@ fun MachineFormScreen(
     onSaved: (MachineId) -> Unit,
     onLink: () -> Unit = {},
     onOpenFriendMachine: (MachineId, UserId) -> Unit = { _, _ -> },
+    onOpenMachine: (MachineId) -> Unit = {},
     onOpenStatistics: (MachineId) -> Unit = {},
     /** A friend's machine whose settings the link chooser handed back. */
     copySettingsFrom: MachineId? = null,
@@ -152,13 +148,13 @@ fun MachineFormScreen(
                 ) {
                     PhotoStrip(photos, launchers, onOpen = { opened = it })
                     if (linking.linkedWith.isNotEmpty()) {
-                        LinkedWith(linking.linkedWith, onOpenFriendMachine)
+                        LinkedWith(linking.linkedWith, onOpenMachine, onOpenFriendMachine)
                     }
                 }
             } else {
                 PhotoStrip(photos, launchers, { opened = it }, Modifier.fillMaxWidth())
                 if (linking.linkedWith.isNotEmpty()) {
-                    LinkedWith(linking.linkedWith, onOpenFriendMachine)
+                    LinkedWith(linking.linkedWith, onOpenMachine, onOpenFriendMachine)
                 }
             }
             FormField(
@@ -284,29 +280,10 @@ fun MachineFormScreen(
 @Composable
 private fun LinkedWith(
     linked: List<LinkedMachineUi>,
-    onOpen: (MachineId, UserId) -> Unit,
-) {
-    val colors = MaterialTheme.colorScheme
-    val linkStyle = TextLinkStyles(SpanStyle(color = colors.tertiary))
-    val s = strings()
-    val text =
-        buildAnnotatedString {
-            append(s.linkedWith)
-            linked.forEachIndexed { index, machine ->
-                if (index > 0) append(", ")
-                val link =
-                    LinkAnnotation.Clickable(machine.machineId.value, linkStyle) {
-                        onOpen(machine.machineId, machine.ownerId)
-                    }
-                withLink(link) { append(machine.label) }
-            }
-        }
-    Text(
-        text,
-        modifier = Modifier.testTag("machine-linked-with"),
-        fontSize = 13.sp,
-        color = colors.onBackground.copy(alpha = 0.60f),
-    )
+    onOpenOwn: (MachineId) -> Unit,
+    onOpenFriend: (MachineId, UserId) -> Unit,
+) = LinkedMachines(linked, "machine-linked-with") {
+    if (it.own) onOpenOwn(it.machineId) else onOpenFriend(it.machineId, it.owner.userId)
 }
 
 @Composable
