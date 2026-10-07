@@ -144,6 +144,7 @@ interface Strings {
     val platformAdded: String
     val platformBeside: String
     val linkTo: String
+    val linkToMine: String
     val merge: String
     val mergeTitle: String
 

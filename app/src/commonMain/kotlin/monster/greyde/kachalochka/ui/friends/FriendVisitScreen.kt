@@ -28,6 +28,7 @@ import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.machine.LinkedMachines
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
 import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.visit.MachineLines
@@ -119,14 +120,18 @@ private fun FriendVisitList(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 MachineThumbnail(group.photo, PhosphorIcons.Barbell, size = 44.dp)
-                MachineLines(
-                    title = group.title,
-                    tags = group.tags,
-                    note = group.note,
-                    summary = group.summary,
-                    tag = id,
-                    modifier = Modifier.weight(1f),
-                )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    MachineLines(
+                        title = group.title,
+                        tags = group.tags,
+                        note = group.note,
+                        summary = group.summary,
+                        tag = id,
+                    )
+                    if (group.linkedWith.isNotEmpty()) {
+                        LinkedMachines(group.linkedWith, "friend-linked-$id")
+                    }
+                }
             }
             Rule()
         }

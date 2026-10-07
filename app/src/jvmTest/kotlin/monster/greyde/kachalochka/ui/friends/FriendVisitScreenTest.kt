@@ -28,6 +28,11 @@ class FriendVisitScreenTest {
             onNodeWithTag("top-bar-title").assertTextEquals("Олег")
             onNodeWithTag("friend-visit-day").assertTextEquals("Понедельник, 13 ноября")
             onNodeWithTag("friend-group-${fixture.olegPress.id.value}").assertIsDisplayed()
+            val olegPress = fixture.olegPress.id.value
+            onNodeWithTag(
+                "friend-linked-$olegPress-${fixture.myPress.id.value}",
+                useUnmergedTree = true,
+            ).assertIsDisplayed()
             val first = gym.friends.sets.first()
             onNodeWithTag("friend-set-${first.id.value}").assertDoesNotExist()
             onNodeWithTag("pick-machine").assertDoesNotExist()

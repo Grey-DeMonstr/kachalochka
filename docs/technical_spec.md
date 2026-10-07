@@ -446,14 +446,15 @@ reader asks it: the picker and the machine list offer one friend's machine per c
 own machine (`friendMachineRows`, the machine with the fewest outgoing links, then by owner name
 and id), the machine's page asks `FriendsRepository.latestOn` for the friends' machines of the open
 machine's cluster (each `FriendResult` carries the friend's machine, whose unit its sets are
-written in), a friend's visit names each machine after the viewer's own in its cluster
+written in), a friend's calendar names each machine after the viewer's own in its cluster
 (`namesForViewer`), and every list of linked machines comes from `ShownMachines.linkedWith`: the
 cluster's other own machines, then its friends' machines by owner name and machine name
 (`linkedFriendMachines`), each a `LinkedMachineUi` with its owner as a `Friend`. The account itself
-is `OwnMachines.me`, built from the signed-in account and `AccountAvatars`. The clusters combine the account's own links, read
-locally, with its group mates' live links, read online through `FriendsRepository.groupLinks`.
-Picking a friend's machine, or "Взять себе" on one opened from the machine list, writes the own
-copy (`linkedCopy`) and the link from it to the friend's machine.
+is `OwnMachines.me`, built from the signed-in account and `AccountAvatars`. The clusters combine
+the account's own links, read locally, with its group mates' live links, read online through
+`FriendsRepository.groupLinks`. Picking a friend's machine, or "Взять себе" on one opened from the
+machine list, writes the own copy (`linkedCopy`) and the link from it to the friend's machine;
+"Привязать к моему" (`MineChooserRoute`) writes only the link, from the chosen own machine.
 
 A machine's record and last use come from `machinePeaks` in `domain/gym`: per machine, its
 heaviest and lightest weights with the most reps at each, its last set's instant and the number

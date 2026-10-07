@@ -240,15 +240,19 @@ machine form; "Добавить" adds one. Saving returns to the list. Signed in
 friends' machines follow once the server answers: one section per friend, headed by their avatar
 (or their initial in their calendar colour), name and machine count, one machine per physical
 machine that is not yet the same machine as one of the account's. Tapping one opens "Упражнение
-друга", the friend's machine to read: its name and owner, its tags, its photos with the one the
-friend chose starred, its setup note, how its weight is counted and its platform in the machine's
-own unit, then the
+друга", the friend's machine to read: its name and owner, the machines it is linked with, its
+tags, its photos with the one the friend chose starred, its setup note, how its weight is counted
+and its platform in the machine's own unit, then the
 friend's statistics on it as the statistics screen shows a machine's — the period chips, the
 period's best set, the chart and "Все результаты" — in the viewer's unit. Nothing on it can be
-edited. "Взять себе" saves the account's own copy linked to it (see Group sharing) and opens that
-copy in the machine form; a machine already linked to one of the account's, directly or through
-friends' links, is shown without it. Offline that view says "Нет связи с сервером" and offers a
-retry.
+edited. Tapping a linked machine opens it: an own machine in its form, a friend's as this view.
+"Взять себе" saves the account's own copy linked to it (see Group sharing) and opens that copy in
+the machine form. "Привязать к моему" opens a list of the account's machines with a search field,
+which starts with the friend's machine's name, as "Привязать к…" does; it leaves out the machines
+already the same machine as this one. Choosing one links it to the friend's machine and returns to
+the view, which then shows the new link. A machine already linked to one of the account's,
+directly or through friends' links, is shown without both buttons. Offline that view says "Нет
+связи с сервером" and offers a retry.
 
 The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
 visit are marked, today and the chosen day are highlighted, and future days cannot be chosen. Below
@@ -268,8 +272,9 @@ account's own dot, at most four dots a day. Below the chosen day's own visit is 
 who trained that day, drawn as the own one — the friend's avatar, or their initial in their colour,
 then, once read, the day's tags and machines; tapping it opens that friend's visit, read-only: the
 friend's avatar and name in the top bar, the day and how many machines they did, then one row per
-machine as on the visit screen — photo, name, tags, comment and results — without its sets; a
-row opens "Упражнение друга" for that machine. Friends are read again on entering the calendar,
+machine as on the visit screen — photo, the friend's own name for it, tags, comment and results —
+without its sets, and under them the machines it is linked with (see Group sharing); a row opens
+"Упражнение друга" for that machine. Friends are read again on entering the calendar,
 on changing the month and after switching accounts; without a network the calendar shows only
 the account's own visits. Each friend gets a colour at
 random at first, and the account can change it on the group screen. The colours are personal to the
@@ -493,10 +498,11 @@ opened from the group.
 
 A machine can be taken from a friend's list: the copy keeps the friend's settings and stays linked
 to the friend's machine as one physical machine. An own machine can also be linked to a friend's
-with "Привязать к…". Machines linked directly or through other friends' links are one machine: the
-picker no longer offers the friend's machine beside the user's own, the machine's page shows each
-friend's latest visit on it ("Олег  вчера · 80-85кг 8-6"), a friend's visit shows their results on
-it under the user's own machine name, and the machine form lists the machines it is linked with.
+with "Привязать к…" in its form, or from the friend's machine with "Привязать к моему". Machines
+linked directly or through other friends' links are one machine: the picker no longer offers the
+friend's machine beside the user's own, the machine's page shows each friend's latest visit on it
+("Олег  вчера · 80-85кг 8-6"), and a friend's visit, a friend's machine and the machine form list
+the machines it is linked with.
 Every list of linked machines starts with a link icon and puts the owner's avatar before each
 machine name: the user's own machines first, then the friends' by owner and then by name. In the
 form, tapping one opens it: an own machine in its form, a friend's as from the machine list.

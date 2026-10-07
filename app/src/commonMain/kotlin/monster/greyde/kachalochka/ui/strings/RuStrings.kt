@@ -177,6 +177,7 @@ object RuStrings : Strings {
     override val platformAdded = "прибавляется к записи"
     override val platformBeside = "рядом с названием"
     override val linkTo = "Привязать к…"
+    override val linkToMine = "Привязать к моему"
     override val merge = "Объединить"
     override val mergeTitle = "Объединить упражнения?"
 

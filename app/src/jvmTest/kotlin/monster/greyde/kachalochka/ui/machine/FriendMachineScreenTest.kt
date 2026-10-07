@@ -10,13 +10,17 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -53,6 +57,41 @@ class FriendMachineScreenTest {
             on.machineLinks.rows.values
                 .single()
         assertEquals(taken.single() to olegPress.id, link.machineId to link.linkedMachineId)
+    }
+
+    @Test
+    fun link_to_mine_hands_on_the_machine_s_name_and_a_linked_machine_opens() {
+        val pashas = Machine.new("Платформа", PASHA.userId, on.clock.current)
+        on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        on.friends.machines += pashas
+        on.friends.links +=
+            MachineLink(
+                MachineLinkId.random(),
+                PASHA.userId,
+                pashas.id,
+                olegPress.id,
+                on.clock.current,
+                false,
+            )
+        val linking = mutableListOf<String>()
+        val opened = mutableListOf<Pair<MachineId, UserId>>()
+        runScreenTest(on, screen = {
+            FriendMachineScreen(
+                olegPress.id,
+                OLEG.userId,
+                {},
+                {},
+                onTaken = {},
+                onLinkToMine = { linking += it },
+                onOpenFriendMachine = { machine, owner -> opened += machine to owner },
+            )
+        }) {
+            onNodeWithTag("link-to-mine").performClick()
+            onNodeWithTag("friend-machine-linked-${pashas.id.value}").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf("Жим ногами"), linking)
+        assertEquals(listOf(pashas.id to PASHA.userId), opened)
     }
 
     @Test

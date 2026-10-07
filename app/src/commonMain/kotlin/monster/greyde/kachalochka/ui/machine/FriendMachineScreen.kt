@@ -1,9 +1,9 @@
 package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.components.AccentButton
+import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.friends.OfflineNotice
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
@@ -43,9 +44,21 @@ fun FriendMachineScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onTaken: (MachineId) -> Unit,
+    onLinkToMine: (name: String) -> Unit = {},
+    onOpenMachine: (MachineId) -> Unit = {},
+    onOpenFriendMachine: (MachineId, UserId) -> Unit = { _, _ -> },
+    /** True once "Привязать к моему" has written a link, so the links are read again. */
+    linked: Boolean = false,
+    onLinkedConsumed: () -> Unit = {},
 ) {
     val viewModel: FriendMachineViewModel = koinViewModel { parametersOf(machineId, ownerId) }
     LaunchedEffect(Unit) { viewModel.speak() }
+    LaunchedEffect(linked) {
+        if (linked) {
+            viewModel.refresh()
+            onLinkedConsumed()
+        }
+    }
     val state by viewModel.state.collectAsState()
     val offline by viewModel.offline.collectAsState()
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
@@ -76,6 +89,15 @@ fun FriendMachineScreen(
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
+                if (current.linkedWith.isNotEmpty()) {
+                    LinkedMachines(current.linkedWith, "friend-machine-linked") {
+                        if (it.own) {
+                            onOpenMachine(it.machineId)
+                        } else {
+                            onOpenFriendMachine(it.machineId, it.owner.userId)
+                        }
+                    }
+                }
                 if (current.tags.isNotEmpty()) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -102,7 +124,16 @@ fun FriendMachineScreen(
                 Column { MachineStats(current.stats) }
             }
             if (current.canTake) {
-                Box(Modifier.padding(16.dp)) {
+                Column(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlineButton(
+                        strings().linkToMine,
+                        PhosphorIcons.LinkSimple,
+                        { onLinkToMine(current.name) },
+                        Modifier.fillMaxWidth().testTag("link-to-mine"),
+                    )
                     AccentButton(
                         strings().takeForMyself,
                         PhosphorIcons.Copy,

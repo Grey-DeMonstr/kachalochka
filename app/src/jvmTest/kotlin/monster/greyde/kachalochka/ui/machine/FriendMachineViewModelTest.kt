@@ -286,6 +286,36 @@ class FriendMachineViewModelTest {
         }
 
     @Test
+    fun the_machines_it_is_linked_with_are_named_with_their_owners() =
+        runTest {
+            val mine = Machine.new("Жим", ME.userId, t0)
+            val pashaPress = Machine.new("Платформа", PASHA.userId, t0)
+            on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+            on.friends.machines += pashaPress
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(
+                MachineLink(MachineLinkId.random(), ME.userId, mine.id, pashaPress.id, t0, false),
+            )
+            on.friends.links +=
+                MachineLink(
+                    MachineLinkId.random(),
+                    PASHA.userId,
+                    pashaPress.id,
+                    olegPress.id,
+                    t0,
+                    false,
+                )
+
+            assertEquals(
+                listOf(
+                    LinkedMachineUi(mine.id, ME, "Жим", own = true),
+                    LinkedMachineUi(pashaPress.id, PASHA, "Платформа"),
+                ),
+                viewModel().state.value?.linkedWith,
+            )
+        }
+
+    @Test
     fun offline_it_says_so_and_takes_nothing() {
         on.friends.offline = true
         val vm = viewModel()

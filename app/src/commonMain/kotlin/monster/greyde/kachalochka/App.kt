@@ -43,6 +43,7 @@ import monster.greyde.kachalochka.navigation.MachinePickerRoute
 import monster.greyde.kachalochka.navigation.MeasureRoute
 import monster.greyde.kachalochka.navigation.MeasurementFormRoute
 import monster.greyde.kachalochka.navigation.MeasuresRoute
+import monster.greyde.kachalochka.navigation.MineChooserRoute
 import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.navigation.PlanRoute
 import monster.greyde.kachalochka.navigation.PlansRoute
@@ -76,6 +77,7 @@ import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormScreen
 import monster.greyde.kachalochka.ui.machine.MachineListScreen
 import monster.greyde.kachalochka.ui.machine.MachinePickerScreen
+import monster.greyde.kachalochka.ui.machine.MineChooserScreen
 import monster.greyde.kachalochka.ui.measures.MeasureScreen
 import monster.greyde.kachalochka.ui.measures.MeasurementFormScreen
 import monster.greyde.kachalochka.ui.measures.MeasuresScreen
@@ -100,6 +102,9 @@ const val PICKED_MACHINE = "pickedMachine"
 
 /** The friend's machine whose settings the link chooser hands to the machine form. */
 private const val COPIED_SETTINGS = "copiedSettings"
+
+/** Set on a friend's machine once one of the account's machines is linked to it. */
+private const val LINKED_MINE = "linkedMine"
 
 /** The machine whose page a visit opens once, from [VisitRoute.machineId]. */
 private const val OPENED_MACHINE = "openedMachine"
@@ -260,6 +265,9 @@ fun App() {
                 }
                 composable<FriendMachineRoute> { entry ->
                     val route = entry.toRoute<FriendMachineRoute>()
+                    val linked by entry.savedStateHandle
+                        .getStateFlow(LINKED_MINE, false)
+                        .collectAsState()
                     FriendMachineScreen(
                         machineId = MachineId(route.machineId),
                         ownerId = UserId(route.ownerId),
@@ -269,6 +277,34 @@ fun App() {
                             navController.navigate(
                                 MachineFormRoute(machineId = copy.value, fromList = true),
                             ) { popUpTo<FriendMachineRoute> { inclusive = true } }
+                        },
+                        onLinkToMine = { name ->
+                            navController.navigate(MineChooserRoute(route.machineId, name))
+                        },
+                        onOpenMachine = {
+                            navController.navigate(
+                                MachineFormRoute(machineId = it.value, fromList = true),
+                            )
+                        },
+                        onOpenFriendMachine = { machine, owner ->
+                            navController.navigate(FriendMachineRoute(machine.value, owner.value))
+                        },
+                        linked = linked,
+                        onLinkedConsumed = { entry.savedStateHandle[LINKED_MINE] = false },
+                    )
+                }
+                composable<MineChooserRoute> { entry ->
+                    val route = entry.toRoute<MineChooserRoute>()
+                    MineChooserScreen(
+                        machineId = MachineId(route.machineId),
+                        name = route.name,
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onLinked = {
+                            navController.previousBackStackEntry
+                                ?.savedStateHandle
+                                ?.set(LINKED_MINE, true)
+                            navController.popBackStack()
                         },
                     )
                 }

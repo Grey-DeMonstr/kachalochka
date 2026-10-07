@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
-import monster.greyde.kachalochka.core.domain.friends.namesForViewer
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -27,6 +26,7 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.setsSummaryParts
 import monster.greyde.kachalochka.ui.format.weekdayDate
+import monster.greyde.kachalochka.ui.machine.LinkedMachineUi
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.strings.AppStrings
@@ -49,6 +49,7 @@ data class FriendMachineRowUi(
     val tags: List<String>,
     val summary: List<String>,
     val photo: Photo?,
+    val linkedWith: List<LinkedMachineUi> = emptyList(),
 )
 
 class FriendVisitViewModel(
@@ -104,7 +105,6 @@ class FriendVisitViewModel(
             val own = catalogue.own(me)
             val group = me?.let { catalogue.group(it) }
             val shown = ShownMachines(own, group)
-            val names = namesForViewer(theirs, own.machines, shown.clusters)
             val avatar =
                 me
                     ?.let { viewer -> friends.mates(viewer).firstOrNull { it.userId == member } }
@@ -112,7 +112,6 @@ class FriendVisitViewModel(
             stateOf(
                 visitSets,
                 theirs.associateBy { it.id },
-                names,
                 profiles.preferredUnit(me),
                 avatar,
                 shown,
@@ -128,7 +127,6 @@ class FriendVisitViewModel(
     private fun stateOf(
         visitSets: List<WorkoutSet>,
         machinesById: Map<MachineId, Machine>,
-        names: Map<MachineId, String>,
         preferred: PreferredWeightUnit,
         avatar: Avatar,
         shown: ShownMachines,
@@ -143,7 +141,7 @@ class FriendVisitViewModel(
             countLabel = machineCount(groups.size),
             groups =
                 groups.map {
-                    groupUi(it.machineId, it.sets, names, machinesById, preferred, shown)
+                    groupUi(it.machineId, it.sets, machinesById, preferred, shown)
                 },
         )
     }
@@ -151,7 +149,6 @@ class FriendVisitViewModel(
     private fun groupUi(
         machineId: MachineId,
         machineSets: List<WorkoutSet>,
-        names: Map<MachineId, String>,
         machinesById: Map<MachineId, Machine>,
         preferred: PreferredWeightUnit,
         shown: ShownMachines,
@@ -159,11 +156,12 @@ class FriendVisitViewModel(
         val machine = machinesById[machineId]
         return FriendMachineRowUi(
             machineId = machineId,
-            title = names[machineId].orEmpty(),
+            title = machine?.name.orEmpty(),
             note = machine?.setupNote.orEmpty(),
             tags = machine?.tags.orEmpty().sortedBy { it.lowercase() },
             summary = machine?.let { setsSummaryParts(it, machineSets, preferred) }.orEmpty(),
             photo = shown.cover(machineId),
+            linkedWith = shown.linkedWith(machineId),
         )
     }
 }

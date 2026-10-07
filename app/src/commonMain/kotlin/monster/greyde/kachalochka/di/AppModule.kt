@@ -39,6 +39,7 @@ import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
 import monster.greyde.kachalochka.ui.machine.MachineListViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
+import monster.greyde.kachalochka.ui.machine.MineChooserViewModel
 import monster.greyde.kachalochka.ui.measures.MeasureViewModel
 import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
 import monster.greyde.kachalochka.ui.measures.MeasuresViewModel
@@ -184,6 +185,9 @@ val appModule =
                 get(),
                 get(),
             )
+        }
+        viewModel { (machine: MachineId, name: String) ->
+            MineChooserViewModel(machine, name, get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (machine: MachineId, owner: UserId) ->
             FriendMachineViewModel(

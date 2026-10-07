@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.ui.machine.LinkedMachineUi
 import monster.greyde.kachalochka.ui.strings.inEnglish
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -57,7 +58,7 @@ class FriendVisitViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun a_friend_s_visit_lists_their_machines_under_the_viewer_s_names_where_linked() {
+    fun a_friend_s_visit_lists_their_machines_under_their_own_names() {
         val state = assertNotNull(viewModel().state.value)
 
         assertEquals("Олег", state.title)
@@ -65,12 +66,42 @@ class FriendVisitViewModelTest {
         assertEquals("2 упражнения", state.countLabel)
         assertEquals(
             listOf(
-                "Жим ногами" to listOf("80-85кг", "8-6"),
+                "Платформа" to listOf("80-85кг", "8-6"),
                 "Тяга" to listOf("45.5кг", "1x10"),
             ),
             state.groups.map { it.title to it.summary },
         )
     }
+
+    @Test
+    fun a_friend_s_machine_names_the_viewer_s_and_other_friends_machines_linked_to_it() =
+        runTest {
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+            val pashas = Machine.new("Жим", PASHA.userId, gym.clock.current)
+            gym.friends.machines += pashas
+            gym.friends.links +=
+                MachineLink(
+                    MachineLinkId.random(),
+                    PASHA.userId,
+                    pashas.id,
+                    fixture.olegPress.id,
+                    gym.clock.current,
+                    deleted = false,
+                )
+
+            val state = assertNotNull(viewModel().state.value)
+
+            assertEquals(
+                listOf(
+                    listOf(
+                        LinkedMachineUi(fixture.myPress.id, ME, "Жим ногами", own = true),
+                        LinkedMachineUi(pashas.id, PASHA, "Жим"),
+                    ),
+                    emptyList(),
+                ),
+                state.groups.map { it.linkedWith },
+            )
+        }
 
     @Test
     fun coming_back_in_another_language_reads_the_visit_again() {
@@ -104,7 +135,7 @@ class FriendVisitViewModelTest {
         }
 
     @Test
-    fun a_friend_s_machine_the_viewer_linked_to_reads_under_the_viewer_s_name() =
+    fun a_friend_s_machine_the_viewer_linked_to_names_the_viewer_s_machine() =
         runTest {
             val myRow = Machine.new("Тяга верхнего блока", ME.userId, gym.clock.current)
             gym.machines.upsert(myRow)
@@ -122,8 +153,8 @@ class FriendVisitViewModelTest {
             val state = assertNotNull(viewModel().state.value)
 
             assertEquals(
-                listOf("Жим ногами", "Тяга верхнего блока"),
-                state.groups.map { it.title },
+                listOf("Тяга" to listOf(LinkedMachineUi(myRow.id, ME, myRow.name, own = true))),
+                state.groups.drop(1).map { it.title to it.linkedWith },
             )
         }
 

@@ -161,6 +161,7 @@ object EnStrings : Strings {
     override val platformAdded = "added to the record"
     override val platformBeside = "shown beside the name"
     override val linkTo = "Link to…"
+    override val linkToMine = "Link to mine"
     override val merge = "Merge"
     override val mergeTitle = "Merge the machines?"
 

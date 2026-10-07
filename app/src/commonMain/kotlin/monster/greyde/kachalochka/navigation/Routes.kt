@@ -51,6 +51,13 @@ data class FriendMachineRoute(
     val ownerId: String,
 )
 
+/** Links one of the account's machines to the friend's [machineId]; [name] starts the search. */
+@Serializable
+data class MineChooserRoute(
+    val machineId: String,
+    val name: String,
+)
+
 @Serializable
 data class FriendVisitRoute(
     val userId: String,

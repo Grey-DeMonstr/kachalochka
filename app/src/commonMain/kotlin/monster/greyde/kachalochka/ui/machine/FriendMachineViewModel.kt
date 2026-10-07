@@ -42,7 +42,9 @@ data class FriendMachineUi(
     val note: String,
     val caption: String,
     val platform: String?,
+    /** Neither taking it nor linking an own machine to it would duplicate one. */
     val canTake: Boolean,
+    val linkedWith: List<LinkedMachineUi>,
     val photos: List<ShownPhoto>,
     val tags: List<String>,
     val period: StatsPeriod,
@@ -70,7 +72,9 @@ class FriendMachineViewModel(
     /** What the last read brought, kept so a period change redraws without the network. */
     private class Read(
         val friend: FriendMachine,
+        /** Another copy or link would duplicate an own machine already linked to this one. */
         val had: Boolean,
+        val linked: List<LinkedMachineUi>,
         val photos: List<Photo>,
         val sets: List<WorkoutSet>,
         val preferred: PreferredWeightUnit,
@@ -104,10 +108,14 @@ class FriendMachineViewModel(
             viewModelScope.launch {
                 val viewer = currentUser.id() ?: return@launch
                 reading {
-                    friends.groupMachines(viewer).firstOrNull(::isShown)?.let { found ->
+                    val group = catalogue.group(viewer)
+                    group.friends.firstOrNull(::isShown)?.let { found ->
+                        val own = catalogue.own(viewer)
+                        val shown = ShownMachines(own, group)
                         Read(
                             found,
-                            alreadyHas(viewer),
+                            own.machines.any { shown.clusters.sameMachine(it.id, machineId) },
+                            shown.linkedWith(machineId),
                             friends.photos(machineId),
                             friends.setsOn(owner, machineId),
                             profiles.preferredUnit(viewer),
@@ -129,18 +137,6 @@ class FriendMachineViewModel(
 
     private fun isShown(friend: FriendMachine) =
         friend.machine.id == machineId && friend.owner.userId == owner
-
-    /** Another copy would duplicate an own machine already linked to this one. */
-    private suspend fun alreadyHas(viewer: UserId): Boolean {
-        val clusters = catalogue.clusters(viewer)
-        val own =
-            catalogue
-                .own(viewer)
-                .machines
-                .map { it.id }
-                .toSet()
-        return clusters.of(machineId).any { it in own }
-    }
 
     /** Saves the account's copy of the shown machine, linked to it, and hands on the copy. */
     fun take(onTaken: (MachineId) -> Unit) {
@@ -166,6 +162,7 @@ class FriendMachineViewModel(
             caption = weightCaption(machine, PreferredWeightUnit.Mixed),
             platform = platformText(machine),
             canTake = !read.had,
+            linkedWith = read.linked,
             photos = read.photos.map { ShownPhoto(it.id.value, it, cover = it == cover) },
             tags = machine.tags.sortedBy { it.lowercase() },
             period = period,
