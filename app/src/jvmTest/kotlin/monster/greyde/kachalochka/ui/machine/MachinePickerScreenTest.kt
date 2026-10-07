@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -79,6 +80,23 @@ class MachinePickerScreenTest {
 
             onNodeWithTag("machine-search").assertTextEquals("")
             onNodeWithTag("clear-search").assertDoesNotExist()
+            onNodeWithTag("machine-row-${press.id.value}").assertIsDisplayed()
+        }
+
+    @Test
+    fun typing_goes_on_in_the_search_after_the_cross_empties_it() =
+        runScreenTest(gym, screen = {
+            MachinePickerScreen(gym.today, null, {}, {}, {}, { _, _ -> }, { _, _ -> })
+        }) {
+            onNodeWithTag("machine-search").performTextInput("гакк")
+            waitForIdle()
+            onNodeWithTag("clear-search").performClick()
+            waitForIdle()
+
+            onNodeWithTag("machine-search").assertIsFocused()
+            onNodeWithTag("machine-search").performTextInput("жим")
+            waitForIdle()
+            onNodeWithTag("machine-search").assertTextEquals("жим")
             onNodeWithTag("machine-row-${press.id.value}").assertIsDisplayed()
         }
 

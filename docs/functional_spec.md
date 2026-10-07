@@ -159,7 +159,7 @@ one opens its page with the form for its next set. A search keeps the machines w
 what is typed, in any letter case and with a few typos: none for up to 3 letters, one for 4-5, two
 for 6-8 and three for more; every machine search in the app works so. An own machine is also
 found by the names of the friends' machines it is linked with. A cross at its end, shown
-while it holds text, empties it. The tags of all these machines follow the search field as chips, and the chosen
+while it holds text, empties it and keeps the keyboard in the field. The tags of all these machines follow the search field as chips, and the chosen
 ones keep only the machines carrying every one of them. With nothing left, the picker says
 "Ничего не найдено". "Создать «…»" opens the machine form pre-filled with the typed name and the
 chosen tags ("С тегом «Руки»"). When a machine was opened in the visit, "Скопировать упражнение"
