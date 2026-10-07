@@ -815,6 +815,10 @@ builds them from its own address.
 - Google sign-in goes through Credential Manager, whose sheet needs an `Activity` rather than the
   `Application`, so the implementation takes a context supplier the Activity installs.
 - The sync pass is a WorkManager job so it survives the app being backgrounded.
+- Release builds are minified and resource-shrunk by R8; the app bundle carries the mapping file
+  Play uses to deobfuscate crashes. Class names do not survive R8, so code must never compare
+  them: a platform error that common code reacts to is wrapped in a type `core` owns, as
+  `SignInCancelledException` wraps Credential Manager's cancellation.
 
 ---
 

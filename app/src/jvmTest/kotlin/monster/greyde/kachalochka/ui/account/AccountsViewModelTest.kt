@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.data.identity.NoWatermarkReset
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
+import monster.greyde.kachalochka.core.data.identity.SignInCancelledException
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.Avatar
@@ -31,8 +32,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
-
-private class GetCredentialCancellationException : Exception("the user backed out")
 
 private class FailingSignIn(
     private val error: Throwable,
@@ -134,7 +133,7 @@ class AccountsViewModelTest {
     @Test
     fun backing_out_of_the_picker_leaves_no_trace_of_an_error() =
         runTest {
-            val viewModel = viewModel(FailingSignIn(GetCredentialCancellationException()))
+            val viewModel = viewModel(FailingSignIn(SignInCancelledException()))
 
             viewModel.addAccount()
 

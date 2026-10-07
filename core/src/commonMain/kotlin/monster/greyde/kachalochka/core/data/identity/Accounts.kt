@@ -60,16 +60,9 @@ class Accounts(
             work()
         } catch (stopped: CancellationException) {
             throw stopped
+        } catch (_: SignInCancelledException) {
         } catch (refused: Exception) {
-            if (!isUserCancellation(refused)) failure.value = refused.toString()
+            failure.value = refused.toString()
         }
     }
 }
-
-/**
- * Android's picker throws `GetCredentialCancellationException` when the user backs out; that type
- * lives in androidx.credentials, invisible from commonMain, so its class name is the only
- * cross-platform way to tell a change of mind from a broken sign-in.
- */
-internal fun isUserCancellation(error: Throwable): Boolean =
-    error::class.simpleName == "GetCredentialCancellationException"

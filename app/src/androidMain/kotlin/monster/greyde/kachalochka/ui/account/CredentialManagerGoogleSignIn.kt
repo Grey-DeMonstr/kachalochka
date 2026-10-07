@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import io.github.jan.supabase.SupabaseClient
@@ -12,6 +13,7 @@ import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.IDToken
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
+import monster.greyde.kachalochka.core.data.identity.SignInCancelledException
 import monster.greyde.kachalochka.core.data.identity.toAccountSession
 
 private val GOOGLE_ID_TOKEN_TYPES =
@@ -51,10 +53,14 @@ class CredentialManagerGoogleSignIn(
                 .addCredentialOption(GetSignInWithGoogleOption.Builder(webClientId).build())
                 .build()
         val credential =
-            CredentialManager
-                .create(screen)
-                .getCredential(screen, request)
-                .credential
+            try {
+                CredentialManager
+                    .create(screen)
+                    .getCredential(screen, request)
+                    .credential
+            } catch (backedOut: GetCredentialCancellationException) {
+                throw SignInCancelledException(backedOut)
+            }
         check(credential is CustomCredential && credential.type in GOOGLE_ID_TOKEN_TYPES) {
             "Google sign-in returned a ${credential.type} instead of an ID token"
         }

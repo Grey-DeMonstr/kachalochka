@@ -24,9 +24,6 @@ private class FailingSignIn(
     override suspend fun signIn(): AccountSession = throw error
 }
 
-/** Stands in for androidx.credentials' own type, which commonMain cannot see. */
-private class GetCredentialCancellationException : Exception("the user backed out")
-
 private class RecordingActivation : SessionActivation {
     val activated = mutableListOf<UserId>()
     var cleared = false
@@ -170,7 +167,7 @@ class AccountsTest {
     @Test
     fun backing_out_of_the_google_picker_reports_nothing() =
         runTest {
-            val service = refusing(GetCredentialCancellationException())
+            val service = refusing(SignInCancelledException())
 
             service.addAccount()
 
@@ -256,13 +253,6 @@ class AccountsTest {
 
             assertFailsWith<CancellationException> { service.signOut(ivan.account.userId) }
         }
-
-    @Test
-    fun only_the_picker_s_own_cancellation_reads_as_a_change_of_mind() {
-        assertTrue(isUserCancellation(GetCredentialCancellationException()))
-        assertFalse(isUserCancellation(IllegalStateException("Sign-in needs a visible screen")))
-        assertFalse(isUserCancellation(CancellationException("stopped")))
-    }
 
     @Test
     fun switching_to_a_managed_child_makes_its_guardian_s_session_live() =
