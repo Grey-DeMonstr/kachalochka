@@ -1,5 +1,15 @@
 Kachalochka - Changelog
 
+1.6.5
+
+- The machine list suggests machines to merge or link.
+- A friend's visit and machine show the machines they are linked with.
+- "Link to mine" on a friend's machine links it to one of your machines.
+- Linked machines show their owner's avatar instead of a name in brackets.
+- Switching a machine between total and per-side weight offers to recalculate its sets.
+- Fixed: on Android, typing in a search sometimes stops after its cross empties it.
+
+
 1.6.4
 
 - Machine search also finds a machine by the names of the friends' machines it is linked with.
