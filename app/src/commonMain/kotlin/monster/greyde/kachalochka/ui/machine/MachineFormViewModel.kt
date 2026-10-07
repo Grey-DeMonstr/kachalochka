@@ -30,6 +30,8 @@ import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.gym.shiftedSets
+import monster.greyde.kachalochka.core.domain.gym.sideFactor
+import monster.greyde.kachalochka.core.domain.gym.sidedSets
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
@@ -450,8 +452,8 @@ class MachineFormViewModel(
         }
 
     /**
-     * A platform or unit change over recorded sets waits for [recalculate] or [keepRecorded],
-     * since only the user knows whether the recorded weights held the platform or the new unit.
+     * A platform, unit or side change over recorded sets waits for [recalculate] or
+     * [keepRecorded], since only the user knows how the recorded weights were read.
      */
     fun save(onSaved: (MachineId) -> Unit) {
         val form = mutableState.value
@@ -462,8 +464,13 @@ class MachineFormViewModel(
             val (base, machine) = edited(form, owner)
             val shift = platformShift(base, machine)
             val converted = convertible(base.unit, machine.unit)
+            val factor = sideFactor(base.weightMode, machine.weightMode)
             val recorded =
-                if (shift == 0.0 && !converted) emptyList() else recordedSets(base, owner)
+                if (shift == 0.0 && !converted && factor == 1.0) {
+                    emptyList()
+                } else {
+                    recordedSets(base, owner)
+                }
             if (recorded.isEmpty()) {
                 write(form, onSaved, recalculate = false)
                 return@launch
@@ -472,19 +479,26 @@ class MachineFormViewModel(
             val strings = AppStrings.current
             val sets = setCount(recorded.size)
             val shiftText = weightShift(shift, machine).takeIf { shift != 0.0 }
-            mutableRecalculation.value =
-                RecalculationUi(
-                    if (converted) {
+            val sideText =
+                when {
+                    factor < 1.0 -> strings.recalculatePerSideText(sets)
+                    factor > 1.0 -> strings.recalculateTotalText(sets)
+                    else -> null
+                }
+            val weightText =
+                when {
+                    converted ->
                         strings.recalculateUnitText(
                             sets,
                             unitLabel(base),
                             unitLabel(machine),
                             shiftText,
                         )
-                    } else {
-                        strings.recalculateText(sets, weightShift(shift, machine))
-                    },
-                )
+                    shiftText != null -> strings.recalculateText(sets, shiftText)
+                    else -> null
+                }
+            mutableRecalculation.value =
+                RecalculationUi(listOfNotNull(sideText, weightText).joinToString("\n\n"))
         }
     }
 
@@ -552,7 +566,8 @@ class MachineFormViewModel(
             val recorded = recordedSets(base, owner)
             val converted =
                 convertedSets(recorded, base.unit, machine.unit, machine.weightStep, now)
-            shiftedSets(converted, platformShift(base, machine), now).forEach { sets.upsert(it) }
+            val sided = sidedSets(converted, sideFactor(base.weightMode, machine.weightMode), now)
+            shiftedSets(sided, platformShift(base, machine), now).forEach { sets.upsert(it) }
         }
         takenPhotos.forEach {
             photoRows.add(Photo(it.id, owner, machine.id, it.takenAt, now, false), it.jpeg)

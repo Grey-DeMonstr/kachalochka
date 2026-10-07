@@ -482,7 +482,9 @@ read takes it before the profile, so a reload after a sync keeps it. Migration `
 rounds pounds to 0.1 kg and kilograms to a multiple of a pound step, which `guessedLbStep` finds
 from the sets recorded in kg. `platformShift` compares the two platforms in the new machine's unit.
 The machine form converts its fields on a unit switch and the recorded sets on save; a merge
-converts the moved sets before it shifts them.
+converts the moved sets before it shifts them. `sideFactor` in `SideConversion` halves the
+recorded weights when a machine starts counting per side and doubles them back; the form applies
+it between the unit conversion and the platform shift.
 
 Every machine search filters names with `nameMatches` in `domain/gym`: the smallest Levenshtein
 distance from the typed text to any part of the name (Sellers' algorithm), in lower case, against

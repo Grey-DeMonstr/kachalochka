@@ -199,6 +199,12 @@ object EnStrings : Strings {
     ) = "The unit changed: $from → $to. Convert the weight of the recorded sets ($sets) to the " +
         "new unit" + shift?.let { " and change it by $it for the platform" }.orEmpty() + "?"
 
+    override fun recalculatePerSideText(sets: String) =
+        "The weight now counts per side. Halve the weight of the recorded sets ($sets)?"
+
+    override fun recalculateTotalText(sets: String) =
+        "The weight now counts in total. Double the weight of the recorded sets ($sets)?"
+
     override fun mergeConvert(
         removed: String,
         from: String,

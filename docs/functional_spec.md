@@ -193,6 +193,13 @@ asks "Пересчитать историю?" for a machine with recorded sets a
 "Пересчитать" converts every recorded weight the same way, to the form's step, and then applies a
 platform change, which the question names too.
 
+Switching how the weight counts from "Всего" to "На сторону", or back, makes "Сохранить" ask
+"Пересчитать историю?" for a machine with recorded sets: "Пересчитать" halves every recorded
+weight, or doubles it, so that a machine counted the other way can be merged with this one. With a
+unit or platform change in the same save, the question names each change and "Пересчитать"
+applies them all: the unit first, then the sides, then the platform. A switch to or from
+"Гравитрон" keeps the weights.
+
 Under the name, the machine's photos run in a row, oldest first, then, signed in and online, the
 photos of the friends' machines it is linked with, each with its owner's avatar; the row ends with
 a camera tile, which offers "Снять фото" and "Из галереи". With no photo yet, the machines it is

@@ -181,6 +181,10 @@ interface Strings {
         shift: String?,
     ): String
 
+    fun recalculatePerSideText(sets: String): String
+
+    fun recalculateTotalText(sets: String): String
+
     fun mergeConvert(
         removed: String,
         from: String,

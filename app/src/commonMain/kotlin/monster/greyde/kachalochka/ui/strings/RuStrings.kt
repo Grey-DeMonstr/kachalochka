@@ -215,6 +215,12 @@ object RuStrings : Strings {
     ) = "Единица изменилась: $from → $to. Перевести вес записанных подходов ($sets) в новую " +
         "единицу" + shift?.let { " и изменить его на $it под платформу" }.orEmpty() + "?"
 
+    override fun recalculatePerSideText(sets: String) =
+        "Вес теперь считается на сторону. Разделить вес записанных подходов ($sets) пополам?"
+
+    override fun recalculateTotalText(sets: String) =
+        "Вес теперь считается всего. Удвоить вес записанных подходов ($sets)?"
+
     override fun mergeConvert(
         removed: String,
         from: String,

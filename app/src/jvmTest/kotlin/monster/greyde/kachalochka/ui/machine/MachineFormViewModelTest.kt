@@ -772,6 +772,84 @@ class MachineFormViewModelTest {
         }
 
     @Test
+    fun counting_per_side_offers_to_halve_the_recorded_sets() =
+        runTest {
+            val (vm, recorded) = kgMachine()
+            vm.update { it.copy(weightMode = WeightMode.PerSide) }
+
+            vm.save {}
+
+            assertEquals(
+                RecalculationUi(
+                    "Вес теперь считается на сторону. Разделить вес записанных подходов " +
+                        "(2 подхода) пополам?",
+                ),
+                vm.recalculation.value,
+            )
+
+            vm.recalculate()
+
+            assertEquals(WeightMode.PerSide, gym.machines.byId(recorded[0].machineId)?.weightMode)
+            assertEquals(
+                recorded.zip(listOf(11.35, 13.6)).map { (set, weight) ->
+                    set.copy(weight = weight, updatedAt = gym.clock.current)
+                },
+                recorded.map { gym.sets.rows.getValue(it.id) },
+            )
+        }
+
+    @Test
+    fun counting_in_total_again_offers_to_double_them_with_a_unit_change() =
+        runTest {
+            val (vm, recorded) = kgMachine()
+            vm.update { it.copy(weightMode = WeightMode.PerSide) }
+            vm.save {}
+            vm.keepRecorded()
+            val again =
+                viewModel(
+                    MachineFormArgs(recorded[0].machineId, null, ""),
+                ).also { it.load() }
+            again.update { it.copy(weightMode = WeightMode.Total) }
+            again.chooseUnit(WeightUnit.Lb)
+
+            again.save {}
+
+            assertEquals(
+                RecalculationUi(
+                    "Вес теперь считается всего. Удвоить вес записанных подходов " +
+                        "(2 подхода)?\n\nЕдиница изменилась: кг → lb. Перевести вес " +
+                        "записанных подходов (2 подхода) в новую единицу?",
+                ),
+                again.recalculation.value,
+            )
+
+            again.recalculate()
+
+            assertEquals(
+                listOf(100.0, 120.0),
+                recorded.map {
+                    gym.sets.rows
+                        .getValue(it.id)
+                        .weight
+                },
+            )
+        }
+
+    @Test
+    fun a_counterweight_saves_at_once() =
+        runTest {
+            val (vm, recorded) = kgMachine()
+            vm.update { it.copy(weightMode = WeightMode.Counterweight) }
+            var saved = false
+
+            vm.save { saved = true }
+
+            assertTrue(saved)
+            assertNull(vm.recalculation.value)
+            assertEquals(recorded, recorded.map { gym.sets.rows.getValue(it.id) })
+        }
+
+    @Test
     fun a_platform_change_without_recorded_sets_saves_at_once() =
         runTest {
             val press = Machine.new("Жим ногами", null, t0)
