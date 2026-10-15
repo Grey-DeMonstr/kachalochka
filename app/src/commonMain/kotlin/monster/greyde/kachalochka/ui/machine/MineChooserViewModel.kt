@@ -7,11 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
-import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLink
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.anyNameMatches
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -21,7 +17,6 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.friends.reading
-import kotlin.time.Clock
 
 data class MineChooserUiState(
     val query: String = "",
@@ -32,11 +27,8 @@ data class MineChooserUiState(
 class MineChooserViewModel(
     private val friendMachine: MachineId,
     name: String,
-    private val links: MachineLinkRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
     private val catalogue: MachineCatalogue,
 ) : ViewModel() {
@@ -89,9 +81,7 @@ class MineChooserViewModel(
         writes.launch {
             val owner = currentUser.id() ?: return@launch
             if (owner != offeredTo) return@launch
-            val now = clock.now()
-            links.upsert(MachineLink(MachineLinkId.random(), owner, id, friendMachine, now, false))
-            sync.request()
+            catalogue.link(owner, id, friendMachine, current.group)
             onDone()
         }
     }

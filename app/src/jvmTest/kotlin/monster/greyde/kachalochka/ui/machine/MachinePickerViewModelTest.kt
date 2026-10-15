@@ -557,20 +557,21 @@ class MachinePickerViewModelTest {
     }
 
     @Test
-    fun picking_the_shared_row_links_to_the_original() =
+    fun picking_the_shared_row_links_to_the_original_and_to_its_copy() =
         runTest {
             val (on, olegPress) = sharedLinkGym()
+            val pashaCopy = on.friends.machines.single { it.userId == PASHA.userId }
             val vm = pickerOn(on).also { it.load() }
             var picked: MachineId? = null
 
             vm.pickFriend(olegPress.id) { picked = it }
 
-            val link =
-                on.machineLinks.rows.values
-                    .single()
+            val copy = assertNotNull(picked)
             assertEquals(
-                assertNotNull(picked) to olegPress.id,
-                link.machineId to link.linkedMachineId,
+                setOf(copy to olegPress.id, copy to pashaCopy.id),
+                on.machineLinks.rows.values
+                    .map { it.machineId to it.linkedMachineId }
+                    .toSet(),
             )
         }
 

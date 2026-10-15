@@ -32,11 +32,8 @@ class MineChooserViewModelTest {
         MineChooserViewModel(
             olegs.id,
             olegs.name,
-            gym.machineLinks,
             gym.currentUser,
             gym.accounts,
-            gym.clock,
-            gym.sync,
             gym.profiles,
             gym.catalogue,
         ).also { it.load() }
@@ -109,5 +106,22 @@ class MineChooserViewModelTest {
             Triple(link.userId, link.machineId, link.linkedMachineId),
         )
         assertEquals(1, gym.sync.requests)
+    }
+
+    @Test
+    fun choosing_an_own_machine_links_it_to_the_whole_cluster_of_the_friend_s() {
+        val pashas = Machine.new("Жим", PASHA.userId, t0)
+        gym.friends.machines += pashas
+        gym.friends.links +=
+            MachineLink(MachineLinkId.random(), PASHA.userId, pashas.id, olegs.id, t0, false)
+
+        viewModel().choose(row.id) {}
+
+        assertEquals(
+            setOf(row.id to olegs.id, row.id to pashas.id),
+            gym.machineLinks.rows.values
+                .map { it.machineId to it.linkedMachineId }
+                .toSet(),
+        )
     }
 }

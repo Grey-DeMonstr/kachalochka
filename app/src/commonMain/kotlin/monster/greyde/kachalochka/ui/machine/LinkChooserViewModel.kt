@@ -15,8 +15,6 @@ import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLink
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
@@ -124,13 +122,7 @@ class LinkChooserViewModel(
     /** The two machines the merge dialog asks about. */
     private var pending: List<Machine> = emptyList()
 
-    /** The friends' machines suggested for this one first, then the clusters without own ones. */
-    private val offeredGroups: List<List<FriendMachine>>?
-        get() =
-            group?.let { read ->
-                val suggested = read.suggestedLinks(machineId, own)
-                listOf(suggested).filter { it.isNotEmpty() } + read.offeredGroups(own)
-            }
+    private val offeredGroups: List<List<FriendMachine>>? get() = group?.offeredGroups(own)
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -321,17 +313,15 @@ class LinkChooserViewModel(
         id: MachineId,
         onDone: (copyFrom: MachineId?) -> Unit,
     ) {
-        if (offeredGroups.orEmpty().flatten().none { it.machine.id == id }) return
+        val read = group ?: return
+        if (read.offeredGroups(own).flatten().none { it.machine.id == id }) return
         val offeredTo = shownFor
         val copyFrom = id.takeIf { mutableState.value.copySettings }
         writes.launch {
             val owner = currentUser.id() ?: return@launch
             if (owner != offeredTo) return@launch
             liveOwn(machineId, owner) ?: return@launch
-            machineLinks.upsert(
-                MachineLink(MachineLinkId.random(), owner, machineId, id, clock.now(), false),
-            )
-            sync.request()
+            catalogue.link(owner, machineId, id, read)
             onDone(copyFrom)
         }
     }

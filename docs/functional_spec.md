@@ -220,8 +220,7 @@ form drops them. A photo is shrunk to at most 1600 pixels on its long edge befor
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a
 search field, which starts with the machine's name: "Мои упражнения", the account's other machines, and, signed in and online,
 "Упражнения друзей", one row per friends' machine that is not yet the same machine as one of the
-account's, after the friends' machines suggested for it (see below), which are already the same
-machine but not linked to it directly. Every row shows the machine's photo, as every list does, and an own row the friends'
+account's. Every row shows the machine's photo, as every list does, and an own row the friends'
 machines it is linked with. Friends' machines already
 linked with each other stand together in one frame, the original first, so any of them can be
 chosen; a search keeps the whole frame when one machine in it matches. Choosing an own machine removes a duplicate. "Объединить упражнения?" shows both
@@ -252,14 +251,12 @@ and the chosen tags keep the own and the friends' machines as they do in the pic
 nothing left the list says "Ничего не найдено". Tapping one opens it in the
 machine form; "Добавить" adds one. Saving returns to the list.
 
-The list suggests links for the account's machines. Another own machine is suggested, to merge
-with, when it has the same name (in any letter case) or is already the same machine through
-friends' links. A friend's machine is suggested, to link to, when it is already the same machine
-through other friends' links but the own machine has no direct link to any of that friend's
-machines: one machine per such friend. Offline, only the account's own machines and links suggest
-anything. A machine with a suggestion has a link button at the end of its name; it opens
-"Привязать к…" with the search starting with the first suggested machine's name, merges come
-first. There "Скопировать настройки" is not offered, and merging or linking returns to the list.
+The list suggests merges for the account's machines. Another own machine is suggested when it has
+the same name (in any letter case) or is already the same machine through friends' links.
+Offline, only the account's own machines and links suggest anything. A machine with a suggestion
+has a link button at the end of its name; it opens "Привязать к…" with the search starting with
+the first suggested machine's name. There "Скопировать настройки" is not offered, and merging or
+linking returns to the list.
 While any machine has a suggestion, a chip with a link icon follows the sort chips; chosen, it keeps
 only the account's machines with a suggestion and hides the friends' sections.
 
@@ -531,6 +528,12 @@ linked directly or through other friends' links are one machine: the picker no l
 friend's machine beside the user's own, the machine's page shows each friend's latest visit on it
 ("Олег  вчера · 80-85кг 8-6"), and a friend's visit, a friend's machine and the machine form list
 the machines it is linked with.
+The app keeps every link direct: when an own machine is the same machine as a friend's only
+through other friends' links, the app links the two itself, as the user's own link. This happens
+each time the friends' machines are read, and "Привязать к…", "Привязать к моему" and "Взять
+себе" link the machine at once to every friend's machine joined with the chosen one. The app sees
+only the links of the user's group mates, so a chain through a person outside the user's groups
+stops there.
 Every list of linked machines starts with a link icon and puts the owner's avatar before each
 machine name: the user's own machines first, then the friends' by owner and then by name. In the
 form, tapping one opens it: an own machine in its form, a friend's as from the machine list.

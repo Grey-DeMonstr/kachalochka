@@ -49,7 +49,7 @@ fun machineSortLabels(): List<Pair<MachineSort, String>> {
 
 /**
  * The sort orders as chips, drawn like the tags; with [onlySuggested] given, a link chip follows
- * them, which keeps only the machines with a suggested link.
+ * them, which keeps only the machines with a suggested merge.
  */
 @Composable
 fun SortChips(

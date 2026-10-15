@@ -150,7 +150,7 @@ class LinkChooserViewModelTest {
     }
 
     @Test
-    fun a_friend_s_machine_reached_through_another_friend_s_is_offered_and_linked() {
+    fun a_friend_s_machine_reached_through_another_friend_s_is_linked_and_not_offered() {
         gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         val (olegs, link) = linkedCopy(press, OLEG.userId, t0)
         val pashas = Machine.new("Платформа", PASHA.userId, t0)
@@ -158,20 +158,33 @@ class LinkChooserViewModelTest {
         gym.friends.links += link
         gym.friends.links +=
             MachineLink(MachineLinkId.random(), PASHA.userId, pashas.id, olegs.id, t0, false)
+
         val vm = viewModel(query = null, start = "Платформа")
 
-        assertEquals(
-            listOf(listOf(pashas.id)),
-            vm.state.value.friendGroups
-                ?.map { g -> g.map { it.id } },
-        )
-
-        vm.chooseFriend(pashas.id) {}
-
+        assertEquals(emptyList(), vm.state.value.friendGroups)
         val written =
             gym.machineLinks.rows.values
                 .single()
         assertEquals(press.id to pashas.id, written.machineId to written.linkedMachineId)
+    }
+
+    @Test
+    fun choosing_a_friend_s_machine_links_this_one_to_its_whole_cluster() {
+        val (_, bench) = olegsMachines()
+        val (pashas, link) = linkedCopy(bench, PASHA.userId, t0)
+        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        gym.friends.machines += pashas
+        gym.friends.links += link
+
+        viewModel().chooseFriend(bench.id) {}
+
+        assertEquals(
+            setOf(press.id to bench.id, press.id to pashas.id),
+            gym.machineLinks.rows.values
+                .map { it.machineId to it.linkedMachineId }
+                .toSet(),
+        )
+        assertEquals(1, gym.sync.requests)
     }
 
     @Test

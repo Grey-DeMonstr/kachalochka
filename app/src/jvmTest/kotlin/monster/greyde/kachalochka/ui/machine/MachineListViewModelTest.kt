@@ -423,6 +423,39 @@ class MachineListViewModelTest {
         }
 
     @Test
+    fun a_friend_s_machine_reached_through_another_friend_s_is_linked_instead_of_suggested() =
+        runTest {
+            val (on, olegPress) = olegsGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+            val mine = Machine.new("Жим ногами", ME.userId, t0)
+            val pashas = Machine.new("Платформа", PASHA.userId, t0)
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(
+                MachineLink(MachineLinkId.random(), ME.userId, mine.id, olegPress.id, t0, false),
+            )
+            on.friends.machines += pashas
+            on.friends.links +=
+                MachineLink(
+                    MachineLinkId.random(),
+                    PASHA.userId,
+                    pashas.id,
+                    olegPress.id,
+                    t0,
+                    false,
+                )
+
+            val vm = viewModel(on).also { it.load() }
+
+            assertEquals(false, vm.state.value.hasSuggestions)
+            assertEquals(
+                setOf(mine.id to olegPress.id, mine.id to pashas.id),
+                on.machineLinks.rows.values
+                    .map { it.machineId to it.linkedMachineId }
+                    .toSet(),
+            )
+        }
+
+    @Test
     fun without_suggestions_there_is_no_chip_and_nothing_is_kept_out() =
         runTest {
             val row = Machine.new("Тяга", null, t0)

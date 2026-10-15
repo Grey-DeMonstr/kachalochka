@@ -7,7 +7,6 @@ import kotlin.test.assertEquals
 class LinkSuggestionsTest {
     private val me = UserId("11111111-1111-4111-8111-111111111111")
     private val oleg = UserId("33333333-3333-4333-8333-333333333333")
-    private val pasha = UserId("44444444-4444-4444-8444-444444444444")
 
     private fun machine(
         name: String,
@@ -26,7 +25,7 @@ class LinkSuggestionsTest {
         val b = machine(" жим НОГАМИ ", me)
         val c = machine("Жим", me)
 
-        val suggested = linkSuggestions(listOf(a, b, c), emptyList(), emptyList())
+        val suggested = linkSuggestions(listOf(a, b, c), emptyList())
 
         assertEquals(mapOf(a.id to listOf(b), b.id to listOf(a)), suggested)
     }
@@ -37,69 +36,43 @@ class LinkSuggestionsTest {
         val c = machine("Присед", me)
         val b = machine("Гакк-машина", oleg)
 
-        val suggested = linkSuggestions(listOf(a, c), listOf(b), listOf(link(a, b), link(c, b)))
+        val suggested = linkSuggestions(listOf(a, c), listOf(link(a, b), link(c, b)))
 
         assertEquals(mapOf(a.id to listOf(c), c.id to listOf(a)), suggested)
     }
 
     @Test
-    fun a_friend_s_machine_reached_only_through_another_friend_s_is_suggested() {
+    fun a_friend_s_machine_is_never_suggested() {
         val a = machine("Гакк", me)
         val b = machine("Гакк-машина", oleg)
-        val c = machine("Присед", pasha)
+        val c = machine("Присед", oleg)
 
-        val suggested = linkSuggestions(listOf(a), listOf(b, c), listOf(link(a, b), link(c, b)))
+        val suggested = linkSuggestions(listOf(a), listOf(link(a, b), link(c, b)))
 
-        assertEquals(mapOf(a.id to listOf(c)), suggested)
+        assertEquals(emptyMap(), suggested)
     }
 
     @Test
-    fun one_direct_link_to_a_friend_s_machine_covers_that_friend() {
+    fun a_deleted_link_joins_nothing() {
         val a = machine("Гакк", me)
+        val c = machine("Присед", me)
         val b = machine("Гакк-машина", oleg)
-        val other = machine("Гакк 2", oleg)
-        val c = machine("Присед", pasha)
-        val pashasOther = machine("Гакк", pasha)
+
+        val suggested = linkSuggestions(listOf(a, c), listOf(link(a, b), link(c, b, true)))
+
+        assertEquals(emptyMap(), suggested)
+    }
+
+    @Test
+    fun the_machines_to_merge_with_come_by_name() {
+        val a = machine("Гакк", me)
+        val later = machine("Гакк", me)
+        val first = machine("Арка", me)
+        val b = machine("Гакк-машина", oleg)
 
         val suggested =
-            linkSuggestions(
-                listOf(a),
-                listOf(b, other, c, pashasOther),
-                listOf(link(a, b), link(other, b), link(c, b), link(pashasOther, c)),
-            )
+            linkSuggestions(listOf(a, later, first), listOf(link(a, b), link(first, b)))
 
-        assertEquals(mapOf(a.id to listOf(pashasOther)), suggested)
-    }
-
-    @Test
-    fun a_link_in_either_direction_counts_and_a_deleted_one_does_not() {
-        val a = machine("Гакк", me)
-        val b = machine("Гакк-машина", oleg)
-        val c = machine("Присед", pasha)
-
-        val linkedBack =
-            linkSuggestions(listOf(a), listOf(b, c), listOf(link(b, a), link(c, b), link(c, a)))
-        val unlinked =
-            linkSuggestions(
-                listOf(a),
-                listOf(b, c),
-                listOf(link(a, b), link(c, b), link(a, c, deleted = true)),
-            )
-
-        assertEquals(emptyMap(), linkedBack)
-        assertEquals(mapOf(a.id to listOf(c)), unlinked)
-    }
-
-    @Test
-    fun merges_come_before_links() {
-        val a = machine("Гакк", me)
-        val same = machine("Гакк", me)
-        val b = machine("Гакк-машина", oleg)
-        val c = machine("Присед", pasha)
-
-        val suggested =
-            linkSuggestions(listOf(a, same), listOf(b, c), listOf(link(a, b), link(c, b)))
-
-        assertEquals(listOf(same, c), suggested[a.id])
+        assertEquals(listOf(first, later), suggested[a.id])
     }
 }

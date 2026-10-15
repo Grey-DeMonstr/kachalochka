@@ -73,6 +73,7 @@ class FriendMachineViewModel(
     /** What the last read brought, kept so a period change redraws without the network. */
     private class Read(
         val friend: FriendMachine,
+        val group: GroupMachines,
         /** Another copy or link would duplicate an own machine already linked to this one. */
         val had: Boolean,
         val linked: List<LinkedMachineUi>,
@@ -115,6 +116,7 @@ class FriendMachineViewModel(
                         val shown = ShownMachines(own, group)
                         Read(
                             found,
+                            group,
                             own.machines.any { shown.clusters.sameMachine(it.id, machineId) },
                             shown.linkedWith(machineId),
                             friends.photos(machineId),
@@ -141,12 +143,12 @@ class FriendMachineViewModel(
 
     /** Saves the account's copy of the shown machine, linked to it, and hands on the copy. */
     fun take(onTaken: (MachineId) -> Unit) {
-        val friend = read?.takeUnless { it.had }?.friend?.machine ?: return
+        val shown = read?.takeUnless { it.had } ?: return
         val takenFor = shownFor
         writes.launch {
             val viewer = currentUser.id() ?: return@launch
             if (viewer != takenFor) return@launch
-            onTaken(catalogue.take(viewer, friend).id)
+            onTaken(catalogue.take(viewer, shown.friend.machine, shown.group).id)
         }
     }
 

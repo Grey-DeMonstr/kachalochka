@@ -463,15 +463,21 @@ is `OwnMachines.me`, built from the signed-in account and `AccountAvatars`. The 
 the account's own links, read locally, with its group mates' live links, read online through
 `FriendsRepository.groupLinks`. Picking a friend's machine, or "Взять себе" on one opened from the
 machine list, writes the own copy (`linkedCopy`) and the link from it to the friend's machine;
-"Привязать к моему" (`MineChooserRoute`) writes only the link, from the chosen own machine.
+"Привязать к моему" (`MineChooserRoute`) writes only the link, from the chosen own machine. Both
+then link the machine to the rest of the cluster, as below.
 
-`linkSuggestions` in `domain/gym` gives each own machine what it could still be joined with: own
-machines of the same trimmed, case-blind name or of its cluster, to merge, then one machine per
-friend who has machines in its cluster but none linked to it directly, so links stay direct when a
-middle machine goes. `ShownMachines.suggestions` runs it over the group's machines and links, or,
-before the group is read, over the own ones. The machine list's link button opens
-`LinkChooserRoute.suggested`, which starts the chooser's search and sends it back to the list; the
-chooser offers the suggested friends' machines (`GroupMachines.suggestedLinks`) as its first group.
+Every device keeps its owner's links direct, so a cluster holds when a middle machine or its
+owner goes. `missingDirectLinks` in `domain/gym` gives the links an owner must write: from each of
+its live machines to every visible friend's machine of its cluster that no live link joins to it
+in either direction, never to an own machine, ordered by machine id, with ids from a generator. The
+links are the owner's own rows, so no friend's row is changed. A device sees only its group mates'
+links, so a chain through a person outside the owner's groups stops there.
+
+`linkSuggestions` in `domain/gym` gives each own machine the other own machines it could be
+merged with: of the same trimmed, case-blind name or of its cluster. `ShownMachines.suggestions`
+runs it over the group read's links, or, before the group is read, over the own ones. The machine
+list's link button opens `LinkChooserRoute.suggested`, which starts the chooser's search and sends
+it back to the list.
 
 A machine's record and last use come from `machinePeaks` in `domain/gym`: per machine, its
 heaviest and lightest weights with the most reps at each, its last set's instant and the number
@@ -503,19 +509,25 @@ friends' machines in its cluster (`ShownMachines.linkedNames`), known only after
 `MachineCatalogue` in `app/ui/machine` is the one reader of all of this. Its `own` read gives an
 account's live machines, photos and links from the device; its `group` read gives the group
 mates' machines, links and photos from the network, in one parallel request; `clusters` reads
-only the links, for screens that just name a friend's machine after the viewer's own; and `take`
-writes the own copy and its link. `ShownMachines` joins an own read with a group read into what a
-screen shows, the clusters, each machine's cover photo and the friends' machines offered, and
-drops a group read made for another account than the own read's, so friends' rows read for one
-account are never shown or copied once another is active.
+only the links, for screens that just name a friend's machine after the viewer's own; `take`
+writes the own copy and its link; and `link` writes one own link to a friend's machine. After a
+group read that succeeds, and after `take` and `link` with the group read the screen holds, the
+catalogue writes `missingDirectLinks` for the account the read was made for, a managed child
+included, and requests a sync when it wrote anything. A mutex lets one upkeep run at a time, and
+each reads the own links again first, so two at once never write the same link.
+
+`ShownMachines` joins an own read with a group read into what a screen shows, the clusters, each
+machine's cover photo and the friends' machines offered, and drops a group read made for another
+account than the own read's, so friends' rows read for one account are never shown or copied once
+another is active.
 
 `MachineCards` turns what a screen read — `ShownMachines` and both peaks — into the card every
 list draws, in the viewer's unit; the machine list and the picker group friends' cards by owner,
 each owner with the colour `FriendColorStore` gives them.
 
 The machine form's "Привязать к…" chooser (`LinkChooserViewModel`) links an own machine to a
-friend's by writing one own link, and merges two own machines. A merge removes a duplicate and
-writes no link. The dialog lets the user choose the machine that stays and preselects
+friend's through `MachineCatalogue.link`, and merges two own machines. A merge removes a
+duplicate and writes no link. The dialog lets the user choose the machine that stays and preselects
 `suggestedToKeep`: the machine whose latest live set is later, one without sets counting as oldest
 and a tie suggesting the edited one. Imported history makes duplicates with older sets, so this
 suggests the machine in use. `mergedMachines` returns the rows to write — the removed machine's

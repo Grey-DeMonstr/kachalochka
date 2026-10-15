@@ -164,12 +164,13 @@ class MachinePickerViewModel(
         onPicked: (MachineId) -> Unit,
     ) {
         val offered = shown ?: return
+        val group = offered.group ?: return
         val friend = offered.offered.firstOrNull { it.machine.id == id } ?: return
         val offeredTo = offered.own.owner
         writes.launch {
             val owner = currentUser.id() ?: return@launch
             if (owner != offeredTo) return@launch
-            onPicked(catalogue.take(owner, friend.machine).id)
+            onPicked(catalogue.take(owner, friend.machine, group).id)
         }
     }
 

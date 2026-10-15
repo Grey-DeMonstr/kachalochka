@@ -40,7 +40,7 @@ data class MachineListUiState(
     val tags: List<TagChoiceUi> = emptyList(),
     /** True when a search or a tag leaves nothing to list. */
     val nothingFound: Boolean = false,
-    /** Some own machine could be merged with or linked to another. */
+    /** Some own machine could be merged with another. */
     val hasSuggestions: Boolean = false,
     /** Only the own machines with a suggestion are listed. */
     val onlySuggested: Boolean = false,
