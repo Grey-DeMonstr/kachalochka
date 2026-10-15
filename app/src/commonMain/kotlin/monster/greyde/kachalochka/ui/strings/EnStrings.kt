@@ -240,7 +240,8 @@ object EnStrings : Strings {
 
     override fun createNamed(name: String) = "Create \"$name\""
 
-    override fun withTags(tags: List<String>) = "Tagged " + tags.joinToString(", ") { "\"$it\"" }
+    override fun withTags(tags: List<String>) =
+        "Tagged " + tags.joinToString(", ") { "\"${it.uppercase()}\"" }
 
     override val nothingFound = "Nothing found"
     override val alreadyInVisit = "Already in the visit"

@@ -191,7 +191,7 @@ class MachinePickerScreenTest {
             onNodeWithTag("machine-search").performTextInput("гакк")
             waitForIdle()
             onNodeWithTag("picker-nothing").assertTextEquals("Ничего не найдено")
-            onNodeWithTag("create-hint", useUnmergedTree = true).assertTextEquals("С тегом «Ноги»")
+            onNodeWithTag("create-hint", useUnmergedTree = true).assertTextEquals("С тегом «НОГИ»")
             onNodeWithTag("create-machine").performClick()
             waitForIdle()
         }

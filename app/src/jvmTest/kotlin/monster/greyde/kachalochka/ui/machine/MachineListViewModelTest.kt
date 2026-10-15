@@ -181,19 +181,18 @@ class MachineListViewModelTest {
         }
 
     @Test
-    fun a_tag_in_another_letter_case_is_one_chip_that_keeps_both_machines() =
+    fun a_friend_s_tag_in_another_letter_case_is_one_chip_in_the_own_spelling() =
         runTest {
             val (on, olegPress) = olegsGym()
             on.friends.machines.replaceAll {
                 if (it.id == olegPress.id) it.copy(tags = setOf("НОГИ")) else it
             }
             on.machines.upsert(Machine.new("Присед", ME.userId, t0).copy(tags = setOf("Ноги")))
-            on.machines.upsert(Machine.new("Гакк", ME.userId, t0).copy(tags = setOf("ноги")))
             val vm = viewModel(on).also { it.load() }
             assertEquals(
-                listOf("ноги" to false),
+                listOf("Ноги" to false),
                 vm.state.value.tags
-                    .map { it.name.lowercase() to it.chosen },
+                    .map { it.name to it.chosen },
             )
 
             vm.toggleTag("НОГИ")
@@ -204,10 +203,9 @@ class MachineListViewModelTest {
                     .map { it.chosen },
             )
             assertEquals(
-                setOf("Присед", "Гакк"),
+                listOf("Присед"),
                 vm.state.value.own
-                    ?.map { it.name }
-                    ?.toSet(),
+                    ?.map { it.name },
             )
             assertEquals(
                 listOf(olegPress.id),

@@ -244,7 +244,8 @@ class MachineFormViewModel(
             val source = group.friends.firstOrNull { it.machine.id == friendMachine }?.machine
             source ?: return@launch
             update { form ->
-                val tags = tagsSpelledAs(form.tags + source.tags, form.tags + form.shownTags)
+                // The form's chosen tags come first, so their spelling wins over the known ones.
+                val tags = tagsSpelledAs(form.tags + source.tags, form.tags + form.knownTags)
                 form.copy(
                     name = source.name,
                     tags = tags,

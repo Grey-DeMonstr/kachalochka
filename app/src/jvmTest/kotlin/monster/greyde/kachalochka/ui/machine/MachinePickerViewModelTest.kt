@@ -316,7 +316,7 @@ class MachinePickerViewModelTest {
                     .map { it.name },
             )
             vm.onQueryChange("гакк")
-            assertEquals("С тегом «Жим»", vm.state.value.createHint)
+            assertEquals("С тегом «ЖИМ»", vm.state.value.createHint)
             assertEquals(listOf("Жим"), vm.createTags)
             assertTrue(vm.state.value.nothingFound)
 
@@ -357,6 +357,19 @@ class MachinePickerViewModelTest {
             assertEquals("Photos, comment and weight setup", vm.state.value.createHint)
         }
     }
+
+    @Test
+    fun the_english_create_hint_quotes_the_tags_in_capitals() =
+        runTest {
+            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
+            val vm = viewModel().also { it.load() }
+            vm.toggleTag("Ноги")
+
+            inEnglish {
+                vm.load()
+                assertEquals("Tagged \"НОГИ\"", vm.state.value.createHint)
+            }
+        }
 
     @Test
     fun typing_an_existing_name_does_not_offer_creation() {

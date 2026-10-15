@@ -257,7 +257,8 @@ object RuStrings : Strings {
     override fun createNamed(name: String) = "Создать «$name»"
 
     override fun withTags(tags: List<String>) =
-        (if (tags.size == 1) "С тегом " else "С тегами ") + tags.joinToString(", ") { "«$it»" }
+        (if (tags.size == 1) "С тегом " else "С тегами ") +
+            tags.joinToString(", ") { "«${it.uppercase()}»" }
 
     override val nothingFound = "Ничего не найдено"
     override val alreadyInVisit = "Уже в визите"

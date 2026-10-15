@@ -218,6 +218,7 @@ interface Strings {
 
     fun createNamed(name: String): String
 
+    /** Quotes [tags] in capitals, as every screen draws a tag. */
     fun withTags(tags: List<String>): String
 
     val nothingFound: String

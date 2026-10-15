@@ -84,9 +84,8 @@ handle moves it among its machine's sets. While it is on, "Готово" replace
 of the list, and it or the button again hides the handles. When a machine of the visit has tags,
 "Группировать по тегам" splits the list into sections, one per distinct set of tags in any letter
 case, headed by the tags and in the order of their first machine; untagged machines come last
-under "Остальное". A
-row under a heading does not repeat its tags. The choice is the account's, saved in its profile
-and synced, and ordering shows the plain list.
+under "Остальное". A row under a heading does not repeat its tags. The choice is the account's,
+saved in its profile and synced, and ordering shows the plain list.
 
 A machine's page covers the list. Its top bar has a chart button opening the machine's statistics,
 a gear opening the machine form, whose photo opens it too, and the rest timer. It shows the photo,
@@ -164,7 +163,7 @@ while it holds text, empties it and keeps the keyboard in the field. The tags of
 machines follow the search field as chips, each tag once in any letter case, and the chosen ones
 keep only the machines carrying every one of them. With nothing left, the picker says
 "Ничего не найдено". "Создать «…»" opens the machine form pre-filled with the typed name and the
-chosen tags ("С тегом «Руки»"). When a machine was opened in the visit, "Скопировать упражнение"
+chosen tags ("С тегом «РУКИ»"). When a machine was opened in the visit, "Скопировать упражнение"
 opens the form pre-filled from that machine, with the typed name instead of its own.
 
 The machine form has no title; for a saved machine, a chart button in its top bar opens the
