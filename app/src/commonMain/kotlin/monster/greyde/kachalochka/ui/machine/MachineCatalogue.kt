@@ -1,9 +1,11 @@
 package monster.greyde.kachalochka.ui.machine
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
@@ -126,6 +128,7 @@ class MachineCatalogue(
     private val sync: SyncTrigger,
     private val accounts: Accounts,
     private val avatars: AccountAvatars,
+    private val failures: FailureLog,
 ) {
     private val upkeep = Mutex()
 
@@ -145,9 +148,11 @@ class MachineCatalogue(
     suspend fun group(owner: UserId): GroupMachines =
         coroutineScope {
             val mates = async { friends.groupMachines(owner) }
+            val mine = async { links.all(owner) }
             val theirs = async { friends.groupLinks(owner) }
             val pictures = async { friends.groupPhotos(owner) }
-            val all = keepDirect(owner, mates.await(), theirs.await())
+            val all =
+                keepDirect(owner, mates.await(), theirs.await(), mine.await() + theirs.await())
             GroupMachines(owner, mates.await(), all, pictures.await())
         }
 
@@ -162,7 +167,7 @@ class MachineCatalogue(
     ): Machine {
         val (copy, link) = linkedCopy(friend, owner, clock.now())
         machines.upsert(copy)
-        keepDirect(owner, group.friends, group.mateLinks(owner), written = listOf(link))
+        keepDirect(owner, group.friends, group.mateLinks(owner), group.links, listOf(link))
         return copy
     }
 
@@ -178,35 +183,51 @@ class MachineCatalogue(
             owner,
             group?.friends.orEmpty(),
             group?.mateLinks(owner).orEmpty(),
-            written = listOf(link),
+            group?.links.orEmpty(),
+            listOf(link),
         )
     }
 
     /**
      * Writes [written], then the links each own machine misses to the friends' machines of its
      * cluster, and returns every link visible after. One upkeep runs at a time and reads the own
-     * links again, so two at once never write the same link.
+     * links again, so two at once never write the same link. A failed upkeep is only recorded,
+     * since [written] already stands: [before] and [written] are then returned.
      */
     private suspend fun keepDirect(
         owner: UserId,
         mates: List<FriendMachine>,
         theirs: List<MachineLink>,
+        before: List<MachineLink>,
         written: List<MachineLink> = emptyList(),
     ): List<MachineLink> =
         upkeep.withLock {
-            written.forEach { links.upsert(it) }
-            val visible = links.all(owner) + theirs
-            val missing =
-                missingDirectLinks(
-                    owner,
-                    machines.all(owner).map { it.id },
-                    mates.map { it.machine.id },
-                    visible,
-                    clock.now(),
-                )
-            missing.forEach { links.upsert(it) }
-            if (written.isNotEmpty() || missing.isNotEmpty()) sync.request()
-            visible + missing
+            // A write stopped halfway may have reached the outbox, so it still asks for a pass.
+            var wrote = written.isNotEmpty()
+            try {
+                written.forEach { links.upsert(it) }
+                try {
+                    val visible = links.all(owner) + theirs
+                    val missing =
+                        missingDirectLinks(
+                            owner,
+                            machines.all(owner).map { it.id },
+                            mates.map { it.machine.id },
+                            visible,
+                            clock.now(),
+                        )
+                    wrote = wrote || missing.isNotEmpty()
+                    missing.forEach { links.upsert(it) }
+                    visible + missing
+                } catch (stopped: CancellationException) {
+                    throw stopped
+                } catch (failed: Exception) {
+                    failures.record(failed)
+                    before + written
+                }
+            } finally {
+                if (wrote) sync.request()
+            }
         }
 
     private suspend fun visibleLinks(owner: UserId): List<MachineLink> =

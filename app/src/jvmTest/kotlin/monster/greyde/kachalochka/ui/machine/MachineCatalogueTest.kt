@@ -1,10 +1,12 @@
 package monster.greyde.kachalochka.ui.machine
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
+import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -31,17 +33,33 @@ class MachineCatalogueTest {
     private val olegCopy = linkedCopy(myPress, OLEG.userId, t0)
     private val olegPress = olegCopy.first
     private val olegRow = Machine.new("Тяга", OLEG.userId, t0)
-    private val catalogue =
+    private val failures = mutableListOf<Throwable>()
+
+    private fun catalogueOver(links: MachineLinkRepository) =
         MachineCatalogue(
             gym.machines,
             gym.photos,
-            gym.machineLinks,
+            links,
             gym.friends,
             gym.clock,
             gym.sync,
             gym.accounts,
             gym.avatars,
+            FailureLog { failures += it },
         )
+
+    private val catalogue = catalogueOver(gym.machineLinks)
+
+    /** Links whose writes after the first [kept] fail. */
+    private fun failingLinks(kept: Int = 0) =
+        object : MachineLinkRepository by gym.machineLinks {
+            var writes = 0
+
+            override suspend fun upsert(link: MachineLink) {
+                if (writes++ >= kept) error("disk full")
+                gym.machineLinks.upsert(link)
+            }
+        }
 
     /** Олег shares a group with Иван; his copy of the press links to Иван's, his row to nothing. */
     private suspend fun olegsGym() {
@@ -218,17 +236,7 @@ class MachineCatalogueTest {
                     override suspend fun all(owner: UserId?): List<MachineLink> =
                         gym.machineLinks.all(owner).also { yield() }
                 }
-            val slow =
-                MachineCatalogue(
-                    gym.machines,
-                    gym.photos,
-                    slowLinks,
-                    gym.friends,
-                    gym.clock,
-                    gym.sync,
-                    gym.accounts,
-                    gym.avatars,
-                )
+            val slow = catalogueOver(slowLinks)
 
             val reads = List(2) { launch { slow.group(ME.userId) } }
             testScheduler.advanceUntilIdle()
@@ -236,6 +244,81 @@ class MachineCatalogueTest {
             reads.joinAll()
 
             assertEquals(1, gym.machineLinks.rows.size)
+        }
+
+    @Test
+    fun a_failed_upkeep_keeps_the_group_read_and_is_recorded() =
+        runTest {
+            olegsGym()
+            val pashas = pashaLinksTo(olegPress)
+
+            val group = catalogueOver(failingLinks()).group(ME.userId)
+
+            assertEquals(
+                setOf(olegPress, olegRow, pashas),
+                group.friends.map { it.machine }.toSet(),
+            )
+            assertTrue(group.clusters.sameMachine(myPress.id, pashas.id))
+            assertEquals(emptyMap(), gym.machineLinks.rows)
+            assertEquals(listOf("disk full"), failures.map { it.message })
+        }
+
+    @Test
+    fun a_failed_upkeep_after_the_chosen_link_keeps_the_link_and_syncs() =
+        runTest {
+            olegsGym()
+            val pashas = pashaLinksTo(olegRow)
+            val mine = Machine.new("Тяга", ME.userId, t0)
+            gym.machines.upsert(mine)
+            val linking = catalogueOver(failingLinks(kept = 1))
+
+            linking.link(ME.userId, mine.id, olegRow.id, linking.group(ME.userId))
+
+            assertEquals(setOf(mine.id to olegRow.id), linkedPairs())
+            assertEquals(1, failures.size)
+            assertEquals(1, gym.sync.requests)
+            assertTrue(
+                gym.machineLinks.rows.values
+                    .none { it.linkedMachineId == pashas.id },
+            )
+        }
+
+    @Test
+    fun a_failed_upkeep_after_taking_keeps_the_copy_and_its_link() =
+        runTest {
+            olegsGym()
+            pashaLinksTo(olegRow)
+            val taking = catalogueOver(failingLinks(kept = 1))
+
+            val copy = taking.take(ME.userId, olegRow, taking.group(ME.userId))
+
+            assertEquals(copy, gym.machines.rows[copy.id])
+            assertEquals(setOf(copy.id to olegRow.id), linkedPairs())
+            assertEquals(1, failures.size)
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun an_upkeep_stopped_while_writing_still_asks_for_a_sync() =
+        runTest {
+            olegsGym()
+            pashaLinksTo(olegPress)
+            val stuck =
+                object : MachineLinkRepository by gym.machineLinks {
+                    override suspend fun upsert(link: MachineLink) {
+                        gym.machineLinks.upsert(link)
+                        awaitCancellation()
+                    }
+                }
+
+            val read = launch { catalogueOver(stuck).group(ME.userId) }
+            testScheduler.advanceUntilIdle()
+            read.cancel()
+            read.join()
+
+            assertEquals(1, gym.machineLinks.rows.size)
+            assertEquals(1, gym.sync.requests)
+            assertEquals(emptyList(), failures)
         }
 
     @Test

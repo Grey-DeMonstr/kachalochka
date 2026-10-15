@@ -5,6 +5,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
 import monster.greyde.kachalochka.core.data.identity.Account
@@ -419,8 +420,19 @@ class FakeGym(
     val utcOffset = UtcOffset { Duration.ZERO }
     val sync = RecordingSyncTrigger()
     val avatars = AccountAvatars(accounts, profiles)
+    val failures = mutableListOf<Throwable>()
     val catalogue =
-        MachineCatalogue(machines, photos, machineLinks, friends, clock, sync, accounts, avatars)
+        MachineCatalogue(
+            machines,
+            photos,
+            machineLinks,
+            friends,
+            clock,
+            sync,
+            accounts,
+            avatars,
+            FailureLog { failures += it },
+        )
     val unsaved = UnsavedChoices()
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()

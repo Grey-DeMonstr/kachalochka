@@ -463,8 +463,9 @@ is `OwnMachines.me`, built from the signed-in account and `AccountAvatars`. The 
 the account's own links, read locally, with its group mates' live links, read online through
 `FriendsRepository.groupLinks`. Picking a friend's machine, or "Взять себе" on one opened from the
 machine list, writes the own copy (`linkedCopy`) and the link from it to the friend's machine;
-"Привязать к моему" (`MineChooserRoute`) writes only the link, from the chosen own machine. Both
-then link the machine to the rest of the cluster, as below.
+"Привязать к моему" (`MineChooserRoute`) writes only the link, from the chosen own machine. After
+each of these, and after "Привязать к…" in the machine form, the own machine is also linked to
+every other friend's machine of the cluster (see `missingDirectLinks` below).
 
 Every device keeps its owner's links direct, so a cluster holds when a middle machine or its
 owner goes. `missingDirectLinks` in `domain/gym` gives the links an owner must write: from each of
@@ -513,8 +514,10 @@ only the links, for screens that just name a friend's machine after the viewer's
 writes the own copy and its link; and `link` writes one own link to a friend's machine. After a
 group read that succeeds, and after `take` and `link` with the group read the screen holds, the
 catalogue writes `missingDirectLinks` for the account the read was made for, a managed child
-included, and requests a sync when it wrote anything. A mutex lets one upkeep run at a time, and
-each reads the own links again first, so two at once never write the same link.
+included, and requests a sync when it wrote anything, also when it is stopped halfway. A mutex
+lets one upkeep run at a time, and each reads the own links again first, so two at once never
+write the same link. A failed upkeep goes to `FailureLog` and fails nothing: the group read keeps
+the links seen before it, and the link that `take` or `link` wrote first stays.
 
 `ShownMachines` joins an own read with a group read into what a screen shows, the clusters, each
 machine's cover photo and the friends' machines offered, and drops a group read made for another
