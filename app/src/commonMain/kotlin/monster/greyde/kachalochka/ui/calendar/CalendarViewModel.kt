@@ -28,6 +28,7 @@ import monster.greyde.kachalochka.core.domain.gym.movedVisit
 import monster.greyde.kachalochka.core.domain.gym.removedVisit
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.shownVisit
+import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -91,10 +92,7 @@ data class CalendarVisitUi(
 
 /** A visit card's tag line: every tag of its machines, in one order everywhere. */
 private fun dayTags(machines: List<Machine>): String? =
-    machines
-        .flatMap { it.tags }
-        .distinct()
-        .sortedBy { it.lowercase() }
+    sortedTags(machines.flatMap { it.tags })
         .takeIf { it.isNotEmpty() }
         ?.joinToString(" · ")
 

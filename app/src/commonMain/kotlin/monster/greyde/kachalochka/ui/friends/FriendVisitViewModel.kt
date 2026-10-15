@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.dayAt
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.shownVisit
+import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -158,7 +159,7 @@ class FriendVisitViewModel(
             machineId = machineId,
             title = machine?.name.orEmpty(),
             note = machine?.setupNote.orEmpty(),
-            tags = machine?.tags.orEmpty().sortedBy { it.lowercase() },
+            tags = sortedTags(machine?.tags.orEmpty()),
             summary = machine?.let { setsSummaryParts(it, machineSets, preferred) }.orEmpty(),
             photo = shown.cover(machineId),
             linkedWith = shown.linkedWith(machineId),

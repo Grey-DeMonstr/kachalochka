@@ -32,6 +32,7 @@ import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.gym.setMovedTo
 import monster.greyde.kachalochka.core.domain.gym.shownOn
+import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.stepReps
 import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
@@ -694,7 +695,7 @@ class VisitViewModel(
             summary = machine?.let { setsSummaryParts(it, machineSets, preferred) }.orEmpty(),
             sets = setRows(machine, machineSets),
             photo = coverOf(machineId),
-            tags = machine?.tags.orEmpty().sortedBy { it.lowercase() },
+            tags = sortedTags(machine?.tags.orEmpty()),
         )
     }
 
@@ -707,7 +708,7 @@ class VisitViewModel(
             summary = listOf(AppStrings.current.planned),
             sets = emptyList(),
             photo = coverOf(machineId),
-            tags = machine.tags.sortedBy { it.lowercase() },
+            tags = sortedTags(machine.tags),
             planned = true,
         )
     }
@@ -752,7 +753,7 @@ class VisitViewModel(
             name = machine.name,
             platformSuffix = platformSuffix(machine, preferred),
             photo = coverOf(machine.id),
-            tags = machine.tags.sortedBy { it.lowercase() },
+            tags = sortedTags(machine.tags),
             setupNote = machine.setupNote,
             record =
                 machinePeaks(machineSets).firstOrNull()?.best(machine.weightMode)?.let {

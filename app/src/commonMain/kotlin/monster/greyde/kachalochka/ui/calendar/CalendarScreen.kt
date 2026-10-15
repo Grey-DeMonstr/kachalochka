@@ -42,6 +42,7 @@ import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
+import monster.greyde.kachalochka.ui.components.TagText
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.friendColor
@@ -248,10 +249,10 @@ private fun DayCard(
         avatar?.invoke()
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             tags?.let {
-                Text(
+                TagText(
                     it,
                     modifier = Modifier.testTag("$tag-tags"),
-                    fontSize = 15.sp,
+                    fontSize = 13.sp,
                     color = colors.onBackground,
                 )
             }

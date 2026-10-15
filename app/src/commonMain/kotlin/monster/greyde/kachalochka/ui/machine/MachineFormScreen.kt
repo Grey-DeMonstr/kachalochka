@@ -60,7 +60,6 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Choice
-import monster.greyde.kachalochka.ui.components.ChoiceChip
 import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.ControlShape
@@ -68,6 +67,8 @@ import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
+import monster.greyde.kachalochka.ui.components.TagChoiceChip
+import monster.greyde.kachalochka.ui.components.TagText
 import monster.greyde.kachalochka.ui.components.dashedBorder
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
@@ -344,7 +345,7 @@ private fun TagsSection(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         state.shownTags.forEach { tag ->
-            ChoiceChip(tag, tag in state.tags, "tag-$tag") { viewModel.toggleTag(tag) }
+            TagChoiceChip(tag, state.chosen(tag), "tag-$tag") { viewModel.toggleTag(tag) }
         }
         state.offeredFriendTags.forEach { FriendTagChip(it) { viewModel.toggleTag(it.tag) } }
         NewTagChip(state.newTag, viewModel::typeNewTag, viewModel::addNewTag)
@@ -435,7 +436,7 @@ private fun FriendTagChip(
             offered.friend.avatar,
             size = 24.dp,
         )
-        Text(offered.tag, fontSize = 15.sp, color = colors.onBackground)
+        TagText(offered.tag, fontSize = 13.sp, color = colors.onBackground)
         Icon(
             PhosphorIcons.Plus,
             null,

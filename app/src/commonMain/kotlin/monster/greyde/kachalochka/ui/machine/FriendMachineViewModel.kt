@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -164,7 +165,7 @@ class FriendMachineViewModel(
             canTake = !read.had,
             linkedWith = read.linked,
             photos = read.photos.map { ShownPhoto(it.id.value, it, cover = it == cover) },
-            tags = machine.tags.sortedBy { it.lowercase() },
+            tags = sortedTags(machine.tags),
             period = period,
             stats = machineStatsUi(machine, read.sets, period, today, read.preferred, utcOffset),
         )

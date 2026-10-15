@@ -82,8 +82,9 @@ shows every machine's sets, numbered "#1", "#2" and so on, and a handle at the l
 machine and set; dragging a machine's handle moves the machine with its sets, dragging a set's
 handle moves it among its machine's sets. While it is on, "Готово" replaces "Добавить" at the end
 of the list, and it or the button again hides the handles. When a machine of the visit has tags,
-"Группировать по тегам" splits the list into sections, one per distinct set of tags, headed by the
-tags and in the order of their first machine; untagged machines come last under "Остальное". A
+"Группировать по тегам" splits the list into sections, one per distinct set of tags in any letter
+case, headed by the tags and in the order of their first machine; untagged machines come last
+under "Остальное". A
 row under a heading does not repeat its tags. The choice is the account's, saved in its profile
 and synced, and ordering shows the plain list.
 
@@ -120,7 +121,7 @@ since a smaller one is progress ("Подтягивания в гравитрон
 rows of the visit screen and of a friend's visit, and the previous visit's and friends' results on
 the machine's page, write a machine's weights and reps exactly the same way. When the visit is
 grouped by tags, the machine lines form the same sections, separated by an empty line, each tagged
-one starting with a line of its tags.
+one starting with a line of its tags in capitals ("НОГИ").
 
 Adding or editing a set uses the same form, which slides up over the page. Adding shows the
 signed-in accounts as a row of chips, then "#4 Новый подход"; editing shows "#3 Правка: 70 кг ×
@@ -159,8 +160,9 @@ one opens its page with the form for its next set. A search keeps the machines w
 what is typed, in any letter case and with a few typos: none for up to 3 letters, one for 4-5, two
 for 6-8 and three for more; every machine search in the app works so. An own machine is also
 found by the names of the friends' machines it is linked with. A cross at its end, shown
-while it holds text, empties it and keeps the keyboard in the field. The tags of all these machines follow the search field as chips, and the chosen
-ones keep only the machines carrying every one of them. With nothing left, the picker says
+while it holds text, empties it and keeps the keyboard in the field. The tags of all these
+machines follow the search field as chips, each tag once in any letter case, and the chosen ones
+keep only the machines carrying every one of them. With nothing left, the picker says
 "Ничего не найдено". "Создать «…»" opens the machine form pre-filled with the typed name and the
 chosen tags ("С тегом «Руки»"). When a machine was opened in the visit, "Скопировать упражнение"
 opens the form pre-filled from that machine, with the typed name instead of its own.
@@ -178,6 +180,11 @@ they are the account's own: a machine taken from a friend starts without any. Si
 the tags of friends' machines the account has not got come between the account's tags and "Новый
 тег", as dashed chips with the friend's avatar; tapping one gives it to the machine, and saving
 makes it the account's own.
+
+Tags have no letter case: "ноги" and "Ноги" are one tag, a machine never holds both, and a tag
+keeps the spelling it was first typed in. Every screen draws a tag in capitals, in a small font
+with wide letter spacing: the chips, the machine rows and pages, the section headings of the visit
+and of the statistics, the calendar's cards ("СПИНА · ГРУДЬ") and a friend's machine.
 
 A set's total weight is its weight plus the platform when the platform is not added to the record.
 When "Сохранить" changes that for a machine with recorded sets (for example, a platform typed in
@@ -496,7 +503,8 @@ With cards shown, "Общая" has an export button in the top bar. It hands the
 "Поделиться" hands a visit: the nickname and the period ("ГДМ, за месяц"), an empty line, then one
 line per card with its name, its change and its best set in brackets ("Пресс сидя +3 повт. (45 кг
 × 15)", "Бицепс в тренажёре — новое упражнение (32 кг × 12)"). Grouped by tags, the lines form the
-visit's sections, separated by an empty line, each tagged one starting with a line of its tags.
+visit's sections, separated by an empty line, each tagged one starting with a line of its tags in
+capitals.
 
 ## Data import / export
 

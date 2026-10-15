@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.max
@@ -194,6 +195,23 @@ fun SectionLabel(
     )
 }
 
+/** Tags read as the design's labels on every screen: in capitals, with wide letter spacing. */
+@Composable
+fun TagText(
+    text: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 12.sp,
+    color: Color = Color.Unspecified,
+) {
+    Text(
+        text.uppercase(),
+        modifier = modifier,
+        fontSize = fontSize,
+        letterSpacing = 0.08.em,
+        color = color,
+    )
+}
+
 @Composable
 fun Rule() {
     HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.10f))
@@ -273,6 +291,17 @@ fun ChoiceChip(
     onToggle: () -> Unit,
 ) = ChipFrame(chosen, tag, onToggle) { color ->
     Text(label, fontSize = 15.sp, color = color)
+}
+
+/** A [ChoiceChip] for a tag, its label drawn as [TagText]. */
+@Composable
+fun TagChoiceChip(
+    label: String,
+    chosen: Boolean,
+    tag: String,
+    onToggle: () -> Unit,
+) = ChipFrame(chosen, tag, onToggle) { color ->
+    TagText(label, fontSize = 13.sp, color = color)
 }
 
 /** A [ChoiceChip] that shows [icon] alone, described by [description]. */

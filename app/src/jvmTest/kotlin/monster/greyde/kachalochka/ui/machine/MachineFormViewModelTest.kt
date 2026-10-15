@@ -175,6 +175,36 @@ class MachineFormViewModelTest {
         }
 
     @Test
+    fun a_tag_in_two_letter_cases_is_one_chip_and_the_machine_keeps_it_once() =
+        runTest {
+            gym.machines.upsert(Machine.new("Присед", null, t0).copy(tags = setOf("Ноги")))
+            val press = Machine.new("Жим", null, t0).copy(tags = setOf("ноги", "НОГИ "))
+            gym.machines.upsert(press)
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            assertEquals(1, vm.state.value.shownTags.size)
+            assertTrue(
+                vm.state.value.chosen(
+                    vm.state.value.shownTags
+                        .single(),
+                ),
+            )
+            vm.save {}
+            assertEquals(
+                1,
+                gym.machines
+                    .byId(press.id)
+                    ?.tags
+                    ?.size,
+            )
+
+            vm.toggleTag("Ноги")
+
+            assertEquals(emptySet(), vm.state.value.tags)
+            assertFalse(vm.state.value.chosen("Ноги"))
+        }
+
+    @Test
     fun a_saved_machine_opens_with_its_tags_chosen_and_a_tap_removes_one() =
         runTest {
             val press = Machine.new("Жим", null, t0).copy(tags = setOf("Грудь", "Руки"))

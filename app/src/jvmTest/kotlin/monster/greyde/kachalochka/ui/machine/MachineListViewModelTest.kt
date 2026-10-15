@@ -181,6 +181,42 @@ class MachineListViewModelTest {
         }
 
     @Test
+    fun a_tag_in_another_letter_case_is_one_chip_that_keeps_both_machines() =
+        runTest {
+            val (on, olegPress) = olegsGym()
+            on.friends.machines.replaceAll {
+                if (it.id == olegPress.id) it.copy(tags = setOf("НОГИ")) else it
+            }
+            on.machines.upsert(Machine.new("Присед", ME.userId, t0).copy(tags = setOf("Ноги")))
+            on.machines.upsert(Machine.new("Гакк", ME.userId, t0).copy(tags = setOf("ноги")))
+            val vm = viewModel(on).also { it.load() }
+            assertEquals(
+                listOf("ноги" to false),
+                vm.state.value.tags
+                    .map { it.name.lowercase() to it.chosen },
+            )
+
+            vm.toggleTag("НОГИ")
+
+            assertEquals(
+                listOf(true),
+                vm.state.value.tags
+                    .map { it.chosen },
+            )
+            assertEquals(
+                setOf("Присед", "Гакк"),
+                vm.state.value.own
+                    ?.map { it.name }
+                    ?.toSet(),
+            )
+            assertEquals(
+                listOf(olegPress.id),
+                vm.state.value.friends
+                    .map { it.id },
+            )
+        }
+
+    @Test
     fun a_managed_child_s_sort_survives_a_finished_sync() =
         runTest {
             val on = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))

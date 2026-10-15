@@ -78,7 +78,7 @@ class MachineListScreenTest {
             waitForIdle()
             onNodeWithTag("machine-list-nothing").assertTextEquals("Ничего не найдено")
             onNodeWithTag("clear-search").performClick()
-            onNodeWithTag("list-tag-Спина").performClick()
+            onNodeWithTag("list-tag-Спина").assertTextEquals("СПИНА").performClick()
             waitForIdle()
 
             onNodeWithTag("machine-list-row-${row.id.value}").assertIsDisplayed()

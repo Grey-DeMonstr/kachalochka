@@ -304,7 +304,7 @@ class ShareTextTest {
         val press = machine("Жим ногами", platform = 76.0).copy(tags = setOf("Ноги"))
         val curl = machine("Бицепс").copy(tags = setOf("Руки"))
         val abs = machine("Пресс сидя")
-        val dips = machine("Трицепс").copy(tags = setOf("Руки"))
+        val dips = machine("Трицепс").copy(tags = setOf("руки"))
         val shared =
             listOf(
                 SharedMachine(press, sets(20.0 to 10, 30.0 to 10)),
@@ -314,7 +314,7 @@ class ShareTextTest {
             )
 
         assertEquals(
-            "ГДМ, чт\n\nНоги\nЖим ногами (+76кг) 20-30кг 2x10\n\nРуки\nБицепс 14кг 1x12\n" +
+            "ГДМ, чт\n\nНОГИ\nЖим ногами (+76кг) 20-30кг 2x10\n\nРУКИ\nБицепс 14кг 1x12\n" +
                 "Трицепс 5кг 1x10\n\nОстальное\nПресс сидя 41кг 1x10",
             visitShareText("ГДМ", thursday, shared, kg, groupByTag = true),
         )

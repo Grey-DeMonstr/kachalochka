@@ -180,7 +180,7 @@ class CalendarViewModelTest {
     fun a_chosen_day_shows_its_visit_s_machines_and_their_tags() =
         runTest {
             gym.machines.upsert(press.copy(tags = setOf("Ноги", "Жим")))
-            gym.machines.upsert(row.copy(tags = setOf("Спина", "Жим")))
+            gym.machines.upsert(row.copy(tags = setOf("Спина", "жим")))
             val vm = viewModel().also { it.refresh() }
 
             vm.selectDay(twelfth)

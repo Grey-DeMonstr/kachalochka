@@ -15,10 +15,14 @@ import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.hasAllTags
+import monster.greyde.kachalochka.core.domain.gym.hasTag
 import monster.greyde.kachalochka.core.domain.gym.machineOrder
 import monster.greyde.kachalochka.core.domain.gym.nameMatches
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
 import monster.greyde.kachalochka.core.domain.gym.shownOn
+import monster.greyde.kachalochka.core.domain.gym.sortedTags
+import monster.greyde.kachalochka.core.domain.gym.toggledTag
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -142,7 +146,7 @@ class MachinePickerViewModel(
     }
 
     fun toggleTag(tag: String) {
-        chosenTags = if (tag in chosenTags) chosenTags - tag else chosenTags + tag
+        chosenTags = toggledTag(chosenTags, tag)
         publish()
     }
 
@@ -152,7 +156,7 @@ class MachinePickerViewModel(
     }
 
     /** The tags a machine created now starts with. */
-    val createTags: List<String> get() = chosenTags.sortedBy { it.lowercase() }
+    val createTags: List<String> get() = sortedTags(chosenTags)
 
     /** A friend's machine becomes the account's own, linked to theirs, before it is picked. */
     fun pickFriend(
@@ -184,7 +188,7 @@ class MachinePickerViewModel(
         val matchingOffered =
             offered.filter {
                 nameMatches(it.machine.name, needle) &&
-                    it.machine.tags.containsAll(chosenTags)
+                    hasAllTags(it.machine.tags, chosenTags)
             }
         val now = clock.now()
         val offset = utcOffset.at(now)
@@ -221,9 +225,8 @@ class MachinePickerViewModel(
                     (ownMachines + offered.map { it.machine })
                         .flatMap { it.tags }
                         .plus(chosenTags)
-                        .distinct()
-                        .sortedBy { it.lowercase() }
-                        .map { TagChoiceUi(it, it in chosenTags) },
+                        .let(::sortedTags)
+                        .map { TagChoiceUi(it, hasTag(chosenTags, it)) },
                 rows = rows,
                 friendSections = sections,
                 inVisitRows = inVisitRows,

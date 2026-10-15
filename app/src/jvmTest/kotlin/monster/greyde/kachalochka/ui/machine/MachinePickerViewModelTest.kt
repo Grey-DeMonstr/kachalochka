@@ -326,6 +326,27 @@ class MachinePickerViewModelTest {
         }
 
     @Test
+    fun a_tag_in_another_letter_case_is_one_chip_that_keeps_both_machines() =
+        runTest {
+            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
+            gym.machines.upsert(smith.copy(tags = setOf("НОГИ")))
+            val vm = viewModel().also { it.load() }
+            val first =
+                vm.state.value.tags
+                    .single()
+                    .name
+
+            vm.toggleTag(first)
+
+            assertEquals(
+                listOf(true),
+                vm.state.value.tags
+                    .map { it.chosen },
+            )
+            assertEquals(2, vm.state.value.rows.size)
+        }
+
+    @Test
     fun the_picker_speaks_english_when_entered_again() {
         val vm = viewModel().also { it.load() }
         vm.onQueryChange("гакк")

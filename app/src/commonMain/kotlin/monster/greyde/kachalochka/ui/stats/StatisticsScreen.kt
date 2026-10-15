@@ -35,7 +35,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -45,6 +44,7 @@ import monster.greyde.kachalochka.ui.components.ChipRow
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.components.SquareIconButton
+import monster.greyde.kachalochka.ui.components.TagText
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
 import monster.greyde.kachalochka.ui.strings.strings
@@ -311,7 +311,7 @@ private fun SectionTitle(
     tag: String,
     menu: Boolean = false,
 ) {
-    Text(
+    TagText(
         title,
         modifier =
             Modifier
@@ -321,8 +321,6 @@ private fun SectionTitle(
                     top = 14.dp,
                     bottom = 8.dp,
                 ).testTag(tag),
-        fontSize = 13.sp,
-        letterSpacing = 0.09.em,
         color = MaterialTheme.colorScheme.secondary,
     )
 }

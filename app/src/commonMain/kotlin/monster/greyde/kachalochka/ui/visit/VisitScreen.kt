@@ -34,7 +34,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.navigationevent.NavigationEventInfo
@@ -52,6 +51,7 @@ import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.SquareToggleButton
+import monster.greyde.kachalochka.ui.components.TagText
 import monster.greyde.kachalochka.ui.components.dragOutline
 import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
@@ -216,11 +216,9 @@ private fun VisitList(
         SideEffect { machineOrder.retain(state.groups.size) }
         state.sections.forEach { section ->
             section.title?.let {
-                Text(
+                TagText(
                     it,
                     modifier = Modifier.padding(top = 18.dp, bottom = 2.dp).testTag("section-$it"),
-                    fontSize = 13.sp,
-                    letterSpacing = 0.09.em,
                     color = colors.secondary,
                 )
             }
@@ -392,14 +390,14 @@ internal fun TagChip(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
-    Text(
+    TagText(
         tag,
         modifier =
             modifier
                 .clip(RoundedCornerShape(11.dp))
                 .border(1.dp, colors.primary.copy(alpha = 0.55f), RoundedCornerShape(11.dp))
                 .padding(horizontal = 8.dp, vertical = 2.dp),
-        fontSize = 12.sp,
+        fontSize = 11.sp,
         color = colors.onPrimaryContainer,
     )
 }

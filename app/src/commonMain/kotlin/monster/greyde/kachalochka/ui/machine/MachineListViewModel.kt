@@ -15,7 +15,11 @@ import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.anyNameMatches
+import monster.greyde.kachalochka.core.domain.gym.hasAllTags
+import monster.greyde.kachalochka.core.domain.gym.hasTag
 import monster.greyde.kachalochka.core.domain.gym.machineOrder
+import monster.greyde.kachalochka.core.domain.gym.sortedTags
+import monster.greyde.kachalochka.core.domain.gym.toggledTag
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -123,7 +127,7 @@ class MachineListViewModel(
     }
 
     fun toggleTag(tag: String) {
-        chosenTags = if (tag in chosenTags) chosenTags - tag else chosenTags + tag
+        chosenTags = toggledTag(chosenTags, tag)
         publish()
     }
 
@@ -133,7 +137,7 @@ class MachineListViewModel(
     }
 
     private fun Machine.kept(alsoGoesBy: List<String> = emptyList()): Boolean =
-        anyNameMatches(listOf(name) + alsoGoesBy, query) && tags.containsAll(chosenTags)
+        anyNameMatches(listOf(name) + alsoGoesBy, query) && hasAllTags(tags, chosenTags)
 
     private fun publish() {
         val shown = own?.let { ShownMachines(it, group) }
@@ -182,9 +186,8 @@ class MachineListViewModel(
                     (ownMachines + offered.map { it.machine })
                         .flatMap { it.tags }
                         .plus(chosenTags)
-                        .distinct()
-                        .sortedBy { it.lowercase() }
-                        .map { TagChoiceUi(it, it in chosenTags) },
+                        .let(::sortedTags)
+                        .map { TagChoiceUi(it, hasTag(chosenTags, it)) },
                 nothingFound = filtering && ownCards.isNullOrEmpty() && sections.isEmpty(),
                 hasSuggestions = suggested.isNotEmpty(),
                 onlySuggested = onlySuggested,

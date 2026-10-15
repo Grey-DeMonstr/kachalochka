@@ -31,6 +31,17 @@ class TagSectionsTest {
     }
 
     @Test
+    fun tag_sets_equal_without_letter_case_share_a_section_spelled_as_its_first_item() {
+        val spelled = mapOf("press" to setOf("Ноги", "Жим"), "squat" to setOf("жим", "НОГИ"))
+
+        assertEquals(
+            listOf(setOf("Ноги", "Жим") to listOf("press", "squat")),
+            tagSections(listOf("press", "squat")) { spelled.getValue(it) }
+                .map { it.tags to it.items },
+        )
+    }
+
+    @Test
     fun without_tags_everything_is_one_untagged_section() {
         assertEquals(listOf(emptySet<String>() to listOf("abs")), sections("abs"))
         assertEquals(emptyList(), sections())

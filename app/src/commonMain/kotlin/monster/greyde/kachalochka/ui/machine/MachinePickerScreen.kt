@@ -46,11 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.ui.components.ChoiceChip
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
+import monster.greyde.kachalochka.ui.components.TagChoiceChip
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
@@ -151,7 +151,7 @@ internal fun TagFilter(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             tags.forEach {
-                ChoiceChip(
+                TagChoiceChip(
                     it.name,
                     it.chosen,
                     "$testTagPrefix-${it.name}",

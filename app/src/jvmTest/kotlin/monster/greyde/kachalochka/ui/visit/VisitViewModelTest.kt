@@ -772,8 +772,8 @@ class VisitViewModelTest {
 
             assertEquals(
                 listOf(
-                    "Жим, Ноги" to listOf(press.id),
-                    "Руки" to listOf(curl.id),
+                    "ЖИМ, НОГИ" to listOf(press.id),
+                    "РУКИ" to listOf(curl.id),
                     "Остальное" to listOf(row.id),
                 ),
                 assertNotNull(vm.state.value).sectionIds(),
@@ -842,7 +842,7 @@ class VisitViewModelTest {
             vm.share()
 
             assertEquals(
-                "вт\n\nЖим, Ноги\nЖим ногами (+20кг) 80кг 1x8\n\nРуки\nБицепс 14кг 1x12\n\n" +
+                "вт\n\nЖИМ, НОГИ\nЖим ногами (+20кг) 80кг 1x8\n\nРУКИ\nБицепс 14кг 1x12\n\n" +
                     "Остальное\nТяга верхнего блока 45кг 1x12",
                 gym.texts.shared.single(),
             )

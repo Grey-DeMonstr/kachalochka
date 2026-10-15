@@ -126,14 +126,14 @@ class StatisticsScreenTest {
     fun grouping_by_tags_heads_the_cards_and_the_dropdown_and_growth_can_be_chosen() {
         runBlocking { gym.machines.upsert(press.copy(tags = setOf("Ноги"))) }
         runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {
-            onNodeWithTag("stats-section-Ноги").assertDoesNotExist()
+            onNodeWithTag("stats-section-НОГИ").assertDoesNotExist()
 
             onNodeWithTag("stats-group-by-tag").performClick()
             waitForIdle()
 
-            onNodeWithTag("stats-section-Ноги").assertTextEquals("Ноги")
+            onNodeWithTag("stats-section-НОГИ").assertTextEquals("НОГИ")
             onNodeWithTag("stats-choice").performClick()
-            onNodeWithTag("stats-choice-section-Ноги").assertTextEquals("Ноги")
+            onNodeWithTag("stats-choice-section-НОГИ").assertTextEquals("НОГИ")
             onNodeWithTag("stats-choice-overall").performClick()
             onNodeWithTag("stats-sort-growth").assertTextEquals("Рост").performClick()
             onNodeWithTag("stats-sort-growth").assertIsOn()

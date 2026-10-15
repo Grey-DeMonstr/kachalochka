@@ -16,8 +16,11 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
@@ -153,6 +156,34 @@ class CalendarScreenTest {
             onNodeWithTag("calendar-visit-${sunday.id.value}").performScrollTo().performClick()
             waitForIdle()
             assertEquals(CalendarDay(2023, 11, 12), opened)
+        }
+    }
+
+    @Test
+    fun a_visit_card_draws_its_tags_in_capitals() {
+        val press = Machine.new("Жим ногами", null, t0).copy(tags = setOf("Ноги", "Жим"))
+        runBlocking {
+            gym.machines.upsert(press)
+            gym.sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    sunday.id,
+                    press.id,
+                    80.0,
+                    8,
+                    0,
+                    t0,
+                    t0,
+                    false,
+                ),
+            )
+        }
+        runScreenTest(gym, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("calendar-visit-${sunday.id.value}-tags", useUnmergedTree = true)
+                .assertTextEquals("ЖИМ · НОГИ")
         }
     }
 

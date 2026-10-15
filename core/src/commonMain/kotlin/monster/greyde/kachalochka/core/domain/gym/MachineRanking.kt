@@ -7,7 +7,7 @@ data class MachineRanking(
 
 /**
  * The machines whose name, or one of the names it [alsoGoesBy], [nameMatches] [query] and that
- * carry every one of [tags], in [order].
+ * carry every one of [tags] in any letter case, in [order].
  */
 fun rankMachines(
     query: String,
@@ -24,7 +24,7 @@ fun rankMachines(
         machines =
             live.filter {
                 anyNameMatches(listOf(it.name) + alsoGoesBy(it), needle) &&
-                    it.tags.containsAll(tags)
+                    hasAllTags(it.tags, tags)
             },
     )
 }

@@ -232,7 +232,7 @@ class StatisticsViewModelTest {
             assertEquals(
                 listOf(
                     "за месяц\n\n" +
-                        "Ноги\n" +
+                        "НОГИ\n" +
                         "Жим ногами +5 кг (75 кг × 8)\n\n" +
                         "Остальное\n" +
                         "Тяга +2 повт. (40 кг × 12)\n" +
@@ -331,13 +331,13 @@ class StatisticsViewModelTest {
 
             assertTrue(vm.state.value.groupByTag)
             assertEquals(
-                listOf("Ноги" to listOf("Жим ногами"), "Остальное" to listOf("Тяга")),
+                listOf("НОГИ" to listOf("Жим ногами"), "Остальное" to listOf("Тяга")),
                 vm.state.value.overallSections
                     .map { s -> s.title to s.items.map { it.name } },
             )
             assertEquals(
                 listOf(
-                    "Ноги" to listOf("Жим ногами", "Гравитрон"),
+                    "НОГИ" to listOf("Жим ногами", "Гравитрон"),
                     "Остальное" to listOf("Тяга"),
                 ),
                 vm.state.value.choiceSections

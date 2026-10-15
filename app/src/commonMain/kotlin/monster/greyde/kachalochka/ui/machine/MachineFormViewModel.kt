@@ -25,13 +25,20 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.convertedSets
 import monster.greyde.kachalochka.core.domain.gym.convertedWeight
 import monster.greyde.kachalochka.core.domain.gym.convertible
+import monster.greyde.kachalochka.core.domain.gym.distinctTags
 import monster.greyde.kachalochka.core.domain.gym.guessedLbStep
+import monster.greyde.kachalochka.core.domain.gym.hasTag
 import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.gym.shiftedSets
 import monster.greyde.kachalochka.core.domain.gym.sideFactor
 import monster.greyde.kachalochka.core.domain.gym.sidedSets
+import monster.greyde.kachalochka.core.domain.gym.sortedTags
+import monster.greyde.kachalochka.core.domain.gym.spelledAs
+import monster.greyde.kachalochka.core.domain.gym.tagKey
+import monster.greyde.kachalochka.core.domain.gym.tagsSpelledAs
+import monster.greyde.kachalochka.core.domain.gym.toggledTag
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
@@ -85,10 +92,12 @@ data class MachineFormState(
     val friendTags: List<FriendTagUi> = emptyList(),
 ) {
     val shownTags: List<String>
-        get() = (knownTags + tags).sortedBy { it.lowercase() }
+        get() = sortedTags(knownTags + tags)
 
     val offeredFriendTags: List<FriendTagUi>
-        get() = friendTags.filter { offered -> shownTags.none { it.equals(offered.tag, true) } }
+        get() = friendTags.filterNot { hasTag(shownTags, it.tag) }
+
+    fun chosen(tag: String): Boolean = hasTag(tags, tag)
 
     val platformWeightValue: Double?
         get() =
@@ -120,7 +129,7 @@ data class MachineFormState(
             unit = machine.unit,
             unitLabel = machine.unitLabel,
             weightStep = formatNumber(machine.weightStep),
-            tags = machine.tags,
+            tags = distinctTags(machine.tags).toSet(),
         )
     }
 }
@@ -235,13 +244,10 @@ class MachineFormViewModel(
             val source = group.friends.firstOrNull { it.machine.id == friendMachine }?.machine
             source ?: return@launch
             update { form ->
-                val tags =
-                    source.tags.map { tag ->
-                        form.shownTags.firstOrNull { it.equals(tag, ignoreCase = true) } ?: tag
-                    }
+                val tags = tagsSpelledAs(form.tags + source.tags, form.tags + form.shownTags)
                 form.copy(
                     name = source.name,
-                    tags = form.tags + tags,
+                    tags = tags,
                     weightMode = source.weightMode,
                     platformWeight = formatNumber(source.platformWeight),
                     platformIncluded = source.platformIncluded,
@@ -261,8 +267,8 @@ class MachineFormViewModel(
             group.friends
                 .sortedBy { it.owner.displayName.lowercase() }
                 .flatMap { mate -> mate.machine.tags.map { FriendTagUi(it, mate.owner) } }
-                .distinctBy { it.tag.lowercase() }
-                .sortedBy { it.tag.lowercase() }
+                .distinctBy { tagKey(it.tag) }
+                .sortedBy { tagKey(it.tag) }
         update { it.copy(friendTags = offered) }
     }
 
@@ -437,7 +443,7 @@ class MachineFormViewModel(
     }
 
     fun toggleTag(tag: String) =
-        update { it.copy(tags = if (tag in it.tags) it.tags - tag else it.tags + tag) }
+        update { it.copy(tags = toggledTag(it.tags, spelledAs(tag, it.shownTags))) }
 
     fun typeNewTag(text: String) =
         update { it.copy(newTag = text.take(MachineFormState.TAG_LENGTH)) }
@@ -446,8 +452,8 @@ class MachineFormViewModel(
     fun addNewTag() =
         update { form ->
             val typed = form.newTag.trim().replace(Regex("""\s+"""), " ")
-            val tag = form.shownTags.firstOrNull { it.equals(typed, ignoreCase = true) } ?: typed
-            val tags = if (tag.isEmpty()) form.tags else form.tags + tag
+            val tag = spelledAs(typed, form.shownTags)
+            val tags = if (tag.isEmpty() || hasTag(form.tags, tag)) form.tags else form.tags + tag
             form.copy(tags = tags, newTag = "")
         }
 

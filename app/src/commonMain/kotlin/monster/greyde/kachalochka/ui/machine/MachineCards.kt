@@ -7,6 +7,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
@@ -87,7 +88,7 @@ class MachineCards(
         id = machine.id,
         name = machine.name,
         photo = shown.cover(machine.id),
-        tags = machine.tags.sortedBy { it.lowercase() },
+        tags = sortedTags(machine.tags),
         comment = "",
         lastUsed = null,
         record =

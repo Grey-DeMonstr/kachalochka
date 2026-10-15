@@ -5,6 +5,7 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.tagSections
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.ui.strings.AppStrings
@@ -36,8 +37,8 @@ fun visitShareText(
     return "$header\n\n$body"
 }
 
-/** A tag set's heading, the same wherever it is read. */
-fun tagTitle(tags: Set<String>): String = tags.sortedBy { it.lowercase() }.joinToString(", ")
+/** A tag set's heading in capitals, as tags are drawn, the same wherever it is read. */
+fun tagTitle(tags: Set<String>): String = sortedTags(tags).joinToString(", ") { it.uppercase() }
 
 /** [tagSections] with their headings; untagged items are headed only beside tagged ones. */
 fun <T> headedTagSections(

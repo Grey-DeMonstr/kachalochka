@@ -76,6 +76,16 @@ class MachineRankingTest {
     }
 
     @Test
+    fun tags_keep_machines_whatever_letter_case_either_spells_them_in() {
+        val legs = press.copy(tags = setOf("Ноги"))
+
+        assertEquals(
+            listOf(legs),
+            rankMachines("", listOf(legs), lastUsed, setOf("НОГИ")).machines,
+        )
+    }
+
+    @Test
     fun an_existing_name_is_not_offered_for_creation() {
         assertEquals(false, rankMachines("жим НОГАМИ ", listOf(press), lastUsed).offerCreate)
     }

@@ -426,6 +426,14 @@ machine's tag names, trimmed and distinct, `[]` for none; unreadable text or ent
 tags, as `friend_colors` does. Tags are personal: `linkedCopy` starts without any. Migration
 `0017` and `12.sqm` add the column, and `12.sqm` resets `lastPullAt`.
 
+Tags compare by `tagKey`, trimmed and lower-cased. The pure functions of `domain/gym/Tags.kt` hold
+every rule: `distinctTags` keeps the spelling met first, `sortedTags` is the one display order,
+`hasAllTags` filters, `toggledTag` keeps a set free of two spellings of one tag, and
+`tagsSpelledAs` gives tags taken from another account the receiving account's spelling. `tagSections` groups by
+the keys and spells a section as its first item. Stored rows keep the typed spelling; the screens
+upper-case a tag only when they draw it, through `TagText`. `tagTitle` writes a section heading in
+capitals, so the shared visit and the statistics export read as the screens draw.
+
 `workout_plan` holds an account's plans: `name`, `machine_ids` — a JSON array of machine ids in
 plan order, read like `machine.tags`, so an entry that is not an id is dropped — and `created_at`,
 which orders the list. It is not called `plan`, a keyword in SQLite. It is private to its owner,
