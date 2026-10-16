@@ -194,7 +194,7 @@ fun App() {
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenPlan = { navController.navigate(PlanRoute(it?.value)) },
                         onStarted = { day ->
-                            // The started plan is gone, so back leads home, not to the list.
+                            // Any start ends the trip to the plans, so back leads home.
                             navController.navigate(VisitRoute(day.iso)) {
                                 popUpTo<PlansRoute> { inclusive = true }
                             }

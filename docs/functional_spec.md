@@ -446,15 +446,14 @@ machines it holds and a "Начать" button. "Планов пока нет" st
 
 "Начать" asks "Начать план?", since a started plan cannot be taken back. Confirmed, it adds the
 plan's machines to today's visit, creating it when there is none, deletes the plan and opens the
-visit; back from it returns home. A pinned plan starts at once, without the question, and stays
-in the list. A machine the visit already has is not
-added again. In the visit the added machines follow the ones with sets, each saying
-"Запланировано"; tapping one opens its page, where "Добавить" opens the form for its first set
-and "Убрать" takes it out of the visit. A machine with a set is listed like any
-other. Ordering shows only the machines with sets. The shared text counts only machines with
-sets. A started plan makes the day a visit even before its first set, so the
-calendar marks the day and friends see the visit. Plans sync like visits and friends never see
-them.
+visit. A pinned plan starts at once, without the question, and stays in the list. After any
+start, back from the visit returns home. A machine the visit already has is not added again. In
+the visit the added machines follow the ones with sets, each saying "Запланировано"; tapping one
+opens its page, where "Добавить" opens the form for its first set and "Убрать" takes it out of
+the visit. A machine with a set is listed like any other. Ordering shows only the machines with
+sets. The shared text counts only machines with sets. A started plan makes the day a visit even
+before its first set, so the calendar marks the day and friends see the visit. Plans sync like
+visits and friends never see them.
 
 The plan form opens from a row or from "Новый план". "Название" takes up to 40 characters and
 reads "Без названия" while empty. Below it are the plan's machines in order, each with its photo
@@ -463,12 +462,11 @@ machine. "Добавить упражнение" opens the machine picker, which
 last result and offers no "Скопировать упражнение"; a machine already in the plan is not added
 twice. The pin button in the top bar ("Закрепить") pins the plan and stays lit while it is
 pinned; a second tap unpins it. The form saves itself: the plan when a machine is added, removed
-or moved and when the pin is tapped, the name a
-second after typing stops, when its field loses focus and when the form is left. A new plan comes
-into being with its first change. Back and the system back save and return to the list. A plan
-with neither a name nor machines is deleted, and its next change brings it back. The menu of a
-saved plan has "Удалить план", which asks "Удалить план?". Switching accounts returns to the list
-without saving.
+or moved and when the pin is tapped, the name a second after typing stops, when its field loses
+focus and when the form is left. A new plan comes into being with its first change. Back and the
+system back save and return to the list. A plan with neither a name nor machines is deleted, and
+its next change brings it back. The menu of a saved plan has "Удалить план", which asks
+"Удалить план?". Switching accounts returns to the list without saving.
 
 The menu in the top bar of a visit with machines has "Сохранить как план". It opens the form of a
 new plan holding the visit's machines in the visit's order, planned ones included, and saves the

@@ -462,13 +462,13 @@ Migration `0025` and `17.sqm` add `pinned`; `17.sqm` resets `lastPullAt` too.
 `NAME_PAUSE` in typing, `commitName` (the name field lost focus) and `leave` (top-bar back,
 system back) put a write on one `Channel` that runs its tasks in order, after the open's own
 load. A write takes the form's state at the time it runs and skips a plan equal to the stored
-one, so the first write of a new plan is its first real change. A blank name with no live machines soft-deletes a
-written plan, and a later write undeletes it under the same id. A failed write goes to
-`FailureLog` and the queue goes on. `leave` sets `done` only after the queue gets to it, failed
-or not, because the view model's scope, and with it any write still waiting, ends when the
-screen pops. A switch of account closes the form without a write: on the web the new account's
-session is live by the time the form sees the switch, so the old account's plan would be
-refused by RLS or written across accounts (§4.3). The pause keeps the loss to the last second
+one, so the first write of a new plan is its first real change. A blank name with no live
+machines soft-deletes a written plan, and a later write undeletes it under the same id. A failed
+write goes to `FailureLog` and the queue goes on. `leave` sets `done` only after the queue gets
+to it, failed or not, because the view model's scope, and with it any write still waiting, ends
+when the screen pops. A switch of account closes the form without a write: on the web the new
+account's session is live by the time the form sees the switch, so the old account's plan would
+be refused by RLS or written across accounts (§4.3). The pause keeps the loss to the last second
 of typing.
 
 A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
