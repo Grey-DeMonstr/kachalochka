@@ -418,7 +418,7 @@ class MachineCatalogueTest {
         runTest {
             olegsGym()
 
-            val own = catalogue.standIn(ME.userId, olegPress.id, catalogue.group(ME.userId))
+            val own = catalogue.friendStandIn(ME.userId, olegPress.id, catalogue.group(ME.userId))
 
             assertEquals(myPress, own)
             assertEquals(listOf(myPress), gym.machines.all(ME.userId))
@@ -429,11 +429,32 @@ class MachineCatalogueTest {
         runTest {
             olegsGym()
 
-            val own = catalogue.standIn(ME.userId, olegRow.id, catalogue.group(ME.userId))
+            val own = catalogue.friendStandIn(ME.userId, olegRow.id, catalogue.group(ME.userId))
 
             assertEquals("Тяга", own?.name)
             assertEquals(own, own?.id?.let { gym.machines.byId(it) })
             assertTrue(own?.id to olegRow.id in linkedPairs())
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun friend_stand_ins_at_the_same_time_write_one_copy() =
+        runTest {
+            olegsGym()
+            // The read suspends, as a database's does, so the other stand-in could run in between.
+            val slowLinks =
+                object : MachineLinkRepository by gym.machineLinks {
+                    override suspend fun all(owner: UserId?): List<MachineLink> =
+                        gym.machineLinks.all(owner).also { yield() }
+                }
+            val slow = catalogueOver(slowLinks)
+            val group = slow.group(ME.userId)
+
+            val copies =
+                List(2) { async { slow.friendStandIn(ME.userId, olegRow.id, group) } }.awaitAll()
+
+            assertEquals(1, copies.toSet().size)
+            assertEquals(1, gym.machines.all(ME.userId).count { it.name == olegRow.name })
         }
 
     @Test
@@ -442,7 +463,7 @@ class MachineCatalogueTest {
             olegsGym()
 
             assertNull(
-                catalogue.standIn(ME.userId, MachineId.random(), catalogue.group(ME.userId)),
+                catalogue.friendStandIn(ME.userId, MachineId.random(), catalogue.group(ME.userId)),
             )
         }
 

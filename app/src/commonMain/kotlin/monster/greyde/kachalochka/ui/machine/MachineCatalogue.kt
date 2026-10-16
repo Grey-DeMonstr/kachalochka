@@ -146,7 +146,7 @@ class MachineCatalogue(
     private val avatars: AccountAvatars,
     private val failures: FailureLog,
 ) {
-    private val upkeep = Mutex()
+    private val linkWrites = Mutex()
     private val flights = Mutex()
     private val inFlight = mutableMapOf<UserId, CompletableDeferred<GroupMachines>>()
     private val lastGyms = MutableStateFlow<Map<UserId, GroupGym>>(emptyMap())
@@ -195,7 +195,15 @@ class MachineCatalogue(
             val mine = async { links.all(owner) }
             val gym = friends.groupGym(owner)
             lastGyms.update { it + (owner to gym) }
-            val all = keepDirect(owner, gym.machines, gym.links, mine.await() + gym.links)
+            val all =
+                writingLinks {
+                    keepDirect(
+                        owner,
+                        gym.machines,
+                        gym.links,
+                        mine.await() + gym.links,
+                    )
+                }
             GroupMachines(owner, gym.machines, all, gym.photos)
         }
 
@@ -216,25 +224,22 @@ class MachineCatalogue(
         owner: UserId,
         friend: Machine,
         group: GroupMachines,
-    ): Machine {
-        val (copy, link) = linkedCopy(friend, owner, clock.now())
-        machines.upsert(copy)
-        keepDirect(owner, group.friends, group.mateLinks(owner), group.links, listOf(link))
-        return copy
-    }
+    ): Machine = writingLinks { copyOf(owner, friend, group) }
 
     /**
-     * [owner]'s machine of [friend]'s cluster, else a new copy [take] writes; null when [group]
-     * lacks [friend]. The own links are read again, so a copy written after [group] counts.
+     * [owner]'s machine of [friend]'s cluster, else a new copy; null when [group] lacks [friend].
+     * The own links are read again, so a copy written after [group] counts.
      */
-    suspend fun standIn(
+    suspend fun friendStandIn(
         owner: UserId,
         friend: MachineId,
         group: GroupMachines,
     ): Machine? {
         val shown = group.friends.firstOrNull { it.machine.id == friend }?.machine ?: return null
-        val cluster = MachineClusters(group.links + links.all(owner)).of(friend)
-        return machines.all(owner).firstOrNull { it.id in cluster } ?: take(owner, shown, group)
+        return writingLinks {
+            val cluster = MachineClusters(group.links + links.all(owner)).of(friend)
+            machines.all(owner).firstOrNull { it.id in cluster } ?: copyOf(owner, shown, group)
+        }
     }
 
     /** [machine], [owner]'s own, links to [friend] and to the rest of its cluster in [group]. */
@@ -245,56 +250,84 @@ class MachineCatalogue(
         group: GroupMachines?,
     ) {
         val link = MachineLink(MachineLinkId.random(), owner, machine, friend, clock.now(), false)
-        keepDirect(
-            owner,
-            group?.friends.orEmpty(),
-            group?.mateLinks(owner).orEmpty(),
-            group?.links.orEmpty(),
-            listOf(link),
-        )
+        writingLinks {
+            keepDirect(
+                owner,
+                group?.friends.orEmpty(),
+                group?.mateLinks(owner).orEmpty(),
+                group?.links.orEmpty(),
+                listOf(link),
+            )
+        }
+    }
+
+    /**
+     * Runs [write] with every other link write waiting, so two writes at once never write the same
+     * link. Not re-entrant. Asks for a sync when [write] wrote.
+     */
+    private suspend fun <T> writingLinks(write: suspend LinkWriter.() -> T): T =
+        linkWrites.withLock {
+            val writer = LinkWriter()
+            try {
+                writer.write()
+            } finally {
+                if (writer.syncAfter) sync.request()
+            }
+        }
+
+    private inner class LinkWriter {
+        // A write stopped halfway may have reached the outbox, so it still asks for a pass.
+        var syncAfter = false
+
+        suspend fun upsert(link: MachineLink) {
+            syncAfter = true
+            links.upsert(link)
+        }
+    }
+
+    private suspend fun LinkWriter.copyOf(
+        owner: UserId,
+        friend: Machine,
+        group: GroupMachines,
+    ): Machine {
+        val (copy, link) = linkedCopy(friend, owner, clock.now())
+        machines.upsert(copy)
+        keepDirect(owner, group.friends, group.mateLinks(owner), group.links, listOf(link))
+        return copy
     }
 
     /**
      * Writes [written], then the links each own machine misses to the friends' machines of its
-     * cluster, and returns every link visible after. One upkeep runs at a time and reads the own
-     * links again, so two at once never write the same link. A failed upkeep is only recorded,
-     * since [written] already stands: [before] and [written] are then returned.
+     * cluster, and returns every link visible after. A failed upkeep is only recorded, since
+     * [written] already stands: [before] and [written] are then returned.
      */
-    private suspend fun keepDirect(
+    private suspend fun LinkWriter.keepDirect(
         owner: UserId,
         mates: List<FriendMachine>,
         theirs: List<MachineLink>,
         before: List<MachineLink>,
         written: List<MachineLink> = emptyList(),
-    ): List<MachineLink> =
-        upkeep.withLock {
-            // A write stopped halfway may have reached the outbox, so it still asks for a pass.
-            var wrote = written.isNotEmpty()
-            try {
-                written.forEach { links.upsert(it) }
-                try {
-                    val visible = links.all(owner) + theirs
-                    val missing =
-                        missingDirectLinks(
-                            owner,
-                            machines.all(owner).map { it.id },
-                            mates.map { it.machine.id },
-                            visible,
-                            clock.now(),
-                        )
-                    wrote = wrote || missing.isNotEmpty()
-                    missing.forEach { links.upsert(it) }
-                    visible + missing
-                } catch (stopped: CancellationException) {
-                    throw stopped
-                } catch (failed: Exception) {
-                    failures.record(failed)
-                    before + written
-                }
-            } finally {
-                if (wrote) sync.request()
-            }
+    ): List<MachineLink> {
+        written.forEach { upsert(it) }
+        return try {
+            val visible = links.all(owner) + theirs
+            val missing =
+                missingDirectLinks(
+                    owner,
+                    machines.all(owner).map { it.id },
+                    mates.map { it.machine.id },
+                    visible,
+                    clock.now(),
+                )
+            missing.forEach { upsert(it) }
+            visible + missing
+        } catch (stopped: CancellationException) {
+            throw stopped
+        } catch (failed: Exception) {
+            failures.record(failed)
+            before + written
         }
+    }
 
     private suspend fun visibleLinks(owner: UserId): List<MachineLink> =
         links.all(owner) + friends.groupLinks(owner)

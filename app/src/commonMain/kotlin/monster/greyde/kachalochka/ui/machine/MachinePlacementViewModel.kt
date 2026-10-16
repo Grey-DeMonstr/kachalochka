@@ -185,7 +185,7 @@ class MachinePlacementViewModel(
                 }
         if (!stillActive(viewer)) return null
         val own =
-            reading { catalogue.standIn(viewer, machine.id, group) }.getOrElse {
+            reading { catalogue.friendStandIn(viewer, machine.id, group) }.getOrElse {
                 notice(machine, AppStrings.current.offline)
                 return null
             }
