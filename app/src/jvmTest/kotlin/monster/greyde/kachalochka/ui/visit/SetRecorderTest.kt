@@ -3,15 +3,11 @@ package monster.greyde.kachalochka.ui.visit
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLink
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
-import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.Test
@@ -30,9 +26,6 @@ class SetRecorderTest {
     private val timer = RestTimer(gym.clock)
     private val press = Machine.new("Жим ногами", null, t0)
     private val row = Machine.new("Тяга", null, t0)
-    private val ivan = UserId("11111111-1111-4111-8111-111111111111")
-    private val misha = UserId("22222222-2222-4222-8222-222222222222")
-    private val oleg = UserId("33333333-3333-4333-8333-333333333333")
     private val lastWeek = Visit(VisitId.random(), null, seventh, t0 - 7.days, t0, false)
     private val lastWeekSet =
         WorkoutSet(
@@ -53,7 +46,6 @@ class SetRecorderTest {
             day,
             gym.visits,
             gym.machines,
-            gym.machineLinks,
             gym.sets,
             gym.clock,
             gym.utcOffset,
@@ -103,140 +95,6 @@ class SetRecorderTest {
             assertNull(timer.startedAt.value)
             assertEquals(1, gym.sync.requests)
         }
-
-    @Test
-    fun a_set_on_another_account_s_machine_lands_on_the_owner_s_copy_of_it() =
-        runTest {
-            val mishasPress = press.copy(userId = misha)
-            gym.machines.upsert(mishasPress)
-
-            recorder().record(ivan, mishasPress, SetValues(60.0, 10), "")
-            recorder().record(ivan, mishasPress, SetValues(65.0, 10), "")
-
-            val copy =
-                gym.machines.rows.values
-                    .single { it.userId == ivan }
-            assertEquals(mishasPress.name, copy.name)
-            assertEquals(2, gym.machines.rows.size)
-            assertEquals(
-                setOf(copy.id),
-                gym.sets.rows.values
-                    .map { it.machineId }
-                    .toSet(),
-            )
-            assertTrue(
-                gym.sets.rows.values
-                    .all { it.userId == ivan },
-            )
-        }
-
-    @Test
-    fun the_owner_s_copy_keeps_the_tags_and_links_to_the_shown_machine() =
-        runTest {
-            val mishasPress = press.copy(userId = misha, tags = setOf("ноги", "спина"))
-            gym.machines.upsert(mishasPress)
-            gym.machines.upsert(row.copy(userId = ivan, tags = setOf("ноги")))
-
-            recorder().record(ivan, mishasPress, SetValues(60.0, 10), "")
-
-            val copy =
-                gym.machines.rows.values
-                    .single { it.userId == ivan && it.name == press.name }
-            assertEquals(setOf("ноги", "спина"), copy.tags)
-            val link =
-                gym.machineLinks.rows.values
-                    .single()
-            assertEquals(ivan, link.userId)
-            assertEquals(copy.id, link.machineId)
-            assertEquals(mishasPress.id, link.linkedMachineId)
-        }
-
-    @Test
-    fun the_owner_s_copy_links_to_every_machine_the_shown_one_is_linked_with() =
-        runTest {
-            val mishasPress = press.copy(userId = misha)
-            val mishasOld = Machine.new("Жим", misha, t0)
-            val olegs = Machine.new("Платформа", oleg, t0)
-            gym.machines.upsert(mishasPress)
-            gym.machines.upsert(mishasOld)
-            gym.machineLinks.upsert(link(misha, mishasPress.id, olegs.id))
-            gym.machineLinks.upsert(link(misha, mishasOld.id, olegs.id))
-
-            recorder().record(ivan, mishasPress, SetValues(60.0, 10), "")
-
-            val copy =
-                gym.machines.rows.values
-                    .single { it.userId == ivan }
-            assertEquals(
-                setOf(mishasPress.id, olegs.id, mishasOld.id),
-                gym.machineLinks
-                    .all(ivan)
-                    .onEach { assertEquals(copy.id, it.machineId) }
-                    .map { it.linkedMachineId }
-                    .toSet(),
-            )
-        }
-
-    @Test
-    fun a_set_for_another_account_lands_on_its_machine_linked_with_the_shown_one() =
-        runTest {
-            val mishasPress = press.copy(userId = misha)
-            val ivansPlatform = Machine.new("Платформа", ivan, t0)
-            val ivansPress = press.copy(id = MachineId.random(), userId = ivan)
-            gym.machines.upsert(mishasPress)
-            gym.machines.upsert(ivansPlatform)
-            gym.machines.upsert(ivansPress)
-            gym.machineLinks.upsert(link(misha, mishasPress.id, ivansPlatform.id))
-
-            recorder().record(ivan, mishasPress, SetValues(60.0, 10), "")
-
-            assertEquals(
-                ivansPlatform.id,
-                gym.sets.rows.values
-                    .single()
-                    .machineId,
-            )
-            assertEquals(3, gym.machines.rows.size)
-        }
-
-    @Test
-    fun a_link_of_the_other_account_also_joins_its_machine_to_the_shown_one() =
-        runTest {
-            val mishasPress = press.copy(userId = misha)
-            val ivansPlatform = Machine.new("Платформа", ivan, t0)
-            gym.machines.upsert(mishasPress)
-            gym.machines.upsert(ivansPlatform)
-            gym.machineLinks.upsert(link(ivan, ivansPlatform.id, mishasPress.id))
-
-            val own = recorder().ownCopy(ivan, mishasPress)
-
-            assertEquals(ivansPlatform, own)
-        }
-
-    @Test
-    fun a_set_for_another_account_lands_on_its_machine_of_the_same_name_in_any_letter_case() =
-        runTest {
-            val mishasPress = press.copy(userId = misha)
-            val ivansPress = Machine.new("ЖИМ НОГАМИ", ivan, t0)
-            gym.machines.upsert(mishasPress)
-            gym.machines.upsert(ivansPress)
-
-            recorder().record(ivan, mishasPress, SetValues(60.0, 10), "")
-
-            assertEquals(
-                ivansPress.id,
-                gym.sets.rows.values
-                    .single()
-                    .machineId,
-            )
-            assertTrue(gym.machineLinks.rows.isEmpty())
-        }
-
-    private fun link(
-        owner: UserId,
-        machine: MachineId,
-        linked: MachineId,
-    ) = MachineLink(MachineLinkId.random(), owner, machine, linked, t0, false)
 
     @Test
     fun amending_a_set_changes_its_values_and_keeps_its_place() =

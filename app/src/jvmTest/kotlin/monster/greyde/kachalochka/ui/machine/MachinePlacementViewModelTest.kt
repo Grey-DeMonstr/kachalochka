@@ -54,7 +54,6 @@ class MachinePlacementViewModelTest {
             on.plans,
             on.visits,
             on.machines,
-            on.machineLinks,
             on.sets,
             on.currentUser,
             on.accounts,

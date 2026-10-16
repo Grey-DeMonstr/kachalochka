@@ -3,9 +3,7 @@ package monster.greyde.kachalochka.ui.visit
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.ShownVisit
@@ -15,16 +13,14 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.dayVisit
-import monster.greyde.kachalochka.core.domain.gym.linkedCopy
-import monster.greyde.kachalochka.core.domain.gym.missingDirectLinks
 import monster.greyde.kachalochka.core.domain.gym.nextPosition
-import monster.greyde.kachalochka.core.domain.gym.ownStandIn
 import monster.greyde.kachalochka.core.domain.gym.recordingInstant
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.startedPlanned
 import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Clock
 
@@ -37,14 +33,13 @@ class SetRecorder(
     private val day: CalendarDay,
     private val visits: VisitRepository,
     private val machines: MachineRepository,
-    private val links: MachineLinkRepository,
     private val sets: WorkoutSetRepository,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
     private val restTimer: RestTimer,
     private val sync: SyncTrigger,
 ) {
-    /** Records a set for [owner] on [machine], which may be another account's (spec §4.1). */
+    /** Records a set for [owner] on [machine], the owner's own (see [MachineCatalogue.ownCopy]). */
     suspend fun record(
         owner: UserId?,
         machine: Machine,
@@ -59,7 +54,7 @@ class SetRecorder(
                 WorkoutSetId.random(),
                 owner,
                 target.id,
-                ownCopy(owner, machine).id,
+                machine.id,
                 values.weight,
                 values.reps,
                 nextPosition(targetSets),
@@ -143,43 +138,6 @@ class SetRecorder(
         changed.forEach { sets.upsert(it) }
         if (changed.isNotEmpty()) pushIfPast()
     }
-
-    /**
-     * The owner's machine standing for [shown] without writing anything: [shown] itself when it
-     * is the owner's, else its [ownStandIn] in the cluster the two accounts' own links show.
-     */
-    suspend fun standIn(
-        owner: UserId?,
-        shown: Machine,
-    ): Machine? {
-        if (shown.userId == owner) return shown
-        return ownStandIn(shown, machines.all(owner), MachineClusters(knownLinks(owner, shown)))
-    }
-
-    /**
-     * The owner's own machine standing for [shown], which may be another account's: its
-     * [standIn], else a new copy linked to [shown] and to the rest of its cluster (spec §4.5).
-     */
-    suspend fun ownCopy(
-        owner: UserId?,
-        shown: Machine,
-    ): Machine {
-        standIn(owner, shown)?.let { return it }
-        val known = knownLinks(owner, shown)
-        val now = clock.now()
-        val (copy, link) = linkedCopy(shown, owner, now)
-        machines.upsert(copy)
-        links.upsert(link)
-        val cluster = MachineClusters(known).of(shown.id)
-        missingDirectLinks(owner, listOf(copy.id), cluster, known + link, now)
-            .forEach { links.upsert(it) }
-        return copy
-    }
-
-    private suspend fun knownLinks(
-        owner: UserId?,
-        shown: Machine,
-    ) = links.all(owner) + links.all(shown.userId)
 
     private suspend fun shownOrNew(owner: UserId?): ShownVisit {
         visits.shownOn(owner, day, sets, utcOffset::at)?.let { return it }

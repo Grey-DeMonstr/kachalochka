@@ -36,6 +36,7 @@ import monster.greyde.kachalochka.core.domain.gym.coverPhoto
 import monster.greyde.kachalochka.core.domain.gym.linkSuggestions
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.gym.missingDirectLinks
+import monster.greyde.kachalochka.core.domain.gym.ownStandIn
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.accountAvatar
@@ -262,8 +263,44 @@ class MachineCatalogue(
     }
 
     /**
-     * Runs [write] with every other link write waiting, so two writes at once never write the same
-     * link. Not re-entrant. Asks for a sync when [write] wrote.
+     * The owner's machine standing for [shown] without writing anything: [shown] itself when it
+     * is the owner's, else its [ownStandIn] in the cluster the two accounts' own links show.
+     */
+    suspend fun deviceStandIn(
+        owner: UserId?,
+        shown: Machine,
+    ): Machine? {
+        if (shown.userId == owner) return shown
+        val known = links.all(owner) + links.all(shown.userId)
+        return ownStandIn(shown, machines.all(owner), MachineClusters(known))
+    }
+
+    /**
+     * The owner's own machine standing for [shown], which may be another account's: its
+     * [deviceStandIn], else a new copy linked to [shown] and to the rest of its cluster (spec §4.5).
+     */
+    suspend fun ownCopy(
+        owner: UserId?,
+        shown: Machine,
+    ): Machine =
+        writingLinks {
+            deviceStandIn(owner, shown) ?: run {
+                val known = links.all(owner) + links.all(shown.userId)
+                val now = clock.now()
+                val (copy, link) = linkedCopy(shown, owner, now)
+                machines.upsert(copy)
+                upsert(link)
+                val cluster = MachineClusters(known).of(shown.id)
+                missingDirectLinks(owner, listOf(copy.id), cluster, known + link, now)
+                    .forEach { upsert(it) }
+                copy
+            }
+        }
+
+    /**
+     * Runs [write] with every other link write waiting. Each write reads the own links again under
+     * the lock, so two writes at once never write the same link. Not re-entrant. Asks for a sync
+     * when [write] wrote.
      */
     private suspend fun <T> writingLinks(write: suspend LinkWriter.() -> T): T =
         linkWrites.withLock {

@@ -82,7 +82,6 @@ class CalendarViewModelTest {
             gym.visits,
             gym.sets,
             gym.machines,
-            gym.machineLinks,
             gym.currentUser,
             gym.accounts,
             gym.clock,

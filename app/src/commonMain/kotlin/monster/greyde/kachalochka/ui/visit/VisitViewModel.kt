@@ -14,7 +14,6 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.DEFAULT_REPS
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.SetValues
@@ -177,7 +176,6 @@ class VisitViewModel(
     private val day: CalendarDay,
     private val visits: VisitRepository,
     private val machines: MachineRepository,
-    private val links: MachineLinkRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
@@ -197,7 +195,7 @@ class VisitViewModel(
     val state: StateFlow<VisitUiState?> = mutableState
     private val writes = WriteGuard(viewModelScope)
     private val recorder =
-        SetRecorder(day, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
+        SetRecorder(day, visits, machines, sets, clock, utcOffset, restTimer, sync)
 
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var visitSets: List<WorkoutSet> = emptyList()
@@ -282,7 +280,7 @@ class VisitViewModel(
         writes.launch {
             val now = clock.now()
             val today = CalendarDay.of(now, utcOffset.at(now))
-            SetRecorder(today, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
+            SetRecorder(today, visits, machines, sets, clock, utcOffset, restTimer, sync)
                 .planFrom(currentUser.id(), day)
             onDone(today)
         }
@@ -392,7 +390,8 @@ class VisitViewModel(
             publish()
             try {
                 if (edited == null) {
-                    recorder.record(currentUser.id(), machine, saved, comment)
+                    val owner = currentUser.id()
+                    recorder.record(owner, catalogue.ownCopy(owner, machine), saved, comment)
                 } else {
                     recorder.amend(edited, saved, comment)
                 }
@@ -422,7 +421,7 @@ class VisitViewModel(
                 reload(reseed = false)
                 return@launch
             }
-            val own = recorder.ownCopy(currentUser.id(), machine)
+            val own = catalogue.ownCopy(currentUser.id(), machine)
             reload(reseed = false)
             onOpen(own.id)
         }
@@ -539,7 +538,7 @@ class VisitViewModel(
             closePage()
             return null
         }
-        return recorder.standIn(owner, shown) ?: shown
+        return catalogue.deviceStandIn(owner, shown) ?: shown
     }
 
     private fun setNumber(

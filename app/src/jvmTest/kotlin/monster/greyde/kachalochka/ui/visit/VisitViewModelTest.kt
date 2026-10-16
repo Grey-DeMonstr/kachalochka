@@ -125,7 +125,6 @@ class VisitViewModelTest {
         day,
         gym.visits,
         gym.machines,
-        gym.machineLinks,
         gym.sets,
         gym.currentUser,
         gym.accounts,

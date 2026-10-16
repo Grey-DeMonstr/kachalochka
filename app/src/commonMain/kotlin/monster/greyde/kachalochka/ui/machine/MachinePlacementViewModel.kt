@@ -9,7 +9,6 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.PlanRepository
@@ -63,7 +62,6 @@ class MachinePlacementViewModel(
     private val plans: PlanRepository,
     private val visits: VisitRepository,
     private val machines: MachineRepository,
-    private val links: MachineLinkRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
@@ -197,7 +195,7 @@ class MachinePlacementViewModel(
         return own.id
     }
 
-    /** Another account's stored machine stands in as the set form's [SetRecorder.ownCopy] does. */
+    /** Another account's stored machine stands in as the set form's [MachineCatalogue.ownCopy] does. */
     private suspend fun ownMachine(
         owner: UserId?,
         machine: PlacedMachine,
@@ -205,16 +203,15 @@ class MachinePlacementViewModel(
     ): MachineId? {
         val shown = machines.byId(machine.id)?.takeIf { !it.deleted } ?: return null
         if (shown.userId == owner) return shown.id
-        val recorder = recorder(today())
-        val found = recorder.standIn(owner, shown)
+        val found = catalogue.deviceStandIn(owner, shown)
         if (!stillActive(owner)) return null
-        val own = found ?: recorder.ownCopy(owner, shown)
+        val own = found ?: catalogue.ownCopy(owner, shown)
         onStoodIn()
         return own.id
     }
 
     private fun recorder(day: CalendarDay) =
-        SetRecorder(day, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
+        SetRecorder(day, visits, machines, sets, clock, utcOffset, restTimer, sync)
 
     private fun today(): CalendarDay {
         val now = clock.now()

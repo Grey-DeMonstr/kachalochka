@@ -15,7 +15,6 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -122,7 +121,6 @@ class CalendarViewModel(
     private val visits: VisitRepository,
     private val sets: WorkoutSetRepository,
     private val machines: MachineRepository,
-    private val links: MachineLinkRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
@@ -251,7 +249,7 @@ class CalendarViewModel(
         val from = selected
         writes.launch {
             val today = today()
-            SetRecorder(today, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
+            SetRecorder(today, visits, machines, sets, clock, utcOffset, restTimer, sync)
                 .planFrom(currentUser.id(), from)
             onDone(today)
         }

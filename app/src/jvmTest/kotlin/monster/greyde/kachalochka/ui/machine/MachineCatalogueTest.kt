@@ -17,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
@@ -570,5 +571,184 @@ class MachineCatalogueTest {
             gym.friends.offline = true
 
             assertFailsWith<IllegalStateException> { catalogue.group(ME.userId) }
+        }
+
+    private fun ownLink(
+        owner: UserId,
+        machine: MachineId,
+        linked: MachineId,
+    ) = MachineLink(MachineLinkId.random(), owner, machine, linked, t0, false)
+
+    @Test
+    fun a_device_account_s_copy_is_made_once_and_asks_for_a_sync() =
+        runTest {
+            val sashas = myPress.copy(userId = SASHA.userId)
+            gym.machines.upsert(sashas)
+
+            val first = catalogue.ownCopy(ME.userId, sashas)
+            val second = catalogue.ownCopy(ME.userId, sashas)
+
+            assertEquals(first, second)
+            assertEquals(2, gym.machines.rows.size)
+            assertEquals(sashas.name, first.name)
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_device_account_s_copy_keeps_the_tags_and_links_to_the_shown_machine() =
+        runTest {
+            val sashas = myPress.copy(userId = SASHA.userId, tags = setOf("ноги", "спина"))
+            gym.machines.upsert(sashas)
+            gym.machines.upsert(olegRow.copy(userId = ME.userId, tags = setOf("ноги")))
+
+            catalogue.ownCopy(ME.userId, sashas)
+
+            val copy =
+                gym.machines.rows.values
+                    .single { it.userId == ME.userId && it.name == myPress.name }
+            assertEquals(setOf("ноги", "спина"), copy.tags)
+            val link =
+                gym.machineLinks.rows.values
+                    .single()
+            assertEquals(ME.userId, link.userId)
+            assertEquals(copy.id, link.machineId)
+            assertEquals(sashas.id, link.linkedMachineId)
+        }
+
+    @Test
+    fun a_device_account_s_copy_links_to_every_machine_the_shown_one_is_linked_with() =
+        runTest {
+            val sashas = myPress.copy(userId = SASHA.userId)
+            val sashasOld = Machine.new("Жим", SASHA.userId, t0)
+            val olegs = Machine.new("Платформа", OLEG.userId, t0)
+            gym.machines.upsert(sashas)
+            gym.machines.upsert(sashasOld)
+            gym.machineLinks.upsert(ownLink(SASHA.userId, sashas.id, olegs.id))
+            gym.machineLinks.upsert(ownLink(SASHA.userId, sashasOld.id, olegs.id))
+
+            val copy = catalogue.ownCopy(ME.userId, sashas)
+
+            assertEquals(
+                setOf(sashas.id, olegs.id, sashasOld.id),
+                gym.machineLinks
+                    .all(ME.userId)
+                    .onEach { assertEquals(copy.id, it.machineId) }
+                    .map { it.linkedMachineId }
+                    .toSet(),
+            )
+        }
+
+    @Test
+    fun the_owner_s_machine_linked_with_the_shown_one_stands_in() =
+        runTest {
+            val sashas = myPress.copy(userId = SASHA.userId)
+            val platform = Machine.new("Платформа", ME.userId, t0)
+            val press = myPress.copy(id = MachineId.random())
+            gym.machines.upsert(sashas)
+            gym.machines.upsert(platform)
+            gym.machines.upsert(press)
+            gym.machineLinks.upsert(ownLink(SASHA.userId, sashas.id, platform.id))
+
+            assertEquals(platform, catalogue.ownCopy(ME.userId, sashas))
+            assertEquals(3, gym.machines.rows.size)
+        }
+
+    @Test
+    fun an_own_link_also_joins_the_owner_s_machine_to_the_shown_one() =
+        runTest {
+            val sashas = myPress.copy(userId = SASHA.userId)
+            val platform = Machine.new("Платформа", ME.userId, t0)
+            gym.machines.upsert(sashas)
+            gym.machines.upsert(platform)
+            gym.machineLinks.upsert(ownLink(ME.userId, platform.id, sashas.id))
+
+            assertEquals(platform, catalogue.ownCopy(ME.userId, sashas))
+        }
+
+    @Test
+    fun the_owner_s_machine_of_the_same_name_in_any_letter_case_stands_in() =
+        runTest {
+            val sashas = myPress.copy(userId = SASHA.userId)
+            val mine = Machine.new("ЖИМ НОГАМИ", ME.userId, t0)
+            gym.machines.upsert(sashas)
+            gym.machines.upsert(mine)
+
+            assertEquals(mine, catalogue.ownCopy(ME.userId, sashas))
+            assertTrue(gym.machineLinks.rows.isEmpty())
+        }
+
+    @Test
+    fun a_device_stand_in_writes_nothing() =
+        runTest {
+            val sashas = Machine.new("Гакк", SASHA.userId, t0)
+            gym.machines.upsert(myPress)
+            gym.machines.upsert(sashas)
+
+            assertNull(catalogue.deviceStandIn(ME.userId, sashas))
+            assertEquals(myPress, catalogue.deviceStandIn(ME.userId, myPress))
+            assertTrue(gym.machineLinks.rows.isEmpty())
+            assertEquals(2, gym.machines.rows.size)
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun a_device_copy_stopped_while_writing_still_asks_for_a_sync() =
+        runTest {
+            val sashas = Machine.new("Гакк", SASHA.userId, t0)
+            gym.machines.upsert(sashas)
+            val stuck =
+                object : MachineLinkRepository by gym.machineLinks {
+                    override suspend fun upsert(link: MachineLink) {
+                        gym.machineLinks.upsert(link)
+                        awaitCancellation()
+                    }
+                }
+
+            val copying = launch { catalogueOver(stuck).ownCopy(ME.userId, sashas) }
+            testScheduler.advanceUntilIdle()
+            copying.cancel()
+            copying.join()
+
+            assertEquals(1, gym.machineLinks.rows.size)
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_device_copy_and_a_group_read_at_the_same_time_write_each_link_once() =
+        runTest {
+            // Паша's rows are on the device too, as a second account's are.
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+            val pashas = Machine.new("Тяга", PASHA.userId, t0)
+            val pashaLink = ownLink(PASHA.userId, pashas.id, olegRow.id)
+            gym.friends.machines += listOf(olegRow, pashas)
+            gym.friends.links += pashaLink
+            gym.machines.upsert(pashas)
+            gym.machineLinks.upsert(pashaLink)
+            val gate = CompletableDeferred<Unit>()
+            // The copy's first link lands, then its write waits, so the upkeep could run in between.
+            val paused =
+                object : MachineLinkRepository by gym.machineLinks {
+                    var writes = 0
+
+                    override suspend fun upsert(link: MachineLink) {
+                        gym.machineLinks.upsert(link)
+                        if (writes++ == 0) gate.await()
+                    }
+                }
+            val racing = catalogueOver(paused)
+
+            val copying = async { racing.ownCopy(ME.userId, pashas) }
+            testScheduler.advanceUntilIdle()
+            val reading = launch { racing.group(ME.userId) }
+            testScheduler.advanceUntilIdle()
+            gate.complete(Unit)
+            val copy = copying.await()
+            reading.join()
+
+            assertEquals(
+                1,
+                gym.machineLinks.rows.values
+                    .count { it.machineId == copy.id && it.linkedMachineId == olegRow.id },
+            )
         }
 }
