@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
+import monster.greyde.kachalochka.core.domain.friends.GroupGym
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.friends.GroupMember
 import monster.greyde.kachalochka.core.domain.friends.friendResults
@@ -20,7 +21,6 @@ import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.machinePeaks
-import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.tagKey
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -182,30 +182,20 @@ class FakeFriends(
                 .sortedBy { it.name.lowercase() }
         }
 
-    override suspend fun photos(machine: MachineId) =
-        online {
-            photos
-                .filter { !it.deleted && it.machineId == machine }
-                .filter { photo -> photo.userId?.let(::visibleMember) == true }
-                .sortedWith(photoOrder)
-        }
-
     override suspend fun mates(viewer: UserId) = online { matesById(viewer).values.toList() }
 
-    override suspend fun groupPhotos(viewer: UserId) =
+    override suspend fun groupGym(viewer: UserId) =
         online {
             val mates = matesById(viewer)
-            photos.filter { !it.deleted && it.userId in mates.keys }
-        }
-
-    override suspend fun groupMachines(viewer: UserId) =
-        online {
-            val mates = matesById(viewer)
-            machines
-                .filterNot { it.deleted }
-                .mapNotNull { m ->
-                    m.userId?.let(mates::get)?.let { FriendMachine(m.keyed(), it) }
-                }.sortedBy { it.machine.name.lowercase() }
+            GroupGym(
+                machines
+                    .filterNot { it.deleted }
+                    .mapNotNull { m ->
+                        m.userId?.let(mates::get)?.let { FriendMachine(m.keyed(), it) }
+                    }.sortedBy { it.machine.name.lowercase() },
+                links.filter { !it.deleted && it.userId in mates.keys },
+                photos.filter { !it.deleted && it.userId in mates.keys },
+            )
         }
 
     override suspend fun groupVisits(

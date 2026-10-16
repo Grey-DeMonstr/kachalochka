@@ -430,8 +430,8 @@ else the first of any machine in its cluster. A friend's machine is drawn with i
 Offline a chosen friend's photo is not at hand, so the own first stands in, and the form keeps
 the choice on save unless that photo was removed in it. Migration `0022` and `16.sqm` add the
 column; `16.sqm` resets `lastPullAt`. Own photos are read locally
-(`PhotoRepository.all`); group mates' come in one read, `FriendsRepository.groupPhotos`, beside the
-friends' machines, and "Упражнение друга" reads its machine's with `photos`.
+(`PhotoRepository.all`); group mates' come with the friends' machines in
+`FriendsRepository.groupGym`, and "Упражнение друга" takes its machine's from there.
 
 ### 4.5 Gym data
 
@@ -604,7 +604,9 @@ this.
 
 `MachineCatalogue` in `app/ui/machine` is the one reader of all of this. Its `own` read gives an
 account's live machines, photos and links from the device; its `group` read gives the group
-mates' machines, links and photos from the network, in one parallel request; `clusters` reads
+mates' machines with their tags, links and photos from the network in one request,
+`FriendsRepository.groupGym`, which the server's `group_gym` (migration `0028`) answers under the
+invoker's row-level security, the members it found the mates by included; `clusters` reads
 only the links, for screens that just name a friend's machine after the viewer's own; `take`
 writes the own copy and its link; `standIn` gives the own machine of a friend's machine's
 cluster, from a group read and the own links read again, else `take`s it; and `link` writes
@@ -618,6 +620,11 @@ keeps the links seen before it, and the link that `take` or `link` wrote first s
 `LinkUpkeep` makes a group read for every account that becomes active, at start and on each
 switch, so the links that friends made since reach the account's machines without a screen that
 reads the group. A read that fails, as offline, waits for the next start or switch.
+Group reads for one account share the read in flight, so the screens a sync pass reloads together
+send one request; when the screen that started it closes, the others read again. The catalogue
+keeps the last read of each account in memory, and `lastGroup` joins it to the own links read
+again, so the machine list, the picker, the form and "Упражнение друга" show it at once and the
+fresh read follows. The form reads the group once per load, for its links, photos and tags.
 
 `ShownMachines` joins an own read with a group read into what a screen shows, the clusters, each
 machine's cover photo and the friends' machines offered, and drops a group read made for another

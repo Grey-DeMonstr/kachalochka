@@ -15,8 +15,7 @@ import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.MachineLinkRow
 import monster.greyde.kachalochka.core.data.gym.MachineRow
-import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
-import monster.greyde.kachalochka.core.data.gym.PhotoRow
+import monster.greyde.kachalochka.core.data.gym.TagRows
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
@@ -30,6 +29,7 @@ import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
+import monster.greyde.kachalochka.core.domain.friends.GroupGym
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.friends.GroupMember
 import monster.greyde.kachalochka.core.domain.friends.friendResults
@@ -39,10 +39,8 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
-import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
-import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Clock
@@ -191,41 +189,28 @@ class SupabaseFriendsRepository(
     override suspend fun machines(member: UserId): List<Machine> =
         taggedMachines { eq("user_id", member.value) }.sortedBy { it.name.lowercase() }
 
-    override suspend fun photos(machine: MachineId): List<Photo> =
-        postgrest
-            .from(PHOTO_TABLE)
-            .select {
-                filter {
-                    eq("machine_id", machine.value)
-                    eq("deleted", false)
-                }
-            }.decodeList<PhotoRow>()
-            .map { it.toPhoto() }
-            .sortedWith(photoOrder)
-
     override suspend fun mates(viewer: UserId): List<Friend> = matesById(viewer).values.toList()
 
-    override suspend fun groupPhotos(viewer: UserId): List<Photo> {
-        val mates = matesById(viewer)
-        if (mates.isEmpty()) return emptyList()
-        return postgrest
-            .from(PHOTO_TABLE)
-            .select {
-                filter {
-                    isIn("user_id", mates.keys.map { it.value })
-                    eq("deleted", false)
-                }
-            }.decodeList<PhotoRow>()
-            .map { it.toPhoto() }
-    }
-
-    override suspend fun groupMachines(viewer: UserId): List<FriendMachine> {
-        val mates = matesById(viewer)
-        if (mates.isEmpty()) return emptyList()
-        return taggedMachines { isIn("user_id", mates.keys.map { it.value }) }
-            .mapNotNull { machine ->
-                machine.userId?.let(mates::get)?.let { FriendMachine(machine, it) }
-            }.sortedBy { it.machine.name.lowercase() }
+    override suspend fun groupGym(viewer: UserId): GroupGym {
+        val read =
+            postgrest
+                .rpc("group_gym", buildJsonObject { put("viewer", viewer.value) })
+                .decodeAs<GroupGymRow>()
+        val mates = matesOf(read.members, viewer)
+        val tags =
+            TagRows(read.machineTags.map { it.toMachineTag() }, read.tags.map { it.toTag() })
+        val machines =
+            read.machines
+                .map { it.toMachine() }
+                .withTagRows(tags)
+                .mapNotNull { machine ->
+                    machine.userId?.let(mates::get)?.let { FriendMachine(machine, it) }
+                }.sortedBy { it.machine.name.lowercase() }
+        return GroupGym(
+            machines,
+            read.links.map { it.toMachineLink() },
+            read.photos.map { it.toPhoto() },
+        )
     }
 
     override suspend fun groupVisits(
@@ -348,10 +333,15 @@ class SupabaseFriendsRepository(
                 }
             }.decodeList<GroupMemberRow>()
 
+    private suspend fun matesById(viewer: UserId): Map<UserId, Friend> =
+        matesOf(memberships(), viewer)
+
     // A managed child's reads go out under its guardian's session, which sees the guardian's
     // groups; only those holding the viewer are the viewer's to show.
-    private suspend fun matesById(viewer: UserId): Map<UserId, Friend> {
-        val rows = memberships()
+    private fun matesOf(
+        rows: List<GroupMemberRow>,
+        viewer: UserId,
+    ): Map<UserId, Friend> {
         val shared = rows.filter { it.userId == viewer.value }.map { it.groupId }.toSet()
         return rows
             .filter { it.groupId in shared && it.userId != viewer.value }

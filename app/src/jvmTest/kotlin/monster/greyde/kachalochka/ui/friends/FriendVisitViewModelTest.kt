@@ -212,9 +212,8 @@ class FriendVisitViewModelTest {
 
         assertEquals("2 упражнения", state.countLabel)
         assertEquals(2, state.groups.size)
-        // The visits, each visit's sets once, the machines, the group's machines, links and
-        // photos, and the mates.
-        assertEquals(8, gym.friends.reads)
+        // The visits, each visit's sets once, the machines, the group read and the mates.
+        assertEquals(6, gym.friends.reads)
     }
 
     @Test

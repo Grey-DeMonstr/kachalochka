@@ -3,6 +3,8 @@ package monster.greyde.kachalochka.ui.machine
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -15,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -34,8 +37,8 @@ import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
 /**
- * [stats] are the friend's own results on the machine over [period], in the viewer's unit; the
- * settings, [caption] and [platform], stay in the machine's own unit.
+ * [stats] are the friend's own results on the machine over [period], in the viewer's unit, null
+ * until they are read; the settings, [caption] and [platform], stay in the machine's own unit.
  */
 data class FriendMachineUi(
     val name: String,
@@ -49,7 +52,7 @@ data class FriendMachineUi(
     val photos: List<ShownPhoto>,
     val tags: List<String>,
     val period: StatsPeriod,
-    val stats: MachineStatsUi,
+    val stats: MachineStatsUi?,
 )
 
 /** A group mate's machine, read online, that the account can take as its own linked copy. */
@@ -71,15 +74,15 @@ class FriendMachineViewModel(
     private val writes = WriteGuard(viewModelScope)
 
     /** What the last read brought, kept so a period change redraws without the network. */
-    private class Read(
+    private data class Read(
         val friend: FriendMachine,
         val group: GroupMachines,
         /** Another copy or link would duplicate an own machine already linked to this one. */
         val had: Boolean,
         val linked: List<LinkedMachineUi>,
         val photos: List<Photo>,
-        val sets: List<WorkoutSet>,
         val preferred: PreferredWeightUnit,
+        val sets: List<WorkoutSet>? = null,
     )
 
     private var read: Read? = null
@@ -100,37 +103,68 @@ class FriendMachineViewModel(
         viewModelScope.launch { accounts.activeId.collect { refresh() } }
     }
 
-    /** Cancels the load in flight, so one for a previous account never lands last. */
+    /**
+     * Cancels the load in flight, so one for a previous account never lands last. The friend's
+     * sets are read beside the group; the last group read shows the machine before either lands.
+     */
     fun refresh() {
         loading?.cancel()
-        read = null
-        shownFor = null
-        mutableState.value = null
+        forgetShown()
         loading =
             viewModelScope.launch {
                 val viewer = currentUser.id() ?: return@launch
                 reading {
-                    val group = catalogue.group(viewer)
-                    group.friends.firstOrNull(::isShown)?.let { found ->
-                        val own = catalogue.own(viewer)
-                        val shown = ShownMachines(own, group)
-                        Read(
-                            found,
-                            group,
-                            own.machines.any { shown.clusters.sameMachine(it.id, machineId) },
-                            shown.linkedWith(machineId),
-                            friends.photos(machineId),
-                            friends.setsOn(owner, machineId),
-                            profiles.preferredUnit(viewer),
-                        )
+                    coroutineScope {
+                        val sets = async { friends.setsOn(owner, machineId) }
+                        val preferred = profiles.preferredUnit(viewer)
+                        catalogue.lastGroup(viewer)?.let { readOf(viewer, it, preferred) }?.let {
+                            show(viewer, it)
+                        }
+                        val found = readOf(viewer, catalogue.group(viewer), preferred)
+                        if (found == null) sets.cancel() else show(viewer, found)
+                        found?.copy(sets = sets.await())
                     }
                 }.onSuccess { found ->
-                    read = found
-                    shownFor = viewer
-                    mutableState.value = found?.let(::uiOf)
+                    if (found == null) forgetShown() else show(viewer, found)
                     mutableOffline.value = false
-                }.onFailure { mutableOffline.value = true }
+                }.onFailure {
+                    forgetShown()
+                    mutableOffline.value = true
+                }
             }
+    }
+
+    private fun forgetShown() {
+        read = null
+        shownFor = null
+        mutableState.value = null
+    }
+
+    private suspend fun readOf(
+        viewer: UserId,
+        group: GroupMachines,
+        preferred: PreferredWeightUnit,
+    ): Read? {
+        val found = group.friends.firstOrNull(::isShown) ?: return null
+        val own = catalogue.own(viewer)
+        val shown = ShownMachines(own, group)
+        return Read(
+            found,
+            group,
+            own.machines.any { shown.clusters.sameMachine(it.id, machineId) },
+            shown.linkedWith(machineId),
+            group.photos.filter { it.machineId == machineId }.sortedWith(photoOrder),
+            preferred,
+        )
+    }
+
+    private fun show(
+        viewer: UserId,
+        shown: Read,
+    ) {
+        read = shown
+        shownFor = viewer
+        mutableState.value = uiOf(shown)
     }
 
     /** The shown machine with the group read it came from, to place it elsewhere. */
@@ -172,7 +206,10 @@ class FriendMachineViewModel(
             photos = read.photos.map { ShownPhoto(it.id.value, it, cover = it == cover) },
             tags = sortedTags(machine.tags),
             period = period,
-            stats = machineStatsUi(machine, read.sets, period, today, read.preferred, utcOffset),
+            stats =
+                read.sets?.let {
+                    machineStatsUi(machine, it, period, today, read.preferred, utcOffset)
+                },
         )
     }
 

@@ -518,6 +518,21 @@ class MachinePickerViewModelTest {
     }
 
     @Test
+    fun friends_machines_read_before_show_at_once_while_they_are_read_again() {
+        val (on, olegPress) = olegsGym()
+        runBlocking { on.catalogue.group(ME.userId) }
+        on.friends.gate = CompletableDeferred()
+
+        val vm = pickerOn(on).also { it.load() }
+
+        assertEquals(
+            listOf(olegPress.id),
+            vm.state.value.friendRows
+                .map { it.id },
+        )
+    }
+
+    @Test
     fun own_machines_show_while_the_friends_read_is_still_in_flight() {
         val (on, _) = olegsGym()
         val press = Machine.new("Жим ногами", ME.userId, t0)

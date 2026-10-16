@@ -30,6 +30,7 @@ import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendVisit
+import monster.greyde.kachalochka.core.domain.friends.GroupGym
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.friends.GroupMember
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
@@ -122,49 +123,59 @@ class SupabaseFriendsRepositoryTest {
     private suspend fun HttpRequestData.bodyText() = body.toByteArray().decodeToString()
 
     @Test
-    fun group_photos_are_the_live_photos_of_every_group_mate_in_one_read() =
+    fun the_group_gym_is_one_request_for_the_mates_machines_with_tags_links_and_photos() =
         runTest {
-            val photo = Photo.new(MachineId.random(), OLEG, NOW)
-            val requests = mutableListOf<HttpRequestData>()
-            val engine =
-                MockEngine { request ->
-                    requests += request
-                    val body =
-                        when (request.table()) {
-                            "group_member" -> MEMBERSHIPS
-                            else -> Json.encodeToString(listOf(PhotoRow.of(photo)))
-                        }
-                    respond(body, HttpStatusCode.OK, jsonHeaders())
-                }
+            val press = Machine.new("Жим ногами", OLEG, NOW)
+            val row = Machine.new("Тяга", OLEG, NOW)
+            val tag = Tag(tagId(OLEG, "ноги"), OLEG, "ноги", NOW, false)
+            val tagged =
+                MachineTag(machineTagId(press.id, "ноги"), OLEG, press.id, tag.id, NOW, false)
+            val link =
+                MachineLink(MachineLinkId.random(), OLEG, press.id, MachineId.random(), NOW, false)
+            val photo = Photo.new(press.id, OLEG, NOW)
+            val machines = Json.encodeToString(listOf(row, press).map(MachineRow::of))
+            val machineTags = Json.encodeToString(listOf(MachineTagRow.of(tagged)))
+            val tags = Json.encodeToString(listOf(TagRow.of(tag)))
+            val links = Json.encodeToString(listOf(MachineLinkRow.of(link)))
+            val photos = Json.encodeToString(listOf(PhotoRow.of(photo)))
+            val engine = MockEngine.Queue()
+            engine.answer(
+                """{"members":$MEMBERSHIPS,"machines":$machines,"machine_tags":$machineTags,""" +
+                    """"tags":$tags,"links":$links,"photos":$photos}""",
+            )
 
-            assertEquals(listOf(photo), repositoryOn(engine).groupPhotos(IVAN))
+            val gym = repositoryOn(engine).groupGym(IVAN)
 
-            val query = requests.single { it.table() == "photo" }.url.parameters
-            assertEquals("in.(${OLEG.value})", query["user_id"])
-            assertEquals("eq.false", query["deleted"])
+            val oleg = Friend(OLEG, "Олег")
+            assertEquals(
+                GroupGym(
+                    listOf(
+                        FriendMachine(press.copy(tags = setOf("ноги")), oleg),
+                        FriendMachine(row, oleg),
+                    ),
+                    listOf(link),
+                    listOf(photo),
+                ),
+                gym,
+            )
+            val request = engine.requestHistory.single()
+            assertTrue(request.url.encodedPath.endsWith("/rpc/group_gym"), request.url.encodedPath)
+            assertEquals("""{"viewer":"${IVAN.value}"}""", request.bodyText())
         }
 
     @Test
-    fun a_machine_s_photos_are_its_live_rows_oldest_first() =
+    fun a_group_gym_without_mates_is_empty() =
         runTest {
-            val press = MachineId.random()
-            val later = Photo.new(press, OLEG, NOW + 1.minutes)
-            val first = Photo.new(press, OLEG, NOW)
-            val requests = mutableListOf<HttpRequestData>()
-            val engine =
-                MockEngine { request ->
-                    requests += request
-                    val rows = listOf(later, first).map(PhotoRow::of)
-                    respond(Json.encodeToString(rows), HttpStatusCode.OK, jsonHeaders())
-                }
+            val engine = MockEngine.Queue()
+            engine.answer(
+                """{"members":${MEMBERSHIPS.substringBefore(",{") + "]"},"machines":[],""" +
+                    """"machine_tags":[],"tags":[],"links":[],"photos":[]}""",
+            )
 
-            val photos = repositoryOn(engine).photos(press)
-
-            assertEquals(listOf(first, later), photos)
-            val query = requests.single().url.parameters
-            assertEquals("photo", requests.single().table())
-            assertEquals("eq.${press.value}", query["machine_id"])
-            assertEquals("eq.false", query["deleted"])
+            assertEquals(
+                GroupGym(emptyList(), emptyList(), emptyList()),
+                repositoryOn(engine).groupGym(IVAN),
+            )
         }
 
     @Test
@@ -306,35 +317,6 @@ class SupabaseFriendsRepositoryTest {
 
             assertEquals(emptyList(), visits)
             assertEquals(1, engine.requestHistory.size)
-        }
-
-    @Test
-    fun group_machines_leave_the_viewer_out_and_carry_the_mates_live_tags() =
-        runTest {
-            val press = Machine.new("Жим ногами", OLEG, NOW)
-            val tag = Tag(tagId(OLEG, "ноги"), OLEG, "ноги", NOW, false)
-            val link =
-                MachineTag(machineTagId(press.id, "ноги"), OLEG, press.id, tag.id, NOW, false)
-            val engine =
-                answeringByTable(
-                    "group_member" to MEMBERSHIPS,
-                    "machine" to Json.encodeToString(listOf(MachineRow.of(press))),
-                    "machine_tag" to Json.encodeToString(listOf(MachineTagRow.of(link))),
-                    "tag" to Json.encodeToString(listOf(TagRow.of(tag))),
-                )
-
-            val machines = repositoryOn(engine).groupMachines(IVAN)
-
-            assertEquals(
-                listOf(FriendMachine(press.copy(tags = setOf("ноги")), Friend(OLEG, "Олег"))),
-                machines,
-            )
-            val requests = engine.requestHistory.associateBy { it.table() }
-            listOf("machine", "machine_tag", "tag").forEach {
-                val query = requests.getValue(it).url.parameters
-                assertEquals("in.(${OLEG.value})", query["user_id"], it)
-                assertEquals("eq.false", query["deleted"], it)
-            }
         }
 
     @Test

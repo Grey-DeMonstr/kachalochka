@@ -268,7 +268,10 @@ class LinkChooserViewModel(
                     reading {
                         val intoRemoved =
                             friends.groupLinks(owner).any { it.linkedMachineId == removed.id }
-                        if (intoRemoved) friends.repointLinks(removed.id, kept.id)
+                        if (intoRemoved) {
+                            friends.repointLinks(removed.id, kept.id)
+                            catalogue.forget(owner)
+                        }
                     }
                 if (repointed.isFailure) {
                     closeMerge(error = AppStrings.current.offline)

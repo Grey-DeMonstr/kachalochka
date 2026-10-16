@@ -181,6 +181,22 @@ class MachineListViewModelTest {
         }
 
     @Test
+    fun friends_machines_read_before_show_at_once_while_they_are_read_again() =
+        runTest {
+            val (on, olegPress) = olegsGym()
+            on.catalogue.group(ME.userId)
+            on.friends.gate = CompletableDeferred()
+
+            val vm = viewModel(on).also { it.load() }
+
+            assertEquals(
+                listOf(olegPress.id),
+                vm.state.value.friends
+                    .map { it.id },
+            )
+        }
+
+    @Test
     fun a_chosen_friend_s_tag_stays_while_the_friends_cannot_be_read() =
         runTest {
             val (on, olegPress) = olegsGym()

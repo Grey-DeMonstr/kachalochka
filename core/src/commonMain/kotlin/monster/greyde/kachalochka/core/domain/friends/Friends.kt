@@ -49,6 +49,13 @@ data class FriendMachine(
     val owner: Friend,
 )
 
+/** The group mates' live machines by name, with their tags, and their live links and photos. */
+data class GroupGym(
+    val machines: List<FriendMachine>,
+    val links: List<MachineLink>,
+    val photos: List<Photo>,
+)
+
 data class FriendVisit(
     val friend: Friend,
     val visit: Visit,
@@ -101,17 +108,11 @@ interface FriendsRepository {
 
     suspend fun machines(member: UserId): List<Machine>
 
-    /** A group mate's live photos of [machine], in [photoOrder]. */
-    suspend fun photos(machine: MachineId): List<Photo>
-
     /** Everyone sharing a live group with [viewer]. */
     suspend fun mates(viewer: UserId): List<Friend>
 
-    /** The live photos of everyone sharing a group with [viewer]. */
-    suspend fun groupPhotos(viewer: UserId): List<Photo>
-
-    /** The live machines of everyone sharing a group with [viewer], by name. */
-    suspend fun groupMachines(viewer: UserId): List<FriendMachine>
+    /** What everyone sharing a live group with [viewer] has of their gym, in one read. */
+    suspend fun groupGym(viewer: UserId): GroupGym
 
     /** Group mates' live visits on days [from]..[to], or recorded within a day of them. */
     suspend fun groupVisits(

@@ -38,9 +38,9 @@ class FriendVisitScreenTest {
             onNodeWithTag("pick-machine").assertDoesNotExist()
             onNodeWithTag("reorder-toggle").assertDoesNotExist()
             onNodeWithTag("set-sheet").assertDoesNotExist()
-            // One load on mount: visits, sets, machines, the group's machines, links and photos,
-            // and the mates, each a network round trip.
-            assertEquals(7, gym.friends.reads)
+            // One load on mount: visits, sets, machines, the group read and the mates, each a
+            // network round trip.
+            assertEquals(5, gym.friends.reads)
         }
     }
 

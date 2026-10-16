@@ -278,7 +278,6 @@ class MachineFormViewModel(
             startCover = coverChoice
             showPhotos()
             refreshLinks()
-            owner?.let { readFriendTags(it) }
         }
     }
 
@@ -308,48 +307,48 @@ class MachineFormViewModel(
         }
     }
 
-    /** Each friend's tag once, from the first friend by name who has it. */
-    private suspend fun readFriendTags(owner: UserId) {
-        val group = reading { catalogue.group(owner) }.getOrNull() ?: return
-        if (accounts.activeId.value != owner) return
-        val offered =
-            group.friends
-                .sortedBy { it.owner.displayName.lowercase() }
-                .flatMap { mate -> mate.machine.tags.map { FriendTagUi(it, mate.owner) } }
-                .distinctBy { tagKey(it.tag) }
-                .sortedBy { tagKey(it.tag) }
-        update { it.copy(friendTags = offered) }
-    }
-
     private fun refreshLinks() {
         readingLinks?.cancel()
         readingLinks = viewModelScope.launch { readLinks() }
     }
 
     /**
-     * Own links are on hand offline; friends' links and machines need the network, and without
-     * it the form names no friends' machines.
+     * Own links are on hand offline; friends' links, machines, photos and tags need the network.
+     * The last group read shows them at once, and the group is read once for all of them; without
+     * either the form names no friends' machines.
      */
     private suspend fun readLinks() {
-        val shown = existing
         val owner = accounts.activeId.value
-        if (shown == null || shown.userId != owner) {
+        val shown = existing?.takeIf { it.userId == owner }
+        val ownLinks = machineLinks.all(owner)
+        if (shown == null) {
             mutableLinking.value = LinkingUi(error = mutableLinking.value.error)
             update { it.copy(linkedTags = emptyList()) }
-            return
+        } else {
+            val ownTouch = ownLinks.any { it.touches(shown.id) }
+            mutableLinking.value =
+                mutableLinking.value.let {
+                    it.copy(canLink = true, canUnlink = it.canUnlink || ownTouch)
+                }
         }
-        val ownLinks = machineLinks.all(owner)
-        val ownTouch = ownLinks.any { it.touches(shown.id) }
-        mutableLinking.value =
-            mutableLinking.value.let {
-                it.copy(
-                    canLink = true,
-                    canUnlink = it.canUnlink || ownTouch,
-                )
-            }
-        val group = owner?.let { reading { catalogue.group(it) }.getOrNull() }
+        // Before the load the form has no machine yet, so it waits for the load's own read.
+        val reader = owner?.takeIf { loaded }
+        val last = reader?.let { catalogue.lastGroup(it) }
+        last?.let { showGroup(owner, shown, ownLinks, it) }
+        val group = reader?.let { reading { catalogue.group(it) }.getOrNull() } ?: last
+        showGroup(owner, shown, ownLinks, group)
+    }
+
+    private suspend fun showGroup(
+        owner: UserId?,
+        shown: Machine?,
+        ownLinks: List<MachineLink>,
+        group: GroupMachines?,
+    ) {
         val own = catalogue.own(owner)
-        if (accounts.activeId.value != owner || existing?.id != shown.id) return
+        if (accounts.activeId.value != owner || existing?.id != shown?.id) return
+        group?.let { update { form -> form.copy(friendTags = friendTagsOf(it)) } }
+        if (shown == null) return
         if (group != null) {
             friendPhotos = friendPhotosOf(shown.id, group)
             showPhotos()
@@ -362,6 +361,14 @@ class MachineFormViewModel(
                 canUnlink = (group?.links ?: ownLinks).any { it.touches(shown.id) },
             )
     }
+
+    /** Each friend's tag once, from the first friend by name who has it. */
+    private fun friendTagsOf(group: GroupMachines): List<FriendTagUi> =
+        group.friends
+            .sortedBy { it.owner.displayName.lowercase() }
+            .flatMap { mate -> mate.machine.tags.map { FriendTagUi(it, mate.owner) } }
+            .distinctBy { tagKey(it.tag) }
+            .sortedBy { tagKey(it.tag) }
 
     private fun friendPhotosOf(
         machine: MachineId,
@@ -399,7 +406,13 @@ class MachineFormViewModel(
         writes.launch {
             val owner = currentUser.id()
             machines.byId(shown.id)?.takeIf { it.userId == owner } ?: return@launch
-            val broken = owner?.let { reading { friends.breakLinks(shown.id) } }
+            val broken =
+                owner?.let {
+                    reading {
+                        friends.breakLinks(shown.id)
+                        catalogue.forget(it)
+                    }
+                }
             if (broken?.isFailure == true) {
                 mutableLinking.value =
                     mutableLinking.value.copy(

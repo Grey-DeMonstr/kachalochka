@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.machine
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -137,7 +138,7 @@ class FriendMachineViewModelTest {
             )
             olegTrained(3, 100.0 to 8)
 
-            val stats = assertNotNull(viewModel().state.value).stats
+            val stats = assertNotNull(viewModel().state.value?.stats)
 
             assertEquals(1, stats.points.size)
             assertNull(stats.phases)
@@ -184,7 +185,7 @@ class FriendMachineViewModelTest {
         olegTrained(1, 80.0 to 8, 85.0 to 6)
         val vm = viewModel()
 
-        val month = assertNotNull(vm.state.value).stats
+        val month = assertNotNull(vm.state.value?.stats)
         assertEquals("85 кг × 6", month.best)
         assertEquals(listOf(on.today.plusDays(-1) to 85.0), month.points)
         assertEquals(
@@ -197,8 +198,8 @@ class FriendMachineViewModelTest {
 
         val quarter = assertNotNull(vm.state.value)
         assertEquals(StatsPeriod.ThreeMonths, quarter.period)
-        assertEquals(on.today.minusMonths(3), quarter.stats.start)
-        assertEquals(2, quarter.stats.points.size)
+        assertEquals(on.today.minusMonths(3), quarter.stats?.start)
+        assertEquals(2, quarter.stats?.points?.size)
         // The period is chosen over what was read: no second round trip.
         assertEquals(reads, on.friends.reads)
     }
@@ -211,7 +212,7 @@ class FriendMachineViewModelTest {
                 Profile.new(ME.userId, t0).copy(weightUnit = PreferredWeightUnit.Lb),
             )
 
-            val stats = assertNotNull(viewModel().state.value).stats
+            val stats = assertNotNull(viewModel().state.value?.stats)
 
             assertEquals("187.5 lb × 6", stats.best)
             assertEquals("176.5-187.5lb на каждую, 8-6", stats.history.single().results)
@@ -354,6 +355,39 @@ class FriendMachineViewModelTest {
         assertNull(vm.state.value)
         assertNull(taken)
         assertTrue(on.machineLinks.rows.isEmpty())
+    }
+
+    @Test
+    fun the_group_and_the_friend_s_sets_are_read_at_once() {
+        val gate = CompletableDeferred<Unit>()
+        on.friends.gate = gate
+        val vm = viewModel()
+
+        assertEquals(2, on.friends.reads)
+        gate.complete(Unit)
+
+        assertNotNull(vm.state.value?.stats)
+        assertEquals(2, on.friends.reads)
+    }
+
+    @Test
+    fun a_machine_read_before_shows_at_once_and_its_statistics_follow() {
+        olegTrained(1, 80.0 to 8)
+        viewModel()
+        val gate = CompletableDeferred<Unit>()
+        on.friends.gate = gate
+
+        val vm = viewModel()
+
+        assertEquals("Жим ногами", vm.state.value?.name)
+        assertNull(vm.state.value?.stats)
+        gate.complete(Unit)
+        assertEquals(
+            "80 кг × 8",
+            vm.state.value
+                ?.stats
+                ?.best,
+        )
     }
 
     @Test

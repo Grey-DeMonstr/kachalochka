@@ -1,16 +1,25 @@
 package monster.greyde.kachalochka.ui.machine
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
+import kotlinx.coroutines.completeWith
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
+import monster.greyde.kachalochka.core.domain.friends.GroupGym
 import monster.greyde.kachalochka.core.domain.friends.friendMachineGroups
 import monster.greyde.kachalochka.core.domain.friends.friendMachineRows
 import monster.greyde.kachalochka.core.domain.friends.linkedFriendMachines
@@ -138,6 +147,9 @@ class MachineCatalogue(
     private val failures: FailureLog,
 ) {
     private val upkeep = Mutex()
+    private val flights = Mutex()
+    private val inFlight = mutableMapOf<UserId, CompletableDeferred<GroupMachines>>()
+    private val lastGyms = MutableStateFlow<Map<UserId, GroupGym>>(emptyMap())
 
     suspend fun own(owner: UserId?): OwnMachines =
         OwnMachines(owner, machines.all(owner), photos.all(owner), links.all(owner), me(owner))
@@ -151,17 +163,50 @@ class MachineCatalogue(
     /** Machines joined by the owner's live links and the group mates', the latter read online. */
     suspend fun clusters(owner: UserId): MachineClusters = MachineClusters(visibleLinks(owner))
 
-    /** Fails when the network does not answer; once it has, [owner]'s links are kept direct. */
-    suspend fun group(owner: UserId): GroupMachines =
-        coroutineScope {
-            val mates = async { friends.groupMachines(owner) }
-            val mine = async { links.all(owner) }
-            val theirs = async { friends.groupLinks(owner) }
-            val pictures = async { friends.groupPhotos(owner) }
-            val all =
-                keepDirect(owner, mates.await(), theirs.await(), mine.await() + theirs.await())
-            GroupMachines(owner, mates.await(), all, pictures.await())
+    /**
+     * Fails when the network does not answer; once it has, [owner]'s links are kept direct. Reads
+     * for one owner at the same time share one; when the caller running it is cancelled, the
+     * others read again.
+     */
+    suspend fun group(owner: UserId): GroupMachines {
+        var leads = false
+        val shared =
+            flights.withLock {
+                inFlight.getOrPut(owner) {
+                    CompletableDeferred<GroupMachines>().also { leads = true }
+                }
+            }
+        if (!leads) {
+            return try {
+                shared.await()
+            } catch (stopped: CancellationException) {
+                currentCoroutineContext().ensureActive()
+                group(owner)
+            }
         }
+        val result = runCatching { readGroup(owner) }
+        withContext(NonCancellable) { flights.withLock { inFlight.remove(owner) } }
+        shared.completeWith(result)
+        return result.getOrThrow()
+    }
+
+    private suspend fun readGroup(owner: UserId): GroupMachines =
+        coroutineScope {
+            val mine = async { links.all(owner) }
+            val gym = friends.groupGym(owner)
+            lastGyms.update { it + (owner to gym) }
+            val all = keepDirect(owner, gym.machines, gym.links, mine.await() + gym.links)
+            GroupMachines(owner, gym.machines, all, gym.photos)
+        }
+
+    /** [owner]'s last group read, joined to the own links as they are now; null before one. */
+    suspend fun lastGroup(owner: UserId): GroupMachines? {
+        val gym = lastGyms.value[owner] ?: return null
+        return GroupMachines(owner, gym.machines, links.all(owner) + gym.links, gym.photos)
+    }
+
+    /** Drops [owner]'s last group read, once friends' rows changed on the server. */
+    fun forget(owner: UserId) = lastGyms.update { it - owner }
 
     /**
      * [friend]'s machine becomes [owner]'s own, linked to it and to the rest of its cluster in

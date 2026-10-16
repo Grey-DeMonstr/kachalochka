@@ -166,8 +166,10 @@ fun FriendMachineScreen(
                         "friend-machine-platform",
                     )
                 }
-                PeriodChips(current.period, viewModel::choosePeriod)
-                Column { MachineStats(current.stats) }
+                current.stats?.let { stats ->
+                    PeriodChips(current.period, viewModel::choosePeriod)
+                    Column { MachineStats(stats) }
+                }
             }
             if (current.canTake) {
                 Column(

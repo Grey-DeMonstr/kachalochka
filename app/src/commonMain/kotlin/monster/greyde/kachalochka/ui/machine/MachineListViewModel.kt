@@ -102,7 +102,12 @@ class MachineListViewModel(
     private fun loadFriends(owner: UserId) {
         loadingFriends =
             viewModelScope.launch {
-                group = reading { catalogue.group(owner) }.getOrNull()
+                catalogue.lastGroup(owner)?.let {
+                    group = it
+                    publish()
+                }
+                val read = reading { catalogue.group(owner) }.getOrNull()
+                group = read ?: catalogue.lastGroup(owner)
                 publish()
                 friendPeaks =
                     reading { friendsRepository.groupPeaks(owner) }.getOrDefault(friendPeaks)

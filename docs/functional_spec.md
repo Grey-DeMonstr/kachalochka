@@ -640,6 +640,8 @@ outer spaces ignored) show it once, after all their owners' avatars. A name equa
 the machine itself is not written, and only the avatars stay. In the form and in a friend's
 machine, each linked machine has its own row, and tapping one opens it: an own machine in its
 form, a friend's as from the machine list.
+Once the friends' machines were read, the machine list, the picker, the form and a friend's
+machine show them at once from that read, and bring them up to date when the server answers.
 "Отвязать от друзей" in the form's menu,
 after a confirmation, breaks every link between the machine and friends' machines, whichever side
 made it.

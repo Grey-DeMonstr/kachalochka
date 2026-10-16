@@ -2,6 +2,11 @@ package monster.greyde.kachalochka.core.data.friends
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import monster.greyde.kachalochka.core.data.gym.MachineLinkRow
+import monster.greyde.kachalochka.core.data.gym.MachineRow
+import monster.greyde.kachalochka.core.data.gym.MachineTagRow
+import monster.greyde.kachalochka.core.data.gym.PhotoRow
+import monster.greyde.kachalochka.core.data.gym.TagRow
 import monster.greyde.kachalochka.core.data.gym.photoIdOf
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.GroupId
@@ -36,6 +41,17 @@ internal data class GroupMemberRow(
     val avatar: Avatar
         get() = Avatar(photoIdOf(avatarPhoto), pictureUrl?.takeIf { it.isNotBlank() })
 }
+
+/** What `group_gym` (0028) answers: each table's rows as the table serves them. */
+@Serializable
+internal data class GroupGymRow(
+    val members: List<GroupMemberRow>,
+    val machines: List<MachineRow>,
+    @SerialName("machine_tags") val machineTags: List<MachineTagRow>,
+    val tags: List<TagRow>,
+    val links: List<MachineLinkRow>,
+    val photos: List<PhotoRow>,
+)
 
 @Serializable
 internal data class GroupDeletion(

@@ -142,6 +142,57 @@ class MachineFormViewModelTest {
             assertEquals(emptyList(), vm.state.value.offeredFriendTags)
         }
 
+    /** Иван's copy of Олег's press, linked to it, in a group with Олег. */
+    private suspend fun FakeGym.myCopyOfOlegsPress(): Pair<Machine, Machine> {
+        friends.group("Зал на Лесной", owner = OLEG, ME)
+        val olegs = Machine.new("Жим", OLEG.userId, t0).copy(tags = setOf("плечи"))
+        friends.machines += olegs
+        val (copy, link) = linkedCopy(olegs, ME.userId, t0)
+        machines.upsert(copy)
+        machineLinks.upsert(link)
+        return copy to olegs
+    }
+
+    @Test
+    fun opening_a_linked_machine_reads_the_group_once() =
+        runTest {
+            val on = signedInGym()
+            val (copy, olegs) = on.myCopyOfOlegsPress()
+
+            val vm = formOn(on, MachineFormArgs(copy.id, null, "")).also { it.load() }
+
+            assertEquals(
+                listOf(olegs.id),
+                vm.linking.value.linkedWith
+                    .map { it.machineId },
+            )
+            assertEquals(1, on.friends.reads)
+        }
+
+    @Test
+    fun links_read_before_show_at_once_while_the_group_is_read_again() =
+        runTest {
+            val on = signedInGym()
+            val (copy, olegs) = on.myCopyOfOlegsPress()
+            on.catalogue.group(ME.userId)
+            val gate = CompletableDeferred<Unit>()
+            on.friends.gate = gate
+
+            val vm = formOn(on, MachineFormArgs(copy.id, null, "")).also { it.load() }
+
+            assertEquals(
+                listOf(olegs.id),
+                vm.linking.value.linkedWith
+                    .map { it.machineId },
+            )
+            gate.complete(Unit)
+            assertEquals(
+                listOf(olegs.id),
+                vm.linking.value.linkedWith
+                    .map { it.machineId },
+            )
+        }
+
     @Test
     fun linked_machines_suggest_the_tags_the_machine_lacks_apart_from_other_tags() =
         runTest {

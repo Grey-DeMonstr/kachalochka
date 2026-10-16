@@ -1,6 +1,8 @@
 package monster.greyde.kachalochka.ui.machine
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -22,6 +24,7 @@ import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
@@ -470,6 +473,73 @@ class MachineCatalogueTest {
 
             assertEquals(setOf(mine.id to olegRow.id), linkedPairs())
             assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun group_reads_for_one_account_at_the_same_time_share_one_request() =
+        runTest {
+            olegsGym()
+            val gate = CompletableDeferred<Unit>()
+            gym.friends.gate = gate
+
+            val reads = List(3) { async { catalogue.group(ME.userId) } }
+            testScheduler.advanceUntilIdle()
+            gate.complete(Unit)
+            val groups = reads.awaitAll()
+
+            assertEquals(1, gym.friends.reads)
+            assertEquals(1, groups.toSet().size)
+        }
+
+    @Test
+    fun a_shared_read_stopped_with_its_screen_is_read_again_for_the_others() =
+        runTest {
+            olegsGym()
+            val gate = CompletableDeferred<Unit>()
+            gym.friends.gate = gate
+
+            val first = launch { catalogue.group(ME.userId) }
+            val second = async { catalogue.group(ME.userId) }
+            testScheduler.advanceUntilIdle()
+            first.cancel()
+            testScheduler.advanceUntilIdle()
+            gate.complete(Unit)
+
+            val group = second.await()
+            assertEquals(setOf(olegPress, olegRow), group.friends.map { it.machine }.toSet())
+            assertEquals(2, gym.friends.reads)
+        }
+
+    @Test
+    fun the_last_group_read_shows_with_the_own_links_as_they_are_now() =
+        runTest {
+            olegsGym()
+            assertNull(catalogue.lastGroup(ME.userId))
+            catalogue.group(ME.userId)
+            gym.friends.offline = true
+            val mine = Machine.new("Тяга", ME.userId, t0)
+            gym.machines.upsert(mine)
+            gym.machineLinks.upsert(
+                MachineLink(MachineLinkId.random(), ME.userId, mine.id, olegRow.id, t0, false),
+            )
+
+            val last = assertNotNull(catalogue.lastGroup(ME.userId))
+
+            assertEquals(setOf(olegPress, olegRow), last.friends.map { it.machine }.toSet())
+            assertTrue(last.clusters.sameMachine(myPress.id, olegPress.id))
+            assertTrue(last.clusters.sameMachine(mine.id, olegRow.id))
+            assertNull(catalogue.lastGroup(PASHA.userId))
+        }
+
+    @Test
+    fun a_forgotten_group_read_is_no_longer_shown() =
+        runTest {
+            olegsGym()
+            catalogue.group(ME.userId)
+
+            catalogue.forget(ME.userId)
+
+            assertNull(catalogue.lastGroup(ME.userId))
         }
 
     @Test
