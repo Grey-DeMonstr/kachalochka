@@ -368,9 +368,27 @@ class MeasuresViewModelTest {
             val inputs = BodyInputs(Sex.Male, 36, 180.0, 85.0, 90.0, 40.0, null)
             assertEquals(
                 listOf(
-                    FatRowUi("NAVY", "ВМС США", percent(BodyFatMethod.Navy, inputs), null),
-                    FatRowUi("YMCA", "YMCA", percent(BodyFatMethod.Ymca, inputs), null),
-                    FatRowUi("BMI", "Дойренберг", percent(BodyFatMethod.Deurenberg, inputs), null),
+                    FatRowUi(
+                        BodyFatMethod.Navy,
+                        "NAVY",
+                        "ВМС США",
+                        percent(BodyFatMethod.Navy, inputs),
+                        null,
+                    ),
+                    FatRowUi(
+                        BodyFatMethod.Ymca,
+                        "YMCA",
+                        "YMCA",
+                        percent(BodyFatMethod.Ymca, inputs),
+                        null,
+                    ),
+                    FatRowUi(
+                        BodyFatMethod.Deurenberg,
+                        "BMI",
+                        "Дойренберг",
+                        percent(BodyFatMethod.Deurenberg, inputs),
+                        null,
+                    ),
                 ),
                 vm.state.value.fat,
             )
@@ -387,9 +405,21 @@ class MeasuresViewModelTest {
 
             assertEquals(
                 listOf(
-                    FatRowUi("NAVY", "ВМС США", null, "Нужно: пол, рост, талия, шея"),
-                    FatRowUi("YMCA", "YMCA", null, "Нужно: пол, талия"),
-                    FatRowUi("BMI", "Дойренберг", null, "Нужно: пол, дата рождения, рост"),
+                    FatRowUi(
+                        BodyFatMethod.Navy,
+                        "NAVY",
+                        "ВМС США",
+                        null,
+                        "Нужно: пол, рост, талия, шея",
+                    ),
+                    FatRowUi(BodyFatMethod.Ymca, "YMCA", "YMCA", null, "Нужно: пол, талия"),
+                    FatRowUi(
+                        BodyFatMethod.Deurenberg,
+                        "BMI",
+                        "Дойренберг",
+                        null,
+                        "Нужно: пол, дата рождения, рост",
+                    ),
                 ),
                 vm.state.value.fat,
             )
@@ -399,7 +429,7 @@ class MeasuresViewModelTest {
     private fun percent(
         method: BodyFatMethod,
         inputs: BodyInputs,
-    ) = "${oneDecimal(bodyFat(method, inputs)!!)} %"
+    ) = fatPercent(bodyFat(method, inputs)!!)
 
     @Test
     fun a_new_measure_is_added_at_the_end() =

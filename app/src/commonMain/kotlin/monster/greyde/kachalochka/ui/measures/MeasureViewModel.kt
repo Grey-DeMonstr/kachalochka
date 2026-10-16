@@ -30,7 +30,6 @@ import monster.greyde.kachalochka.ui.calendar.monthWeeks
 import monster.greyde.kachalochka.ui.components.HistoryRowUi
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
-import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.parseDecimal
@@ -364,17 +363,6 @@ class MeasureViewModel(
                 canEdit = shown.kind == null,
                 canDelete = deletable(shown),
             )
-    }
-
-    private fun lastMeasured(
-        day: CalendarDay,
-        today: CalendarDay,
-    ): String {
-        val days = (today.epochDay - day.epochDay).toInt().coerceAtLeast(0)
-        val ago = daysAgoLabel(days)
-        return AppStrings.current.lastMeasured(
-            if (days <= 1) ago else "${dayMonthLabel(day, today.year)}, $ago",
-        )
     }
 
     /** A day without a value starts from the one before it, the likeliest new value. */

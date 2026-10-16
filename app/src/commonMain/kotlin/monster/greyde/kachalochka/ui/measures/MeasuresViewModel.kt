@@ -47,6 +47,7 @@ data class MeasureRowUi(
 
 /** [percent] when the inputs suffice, else [missing] names what they lack. */
 data class FatRowUi(
+    val method: BodyFatMethod,
     val tag: String,
     val name: String,
     val percent: String?,
@@ -245,9 +246,10 @@ class MeasuresViewModel(
     ): FatRowUi {
         val missing = missingInputs(method, inputs)
         return FatRowUi(
+            method = method,
             tag = methodTag(method),
             name = methodName(method),
-            percent = bodyFat(method, inputs)?.let { "${oneDecimal(it)} %" },
+            percent = bodyFat(method, inputs)?.let(::fatPercent),
             missing =
                 when {
                     missing.isNotEmpty() ->

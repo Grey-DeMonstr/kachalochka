@@ -72,6 +72,12 @@ class MeasurePeriodTest {
     }
 
     @Test
+    fun a_period_starts_its_months_back_and_all_has_no_start() {
+        assertEquals(CalendarDay(2026, 6, 28), periodStart(MeasurePeriod.Quarter, today))
+        assertEquals(null, periodStart(MeasurePeriod.All, today))
+    }
+
+    @Test
     fun periods_are_one_three_six_and_twelve_months_and_everything() {
         assertEquals(
             listOf(1, 3, 6, 12, null),

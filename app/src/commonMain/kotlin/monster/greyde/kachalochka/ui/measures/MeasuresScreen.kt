@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.DragHandle
@@ -49,6 +50,7 @@ fun MeasuresScreen(
     onOpenSettings: () -> Unit,
     onNewMeasurement: () -> Unit,
     onOpenMeasure: (MeasureId) -> Unit,
+    onOpenFat: (BodyFatMethod) -> Unit,
 ) {
     val viewModel: MeasuresViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -86,7 +88,7 @@ fun MeasuresScreen(
                     viewModel.move(state.rows[from].id, to)
                 }
             }
-            FatSection(state.fat, state.profileIncomplete, onOpenSettings)
+            FatSection(state.fat, state.profileIncomplete, onOpenFat, onOpenSettings)
         }
         Column(
             Modifier.padding(16.dp),
@@ -194,6 +196,7 @@ private fun MeasureRow(
 private fun FatSection(
     rows: List<FatRowUi>,
     profileIncomplete: Boolean,
+    onOpen: (BodyFatMethod) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -203,6 +206,7 @@ private fun FatSection(
         Row(
             Modifier
                 .fillMaxWidth()
+                .clickable { onOpen(row.method) }
                 .padding(vertical = 10.dp)
                 .testTag("fat-${row.tag}"),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -215,6 +219,12 @@ private fun FatSection(
                 Modifier.testTag("fat-value-${row.tag}"),
                 fontSize = if (row.percent != null) 16.sp else 13.sp,
                 color = if (row.percent != null) colors.onBackground else muted,
+            )
+            Icon(
+                PhosphorIcons.CaretRight,
+                null,
+                tint = muted,
+                modifier = Modifier.size(18.dp).testTag("fat-chevron-${row.tag}"),
             )
         }
         Rule()

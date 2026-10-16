@@ -26,7 +26,9 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
+import monster.greyde.kachalochka.navigation.BodyFatRoute
 import monster.greyde.kachalochka.navigation.CalendarRoute
 import monster.greyde.kachalochka.navigation.ChildrenRoute
 import monster.greyde.kachalochka.navigation.FriendCalendarRoute
@@ -78,6 +80,7 @@ import monster.greyde.kachalochka.ui.machine.MachineFormScreen
 import monster.greyde.kachalochka.ui.machine.MachineListScreen
 import monster.greyde.kachalochka.ui.machine.MachinePickerScreen
 import monster.greyde.kachalochka.ui.machine.MineChooserScreen
+import monster.greyde.kachalochka.ui.measures.BodyFatScreen
 import monster.greyde.kachalochka.ui.measures.MeasureScreen
 import monster.greyde.kachalochka.ui.measures.MeasurementFormScreen
 import monster.greyde.kachalochka.ui.measures.MeasuresScreen
@@ -225,6 +228,14 @@ fun App() {
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onNewMeasurement = { navController.navigate(MeasurementFormRoute()) },
                         onOpenMeasure = { navController.navigate(MeasureRoute(it.value)) },
+                        onOpenFat = { navController.navigate(BodyFatRoute(it.name)) },
+                    )
+                }
+                composable<BodyFatRoute> { entry ->
+                    BodyFatScreen(
+                        method = BodyFatMethod.valueOf(entry.toRoute<BodyFatRoute>().method),
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
                     )
                 }
                 composable<MeasureRoute> { entry ->
@@ -598,6 +609,7 @@ fun App() {
 private fun NavController.leaveChildHidden() {
     popBackStack<MeasuresRoute>(inclusive = true)
     popBackStack<MeasureRoute>(inclusive = true)
+    popBackStack<BodyFatRoute>(inclusive = true)
     popBackStack<MeasurementFormRoute>(inclusive = true)
     popBackStack<FriendsRoute>(inclusive = true)
     popBackStack<GroupRoute>(inclusive = true)

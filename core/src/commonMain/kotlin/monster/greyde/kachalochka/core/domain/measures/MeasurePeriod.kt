@@ -14,16 +14,21 @@ enum class MeasurePeriod(
 }
 
 /**
- * The values of [period] ending [today], oldest first. A period starts on today's day of the
- * month [MeasurePeriod.months] back, or on that month's last day when it is shorter.
+ * The first day of [period] ending [today]: today's day of the month [MeasurePeriod.months] back,
+ * or that month's last day when it is shorter. Null for [MeasurePeriod.All].
  */
+fun periodStart(
+    period: MeasurePeriod,
+    today: CalendarDay,
+): CalendarDay? = period.months?.let { today.minusMonths(it) }
+
+/** The values of [period] ending [today], oldest first. */
 fun inPeriod(
     values: List<Measurement>,
     period: MeasurePeriod,
     today: CalendarDay,
 ): List<Measurement> {
     val oldestFirst = values.sortedBy { it.day }
-    val months = period.months ?: return oldestFirst
-    val start = today.minusMonths(months)
+    val start = periodStart(period, today) ?: return oldestFirst
     return oldestFirst.filter { it.day >= start }
 }

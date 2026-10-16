@@ -722,12 +722,12 @@ full set. The "Замер" form writes only the fields whose value changed: the
 day's newest row updated in place, or a new row; an emptied field soft-deletes that row, which
 `newestPerDay` then reads as a cleared day.
 
-The measure screen's periods (`MeasurePeriod`, `inPeriod`) count calendar months back from today,
-starting on today's day of the month or the shorter month's last day. Its Vico chart puts each
-value at its epoch day, so an irregular week keeps its true width, and fits the y range to the
-values instead of Vico's default from zero, which would flatten a body weight. Deleting a measure
-also soft-deletes the values `MeasurementRepository.all` returns for it; older rows of those days
-stay hidden behind them through `newestPerDay`.
+The measure screen's periods (`MeasurePeriod`, `periodStart`) count calendar months back from
+today, starting on today's day of the month or the shorter month's last day. Its Vico chart puts
+each value at its epoch day, so an irregular week keeps its true width, and fits the y range to
+the values instead of Vico's default from zero, which would flatten a body weight. Deleting a
+measure also soft-deletes the values `MeasurementRepository.all` returns for it; older rows of
+those days stay hidden behind them through `newestPerDay`.
 
 The measure screen writes one day's value as the form does: the day's row updated in place or a
 new row, and the trash soft-deletes it; a past day's write requests a sync at once. Its history is
@@ -748,6 +748,16 @@ height from the profile, with `ageOn` counting whole years to today. Settings ed
 with the nickname; its save re-reads `forOwner` and updates that row, or creates one with
 `Profile.new` when there is none, as a picked friend colour does (§4.3), so the colours survive.
 Without an account the profile stays on the device, as every ownerless row does.
+
+The body-fat chart comes from `bodyFatHistory` in `domain/measures/BodyFatHistory.kt`. The
+measures a formula reads for the sex come from `methodsReading`. A point falls on each day with a
+value of one of them, from the first day all have one; a missing value is interpolated linearly by
+epoch day between its neighbours and keeps the last value after them; the age is counted on each
+day. `BodyFatViewModel` takes per kind the values of the first measure of that kind with values,
+as "Замеры" does, rounds each percent to the tenth it shows and cuts the period with
+`periodStart`. `BodyFatRoute` carries the `BodyFatMethod` name and closes for a managed child as
+`MeasureRoute` does. Both screens draw `MeasureSummary`, `PeriodChoice` and `PeriodChart`, which
+holds the one `MeasureChart` call.
 
 `Profile.birthDate` travels as an ISO date: a Postgres `date` in `profile.birth_date`, TEXT in
 SQLite. Migration `0011` and `8.sqm` replaced the birth year with 1 January of that year; `8.sqm`

@@ -137,6 +137,21 @@ class AppTest {
         }
 
     @Test
+    fun a_body_fat_row_opens_its_chart_and_back_returns_to_the_measures() =
+        runApp {
+            onNodeWithTag("section-measures").performClick()
+            waitForIdle()
+            onNodeWithTag("fat-NAVY").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Процент жира · ВМС США")
+
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+        }
+
+    @Test
     fun home_navigates_to_settings_and_back() =
         runApp {
             onNodeWithTag("account-avatar").performClick()
@@ -773,6 +788,25 @@ class AppTest {
             onNodeWithTag("section-measures").performClick()
             waitForIdle()
             onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+
+            onNodeWithTag("account-avatar").performClick()
+            onNodeWithTag("account-${SASHA.userId.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Качалочка")
+            onNodeWithTag("section-measures").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun switching_to_a_managed_child_closes_a_body_fat_chart() {
+        val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            onNodeWithTag("section-measures").performClick()
+            waitForIdle()
+            onNodeWithTag("fat-YMCA").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Процент жира · YMCA")
 
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-${SASHA.userId.value}").performClick()

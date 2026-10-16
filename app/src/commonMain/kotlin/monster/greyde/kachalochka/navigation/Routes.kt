@@ -97,6 +97,12 @@ data class MeasureRoute(
     val measureId: String,
 )
 
+/** [method] is a `BodyFatMethod` name. */
+@Serializable
+data class BodyFatRoute(
+    val method: String,
+)
+
 @Serializable
 object PlansRoute
 

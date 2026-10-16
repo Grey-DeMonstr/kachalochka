@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountAvatars
@@ -41,6 +42,7 @@ import monster.greyde.kachalochka.ui.machine.MachineListViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePlacementViewModel
 import monster.greyde.kachalochka.ui.machine.MineChooserViewModel
+import monster.greyde.kachalochka.ui.measures.BodyFatViewModel
 import monster.greyde.kachalochka.ui.measures.MeasureViewModel
 import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
 import monster.greyde.kachalochka.ui.measures.MeasuresViewModel
@@ -95,6 +97,9 @@ val appModule =
         viewModelOf(::MachinePlacementViewModel)
         viewModel { (day: CalendarDay?) ->
             MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get())
+        }
+        viewModel { (method: BodyFatMethod) ->
+            BodyFatViewModel(method, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (measure: MeasureId) ->
             MeasureViewModel(measure, get(), get(), get(), get(), get(), get(), get(), get())

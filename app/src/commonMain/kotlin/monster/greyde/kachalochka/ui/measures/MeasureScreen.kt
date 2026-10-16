@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,23 +23,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
-import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
 import monster.greyde.kachalochka.ui.calendar.MonthGrid
 import monster.greyde.kachalochka.ui.calendar.MonthHeader
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.AllResults
-import monster.greyde.kachalochka.ui.components.Choice
-import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
@@ -49,19 +43,9 @@ import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.Stepper
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
-import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-
-private fun periodLabel(period: MeasurePeriod): String =
-    when (period) {
-        MeasurePeriod.Month -> AppStrings.current.periodMonth
-        MeasurePeriod.Quarter -> AppStrings.current.periodQuarter
-        MeasurePeriod.HalfYear -> AppStrings.current.periodHalfYear
-        MeasurePeriod.Year -> AppStrings.current.periodYear
-        MeasurePeriod.All -> AppStrings.current.periodAll
-    }
 
 @Composable
 fun MeasureScreen(
@@ -113,14 +97,9 @@ fun MeasureScreen(
                     Hint(measure)
                 }
                 Entry(measure, viewModel)
-                Summary(measure)
-                val periods = MeasurePeriod.entries
-                ChoiceRow(
-                    choices = periods.map { Choice(periodLabel(it), "period-${it.name}") },
-                    selected = periods.indexOf(measure.period),
-                    onSelect = { viewModel.choose(periods[it]) },
-                )
-                ChartArea(measure)
+                MeasureSummary(measure.latest, measure.change, measure.lastMeasured)
+                PeriodChoice(measure.period, viewModel::choose)
+                PeriodChart(measure.points) { measureValue(it, measure.unit) }
                 OutlineButton(
                     strings().editHistory,
                     PhosphorIcons.CalendarBlank,
@@ -185,61 +164,6 @@ private fun Hint(measure: MeasureUi) {
             lineHeight = 16.sp,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
         )
-    }
-}
-
-@Composable
-private fun Summary(measure: MeasureUi) {
-    val colors = MaterialTheme.colorScheme
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            Text(
-                measure.latest ?: strings().noValues,
-                Modifier.testTag("measure-latest"),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Medium,
-                color = colors.onBackground,
-            )
-            measure.change?.let {
-                Text(
-                    it,
-                    Modifier.padding(bottom = 4.dp).testTag("measure-change"),
-                    fontSize = 15.sp,
-                    color = colors.onBackground.copy(alpha = 0.55f),
-                )
-            }
-        }
-        measure.lastMeasured?.let {
-            Text(
-                it,
-                Modifier.testTag("measure-last"),
-                fontSize = 14.sp,
-                color = colors.onBackground.copy(alpha = 0.55f),
-            )
-        }
-    }
-}
-
-/** Weekly values give a quarter about a dozen points; fewer than two draw no line. */
-@Composable
-private fun ChartArea(measure: MeasureUi) {
-    val muted = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
-    Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-        when (measure.points.size) {
-            0 -> Text(strings().noValuesInPeriod, fontSize = 15.sp, color = muted)
-            1 ->
-                Text(
-                    measureValue(measure.points.single().second, measure.unit),
-                    Modifier.testTag("measure-single-value"),
-                    fontSize = 22.sp,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            else -> MeasureChart(measure.points, Modifier.fillMaxSize().testTag("measure-chart"))
-        }
     }
 }
 

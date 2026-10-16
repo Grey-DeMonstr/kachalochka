@@ -431,6 +431,14 @@ measure, and sex, birth date and height from the profile; age is counted in whol
 A row shows its result ("18.4 %") or what it lacks ("Нужно: шея, рост"). While sex, birth date or
 height is missing, a line under the rows leads to Settings.
 
+Each "Процент жира" row ends with a chevron; tapping it opens that formula's chart
+("Процент жира · ВМС США"). It shows the latest result, its change over the chosen period and the
+day of the latest result, the same periods and chart as a measure, and "Все результаты": every
+result, newest first. A point falls on every day with a value of one of the formula's measures,
+from the first day all of them have one. On a day without its own value, a measure takes the
+straight line between its values before and after that day, and keeps its last value after them.
+Age is counted on each day. A result outside 2–70 % gives no point.
+
 Each measure row ends with a chevron; tapping it opens the measure. The screen starts with today's
 value ("Сегодня, 29 сентября"); a predefined measure shows under it how to take it, as "Новый
 замер" does. A decimal field between − and + follows, and "Сохранить". A day without a value
