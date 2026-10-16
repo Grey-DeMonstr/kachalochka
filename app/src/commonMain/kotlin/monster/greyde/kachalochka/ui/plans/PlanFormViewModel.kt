@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.ui.plans
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -19,7 +20,6 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.identity.UserId
-import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.OwnMachines
@@ -30,7 +30,6 @@ data class PlanFormUiState(
     val name: String = "",
     val rows: List<PlanMachineUi> = emptyList(),
     val ordering: Boolean = false,
-    val canSave: Boolean = false,
     val canDelete: Boolean = false,
     val confirmingDelete: Boolean = false,
     val done: Boolean = false,
@@ -43,8 +42,8 @@ data class PlanMachineUi(
 )
 
 /**
- * Edits stay in the form until saved; a switch of account closes it unsaved. A new plan starts
- * with the machines of the account's visit on [fromVisit], when given.
+ * Writes the plan on every change of its machines, and its name on [commitName] and [leave]. A new
+ * plan starts with the machines of the account's visit on [fromVisit], when given.
  */
 class PlanFormViewModel(
     private val planId: PlanId?,
@@ -59,7 +58,9 @@ class PlanFormViewModel(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PlanFormUiState())
     val state: StateFlow<PlanFormUiState> = mutableState
-    private val writes = WriteGuard(viewModelScope)
+
+    // One at a time, in order: two writes of a new plan at once would create it twice.
+    private val queue = Channel<suspend () -> Unit>(Channel.UNLIMITED)
 
     private var opened = false
     private var owner: UserId? = null
@@ -73,15 +74,15 @@ class PlanFormViewModel(
     private var done = false
 
     init {
+        viewModelScope.launch { for (task in queue) task() }
         viewModelScope.launch {
             accounts.activeId.collect { active ->
                 if (!opened) {
                     opened = true
                     owner = active
-                    load()
+                    serially(::load)
                 } else if (active != owner) {
-                    done = true
-                    publish()
+                    leave()
                 }
             }
         }
@@ -97,11 +98,17 @@ class PlanFormViewModel(
             machineIds = found.machineIds
         } else if (planId != null) {
             done = true
-        } else if (fromVisit != null) {
-            val shown = visits.shownOn(owner, fromVisit, sets, utcOffset::at)
-            if (shown != null) machineIds = visitMachines(shown.sets, shown.visit.planned)
+        } else {
+            machineIds = startMachines()
+            write(leaving = false)
         }
         publish()
+    }
+
+    private suspend fun startMachines(): List<MachineId> {
+        val day = fromVisit ?: return emptyList()
+        val shown = visits.shownOn(owner, day, sets, utcOffset::at) ?: return emptyList()
+        return visitMachines(shown.sets, shown.visit.planned)
     }
 
     fun typeName(text: String) {
@@ -109,24 +116,31 @@ class PlanFormViewModel(
         publish()
     }
 
+    fun commitName() = store(leaving = false)
+
+    /** Writes what is left to write and then closes the form. */
+    fun leave() = store(leaving = true)
+
     /** The machine may have been created or taken from a friend in the picker just now. */
     fun add(id: MachineId) {
         if (id !in machineIds) machineIds = machineIds + id
         if (own?.machines?.any { it.id == id } == true) {
             publish()
-            return
+        } else {
+            reading?.cancel()
+            reading =
+                viewModelScope.launch {
+                    own = catalogue.own(owner)
+                    publish()
+                }
         }
-        reading?.cancel()
-        reading =
-            viewModelScope.launch {
-                own = catalogue.own(owner)
-                publish()
-            }
+        store(leaving = false)
     }
 
     fun remove(id: MachineId) {
         machineIds = machineIds - id
         publish()
+        store(leaving = false)
     }
 
     fun toggleOrdering() {
@@ -143,22 +157,7 @@ class PlanFormViewModel(
         shown.add(to, shown.removeAt(from))
         machineIds = shown
         publish()
-    }
-
-    fun save() {
-        writes.launch {
-            reading?.join()
-            val live = rows().map { it.id }
-            if (live.isEmpty()) return@launch
-            val now = clock.now()
-            val trimmed = name.trim()
-            plans.upsert(
-                stored?.copy(name = trimmed, machineIds = live, updatedAt = now)
-                    ?: Plan(PlanId.random(), owner, trimmed, live, now, now, false),
-            )
-            done = true
-            publish()
-        }
+        store(leaving = false)
     }
 
     fun askToDelete() {
@@ -172,13 +171,53 @@ class PlanFormViewModel(
     }
 
     fun confirmDelete() {
-        val plan = stored ?: return
         confirmingDelete = false
-        writes.launch {
-            plans.upsert(plan.copy(deleted = true, updatedAt = clock.now()))
-            done = true
+        publish()
+        serially {
+            val plan = stored
+            if (plan != null && !done) {
+                plans.upsert(plan.copy(deleted = true, updatedAt = clock.now()))
+                done = true
+                publish()
+            }
+        }
+    }
+
+    private fun serially(task: suspend () -> Unit) {
+        queue.trySend(task)
+    }
+
+    private fun store(leaving: Boolean) =
+        serially {
+            reading?.join()
+            if (!done) write(leaving)
+            if (leaving) done = true
             publish()
         }
+
+    private suspend fun write(leaving: Boolean) {
+        val plan = stored
+        val trimmed = name.trim()
+        val live = rows().map { it.id }
+        val empty = trimmed.isEmpty() && live.isEmpty()
+        if (leaving && empty) {
+            if (plan != null) plans.upsert(plan.copy(deleted = true, updatedAt = clock.now()))
+            return
+        }
+        val unchanged =
+            if (plan == null) empty else plan.name == trimmed && plan.machineIds.alive() == live
+        if (unchanged) return
+        val now = clock.now()
+        val next =
+            plan?.copy(name = trimmed, machineIds = live, updatedAt = now)
+                ?: Plan(PlanId.random(), owner, trimmed, live, now, now, false)
+        plans.upsert(next)
+        stored = next
+    }
+
+    private fun List<MachineId>.alive(): List<MachineId> {
+        val ids = own?.machines.orEmpty().mapTo(HashSet()) { it.id }
+        return filter { it in ids }
     }
 
     // A machine deleted or merged away drops out of the plan.
@@ -198,7 +237,6 @@ class PlanFormViewModel(
                 name = name,
                 rows = rows,
                 ordering = ordering && rows.size > 1,
-                canSave = rows.isNotEmpty(),
                 canDelete = stored != null,
                 confirmingDelete = confirmingDelete,
                 done = done,

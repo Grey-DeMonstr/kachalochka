@@ -662,9 +662,11 @@ class AppTest {
 
             onNodeWithTag("top-bar-title").assertTextEquals("План")
             onNodeWithTag("plan-machine-${press.id.value}").assertIsDisplayed()
-            onNodeWithTag("save-plan").performClick()
+            onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
             onNodeWithTag("top-bar-title").assertTextEquals("Планы")
+            onNodeWithTag("plan-row-${runBlocking { gym.plans.all(null) }.single().id.value}")
+                .assertIsDisplayed()
         }
 
     @Test

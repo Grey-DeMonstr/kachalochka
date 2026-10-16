@@ -212,7 +212,6 @@ fun App() {
                         onPickedMachineConsumed = {
                             entry.savedStateHandle[PICKED_MACHINE] = null
                         },
-                        onBack = { navController.popBackStack() },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onAddMachine = { navController.navigate(MachinePickerRoute()) },
                         onDone = { navController.popBackStack() },

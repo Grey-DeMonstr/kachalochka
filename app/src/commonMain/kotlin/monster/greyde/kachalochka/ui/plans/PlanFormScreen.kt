@@ -22,13 +22,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.PlanId
-import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.DragHandle
 import monster.greyde.kachalochka.ui.components.OutlineButton
@@ -53,7 +56,6 @@ fun PlanFormScreen(
     planId: PlanId?,
     pickedMachineId: MachineId?,
     onPickedMachineConsumed: () -> Unit,
-    onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onAddMachine: () -> Unit,
     onDone: () -> Unit,
@@ -68,10 +70,15 @@ fun PlanFormScreen(
         }
     }
     LaunchedEffect(state.done) { if (state.done) onDone() }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = true,
+        onBackCompleted = viewModel::leave,
+    )
     val s = strings()
     Screen(
         s.plan,
-        onBack = onBack,
+        onBack = viewModel::leave,
         onOpenSettings = onOpenSettings,
         actions = {
             if (state.rows.size > 1) {
@@ -94,11 +101,15 @@ fun PlanFormScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SectionLabel(s.planName)
+            var nameFocused by remember { mutableStateOf(false) }
             TextInput(
                 state.name,
                 s.untitledPlan,
                 viewModel::typeName,
-                Modifier.testTag("plan-name"),
+                Modifier.testTag("plan-name").onFocusChanged {
+                    if (nameFocused && !it.isFocused) viewModel.commitName()
+                    nameFocused = it.isFocused
+                },
             )
             val order = rememberReorderState()
             SideEffect { order.retain(state.rows.size) }
@@ -122,15 +133,6 @@ fun PlanFormScreen(
                     Modifier.fillMaxWidth().testTag("plan-add-machine"),
                 )
             }
-        }
-        Box(Modifier.padding(16.dp)) {
-            AccentButton(
-                s.savePlan,
-                PhosphorIcons.Check,
-                viewModel::save,
-                Modifier.testTag("save-plan"),
-                enabled = state.canSave,
-            )
         }
     }
     if (state.confirmingDelete) {

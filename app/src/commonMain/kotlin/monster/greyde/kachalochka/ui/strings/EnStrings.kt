@@ -113,7 +113,6 @@ object EnStrings : Strings {
     override val plan = "Plan"
     override val planName = "Name"
     override val addMachine = "Add a machine"
-    override val savePlan = "Save plan"
     override val deletePlan = "Delete plan"
     override val deletePlanTitle = "Delete the plan?"
     override val deletePlanText = "The plan will disappear from the list."

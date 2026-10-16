@@ -130,7 +130,6 @@ object RuStrings : Strings {
     override val plan = "План"
     override val planName = "Название"
     override val addMachine = "Добавить упражнение"
-    override val savePlan = "Сохранить план"
     override val deletePlan = "Удалить план"
     override val deletePlanTitle = "Удалить план?"
     override val deletePlanText = "План исчезнет из списка."

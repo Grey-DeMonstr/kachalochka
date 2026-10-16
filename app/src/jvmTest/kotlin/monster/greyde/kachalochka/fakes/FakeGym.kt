@@ -124,7 +124,11 @@ class InMemoryMachineRepository : MachineRepository {
 class InMemoryPlanRepository : PlanRepository {
     val rows = linkedMapOf<PlanId, Plan>()
 
+    /** While set, writes wait for it, keeping a write in flight for as long as a test needs. */
+    var gate: CompletableDeferred<Unit>? = null
+
     override suspend fun upsert(plan: Plan) {
+        gate?.await()
         rows[plan.id] = plan
     }
 

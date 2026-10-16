@@ -20,6 +20,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -45,6 +46,12 @@ class PlanFormViewModelTest {
         gym.catalogue,
     )
 
+    private fun newPlans() =
+        gym.plans.rows.values
+            .filter { it.id != legs.id }
+
+    private fun stored() = gym.plans.rows.getValue(legs.id)
+
     @BeforeTest
     fun setUp() =
         runTest {
@@ -58,7 +65,7 @@ class PlanFormViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun a_plan_from_a_visit_takes_its_machines_in_visit_order_and_saves_as_new() =
+    fun a_plan_from_a_visit_is_written_with_its_machines_in_visit_order_at_once() =
         runTest {
             val today = gym.today
             val visit = Visit(VisitId.random(), null, today, t0, t0, false, listOf(press.id))
@@ -84,12 +91,8 @@ class PlanFormViewModelTest {
                 vm.state.value.rows
                     .map { it.id },
             )
-            vm.save()
-
-            val saved =
-                gym.plans.rows.values
-                    .single { it.id != legs.id }
-            assertEquals(listOf(row.id, press.id), saved.machineIds)
+            assertEquals(listOf(row.id, press.id), newPlans().single().machineIds)
+            assertTrue(vm.state.value.canDelete)
             assertEquals(
                 listOf(press.id),
                 gym.visits.rows
@@ -99,22 +102,30 @@ class PlanFormViewModelTest {
         }
 
     @Test
-    fun a_reordered_plan_is_saved_in_its_new_order() {
-        val vm = viewModel(legs.id)
+    fun a_new_plan_is_written_at_its_first_change_and_may_lose_every_machine() {
+        val vm = viewModel(null)
+        assertEquals(emptyList(), newPlans())
 
-        vm.move(0, 1)
-        vm.save()
+        vm.add(press.id)
+        val written = newPlans().single()
+        assertEquals(listOf(press.id), written.machineIds)
+        assertEquals("", written.name)
+        vm.remove(press.id)
 
-        assertEquals(
-            listOf(row.id, press.id),
-            gym.plans.rows
-                .getValue(legs.id)
-                .machineIds,
-        )
+        assertEquals(written.copy(machineIds = emptyList()), newPlans().single())
     }
 
     @Test
-    fun a_save_right_after_adding_a_new_machine_keeps_it() =
+    fun a_reorder_is_written_at_once() {
+        val vm = viewModel(legs.id)
+
+        vm.move(0, 1)
+
+        assertEquals(listOf(row.id, press.id), stored().machineIds)
+    }
+
+    @Test
+    fun an_added_machine_is_written_once_the_machines_are_read() =
         runTest {
             val fresh = Machine.new("Гакк", null, t0)
             val vm = viewModel(legs.id)
@@ -123,16 +134,89 @@ class PlanFormViewModelTest {
             gym.machines.readGate = read
 
             vm.add(fresh.id)
-            vm.save()
+            assertEquals(legs, stored())
             read.complete(Unit)
 
-            assertEquals(
-                listOf(press.id, row.id, fresh.id),
-                gym.plans.rows
-                    .getValue(legs.id)
-                    .machineIds,
-            )
+            assertEquals(listOf(press.id, row.id, fresh.id), stored().machineIds)
         }
+
+    @Test
+    fun the_name_is_written_trimmed_when_committed_not_while_typed() {
+        val vm = viewModel(legs.id)
+
+        vm.typeName("  Спина  ")
+        assertEquals(legs, stored())
+        vm.commitName()
+
+        assertEquals("Спина", stored().name)
+    }
+
+    @Test
+    fun leaving_writes_the_typed_name_and_closes_the_form() {
+        val vm = viewModel(legs.id)
+        vm.typeName("Спина")
+
+        vm.leave()
+
+        assertEquals("Спина", stored().name)
+        assertTrue(vm.state.value.done)
+    }
+
+    @Test
+    fun leaving_unchanged_writes_nothing() {
+        val vm = viewModel(legs.id)
+        vm.typeName("Ноги ")
+        vm.commitName()
+
+        vm.leave()
+
+        assertEquals(legs, stored())
+        assertTrue(vm.state.value.done)
+    }
+
+    @Test
+    fun leaving_a_new_plan_untouched_writes_nothing() {
+        val vm = viewModel(null)
+        vm.typeName(" ")
+
+        vm.leave()
+
+        assertEquals(emptyList(), newPlans())
+        assertTrue(vm.state.value.done)
+    }
+
+    @Test
+    fun leaving_a_written_plan_with_neither_name_nor_machines_deletes_it() {
+        val vm = viewModel(legs.id)
+        vm.typeName("")
+        vm.remove(press.id)
+        vm.remove(row.id)
+        assertFalse(stored().deleted)
+
+        vm.leave()
+
+        assertTrue(stored().deleted)
+        assertTrue(vm.state.value.done)
+    }
+
+    @Test
+    fun writes_wait_for_each_other_so_a_new_plan_is_created_once() {
+        val vm = viewModel(null)
+        val write = CompletableDeferred<Unit>()
+        gym.plans.gate = write
+
+        vm.add(press.id)
+        vm.add(row.id)
+        vm.typeName("Спина")
+        vm.leave()
+        assertFalse(vm.state.value.done)
+        write.complete(Unit)
+
+        val written = newPlans().single()
+        assertEquals("Спина", written.name)
+        assertEquals(listOf(press.id, row.id), written.machineIds)
+        assertTrue(vm.state.value.done)
+    }
 
     @Test
     fun opening_a_deleted_plan_closes_the_form_without_writing() =
@@ -141,6 +225,7 @@ class PlanFormViewModelTest {
             gym.plans.upsert(deleted)
 
             val vm = viewModel(deleted.id)
+            vm.leave()
 
             assertTrue(vm.state.value.done)
             assertEquals(mapOf(deleted.id to deleted), gym.plans.rows)

@@ -96,7 +96,6 @@ interface Strings {
     val plan: String
     val planName: String
     val addMachine: String
-    val savePlan: String
     val deletePlan: String
     val deletePlanTitle: String
     val deletePlanText: String
