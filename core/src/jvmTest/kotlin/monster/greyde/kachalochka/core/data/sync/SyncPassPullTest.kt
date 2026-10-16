@@ -45,6 +45,17 @@ class SyncPassPullTest {
         }
 
     @Test
+    fun a_pulled_pinned_plan_stays_pinned() =
+        runTest {
+            val plan = ownedPlan(IVAN).copy(pinned = true)
+            h.gateway.plansToPull = listOf(plan)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(plan, h.plans.byId(plan.id))
+        }
+
+    @Test
     fun a_plan_waiting_in_the_outbox_survives_the_pull_that_would_overwrite_it() =
         runTest {
             val mine = ownedPlan(IVAN)

@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,7 +57,7 @@ fun PlansScreen(
                 PlanRow(
                     row,
                     onOpen = { onOpenPlan(row.id) },
-                    onStart = { viewModel.askToStart(row.id) },
+                    onStart = { viewModel.start(row.id, onStarted) },
                 )
             }
             OutlineButton(
@@ -73,7 +75,7 @@ fun PlansScreen(
             confirmLabel = strings().startPlan,
             confirmTag = "confirm-start-plan",
             cancelTag = "cancel-start-plan",
-            onConfirm = { viewModel.start(onStarted) },
+            onConfirm = { viewModel.confirmStart(onStarted) },
             onCancel = viewModel::cancelStart,
         )
     }
@@ -98,12 +100,25 @@ private fun PlanRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(
-                    row.title,
-                    modifier = Modifier.testTag("plan-title-$id"),
-                    fontSize = 17.sp,
-                    color = colors.onBackground,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (row.pinned) {
+                        Icon(
+                            PhosphorIcons.PushPin,
+                            strings().pinnedPlan,
+                            tint = colors.tertiary,
+                            modifier = Modifier.size(16.dp).testTag("plan-pin-$id"),
+                        )
+                    }
+                    Text(
+                        row.title,
+                        modifier = Modifier.testTag("plan-title-$id"),
+                        fontSize = 17.sp,
+                        color = colors.onBackground,
+                    )
+                }
                 Text(
                     row.count,
                     modifier = Modifier.testTag("plan-count-$id"),

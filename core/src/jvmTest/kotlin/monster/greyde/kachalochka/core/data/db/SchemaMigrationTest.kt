@@ -597,6 +597,32 @@ class SchemaMigrationTest {
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
+    @Test
+    fun version_17_plans_are_not_pinned_and_are_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        exec("DROP TABLE workout_plan")
+        exec(
+            """
+            CREATE TABLE workout_plan (
+                id TEXT NOT NULL PRIMARY KEY,
+                user_id TEXT,
+                name TEXT NOT NULL DEFAULT '',
+                machine_ids TEXT NOT NULL DEFAULT '[]',
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+        )
+        exec("INSERT INTO workout_plan(id, created_at, updated_at) VALUES ('legs', 5, 7)")
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 17, 18)
+
+        assertEquals(0L, number("SELECT pinned FROM workout_plan WHERE id = 'legs'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
     /** Versions 5 to 12 declare the machine table this way. */
     private fun version12MachineTable() {
         exec("DROP TABLE machine")

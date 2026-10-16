@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.core.data.gym
 
+import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Plan
@@ -9,6 +10,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class PlanWireTest {
@@ -30,6 +32,14 @@ class PlanWireTest {
     fun a_plan_survives_the_wire_round_trip_with_its_machines_in_order() {
         assertEquals(plan, PlanRow.of(plan).toPlan())
         assertEquals("[\"${row.value}\",\"${press.value}\"]", PlanRow.of(plan).machineIds)
+    }
+
+    @Test
+    fun a_pinned_plan_stays_pinned_over_the_wire() {
+        val pinned = plan.copy(pinned = true)
+
+        assertEquals(pinned, PlanRow.of(pinned).toPlan())
+        assertTrue("\"pinned\":true" in Json.encodeToString(PlanRow.of(pinned)))
     }
 
     @Test

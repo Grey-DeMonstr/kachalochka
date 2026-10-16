@@ -439,13 +439,15 @@ after a confirmation.
 ## Plans
 
 A plan is a list of machines to do on a visit to come, with no sets. "Планы" on the home screen
-lists the account's plans, oldest first: each by its name, or by its machines' names when it has
-none, with how many machines it holds and a "Начать" button. "Планов пока нет" stands in for an
-empty list, and "Новый план" makes one.
+lists the account's plans: pinned ones first, each with a pin, then the others, each group oldest
+first. A row shows the plan's name, or its machines' names when it has none, with how many
+machines it holds and a "Начать" button. "Планов пока нет" stands in for an empty list, and
+"Новый план" makes one.
 
 "Начать" asks "Начать план?", since a started plan cannot be taken back. Confirmed, it adds the
 plan's machines to today's visit, creating it when there is none, deletes the plan and opens the
-visit; back from it returns home. A machine the visit already has is not
+visit; back from it returns home. A pinned plan starts at once, without the question, and stays
+in the list. A machine the visit already has is not
 added again. In the visit the added machines follow the ones with sets, each saying
 "Запланировано"; tapping one opens its page, where "Добавить" opens the form for its first set
 and "Убрать" takes it out of the visit. A machine with a set is listed like any
@@ -459,7 +461,9 @@ reads "Без названия" while empty. Below it are the plan's machines in
 and a remove button. The order button in the top bar shows a drag handle at the left of every
 machine. "Добавить упражнение" opens the machine picker, which in a plan shows each machine's
 last result and offers no "Скопировать упражнение"; a machine already in the plan is not added
-twice. The form saves itself: the plan when a machine is added, removed or moved, the name a
+twice. The pin button in the top bar ("Закрепить") pins the plan and stays lit while it is
+pinned; a second tap unpins it. The form saves itself: the plan when a machine is added, removed
+or moved and when the pin is tapped, the name a
 second after typing stops, when its field loses focus and when the form is left. A new plan comes
 into being with its first change. Back and the system back save and return to the list. A plan
 with neither a name nor machines is deleted, and its next change brings it back. The menu of a

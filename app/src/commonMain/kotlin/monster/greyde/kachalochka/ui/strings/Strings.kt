@@ -93,6 +93,8 @@ interface Strings {
     val newPlan: String
     val startPlan: String
     val untitledPlan: String
+    val pinPlan: String
+    val pinnedPlan: String
     val plan: String
     val planName: String
     val addMachine: String

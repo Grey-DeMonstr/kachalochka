@@ -30,9 +30,12 @@ data class Plan(
     val createdAt: Instant,
     val updatedAt: Instant,
     val deleted: Boolean,
+    /** A pinned plan heads the list and stays when started. */
+    val pinned: Boolean = false,
 )
 
-val planOrder: Comparator<Plan> = compareBy<Plan>({ it.createdAt }, { it.id.value })
+val planOrder: Comparator<Plan> =
+    compareBy<Plan>({ !it.pinned }, { it.createdAt }, { it.id.value })
 
 /**
  * The visit's planned list once [plan] starts on it: [planned] followed by the plan's [live]

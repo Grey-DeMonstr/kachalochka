@@ -18,6 +18,7 @@ internal data class PlanRow(
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
+    val pinned: Boolean,
 ) {
     fun toPlan(): Plan =
         Plan(
@@ -28,6 +29,7 @@ internal data class PlanRow(
             createdAt = Instant.parse(createdAt),
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
+            pinned = pinned,
         )
 
     companion object {
@@ -40,6 +42,7 @@ internal data class PlanRow(
                 createdAt = plan.createdAt.toString(),
                 updatedAt = plan.updatedAt.toString(),
                 deleted = plan.deleted,
+                pinned = plan.pinned,
             )
     }
 }

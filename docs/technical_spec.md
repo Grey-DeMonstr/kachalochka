@@ -447,20 +447,22 @@ typed spelling; the screens upper-case a tag only when they draw it, through `Ta
 read as the screens draw, and `withTags` quotes tags in capitals too.
 
 `workout_plan` holds an account's plans: `name`, `machine_ids` — a JSON array of machine ids in
-plan order, read like `machine.tags`, so an entry that is not an id is dropped — and `created_at`,
-which orders the list. It is not called `plan`, a keyword in SQLite. It is private to its owner,
-like `measure`. A started plan's machines go to `visit.planned`, the same kind of array:
-`startedPlanned` appends the plan's live machines the visit neither recorded nor planned, and the
-visit screen shows `plannedWithoutSets` as planned rows. A plan made from a visit
-(`PlanRoute.fromVisit`) starts from `visitMachines`, the visit's machines in list order. Readers
-skip ids that name no live machine, so a machine merged away drops out of plans. Migration `0018`
-and `13.sqm` add both; `13.sqm` resets `lastPullAt`.
+plan order, read like `machine.tags`, so an entry that is not an id is dropped — `created_at`
+and `pinned`. `planOrder` lists pinned plans first, then by `created_at`, on both platforms.
+Starting a pinned plan keeps it, so it asks nothing. It is not called `plan`, a keyword in
+SQLite. It is private to its owner, like `measure`. A started plan's machines go to
+`visit.planned`, the same kind of array: `startedPlanned` appends the plan's live machines the
+visit neither recorded nor planned, and the visit screen shows `plannedWithoutSets` as planned
+rows. A plan made from a visit (`PlanRoute.fromVisit`) starts from `visitMachines`, the visit's
+machines in list order. Readers skip ids that name no live machine, so a machine merged away
+drops out of plans. Migration `0018` and `13.sqm` add both; `13.sqm` resets `lastPullAt`.
+Migration `0025` and `17.sqm` add `pinned`; `17.sqm` resets `lastPullAt` too.
 
-`PlanFormViewModel` saves the plan itself. Each change of the machines, a pause of `NAME_PAUSE`
-in typing, `commitName` (the name field lost focus) and `leave` (top-bar back, system back) put
-a write on one `Channel` that runs its tasks in order, after the open's own load. A write takes
-the form's state at the time it runs and skips a plan equal to the stored one, so the first
-write of a new plan is its first real change. A blank name with no live machines soft-deletes a
+`PlanFormViewModel` saves the plan itself. Each change of the machines or the pin, a pause of
+`NAME_PAUSE` in typing, `commitName` (the name field lost focus) and `leave` (top-bar back,
+system back) put a write on one `Channel` that runs its tasks in order, after the open's own
+load. A write takes the form's state at the time it runs and skips a plan equal to the stored
+one, so the first write of a new plan is its first real change. A blank name with no live machines soft-deletes a
 written plan, and a later write undeletes it under the same id. A failed write goes to
 `FailureLog` and the queue goes on. `leave` sets `done` only after the queue gets to it, failed
 or not, because the view model's scope, and with it any write still waiting, ends when the

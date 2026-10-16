@@ -110,6 +110,8 @@ object EnStrings : Strings {
     override val newPlan = "New plan"
     override val startPlan = "Start"
     override val untitledPlan = "Untitled"
+    override val pinPlan = "Pin"
+    override val pinnedPlan = "Pinned"
     override val plan = "Plan"
     override val planName = "Name"
     override val addMachine = "Add a machine"

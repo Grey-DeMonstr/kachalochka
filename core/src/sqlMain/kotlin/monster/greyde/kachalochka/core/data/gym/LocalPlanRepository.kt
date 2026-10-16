@@ -48,6 +48,7 @@ internal fun PlanQueries.write(plan: Plan) =
         plan.createdAt,
         plan.updatedAt,
         plan.deleted,
+        plan.pinned,
     )
 
 internal fun planOf(
@@ -58,6 +59,7 @@ internal fun planOf(
     createdAt: Instant,
     updatedAt: Instant,
     deleted: Boolean,
+    pinned: Boolean,
 ) = Plan(
     PlanId(id),
     userId?.let(::UserId),
@@ -66,4 +68,5 @@ internal fun planOf(
     createdAt,
     updatedAt,
     deleted,
+    pinned,
 )

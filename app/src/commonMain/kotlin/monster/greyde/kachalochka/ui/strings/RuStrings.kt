@@ -127,6 +127,8 @@ object RuStrings : Strings {
     override val newPlan = "Новый план"
     override val startPlan = "Начать"
     override val untitledPlan = "Без названия"
+    override val pinPlan = "Закрепить"
+    override val pinnedPlan = "Закреплён"
     override val plan = "План"
     override val planName = "Название"
     override val addMachine = "Добавить упражнение"

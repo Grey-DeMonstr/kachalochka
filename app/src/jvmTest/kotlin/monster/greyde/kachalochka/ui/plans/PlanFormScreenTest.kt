@@ -9,6 +9,8 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -178,6 +180,20 @@ class PlanFormScreenTest {
         assertTrue(stored().deleted)
         assertEquals(1, done)
     }
+
+    @Test
+    fun the_pin_lights_up_and_is_written_at_once() =
+        runScreenTest(gym, screen = {
+            PlanFormScreen(legs.id, null, {}, {}, {}, onDone = { done++ })
+        }) {
+            waitForIdle()
+            onNodeWithTag("plan-pin").assertIsOff()
+            onNodeWithTag("plan-pin").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-pin").assertIsOn()
+            assertTrue(stored().pinned)
+            assertEquals(0, done)
+        }
 
     @Test
     fun a_new_plan_has_no_menu() =

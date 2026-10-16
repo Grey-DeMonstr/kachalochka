@@ -209,6 +209,47 @@ class PlanFormViewModelTest {
     }
 
     @Test
+    fun a_pin_is_written_at_once_and_a_second_tap_takes_it_off() {
+        val vm = viewModel(legs.id)
+        assertFalse(vm.state.value.pinned)
+
+        vm.togglePin()
+        assertTrue(vm.state.value.pinned)
+        assertEquals(legs.copy(pinned = true), stored())
+        vm.togglePin()
+
+        assertFalse(vm.state.value.pinned)
+        assertEquals(legs, stored())
+    }
+
+    @Test
+    fun a_pinned_plan_opens_pinned_and_keeps_its_pin_through_other_writes() =
+        runTest {
+            gym.plans.upsert(legs.copy(pinned = true))
+            val vm = viewModel(legs.id)
+            assertTrue(vm.state.value.pinned)
+
+            vm.remove(press.id)
+
+            assertEquals(legs.copy(machineIds = listOf(row.id), pinned = true), stored())
+        }
+
+    @Test
+    fun a_pin_waits_in_line_behind_earlier_writes() {
+        val vm = viewModel(null)
+        val write = CompletableDeferred<Unit>()
+        gym.plans.gate = write
+
+        vm.add(press.id)
+        vm.togglePin()
+        write.complete(Unit)
+
+        val written = newPlans().single()
+        assertTrue(written.pinned)
+        assertEquals(listOf(press.id), written.machineIds)
+    }
+
+    @Test
     fun an_added_machine_is_written_once_the_machines_are_read() =
         runTest {
             val fresh = Machine.new("Гакк", null, t0)

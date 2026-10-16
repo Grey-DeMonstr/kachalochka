@@ -9,15 +9,17 @@ CREATE TABLE workout_plan (
     machine_ids TEXT NOT NULL DEFAULT '[]',
     created_at  INTEGER AS Instant NOT NULL,
     updated_at  INTEGER AS Instant NOT NULL,
-    deleted     INTEGER AS Boolean NOT NULL DEFAULT 0
+    deleted     INTEGER AS Boolean NOT NULL DEFAULT 0,
+    -- Last, where 17.sqm's ALTER TABLE puts it.
+    pinned      INTEGER AS Boolean NOT NULL DEFAULT 0
 );
 
 CREATE INDEX workout_plan_updated_at_idx ON workout_plan (updated_at);
 
 upsert:
 INSERT OR REPLACE INTO workout_plan(id, user_id, name, machine_ids, created_at, updated_at,
-    deleted)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+    deleted, pinned)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 byId:
 SELECT * FROM workout_plan WHERE id = ?;

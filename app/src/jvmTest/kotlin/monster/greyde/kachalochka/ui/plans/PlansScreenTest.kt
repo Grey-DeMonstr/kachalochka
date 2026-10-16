@@ -114,6 +114,34 @@ class PlansScreenTest {
     }
 
     @Test
+    fun a_pinned_plan_shows_a_pin_and_starts_at_once_and_stays() {
+        runBlocking { gym.plans.upsert(unnamed.copy(pinned = true)) }
+        val started = mutableListOf<CalendarDay>()
+        runScreenTest(gym, screen = plans(started = started)) {
+            waitForIdle()
+            onNodeWithTag("plan-pin-${unnamed.id.value}", useUnmergedTree = true)
+                .assertIsDisplayed()
+            onNodeWithTag("plan-pin-${legs.id.value}", useUnmergedTree = true)
+                .assertDoesNotExist()
+            onNodeWithTag("start-plan-${unnamed.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("confirm-start-plan").assertDoesNotExist()
+        }
+        assertEquals(listOf(gym.today), started)
+        assertEquals(
+            listOf(row.id, press.id),
+            gym.visits.rows.values
+                .single()
+                .planned,
+        )
+        assertFalse(
+            gym.plans.rows
+                .getValue(unnamed.id)
+                .deleted,
+        )
+    }
+
+    @Test
     fun a_cancelled_start_keeps_the_plan_and_writes_no_visit() {
         val started = mutableListOf<CalendarDay>()
         runScreenTest(gym, screen = plans(started = started)) {

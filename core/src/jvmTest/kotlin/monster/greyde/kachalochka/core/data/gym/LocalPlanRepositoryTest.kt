@@ -58,6 +58,17 @@ class LocalPlanRepositoryTest {
         }
 
     @Test
+    fun a_pinned_plan_reads_back_pinned_and_lists_first() =
+        runTest {
+            val older = plan(createdHoursAgo = 2)
+            val pinned = plan().copy(pinned = true)
+            listOf(older, pinned).forEach { repository.upsert(it) }
+
+            assertEquals(pinned, repository.byId(pinned.id))
+            assertEquals(listOf(pinned, older), repository.all(null))
+        }
+
+    @Test
     fun only_an_owned_plan_enters_the_outbox() =
         runTest {
             val ivans = plan(owner = ivan)

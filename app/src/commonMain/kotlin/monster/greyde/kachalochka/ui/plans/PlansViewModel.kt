@@ -36,6 +36,7 @@ data class PlanRowUi(
     val id: PlanId,
     val title: String,
     val count: String,
+    val pinned: Boolean,
 )
 
 class PlansViewModel(
@@ -82,6 +83,7 @@ class PlansViewModel(
                                     plan.id,
                                     planTitle(plan.name, live),
                                     AppStrings.current.machines(live.size),
+                                    plan.pinned,
                                 )
                             },
                         loaded = true,
@@ -93,22 +95,34 @@ class PlansViewModel(
             }
     }
 
-    fun askToStart(id: PlanId) {
-        mutableState.value = mutableState.value.copy(confirmingStart = id)
+    /** Starts a pinned plan at once and keeps it; asks first about any other. */
+    fun start(
+        id: PlanId,
+        onStarted: (CalendarDay) -> Unit,
+    ) {
+        val plan = shown.firstOrNull { it.id == id } ?: return
+        if (plan.pinned) {
+            begin(plan, onStarted)
+        } else {
+            mutableState.value = mutableState.value.copy(confirmingStart = id)
+        }
     }
 
     fun cancelStart() {
         mutableState.value = mutableState.value.copy(confirmingStart = null)
     }
 
-    /**
-     * Starts the plan [askToStart] asked about. The visit is written before the plan is deleted,
-     * so a failed write keeps the plan.
-     */
-    fun start(onStarted: (CalendarDay) -> Unit) {
+    fun confirmStart(onStarted: (CalendarDay) -> Unit) {
         val id = mutableState.value.confirmingStart ?: return
         cancelStart()
-        val plan = shown.firstOrNull { it.id == id } ?: return
+        shown.firstOrNull { it.id == id }?.let { begin(it, onStarted) }
+    }
+
+    /** The visit is written before the plan is deleted, so a failed write keeps the plan. */
+    private fun begin(
+        plan: Plan,
+        onStarted: (CalendarDay) -> Unit,
+    ) {
         val shownTo = shownFor
         writes.launch {
             val owner = currentUser.id()
@@ -117,7 +131,7 @@ class PlansViewModel(
             val today = CalendarDay.of(now, utcOffset.at(now))
             SetRecorder(today, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
                 .plan(owner, plan.machineIds)
-            plans.upsert(plan.copy(deleted = true, updatedAt = clock.now()))
+            if (!plan.pinned) plans.upsert(plan.copy(deleted = true, updatedAt = clock.now()))
             onStarted(today)
         }
     }

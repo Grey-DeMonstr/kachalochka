@@ -81,6 +81,13 @@ fun PlanFormScreen(
         onBack = viewModel::leave,
         onOpenSettings = onOpenSettings,
         actions = {
+            SquareToggleButton(
+                PhosphorIcons.PushPin,
+                s.pinPlan,
+                state.pinned,
+                { viewModel.togglePin() },
+                Modifier.testTag("plan-pin"),
+            )
             if (state.rows.size > 1) {
                 SquareToggleButton(
                     PhosphorIcons.Equals,

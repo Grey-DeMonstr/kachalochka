@@ -36,6 +36,7 @@ internal val NAME_PAUSE = 1.seconds
 data class PlanFormUiState(
     val name: String = "",
     val rows: List<PlanMachineUi> = emptyList(),
+    val pinned: Boolean = false,
     val ordering: Boolean = false,
     val canDelete: Boolean = false,
     val confirmingDelete: Boolean = false,
@@ -49,7 +50,7 @@ data class PlanMachineUi(
 )
 
 /**
- * Writes the plan on every change of its machines, and its name after a pause in typing, on
+ * Writes the plan on every change of its machines or pin, and its name after a pause in typing, on
  * [commitName] and on [leave]. A new plan starts with the machines of the account's visit on
  * [fromVisit], when given.
  */
@@ -81,6 +82,7 @@ class PlanFormViewModel(
     private var pause: Job? = null
     private var name = ""
     private var machineIds: List<MachineId> = emptyList()
+    private var pinned = false
     private var ordering = false
     private var confirmingDelete = false
     private var done = false
@@ -121,6 +123,7 @@ class PlanFormViewModel(
         if (found != null) {
             name = found.name
             machineIds = found.machineIds
+            pinned = found.pinned
         } else if (planId != null) {
             done = true
         } else {
@@ -170,6 +173,12 @@ class PlanFormViewModel(
 
     fun remove(id: MachineId) {
         machineIds = machineIds - id
+        publish()
+        store(leaving = false)
+    }
+
+    fun togglePin() {
+        pinned = !pinned
         publish()
         store(leaving = false)
     }
@@ -245,13 +254,19 @@ class PlanFormViewModel(
         if (plan != null &&
             !plan.deleted &&
             plan.name == trimmed &&
+            plan.pinned == pinned &&
             plan.machineIds.alive() == live
         ) {
             return
         }
         val next =
-            plan?.copy(name = trimmed, machineIds = live, updatedAt = now, deleted = false)
-                ?: Plan(newId, owner, trimmed, live, now, now, false)
+            plan?.copy(
+                name = trimmed,
+                machineIds = live,
+                updatedAt = now,
+                deleted = false,
+                pinned = pinned,
+            ) ?: Plan(newId, owner, trimmed, live, now, now, false, pinned)
         plans.upsert(next)
         stored = next
     }
@@ -277,6 +292,7 @@ class PlanFormViewModel(
             PlanFormUiState(
                 name = name,
                 rows = rows,
+                pinned = pinned,
                 ordering = ordering && rows.size > 1,
                 canDelete = stored?.deleted == false,
                 confirmingDelete = confirmingDelete,

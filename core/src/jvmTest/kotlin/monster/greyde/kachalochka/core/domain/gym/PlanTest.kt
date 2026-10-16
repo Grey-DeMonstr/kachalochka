@@ -33,6 +33,18 @@ class PlanTest {
     }
 
     @Test
+    fun pinned_plans_run_first_and_each_group_runs_oldest_first() {
+        val plain = Plan(PlanId.random(), null, "", emptyList(), T0 - 2.seconds, T0, false)
+        val pinned = plain.copy(id = PlanId.random(), createdAt = T0, pinned = true)
+        val olderPinned = pinned.copy(id = PlanId.random(), createdAt = T0 - 1.seconds)
+
+        assertEquals(
+            listOf(olderPinned, pinned, plain),
+            listOf(plain, pinned, olderPinned).sortedWith(planOrder),
+        )
+    }
+
+    @Test
     fun a_started_plan_appends_its_live_machines_in_plan_order() {
         val started =
             startedPlanned(emptyList(), emptyList(), listOf(ROW, PRESS), setOf(PRESS, ROW))

@@ -1,0 +1,4 @@
+ALTER TABLE workout_plan ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;
+
+-- Plans pulled before this version lost their pin.
+UPDATE syncState SET lastPullAt = NULL;

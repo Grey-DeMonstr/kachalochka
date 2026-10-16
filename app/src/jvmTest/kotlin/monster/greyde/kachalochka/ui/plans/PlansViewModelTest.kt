@@ -43,6 +43,75 @@ class PlansViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
+    private fun viewModel() =
+        PlansViewModel(
+            gym.plans,
+            gym.visits,
+            gym.machines,
+            gym.machineLinks,
+            gym.sets,
+            gym.currentUser,
+            gym.accounts,
+            gym.clock,
+            gym.utcOffset,
+            RestTimer(gym.clock),
+            gym.sync,
+        )
+
+    @Test
+    fun pinned_plans_list_first_and_say_they_are_pinned() =
+        runTest {
+            val back = Plan(PlanId.random(), null, "Спина", listOf(press.id), t0, t0, false, true)
+            gym.plans.upsert(back)
+
+            val rows = viewModel().state.value.rows
+
+            assertEquals(
+                listOf(back.id to true, legs.id to false),
+                rows.map { it.id to it.pinned },
+            )
+        }
+
+    @Test
+    fun a_pinned_plan_starts_without_asking_and_stays() =
+        runTest {
+            val pinned = legs.copy(pinned = true)
+            gym.plans.upsert(pinned)
+            val vm = viewModel()
+            var opened: CalendarDay? = null
+
+            vm.start(legs.id) { opened = it }
+
+            assertEquals(null, vm.state.value.confirmingStart)
+            assertEquals(gym.today, opened)
+            assertEquals(listOf(press.id), gym.visits.onDay(null, gym.today)?.planned)
+            assertEquals(pinned, gym.plans.rows.getValue(legs.id))
+            assertEquals(
+                listOf(legs.id),
+                vm.state.value.rows
+                    .map { it.id },
+            )
+        }
+
+    @Test
+    fun a_plan_that_is_not_pinned_asks_first_and_goes_once_started() =
+        runTest {
+            val vm = viewModel()
+            var opened: CalendarDay? = null
+
+            vm.start(legs.id) { opened = it }
+            assertEquals(legs.id, vm.state.value.confirmingStart)
+            assertEquals(null, opened)
+            vm.confirmStart { opened = it }
+
+            assertEquals(gym.today, opened)
+            assertTrue(
+                gym.plans.rows
+                    .getValue(legs.id)
+                    .deleted,
+            )
+        }
+
     @Test
     fun a_plan_shown_before_a_switch_is_not_started_for_the_new_account() {
         val vm =
@@ -60,13 +129,14 @@ class PlansViewModelTest {
                 gym.sync,
             )
         assertEquals(1, vm.state.value.rows.size)
-        vm.askToStart(legs.id)
+        var started = false
+        vm.start(legs.id) { started = true }
+        assertEquals(legs.id, vm.state.value.confirmingStart)
         val reload = CompletableDeferred<Unit>()
         gym.machines.readGate = reload
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
-        var started = false
 
-        vm.start { started = true }
+        vm.confirmStart { started = true }
         reload.complete(Unit)
 
         assertFalse(started)
@@ -108,8 +178,8 @@ class PlansViewModelTest {
             )
         var opened: CalendarDay? = null
 
-        vm.askToStart(sashaLegs.id)
-        vm.start { opened = it }
+        vm.start(sashaLegs.id) { opened = it }
+        vm.confirmStart { opened = it }
 
         assertNotNull(opened)
         assertEquals(
