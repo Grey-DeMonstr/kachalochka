@@ -195,7 +195,7 @@ class MachinePlacementViewModel(
         return own.id
     }
 
-    /** Another account's stored machine stands in as the set form's [MachineCatalogue.ownCopy] does. */
+    /** Another account's stored machine stands in as in [MachineCatalogue.ownCopy]. */
     private suspend fun ownMachine(
         owner: UserId?,
         machine: PlacedMachine,

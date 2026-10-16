@@ -277,7 +277,8 @@ class MachineCatalogue(
 
     /**
      * The owner's own machine standing for [shown], which may be another account's: its
-     * [deviceStandIn], else a new copy linked to [shown] and to the rest of its cluster (spec §4.5).
+     * [deviceStandIn], else a new copy linked to [shown] and to the rest of its cluster (spec
+     * §4.5).
      */
     suspend fun ownCopy(
         owner: UserId?,

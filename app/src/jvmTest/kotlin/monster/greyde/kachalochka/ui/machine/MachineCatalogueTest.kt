@@ -725,7 +725,7 @@ class MachineCatalogueTest {
             gym.machines.upsert(pashas)
             gym.machineLinks.upsert(pashaLink)
             val gate = CompletableDeferred<Unit>()
-            // The copy's first link lands, then its write waits, so the upkeep could run in between.
+            // The copy's first link lands, then its write waits, so the upkeep could run between.
             val paused =
                 object : MachineLinkRepository by gym.machineLinks {
                     var writes = 0

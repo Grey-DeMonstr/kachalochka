@@ -39,7 +39,9 @@ class SetRecorder(
     private val restTimer: RestTimer,
     private val sync: SyncTrigger,
 ) {
-    /** Records a set for [owner] on [machine], the owner's own (see [MachineCatalogue.ownCopy]). */
+    /**
+     * Records a set for [owner] on [machine], the owner's own (see [MachineCatalogue.ownCopy]).
+     */
     suspend fun record(
         owner: UserId?,
         machine: Machine,
