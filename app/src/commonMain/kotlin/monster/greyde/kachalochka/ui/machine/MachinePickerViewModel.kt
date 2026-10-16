@@ -10,14 +10,12 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.hasAllTags
-import monster.greyde.kachalochka.core.domain.gym.hasTag
 import monster.greyde.kachalochka.core.domain.gym.machineOrder
 import monster.greyde.kachalochka.core.domain.gym.nameMatches
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
@@ -37,36 +35,6 @@ import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
-
-data class TagChoiceUi(
-    val name: String,
-    val chosen: Boolean,
-)
-
-/** The chips of the tags [machines] hold and of the [chosen] ones, [chosen] marked. */
-internal fun tagChoices(
-    machines: List<Machine>,
-    chosen: Set<String>,
-): List<TagChoiceUi> {
-    val tags = sortedTags(machines.flatMap { it.tags } + chosen)
-    return tags.map { TagChoiceUi(it, hasTag(chosen, it)) }
-}
-
-/**
- * Of [chosen], the tags [shown]'s machines still hold: a tag no machine holds is deleted. Without
- * a group read, a tag the own machines lack may still be a friend's, so it stays.
- */
-internal fun heldTags(
-    chosen: Set<String>,
-    shown: ShownMachines,
-): Set<String> {
-    val held = shown.own.machines.flatMap { it.tags }
-    val friendsKnown = shown.group != null || shown.own.owner == null
-    val friends = shown.offered.flatMap { it.machine.tags }
-    return chosen.filterTo(mutableSetOf()) {
-        hasTag(held, it) || !friendsKnown || hasTag(friends, it)
-    }
-}
 
 data class PickerUiState(
     val query: String = "",
