@@ -210,6 +210,7 @@ class MachineFormViewModelTest {
                     on.machineReadsOver(catalogue),
                     on.sets,
                 ).also { it.load() }
+            // A friend's link into the machine makes repointFriends drop the cached read.
             on.friends.links += linkedCopy(olegs, OLEG.userId, t0).second
             assertTrue(catalogue.repointFriends(ME.userId, olegs.id, MachineId.random()))
             assertNull(catalogue.lastGroup(ME.userId))

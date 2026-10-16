@@ -39,6 +39,9 @@ class FakeFriends(
     val links = mutableListOf<MachineLink>()
     val photos = mutableListOf<Photo>()
     var offline = false
+
+    /** Fails only the group read, so the other online reads still answer. */
+    var gymOffline = false
     var reads = 0
         private set
 
@@ -186,6 +189,7 @@ class FakeFriends(
 
     override suspend fun groupGym(viewer: UserId) =
         online {
+            if (gymOffline) error("no connection")
             val mates = matesById(viewer)
             GroupGym(
                 machines

@@ -119,13 +119,13 @@ class FriendMachineViewModel(
                     coroutineScope {
                         val sets = async { friends.setsOn(owner, machineId) }
                         val preferred = profiles.preferredUnit(viewer)
-                        var offline = false
+                        var serverDown = false
                         reads.machines(viewer).collect { read ->
                             val group = read.group ?: return@collect
                             if (read.offline) {
                                 forgetShown()
                                 sets.cancel()
-                                offline = true
+                                serverDown = true
                                 return@collect
                             }
                             val found = readOf(read, preferred)
@@ -141,10 +141,10 @@ class FriendMachineViewModel(
                                 }
                             }
                         }
-                        offline
+                        serverDown
                     }
-                }.onSuccess { offline ->
-                    mutableOffline.value = offline
+                }.onSuccess { serverDown ->
+                    mutableOffline.value = serverDown
                 }.onFailure {
                     forgetShown()
                     mutableOffline.value = true

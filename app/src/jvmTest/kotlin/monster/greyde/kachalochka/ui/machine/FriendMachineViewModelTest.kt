@@ -137,6 +137,17 @@ class FriendMachineViewModelTest {
     }
 
     @Test
+    fun offline_group_read_with_the_sets_on_hand_shows_no_cached_machine() {
+        viewModel()
+        on.friends.gymOffline = true
+
+        val vm = viewModel()
+
+        assertTrue(vm.offline.value)
+        assertNull(vm.state.value)
+    }
+
+    @Test
     fun the_viewer_s_cycle_stays_off_a_friend_s_chart() =
         runTest {
             val cycleDay =
