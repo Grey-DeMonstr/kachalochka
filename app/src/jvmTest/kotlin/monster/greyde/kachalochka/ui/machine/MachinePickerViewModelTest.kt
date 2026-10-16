@@ -111,7 +111,7 @@ class MachinePickerViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
-            val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
+            val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current)
             val olegsPhoto = Photo.new(olegs.id, OLEG.userId, on.clock.current)
             on.friends.machines += olegs
             on.friends.photos += olegsPhoto
@@ -133,7 +133,7 @@ class MachinePickerViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
-            val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
+            val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current)
             val mine = copy.copy(name = "Присед в тренажёре")
             on.friends.machines += olegs
             on.machines.upsert(mine)
@@ -165,7 +165,7 @@ class MachinePickerViewModelTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         val olegPress = Machine.new("Жим ногами", OLEG.userId, t0)
-        val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0, emptySet())
+        val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0)
         on.friends.machines += listOf(pashaCopy, olegPress)
         on.friends.links += link
         return on to olegPress
@@ -303,7 +303,7 @@ class MachinePickerViewModelTest {
             gym.machines.upsert(smith.copy(tags = setOf("Ноги")))
             val vm = viewModel().also { it.load() }
             assertEquals(
-                listOf("Жим" to false, "Ноги" to false),
+                listOf("жим" to false, "ноги" to false),
                 vm.state.value.tags
                     .map { it.name to it.chosen },
             )
@@ -317,12 +317,29 @@ class MachinePickerViewModelTest {
             )
             vm.onQueryChange("гакк")
             assertEquals("С тегом «ЖИМ»", vm.state.value.createHint)
-            assertEquals(listOf("Жим"), vm.createTags)
+            assertEquals(listOf("жим"), vm.createTags)
             assertTrue(vm.state.value.nothingFound)
 
             vm.toggleTag("Жим")
             vm.onQueryChange("")
             assertEquals(2, vm.state.value.rows.size)
+        }
+
+    @Test
+    fun a_chosen_tag_no_machine_has_any_more_stops_filtering_and_creating() =
+        runTest {
+            gym.machines.upsert(press.copy(tags = setOf("ноги")))
+            gym.machines.upsert(smith)
+            val vm = viewModel().also { it.load() }
+            vm.toggleTag("ноги")
+            assertEquals(1, vm.state.value.rows.size)
+
+            gym.machines.upsert(press.copy(tags = emptySet()))
+            vm.load()
+
+            assertEquals(2, vm.state.value.rows.size)
+            assertEquals(emptyList(), vm.state.value.tags)
+            assertEquals(emptyList(), vm.createTags)
         }
 
     @Test

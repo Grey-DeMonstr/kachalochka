@@ -78,7 +78,7 @@ class LinkChooserScreenTest {
 
     @Test
     fun any_machine_of_a_linked_group_can_be_chosen() {
-        val (pashas, link) = linkedCopy(bench, PASHA.userId, gym.clock.current, emptySet())
+        val (pashas, link) = linkedCopy(bench, PASHA.userId, gym.clock.current)
         gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         gym.friends.machines += pashas
         gym.friends.links += link

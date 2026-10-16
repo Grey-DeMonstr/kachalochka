@@ -474,14 +474,18 @@ ids the server gave them, and the owned ones are enqueued. Tags an older client 
 its own column.
 
 Tags compare by `tagKey`: trimmed, inner whitespace joined to one space, in lower case; `0027`
-makes the same key in SQL. The pure functions of `domain/gym/Tags.kt` hold
-every rule: `distinctTags` keeps the spelling met first, `sortedTags` is the one display order,
-`hasAllTags` filters, `toggledTag` keeps a set free of two spellings of one tag, and
-`tagsSpelledAs` gives tags taken from another account the receiving account's spelling.
-`suggestedTags` gives the machine form the tags of `ShownMachines.linkedRows` that the machine
-lacks, in the account's spelling.
-`tagSections` groups by the keys and spells a section as its first item. The screens upper-case a
-tag only when they draw it, through `TagText`.
+makes the same key in SQL. With every stored name a key, the comparison matters only for text
+from outside, such as a typed tag, which the machine form turns into its key on add. The pure
+functions of `domain/gym/Tags.kt` hold every rule: `sortedTags` is the one display order,
+`hasAllTags` filters, `toggledTag` keeps a set free of two forms of one tag, and `suggestedTags`
+gives the machine form the tags of `ShownMachines.linkedRows` that the machine lacks. A
+`linkedCopy` takes the friend's tags as they are. `tagSections` groups by the keys. The screens
+upper-case a tag only when they draw it, through `TagText`.
+
+The machine form shows the machine's tags as opened first, then the account's other tags; a tag
+neither the edited machine nor another own machine holds (`MachineFormState.accountTags`) loses
+its chip, since a save would delete it. The machine list and the picker keep a chosen tag only
+while a machine they show holds it (`heldTags`).
 `tagTitle` writes a section heading in capitals, so the shared visit and the statistics export
 read as the screens draw, and `withTags` quotes tags in capitals too.
 

@@ -23,7 +23,7 @@ internal fun FakeGym.olegTrainedOn(
 ) {
     val t0 = clock.current
     friends.group("Зал на Лесной", owner = OLEG, viewer)
-    val (olegPress, link) = linkedCopy(machine, OLEG.userId, t0, emptySet())
+    val (olegPress, link) = linkedCopy(machine, OLEG.userId, t0)
     val olegVisit =
         Visit(VisitId.random(), OLEG.userId, today.plusDays(-1), t0 - 1.days, t0, false)
     friends.machines += olegPress
@@ -70,7 +70,7 @@ internal class OlegVisitFixture(
     private val t0 = gym.clock.current
     val yesterday = gym.today.plusDays(-1)
     val myPress = Machine.new("Жим ногами", ME.userId, t0)
-    private val olegCopy = linkedCopy(myPress, OLEG.userId, t0, emptySet())
+    private val olegCopy = linkedCopy(myPress, OLEG.userId, t0)
     val olegPress = olegCopy.first.copy(name = "Платформа")
     val olegRow = Machine.new("Тяга", OLEG.userId, t0).copy(unit = WeightUnit.Lb)
     val olegVisit = Visit(VisitId.random(), OLEG.userId, yesterday, t0 - 1.days, t0, false)

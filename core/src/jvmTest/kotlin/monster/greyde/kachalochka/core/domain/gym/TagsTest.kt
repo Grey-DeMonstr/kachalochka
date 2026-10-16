@@ -20,22 +20,13 @@ class TagsTest {
     }
 
     @Test
-    fun each_tag_is_kept_once_in_the_spelling_met_first() {
+    fun each_tag_is_kept_once_as_met_first() {
         assertEquals(listOf("Ноги", "Руки"), distinctTags(listOf("Ноги", "Руки", "ноги", "РУКИ")))
     }
 
     @Test
     fun sorted_tags_are_distinct_and_in_alphabetical_order_without_letter_case() {
         assertEquals(listOf("бицепс", "Ноги"), sortedTags(listOf("Ноги", "бицепс", "НОГИ")))
-    }
-
-    @Test
-    fun a_tag_takes_the_known_spelling_when_one_is_known() {
-        val known = listOf("Ноги", "Спина")
-
-        assertEquals("Ноги", spelledAs("НОГИ", known))
-        assertEquals("Грудь", spelledAs("Грудь", known))
-        assertEquals(setOf("Ноги", "Грудь"), tagsSpelledAs(setOf("ноги", "Грудь"), known))
     }
 
     @Test
@@ -55,15 +46,11 @@ class TagsTest {
     }
 
     @Test
-    fun linked_machines_suggest_each_tag_the_machine_lacks_once_in_the_account_s_spelling() {
+    fun linked_machines_suggest_each_tag_the_machine_lacks_once() {
         assertEquals(
-            listOf("Жим", "Ноги"),
-            suggestedTags(
-                linked = listOf("ноги", "спина", "Жим", "НОГИ"),
-                tags = setOf("СПИНА"),
-                known = setOf("Ноги", "Спина"),
-            ),
+            listOf("жим", "ноги"),
+            suggestedTags(linked = listOf("ноги", "спина", "жим", "ноги"), tags = setOf("спина")),
         )
-        assertEquals(emptyList(), suggestedTags(listOf("ноги"), setOf("Ноги"), setOf("Ноги")))
+        assertEquals(emptyList(), suggestedTags(listOf("ноги"), setOf("ноги")))
     }
 }

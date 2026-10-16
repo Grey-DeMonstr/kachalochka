@@ -186,20 +186,22 @@ them. The unit is kg, lb or an own unit such as "плитка", whose name is th
 after every weight on that machine, with no conversion. The weight step is any positive number,
 typed in its field. Under the comment, every tag of the account's machines is a chip to tap on or
 off, the tags the machine had when the form opened first, in an order that a tap never changes;
-a machine has any number of tags.
+a machine has any number of tags. A tag that neither this machine nor another of the account's
+machines would then hold loses its chip.
 When the machines it is linked with carry tags it has not got, a row above the chips starts with
 a link icon and offers those tags as dashed chips in the accent colour; tapping one gives it to
-the machine, in the account's spelling when the account has the tag, and such a tag is not
-repeated among the account's chips. Offline or signed out, only the account's own linked
-machines offer tags. Signed in and online, the tags of other friends' machines the account has
-not got follow the account's chips as dashed chips with the friend's avatar; tapping one gives it
-to the machine, and saving makes it the account's own. A last "Новый тег" chip adds what is typed
-in it.
+the machine, and such a tag is not repeated among the account's chips. Offline or signed out,
+only the account's own linked machines offer tags. Signed in and online, the tags of other
+friends' machines the account has not got follow the account's chips as dashed chips with the
+friend's avatar; tapping one gives it to the machine, and saving makes it the account's own. A
+last "Новый тег" chip adds what is typed in it.
 
-Tags have no letter case: "ноги" and "Ноги" are one tag, a machine never holds both, and a tag
-keeps the spelling it was first typed in. Every screen draws a tag in capitals, in a small font
-with wide letter spacing: the chips, the machine rows and pages, the section headings of the visit
-and of the statistics, the calendar's cards ("СПИНА · ГРУДЬ") and a friend's machine.
+Tags have no letter case and no extra spaces: "ноги", "Ноги" and " НОГИ " are one tag, kept in
+lower case, and a machine never holds two forms of one tag. A tag that no machine of the account
+holds any more is deleted: it is no longer offered as a chip, and a list or picker filtered by it
+drops the filter. Every screen draws a tag in capitals, in a small font with wide letter spacing:
+the chips, the machine rows and pages, the section headings of the visit and of the statistics,
+the calendar's cards ("СПИНА · ГРУДЬ") and a friend's machine.
 
 A set's total weight is its weight plus the platform when the platform is not added to the record.
 When "Сохранить" changes that for a machine with recorded sets (for example, a platform typed in
@@ -262,9 +264,8 @@ that stays then replaces the list, and unsaved edits in the old form are dropped
 machine's photos move to the one that stays. Choosing a friend's machine links the two as one
 physical machine (see Group sharing) and returns to the form. Over the friends' machines,
 "Скопировать настройки", off at first, also takes the chosen machine's name, weight counting,
-platform, unit and weight step into the form and adds its tags to the machine's (a tag the account
-has in another letter case is taken in the account's spelling); saving it then asks about recorded
-sets as any other edit does.
+platform, unit and weight step into the form and adds its tags to the machine's; saving it then
+asks about recorded sets as any other edit does.
 
 The "Упражнения" row lists the active account's machines in the chosen order, each drawn as every
 list draws it, with its photo: the one chosen in its form, else the machine's first photo, or, when
@@ -613,13 +614,12 @@ the chosen one marks that friend's visits in the user's calendar and in the frie
 opened from the group.
 
 A machine can be taken from a friend's list: the copy keeps the friend's settings and tags and
-stays linked to the friend's machine as one physical machine. A tag the user already has in
-another letter case keeps the user's spelling. An own machine can also be linked to a friend's
-with "Привязать к…" in its form, or from the friend's machine with "Привязать к моему". Machines
-linked directly or through other friends' links are one machine: the picker no longer offers the
-friend's machine beside the user's own, the machine's page shows each friend's latest visit on it
-("Олег  вчера · 80-85кг 8-6"), and a friend's visit, a friend's machine and the machine form list
-the machines it is linked with.
+stays linked to the friend's machine as one physical machine. An own machine can also be linked
+to a friend's with "Привязать к…" in its form, or from the friend's machine with "Привязать к
+моему". Machines linked directly or through other friends' links are one machine: the picker no
+longer offers the friend's machine beside the user's own, the machine's page shows each friend's
+latest visit on it ("Олег  вчера · 80-85кг 8-6"), and a friend's visit, a friend's machine and the
+machine form list the machines it is linked with.
 The app keeps every link direct: when an own machine is the same machine as a friend's only
 through other friends' links, the app links the two itself, as the user's own link. This happens
 at every start of the app, on every switch of account and each time the friends' machines are

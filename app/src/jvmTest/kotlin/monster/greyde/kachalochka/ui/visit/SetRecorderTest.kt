@@ -131,18 +131,18 @@ class SetRecorderTest {
         }
 
     @Test
-    fun the_owner_s_copy_keeps_the_tags_in_the_owner_s_spelling_and_links_to_the_shown_machine() =
+    fun the_owner_s_copy_keeps_the_tags_and_links_to_the_shown_machine() =
         runTest {
-            val mishasPress = press.copy(userId = misha, tags = setOf("ноги", "Спина"))
+            val mishasPress = press.copy(userId = misha, tags = setOf("ноги", "спина"))
             gym.machines.upsert(mishasPress)
-            gym.machines.upsert(row.copy(userId = ivan, tags = setOf("НОГИ")))
+            gym.machines.upsert(row.copy(userId = ivan, tags = setOf("ноги")))
 
             recorder().record(ivan, mishasPress, SetValues(60.0, 10), "")
 
             val copy =
                 gym.machines.rows.values
                     .single { it.userId == ivan && it.name == press.name }
-            assertEquals(setOf("НОГИ", "Спина"), copy.tags)
+            assertEquals(setOf("ноги", "спина"), copy.tags)
             val link =
                 gym.machineLinks.rows.values
                     .single()

@@ -337,17 +337,17 @@ class MachineFormScreenTest {
         }) {
             onNodeWithTag("machine-name").performTextInput("Гакк")
             onNodeWithTag("suggested-tags").assertDoesNotExist()
-            onNodeWithTag("tag-Ноги").performScrollTo().assertIsOff().performClick()
+            onNodeWithTag("tag-ноги").performScrollTo().assertIsOff().performClick()
             onNodeWithTag("new-tag").performScrollTo().performTextInput("Жим")
             onNodeWithTag("add-tag").performClick()
             waitForIdle()
-            onNodeWithTag("tag-Ноги").assertIsOn()
-            onNodeWithTag("tag-Жим").assertIsOn()
+            onNodeWithTag("tag-ноги").assertIsOn()
+            onNodeWithTag("tag-жим").assertIsOn()
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
             val machine = runBlocking { gym.machines.byId(saved.single()) }
-            assertEquals(setOf("Ноги", "Жим"), machine?.tags)
+            assertEquals(setOf("ноги", "жим"), machine?.tags)
         }
     }
 
@@ -387,7 +387,7 @@ class MachineFormScreenTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME)
         val olegs = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
-        val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
+        val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current)
         val olegsPhoto = Photo.new(olegs.id, OLEG.userId, on.clock.current)
         runBlocking {
             on.machines.upsert(mine)
@@ -559,8 +559,8 @@ class MachineFormScreenTest {
         runScreenTest(on, screen = {
             MachineFormScreen(MachineFormArgs(null, null, "Гакк"), {}, {}, onSaved = {})
         }) {
-            val own = onNodeWithTag("tag-Ноги").getUnclippedBoundsInRoot()
-            val friends = onNodeWithTag("friend-tag-Плечи").getUnclippedBoundsInRoot()
+            val own = onNodeWithTag("tag-ноги").getUnclippedBoundsInRoot()
+            val friends = onNodeWithTag("friend-tag-плечи").getUnclippedBoundsInRoot()
             val field = onNodeWithTag("new-tag").getUnclippedBoundsInRoot()
             assertTrue(own.right <= friends.left || own.bottom <= friends.top)
             assertTrue(friends.right <= field.left || friends.bottom <= field.top)
@@ -572,7 +572,7 @@ class MachineFormScreenTest {
         val on = signedInGym()
         val now = on.clock.current
         val olegs = Machine.new("Жим ногами", OLEG.userId, now).copy(tags = setOf("Квадрицепс"))
-        val (copy, link) = linkedCopy(olegs, ME.userId, now, emptySet())
+        val (copy, link) = linkedCopy(olegs, ME.userId, now)
         val mine = copy.copy(tags = setOf("Ноги"))
         on.friends.group("Зал на Лесной", owner = OLEG, ME)
         on.friends.machines += olegs
@@ -584,20 +584,20 @@ class MachineFormScreenTest {
             MachineFormScreen(MachineFormArgs(mine.id, null, ""), {}, {}, onSaved = {})
         }) {
             val icon = onNodeWithTag("suggested-tags").getUnclippedBoundsInRoot()
-            val suggested = onNodeWithTag("suggested-tag-Квадрицепс").getUnclippedBoundsInRoot()
-            val own = onNodeWithTag("tag-Ноги").getUnclippedBoundsInRoot()
+            val suggested = onNodeWithTag("suggested-tag-квадрицепс").getUnclippedBoundsInRoot()
+            val own = onNodeWithTag("tag-ноги").getUnclippedBoundsInRoot()
             assertTrue(icon.right <= suggested.left)
             assertTrue(suggested.bottom <= own.top)
 
-            onNodeWithTag("suggested-tag-Квадрицепс").performScrollTo().performClick()
+            onNodeWithTag("suggested-tag-квадрицепс").performScrollTo().performClick()
             waitForIdle()
 
             onNodeWithTag("suggested-tags").assertDoesNotExist()
-            onNodeWithTag("tag-Квадрицепс").assertIsOn()
+            onNodeWithTag("tag-квадрицепс").assertIsOn()
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
         }
-        assertEquals(setOf("Ноги", "Квадрицепс"), runBlocking { on.machines.byId(mine.id)?.tags })
+        assertEquals(setOf("ноги", "квадрицепс"), runBlocking { on.machines.byId(mine.id)?.tags })
     }
 
     @Test
@@ -610,7 +610,6 @@ class MachineFormScreenTest {
                 Machine.new("Жим ногами", null, now),
                 ivanSession.account.userId,
                 now,
-                emptySet(),
             )
         runBlocking {
             signedIn.machines.upsert(linked)
@@ -721,7 +720,7 @@ class MachineFormScreenTest {
         val signedIn = signedInGym()
         val now = signedIn.clock.current
         val olegs = Machine.new("Жим ногами", OLEG.userId, now)
-        val (press, link) = linkedCopy(olegs, ME.userId, now, emptySet())
+        val (press, link) = linkedCopy(olegs, ME.userId, now)
         signedIn.friends.group("Зал на Лесной", owner = OLEG, ME)
         signedIn.friends.machines += olegs
         runBlocking {
@@ -752,8 +751,8 @@ class MachineFormScreenTest {
         val signedIn = signedInGym()
         val now = signedIn.clock.current
         val olegs = Machine.new("Жим ногами", OLEG.userId, now)
-        val (press, link) = linkedCopy(olegs, ME.userId, now, emptySet())
-        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, now, emptySet())
+        val (press, link) = linkedCopy(olegs, ME.userId, now)
+        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, now)
         signedIn.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         signedIn.friends.machines += listOf(olegs, pashas.copy(name = "Платформа"))
         signedIn.friends.links += pashaLink

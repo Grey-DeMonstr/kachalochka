@@ -152,7 +152,7 @@ class MachineListViewModelTest {
             )
             val vm = viewModel(on).also { it.load() }
             assertEquals(
-                listOf("База" to false, "Ноги" to false, "Спина" to false),
+                listOf("база" to false, "ноги" to false, "спина" to false),
                 vm.state.value.tags
                     .map { it.name to it.chosen },
             )
@@ -181,7 +181,33 @@ class MachineListViewModelTest {
         }
 
     @Test
-    fun a_friend_s_tag_in_another_letter_case_is_one_chip_in_the_own_spelling() =
+    fun a_chosen_tag_no_machine_has_any_more_stops_filtering() =
+        runTest {
+            val press = Machine.new("Жим", null, t0).copy(tags = setOf("ноги"))
+            gym.machines.upsert(press)
+            gym.machines.upsert(Machine.new("Тяга", null, t0))
+            val vm = viewModel().also { it.load() }
+            vm.toggleTag("ноги")
+            assertEquals(
+                1,
+                vm.state.value.own
+                    ?.size,
+            )
+
+            gym.machines.upsert(press.copy(tags = emptySet()))
+            vm.load()
+
+            assertEquals(
+                2,
+                vm.state.value.own
+                    ?.size,
+            )
+            assertEquals(emptyList(), vm.state.value.tags)
+            assertEquals(false, vm.state.value.nothingFound)
+        }
+
+    @Test
+    fun a_friend_s_tag_the_account_has_too_is_one_chip() =
         runTest {
             val (on, olegPress) = olegsGym()
             on.friends.machines.replaceAll {
@@ -190,7 +216,7 @@ class MachineListViewModelTest {
             on.machines.upsert(Machine.new("Присед", ME.userId, t0).copy(tags = setOf("Ноги")))
             val vm = viewModel(on).also { it.load() }
             assertEquals(
-                listOf("Ноги" to false),
+                listOf("ноги" to false),
                 vm.state.value.tags
                     .map { it.name to it.chosen },
             )
@@ -278,7 +304,7 @@ class MachineListViewModelTest {
                         press.id,
                         "Жим ногами",
                         null,
-                        listOf("Жим", "Ноги"),
+                        listOf("жим", "ноги"),
                         "Сиденье на 4",
                         "14 ноября",
                         "80 кг × 10",
@@ -354,7 +380,7 @@ class MachineListViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Жим ногами", OLEG.userId, t0)
-            val (mine, link) = linkedCopy(olegs, ME.userId, t0, emptySet())
+            val (mine, link) = linkedCopy(olegs, ME.userId, t0)
             val olegsPhoto = Photo.new(olegs.id, OLEG.userId, t0)
             on.friends.machines += olegs
             on.friends.photos += olegsPhoto
@@ -376,7 +402,7 @@ class MachineListViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
-            val (copy, link) = linkedCopy(olegs, ME.userId, t0, emptySet())
+            val (copy, link) = linkedCopy(olegs, ME.userId, t0)
             val mine = copy.copy(name = "Присед в тренажёре")
             on.friends.machines += olegs
             on.machines.upsert(mine)
@@ -479,8 +505,8 @@ class MachineListViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
-            val (first, firstLink) = linkedCopy(olegs, ME.userId, t0, emptySet())
-            val (second, secondLink) = linkedCopy(olegs, ME.userId, t0, emptySet())
+            val (first, firstLink) = linkedCopy(olegs, ME.userId, t0)
+            val (second, secondLink) = linkedCopy(olegs, ME.userId, t0)
             on.friends.machines += olegs
             on.machines.upsert(first.copy(name = "Гакк"))
             on.machines.upsert(second.copy(name = "Присед"))
@@ -602,7 +628,7 @@ class MachineListViewModelTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         val olegPress = Machine.new("Жим ногами", OLEG.userId, t0)
-        val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0, emptySet())
+        val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0)
         on.friends.machines += listOf(pashaCopy, olegPress)
         on.friends.links += link
 

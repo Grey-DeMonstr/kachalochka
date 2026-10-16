@@ -25,7 +25,6 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.convertedSets
 import monster.greyde.kachalochka.core.domain.gym.convertedWeight
 import monster.greyde.kachalochka.core.domain.gym.convertible
-import monster.greyde.kachalochka.core.domain.gym.distinctTags
 import monster.greyde.kachalochka.core.domain.gym.guessedLbStep
 import monster.greyde.kachalochka.core.domain.gym.hasTag
 import monster.greyde.kachalochka.core.domain.gym.photoOrder
@@ -35,10 +34,8 @@ import monster.greyde.kachalochka.core.domain.gym.shiftedSets
 import monster.greyde.kachalochka.core.domain.gym.sideFactor
 import monster.greyde.kachalochka.core.domain.gym.sidedSets
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
-import monster.greyde.kachalochka.core.domain.gym.spelledAs
 import monster.greyde.kachalochka.core.domain.gym.suggestedTags
 import monster.greyde.kachalochka.core.domain.gym.tagKey
-import monster.greyde.kachalochka.core.domain.gym.tagsSpelledAs
 import monster.greyde.kachalochka.core.domain.gym.toggledTag
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -86,7 +83,7 @@ data class MachineFormState(
     val unitLabel: String = "",
     val weightStep: String = "2.5",
     val tags: Set<String> = emptySet(),
-    /** Every tag of the account's machines, offered as chips. */
+    /** Every tag of the account's other machines, offered as chips. */
     val knownTags: Set<String> = emptySet(),
     val newTag: String = "",
     /** Friends' tags, offered until one is chosen and so becomes the account's own. */
@@ -96,17 +93,20 @@ data class MachineFormState(
     /** The machine's tags when the form opened, which lead the chips so a tap never moves one. */
     val openedTags: Set<String> = emptySet(),
 ) {
-    /** Chosen tags first, so their spelling wins. */
+    /** The tags the account would hold after a save; any other tag is deleted. */
     val accountTags: Set<String>
-        get() = tags + knownTags + openedTags
+        get() = tags + knownTags
+
+    private val heldOpenedTags: List<String>
+        get() = sortedTags(openedTags).filter { hasTag(accountTags, it) }
 
     val suggestedTags: List<String>
-        get() = suggestedTags(linkedTags, tags + openedTags, accountTags)
+        get() = suggestedTags(linkedTags, tags + heldOpenedTags)
 
-    /** The opened tags, then the account's other tags that are not suggested. */
+    /** The opened tags still held, then the account's other tags that are not suggested. */
     val shownTags: List<String>
         get() {
-            val opened = sortedTags(openedTags)
+            val opened = heldOpenedTags
             val suggested = suggestedTags
             return opened +
                 sortedTags(accountTags).filterNot { hasTag(opened, it) || hasTag(suggested, it) }
@@ -165,7 +165,7 @@ data class MachineFormState(
             unit = machine.unit,
             unitLabel = machine.unitLabel,
             weightStep = formatNumber(machine.weightStep),
-            tags = distinctTags(machine.tags).toSet(),
+            tags = machine.tags,
         )
     }
 }
@@ -195,7 +195,9 @@ class MachineFormViewModel(
     private val sets: WorkoutSetRepository,
 ) : ViewModel() {
     private val mutableState =
-        MutableStateFlow(MachineFormState(name = args.name, tags = args.tags.toSet()))
+        MutableStateFlow(
+            MachineFormState(name = args.name, tags = args.tags.map(::tagKey).toSet()),
+        )
     val state: StateFlow<MachineFormState> = mutableState
     private val mutableLinking = MutableStateFlow(LinkingUi())
     val linking: StateFlow<LinkingUi> = mutableLinking
@@ -261,11 +263,15 @@ class MachineFormViewModel(
                 when {
                     current != null -> MachineFormState.of(current)
                     source != null -> MachineFormState.of(source, name = args.name)
-                    else -> MachineFormState(name = args.name, tags = args.tags.toSet())
+                    else ->
+                        MachineFormState(
+                            name = args.name,
+                            tags = args.tags.map(::tagKey).toSet(),
+                        )
                 }
             val owner = currentUser.id()
-            val known = machines.all(owner).flatMap { it.tags }.toSet()
-            mutableState.value = shown.copy(knownTags = known, openedTags = shown.tags)
+            val known = machines.all(owner).filter { it.id != current?.id }.flatMap { it.tags }
+            mutableState.value = shown.copy(knownTags = known.toSet(), openedTags = shown.tags)
             startEdits = shown.edits
             savedPhotos = current?.let { photoRows.forMachine(it.id) }.orEmpty()
             coverChoice = current?.coverPhoto
@@ -278,8 +284,7 @@ class MachineFormViewModel(
 
     /**
      * Takes a friend's machine's name, tags and how it counts its weight into the form, as typed
-     * edits: saving then asks about recorded sets as any other edit does. A tag the form has in
-     * another letter case is not added again.
+     * edits: saving then asks about recorded sets as any other edit does.
      */
     fun copySettings(friendMachine: MachineId) {
         viewModelScope.launch {
@@ -289,10 +294,9 @@ class MachineFormViewModel(
             val source = group.friends.firstOrNull { it.machine.id == friendMachine }?.machine
             source ?: return@launch
             update { form ->
-                val tags = tagsSpelledAs(form.tags + source.tags, form.accountTags)
                 form.copy(
                     name = source.name,
-                    tags = tags,
+                    tags = form.tags + source.tags.map(::tagKey),
                     weightMode = source.weightMode,
                     platformWeight = formatNumber(source.platformWeight),
                     platformIncluded = source.platformIncluded,
@@ -507,17 +511,15 @@ class MachineFormViewModel(
         }
     }
 
-    fun toggleTag(tag: String) =
-        update { it.copy(tags = toggledTag(it.tags, spelledAs(tag, it.accountTags))) }
+    fun toggleTag(tag: String) = update { it.copy(tags = toggledTag(it.tags, tagKey(tag))) }
 
     fun typeNewTag(text: String) =
         update { it.copy(newTag = text.take(MachineFormState.TAG_LENGTH)) }
 
-    /** A tag typed in another case picks the existing one, so a visit never splits over it. */
+    /** A typed tag is stored as its key, so one typed in another case is the existing one. */
     fun addNewTag() =
         update { form ->
-            val typed = form.newTag.trim().replace(Regex("""\s+"""), " ")
-            val tag = spelledAs(typed, form.accountTags)
+            val tag = tagKey(form.newTag)
             val tags = if (tag.isEmpty() || hasTag(form.tags, tag)) form.tags else form.tags + tag
             form.copy(tags = tags, newTag = "")
         }

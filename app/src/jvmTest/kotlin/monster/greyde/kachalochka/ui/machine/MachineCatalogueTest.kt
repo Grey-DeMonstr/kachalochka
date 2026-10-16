@@ -30,7 +30,7 @@ class MachineCatalogueTest {
     private val gym = signedInGym()
     private val t0 = gym.clock.current
     private val myPress = Machine.new("Жим ногами", ME.userId, t0)
-    private val olegCopy = linkedCopy(myPress, OLEG.userId, t0, emptySet())
+    private val olegCopy = linkedCopy(myPress, OLEG.userId, t0)
     private val olegPress = olegCopy.first
     private val olegRow = Machine.new("Тяга", OLEG.userId, t0)
     private val failures = mutableListOf<Throwable>()
@@ -398,16 +398,16 @@ class MachineCatalogueTest {
         }
 
     @Test
-    fun a_taken_machine_keeps_its_tags_in_the_account_s_spelling() =
+    fun a_taken_machine_keeps_the_friend_s_tags() =
         runTest {
             olegsGym()
-            gym.machines.upsert(myPress.copy(tags = setOf("НОГИ")))
-            val tagged = olegRow.copy(tags = setOf("ноги", "Спина"))
+            gym.machines.upsert(myPress.copy(tags = setOf("ноги")))
+            val tagged = olegRow.copy(tags = setOf("ноги", "спина"))
             gym.friends.machines.replaceAll { if (it.id == olegRow.id) tagged else it }
 
             val copy = catalogue.take(ME.userId, tagged, catalogue.group(ME.userId))
 
-            assertEquals(setOf("НОГИ", "Спина"), copy.tags)
+            assertEquals(setOf("ноги", "спина"), gym.machines.byId(copy.id)?.tags)
         }
 
     @Test

@@ -194,7 +194,7 @@ class CalendarViewModelTest {
             val listed = assertNotNull(state.visit)
             assertEquals(sunday.id, listed.id)
             assertEquals("Жим ногами, Тяга верхнего блока", listed.machines)
-            assertEquals("Жим · Ноги · Спина", listed.tags)
+            assertEquals("жим · ноги · спина", listed.tags)
         }
 
     @Test

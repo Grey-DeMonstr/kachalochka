@@ -80,7 +80,7 @@ class MachineListScreenTest {
             waitForIdle()
             onNodeWithTag("machine-list-nothing").assertTextEquals("Ничего не найдено")
             onNodeWithTag("clear-search").performClick()
-            onNodeWithTag("list-tag-Спина").assertTextEquals("СПИНА").performClick()
+            onNodeWithTag("list-tag-спина").assertTextEquals("СПИНА").performClick()
             waitForIdle()
 
             onNodeWithTag("machine-list-row-${row.id.value}").assertIsDisplayed()
@@ -113,7 +113,7 @@ class MachineListScreenTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME)
         val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
-        val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
+        val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current)
         val mine = copy.copy(name = "Жим")
         on.friends.machines += olegs
         runBlocking {
@@ -133,8 +133,8 @@ class MachineListScreenTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
-        val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
-        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, on.clock.current, emptySet())
+        val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current)
+        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, on.clock.current)
         val mine = copy.copy(name = "ГАКК-МАШИНА ")
         on.friends.machines += listOf(olegs, pashas.copy(name = "гакк-машина"))
         on.friends.links += pashaLink
@@ -157,8 +157,8 @@ class MachineListScreenTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
-        val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
-        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, on.clock.current, emptySet())
+        val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current)
+        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, on.clock.current)
         val mine = copy.copy(name = "Жим")
         on.friends.machines += listOf(olegs, pashas.copy(name = "гакк-машина"))
         on.friends.links += pashaLink

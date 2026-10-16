@@ -167,8 +167,7 @@ class SetRecorder(
         standIn(owner, shown)?.let { return it }
         val known = knownLinks(owner, shown)
         val now = clock.now()
-        val tags = machines.all(owner).flatMap { it.tags }
-        val (copy, link) = linkedCopy(shown, owner, now, tags)
+        val (copy, link) = linkedCopy(shown, owner, now)
         machines.upsert(copy)
         links.upsert(link)
         val cluster = MachineClusters(known).of(shown.id)

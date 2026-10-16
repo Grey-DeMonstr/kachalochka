@@ -153,7 +153,7 @@ class MachinePlacementViewModelTest {
     private class SashasGym {
         val gym = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
         val ivansPress =
-            Machine.new("Жим ногами", ME.userId, gym.clock.current).copy(tags = setOf("Ноги"))
+            Machine.new("Жим ногами", ME.userId, gym.clock.current).copy(tags = setOf("ноги"))
 
         init {
             runBlocking {
@@ -174,7 +174,7 @@ class MachinePlacementViewModelTest {
 
         val copy = runBlocking { on.machines.all(SASHA.userId) }.single()
         assertEquals("Жим ногами", copy.name)
-        assertEquals(setOf("Ноги"), copy.tags)
+        assertEquals(setOf("ноги"), copy.tags)
         assertTrue(
             on.machineLinks.rows.values.any {
                 it.machineId == copy.id && it.linkedMachineId == sashas.ivansPress.id
@@ -191,7 +191,7 @@ class MachinePlacementViewModelTest {
     fun another_account_s_machine_goes_into_a_plan_as_the_account_s_stand_in() {
         val sashas = SashasGym()
         val on = sashas.gym
-        val (copy, link) = linkedCopy(sashas.ivansPress, SASHA.userId, t0, emptySet())
+        val (copy, link) = linkedCopy(sashas.ivansPress, SASHA.userId, t0)
         val mine = Plan(PlanId.random(), SASHA.userId, "Ноги", emptyList(), t0, t0, false)
         runBlocking {
             on.machines.upsert(copy)
@@ -235,7 +235,7 @@ class MachinePlacementViewModelTest {
     private class OlegsGym {
         val gym = signedInGym()
         val myPress = Machine.new("Жим ногами", ME.userId, gym.clock.current)
-        private val olegCopy = linkedCopy(myPress, OLEG.userId, gym.clock.current, emptySet())
+        private val olegCopy = linkedCopy(myPress, OLEG.userId, gym.clock.current)
         val olegPress = olegCopy.first
         val olegRow = Machine.new("Тяга", OLEG.userId, gym.clock.current)
 

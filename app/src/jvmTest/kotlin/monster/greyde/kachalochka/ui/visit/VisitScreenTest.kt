@@ -335,14 +335,14 @@ class VisitScreenTest {
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
             val id = press.id.value
-            onNodeWithTag("group-tag-$id-Ноги", useUnmergedTree = true).assertTextEquals("НОГИ")
+            onNodeWithTag("group-tag-$id-ноги", useUnmergedTree = true).assertTextEquals("НОГИ")
             onNodeWithTag("section-НОГИ").assertDoesNotExist()
 
             onNodeWithTag("group-by-tag").performClick()
             waitForIdle()
 
             onNodeWithTag("section-НОГИ").assertTextEquals("НОГИ")
-            onNodeWithTag("group-tag-$id-Ноги", useUnmergedTree = true).assertDoesNotExist()
+            onNodeWithTag("group-tag-$id-ноги", useUnmergedTree = true).assertDoesNotExist()
         }
     }
 

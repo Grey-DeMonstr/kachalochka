@@ -183,10 +183,10 @@ class MachinePickerScreenTest {
             )
         }) {
             waitForIdle()
-            onNodeWithTag("picker-tag-Ноги").performClick()
+            onNodeWithTag("picker-tag-ноги").performClick()
             waitForIdle()
             onNodeWithTag("machine-row-${press.id.value}").assertExists()
-            onNodeWithTag("card-tag-${press.id.value}-Ноги", useUnmergedTree = true).assertExists()
+            onNodeWithTag("card-tag-${press.id.value}-ноги", useUnmergedTree = true).assertExists()
 
             onNodeWithTag("machine-search").performTextInput("гакк")
             waitForIdle()
@@ -195,6 +195,6 @@ class MachinePickerScreenTest {
             onNodeWithTag("create-machine").performClick()
             waitForIdle()
         }
-        assertEquals(listOf("гакк" to listOf("Ноги")), created)
+        assertEquals(listOf("гакк" to listOf("ноги")), created)
     }
 }

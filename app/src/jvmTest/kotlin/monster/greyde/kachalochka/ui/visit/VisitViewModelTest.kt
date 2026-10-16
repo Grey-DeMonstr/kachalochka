@@ -752,7 +752,7 @@ class VisitViewModelTest {
 
             val tags = assertNotNull(vm.state.value).groups.map { it.tags }
 
-            assertEquals(listOf(emptyList(), listOf("Жим", "Ноги"), listOf("Руки")), tags)
+            assertEquals(listOf(emptyList(), listOf("жим", "ноги"), listOf("руки")), tags)
         }
 
     @Test
@@ -1991,7 +1991,6 @@ class VisitViewModelTest {
                 two.friends.machines.single(),
                 PASHA.userId,
                 t0,
-                emptySet(),
             )
         two.friends.machines += pashaCopy
         two.friends.links += pashaLink

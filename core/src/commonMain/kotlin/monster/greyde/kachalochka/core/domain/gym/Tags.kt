@@ -23,30 +23,17 @@ fun sameTag(
     b: String,
 ): Boolean = tagKey(a) == tagKey(b)
 
-/** Each tag of [tags] once, in the spelling met first. */
+/** Each tag of [tags] once, as met first. */
 fun distinctTags(tags: Iterable<String>): List<String> = tags.distinctBy(::tagKey)
 
 /** [distinctTags] in alphabetical order, the order tags show in everywhere. */
 fun sortedTags(tags: Iterable<String>): List<String> = distinctTags(tags).sortedBy(::tagKey)
 
-/** [tag] in the spelling of [known] when [known] has it in another letter case. */
-fun spelledAs(
-    tag: String,
-    known: Iterable<String>,
-): String = known.firstOrNull { sameTag(it, tag) } ?: tag
-
-/** [tags] taken over by an account that already spells some of them as in [known]. */
-fun tagsSpelledAs(
-    tags: Set<String>,
-    known: Iterable<String>,
-): Set<String> = distinctTags(tags.map { spelledAs(it, known) }).toSet()
-
-/** The tags of the [linked] machines that [tags] lack, sorted and spelled as in [known]. */
+/** The tags of the [linked] machines that [tags] lack, sorted. */
 fun suggestedTags(
     linked: Iterable<String>,
     tags: Iterable<String>,
-    known: Iterable<String>,
-): List<String> = sortedTags(linked.map { spelledAs(it, known) }).filterNot { hasTag(tags, it) }
+): List<String> = sortedTags(linked).filterNot { hasTag(tags, it) }
 
 fun hasTag(
     tags: Iterable<String>,

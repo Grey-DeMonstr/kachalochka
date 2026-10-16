@@ -65,15 +65,11 @@ fun sameName(
     b: String,
 ): Boolean = a.trim().equals(b.trim(), ignoreCase = true)
 
-/**
- * [owner]'s copy of a friend's machine, and the link that makes them one machine. The copy takes
- * the friend's tags, spelled as in [known], the owner's tags.
- */
+/** [owner]'s copy of a friend's machine, tags and all, and the link that makes them one. */
 fun linkedCopy(
     friend: Machine,
     owner: UserId?,
     now: Instant,
-    known: Iterable<String>,
 ): Pair<Machine, MachineLink> {
     val copy =
         friend.copy(
@@ -81,7 +77,6 @@ fun linkedCopy(
             userId = owner,
             updatedAt = now,
             deleted = false,
-            tags = tagsSpelledAs(friend.tags, known),
         )
     return copy to MachineLink(MachineLinkId.random(), owner, copy.id, friend.id, now, false)
 }

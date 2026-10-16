@@ -148,7 +148,7 @@ class FriendMachineViewModelTest {
         on.friends.machines.clear()
         on.friends.machines += olegPress.copy(tags = setOf("Ноги", "База"))
 
-        assertEquals(listOf("База", "Ноги"), viewModel().state.value?.tags)
+        assertEquals(listOf("база", "ноги"), viewModel().state.value?.tags)
     }
 
     @Test

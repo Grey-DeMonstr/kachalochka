@@ -141,7 +141,7 @@ class FriendMachineScreenTest {
         runScreenTest(on, screen = {
             FriendMachineScreen(olegPress.id, OLEG.userId, {}, {}, {})
         }) {
-            onNodeWithTag("friend-machine-tag-Ноги").assertTextEquals("НОГИ")
+            onNodeWithTag("friend-machine-tag-ноги").assertTextEquals("НОГИ")
             onAllNodesWithTag("photo-cover", useUnmergedTree = true).assertCountEquals(1)
             onNodeWithTag("stats-chart-title").assertDoesNotExist()
             onNodeWithTag("stats-best-trophy", useUnmergedTree = true).assertExists()

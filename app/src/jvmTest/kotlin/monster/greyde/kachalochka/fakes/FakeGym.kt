@@ -45,6 +45,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.photoOrder
 import monster.greyde.kachalochka.core.domain.gym.planOrder
+import monster.greyde.kachalochka.core.domain.gym.tagKey
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -96,11 +97,13 @@ class ManualTicker : Ticker {
     override suspend fun awaitTick() = ticks.receive()
 }
 
+/** Keeps tags as the tag rows do: as keys, and none on a deleted machine. */
 class InMemoryMachineRepository : MachineRepository {
     val rows = linkedMapOf<MachineId, Machine>()
 
     override suspend fun upsert(machine: Machine) {
-        rows[machine.id] = machine
+        val tags = if (machine.deleted) emptySet() else machine.tags.map(::tagKey).toSet()
+        rows[machine.id] = machine.copy(tags = tags - "")
     }
 
     override suspend fun byId(id: MachineId): Machine? = rows[id]

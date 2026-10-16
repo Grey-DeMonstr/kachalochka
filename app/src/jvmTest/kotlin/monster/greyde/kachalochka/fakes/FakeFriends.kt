@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.photoOrder
+import monster.greyde.kachalochka.core.domain.gym.tagKey
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Duration
@@ -175,7 +176,10 @@ class FakeFriends(
     override suspend fun machines(member: UserId) =
         online {
             if (!visibleMember(member)) return@online emptyList()
-            machines.filter { it.userId == member && !it.deleted }.sortedBy { it.name.lowercase() }
+            machines
+                .filter { it.userId == member && !it.deleted }
+                .map { it.keyed() }
+                .sortedBy { it.name.lowercase() }
         }
 
     override suspend fun photos(machine: MachineId) =
@@ -199,8 +203,9 @@ class FakeFriends(
             val mates = matesById(viewer)
             machines
                 .filterNot { it.deleted }
-                .mapNotNull { m -> m.userId?.let(mates::get)?.let { FriendMachine(m, it) } }
-                .sortedBy { it.machine.name.lowercase() }
+                .mapNotNull { m ->
+                    m.userId?.let(mates::get)?.let { FriendMachine(m.keyed(), it) }
+                }.sortedBy { it.machine.name.lowercase() }
         }
 
     override suspend fun groupVisits(
@@ -283,3 +288,6 @@ class FakeFriends(
         }
     }
 }
+
+/** As the server serves a friend's machine: its tags from the friend's tag rows, as keys. */
+private fun Machine.keyed(): Machine = copy(tags = tags.map(::tagKey).toSet())

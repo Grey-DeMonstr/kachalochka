@@ -16,9 +16,8 @@ import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.anyNameMatches
 import monster.greyde.kachalochka.core.domain.gym.hasAllTags
-import monster.greyde.kachalochka.core.domain.gym.hasTag
 import monster.greyde.kachalochka.core.domain.gym.machineOrder
-import monster.greyde.kachalochka.core.domain.gym.sortedTags
+import monster.greyde.kachalochka.core.domain.gym.tagKey
 import monster.greyde.kachalochka.core.domain.gym.toggledTag
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -127,7 +126,7 @@ class MachineListViewModel(
     }
 
     fun toggleTag(tag: String) {
-        chosenTags = toggledTag(chosenTags, tag)
+        chosenTags = toggledTag(chosenTags, tagKey(tag))
         publish()
     }
 
@@ -144,6 +143,8 @@ class MachineListViewModel(
         val sort = sorting.current
         val ownMachines = shown?.own?.machines.orEmpty()
         val offered = shown?.offered.orEmpty()
+        val machines = ownMachines + offered.map { it.machine }
+        if (shown != null) chosenTags = heldTags(chosenTags, machines)
         val now = clock.now()
         val offset = utcOffset.at(now)
         val cards =
@@ -182,12 +183,7 @@ class MachineListViewModel(
                 friendSections = sections,
                 sort = sort,
                 query = query,
-                tags =
-                    (ownMachines + offered.map { it.machine })
-                        .flatMap { it.tags }
-                        .plus(chosenTags)
-                        .let(::sortedTags)
-                        .map { TagChoiceUi(it, hasTag(chosenTags, it)) },
+                tags = tagChoices(machines, chosenTags),
                 nothingFound = filtering && ownCards.isNullOrEmpty() && sections.isEmpty(),
                 hasSuggestions = suggested.isNotEmpty(),
                 onlySuggested = onlySuggested,

@@ -513,7 +513,7 @@ class StatisticsViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
-            val (copy, link) = linkedCopy(olegs, ME.userId, t0, emptySet())
+            val (copy, link) = linkedCopy(olegs, ME.userId, t0)
             val mine = copy.copy(name = "Присед в тренажёре")
             on.friends.machines += olegs
             on.machines.upsert(mine)

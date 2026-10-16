@@ -172,8 +172,7 @@ class MachineCatalogue(
         friend: Machine,
         group: GroupMachines,
     ): Machine {
-        val known = machines.all(owner).flatMap { it.tags }
-        val (copy, link) = linkedCopy(friend, owner, clock.now(), known)
+        val (copy, link) = linkedCopy(friend, owner, clock.now())
         machines.upsert(copy)
         keepDirect(owner, group.friends, group.mateLinks(owner), group.links, listOf(link))
         return copy

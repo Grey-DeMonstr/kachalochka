@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
@@ -22,6 +23,7 @@ import monster.greyde.kachalochka.core.domain.gym.nameMatches
 import monster.greyde.kachalochka.core.domain.gym.rankMachines
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
+import monster.greyde.kachalochka.core.domain.gym.tagKey
 import monster.greyde.kachalochka.core.domain.gym.toggledTag
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -40,6 +42,24 @@ data class TagChoiceUi(
     val name: String,
     val chosen: Boolean,
 )
+
+/** The chips of the tags [machines] hold, [chosen] marked. */
+internal fun tagChoices(
+    machines: List<Machine>,
+    chosen: Set<String>,
+): List<TagChoiceUi> {
+    val tags = sortedTags(machines.flatMap { it.tags })
+    return tags.map { TagChoiceUi(it, hasTag(chosen, it)) }
+}
+
+/** Of [chosen], the tags [machines] still hold: a tag no machine holds is deleted. */
+internal fun heldTags(
+    chosen: Set<String>,
+    machines: List<Machine>,
+): Set<String> {
+    val held = machines.flatMap { it.tags }
+    return chosen.filterTo(mutableSetOf()) { hasTag(held, it) }
+}
 
 data class PickerUiState(
     val query: String = "",
@@ -146,7 +166,7 @@ class MachinePickerViewModel(
     }
 
     fun toggleTag(tag: String) {
-        chosenTags = toggledTag(chosenTags, tag)
+        chosenTags = toggledTag(chosenTags, tagKey(tag))
         publish()
     }
 
@@ -179,6 +199,8 @@ class MachinePickerViewModel(
         val shown = shown
         val ownMachines = shown?.own?.machines.orEmpty()
         val offered = shown?.offered.orEmpty()
+        val machines = ownMachines + offered.map { it.machine }
+        if (shown != null) chosenTags = heldTags(chosenTags, machines)
         val sort = sorting.current
         val ownOrder = machineOrder(sort, ownPeaks.associateBy { it.machineId })
         val ranking =
@@ -222,12 +244,7 @@ class MachinePickerViewModel(
                         strings.withTags(createTags)
                     },
                 sectionLabel = if (query.isBlank()) strings.myMachines else strings.similar,
-                tags =
-                    (ownMachines + offered.map { it.machine })
-                        .flatMap { it.tags }
-                        .plus(chosenTags)
-                        .let(::sortedTags)
-                        .map { TagChoiceUi(it, hasTag(chosenTags, it)) },
+                tags = tagChoices(machines, chosenTags),
                 rows = rows,
                 friendSections = sections,
                 inVisitRows = inVisitRows,
