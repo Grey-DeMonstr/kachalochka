@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
@@ -29,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -432,8 +435,12 @@ private fun PersonChip(
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = CircleShape
+    val inView = remember { BringIntoViewRequester() }
+    // The active person stays in view however far along the row they are, after any switch.
+    LaunchedEffect(person.active) { if (person.active) inView.bringIntoView() }
     val chip =
         Modifier
+            .bringIntoViewRequester(inView)
             .height(ChipHeight)
             .clip(shape)
             .selectable(selected = person.active, onClick = onClick)

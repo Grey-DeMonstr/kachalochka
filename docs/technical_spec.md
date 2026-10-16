@@ -294,13 +294,13 @@ so signing back in finds them again.
 Friends' calendar colours belong to the account, not the device: they live in its profile's
 `friend_colors` (§4.1), keyed by friend, so each account sees its own and they sync to its other
 devices. `FriendColorStore.colorsFor` only reads: a friend without a stored colour gets one from
-the pure `assignedColors` over the stored map (empty without a profile) and the owner's group
-mates with the friends asked about, sorted by id, seeded by an FNV-1a hash of the owner's id. The same owner, stored map and friends so give the
-same colours on every screen and platform, and a drawn colour needs no write: a device that has
-not pulled the account's profile yet would push its row over the server's under outbox-wins
-(§4.2), wiping the nickname and colours chosen elsewhere. Only a colour the user picks is saved,
-creating the profile when there is none. A new friend may shift the others' drawn colours, never
-a stored one.
+the pure `assignedColors` over the stored map (empty without a profile) and the owner's group mates
+with the friends asked about, sorted by id, seeded by an FNV-1a hash of the owner's id. The same
+owner, stored map and friends so give the same colours on every screen and platform, and a drawn
+colour needs no write: a device that has not pulled the account's profile yet would push its row
+over the server's under outbox-wins (§4.2), wiping the nickname and colours chosen elsewhere. Only
+a colour the user picks is saved, creating the profile when there is none. A new friend may shift
+the others' drawn colours, never a stored one.
 
 The avatar sits in every screen's top bar, so the active account can change under any screen. No
 screen-scoped view model carries a row across that change: each observes the store's active id and
@@ -375,12 +375,12 @@ follow without holding up the pass, and a switch made while it activates is put 
 ### 4.4 Photos
 
 A photo belongs to a machine: the synced `photo` table (`machine_id`, `taken_at`), sorted by
-`photoOrder`, `(taken_at, id)`. `machine_id` is not a foreign key, as on `machine_link`. Photo bytes
-are not rows: they are a JPEG in the private `photos` Storage bucket at `<user_id>/<photo_id>`
-(`Photo.storagePath`), whose policies let the owner and their guardians write, read and delete
-the owner's folder, and group mates read it. Both platforms shrink a new photo to 1600 px on its
-long edge, upright, as JPEG quality 85, before anything stores it: Android with `BitmapFactory` and
-the EXIF orientation, the web on a canvas.
+`photoOrder`, `(taken_at, id)`. `machine_id` is not a foreign key, as on `machine_link`. Photo
+bytes are not rows: they are a JPEG in the private `photos` Storage bucket at
+`<user_id>/<photo_id>` (`Photo.storagePath`), whose policies let the owner and their guardians
+write, read and delete the owner's folder, and group mates read it. Both platforms shrink a new
+photo to 1600 px on its long edge, upright, as JPEG quality 85, before anything stores it: Android
+with `BitmapFactory` and the EXIF orientation, the web on a canvas.
 
 Android keeps the bytes in `PhotoFiles` (`filesDir/photos/<id>.jpg`, written aside and renamed)
 and records the row; `LocalPhotoRepository` writes the file before the row and removes the file
@@ -491,19 +491,19 @@ runs it over the group read's links, or, before the group is read, over the own 
 list's link button opens `LinkChooserRoute.suggested`, which starts the chooser's search and sends
 it back to the list.
 
-A machine's record and last use come from `machinePeaks` in `domain/gym`: per machine, its
-heaviest and lightest weights with the most reps at each, its last set's instant and the number
-of visits with a live set on it; `MachinePeaks.best` picks the heaviest, or the lightest on a
-gravitron. `WorkoutSetRepository.peaks` reduces the owner's sets locally on Android. The web and
-`FriendsRepository.groupPeaks` ask the server's `machine_peaks` (migration `0021`), which makes
-the same reduction under the invoker's row-level security, so one row per machine comes back
-however long a history is. `machineOrder` sorts machines by a `MachineSort` over those peaks; the
-lists read the choice from `profile.machine_sort` (`recent` / `name` / `frequent`, an unknown
-name reading as `recent`) through `machineSortChoice`, which writes it at once, as
-`groupByTagChoice` writes `group_by_tag`. Both are a `ProfileChoice`; for a managed child, whose
-profile the device may not write, the shared `UnsavedChoices` holds the choice in memory, and every
-read takes it before the profile, so a reload after a sync keeps it. Migration `0021` and `15.sqm` add the column; `15.sqm` resets
-`lastPullAt`.
+A machine's record and last use come from `machinePeaks` in `domain/gym`: per machine, its heaviest
+and lightest weights with the most reps at each, its last set's instant and the number of visits
+with a live set on it; `MachinePeaks.best` picks the heaviest, or the lightest on a gravitron.
+`WorkoutSetRepository.peaks` reduces the owner's sets locally on Android. The web and
+`FriendsRepository.groupPeaks` ask the server's `machine_peaks` (migration `0021`), which makes the
+same reduction under the invoker's row-level security, so one row per machine comes back however
+long a history is. `machineOrder` sorts machines by a `MachineSort` over those peaks; the lists
+read the choice from `profile.machine_sort` (`recent` / `name` / `frequent`, an unknown name
+reading as `recent`) through `machineSortChoice`, which writes it at once, as `groupByTagChoice`
+writes `group_by_tag`. Both are a `ProfileChoice`; for a managed child, whose profile the device
+may not write, the shared `UnsavedChoices` holds the choice in memory, and every read takes it
+before the profile, so a reload after a sync keeps it. Migration `0021` and `15.sqm` add the
+column; `15.sqm` resets `lastPullAt`.
 
 `UnitConversion` in `domain/gym` converts recorded weights between kg and lb: `convertedWeight`
 rounds pounds to 0.1 kg and kilograms to a multiple of a pound step, which `guessedLbStep` finds

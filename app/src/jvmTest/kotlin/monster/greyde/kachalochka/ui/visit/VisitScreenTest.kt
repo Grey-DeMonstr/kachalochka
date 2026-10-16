@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -691,6 +692,38 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("person-${guests.last().account.userId.value}")
                 .assert(hasText("Гость Номер 6"))
+        }
+    }
+
+    @Test
+    fun the_active_person_s_chip_comes_into_view_when_the_form_opens_and_after_a_switch() {
+        // More chips than the test window's width holds.
+        val guests =
+            (3..24).map {
+                session(
+                    "${it.toString().padStart(8, '0')}-3333-4333-8333-333333333333",
+                    "Гость $it",
+                )
+            }
+        val last = guests.last()
+        val crowd = FakeGym().withAccounts(ivan, misha, *guests.toTypedArray(), active = last)
+        val press = Machine.new("Жим ногами", last.account.userId, crowd.clock.current)
+        runBlocking {
+            crowd.visits.upsert(
+                sharedVisit.copy(userId = last.account.userId, day = crowd.today),
+            )
+            crowd.machines.upsert(press)
+        }
+        runScreenTest(crowd, screen = { visitScreen(day = crowd.today, picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("person-${last.account.userId.value}").assertIsDisplayed()
+
+            onNodeWithTag("person-${ivan.account.userId.value}").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("person-${last.account.userId.value}").assertIsNotDisplayed()
+            runBlocking { crowd.accounts.switchTo(last.account.userId) }
+            waitForIdle()
+            onNodeWithTag("person-${last.account.userId.value}").assertIsDisplayed()
         }
     }
 

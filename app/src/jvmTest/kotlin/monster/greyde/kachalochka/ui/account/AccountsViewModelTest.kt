@@ -22,6 +22,7 @@ import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.fakes.InMemoryProfileRepository
 import monster.greyde.kachalochka.fakes.RecordingSyncTrigger
 import kotlin.test.AfterTest
@@ -55,6 +56,17 @@ private class NoOpOwnerlessRows : OwnerlessRows {
     override suspend fun claim(owner: UserId) = Unit
 }
 
+private class RefusingProfiles(
+    private val inner: InMemoryProfileRepository,
+) : ProfileRepository by inner {
+    var refusing = false
+
+    override suspend fun forOwner(owner: UserId?): Profile? {
+        check(!refusing) { "offline" }
+        return inner.forOwner(owner)
+    }
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountsViewModelTest {
     @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -62,6 +74,7 @@ class AccountsViewModelTest {
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private val profiles = InMemoryProfileRepository()
+    private val reads = RefusingProfiles(profiles)
 
     private fun viewModel(
         signIn: GoogleSignIn,
@@ -75,7 +88,7 @@ class AccountsViewModelTest {
                 NoOpOwnerlessRows(),
                 NoWatermarkReset,
             )
-        return AccountsViewModel(accounts, sync, AccountAvatars(accounts, profiles))
+        return AccountsViewModel(accounts, sync, AccountAvatars(accounts, reads))
     }
 
     @Test
@@ -137,6 +150,43 @@ class AccountsViewModelTest {
                     .single()
             assertEquals("Сэм", shown.displayName)
             assertEquals("С", shown.monogram)
+        }
+
+    @Test
+    fun a_profile_that_cannot_be_read_or_is_not_there_keeps_the_stored_nickname() =
+        runTest {
+            val id = UserId("11111111-1111-4111-8111-111111111111")
+            val session =
+                AccountSession(
+                    Account(id, "sam@example.test", "Sam Smith"),
+                    "access",
+                    "refresh",
+                    Instant.fromEpochSeconds(0),
+                )
+            val sync = RecordingSyncTrigger()
+            val viewModel = viewModel(SucceedingSignIn(session), sync)
+            viewModel.addAccount()
+            profiles.upsert(Profile.new(id, Instant.fromEpochSeconds(0)).copy(displayName = "Сэм"))
+            sync.completePass()
+
+            reads.refusing = true
+            sync.completePass()
+            assertEquals(
+                "Сэм",
+                viewModel.state.value.accounts
+                    .single()
+                    .displayName,
+            )
+
+            reads.refusing = false
+            profiles.rows.clear()
+            sync.completePass()
+            assertEquals(
+                "Сэм",
+                viewModel.state.value.accounts
+                    .single()
+                    .displayName,
+            )
         }
 
     /**

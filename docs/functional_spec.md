@@ -125,31 +125,30 @@ one starting with a line of its tags in capitals ("НОГИ").
 Adding or editing a set uses the same form, which slides up over the page. Adding shows the
 signed-in accounts as a row of avatar chips, which scrolls sideways when they do not fit. Only the
 active person's avatar is followed by their name; the last chip adds an account. "#4 Новый подход"
-follows; editing shows "#3 Правка: 70 кг × 10". Weight and reps steppers follow, both typed as well, the weight with a comma or a point; − and
-+ step the weight by the machine's weight step and the reps by one, and reps that are not a whole
-number above zero cannot be saved. The weight is the one place where the machine's own unit comes
-first: it is typed and stepped in that unit, written beside it ("65 lb"), a gravitron's with "−"
-before it, and when the profile's unit is "кг" or "lb" and differs from it, the converted weight
-follows under it ("29.5 кг"), to the nearest half unit. The page's other weights follow the
-profile's unit. A "Комментарий" field of several lines takes up to 200 characters, saved with the
-set and shown after its number; a shared visit never includes them. The first set on a machine
-starts from the previous visit's best set, picked as the record is; each later one repeats the
-weight and the reps of the set just recorded. "Добавить" records the set and keeps the form open
-for the next one, without a comment; until it is written, the button shows progress and takes no
-taps. Editing offers
-"Сохранить", which closes the form, and a trash button that deletes the set. "Отмена", swiping the
-form down, or back, closes it, leaving any edit; starting to order closes the page. Tapping another
-account's chip switches to it: the shown history follows that person, and the set is recorded
-into their own visit. It goes to that person's machine linked with the shown one, else to their
-machine of the same name in any letter case. Without either, the app makes them a copy of the
-shown machine with its tags, linked to it and to the machines it is linked with. The chips show
-who records, so the button stays "Добавить".
+follows; editing shows "#3 Правка: 70 кг × 10". Weight and reps steppers follow, both typed as
+well, the weight with a comma or a point; − and + step the weight by the machine's weight step and
+the reps by one, and reps that are not a whole number above zero cannot be saved. The weight is the
+one place where the machine's own unit comes first: it is typed and stepped in that unit, written
+beside it ("65 lb"), a gravitron's with "−" before it, and when the profile's unit is "кг" or "lb"
+and differs from it, the converted weight follows under it ("29.5 кг"), to the nearest half unit.
+The page's other weights follow the profile's unit. A "Комментарий" field of several lines takes up
+to 200 characters, saved with the set and shown after its number; a shared visit never includes
+them. The first set on a machine starts from the previous visit's best set, picked as the record
+is; each later one repeats the weight and the reps of the set just recorded. "Добавить" records the
+set and keeps the form open for the next one, without a comment; until it is written, the button
+shows progress and takes no taps. Editing offers "Сохранить", which closes the form, and a trash
+button that deletes the set. "Отмена", swiping the form down, or back, closes it, leaving any edit;
+starting to order closes the page. Tapping another account's chip switches to it: the shown history
+follows that person, and the set is recorded into their own visit. It goes to that person's machine
+linked with the shown one, else to their machine of the same name in any letter case. Without
+either, the app makes them a copy of the shown machine with its tags, linked to it and to the
+machines it is linked with. The chips show who records, so the button stays "Добавить".
 
 Every list of machines draws a machine the same way: its photo, its name, its tags, then, for the
 account's own machine, signed in and online, a link icon with the machines it is linked with, each
-name after its owner's avatar (see Group sharing), its comment and the day it was last used, and a trophy with its
-record — the heaviest set with the most reps at that weight, the lightest on a gravitron — in the
-viewer's unit.
+name after its owner's avatar (see Group sharing), its comment and the day it was last used, and a
+trophy with its record — the heaviest set with the most reps at that weight, the lightest on a
+gravitron — in the viewer's unit.
 The machine list and the picker sort their machines by the chips at their top, drawn like the tags:
 "Недавние", the last used first (the default), "А–Я", or "Частые", those used on the most visits
 first; unused machines come last. The choice orders the account's machines and each friend's
@@ -225,31 +224,30 @@ over the whole screen, where a swipe shows the next or the previous photo of the
 photos and the chosen one are part of the form's edits: "Сохранить" writes them, and leaving the
 form drops them. A photo is shrunk to at most 1600 pixels on its long edge before it is kept.
 
-The form of a saved machine of the active account has "Привязать к…". It opens a list with a
-search field, which starts with the machine's name: "Мои упражнения", the account's other machines, and, signed in and online,
-"Упражнения друзей", one row per friends' machine that is not yet the same machine as one of the
-account's. Every row shows the machine's photo, as every list does, and an own row the friends'
-machines it is linked with. Friends' machines already
-linked with each other stand together in one frame, the original first, so any of them can be
-chosen; a search keeps the whole frame when one machine in it matches. Choosing an own machine removes a duplicate. "Объединить упражнения?" shows both
-machines under "Оставить", each with its set count and the day of its last set, and the user
-chooses the one that stays. The machine used last is chosen first and marked "Рекомендуется" (a
-machine with no sets counts as the oldest, and of two equal ones the edited one is marked):
-imported history adds duplicates with older sets. The other one's sets move to the machine that
-stays, and the other one disappears. When the two platforms differ (see below), a check box
-"Пересчитать подходы «…» под платформу «…»: −5 кг", on at first, changes the moved weights so
-that their totals stay the same. When one machine is in kg and the other in lb, a check box
-"Перевести подходы «…» из кг в lb", on at first, converts the moved weights to the unit of the
+The form of a saved machine of the active account has "Привязать к…". It opens a list with a search
+field, which starts with the machine's name: "Мои упражнения", the account's other machines, and,
+signed in and online, "Упражнения друзей", one row per friends' machine that is not yet the same
+machine as one of the account's. Every row shows the machine's photo, as every list does, and an
+own row the friends' machines it is linked with. Friends' machines already linked with each other
+stand together in one frame, the original first, so any of them can be chosen; a search keeps the
+whole frame when one machine in it matches. Choosing an own machine removes a duplicate.
+"Объединить упражнения?" shows both machines under "Оставить", each with its set count and the day
+of its last set, and the user chooses the one that stays. The machine used last is chosen first and
+marked "Рекомендуется" (a machine with no sets counts as the oldest, and of two equal ones the
+edited one is marked): imported history adds duplicates with older sets. The other one's sets move
+to the machine that stays, and the other one disappears. When the two platforms differ (see below),
+a check box "Пересчитать подходы «…» под платформу «…»: −5 кг", on at first, changes the moved
+weights so that their totals stay the same. When one machine is in kg and the other in lb, a check
+box "Перевести подходы «…» из кг в lb", on at first, converts the moved weights to the unit of the
 machine that stays, as a unit change in the form does; the platforms are compared in that unit.
-Friends who linked to
-the removed machine are linked to the one that stays. The form of the machine that stays then
-replaces the list, and unsaved edits in the old form are dropped. The other machine's photos move
-to the one that stays. Choosing a friend's machine
-links the two as one physical machine (see Group sharing) and returns to the form. Over the
-friends' machines, "Скопировать настройки", off at first, also takes the chosen machine's name,
-weight counting, platform, unit and weight step into the form and adds its tags to the machine's
-(a tag the account has in another letter case is taken in the account's spelling); saving it then
-asks about recorded sets as any other edit does.
+Friends who linked to the removed machine are linked to the one that stays. The form of the machine
+that stays then replaces the list, and unsaved edits in the old form are dropped. The other
+machine's photos move to the one that stays. Choosing a friend's machine links the two as one
+physical machine (see Group sharing) and returns to the form. Over the friends' machines,
+"Скопировать настройки", off at first, also takes the chosen machine's name, weight counting,
+platform, unit and weight step into the form and adds its tags to the machine's (a tag the account
+has in another letter case is taken in the account's spelling); saving it then asks about recorded
+sets as any other edit does.
 
 The "Упражнения" row lists the active account's machines in the chosen order, each drawn as every
 list draws it, with its photo: the one chosen in its form, else the machine's first photo, or, when
@@ -262,11 +260,11 @@ machine form; "Добавить" adds one. Saving returns to the list.
 The list suggests merges for the account's machines. Another own machine is suggested when it has
 the same name (in any letter case) or is already the same machine through friends' links.
 Offline, only the account's own machines and links suggest anything. A machine with a suggestion
-has a link button at the end of its name; it opens "Привязать к…" with the search starting with
-the first suggested machine's name. There "Скопировать настройки" is not offered, and merging or
-linking returns to the list.
-While any machine has a suggestion, a chip with a link icon follows the sort chips; chosen, it keeps
-only the account's machines with a suggestion and hides the friends' sections.
+has a link button at the end of its name; it opens "Привязать к…" with the search starting with the
+first suggested machine's name. There "Скопировать настройки" is not offered, and merging or
+linking returns to the list. While any machine has a suggestion, a chip with a link icon follows
+the sort chips; chosen, it keeps only the account's machines with a suggestion and hides the
+friends' sections.
 
 Signed in and online, the
 friends' machines follow once the server answers: one section per friend, headed by their avatar
@@ -348,19 +346,19 @@ that browser.
 
 A linked child appears in each of their parents' account menus, with their avatar, their nickname
 (else their Google name) and "Ребёнок" under it, and among the set form's avatar chips, on Android
-and on the web; one child under
-two parents signed in on one device appears once. Choosing the child records for them exactly as
-for any account: the home card, the visit and its sets, the machines with their photos and links,
-the calendar, the statistics and the plans are the child's, and they sync between the parent's
-devices and the child's own. The child's profile, measures and groups stay the child's: while the
-child is chosen, "Замеры" and "Друзья" leave the home screen, a screen of them that was open
-closes, Settings keeps only the settings of the device, and sorting or grouping choices are not
-saved: they hold for the child on every screen until the app closes. The friends' visits, machines, results and photos shown beside the child's are those of
-the people the parent and the child share a group with, the parent included. A child has no
-sign-out of its own: removing it in "Дети" takes it, with what was recorded for it, off the
-parent's device, and the child keeps what has already synced. Signing a parent out takes their
-children off that device's menu until the parent signs back in. A child signs in on their own
-phone or browser with their own Google account, as anyone does.
+and on the web; one child under two parents signed in on one device appears once. Choosing the
+child records for them exactly as for any account: the home card, the visit and its sets, the
+machines with their photos and links, the calendar, the statistics and the plans are the child's,
+and they sync between the parent's devices and the child's own. The child's profile, measures and
+groups stay the child's: while the child is chosen, "Замеры" and "Друзья" leave the home screen, a
+screen of them that was open closes, Settings keeps only the settings of the device, and sorting or
+grouping choices are not saved: they hold for the child on every screen until the app closes. The
+friends' visits, machines, results and photos shown beside the child's are those of the people the
+parent and the child share a group with, the parent included. A child has no sign-out of its own:
+removing it in "Дети" takes it, with what was recorded for it, off the parent's device, and the
+child keeps what has already synced. Signing a parent out takes their children off that device's
+menu until the parent signs back in. A child signs in on their own phone or browser with their own
+Google account, as anyone does.
 
 Settings ends with "Дополнительно", a heading that opens, for the active account, a red "Удалить
 аккаунт". Its question, "Удалить аккаунт?", asks to type DELETE, in any case, before "Удалить"
@@ -371,15 +369,15 @@ nothing.
 
 Settings has a "Профиль" section. One "Применить", under the theme and the transition length,
 applies every change on the screen at once, the theme included; leaving with changes not applied
-asks "Применить изменения?", with "Применить" and "Не применять". Signed in, the avatar sits
-left of "Ник"; tapping it offers "Снять фото" and "Из галереи", as a machine's photo does, and,
-once a photo is chosen, "Удалить", which brings the Google picture back. Its "Ник" field, for the
+asks "Применить изменения?", with "Применить" and "Не применять". Signed in, the avatar sits left
+of "Ник"; tapping it offers "Снять фото" and "Из галереи", as a machine's photo does, and, once a
+photo is chosen, "Удалить", which brings the Google picture back. Its "Ник" field, for the
 signed-in account, takes up to 40 characters; the Google account name is shown as a placeholder and
 used when the field is left blank. A nickname replaces the Google name everywhere: in the account
 menu, the set form and every list of people. Friends see it too, and it heads a visit shared as
-text. Пол (Мужской / Женский), Дата рождения (ДД.ММ.ГГГГ, from 1900 to
-today) and Рост, см (50 to 250) feed the body fat formulas; they are there without an account too,
-and an emptied field clears its value. Nobody else sees them.
+text. Пол (Мужской / Женский), Дата рождения (ДД.ММ.ГГГГ, from 1900 to today) and Рост, см (50
+to 250) feed the body fat formulas; they are there without an account too, and an emptied field
+clears its value. Nobody else sees them.
 
 "Единицы веса" in the same section, also there without an account, chooses how gym weights are
 shown: "кг" (the default), "lb" or "Смешанные", where each machine shows its own unit. With "кг"
@@ -474,11 +472,11 @@ or "Doing some press" measured in times.
 
 ## Statistics
 
-"Статистика" on the home screen opens the statistics on "Общая"; a machine's page and its form
-open them on that machine. At the top a dropdown chooses "Общая" or one of the account's
-machines, listed by name with their photos, and chips under it choose the period: "Месяц",
-"3 месяца", "6 месяцев" or "Год". A period counts its months back from today, as the measure screen's do: on 1 October
-"Месяц" starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
+"Статистика" on the home screen opens the statistics on "Общая"; a machine's page and its form open
+them on that machine. At the top a dropdown chooses "Общая" or one of the account's machines,
+listed by name with their photos, and chips under it choose the period: "Месяц", "3 месяца", "6
+месяцев" or "Год". A period counts its months back from today, as the measure screen's do: on 1
+October "Месяц" starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
 
 A machine shows a trophy with the period's best set, then a line chart of each day's best weight
 across the whole period. A gravitron's weights are drawn negative, with zero on top. A period
@@ -518,13 +516,13 @@ User should be able to import or export data in some predefined hardcoded format
 
 ## Group sharing
 
-Signed-in users form groups. The creator owns the group and invites others with a link to the
-web app or with its eight-character code; the Android app joins by code. An invite link asks
-before joining, warning that the group's members will see the user's visits and machines; a
-link opened while signed out is offered to whichever account signs in next in that browser.
-Every member sees the other members' calendars, visits and machine photos, read-only, and nothing
-is shared outside a group. A member can leave; the owner deletes the group instead. Friends' data is read
-online and never stored on the device.
+Signed-in users form groups. The creator owns the group and invites others with a link to the web
+app or with its eight-character code; the Android app joins by code. An invite link asks before
+joining, warning that the group's members will see the user's visits and machines; a link opened
+while signed out is offered to whichever account signs in next in that browser. Every member sees
+the other members' calendars, visits and machine photos, read-only, and nothing is shared outside a
+group. A member can leave; the owner deletes the group instead. Friends' data is read online and
+never stored on the device.
 
 The group screen starts each member's row with their avatar, or their initial in their colour, and
 ends every row but the user's own with a colour dot. Tapping it opens a palette of eight colours;
