@@ -106,6 +106,43 @@ class TagConversionTest {
         }
 
     @Test
+    fun a_deleted_machine_waiting_to_be_pushed_never_deletes_a_tag_the_server_holds() =
+        runTest {
+            val press = Machine.new("Жим", ivan, now)
+            h.machines.upsert(press)
+            h.pass.run(listOf(ivan))
+            val row = Machine.new("Тяга", ivan, now).copy(deleted = true)
+            stored(row, """["ноги"]""")
+
+            database.convertTagMirrors(now)
+            val legs = Tag(tagId(ivan, "ноги"), ivan, "ноги", now, false)
+            h.gateway.tagsToPull = listOf(legs)
+            h.gateway.machineTagsToPull =
+                listOf(
+                    MachineTag(
+                        machineTagId(press.id, "ноги"),
+                        ivan,
+                        press.id,
+                        legs.id,
+                        now,
+                        false,
+                    ),
+                )
+            h.gateway.pushed.clear()
+            h.pass.run(listOf(ivan))
+
+            assertEquals(listOf("$MACHINE_TABLE:${row.id.value}"), h.gateway.pushed)
+            assertEquals(setOf("ноги"), h.machines.byId(press.id)?.tags)
+            assertEquals(
+                false,
+                database.tagQueries
+                    .byId(legs.id, ::tagOf)
+                    .executeAsOne()
+                    .deleted,
+            )
+        }
+
+    @Test
     fun a_machine_that_has_ever_had_a_tag_row_is_left_alone() =
         runTest {
             val press = Machine.new("Жим", ivan, now).copy(tags = setOf("ноги"))

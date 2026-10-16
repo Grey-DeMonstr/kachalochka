@@ -201,7 +201,7 @@ Every synced row carries:
 
 | Column | Rule |
 |---|---|
-| `id` | UUID v4 made on the client at creation, UUID v5 of the content for tags (§4.5) |
+| `id` | Client-made UUID v4; `tag`, `machine_tag`: v5 of the content (§4.5). Never reassigned |
 | `user_id` | Owner. Null while the Android user is not logged in (§4.3) |
 | `updated_at` | UTC instant, set by the writer on every change |
 | `deleted` | Soft-delete flag. Rows are never physically deleted by clients |
@@ -237,10 +237,11 @@ failing a pull.
   another account's row waits for that account's own turn, and an entry whose row is gone or
   unowned is dropped. A pass pushes entries by table rank: `machine`, `tag`, `machine_tag`,
   `visit`, `workout_plan`, `profile`, `measure`, `machine_link`, `photo`, `workout_set`, then
-  `measurement`, because the server checks a set's visit and machine, which the local SQLite does
-  not. The server checks nothing a link, a plan, a tag's link or a measure's value names, but each
-  follows the rows it names, so a reader never meets it before them. An entry is removed after a
-  successful push only if nothing re-enqueued it in the meantime.
+  `measurement`, because the server checks a set's visit and machine and a tag's link's machine
+  and tag, which the local SQLite does not. The server checks nothing a machine link, a plan or a
+  measure's value names, but each follows the rows it names, so a reader never meets it before
+  them. An entry is removed after a successful push only if nothing re-enqueued it in the
+  meantime.
 - **Pull.** The sync pass fetches every row of every table newer than the account's pull
   watermark, keyset-paged on `(updated_at, id)` using the values the server returned for the last
   row of the previous page, and stops once a page comes back empty. It writes nothing, and leaves
@@ -481,12 +482,15 @@ column at its default, `'[]'`. An older client so shows every machine's tags as 
 conversion, and its own later tag edits reach only that column. Migration `0027` converted every
 machine's array once on the server, deleted machines' too; a tag only deleted machines hold is
 written deleted, and text that is not an array of strings gives no tags. Its whitespace class
-adds the spaces Kotlin counts and `[[:space:]]` does not. `19.sqm` adds the tables and resets `lastPullAt`, and `tagConversion`
-runs right after it, inside the migration and so before any read, write or sync pass. It converts
-only the machines the server has not seen as they are: ownerless ones and those whose `machine`
-row waits in the outbox, which have no link yet; their rows are dated now and the owned ones
-enqueued. Every other machine takes its tag rows from the server on the next pull. A machine that
-cannot be converted is skipped, so the database still opens.
+adds the spaces Kotlin counts and `[[:space:]]` does not. `19.sqm` adds the tables and resets
+`lastPullAt`, and `tagConversion` runs right after it, inside the migration and so before any
+read, write or sync pass. It converts only the live machines the server has not seen as they are:
+ownerless ones and those whose `machine` row waits in the outbox, which have no link yet; their
+rows are live, dated now, and the owned ones are enqueued. A deleted machine needs no rows, and
+its deleted ones could delete a tag that a pushed machine holds on the server. Every other machine
+takes its tag rows from the server on the next pull. A machine that cannot be converted is
+skipped, so the database still opens. An accepted cost: a tag that a 1.7.0 edit removed and that
+was still unpushed at the update comes back with the server's link on the next pull.
 
 Tags compare by `tagKey`: trimmed, inner whitespace joined to one space, in lower case; `0027`
 makes the same key in SQL. With every stored name a key, the comparison matters only for text
@@ -932,8 +936,10 @@ cannot map, such as the unit `custom`, fails their pull.
 Row-level security enforces every visibility rule from the functional spec:
 
 - A user writes only rows with their own `user_id` or that of a child they guard (`guards`), a
-  set only into a visit and on a machine of the set's own owner, and a photo only of a machine or
-  profile of the photo's own owner; a `before update` trigger keeps a row's `user_id` from
+  set only into a visit and on a machine of the set's own owner, a photo only of a machine or
+  profile of the photo's own owner, a `tag` only under the id `tag_content_id` gives its owner and
+  name, and a `machine_tag` only between a machine and a tag of its own owner, under the id of that
+  machine and that tag's name (§4.5); a `before update` trigger keeps a row's `user_id` from
   changing.
 - A user reads their own rows and the live `machine`, `visit`, `workout_set`, `machine_link`,
   `photo`, `tag` and `machine_tag` rows of everyone who shares a live group with them, through the

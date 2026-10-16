@@ -647,7 +647,7 @@ class SchemaMigrationTest {
     }
 
     @Test
-    fun version_19_gains_the_tag_tables_with_the_unpushed_machines_tags_and_pulls_again() {
+    fun version_19_gains_the_tag_tables_with_the_unpushed_live_machines_tags_and_pulls_again() {
         val owner = UserId("11111111-1111-4111-8111-111111111111")
         val gone = MachineId("0e000000-0000-4000-8000-00000000000e")
         val pushed = MachineId("0f000000-0000-4000-8000-00000000000f")
@@ -670,7 +670,8 @@ class SchemaMigrationTest {
         )
         listOf(PRESS, gone).forEach {
             exec(
-                "INSERT INTO outbox(tableName, rowId, enqueuedAt) VALUES ('machine', '${it.value}', 1)",
+                "INSERT INTO outbox(tableName, rowId, enqueuedAt) " +
+                    "VALUES ('machine', '${it.value}', 1)",
             )
         }
         exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
@@ -680,10 +681,10 @@ class SchemaMigrationTest {
         val database = kachalochkaDatabase(driver)
 
         fun tag(name: String) =
-            database.tagQueries.byId(tagId(owner, name), ::tagOf).executeAsOne()
+            database.tagQueries.byId(tagId(owner, name), ::tagOf).executeAsOneOrNull()
         assertEquals(Tag(tagId(owner, "ноги"), owner, "ноги", at(5), false), tag("ноги"))
-        assertEquals(false, tag("жим лёжа").deleted)
-        assertEquals(true, tag("спина").deleted)
+        assertEquals(false, tag("жим лёжа")?.deleted)
+        assertEquals(null, tag("спина"))
         assertEquals(
             listOf(false, false),
             database.machineTagQueries
@@ -691,18 +692,13 @@ class SchemaMigrationTest {
                 .executeAsList()
                 .map { it.deleted },
         )
-        assertEquals(
-            listOf(true, true),
-            database.machineTagQueries
-                .forMachine(gone.value, ::machineTagOf)
-                .executeAsList()
-                .map { it.deleted },
-        )
-        assertEquals(
-            emptyList(),
-            database.machineTagQueries.forMachine(pushed.value, ::machineTagOf).executeAsList(),
-        )
-        assertEquals(9L, number("SELECT COUNT(*) FROM outbox"))
+        listOf(gone, pushed).forEach {
+            assertEquals(
+                emptyList(),
+                database.machineTagQueries.forMachine(it.value, ::machineTagOf).executeAsList(),
+            )
+        }
+        assertEquals(6L, number("SELECT COUNT(*) FROM outbox"))
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 

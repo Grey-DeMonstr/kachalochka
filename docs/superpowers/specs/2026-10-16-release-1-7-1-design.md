@@ -48,8 +48,10 @@ writes them for a managed child as it writes the child's machines.
 - **Conversion.** Migration `0027` converts every machine's `tags` once on the server.
   `19.sqm` adds the tables and resets `lastPullAt`, so a device takes the server's rows on its
   next pull. Inside that migration, before any write or sync pass, a device converts only the
-  machines the server has not seen as they are: ownerless ones, and those whose `machine` row
-  waits in the outbox. Each gets its rows from its old `tags` column, dated now, and the owned
-  ones are enqueued. Every other machine keeps the server's rows, so a converted device never
-  pushes its old column over a tag edit made since the server's conversion. A machine that
+  live machines the server has not seen as they are: ownerless ones, and those whose `machine`
+  row waits in the outbox. Each gets live rows for the names in its old `tags` column, dated now,
+  and the owned ones are enqueued; a deleted machine gets none, so it cannot delete a tag that a
+  pushed machine holds. Every other machine keeps the server's rows, so a device never pushes its
+  old column over a tag edit made since the server's conversion. Accepted cost: a name that an
+  unpushed 1.7.0 edit removed comes back with the server's link on the next pull. A machine that
   cannot be converted is skipped, and the database still opens.

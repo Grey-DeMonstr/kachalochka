@@ -201,10 +201,10 @@ lower case, and a machine never holds two forms of one tag. A tag that no machin
 holds any more, deleted machines left out, is deleted: it is no longer offered as a chip, and a
 list or picker filtered by it drops the filter, though a filter by a friend's tag stays while the
 friends' machines cannot be read. An app older than 1.7.1 shows each machine's tags as they were
-when the account's tags moved to 1.7.1, and tags edited in it reach no other app. Every screen
-draws a tag in capitals, in a small font with wide letter spacing: the chips, the machine rows
-and pages, the section headings of the visit and of the statistics, the calendar's cards
-("СПИНА · ГРУДЬ") and a friend's machine.
+when the account's tags moved to 1.7.1, and tags edited in it later reach only other older apps.
+Every screen draws a tag in capitals, in a small font with wide letter spacing: the chips, the
+machine rows and pages, the section headings of the visit and of the statistics, the calendar's
+cards ("СПИНА · ГРУДЬ") and a friend's machine.
 
 A set's total weight is its weight plus the platform when the platform is not added to the record.
 When "Сохранить" changes that for a machine with recorded sets (for example, a platform typed in

@@ -282,9 +282,9 @@ class SyncPass(
     private suspend fun <T> db(read: () -> T): T = withContext(dispatcher) { read() }
 
     private companion object {
-        // The server checks a set's visit and machine. It checks nothing a link, a plan, a tag's
-        // link or a value names, but each follows the rows it names, so a reader never meets it
-        // before them.
+        // The server checks a set's visit and machine, and a tag link's machine and tag. It
+        // checks nothing a machine link, a plan or a value names, but each follows the rows it
+        // names, so a reader never meets it before them.
         val PUSH_RANK =
             listOf(
                 MACHINE_TABLE,

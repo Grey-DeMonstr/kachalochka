@@ -120,16 +120,16 @@ internal fun tagsOf(text: String): Set<String> {
 }
 
 /**
- * Gives every machine whose `tags` column holds names, which has no link at all and which never
- * reached the server (see `tagMirrors`) its tag rows, with the ids migration 0027 gives them. Live
- * machines go first, so a tag that only deleted machines hold is the one written deleted. A
- * machine that cannot be converted keeps no tags rather than keep the database from opening.
+ * Gives every live machine whose `tags` column holds names, which has no link at all and which
+ * never reached the server (see `tagMirrors`) its live tag rows, with the ids migration 0027 gives
+ * them. A machine that cannot be converted keeps no tags rather than keep the database from
+ * opening.
  */
 internal fun KachalochkaDatabase.convertTagMirrors(now: Instant) =
     transaction {
-        machineQueries.tagMirrors().executeAsList().sortedBy { it.deleted }.forEach { mirror ->
+        machineQueries.tagMirrors().executeAsList().forEach { mirror ->
             try {
-                convert(mirror.id, mirror.user_id, mirror.deleted, mirror.tags, now)
+                convert(mirror.id, mirror.user_id, mirror.tags, now)
             } catch (_: Exception) {
             }
         }
@@ -138,17 +138,16 @@ internal fun KachalochkaDatabase.convertTagMirrors(now: Instant) =
 private fun KachalochkaDatabase.convert(
     id: String,
     userId: String?,
-    deleted: Boolean,
     names: String,
     now: Instant,
 ) {
     val owner = userId?.let(::UserId)
     val machine = MachineId(id)
     tagsOf(names).map(::tagKey).filter { it.isNotEmpty() }.distinct().forEach {
-        val tag = Tag(tagId(owner, it), owner, it, now, deleted)
+        val tag = Tag(tagId(owner, it), owner, it, now, deleted = false)
         val stored = tagQueries.byId(tag.id, ::tagOf).executeAsOneOrNull()
-        if (stored == null || (stored.deleted && !tag.deleted)) write(tag)
-        write(MachineTag(machineTagId(machine, it), owner, machine, tag.id, now, deleted))
+        if (stored == null || stored.deleted) write(tag)
+        write(MachineTag(machineTagId(machine, it), owner, machine, tag.id, now, deleted = false))
     }
 }
 

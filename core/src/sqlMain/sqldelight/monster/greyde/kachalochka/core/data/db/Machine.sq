@@ -44,10 +44,11 @@ WHERE deleted = 0 AND name = :name
 LIMIT 1;
 
 -- A pushed machine takes its tag rows from the server, which converted the same column at the
--- same time; only rows that never reached it are converted here.
+-- same time; only rows that never reached it are converted here. A deleted machine needs none, and
+-- its deleted rows would delete a tag that a pushed machine holds on the server.
 tagMirrors:
-SELECT id, user_id, deleted, tags FROM machine
-WHERE tags <> '[]'
+SELECT id, user_id, tags FROM machine
+WHERE tags <> '[]' AND deleted = 0
   AND (user_id IS NULL OR EXISTS (
       SELECT 1 FROM outbox WHERE outbox.tableName = 'machine' AND outbox.rowId = machine.id
   ))
