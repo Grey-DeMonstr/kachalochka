@@ -14,6 +14,8 @@ import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -1949,7 +1951,13 @@ class VisitViewModelTest {
                 .single()
                 .machineId
         two.friends.group("Спортзал", owner = PASHA, ivanFriend)
-        val (pashaCopy, pashaLink) = linkedCopy(two.friends.machines.single(), PASHA.userId, t0)
+        val (pashaCopy, pashaLink) =
+            linkedCopy(
+                two.friends.machines.single(),
+                PASHA.userId,
+                t0,
+                emptySet(),
+            )
         two.friends.machines += pashaCopy
         two.friends.links += pashaLink
 
@@ -2139,6 +2147,76 @@ class VisitViewModelTest {
                 assertNotNull(family.machines.named(SASHA.userId, "Жим ногами")).id,
                 saved.machineId,
             )
+        }
+
+    /** Иван active on his press, with his child Саша, who trained yesterday on [trained]. */
+    private fun familyTrainedOn(
+        trained: Machine,
+        vararg others: Machine,
+        links: List<MachineLink> = emptyList(),
+    ): FakeGym {
+        val family =
+            FakeGym().withAccounts(ivan, active = ivan).withChild(childAccount(SASHA, ivan))
+        val dayBefore = -(1.days.inWholeMinutes.toInt())
+        runBlocking {
+            family.visits.upsert(ivanVisit)
+            family.machines.upsert(ivanPress)
+            (listOf(trained) + others).forEach { family.machines.upsert(it) }
+            links.forEach { family.machineLinks.upsert(it) }
+            family.sets.upsert(set(VisitId.random(), trained, 60.0, 10, dayBefore, SASHA.userId))
+        }
+        return family
+    }
+
+    private fun assertShowsSashasHistory(vm: VisitViewModel) {
+        val page = assertNotNull(vm.state.value?.page)
+        assertEquals("60кг 1x10", page.previous)
+        assertEquals("60", page.form?.weight)
+    }
+
+    @Test
+    fun after_a_switch_the_child_s_machine_linked_with_the_shown_one_stands_in_for_it() =
+        runTest {
+            val platform = Machine.new("Платформа", SASHA.userId, t0)
+            val namesake = Machine.new("Жим ногами", SASHA.userId, t0)
+            val link =
+                MachineLink(
+                    MachineLinkId.random(),
+                    SASHA.userId,
+                    platform.id,
+                    ivanPress.id,
+                    t0,
+                    false,
+                )
+            val family = familyTrainedOn(platform, namesake, links = listOf(link))
+            val vm = viewModel(family).also { it.selectMachine(ivanPress.id) }
+
+            vm.switchTo(SASHA.userId)
+
+            assertEquals(
+                "Платформа",
+                vm.state.value
+                    ?.page
+                    ?.name,
+            )
+            assertShowsSashasHistory(vm)
+        }
+
+    @Test
+    fun after_a_switch_the_child_s_machine_of_the_name_in_another_case_stands_in_for_it() =
+        runTest {
+            val family = familyTrainedOn(Machine.new("ЖИМ НОГАМИ", SASHA.userId, t0))
+            val vm = viewModel(family).also { it.selectMachine(ivanPress.id) }
+
+            vm.switchTo(SASHA.userId)
+
+            assertEquals(
+                "ЖИМ НОГАМИ",
+                vm.state.value
+                    ?.page
+                    ?.name,
+            )
+            assertShowsSashasHistory(vm)
         }
 
     @Test

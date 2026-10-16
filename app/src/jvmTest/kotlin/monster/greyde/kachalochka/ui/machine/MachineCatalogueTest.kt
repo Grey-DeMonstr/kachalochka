@@ -30,7 +30,7 @@ class MachineCatalogueTest {
     private val gym = signedInGym()
     private val t0 = gym.clock.current
     private val myPress = Machine.new("Жим ногами", ME.userId, t0)
-    private val olegCopy = linkedCopy(myPress, OLEG.userId, t0)
+    private val olegCopy = linkedCopy(myPress, OLEG.userId, t0, emptySet())
     private val olegPress = olegCopy.first
     private val olegRow = Machine.new("Тяга", OLEG.userId, t0)
     private val failures = mutableListOf<Throwable>()

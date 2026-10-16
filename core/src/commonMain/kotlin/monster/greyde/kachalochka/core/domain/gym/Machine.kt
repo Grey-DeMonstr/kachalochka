@@ -73,7 +73,7 @@ fun linkedCopy(
     friend: Machine,
     owner: UserId?,
     now: Instant,
-    known: Iterable<String> = emptySet(),
+    known: Iterable<String>,
 ): Pair<Machine, MachineLink> {
     val copy =
         friend.copy(

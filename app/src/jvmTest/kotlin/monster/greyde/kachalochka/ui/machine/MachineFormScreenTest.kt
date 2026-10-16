@@ -200,7 +200,7 @@ class MachineFormScreenTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME)
         val olegs = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
-        val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current)
+        val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
         val olegsPhoto = Photo.new(olegs.id, OLEG.userId, on.clock.current)
         runBlocking {
             on.machines.upsert(mine)
@@ -387,7 +387,12 @@ class MachineFormScreenTest {
         val signedIn = FakeGym().withAccounts(ivanSession, active = ivanSession)
         val now = signedIn.clock.current
         val (linked, link) =
-            linkedCopy(Machine.new("Жим ногами", null, now), ivanSession.account.userId, now)
+            linkedCopy(
+                Machine.new("Жим ногами", null, now),
+                ivanSession.account.userId,
+                now,
+                emptySet(),
+            )
         runBlocking {
             signedIn.machines.upsert(linked)
             signedIn.machineLinks.upsert(link)
@@ -433,7 +438,7 @@ class MachineFormScreenTest {
         val signedIn = signedInGym()
         val now = signedIn.clock.current
         val olegs = Machine.new("Жим ногами", OLEG.userId, now)
-        val (press, link) = linkedCopy(olegs, ME.userId, now)
+        val (press, link) = linkedCopy(olegs, ME.userId, now, emptySet())
         signedIn.friends.group("Зал на Лесной", owner = OLEG, ME)
         signedIn.friends.machines += olegs
         runBlocking {
@@ -464,8 +469,8 @@ class MachineFormScreenTest {
         val signedIn = signedInGym()
         val now = signedIn.clock.current
         val olegs = Machine.new("Жим ногами", OLEG.userId, now)
-        val (press, link) = linkedCopy(olegs, ME.userId, now)
-        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, now)
+        val (press, link) = linkedCopy(olegs, ME.userId, now, emptySet())
+        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, now, emptySet())
         signedIn.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         signedIn.friends.machines += listOf(olegs, pashas.copy(name = "Платформа"))
         signedIn.friends.links += pashaLink

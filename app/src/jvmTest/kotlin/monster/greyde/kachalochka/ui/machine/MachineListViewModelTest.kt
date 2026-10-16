@@ -354,7 +354,7 @@ class MachineListViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Жим ногами", OLEG.userId, t0)
-            val (mine, link) = linkedCopy(olegs, ME.userId, t0)
+            val (mine, link) = linkedCopy(olegs, ME.userId, t0, emptySet())
             val olegsPhoto = Photo.new(olegs.id, OLEG.userId, t0)
             on.friends.machines += olegs
             on.friends.photos += olegsPhoto
@@ -376,7 +376,7 @@ class MachineListViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
-            val (copy, link) = linkedCopy(olegs, ME.userId, t0)
+            val (copy, link) = linkedCopy(olegs, ME.userId, t0, emptySet())
             val mine = copy.copy(name = "Присед в тренажёре")
             on.friends.machines += olegs
             on.machines.upsert(mine)
@@ -479,8 +479,8 @@ class MachineListViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
-            val (first, firstLink) = linkedCopy(olegs, ME.userId, t0)
-            val (second, secondLink) = linkedCopy(olegs, ME.userId, t0)
+            val (first, firstLink) = linkedCopy(olegs, ME.userId, t0, emptySet())
+            val (second, secondLink) = linkedCopy(olegs, ME.userId, t0, emptySet())
             on.friends.machines += olegs
             on.machines.upsert(first.copy(name = "Гакк"))
             on.machines.upsert(second.copy(name = "Присед"))
@@ -602,7 +602,7 @@ class MachineListViewModelTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         val olegPress = Machine.new("Жим ногами", OLEG.userId, t0)
-        val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0)
+        val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0, emptySet())
         on.friends.machines += listOf(pashaCopy, olegPress)
         on.friends.links += link
 

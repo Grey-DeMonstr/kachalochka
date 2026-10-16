@@ -111,7 +111,7 @@ class MachinePickerViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
-            val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current)
+            val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
             val olegsPhoto = Photo.new(olegs.id, OLEG.userId, on.clock.current)
             on.friends.machines += olegs
             on.friends.photos += olegsPhoto
@@ -133,7 +133,7 @@ class MachinePickerViewModelTest {
             val on = signedInGym()
             on.friends.group("Зал на Лесной", owner = OLEG, ME)
             val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
-            val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current)
+            val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
             val mine = copy.copy(name = "Присед в тренажёре")
             on.friends.machines += olegs
             on.machines.upsert(mine)
@@ -165,7 +165,7 @@ class MachinePickerViewModelTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         val olegPress = Machine.new("Жим ногами", OLEG.userId, t0)
-        val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0)
+        val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0, emptySet())
         on.friends.machines += listOf(pashaCopy, olegPress)
         on.friends.links += link
         return on to olegPress

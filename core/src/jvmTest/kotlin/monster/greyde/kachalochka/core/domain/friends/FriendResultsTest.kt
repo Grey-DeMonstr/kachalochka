@@ -89,7 +89,7 @@ class FriendResultsTest {
     @Test
     fun a_friend_s_machine_linked_to_one_of_the_viewer_s_reads_under_the_viewer_s_name() {
         val mine = machine(PRESS, "Жим ногами")
-        val (copy, link) = linkedCopy(mine, oleg.userId, T0)
+        val (copy, link) = linkedCopy(mine, oleg.userId, T0, emptySet())
         val theirLinked = copy.copy(name = "Платформа")
         val theirOwn = machine(ROW, "Тяга").copy(userId = oleg.userId)
 
@@ -106,8 +106,8 @@ class FriendResultsTest {
     @Test
     fun a_friend_s_machine_linked_to_the_viewer_s_through_another_friend_reads_under_its_name() {
         val mine = machine(PRESS, "Жим ногами")
-        val (olegs, olegLink) = linkedCopy(mine, oleg.userId, T0)
-        val (pashas, pashaLink) = linkedCopy(olegs, pasha.userId, T0)
+        val (olegs, olegLink) = linkedCopy(mine, oleg.userId, T0, emptySet())
+        val (pashas, pashaLink) = linkedCopy(olegs, pasha.userId, T0, emptySet())
 
         assertEquals(
             mapOf(pashas.id to "Жим ногами"),
@@ -133,7 +133,7 @@ class FriendResultsTest {
     @Test
     fun a_cluster_holding_an_own_machine_offers_no_friend_row() {
         val mine = Machine.new("Жим ногами", me, T0)
-        val (olegs, link) = linkedCopy(mine, oleg.userId, T0)
+        val (olegs, link) = linkedCopy(mine, oleg.userId, T0, emptySet())
 
         assertEquals(
             emptyList(),
@@ -144,7 +144,7 @@ class FriendResultsTest {
     @Test
     fun a_cluster_of_friends_machines_offers_the_one_without_links_of_its_own() {
         val pashas = pasha.owns("Жим ногами")
-        val (olegs, link) = linkedCopy(pashas.machine, oleg.userId, T0)
+        val (olegs, link) = linkedCopy(pashas.machine, oleg.userId, T0, emptySet())
 
         assertEquals(
             listOf(pashas),
@@ -172,11 +172,11 @@ class FriendResultsTest {
     @Test
     fun every_friends_machine_is_offered_with_its_cluster_original_first() {
         val pashas = pasha.owns("Жим ногами")
-        val (olegs, link) = linkedCopy(pashas.machine, oleg.userId, T0)
+        val (olegs, link) = linkedCopy(pashas.machine, oleg.userId, T0, emptySet())
         val olegsCopy = FriendMachine(olegs, oleg)
         val row = oleg.owns("Гакк")
         val mine = Machine.new("Тяга", me, T0)
-        val (olegsRow, rowLink) = linkedCopy(mine, oleg.userId, T0)
+        val (olegsRow, rowLink) = linkedCopy(mine, oleg.userId, T0, emptySet())
 
         assertEquals(
             listOf(listOf(row), listOf(pashas, olegsCopy)),
@@ -192,9 +192,9 @@ class FriendResultsTest {
     @Test
     fun a_machine_is_linked_with_its_cluster_s_friends_machines_by_owner_then_name() {
         val mine = Machine.new("Жим ногами", me, T0)
-        val (pashas, pashaLink) = linkedCopy(mine, pasha.userId, T0)
-        val (olegsPlatform, platformLink) = linkedCopy(pashas, oleg.userId, T0)
-        val (olegsPress, pressLink) = linkedCopy(mine, oleg.userId, T0)
+        val (pashas, pashaLink) = linkedCopy(mine, pasha.userId, T0, emptySet())
+        val (olegsPlatform, platformLink) = linkedCopy(pashas, oleg.userId, T0, emptySet())
+        val (olegsPress, pressLink) = linkedCopy(mine, oleg.userId, T0, emptySet())
         val friendMachines =
             listOf(
                 FriendMachine(pashas, pasha),

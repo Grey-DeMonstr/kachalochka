@@ -104,7 +104,7 @@ class LinkChooserViewModelTest {
     /** Олег's machines: his copy of [press], linked to it, and one of his own. */
     private fun olegsMachines(): Pair<Machine, Machine> {
         gym.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val (copy, link) = linkedCopy(press, OLEG.userId, t0)
+        val (copy, link) = linkedCopy(press, OLEG.userId, t0, emptySet())
         val bench = Machine.new("Жим лёжа", OLEG.userId, t0)
         gym.friends.machines += listOf(copy, bench)
         gym.friends.links += link
@@ -152,7 +152,7 @@ class LinkChooserViewModelTest {
     @Test
     fun a_friend_s_machine_reached_through_another_friend_s_is_linked_and_not_offered() {
         gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-        val (olegs, link) = linkedCopy(press, OLEG.userId, t0)
+        val (olegs, link) = linkedCopy(press, OLEG.userId, t0, emptySet())
         val pashas = Machine.new("Платформа", PASHA.userId, t0)
         gym.friends.machines += listOf(olegs, pashas)
         gym.friends.links += link
@@ -171,7 +171,7 @@ class LinkChooserViewModelTest {
     @Test
     fun choosing_a_friend_s_machine_links_this_one_to_its_whole_cluster() {
         val (_, bench) = olegsMachines()
-        val (pashas, link) = linkedCopy(bench, PASHA.userId, t0)
+        val (pashas, link) = linkedCopy(bench, PASHA.userId, t0, emptySet())
         gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         gym.friends.machines += pashas
         gym.friends.links += link
@@ -190,7 +190,7 @@ class LinkChooserViewModelTest {
     @Test
     fun a_search_finds_an_own_machine_by_the_name_of_a_linked_friend_s_one() {
         gym.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val (olegs, link) = linkedCopy(smith, OLEG.userId, t0)
+        val (olegs, link) = linkedCopy(smith, OLEG.userId, t0, emptySet())
         gym.friends.machines += olegs.copy(name = "Гакк-машина")
         gym.friends.links += link
 
@@ -264,7 +264,7 @@ class LinkChooserViewModelTest {
     fun linked_friends_machines_are_each_offered_together() {
         val (_, bench) = olegsMachines()
         val pashas = Machine.new("Жим на скамье", PASHA.userId, t0)
-        val (olegsBench, link) = linkedCopy(bench, PASHA.userId, t0)
+        val (olegsBench, link) = linkedCopy(bench, PASHA.userId, t0, emptySet())
         gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         gym.friends.machines += listOf(pashas, olegsBench.copy(name = "Скамья"))
         gym.friends.links += link
@@ -280,7 +280,7 @@ class LinkChooserViewModelTest {
     @Test
     fun a_search_keeps_a_whole_group_when_one_of_it_matches() {
         val (_, bench) = olegsMachines()
-        val (pashasBench, link) = linkedCopy(bench, PASHA.userId, t0)
+        val (pashasBench, link) = linkedCopy(bench, PASHA.userId, t0, emptySet())
         gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
         gym.friends.machines += pashasBench.copy(name = "Скамья")
         gym.friends.links += link

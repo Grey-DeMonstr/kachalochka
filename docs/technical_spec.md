@@ -617,9 +617,10 @@ account is one on the device, such as a child, so `ownCopy` reads both accounts'
 the account's machine of the shown one's cluster stands in for it, else one of the same trimmed,
 case-blind name (`ownStandIn`). Else it writes a `linkedCopy` and the links from the copy to
 every machine of that cluster (`missingDirectLinks`); the group read's upkeep adds the friends'
-machines those local links do not reach. The visit view model keeps the state of the machine's
-page and its set form, both drawn by the visit screen over its list, and hands the recorder what
-to write.
+machines those local links do not reach. `standIn` finds the same machine without a write, so
+after a switch the page shows the history the next save extends. The visit view model keeps the
+state of the machine's page and its set form, both drawn by the visit screen over its list, and
+hands the recorder what to write.
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

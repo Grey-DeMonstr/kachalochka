@@ -37,7 +37,7 @@ class MachineTest {
                 .copy(weightStep = 5.0, unit = WeightUnit.Custom, unitLabel = "плитка")
         val later = T0 + 1.hours
 
-        val (mine, _) = linkedCopy(theirs, ivan, later)
+        val (mine, _) = linkedCopy(theirs, ivan, later, emptySet())
 
         assertNotEquals(theirs.id, mine.id)
         assertEquals(theirs.copy(id = mine.id, userId = ivan, updatedAt = later), mine)
@@ -47,7 +47,7 @@ class MachineTest {
     fun a_linked_copy_keeps_the_friend_s_tags() {
         val theirs = Machine.new("Жим ногами", oleg, T0).copy(tags = setOf("Ноги", "Спина"))
 
-        val (mine, _) = linkedCopy(theirs, ivan, T0)
+        val (mine, _) = linkedCopy(theirs, ivan, T0, emptySet())
 
         assertEquals(setOf("Ноги", "Спина"), mine.tags)
     }
@@ -99,7 +99,7 @@ class MachineTest {
         val cover = PhotoId.random()
         val theirs = Machine.new("Жим ногами", oleg, T0).copy(coverPhoto = cover)
 
-        val (mine, _) = linkedCopy(theirs, ivan, T0)
+        val (mine, _) = linkedCopy(theirs, ivan, T0, emptySet())
 
         assertEquals(cover, mine.coverPhoto)
     }
@@ -109,7 +109,7 @@ class MachineTest {
         val theirs = Machine.new("Жим ногами", oleg, T0)
         val later = T0 + 1.hours
 
-        val (mine, link) = linkedCopy(theirs, ivan, later)
+        val (mine, link) = linkedCopy(theirs, ivan, later, emptySet())
 
         assertEquals(
             MachineLink(link.id, ivan, mine.id, theirs.id, later, deleted = false),

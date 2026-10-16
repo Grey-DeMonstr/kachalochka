@@ -515,7 +515,7 @@ class VisitViewModel(
 
     /**
      * After a switch the page still shows the machine the previous account was on; the active
-     * account's own row of that name stands in for it, until a save mirrors it (spec §4.1).
+     * account's machine a save would use stands in for it, until a save copies it (spec §4.1).
      */
     private suspend fun machineOf(owner: UserId?): Machine? {
         val requested = selected ?: return null
@@ -526,7 +526,7 @@ class VisitViewModel(
             closePage()
             return null
         }
-        return machines.named(owner, shown.name) ?: shown
+        return recorder.standIn(owner, shown) ?: shown
     }
 
     private fun setNumber(

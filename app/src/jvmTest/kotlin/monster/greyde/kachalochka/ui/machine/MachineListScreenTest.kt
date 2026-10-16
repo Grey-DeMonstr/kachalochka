@@ -111,7 +111,7 @@ class MachineListScreenTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME)
         val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
-        val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current)
+        val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
         on.friends.machines += olegs
         runBlocking {
             on.machines.upsert(mine)

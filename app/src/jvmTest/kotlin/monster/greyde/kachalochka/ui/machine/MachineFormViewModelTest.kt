@@ -266,7 +266,7 @@ class MachineFormViewModelTest {
         gym.withAccounts(ivan, active = ivan)
         gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
         val hers = Machine.new("Жим ногами", misha.account.userId, t0)
-        val (press, link) = linkedCopy(hers, ivan.account.userId, t0)
+        val (press, link) = linkedCopy(hers, ivan.account.userId, t0, emptySet())
         gym.machines.upsert(press)
         gym.machineLinks.upsert(link)
         gym.friends.machines += hers
@@ -970,7 +970,7 @@ class MachineFormViewModelTest {
     /** Иван's press, linked by Иван to a friend's machine. */
     private suspend fun linkedPress(): Pair<Machine, MachineLink> {
         val hers = Machine.new("Жим ногами", misha.account.userId, t0)
-        val (press, link) = linkedCopy(hers, ivan.account.userId, t0)
+        val (press, link) = linkedCopy(hers, ivan.account.userId, t0, emptySet())
         gym.machines.upsert(press)
         gym.machineLinks.upsert(link)
         return press to link
@@ -999,9 +999,9 @@ class MachineFormViewModelTest {
             val oleg = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Олег")
             gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend, oleg)
             val hers = Machine.new("Платформа", misha.account.userId, t0)
-            val (press, link) = linkedCopy(hers, ivan.account.userId, t0)
-            val (his, hisLink) = linkedCopy(hers, oleg.userId, t0)
-            val (hisOther, otherLink) = linkedCopy(his, oleg.userId, t0)
+            val (press, link) = linkedCopy(hers, ivan.account.userId, t0, emptySet())
+            val (his, hisLink) = linkedCopy(hers, oleg.userId, t0, emptySet())
+            val (hisOther, otherLink) = linkedCopy(his, oleg.userId, t0, emptySet())
             gym.machines.upsert(press)
             gym.machineLinks.upsert(link)
             gym.friends.machines +=
@@ -1093,7 +1093,7 @@ class MachineFormViewModelTest {
         val original = Machine.new("Жим ногами", ivan.account.userId, t0)
         gym.machines.upsert(original)
         gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
-        val (copy, link) = linkedCopy(original, misha.account.userId, t0)
+        val (copy, link) = linkedCopy(original, misha.account.userId, t0, emptySet())
         gym.friends.machines += copy
         gym.friends.links += link
         return original

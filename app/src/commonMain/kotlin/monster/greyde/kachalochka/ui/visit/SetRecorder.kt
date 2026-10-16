@@ -135,27 +135,42 @@ class SetRecorder(
     }
 
     /**
-     * The owner's own machine standing for [shown], another account's on the device: its
-     * [ownStandIn], else a new copy linked to [shown] and to the rest of its cluster, as the two
-     * accounts' own links show it (spec §4.5).
+     * The owner's machine standing for [shown] without writing anything: [shown] itself when it
+     * is the owner's, else its [ownStandIn] in the cluster the two accounts' own links show.
+     */
+    suspend fun standIn(
+        owner: UserId?,
+        shown: Machine,
+    ): Machine? {
+        if (shown.userId == owner) return shown
+        return ownStandIn(shown, machines.all(owner), MachineClusters(knownLinks(owner, shown)))
+    }
+
+    /**
+     * The owner's own machine standing for [shown], which may be another account's: its
+     * [standIn], else a new copy linked to [shown] and to the rest of its cluster (spec §4.5).
      */
     suspend fun ownCopy(
         owner: UserId?,
         shown: Machine,
     ): Machine {
-        if (shown.userId == owner) return shown
-        val own = machines.all(owner)
-        val known = links.all(owner) + links.all(shown.userId)
-        val clusters = MachineClusters(known)
-        ownStandIn(shown, own, clusters)?.let { return it }
+        standIn(owner, shown)?.let { return it }
+        val known = knownLinks(owner, shown)
         val now = clock.now()
-        val (copy, link) = linkedCopy(shown, owner, now, own.flatMap { it.tags })
+        val tags = machines.all(owner).flatMap { it.tags }
+        val (copy, link) = linkedCopy(shown, owner, now, tags)
         machines.upsert(copy)
         links.upsert(link)
-        missingDirectLinks(owner, listOf(copy.id), clusters.of(shown.id), known + link, now)
+        val cluster = MachineClusters(known).of(shown.id)
+        missingDirectLinks(owner, listOf(copy.id), cluster, known + link, now)
             .forEach { links.upsert(it) }
         return copy
     }
+
+    private suspend fun knownLinks(
+        owner: UserId?,
+        shown: Machine,
+    ) = links.all(owner) + links.all(shown.userId)
 
     private suspend fun shownOrNew(owner: UserId?): ShownVisit {
         visits.shownOn(owner, day, sets, utcOffset::at)?.let { return it }
