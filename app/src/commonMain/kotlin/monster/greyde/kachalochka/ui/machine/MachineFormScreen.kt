@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,11 +39,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
@@ -357,7 +360,7 @@ private fun TagsSection(
             suggested.forEach { tag -> SuggestedTagChip(tag) { viewModel.toggleTag(tag) } }
         }
     }
-    var friendsShown by remember { mutableStateOf(false) }
+    var friendsShown by rememberSaveable { mutableStateOf(false) }
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -382,18 +385,7 @@ private fun SuggestedTagChip(
     onAdd: () -> Unit,
 ) {
     val accent = MaterialTheme.colorScheme.primary
-    val shape = RoundedCornerShape(20.dp)
-    Row(
-        Modifier
-            .height(38.dp)
-            .clip(shape)
-            .dashedBorder(accent, 20.dp)
-            .clickable(onClick = onAdd)
-            .padding(start = 14.dp, end = 12.dp)
-            .testTag("suggested-tag-$tag"),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    DashedChip(accent, "suggested-tag-$tag", onAdd) {
         TagText(tag, fontSize = 13.sp, color = accent)
         Icon(PhosphorIcons.Plus, null, tint = accent, modifier = Modifier.size(14.dp))
     }
@@ -403,18 +395,7 @@ private fun SuggestedTagChip(
 @Composable
 private fun FriendsTagsChip(onShow: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(20.dp)
-    Row(
-        Modifier
-            .height(38.dp)
-            .clip(shape)
-            .dashedBorder(colors.onBackground.copy(alpha = 0.35f), 20.dp)
-            .clickable(onClick = onShow)
-            .padding(start = 14.dp, end = 12.dp)
-            .testTag("friends-tags"),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    DashedChip(colors.onBackground.copy(alpha = 0.35f), "friends-tags", onShow) {
         Text(strings().friendsTags, fontSize = 15.sp, color = colors.onBackground)
         Icon(
             PhosphorIcons.CaretDown,
@@ -491,17 +472,11 @@ private fun FriendTagChip(
     onAdd: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(20.dp)
-    Row(
-        Modifier
-            .height(38.dp)
-            .clip(shape)
-            .dashedBorder(colors.onBackground.copy(alpha = 0.35f), 20.dp)
-            .clickable(onClick = onAdd)
-            .padding(start = 6.dp, end = 12.dp)
-            .testTag("friend-tag-${offered.tag}"),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    DashedChip(
+        colors.onBackground.copy(alpha = 0.35f),
+        "friend-tag-${offered.tag}",
+        onAdd,
+        start = 6.dp,
     ) {
         PersonAvatar(
             offered.friend.userId,
@@ -517,6 +492,29 @@ private fun FriendTagChip(
             modifier = Modifier.size(14.dp),
         )
     }
+}
+
+/** A chip of something offered rather than chosen: a dashed [outline], tapped to take it. */
+@Composable
+private fun DashedChip(
+    outline: Color,
+    tag: String,
+    onClick: () -> Unit,
+    start: Dp = 14.dp,
+    content: @Composable RowScope.() -> Unit,
+) {
+    Row(
+        Modifier
+            .height(38.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .dashedBorder(outline, 20.dp)
+            .clickable(onClick = onClick)
+            .padding(start = start, end = 12.dp)
+            .testTag(tag),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        content = content,
+    )
 }
 
 @Composable

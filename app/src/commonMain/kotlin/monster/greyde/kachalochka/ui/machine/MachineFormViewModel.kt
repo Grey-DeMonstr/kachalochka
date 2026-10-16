@@ -93,23 +93,30 @@ data class MachineFormState(
     val friendTags: List<FriendTagUi> = emptyList(),
     /** Every tag of the machines the edited one is linked with. */
     val linkedTags: List<String> = emptyList(),
+    /** The machine's tags when the form opened, which lead the chips so a tap never moves one. */
+    val openedTags: Set<String> = emptySet(),
 ) {
     /** Chosen tags first, so their spelling wins. */
     val accountTags: Set<String>
-        get() = tags + knownTags
+        get() = tags + knownTags + openedTags
 
     val suggestedTags: List<String>
-        get() = suggestedTags(linkedTags, tags, accountTags)
+        get() = suggestedTags(linkedTags, tags + openedTags, accountTags)
 
-    /** The chosen tags, then the account's other tags that are not suggested. */
+    /** The opened tags, then the account's other tags that are not suggested. */
     val shownTags: List<String>
-        get() = sortedTags(tags) + sortedTags(knownTags).filterNot(::chosenOrSuggested)
+        get() {
+            val opened = sortedTags(openedTags)
+            val suggested = suggestedTags
+            return opened +
+                sortedTags(accountTags).filterNot { hasTag(opened, it) || hasTag(suggested, it) }
+        }
 
     val offeredFriendTags: List<FriendTagUi>
-        get() = friendTags.filterNot { hasTag(knownTags, it.tag) || chosenOrSuggested(it.tag) }
-
-    private fun chosenOrSuggested(tag: String): Boolean =
-        hasTag(tags, tag) || hasTag(suggestedTags, tag)
+        get() {
+            val shown = shownTags + suggestedTags
+            return friendTags.filterNot { hasTag(shown, it.tag) }
+        }
 
     fun chosen(tag: String): Boolean = hasTag(tags, tag)
 
@@ -236,7 +243,7 @@ class MachineFormViewModel(
                 }
             val owner = currentUser.id()
             val known = machines.all(owner).flatMap { it.tags }.toSet()
-            mutableState.value = shown.copy(knownTags = known)
+            mutableState.value = shown.copy(knownTags = known, openedTags = shown.tags)
             savedPhotos = current?.let { photoRows.forMachine(it.id) }.orEmpty()
             coverChoice = current?.coverPhoto
             showPhotos()

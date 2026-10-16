@@ -102,11 +102,11 @@ class ShownMachines(
         return mine + theirs
     }
 
-    /** The rows of the machines [linkedWith] names. */
+    /** The own machines of [machine]'s cluster, then the friends' it is linked with. */
     fun linkedRows(machine: MachineId): List<Machine> {
-        val linked = linkedWith(machine).map { it.machineId }.toSet()
-        val friends = group?.friends.orEmpty().map { it.machine }
-        return (own.machines + friends).filter { it.id in linked }
+        val cluster = clusters.of(machine)
+        val mine = own.machines.filter { it.id != machine && it.id in cluster }
+        return mine + linked(machine).map { it.machine }.filter { it.id != machine }
     }
 
     /** An own machine's chosen cover counts, and a friend's machine's as its owner chose it. */

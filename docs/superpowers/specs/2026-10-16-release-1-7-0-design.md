@@ -1,6 +1,6 @@
 # Release 1.7.0 design
 
-Fifteen changes from the backlog, agreed with the user in one round of questions. The functional
+Changes from the backlog, agreed with the user. The functional
 and technical specs take each change in the commit that implements it; this note keeps the
 decisions and the reasons in one place.
 
@@ -82,10 +82,11 @@ question included, and then leaves.
 The machine form's tags run in three parts, to keep the block short. First, when the machines of
 the linked list carry tags the machine lacks, one row with a link icon offers them as dashed chips
 in the accent colour, without avatars; a tap gives the tag in the account's spelling. Then the
-machine's own tags (on), the account's other tags (off) and "Новый тег". Last, the tags of the
-other friends' machines wait behind a "Теги друзей" chip that shows them in its place. The
-suggestions come from the group read the form already makes, so offline only own linked machines
-give them.
+tags the machine had when the form opened, the account's other tags and "Новый тег"; this order
+stays while the form is open, so a tap never moves a chip. Last, the tags of the other friends'
+machines wait behind a "Теги друзей" chip that shows them in its place. The suggestions come from
+the group read the form already makes, so offline or signed out only own linked machines give
+them.
 
 ## Statistics search
 

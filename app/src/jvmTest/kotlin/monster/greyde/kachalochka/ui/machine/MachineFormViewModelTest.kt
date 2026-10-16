@@ -225,6 +225,53 @@ class MachineFormViewModelTest {
         }
 
     @Test
+    fun tapping_chips_keeps_every_chip_in_its_place() =
+        runTest {
+            val press = Machine.new("Жим", null, t0).copy(tags = setOf("Спина"))
+            gym.machines.upsert(press)
+            gym.machines.upsert(
+                Machine.new("Присед", null, t0).copy(tags = setOf("Ноги", "Адукторы")),
+            )
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            val order = listOf("Спина", "Адукторы", "Ноги")
+
+            vm.toggleTag("Ноги")
+            assertEquals(order, vm.state.value.shownTags)
+            vm.toggleTag("Спина")
+            assertEquals(order, vm.state.value.shownTags)
+            vm.toggleTag("Ноги")
+            assertEquals(order, vm.state.value.shownTags)
+        }
+
+    @Test
+    fun a_new_machine_keeps_a_tag_it_started_with_after_a_tap_turns_it_off() =
+        runTest {
+            val vm =
+                viewModel(MachineFormArgs(null, null, "Гакк", listOf("Руки"))).also { it.load() }
+
+            vm.toggleTag("Руки")
+
+            assertEquals(listOf("Руки"), vm.state.value.shownTags)
+            assertFalse(vm.state.value.chosen("Руки"))
+        }
+
+    @Test
+    fun signed_out_the_own_linked_machines_suggest_tags() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            val squat = Machine.new("Гакк", null, t0).copy(tags = setOf("Ноги"))
+            gym.machines.upsert(press)
+            gym.machines.upsert(squat)
+            gym.machineLinks.upsert(
+                MachineLink(MachineLinkId.random(), null, press.id, squat.id, t0, false),
+            )
+
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            assertEquals(listOf("Ноги"), vm.state.value.suggestedTags)
+        }
+
+    @Test
     fun chosen_and_added_tags_are_saved_with_the_machine() =
         runTest {
             gym.machines.upsert(Machine.new("Присед", null, t0).copy(tags = setOf("Ноги")))

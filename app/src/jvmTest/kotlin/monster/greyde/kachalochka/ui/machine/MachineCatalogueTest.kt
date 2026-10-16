@@ -155,6 +155,41 @@ class MachineCatalogueTest {
         }
 
     @Test
+    fun linked_rows_are_the_own_machines_of_the_cluster_then_the_friends_linked_ones() =
+        runTest {
+            olegsGym()
+            val squat = Machine.new("Гакк", ME.userId, t0)
+            gym.machines.upsert(squat)
+            gym.machineLinks.upsert(
+                MachineLink(MachineLinkId.random(), ME.userId, myPress.id, squat.id, t0, false),
+            )
+            val own = catalogue.own(ME.userId)
+
+            assertEquals(listOf(squat), ShownMachines(own, null).linkedRows(myPress.id))
+            assertEquals(
+                listOf(squat, olegPress),
+                ShownMachines(own, catalogue.group(ME.userId)).linkedRows(myPress.id),
+            )
+        }
+
+    @Test
+    fun signed_out_own_linked_machines_are_linked_rows() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            val squat = Machine.new("Гакк", null, t0)
+            gym.machines.upsert(press)
+            gym.machines.upsert(squat)
+            gym.machineLinks.upsert(
+                MachineLink(MachineLinkId.random(), null, press.id, squat.id, t0, false),
+            )
+
+            val own = catalogue.own(null)
+
+            assertNull(own.me)
+            assertEquals(listOf(squat), ShownMachines(own, null).linkedRows(press.id))
+        }
+
+    @Test
     fun a_group_read_for_another_account_is_not_shown() =
         runTest {
             olegsGym()
