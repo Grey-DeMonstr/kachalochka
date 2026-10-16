@@ -343,6 +343,59 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun the_cycle_length_is_asked_of_a_woman_and_saved_with_the_profile() =
+        runTest {
+            val vm = viewModel()
+            assertFalse(vm.ui.showsCycleLength)
+
+            vm.chooseSex(Sex.Female)
+            assertTrue(vm.ui.showsCycleLength)
+            assertEquals("", vm.ui.cycleLength)
+            vm.typeCycleLength("31")
+            vm.apply()
+
+            assertEquals(31, gym.profiles.forOwner(null)?.cycleLength)
+            assertEquals("31", viewModel().ui.cycleLength)
+        }
+
+    @Test
+    fun a_cycle_length_is_14_to_60_days_and_an_empty_one_is_none() =
+        runTest {
+            gym.profiles.upsert(Profile.new(null, t0).copy(sex = Sex.Female, cycleLength = 30))
+            val vm = viewModel()
+
+            listOf("13", "61", "28.5", "месяц").forEach {
+                vm.typeCycleLength(it)
+                assertFalse(vm.ui.cycleLengthValid, it)
+                assertFalse(vm.ui.canSave, it)
+            }
+            listOf("14", "60").forEach {
+                vm.typeCycleLength(it)
+                assertTrue(vm.ui.cycleLengthValid, it)
+            }
+            vm.typeCycleLength("")
+            assertTrue(vm.ui.canSave)
+            vm.apply()
+
+            assertNull(gym.profiles.forOwner(null)?.cycleLength)
+        }
+
+    @Test
+    fun a_man_s_profile_keeps_the_stored_cycle_length_and_ignores_the_hidden_field() =
+        runTest {
+            gym.profiles.upsert(Profile.new(null, t0).copy(sex = Sex.Female, cycleLength = 30))
+            val vm = viewModel()
+
+            vm.typeCycleLength("5")
+            vm.chooseSex(Sex.Male)
+            assertTrue(vm.ui.canSave)
+            vm.apply()
+
+            assertEquals(Sex.Male, gym.profiles.forOwner(null)?.sex)
+            assertEquals(30, gym.profiles.forOwner(null)?.cycleLength)
+        }
+
+    @Test
     fun switching_the_active_account_reloads_the_profile() =
         runTest {
             gym.withAccounts(ivan, misha, active = ivan)

@@ -65,6 +65,17 @@ class LocalProfileRepositoryTest {
         }
 
     @Test
+    fun the_cycle_length_is_kept_in_the_profile() =
+        runTest {
+            val repository = koin.get<ProfileRepository>()
+            val cycling = profile.copy(cycleLength = 31)
+
+            repository.upsert(cycling)
+
+            assertEquals(cycling, repository.byId(profile.id))
+        }
+
+    @Test
     fun the_machine_sort_is_kept_in_the_profile() =
         runTest {
             val repository = koin.get<ProfileRepository>()

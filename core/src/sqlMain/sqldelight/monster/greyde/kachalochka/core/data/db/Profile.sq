@@ -15,7 +15,8 @@ CREATE TABLE profile (
     weight_unit   TEXT    NOT NULL DEFAULT 'kg',
     group_by_tag  INTEGER AS Boolean NOT NULL DEFAULT 0,
     avatar_photo  TEXT,
-    machine_sort  TEXT    NOT NULL DEFAULT 'recent'
+    machine_sort  TEXT    NOT NULL DEFAULT 'recent',
+    cycle_length  INTEGER
 );
 
 CREATE INDEX profile_updated_at_idx ON profile (updated_at);
@@ -23,9 +24,9 @@ CREATE INDEX profile_updated_at_idx ON profile (updated_at);
 upsert:
 INSERT OR REPLACE INTO profile(
     id, user_id, display_name, updated_at, deleted, friend_colors, sex, birth_date, height_cm,
-    weight_unit, group_by_tag, avatar_photo, machine_sort
+    weight_unit, group_by_tag, avatar_photo, machine_sort, cycle_length
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 byId:
 SELECT * FROM profile WHERE id = ?;

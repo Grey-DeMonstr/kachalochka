@@ -770,6 +770,22 @@ name reads as `Kg`. Settings saves it with the body fields, with or without an a
 `Profile.groupByTag` is `profile.group_by_tag`, false by default, added by the same migrations as
 machine tags; the visit screen writes it as soon as it is switched.
 
+`Profile.cycleLength` is `profile.cycle_length`, an integer of 14 to 60 days (`CYCLE_LENGTHS`, a
+check in Postgres) or null for `DEFAULT_CYCLE_LENGTH`, 28. Migration `0026` and `18.sqm` add it;
+`18.sqm` resets `lastPullAt`. Settings shows the field only while the sex is `Female` and saves it
+with the body fields; with another sex the stored length stays as it is, and the hidden field
+cannot block "Применить".
+
+The cycle arithmetic is pure, in `domain/measures/Cycle.kt`. `cycleAnchors` turns each recorded
+day of the cycle into a `CycleAnchor`: the day it was recorded and the start it tells, day − value
++ 1; a value below 1 tells none. `Cycle.dayOn` counts a day from the start of the anchor recorded
+last of those started by then, modulo the length, so each start rules until the next and the
+latest record rules onwards; before every start the earliest start counts back. `Cycle.bands`
+gives the `PhaseBand`s of a day range: menstruation on days 1 to 5, ovulation on days length − 14
+to length − 12, menstruation first where they meet. `showsCycle` allows the phases on a chart of
+up to `CYCLE_CHART_MONTHS`, three: 1 мес, 3 мес, or "Всё" whose first day is later than three
+months before its last.
+
 ### 4.7 Statistics
 
 The statistics screen reads the account's live sets once, with `WorkoutSetRepository.all`, and

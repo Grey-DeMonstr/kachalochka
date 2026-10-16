@@ -411,6 +411,7 @@ interface Strings {
     val birthDate: String
     val datePlaceholder: String
     val heightCm: String
+    val cycleLength: String
     val bodyFieldsHint: String
     val weightUnits: String
     val mixedUnits: String

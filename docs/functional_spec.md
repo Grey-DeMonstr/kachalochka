@@ -387,7 +387,8 @@ used when the field is left blank. A nickname replaces the Google name everywher
 menu, the set form and every list of people. Friends see it too, and it heads a visit shared as
 text. Пол (Мужской / Женский), Дата рождения (ДД.ММ.ГГГГ, from 1900 to today) and Рост, см (50
 to 250) feed the body fat formulas; they are there without an account too, and an emptied field
-clears its value. Nobody else sees them.
+clears its value. Nobody else sees them. With "Женский", "Длина цикла, дней" follows: 14 to 60,
+and an empty field means 28.
 
 "Единицы веса" in the same section, also there without an account, chooses how gym weights are
 shown: "кг" (the default), "lb" or "Смешанные", where each machine shows its own unit. With "кг"

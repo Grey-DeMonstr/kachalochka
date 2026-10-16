@@ -33,6 +33,7 @@ class ProfileWireTest {
                 groupByTag = true,
                 avatarPhoto = PhotoId("9b1f0c3e-0000-4000-8000-000000000003"),
                 machineSort = MachineSort.Frequent,
+                cycleLength = 31,
             )
 
         assertEquals("1990-06-15", ProfileRow.of(profile).birthDate)

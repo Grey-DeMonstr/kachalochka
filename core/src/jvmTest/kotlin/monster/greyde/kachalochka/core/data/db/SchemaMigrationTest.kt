@@ -623,6 +623,22 @@ class SchemaMigrationTest {
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
+    @Test
+    fun version_18_profiles_have_no_cycle_length_and_are_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        version12ProfileTable()
+        exec("ALTER TABLE profile ADD COLUMN group_by_tag INTEGER NOT NULL DEFAULT 0")
+        exec("ALTER TABLE profile ADD COLUMN avatar_photo TEXT")
+        exec("ALTER TABLE profile ADD COLUMN machine_sort TEXT NOT NULL DEFAULT 'recent'")
+        exec("INSERT INTO profile(id, updated_at) VALUES ('me', 1)")
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 18, 19)
+
+        assertEquals(null, number("SELECT cycle_length FROM profile WHERE id = 'me'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
     /** Versions 5 to 12 declare the machine table this way. */
     private fun version12MachineTable() {
         exec("DROP TABLE machine")

@@ -448,6 +448,7 @@ object EnStrings : Strings {
     override val birthDate = "Birth date"
     override val datePlaceholder = "DD.MM.YYYY"
     override val heightCm = "Height, cm"
+    override val cycleLength = "Cycle length, days"
     override val bodyFieldsHint = "Sex, birth date and height are needed to estimate body fat."
     override val weightUnits = "Weight units"
     override val mixedUnits = "Mixed"

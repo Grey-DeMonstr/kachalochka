@@ -26,6 +26,8 @@ data class Profile(
     /** The photo chosen to stand for the owner instead of the Google picture. */
     val avatarPhoto: PhotoId? = null,
     val machineSort: MachineSort = MachineSort.Recent,
+    /** The menstrual cycle in days; null is the usual 28. */
+    val cycleLength: Int? = null,
 ) {
     companion object {
         /** A signed-in owner's profile id is the owner's own, so devices converge on one row. */

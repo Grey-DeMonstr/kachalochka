@@ -58,6 +58,7 @@ internal fun ProfileQueries.write(profile: Profile) =
         profile.groupByTag,
         profile.avatarPhoto?.value,
         profile.machineSort.wireName(),
+        profile.cycleLength?.toLong(),
     )
 
 internal fun profileOf(
@@ -74,6 +75,7 @@ internal fun profileOf(
     groupByTag: Boolean,
     avatarPhoto: String?,
     machineSort: String,
+    cycleLength: Long?,
 ) = Profile(
     id = ProfileId(id),
     userId = userId?.let(::UserId),
@@ -88,4 +90,5 @@ internal fun profileOf(
     groupByTag = groupByTag,
     avatarPhoto = photoIdOf(avatarPhoto),
     machineSort = machineSortOf(machineSort),
+    cycleLength = cycleLength?.toInt(),
 )

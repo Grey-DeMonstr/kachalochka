@@ -99,6 +99,7 @@ internal data class ProfileRow(
     @SerialName("group_by_tag") val groupByTag: Boolean,
     @SerialName("avatar_photo") val avatarPhoto: String?,
     @SerialName("machine_sort") val machineSort: String?,
+    @SerialName("cycle_length") val cycleLength: Int?,
 ) {
     fun toProfile(): Profile =
         Profile(
@@ -115,6 +116,7 @@ internal data class ProfileRow(
             groupByTag = groupByTag,
             avatarPhoto = photoIdOf(avatarPhoto),
             machineSort = machineSortOf(machineSort),
+            cycleLength = cycleLength,
         )
 
     companion object {
@@ -133,6 +135,7 @@ internal data class ProfileRow(
                 groupByTag = profile.groupByTag,
                 avatarPhoto = profile.avatarPhoto?.value,
                 machineSort = profile.machineSort.wireName(),
+                cycleLength = profile.cycleLength,
             )
     }
 }

@@ -42,6 +42,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import coil3.compose.AsyncImage
+import monster.greyde.kachalochka.core.domain.measures.DEFAULT_CYCLE_LENGTH
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.navigation.MAX_TRANSITION_MILLIS
@@ -332,6 +333,17 @@ private fun ProfileSection(
         valid = profile.heightValid,
     )
     Hint(strings().bodyFieldsHint)
+    if (profile.showsCycleLength) {
+        FieldLabel(strings().cycleLength)
+        TextInput(
+            profile.cycleLength,
+            DEFAULT_CYCLE_LENGTH.toString(),
+            viewModel::typeCycleLength,
+            Modifier.testTag("cycle-length"),
+            KeyboardOptions(keyboardType = KeyboardType.Number),
+            valid = profile.cycleLengthValid,
+        )
+    }
     FieldLabel(strings().weightUnits)
     val units = listOf(PreferredWeightUnit.Kg, PreferredWeightUnit.Lb, PreferredWeightUnit.Mixed)
     ChoiceRow(

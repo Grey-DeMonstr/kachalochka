@@ -76,6 +76,19 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun the_cycle_length_is_asked_once_the_sex_is_female() {
+        val gym = FakeGym()
+        runScreenTest(gym, screen = { settings() }) {
+            onNodeWithTag("cycle-length").assertDoesNotExist()
+            onNodeWithTag("sex-female").performScrollTo().performClick()
+            onNodeWithTag("cycle-length").performScrollTo().performTextInput("30")
+            onNodeWithTag("apply-settings").performScrollTo().performClick()
+            waitForIdle()
+        }
+        assertEquals(30, runBlocking { gym.profiles.forOwner(null)?.cycleLength })
+    }
+
+    @Test
     fun the_transition_field_shows_the_stored_length() {
         runScreenTest(FakeGym(), screen = { settings() }) {
             onNodeWithTag("transition-millis").assertTextEquals("150")

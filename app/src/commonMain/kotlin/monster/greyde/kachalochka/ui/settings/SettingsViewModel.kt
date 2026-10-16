@@ -18,6 +18,7 @@ import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.CYCLE_LENGTHS
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
@@ -58,7 +59,11 @@ data class ProfileUi(
     val heightValid: Boolean,
     val canSave: Boolean,
     val weightUnit: PreferredWeightUnit = PreferredWeightUnit.Kg,
-)
+    val cycleLength: String = "",
+    val cycleLengthValid: Boolean = true,
+) {
+    val showsCycleLength: Boolean get() = sex == Sex.Female
+}
 
 /**
  * The signed-in account's picture: [avatar] as saved, with a photo [chosen] or the chosen one
@@ -181,6 +186,7 @@ class SettingsViewModel(
                 heightValid = true,
                 canSave = false,
                 weightUnit = stored?.weightUnit ?: PreferredWeightUnit.Kg,
+                cycleLength = stored?.cycleLength?.toString().orEmpty(),
             )
         profileOwner = owner
         saved = shown
@@ -198,6 +204,8 @@ class SettingsViewModel(
     fun typeBirthDate(text: String) = edit { it.copy(birthDate = text) }
 
     fun typeHeight(text: String) = edit { it.copy(height = text) }
+
+    fun typeCycleLength(text: String) = edit { it.copy(cycleLength = text) }
 
     fun chooseAvatar(jpeg: ByteArray) = editAvatar { it.copy(chosen = jpeg, removed = false) }
 
@@ -224,6 +232,8 @@ class SettingsViewModel(
                 birthDateValid =
                     edited.birthDate.isBlank() || birthDateOf(edited.birthDate) != null,
                 heightValid = edited.height.isBlank() || heightOf(edited.height) != null,
+                cycleLengthValid =
+                    edited.cycleLength.isBlank() || cycleLengthOf(edited.cycleLength) != null,
             )
         mutableProfile.value =
             checked.copy(canSave = checked.valid && checked.copy(canSave = false) != saved)
@@ -235,7 +245,9 @@ class SettingsViewModel(
         refreshApply()
     }
 
-    private val ProfileUi.valid: Boolean get() = birthDateValid && heightValid
+    // A hidden cycle length is not saved, so it cannot hold the rest back.
+    private val ProfileUi.valid: Boolean
+        get() = birthDateValid && heightValid && (cycleLengthValid || !showsCycleLength)
 
     private fun profileChanged(): Boolean =
         mutableProfile.value?.let { it.copy(canSave = false) != saved?.copy(canSave = false) } ==
@@ -292,6 +304,12 @@ class SettingsViewModel(
                     birthDate = birthDateOf(it.birthDate),
                     heightCm = heightOf(it.height),
                     weightUnit = it.weightUnit,
+                    cycleLength =
+                        if (it.showsCycleLength) {
+                            cycleLengthOf(it.cycleLength)
+                        } else {
+                            existing.cycleLength
+                        },
                 )
             } ?: existing
         val photo =
@@ -408,6 +426,9 @@ class SettingsViewModel(
     }
 
     private fun heightOf(text: String): Double? = parseDecimal(text)?.takeIf { it in heightRange }
+
+    private fun cycleLengthOf(text: String): Int? =
+        text.trim().toIntOrNull()?.takeIf { it in CYCLE_LENGTHS }
 
     private fun today(): CalendarDay {
         val now = clock.now()

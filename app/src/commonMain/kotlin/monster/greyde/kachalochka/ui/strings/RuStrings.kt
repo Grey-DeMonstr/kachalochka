@@ -467,6 +467,7 @@ object RuStrings : Strings {
     override val birthDate = "Дата рождения"
     override val datePlaceholder = "ДД.ММ.ГГГГ"
     override val heightCm = "Рост, см"
+    override val cycleLength = "Длина цикла, дней"
     override val bodyFieldsHint = "Пол, дата рождения и рост нужны для расчёта процента жира."
     override val weightUnits = "Единицы веса"
     override val mixedUnits = "Смешанные"
