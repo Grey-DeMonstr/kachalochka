@@ -40,6 +40,7 @@ import monster.greyde.kachalochka.core.domain.gym.ownStandIn
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.accountAvatar
+import monster.greyde.kachalochka.ui.friends.reading
 import kotlin.time.Clock
 
 /** The account's live machines, with the photos and links that place them. */
@@ -216,6 +217,29 @@ class MachineCatalogue(
 
     /** Drops [owner]'s last group read, once friends' rows changed on the server. */
     fun forget(owner: UserId) = lastGyms.update { it - owner }
+
+    /**
+     * Friends' links into [machine] can be broken only on the server, so they go first, and
+     * nothing is written and false is returned when it does not answer. A sync always follows.
+     */
+    suspend fun unlink(
+        owner: UserId?,
+        machine: MachineId,
+    ): Boolean {
+        if (owner != null) {
+            if (reading { friends.breakLinks(machine) }.isFailure) return false
+            forget(owner)
+        }
+        writingLinks {
+            syncAfter = true
+            val now = clock.now()
+            links
+                .all(owner)
+                .filter { it.machineId == machine || it.linkedMachineId == machine }
+                .forEach { upsert(it.copy(deleted = true, updatedAt = now)) }
+        }
+        return true
+    }
 
     /**
      * [friend]'s machine becomes [owner]'s own, linked to it and to the rest of its cluster in

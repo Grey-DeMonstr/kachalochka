@@ -7,9 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
-import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
-import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -187,9 +185,7 @@ class MachineFormViewModel(
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
-    private val friends: FriendsRepository,
     private val machineLinks: MachineLinkRepository,
-    private val sync: SyncTrigger,
     private val photoRows: PhotoRepository,
     private val catalogue: MachineCatalogue,
     private val sets: WorkoutSetRepository,
@@ -397,23 +393,12 @@ class MachineFormViewModel(
         mutableLinking.value = mutableLinking.value.copy(confirmingUnlink = false)
     }
 
-    /**
-     * Friends' links into the machine can be broken only on the server, so they go first and
-     * nothing is written when it does not answer.
-     */
     fun confirmUnlink() {
         val shown = existing ?: return
         writes.launch {
             val owner = currentUser.id()
             machines.byId(shown.id)?.takeIf { it.userId == owner } ?: return@launch
-            val broken =
-                owner?.let {
-                    reading {
-                        friends.breakLinks(shown.id)
-                        catalogue.forget(it)
-                    }
-                }
-            if (broken?.isFailure == true) {
+            if (!catalogue.unlink(owner, shown.id)) {
                 mutableLinking.value =
                     mutableLinking.value.copy(
                         confirmingUnlink = false,
@@ -421,12 +406,6 @@ class MachineFormViewModel(
                     )
                 return@launch
             }
-            val now = clock.now()
-            machineLinks
-                .all(owner)
-                .filter { it.touches(shown.id) }
-                .forEach { machineLinks.upsert(it.copy(deleted = true, updatedAt = now)) }
-            sync.request()
             mutableLinking.value =
                 mutableLinking.value.copy(confirmingUnlink = false, error = null)
             refreshLinks()

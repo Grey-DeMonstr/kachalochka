@@ -25,6 +25,7 @@ import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -750,5 +751,82 @@ class MachineCatalogueTest {
                 gym.machineLinks.rows.values
                     .count { it.machineId == copy.id && it.linkedMachineId == olegRow.id },
             )
+        }
+
+    private suspend fun linkedMine(): Pair<Machine, MachineLink> {
+        olegsGym()
+        val mine = Machine.new("Тяга", ME.userId, t0)
+        gym.machines.upsert(mine)
+        val link = ownLink(ME.userId, mine.id, olegRow.id)
+        gym.machineLinks.upsert(link)
+        catalogue.group(ME.userId)
+        return mine to link
+    }
+
+    @Test
+    fun unlinking_breaks_friends_links_then_deletes_the_own_ones_and_drops_the_last_group_read() =
+        runTest {
+            val (mine, link) = linkedMine()
+            gym.clock.current += 1.minutes
+
+            assertTrue(catalogue.unlink(ME.userId, mine.id))
+
+            assertEquals(listOf(mine.id), gym.friends.broken)
+            assertEquals(
+                link.copy(deleted = true, updatedAt = gym.clock.current),
+                gym.machineLinks.rows[link.id],
+            )
+            assertNull(catalogue.lastGroup(ME.userId))
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun offline_unlinking_writes_nothing_and_keeps_the_last_group_read() =
+        runTest {
+            val (mine, link) = linkedMine()
+            val requests = gym.sync.requests
+            gym.friends.offline = true
+
+            assertFalse(catalogue.unlink(ME.userId, mine.id))
+
+            assertEquals(link, gym.machineLinks.rows[link.id])
+            assertNotNull(catalogue.lastGroup(ME.userId))
+            assertEquals(requests, gym.sync.requests)
+        }
+
+    @Test
+    fun signed_out_unlinking_deletes_the_own_links_without_the_server() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            val squat = Machine.new("Гакк", null, t0)
+            gym.machines.upsert(press)
+            gym.machines.upsert(squat)
+            val link = MachineLink(MachineLinkId.random(), null, press.id, squat.id, t0, false)
+            gym.machineLinks.upsert(link)
+            val requests = gym.sync.requests
+
+            assertTrue(catalogue.unlink(null, press.id))
+
+            assertTrue(
+                gym.machineLinks.rows
+                    .getValue(link.id)
+                    .deleted,
+            )
+            assertEquals(emptyList(), gym.friends.broken)
+            assertEquals(0, gym.friends.reads)
+            assertEquals(requests + 1, gym.sync.requests)
+        }
+
+    @Test
+    fun unlinking_a_machine_only_friends_link_to_still_asks_for_a_sync() =
+        runTest {
+            olegsGym()
+            val requests = gym.sync.requests
+
+            assertTrue(catalogue.unlink(ME.userId, myPress.id))
+
+            assertEquals(listOf(myPress.id), gym.friends.broken)
+            assertEquals(emptyMap(), gym.machineLinks.rows)
+            assertEquals(requests + 1, gym.sync.requests)
         }
 }
