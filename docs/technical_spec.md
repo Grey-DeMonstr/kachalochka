@@ -741,6 +741,9 @@ is a multiple of, within 1e-6 for the double's rounding, else 0.1. "Все ре�
 `AllResults` composable in `ui/components`, which also draws a machine's history; it takes
 `HistoryRowUi` rows and an optional tap handler.
 
+A version that does not know a kind reads it as none and writes it back as none. So
+`storedKindOf`, on the wire and in SQLite, takes a missing or unknown kind from a matching
+`derivedId(owner, kind)`, and `MeasureRepository.predefined` reads rows of every kind.
 `MeasureKind.CycleDay` (`cycle_day`) is seeded by `missingDefaults` only for the sex `Female`, at
 position 7; it is not locked, so a deleted one stays deleted, and `methodsReading` gives it no
 method. `isShownFor` hides it from "Замеры", the form and the list rows for any other sex; its
@@ -753,7 +756,8 @@ delta stay empty.
 The phases behind the other charts come from `cycleOf(profile, measures, values)`: null unless the
 sex is `Female` and a live `CycleDay` measure has a value; a managed child has no measures, so
 none. `MeasureViewModel`, `BodyFatViewModel` and `StatisticsViewModel` read it from the
-account's own rows; `FriendMachineViewModel` passes none to `machineStatsUi`. `chartPhases` cuts
+account's own rows; the statistics publish first and add the phases after, and a failed read
+leaves them out. `FriendMachineViewModel` passes none to `machineStatsUi`. `chartPhases` cuts
 the bands to the chart's first and last point and keeps them only while `showsCycle` allows the
 period; the machine chart runs over the whole period, so `machineStatsUi` cuts them there, for
 `StatsPeriod.months` up to `CYCLE_CHART_MONTHS`. `MeasureChart` and `StatsChart` draw them with
@@ -805,7 +809,8 @@ day of the cycle into a `CycleAnchor`: the day it was recorded and the start it 
 last of those started by then, modulo the length, so each start rules until the next and the
 latest record rules onwards; before every start the earliest start counts back. `Cycle.bands`
 gives the `PhaseBand`s of a day range: menstruation on days 1 to 5, ovulation on days length − 14
-to length − 12, menstruation first where they meet. `showsCycle` allows the phases on a chart of
+(1 at the earliest) to length − 12. In a cycle shorter than 18 days they overlap, and the dashed
+outline is drawn over the fill. `showsCycle` allows the phases on a chart of
 up to `CYCLE_CHART_MONTHS`, three: 1 мес, 3 мес, or "Всё" whose first day is later than three
 months before its last.
 

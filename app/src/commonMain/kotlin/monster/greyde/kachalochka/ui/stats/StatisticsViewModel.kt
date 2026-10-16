@@ -35,7 +35,6 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.groupByTagChoice
-import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
@@ -139,6 +138,7 @@ class StatisticsViewModel(
     private var peaks: Map<MachineId, MachinePeaks> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
     private var cycle: Cycle? = null
+    private var cycleOwner: UserId? = null
     private var improvementsOnly = true
     private var notice: String? = null
     private var query = ""
@@ -172,13 +172,20 @@ class StatisticsViewModel(
                 val all = sets.all(owner)
                 setsByMachine = all.groupBy { it.machineId }
                 peaks = machinePeaks(all).associateBy { it.machineId }
-                preferred = profiles.preferredUnit(owner)
-                cycle =
-                    cycleOf(profiles.forOwner(owner), measures.all(owner), measurements.all(owner))
+                val profile = profiles.forOwner(owner)
+                preferred = profile?.weightUnit ?: PreferredWeightUnit.Kg
+                if (owner != cycleOwner) cycle = null
                 grouping.read(owner)
                 sharer = reading { nickname.of(owner) }.getOrDefault("")
                 publish()
                 owner?.let(::loadGroup)
+                // The phases only decorate the chart, so a failed read leaves them out.
+                cycle =
+                    reading {
+                        cycleOf(profile, measures.all(owner), measurements.all(owner))
+                    }.getOrNull()
+                cycleOwner = owner
+                publish()
             }
     }
 

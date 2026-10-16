@@ -95,14 +95,17 @@ internal fun DrawScope.drawPhase(
     }
 }
 
-/** [xOf] places an epoch day's middle; each band covers its days in full over [area]'s height. */
+/**
+ * [xOf] places an epoch day's middle; each band covers its days in full over [area]'s height.
+ * Outlines go over fills, where a short cycle overlaps them.
+ */
 internal fun DrawScope.drawPhases(
     bands: List<PhaseBand>,
     xOf: (Double) -> Float,
     area: Rect,
     colors: PhaseColors,
 ) = clipRect(area.left, area.top, area.right, area.bottom) {
-    bands.forEach { band ->
+    bands.sortedBy { it.phase }.forEach { band ->
         val left = xOf(band.first.epochDay - 0.5)
         val right = xOf(band.last.epochDay + 0.5)
         drawPhase(band.phase, Rect(left, area.top, right, area.bottom), colors)

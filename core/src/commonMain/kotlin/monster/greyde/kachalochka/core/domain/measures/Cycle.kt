@@ -74,29 +74,38 @@ fun Cycle.dayOn(day: CalendarDay): Int {
     return (day.epochDay - ruling.start.epochDay).mod(length) + 1
 }
 
-/** Menstruation wins a day that is in both phases, as in a short cycle. */
-fun Cycle.phaseOn(day: CalendarDay): CyclePhase? {
-    val number = dayOn(day)
-    return when {
-        number <= MENSTRUATION_DAYS -> CyclePhase.Menstruation
-        number in
-            (length - OVULATION_FIRST_BEFORE_END)..(length - OVULATION_LAST_BEFORE_END) ->
-            CyclePhase.Ovulation
-        else -> null
+/** The days of [phase]; in a short cycle the ovulation window starts on day 1 at the earliest. */
+fun Cycle.daysOf(phase: CyclePhase): IntRange =
+    when (phase) {
+        CyclePhase.Menstruation -> 1..MENSTRUATION_DAYS
+        CyclePhase.Ovulation ->
+            maxOf(1, length - OVULATION_FIRST_BEFORE_END)..(length - OVULATION_LAST_BEFORE_END)
     }
-}
 
-/** The phases from [from] to [to], oldest first, each cut to the range. */
+/**
+ * The phases from [from] to [to], each cut to the range, by first day and menstruation first. In
+ * a short cycle the two phases overlap.
+ */
 fun Cycle.bands(
     from: CalendarDay,
     to: CalendarDay,
+): List<PhaseBand> =
+    CyclePhase.entries
+        .flatMap { phase -> bandsOf(phase, from, to) }
+        .sortedWith(compareBy({ it.first }, { it.phase }))
+
+private fun Cycle.bandsOf(
+    phase: CyclePhase,
+    from: CalendarDay,
+    to: CalendarDay,
 ): List<PhaseBand> {
+    val days = daysOf(phase)
     val bands = mutableListOf<PhaseBand>()
     for (epochDay in from.epochDay..to.epochDay) {
         val day = CalendarDay.ofEpochDay(epochDay)
-        val phase = phaseOn(day) ?: continue
+        if (dayOn(day) !in days) continue
         val open = bands.lastOrNull()
-        if (open != null && open.phase == phase && open.last.epochDay == epochDay - 1) {
+        if (open != null && open.last.epochDay == epochDay - 1) {
             bands[bands.lastIndex] = open.copy(last = day)
         } else {
             bands += PhaseBand(phase, day, day)

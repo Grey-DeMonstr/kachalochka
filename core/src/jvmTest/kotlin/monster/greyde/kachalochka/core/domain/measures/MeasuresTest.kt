@@ -265,6 +265,18 @@ class MeasuresTest {
     }
 
     @Test
+    fun a_stored_kind_reads_by_name_else_from_the_owner_s_derived_id() {
+        val cycleId = derivedId(ivan, MeasureKind.CycleDay)
+
+        assertEquals(MeasureKind.Neck, storedKindOf("neck", cycleId, ivan))
+        assertEquals(MeasureKind.CycleDay, storedKindOf(null, cycleId, ivan))
+        assertEquals(MeasureKind.CycleDay, storedKindOf("forearm", cycleId, ivan))
+        assertNull(storedKindOf(null, cycleId, misha))
+        assertNull(storedKindOf(null, cycleId, null))
+        assertNull(storedKindOf(null, LOW_ID, ivan))
+    }
+
+    @Test
     fun of_two_values_on_one_day_the_newest_is_kept_and_the_newest_day_comes_first() {
         val weight = MeasureId.random()
         val waist = MeasureId.random()

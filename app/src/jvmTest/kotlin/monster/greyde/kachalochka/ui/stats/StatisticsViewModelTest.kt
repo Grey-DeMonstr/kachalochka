@@ -16,10 +16,12 @@ import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.Cycle
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
+import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.measures.cycleAnchors
 import monster.greyde.kachalochka.core.domain.measures.missingDefaults
 import monster.greyde.kachalochka.core.domain.profile.Profile
@@ -78,6 +80,7 @@ class StatisticsViewModelTest {
     private fun viewModel(
         machine: MachineId? = null,
         on: FakeGym = gym,
+        measurements: MeasurementRepository = on.measurements,
     ) = StatisticsViewModel(
         machine,
         on.currentUser,
@@ -87,7 +90,7 @@ class StatisticsViewModelTest {
         on.sets,
         on.profiles,
         on.measures,
-        on.measurements,
+        measurements,
         on.clock,
         on.utcOffset,
         Nickname(on.profiles, on.accounts),
@@ -143,6 +146,22 @@ class StatisticsViewModelTest {
                 vm.state.value.machine
                     ?.phases,
             )
+        }
+
+    @Test
+    fun a_failed_read_of_the_measures_leaves_the_statistics_without_phases() =
+        runTest {
+            gym.profiles.upsert(Profile.new(null, t0).copy(sex = Sex.Female))
+            val failing =
+                object : MeasurementRepository by gym.measurements {
+                    override suspend fun all(owner: UserId?): List<Measurement> =
+                        throw IllegalStateException("no connection")
+                }
+
+            val machine = viewModel(press.id, measurements = failing).state.value.machine
+
+            assertEquals(2, machine?.points?.size)
+            assertNull(machine?.phases)
         }
 
     @Test

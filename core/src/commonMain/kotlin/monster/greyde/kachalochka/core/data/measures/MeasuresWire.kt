@@ -8,7 +8,7 @@ import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
-import monster.greyde.kachalochka.core.domain.measures.measureKindOf
+import monster.greyde.kachalochka.core.domain.measures.storedKindOf
 import monster.greyde.kachalochka.core.domain.measures.wireName
 import kotlin.time.Instant
 
@@ -32,7 +32,7 @@ internal data class MeasureRow(
             userId = userId?.let(::UserId),
             name = name,
             unit = unit,
-            kind = kind?.let(::measureKindOf),
+            kind = storedKindOf(kind, id, userId?.let(::UserId)),
             position = position,
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,

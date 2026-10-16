@@ -36,7 +36,7 @@ import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 import kotlin.time.Instant
 
-/** [hint] is the measure's latest value before the form's day. */
+/** [hint]: a cycle day hints the day it should be; other measures, the value before. */
 data class MeasureFieldUi(
     val id: MeasureId,
     val name: String,
@@ -253,7 +253,6 @@ class MeasurementFormViewModel(
             )
     }
 
-    /** The day of the cycle is due, not the same as last time. */
     private fun hint(measure: Measure): String? {
         val own = values.filter { it.measureId == measure.id }
         if (measure.kind == MeasureKind.CycleDay) {

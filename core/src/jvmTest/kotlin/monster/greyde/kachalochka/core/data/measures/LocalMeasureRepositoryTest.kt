@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
+import monster.greyde.kachalochka.core.domain.measures.derivedId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -71,6 +72,20 @@ class LocalMeasureRepositoryTest {
             repository.upsert(measure(ivan))
 
             assertEquals(listOf(anonymous), repository.all(null))
+        }
+
+    @Test
+    fun a_kind_an_older_version_wrote_as_none_comes_back_from_the_derived_id() =
+        runTest {
+            val cycle =
+                measure(ivan).copy(id = MeasureId(derivedId(ivan, MeasureKind.CycleDay)))
+            val own = measure(ivan, position = 1)
+            val recovered = cycle.copy(kind = MeasureKind.CycleDay)
+            repository.upsert(cycle)
+            repository.upsert(own)
+
+            assertEquals(listOf(recovered, own), repository.all(ivan))
+            assertEquals(listOf(recovered), repository.predefined(ivan))
         }
 
     @Test

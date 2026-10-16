@@ -108,15 +108,30 @@ class CycleTest {
     }
 
     @Test
-    fun in_a_short_cycle_menstruation_hides_the_ovulation_days_it_covers() {
+    fun in_a_short_cycle_the_ovulation_window_overlaps_menstruation() {
         val cycle = Cycle(cycleAnchors(mapOf(oct1 to 1.0)), 18)
 
         assertEquals(
             listOf(
                 PhaseBand(CyclePhase.Menstruation, oct1, day(4)),
-                PhaseBand(CyclePhase.Ovulation, day(5), day(5)),
+                PhaseBand(CyclePhase.Ovulation, day(3), day(5)),
             ),
             cycle.bands(oct1, day(10)),
+        )
+    }
+
+    @Test
+    fun the_shortest_cycle_has_no_day_zero_in_its_ovulation_window() {
+        val cycle = Cycle(cycleAnchors(mapOf(oct1 to 1.0)), 14)
+
+        assertEquals(
+            listOf(
+                PhaseBand(CyclePhase.Menstruation, oct1, day(4)),
+                PhaseBand(CyclePhase.Ovulation, oct1, day(1)),
+                PhaseBand(CyclePhase.Menstruation, day(14), day(15)),
+                PhaseBand(CyclePhase.Ovulation, day(14), day(15)),
+            ),
+            cycle.bands(day(-1), day(15)),
         )
     }
 

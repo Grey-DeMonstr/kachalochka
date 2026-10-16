@@ -9,8 +9,8 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
-import monster.greyde.kachalochka.core.domain.measures.measureKindOf
 import monster.greyde.kachalochka.core.domain.measures.measureOrder
+import monster.greyde.kachalochka.core.domain.measures.storedKindOf
 import monster.greyde.kachalochka.core.domain.measures.wireName
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
 import kotlin.time.Instant
@@ -75,7 +75,7 @@ internal fun measureOf(
     userId = userId?.let(::UserId),
     name = name,
     unit = unit,
-    kind = kind?.let(::measureKindOf),
+    kind = storedKindOf(kind, id, userId?.let(::UserId)),
     position = position.toInt(),
     updatedAt = updatedAt,
     deleted = deleted,

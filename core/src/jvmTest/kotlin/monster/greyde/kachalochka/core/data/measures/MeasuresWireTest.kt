@@ -7,6 +7,7 @@ import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
+import monster.greyde.kachalochka.core.domain.measures.derivedId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -36,6 +37,17 @@ class MeasuresWireTest {
         val row = MeasureRow.of(measure).copy(kind = "forearm")
 
         assertNull(row.toMeasure().kind)
+    }
+
+    @Test
+    fun a_kind_an_older_version_wrote_as_none_comes_back_from_the_derived_id() {
+        val owner = measure.userId!!
+        val cycle =
+            MeasureRow.of(measure).copy(id = derivedId(owner, MeasureKind.CycleDay), kind = null)
+        val own = MeasureRow.of(measure).copy(kind = null)
+
+        assertEquals(MeasureKind.CycleDay, cycle.toMeasure().kind)
+        assertNull(own.toMeasure().kind)
     }
 
     @Test

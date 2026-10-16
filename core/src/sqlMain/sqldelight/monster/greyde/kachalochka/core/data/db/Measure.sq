@@ -25,9 +25,10 @@ live:
 SELECT * FROM measure
 WHERE deleted = 0 AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
 
+-- Every row of the owner: a kind an older version stored as none is told by the id.
 predefined:
 SELECT * FROM measure
-WHERE kind IS NOT NULL AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner);
+WHERE (:owner IS NULL AND user_id IS NULL) OR user_id = :owner;
 
 ownerlessIds:
 SELECT id FROM measure WHERE user_id IS NULL;

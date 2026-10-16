@@ -54,6 +54,18 @@ fun MeasureKind.wireName(): String =
 fun measureKindOf(wire: String): MeasureKind? =
     MeasureKind.entries.firstOrNull { it.wireName() == wire }
 
+/**
+ * The kind of row [id] of [owner]. An older version writes a kind it does not know as none, but
+ * the derived id still tells it, so the row stays the seed a newer version would write.
+ */
+fun storedKindOf(
+    wire: String?,
+    id: String,
+    owner: UserId?,
+): MeasureKind? =
+    wire?.let(::measureKindOf)
+        ?: owner?.let { MeasureKind.entries.firstOrNull { kind -> derivedId(it, kind) == id } }
+
 /** [kind] is null for a measure the user added. */
 data class Measure(
     val id: MeasureId,
