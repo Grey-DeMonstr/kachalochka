@@ -1,11 +1,14 @@
 package monster.greyde.kachalochka.ui.stats
 
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -104,12 +107,55 @@ class StatisticsScreenTest {
         }
 
     @Test
-    fun the_dropdown_and_the_period_chips_change_what_is_shown() =
+    fun the_search_filters_the_machines_shows_the_found_part_and_the_cross_cancels_it() =
+        runScreenTest(gym, screen = { StatisticsScreen(press.id, {}, {}) }) {
+            onNodeWithTag("stats-search").assertDoesNotExist()
+            onNodeWithTag("stats-choice").performClick()
+            waitForIdle()
+
+            onNodeWithTag("stats-choice-overall").assertExists()
+            onNodeWithTag("stats-choice-check-${press.id.value}", useUnmergedTree = true)
+                .assertExists()
+            onNodeWithTag("stats-choice-check-${row.id.value}", useUnmergedTree = true)
+                .assertDoesNotExist()
+            onNodeWithTag("stats-search").assertIsFocused().performTextInput("ног")
+            waitForIdle()
+
+            onNodeWithTag("stats-choice-overall").assertDoesNotExist()
+            onNodeWithTag("stats-choice-${row.id.value}").assertDoesNotExist()
+            val name =
+                onNodeWithTag("stats-choice-name-${press.id.value}", useUnmergedTree = true)
+                    .fetchSemanticsNode()
+                    .config[SemanticsProperties.Text]
+                    .single()
+            assertEquals("Жим ногами", name.text)
+            assertEquals(listOf(4 until 7), name.spanStyles.map { it.start until it.end })
+
+            onNodeWithTag("stats-search").performTextInput("xyz")
+            waitForIdle()
+            onNodeWithTag("stats-choice-empty").assertTextEquals("Ничего не найдено")
+
+            onNodeWithTag("stats-search-cancel").performClick()
+            waitForIdle()
+            onNodeWithTag("stats-choice-list").assertDoesNotExist()
+            onNodeWithTag("stats-choice").assertTextContains("Жим ногами")
+
+            onNodeWithTag("stats-choice").performClick()
+            waitForIdle()
+            onNodeWithTag("stats-search").assertTextEquals("")
+            onNodeWithTag("stats-choice-overall").assertExists()
+        }
+
+    @Test
+    fun the_machine_choice_and_the_period_chips_change_what_is_shown() =
         runScreenTest(gym, screen = { StatisticsScreen(press.id, {}, {}) }) {
             onNodeWithTag("stats-choice").performClick()
+            onNodeWithTag("stats-search").performTextInput("тяг")
             onNodeWithTag("stats-choice-${row.id.value}").performClick()
             waitForIdle()
 
+            onNodeWithTag("stats-choice-list").assertDoesNotExist()
+            onNodeWithTag("stats-choice").assertTextContains("Тяга")
             onNodeWithTag("stats-empty").assertTextEquals("Нет подходов за период")
 
             onNodeWithTag("period-threemonths").performClick()

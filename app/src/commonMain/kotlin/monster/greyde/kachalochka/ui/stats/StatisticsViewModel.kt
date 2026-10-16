@@ -18,11 +18,14 @@ import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
 import monster.greyde.kachalochka.core.domain.gym.StatsSort
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.anyNameMatches
 import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.machineProgress
+import monster.greyde.kachalochka.core.domain.gym.matchedPart
 import monster.greyde.kachalochka.core.domain.gym.statsOrder
 import monster.greyde.kachalochka.core.domain.gym.weightGain
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.Nickname
@@ -37,6 +40,7 @@ import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.shownLabel
 import monster.greyde.kachalochka.ui.format.shownWeight
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.machine.GroupMachines
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.OwnMachines
 import monster.greyde.kachalochka.ui.machine.ShownMachines
@@ -48,6 +52,8 @@ data class StatsChoiceUi(
     val id: MachineId,
     val name: String,
     val photo: Photo?,
+    /** The part of [name] the search found; null when the search found the machine otherwise. */
+    val matched: IntRange? = null,
 )
 
 /** A machine's change over the period, from its [from] set to its [to] set. */
@@ -89,8 +95,15 @@ data class StatisticsUiState(
     /** What the export left to confirm, as the web's "copied". */
     val notice: String? = null,
     val machine: MachineStatsUi? = null,
+    /** The search over [choiceSections]. */
+    val query: String = "",
 ) {
     val choices: List<StatsChoiceUi> get() = choiceSections.flatMap { it.items }
+
+    /** "Общая" is offered while nothing is searched. */
+    val showsOverall: Boolean get() = query.isBlank()
+
+    val nothingFound: Boolean get() = !showsOverall && choiceSections.isEmpty()
     val overall: List<ProgressCardUi> get() = overallSections.flatMap { it.items }
 }
 
@@ -115,12 +128,15 @@ class StatisticsViewModel(
     private var period = StatsPeriod.Month
     private var sort = StatsSort.Recent
     private var own: OwnMachines? = null
+    private var group: GroupMachines? = null
     private var setsByMachine: Map<MachineId, List<WorkoutSet>> = emptyMap()
     private var peaks: Map<MachineId, MachinePeaks> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
     private var improvementsOnly = true
     private var notice: String? = null
+    private var query = ""
     private var loading: Job? = null
+    private var loadingGroup: Job? = null
 
     /**
      * Read ahead of the tap: a browser lets the clipboard be written only while a tap is recent,
@@ -138,8 +154,10 @@ class StatisticsViewModel(
         viewModelScope.launch { sync.completed.collect { load() } }
     }
 
+    /** The account's own data shows at once; the group's, for the search, follows if it answers. */
     fun load() {
         loading?.cancel()
+        loadingGroup?.cancel()
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
@@ -151,12 +169,27 @@ class StatisticsViewModel(
                 grouping.read(owner)
                 sharer = reading { nickname.of(owner) }.getOrDefault("")
                 publish()
+                owner?.let(::loadGroup)
             }
     }
 
-    /** A null [machine] is "Общая". */
+    private fun loadGroup(owner: UserId) {
+        loadingGroup =
+            viewModelScope.launch {
+                group = reading { catalogue.group(owner) }.getOrNull()
+                publish()
+            }
+    }
+
+    /** A null [machine] is "Общая". The choice ends the search. */
     fun choose(machine: MachineId?) {
         selected = machine
+        query = ""
+        publish()
+    }
+
+    fun search(text: String) {
+        query = text
         publish()
     }
 
@@ -198,7 +231,7 @@ class StatisticsViewModel(
 
     private fun publish() {
         val read = own ?: return
-        val shown = ShownMachines(read, null)
+        val shown = ShownMachines(read, group)
         val now = clock.now()
         val today = CalendarDay.of(now, utcOffset.at(now))
         val start = period.start(today)
@@ -222,9 +255,12 @@ class StatisticsViewModel(
         val overall = if (machine == null) listed else emptyList()
 
         fun choice(it: Machine) = StatsChoiceUi(it.id, it.name, shown.cover(it.id))
+        val found =
+            ordered.filter { anyNameMatches(listOf(it.name) + shown.linkedNames(it), query) }
         mutableState.value =
             StatisticsUiState(
-                choiceSections = sections(ordered, ::choice),
+                choiceSections =
+                    sections(found) { choice(it).copy(matched = matchedPart(it.name, query)) },
                 selected = machine?.let(::choice),
                 period = period,
                 sort = sort,
@@ -246,6 +282,7 @@ class StatisticsViewModel(
                             utcOffset,
                         )
                     },
+                query = query,
             )
     }
 

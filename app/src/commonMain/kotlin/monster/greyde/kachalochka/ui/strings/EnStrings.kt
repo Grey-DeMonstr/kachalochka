@@ -274,6 +274,7 @@ object EnStrings : Strings {
     override val best = "Best"
     override val noChange = "No change"
     override val clearSearch = "Clear search"
+    override val cancelSearch = "Cancel search"
     override val copySettings = "Copy settings"
     override val newMachine = "New machine"
     override val improvementsOnly = "Improvements only"

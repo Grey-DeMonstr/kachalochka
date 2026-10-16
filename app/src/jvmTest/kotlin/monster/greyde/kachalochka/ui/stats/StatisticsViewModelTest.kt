@@ -15,8 +15,12 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.Nickname
+import monster.greyde.kachalochka.ui.friends.ME
+import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -62,21 +66,23 @@ class StatisticsViewModelTest {
         }
     }
 
-    private fun viewModel(machine: MachineId? = null) =
-        StatisticsViewModel(
-            machine,
-            gym.currentUser,
-            gym.accounts,
-            gym.sync,
-            gym.catalogue,
-            gym.sets,
-            gym.profiles,
-            gym.clock,
-            gym.utcOffset,
-            Nickname(gym.profiles, gym.accounts),
-            gym.texts,
-            gym.unsaved,
-        ).also { it.load() }
+    private fun viewModel(
+        machine: MachineId? = null,
+        on: FakeGym = gym,
+    ) = StatisticsViewModel(
+        machine,
+        on.currentUser,
+        on.accounts,
+        on.sync,
+        on.catalogue,
+        on.sets,
+        on.profiles,
+        on.clock,
+        on.utcOffset,
+        Nickname(on.profiles, on.accounts),
+        on.texts,
+        on.unsaved,
+    ).also { it.load() }
 
     @BeforeTest
     fun setUp() =
@@ -400,6 +406,67 @@ class StatisticsViewModelTest {
 
         assertNull(chosen.best)
         assertEquals(emptyList(), chosen.points)
+    }
+
+    @Test
+    fun a_search_keeps_the_matching_choices_in_their_sections_with_the_matched_part() =
+        runTest {
+            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
+            val vm = viewModel()
+            vm.toggleGroupByTag()
+            assertTrue(vm.state.value.showsOverall)
+
+            vm.search("ногм")
+
+            assertFalse(vm.state.value.showsOverall)
+            assertEquals(
+                listOf("НОГИ" to listOf(press.id to 4..8)),
+                vm.state.value.choiceSections
+                    .map { s -> s.title to s.items.map { it.id to it.matched } },
+            )
+            assertFalse(vm.state.value.nothingFound)
+
+            vm.search("присед")
+
+            assertEquals(emptyList(), vm.state.value.choiceSections)
+            assertTrue(vm.state.value.nothingFound)
+        }
+
+    @Test
+    fun a_search_finds_an_own_machine_by_the_name_of_a_linked_friend_s_one() =
+        runTest {
+            val on = signedInGym()
+            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
+            val (copy, link) = linkedCopy(olegs, ME.userId, t0, emptySet())
+            val mine = copy.copy(name = "Присед в тренажёре")
+            on.friends.machines += olegs
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+            val vm = viewModel(on = on)
+
+            vm.search("гакк")
+
+            val found = vm.state.value.choices
+            assertEquals(listOf(mine.id), found.map { it.id })
+            assertNull(found.single().matched)
+        }
+
+    @Test
+    fun choosing_a_machine_ends_the_search() {
+        val vm = viewModel()
+        vm.search("тяг")
+
+        vm.choose(row.id)
+
+        assertEquals("", vm.state.value.query)
+        assertTrue(vm.state.value.showsOverall)
+        assertEquals(3, vm.state.value.choices.size)
+        assertEquals(
+            row.id,
+            vm.state.value.selected
+                ?.id,
+        )
     }
 
     @Test

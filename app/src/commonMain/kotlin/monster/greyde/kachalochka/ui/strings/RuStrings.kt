@@ -292,6 +292,7 @@ object RuStrings : Strings {
     override val best = "Лучший"
     override val noChange = "Без изменений"
     override val clearSearch = "Очистить поиск"
+    override val cancelSearch = "Отменить поиск"
     override val copySettings = "Скопировать настройки"
     override val newMachine = "Новое упражнение"
     override val improvementsOnly = "Только улучшения"

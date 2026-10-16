@@ -500,10 +500,16 @@ or "Doing some press" measured in times.
 ## Statistics
 
 "Статистика" on the home screen opens the statistics on "Общая"; a machine's page and its form open
-them on that machine. At the top a dropdown chooses "Общая" or one of the account's machines,
-listed by name with their photos, and chips under it choose the period: "Месяц", "3 месяца", "6
-месяцев" or "Год". A period counts its months back from today, as the measure screen's do: on 1
-October "Месяц" starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
+them on that machine. At the top a field shows the chosen machine, with its photo, or "Общая"
+with a chart icon, and a magnifying glass at its end. A tap on it starts a search: the field
+takes an empty text with a cross, and a list opens under it. The list holds "Общая" while nothing
+is typed, then the account's machines with their photos, the chosen one checked. Typed text
+keeps the machines whose name, or a linked friend's machine's name, matches as in the machine
+list; the matching part of the name is coloured. With nothing left, the list says
+"Ничего не найдено". A choice closes the list and clears the text; the cross or "back" does the
+same without a choice. Chips under the field choose the period: "Месяц", "3 месяца", "6 месяцев" or
+"Год". A period counts its months back from today, as the measure screen's do: on 1 October
+"Месяц" starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
 
 A machine shows a trophy with the period's best set, then a line chart of each day's best weight
 across the whole period. A gravitron's weights are drawn negative, with zero on top. A period
@@ -516,9 +522,9 @@ its sets can be edited.
 "Частые", as in the machine list, and "Рост", the biggest weight gain in percent of the starting
 weight first, then the most reps gained. The sort is not remembered. When a machine has tags,
 "Группировать по тегам" follows, the same choice as the visit screen's: it splits the cards into
-sections headed by their tags, as the visit does. The sort and the grouping order the dropdown's
-machines too. "Только улучшения", on each time the screen opens, keeps only the cards with a green
-chip; with none left, the list says "Нет улучшений за период".
+sections headed by their tags, as the visit does. The sort and the grouping order the search
+list's machines too. "Только улучшения", on each time the screen opens, keeps only the cards with
+a green chip; with none left, the list says "Нет улучшений за период".
 
 Under "Упражнения за период · с 1 сентября" come the machines with a set in the period: each with
 its photo, its name and two boxes joined by an arrow. With a set before the period they hold the

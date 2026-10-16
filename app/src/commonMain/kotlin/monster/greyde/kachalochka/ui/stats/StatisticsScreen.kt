@@ -3,21 +3,26 @@ package monster.greyde.kachalochka.ui.stats
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,15 +32,31 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
@@ -65,9 +86,28 @@ fun StatisticsScreen(
     val viewModel: StatisticsViewModel = koinViewModel { parametersOf(initial) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
+    var searching by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    fun choose(machine: MachineId?) {
+        focusManager.clearFocus()
+        searching = false
+        viewModel.choose(machine)
+    }
+
+    fun endSearch() {
+        focusManager.clearFocus()
+        searching = false
+        viewModel.search("")
+    }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = searching,
+        onBackCompleted = { endSearch() },
+    )
     Screen(
         strings().statistics,
-        onBack = onBack,
+        onBack = { if (searching) endSearch() else onBack() },
         onOpenSettings = onOpenSettings,
         actions = {
             if (state.selected == null && state.overall.isNotEmpty()) {
@@ -80,58 +120,117 @@ fun StatisticsScreen(
             }
         },
     ) {
-        Column(
-            Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            MachineChoice(state, viewModel::choose)
-            PeriodChips(state.period, viewModel::choosePeriod)
-        }
-        Column(
-            Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-        ) {
-            val machine = state.machine
-            if (machine == null) {
-                Overall(
-                    state,
-                    viewModel::choose,
-                    viewModel::chooseSort,
-                    viewModel::toggleGroupByTag,
-                    viewModel::toggleImprovementsOnly,
-                    viewModel::dismissNotice,
+        Box(Modifier.weight(1f)) {
+            Column(Modifier.fillMaxSize()) {
+                Column(
+                    Modifier.padding(start = 16.dp, end = 16.dp, top = ChoiceTop),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    ChoiceField(
+                        state.selected,
+                        searching,
+                        onOpen = { searching = true },
+                        onSearch = viewModel::search,
+                        onCancel = { endSearch() },
+                    )
+                    PeriodChips(state.period, viewModel::choosePeriod)
+                }
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                ) {
+                    val machine = state.machine
+                    if (machine == null) {
+                        Overall(
+                            state,
+                            viewModel::choose,
+                            viewModel::chooseSort,
+                            viewModel::toggleGroupByTag,
+                            viewModel::toggleImprovementsOnly,
+                            viewModel::dismissNotice,
+                        )
+                    } else {
+                        val id = state.selected?.id
+                        MachineStats(
+                            machine,
+                            onOpenDay = id?.let { { day -> onOpenVisit(day, it) } },
+                        )
+                    }
+                }
+            }
+            if (searching) {
+                val listTop = ChoiceTop + ChoiceHeight + 4.dp
+                // A tap beside the list ends the search instead of reaching what lies under it.
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(top = listTop)
+                        .pointerInput(Unit) { detectTapGestures { endSearch() } },
                 )
-            } else {
-                val id = state.selected?.id
-                MachineStats(machine, onOpenDay = id?.let { { day -> onOpenVisit(day, it) } })
+                ChoiceList(
+                    state,
+                    ::choose,
+                    Modifier.padding(start = 16.dp, end = 16.dp, top = listTop),
+                )
             }
         }
     }
 }
 
+private val ChoiceTop = 14.dp
+private val ChoiceHeight = 56.dp
+private val ListShape = RoundedCornerShape(10.dp)
+
+/** The chosen machine; while [searching], the search over the machines instead. */
 @Composable
-private fun MachineChoice(
-    state: StatisticsUiState,
-    onChoose: (MachineId?) -> Unit,
+private fun ChoiceField(
+    selected: StatsChoiceUi?,
+    searching: Boolean,
+    onOpen: () -> Unit,
+    onSearch: (String) -> Unit,
+    onCancel: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    var open by remember { mutableStateOf(false) }
-    val selected = state.selected
-    Box {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .clip(BoxShape)
-                .border(1.dp, if (open) colors.primary else colors.outlineVariant, BoxShape)
-                .clickable { open = true }
-                .padding(start = 10.dp, end = 14.dp)
-                .testTag("stats-choice"),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(ChoiceHeight)
+            .clip(BoxShape)
+            .border(1.dp, if (searching) colors.primary else colors.outlineVariant, BoxShape)
+            .clickable(enabled = !searching, onClick = onOpen)
+            .padding(
+                start = if (searching) 14.dp else 10.dp,
+                end = if (searching) 7.dp else 14.dp,
+            ).testTag("stats-choice"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (searching) {
+            Icon(
+                PhosphorIcons.MagnifyingGlass,
+                null,
+                tint = colors.primary,
+                modifier = Modifier.size(18.dp),
+            )
+            SearchInput(onSearch, Modifier.weight(1f))
+            Box(
+                Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onCancel)
+                    .testTag("stats-search-cancel"),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    PhosphorIcons.X,
+                    strings().cancelSearch,
+                    tint = colors.onBackground.copy(alpha = 0.6f),
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        } else {
             ChoiceThumbnail(selected?.photo, overall = selected == null)
             Text(
                 selected?.name ?: strings().overallStats,
@@ -142,67 +241,143 @@ private fun MachineChoice(
                 color = colors.onBackground,
             )
             Icon(
-                PhosphorIcons.CaretDown,
+                PhosphorIcons.MagnifyingGlass,
                 null,
                 tint = colors.onBackground.copy(alpha = 0.55f),
                 modifier = Modifier.size(18.dp),
             )
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            ChoiceItem(
-                null,
-                strings().overallStats,
-                null,
-                selected == null,
-                "stats-choice-overall",
-            ) {
-                open = false
+    }
+}
+
+/** Starts empty and focused each time the search opens. */
+@Composable
+private fun SearchInput(
+    onSearch: (String) -> Unit,
+    modifier: Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val field = rememberTextFieldState()
+    val focus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    val currentOnSearch by rememberUpdatedState(onSearch)
+    LaunchedEffect(Unit) {
+        focus.requestFocus()
+        keyboard?.show()
+    }
+    LaunchedEffect(field) {
+        snapshotFlow { field.text.toString() }.collect { currentOnSearch(it) }
+    }
+    BasicTextField(
+        state = field,
+        lineLimits = TextFieldLineLimits.SingleLine,
+        textStyle = TextStyle(fontSize = 17.sp, color = colors.onBackground),
+        cursorBrush = SolidColor(colors.primary),
+        modifier = modifier.focusRequester(focus).testTag("stats-search"),
+    )
+}
+
+@Composable
+private fun ChoiceList(
+    state: StatisticsUiState,
+    onChoose: (MachineId?) -> Unit,
+    modifier: Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val chosen = state.selected?.id
+    Column(
+        modifier
+            .fillMaxWidth()
+            .heightIn(max = 520.dp)
+            .shadow(8.dp, ListShape)
+            .clip(ListShape)
+            .background(colors.surface)
+            .border(1.dp, colors.outlineVariant, ListShape)
+            .verticalScroll(rememberScrollState())
+            .padding(6.dp)
+            .testTag("stats-choice-list"),
+    ) {
+        if (state.showsOverall) {
+            ChoiceRow(null, AnnotatedString(strings().overallStats), chosen == null, "overall") {
                 onChoose(null)
             }
-            state.choiceSections.forEach { section ->
-                section.title?.let { SectionTitle(it, "stats-choice-section-$it", menu = true) }
-                section.items.forEach { choice ->
-                    ChoiceItem(
-                        choice.photo,
-                        choice.name,
-                        choice.id,
-                        choice.id == selected?.id,
-                        "stats-choice-${choice.id.value}",
-                    ) {
-                        open = false
-                        onChoose(choice.id)
-                    }
-                }
+        }
+        state.choiceSections.forEach { section ->
+            section.title?.let { SectionTitle(it, "stats-choice-section-$it", menu = true) }
+            section.items.forEach { choice ->
+                ChoiceRow(
+                    choice.photo,
+                    highlighted(choice),
+                    choice.id == chosen,
+                    choice.id.value,
+                    machine = true,
+                ) { onChoose(choice.id) }
             }
+        }
+        if (state.nothingFound) {
+            Text(
+                strings().nothingFound,
+                modifier = Modifier.padding(12.dp).testTag("stats-choice-empty"),
+                fontSize = 15.sp,
+                color = colors.onBackground.copy(alpha = 0.6f),
+            )
         }
     }
 }
 
 @Composable
-private fun ChoiceItem(
+private fun highlighted(choice: StatsChoiceUi): AnnotatedString {
+    val found = choice.matched ?: return AnnotatedString(choice.name)
+    val style =
+        SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+    return buildAnnotatedString {
+        append(choice.name)
+        addStyle(style, found.first, found.last + 1)
+    }
+}
+
+/** [key] names the row's test tags: the machine's id, or "overall". */
+@Composable
+private fun ChoiceRow(
     photo: Photo?,
-    name: String,
-    id: MachineId?,
+    name: AnnotatedString,
     chosen: Boolean,
-    tag: String,
+    key: String,
+    machine: Boolean = false,
     onClick: () -> Unit,
 ) {
-    DropdownMenuItem(
-        text = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        onClick = onClick,
-        leadingIcon = { ChoiceThumbnail(photo, overall = id == null, size = 32) },
-        trailingIcon = {
-            if (chosen) {
-                Icon(
-                    PhosphorIcons.Check,
-                    null,
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-        },
-        modifier = Modifier.testTag(tag),
-    )
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(BoxShape)
+            .then(
+                if (chosen) Modifier.background(colors.primary.copy(alpha = 0.08f)) else Modifier,
+            ).clickable(onClick = onClick)
+            .padding(horizontal = 12.dp)
+            .testTag("stats-choice-$key"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        ChoiceThumbnail(photo, overall = !machine, size = 34)
+        Text(
+            name,
+            modifier = Modifier.weight(1f).testTag("stats-choice-name-$key"),
+            fontSize = 16.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = colors.onBackground,
+        )
+        if (chosen) {
+            Icon(
+                PhosphorIcons.Check,
+                null,
+                tint = colors.secondary,
+                modifier = Modifier.size(18.dp).testTag("stats-choice-check-$key"),
+            )
+        }
+    }
 }
 
 @Composable
