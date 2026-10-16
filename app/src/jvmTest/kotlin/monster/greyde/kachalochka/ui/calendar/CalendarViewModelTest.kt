@@ -566,6 +566,32 @@ class CalendarViewModelTest {
         }
 
     @Test
+    fun the_replace_question_names_the_planned_machines_of_a_visit_without_sets() =
+        runTest {
+            gym.visits.upsert(fifthVisit.copy(planned = listOf(row.id, press.id)))
+            val vm = viewModel().also { it.refresh() }
+            vm.startMove(sunday.id)
+
+            vm.selectDay(fifth)
+
+            assertEquals(
+                "На 5 ноября уже есть визит: Тяга верхнего блока, Жим ногами, 0 подходов. " +
+                    "Он и его подходы пропадут из истории и статистики.",
+                assertNotNull(vm.state.value?.replacement).text,
+            )
+        }
+
+    @Test
+    fun a_visit_without_machines_cannot_be_repeated_today() =
+        runTest {
+            gym.visits.upsert(fifthVisit)
+            val vm = viewModel().also { it.refresh() }
+            vm.selectDay(fifth)
+
+            assertFalse(assertNotNull(vm.state.value?.visit).canRepeatToday)
+        }
+
+    @Test
     fun a_visit_of_today_cannot_be_repeated_today() =
         runTest {
             val todayVisit = Visit(VisitId.random(), null, today, t0, t0, false)

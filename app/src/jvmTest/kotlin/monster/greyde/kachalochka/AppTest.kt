@@ -575,6 +575,76 @@ class AppTest {
             onNodeWithTag("open-today").assertIsDisplayed()
         }
 
+    private fun pastVisitWithPress(): Pair<Visit, Machine> {
+        val now = gym.clock.current
+        val press = Machine.new("Жим ногами", null, now)
+        val past =
+            Visit(VisitId.random(), null, CalendarDay(2023, 11, 12), now - 2.days, now, false)
+        val set =
+            WorkoutSet(
+                WorkoutSetId.random(),
+                null,
+                past.id,
+                press.id,
+                70.0,
+                10,
+                0,
+                past.recordedAt,
+                now,
+                false,
+            )
+        runBlocking {
+            gym.machines.upsert(press)
+            gym.visits.upsert(past)
+            gym.sets.upsert(set)
+        }
+        return past to press
+    }
+
+    @Test
+    fun repeating_a_past_visit_from_its_screen_opens_today_and_back_returns_to_it() {
+        val (past, press) = pastVisitWithPress()
+        runApp {
+            onNodeWithTag("section-visits").performClick()
+            waitForIdle()
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("calendar-visit-${past.id.value}").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("repeat-today").performClick()
+            waitForIdle()
+
+            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
+            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Запланировано")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-title").assertTextEquals("Воскресенье, 12 ноября")
+        }
+    }
+
+    @Test
+    fun repeating_a_visit_from_the_calendar_opens_today_and_back_returns_to_the_calendar() {
+        val (past, press) = pastVisitWithPress()
+        runApp {
+            onNodeWithTag("section-visits").performClick()
+            waitForIdle()
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-${past.id.value}").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("repeat-today-${past.id.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
+            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Запланировано")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Визиты")
+        }
+    }
+
     @Test
     fun a_machine_picked_for_a_new_plan_lands_in_its_form() =
         runApp {

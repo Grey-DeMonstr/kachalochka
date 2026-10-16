@@ -630,9 +630,9 @@ every machine of that cluster (`missingDirectLinks`); the group read's upkeep ad
 machines those local links do not reach. `standIn` finds the same machine without a write, so
 after a switch the page shows the history the next save extends. "Повторить сегодня" on the
 calendar and the visit screen calls `planFrom` of a recorder for today: it plans the shown visit's
-`visitMachines` as starting a plan does. The visit view model keeps the
-state of the machine's page and its set form, both drawn by the visit screen over its list, and
-hands the recorder what to write.
+`visitMachines` as starting a plan does. The visit view model keeps the state of the machine's
+page and its set form, both drawn by the visit screen over its list, and hands the recorder what
+to write.
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

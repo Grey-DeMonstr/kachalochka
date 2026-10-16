@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 
 /** Phosphor Regular; see PHOSPHOR-LICENSE.txt beside this file. */
 object PhosphorIcons {
+    val ArrowClockwise: ImageVector by lazy { phosphor("ArrowClockwise", ARROW_CLOCKWISE) }
     val ArrowLeft: ImageVector by lazy { phosphor("ArrowLeft", ARROW_LEFT) }
     val ArrowRight: ImageVector by lazy { phosphor("ArrowRight", ARROW_RIGHT) }
     val Barbell: ImageVector by lazy { phosphor("Barbell", BARBELL) }
@@ -52,6 +53,7 @@ object PhosphorIcons {
     val all: List<ImageVector>
         get() =
             listOf(
+                ArrowClockwise,
                 ArrowLeft,
                 ArrowRight,
                 Barbell,
@@ -96,6 +98,7 @@ private fun phosphor(
         .apply { paths.forEach { addPath(addPathNodes(it), fill = SolidColor(Color.Black)) } }
         .build()
 
+private const val ARROW_CLOCKWISE = "M240,56v48a8,8,0,0,1-8,8H184a8,8,0,0,1,0-16H211.4L184.81,71.64l-.25-.24a80,80,0,1,0-1.67,114.78,8,8,0,0,1,11,11.63A95.44,95.44,0,0,1,128,224h-1.32A96,96,0,1,1,195.75,60L224,85.8V56a8,8,0,1,1,16,0Z"
 private const val ARROW_LEFT = "M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"
 private const val ARROW_RIGHT = "M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"
 private const val BARBELL = "M248,120h-8V88a16,16,0,0,0-16-16H208V64a16,16,0,0,0-16-16H168a16,16,0,0,0-16,16v56H104V64A16,16,0,0,0,88,48H64A16,16,0,0,0,48,64v8H32A16,16,0,0,0,16,88v32H8a8,8,0,0,0,0,16h8v32a16,16,0,0,0,16,16H48v8a16,16,0,0,0,16,16H88a16,16,0,0,0,16-16V136h48v56a16,16,0,0,0,16,16h24a16,16,0,0,0,16-16v-8h16a16,16,0,0,0,16-16V136h8a8,8,0,0,0,0-16ZM32,168V88H48v80Zm56,24H64V64H88V192Zm104,0H168V64h24V175.82c0,.06,0,.12,0,.18s0,.12,0,.18V192Zm32-24H208V88h16Z"

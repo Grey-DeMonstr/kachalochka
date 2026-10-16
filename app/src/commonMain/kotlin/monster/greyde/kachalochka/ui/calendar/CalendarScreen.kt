@@ -320,7 +320,13 @@ private fun VisitMenu(
             if (visit.canRepeatToday) {
                 DropdownMenuItem(
                     text = { Text(strings().repeatToday) },
-                    leadingIcon = { Icon(PhosphorIcons.Barbell, null, Modifier.size(20.dp)) },
+                    leadingIcon = {
+                        Icon(
+                            PhosphorIcons.ArrowClockwise,
+                            null,
+                            Modifier.size(20.dp),
+                        )
+                    },
                     onClick = {
                         open = false
                         onRepeatToday()

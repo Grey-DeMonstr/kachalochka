@@ -465,8 +465,8 @@ Leaving without saving drops the edits. The menu of a saved plan has "Удали
 
 The menu in the top bar of a visit with machines has "Сохранить как план". It opens the form of a
 new plan holding the visit's machines in the visit's order, planned ones included; saving returns
-to the visit, which stays as it was. Except on today's visit, the menu also has "Повторить сегодня",
-which does what the calendar card's item of that name does.
+to the visit, which stays as it was. Except on today's visit, the menu also has
+"Повторить сегодня", which does what the calendar card's item of that name does.
 
 ## Custom exercsies
 

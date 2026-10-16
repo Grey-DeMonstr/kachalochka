@@ -31,6 +31,7 @@ import monster.greyde.kachalochka.core.domain.gym.removedVisit
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.shownVisit
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
+import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -206,7 +207,7 @@ class CalendarViewModel(
             viewModelScope.launch {
                 val occupantSets = sets.forVisit(occupant.id)
                 replacingSets = occupantSets.size
-                replacingMachines = machineNames(occupantSets)
+                replacingMachines = machineNames(occupant, occupantSets)
                 replacing = occupant
                 publish()
             }
@@ -228,7 +229,7 @@ class CalendarViewModel(
                     ?.takeIf { it.visit.id != visit.id }
             if (arrived != null) {
                 replacingSets = arrived.sets.size
-                replacingMachines = machineNames(arrived.sets)
+                replacingMachines = machineNames(arrived.visit, arrived.sets)
                 replacing = arrived.visit
                 publish()
                 return@launch
@@ -356,7 +357,12 @@ class CalendarViewModel(
                             AppStrings.current.noSetsYet
                         },
                     tags = dayTags(shown),
-                    canRepeatToday = selected != today(),
+                    canRepeatToday =
+                        selected != today() &&
+                            visitMachines(
+                                visitSets,
+                                visit.planned,
+                            ).isNotEmpty(),
                 )
             }
         publish()
@@ -505,9 +511,12 @@ class CalendarViewModel(
         )
     }
 
-    private fun machineNames(visitSets: List<WorkoutSet>): String =
-        groupByMachine(visitSets)
-            .mapNotNull { machinesById[it.machineId] }
+    private fun machineNames(
+        visit: Visit,
+        visitSets: List<WorkoutSet>,
+    ): String =
+        visitMachines(visitSets, visit.planned)
+            .mapNotNull { machinesById[it] }
             .joinToString(", ") { it.name }
 
     private fun today(): CalendarDay {

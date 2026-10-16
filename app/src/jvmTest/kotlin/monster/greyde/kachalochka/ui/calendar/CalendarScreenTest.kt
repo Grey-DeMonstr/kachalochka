@@ -42,8 +42,27 @@ class CalendarScreenTest {
     private val sunday =
         Visit(VisitId.random(), null, CalendarDay(2023, 11, 12), t0 - 2.days, t0, false)
 
+    private val press = Machine.new("Жим ногами", null, t0)
+
     init {
-        runBlocking { gym.visits.upsert(sunday) }
+        runBlocking {
+            gym.visits.upsert(sunday)
+            gym.machines.upsert(press)
+            gym.sets.upsert(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    null,
+                    sunday.id,
+                    press.id,
+                    70.0,
+                    10,
+                    0,
+                    t0 - 2.days,
+                    t0,
+                    false,
+                ),
+            )
+        }
     }
 
     @Composable

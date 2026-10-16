@@ -1759,15 +1759,19 @@ class VisitViewModelTest {
     @Test
     fun only_a_visit_of_another_day_with_machines_can_be_repeated_today() =
         runTest {
+            val emptyDay = CalendarDay(2023, 11, 6)
             gym.visits.upsert(lastWeek)
+            gym.visits.upsert(Visit(VisitId.random(), null, emptyDay, t0 - 8.days, t0, false))
             gym.sets.upsert(set(lastWeek.id, press, 70.0, 10, -(7.days.inWholeMinutes.toInt())))
             gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
 
             val past = viewModel(day = seventh).also { it.refresh() }
             val current = viewModel().also { it.refresh() }
+            val empty = viewModel(day = emptyDay).also { it.refresh() }
 
             assertTrue(assertNotNull(past.state.value).canRepeatToday)
             assertFalse(assertNotNull(current.state.value).canRepeatToday)
+            assertFalse(assertNotNull(empty.state.value).canRepeatToday)
         }
 
     @Test
