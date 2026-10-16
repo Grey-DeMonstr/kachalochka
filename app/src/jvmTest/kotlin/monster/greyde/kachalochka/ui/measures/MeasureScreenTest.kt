@@ -85,7 +85,7 @@ class MeasureScreenTest {
             onNodeWithTag("period-Quarter").assertTextEquals("3 mo")
             onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82 kg")
             onNodeWithTag("measure-last", useUnmergedTree = true)
-                .assertTextEquals("Last measured: 14 November, today")
+                .assertTextEquals("Last measured: today")
         }
 
     @Test
@@ -135,7 +135,7 @@ class MeasureScreenTest {
             onNodeWithTag("measure-hint", useUnmergedTree = true)
                 .assertTextEquals(howToMeasure(MeasureKind.Weight)!!)
             onNodeWithTag("measure-last", useUnmergedTree = true)
-                .assertTextEquals("Последний замер: 14 ноября, сегодня")
+                .assertTextEquals("Последний замер: сегодня")
         }
     }
 

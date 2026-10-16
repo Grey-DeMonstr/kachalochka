@@ -271,6 +271,17 @@ class MeasureViewModelTest {
     }
 
     @Test
+    fun a_day_before_the_first_value_steps_from_the_nearest_value() {
+        val vm = viewModel().also { it.openHistory() }
+        vm.chooseDay(CalendarDay(2022, 11, 1))
+        assertEquals("", vm.ui.entry.text)
+
+        vm.stepValue(+1)
+
+        assertEquals("86.1", vm.ui.entry.text)
+    }
+
+    @Test
     fun a_predefined_measure_tells_how_to_take_it_and_the_user_s_own_does_not() {
         assertEquals(howToMeasure(MeasureKind.Weight), viewModel().ui.hint)
         assertNull(viewModel(forearm.id).ui.hint)
@@ -278,7 +289,10 @@ class MeasureViewModelTest {
 
     @Test
     fun the_screen_tells_the_day_of_the_latest_value() {
-        assertEquals("Последний замер: 14 ноября, сегодня", viewModel().ui.lastMeasured)
+        assertEquals("Последний замер: сегодня", viewModel().ui.lastMeasured)
+
+        gym.clock.current = t0 + 1.days
+        assertEquals("Последний замер: вчера", viewModel().ui.lastMeasured)
 
         gym.clock.current = t0 + 5.days
 
@@ -315,6 +329,16 @@ class MeasureViewModelTest {
             vm.ui.entry,
         )
         assertTrue(vm.closeHistory())
+        assertEquals(CalendarDay(2023, 11, 14), vm.ui.entry.day)
+    }
+
+    @Test
+    fun a_day_after_today_does_not_open_the_history() {
+        val vm = viewModel()
+
+        vm.openDay(CalendarDay(2023, 11, 15))
+
+        assertNull(vm.ui.history)
         assertEquals(CalendarDay(2023, 11, 14), vm.ui.entry.day)
     }
 

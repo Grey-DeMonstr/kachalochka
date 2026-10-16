@@ -436,11 +436,12 @@ value ("Сегодня, 29 сентября"); a predefined measure shows under 
 замер" does. A decimal field between − and + follows, and "Сохранить". A day without a value
 starts with the latest value before it, which "Сохранить" can keep as it is. − and + step by the
 finest precision of the measure's own values: 1 while all are whole, 0.5 while all are halves,
-else 0.1; a measure without values steps by 1. Then come its latest value and the change over the
-chosen period, the day of the latest value ("Последний замер: 12 октября, 4 дня назад"), and a
-line chart of its values over 1 мес, 3 мес (the default), 6 мес, Год or Всё. A period with a
-single value shows that value instead of a line. "Все результаты" lists every value under the
-chart, newest first, its date and the value with its unit, as the statistics history does.
+else 0.1; a measure without values steps by 1. An empty field steps from the value nearest its
+day. Then come its latest value and the change over the chosen period, the day of the latest
+value ("Последний замер: 12 октября, 4 дня назад", or only "сегодня" or "вчера"), and a line
+chart of its values over 1 мес, 3 мес (the default), 6 мес, Год or Всё. A period with a single
+value shows that value instead of a line. "Все результаты" follows "Редактировать историю": every
+value, newest first, its date and the value with its unit, as the statistics history shows them.
 
 "Редактировать историю" opens the measure's history ("Талия · история"): a month calendar with a
 dot on every day that has a value; future days cannot be chosen. Tapping a day shows its value in

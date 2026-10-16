@@ -36,6 +36,7 @@ import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.strings.AppStrings
+import kotlin.math.abs
 import kotlin.time.Clock
 
 /**
@@ -153,9 +154,11 @@ class MeasureViewModel(
         publish()
     }
 
+    /** An empty field steps from the value nearest its day, the likeliest one. */
     fun stepValue(direction: Int) {
-        val text = mutableState.value?.entry?.text ?: return
-        val start = parseDecimal(text) ?: 0.0
+        val entry = mutableState.value?.entry ?: return
+        val nearest = values.minByOrNull { abs(it.day.epochDay - entry.day.epochDay) }
+        val start = parseDecimal(entry.text) ?: nearest?.value ?: 0.0
         val step = measureStep(values.map { it.value })
         typed = formatNumber((start + direction * step).coerceAtLeast(0.0))
         publish()
@@ -367,8 +370,11 @@ class MeasureViewModel(
         day: CalendarDay,
         today: CalendarDay,
     ): String {
-        val ago = daysAgoLabel((today.epochDay - day.epochDay).toInt().coerceAtLeast(0))
-        return AppStrings.current.lastMeasured("${dayMonthLabel(day, today.year)}, $ago")
+        val days = (today.epochDay - day.epochDay).toInt().coerceAtLeast(0)
+        val ago = daysAgoLabel(days)
+        return AppStrings.current.lastMeasured(
+            if (days <= 1) ago else "${dayMonthLabel(day, today.year)}, $ago",
+        )
     }
 
     /** A day without a value starts from the one before it, the likeliest new value. */
