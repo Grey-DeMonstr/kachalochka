@@ -146,7 +146,8 @@ the preference. While the sound is on, each rest that has not ended goes to the 
 `RestAlarm`, which replaces the earlier schedule; switching the sound off cancels it. Android's
 `ServiceRestAlarm` hands the rest to a foreground service (§6). The web's `WebAudioRestAlarm` sets
 a timeout that plays an 880 Hz beep of 200 ms through the Web Audio API, in one audio context per
-page that every tap wakes, because Safari starts audio only inside a gesture's handler. Settings
+page. While the sound is on, every tap wakes it, because Safari starts audio only inside a
+gesture's handler; while it is off, the page opens no audio context. Settings
 picks the Android sound through `RestSoundChooser`; the web's `FixedRestSound` offers no choice.
 
 Every gym weight shown passes through `app/ui/format/WeightUnits.kt`: `shownUnit` picks the unit
@@ -668,10 +669,12 @@ to write.
 
 `MachinePlacementViewModel` in `app/ui/machine` serves the "⋮" menu that the machine form, the
 visit's machine page and "Упражнение друга" share (`MachineMenu`, `PlanChooser`,
-`PlacementNotice`). An own machine is used only while it is the active account's live machine. A
-friend's machine is replaced by `MachineCatalogue.standIn` over the group read "Упражнение друга"
-holds, when it was made for the active account, else over a new one. A failed read only shows
-"Нет связи с сервером", and a machine the read no longer has "Упражнение больше недоступно".
+`PlacementNotice`). An own machine is used only while it is the active account's live machine.
+Another account's machine on the device, such as a parent's on the visit's page after a switch to
+a child, goes through the set form's rule: `SetRecorder.standIn`, else `ownCopy`. A friend's
+machine is replaced by `MachineCatalogue.standIn` over the group read "Упражнение друга" holds,
+when it was made for the active account, else over a new one. A failed read only shows "Нет связи
+с сервером", and a machine the read no longer has "Упражнение больше недоступно".
 "В план…" reads the plans in `planOrder` with `planTitle` names and keeps the account it read
 them for. Each action checks that the account is still active (§4.3) before the stand-in, after
 the group read, before each write and before it navigates; a switch also closes the choice and
@@ -814,15 +817,15 @@ with the body fields; with another sex the stored length stays as it is, and the
 cannot block "Применить".
 
 The cycle arithmetic is pure, in `domain/measures/Cycle.kt`. `cycleAnchors` turns each recorded
-day of the cycle into a `CycleAnchor`: the day it was recorded and the start it tells, day − value
-+ 1; a value below 1 tells none. `Cycle.dayOn` counts a day from the start of the anchor recorded
-last of those started by then, modulo the length, so each start rules until the next and the
-latest record rules onwards; before every start the earliest start counts back. `Cycle.bands`
-gives the `PhaseBand`s of a day range: menstruation on days 1 to 5, ovulation on days length − 14
-(1 at the earliest) to length − 12. In a cycle shorter than 18 days they overlap, and the dashed
-outline is drawn over the fill. `showsCycle` allows the phases on a chart of
-up to `CYCLE_CHART_MONTHS`, three: 1 мес, 3 мес, or "Всё" whose first day is later than three
-months before its last.
+day of the cycle into a `CycleAnchor`: the day it was recorded and the start it tells,
+day − value + 1; a value below 1 tells none. `Cycle.dayOn` counts a day from the start of the
+anchor recorded last of those started by then, modulo the length, so each start rules until the
+next and the latest record rules onwards; before every start the earliest start counts back.
+`Cycle.bands` gives the `PhaseBand`s of a day range: menstruation on days 1 to 5, ovulation on
+days length − 14 (1 at the earliest) to length − 12. In a cycle of 19 days or less they overlap,
+and the dashed outline is drawn over the fill. `showsCycle` allows the phases on a chart of up to
+`CYCLE_CHART_MONTHS`, three: 1 мес, 3 мес, or "Всё" whose first day is later than three months
+before its last.
 
 ### 4.7 Statistics
 

@@ -46,7 +46,7 @@ actual fun platformModule(): Module =
         single<TransitionPreference> { LocalStorageTransitionPreference() }
         single<LanguagePreference> { LocalStorageLanguagePreference() }
         single<RestSoundPreference> { LocalStorageRestSoundPreference() }
-        single<RestAlarm> { WebAudioRestAlarm() }
+        single<RestAlarm> { WebAudioRestAlarm(get()) }
         single<RestSoundChooser> { FixedRestSound }
         single { SystemLanguage { window.navigator.language } }
         single<GoogleSignIn> { RedirectGoogleSignIn(get()) }

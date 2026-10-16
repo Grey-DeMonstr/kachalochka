@@ -12,6 +12,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.measures.Cycle
+import monster.greyde.kachalochka.core.domain.measures.DEFAULT_CYCLE_LENGTH
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
@@ -171,13 +172,22 @@ class MeasureViewModel(
         publish()
     }
 
-    /** An empty field steps from the value nearest its day, the likeliest one. */
+    /**
+     * An empty field steps from the value nearest its day, the likeliest one. A day of the cycle
+     * wraps within the cycle's length.
+     */
     fun stepValue(direction: Int) {
         val entry = mutableState.value?.entry ?: return
         val nearest = values.minByOrNull { abs(it.day.epochDay - entry.day.epochDay) }
         val start = parseDecimal(entry.text) ?: nearest?.value ?: 0.0
-        val step = measureStep(values.map { it.value })
-        typed = formatNumber((start + direction * step).coerceAtLeast(0.0))
+        typed =
+            if (measure?.kind == MeasureKind.CycleDay) {
+                val length = profile?.cycleLength ?: DEFAULT_CYCLE_LENGTH
+                formatNumber(((start.toInt() + direction - 1).mod(length) + 1).toDouble())
+            } else {
+                val step = measureStep(values.map { it.value })
+                formatNumber((start + direction * step).coerceAtLeast(0.0))
+            }
         publish()
     }
 

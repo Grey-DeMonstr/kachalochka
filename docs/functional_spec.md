@@ -472,9 +472,9 @@ value, newest first, its date and the value with its unit, as the statistics his
 День цикла starts a day without a value with the day it should be, as the form's placeholder does;
 before its first value it counts back. Its chart has no line and no change: over the chosen period
 up to today (from the first value for "Всё") it fills days 1 to 5 of every cycle and outlines the
-ovulation window, days length − 14 to length − 12, with a dashed line. A legend under it names
-them: "Менструация" and "Овуляция". A recorded day starts a cycle that runs until the next one
-recorded, and the latest one runs on after it.
+ovulation window, days length − 14 (day 1 at the earliest) to length − 12, with a dashed line. A
+legend under it names them: "Менструация" and "Овуляция". A recorded day starts a cycle that runs
+until the next one recorded, and the latest one runs on after it.
 
 Once a woman has recorded a day of the cycle, the same phases lie behind the line of every chart
 of her own data: each measure, each "Процент жира" formula and her own machines in the
@@ -535,7 +535,9 @@ the machine at its end, unless it holds it already, and the screen stays and say
 the visit. Back from either returns to the machine. A friend's machine goes in as the account's
 machine joined with it, else as a new copy linked to it, as "Взять себе" makes; offline it says
 "Нет связи с сервером", and for a machine the friend no longer shares "Упражнение больше
-недоступно", and nothing changes. Switching accounts closes the question and the notice.
+недоступно", and nothing changes. The machine of another account on the device, such as a
+parent's on the visit's page after a switch to a child, goes in as a set recorded on it does.
+Switching accounts closes the question and the notice.
 
 ## Custom exercsies
 

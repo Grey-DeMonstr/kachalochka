@@ -149,17 +149,86 @@ class MachinePlacementViewModelTest {
         assertNull(vm.state.value.notice)
     }
 
+    /** Иван's tagged press, with Саша, his child, active on the device. */
+    private class SashasGym {
+        val gym = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
+        val ivansPress =
+            Machine.new("Жим ногами", ME.userId, gym.clock.current).copy(tags = setOf("Ноги"))
+
+        init {
+            runBlocking {
+                gym.machines.upsert(ivansPress)
+                gym.accounts.switchTo(SASHA.userId)
+            }
+        }
+    }
+
     @Test
-    fun another_account_s_machine_goes_nowhere() {
-        val signed = signedInGym()
-        val vm = viewModel(signed)
+    fun another_account_s_machine_goes_in_as_a_new_linked_copy_keeping_its_tags() {
+        val sashas = SashasGym()
+        val on = sashas.gym
+        val vm = viewModel(on)
         var opened: CalendarDay? = null
 
-        runBlocking { signed.machines.upsert(press) }
-        vm.planToday(PlacedMachine(press.id)) { opened = it }
+        vm.planToday(PlacedMachine(sashas.ivansPress.id)) { opened = it }
+
+        val copy = runBlocking { on.machines.all(SASHA.userId) }.single()
+        assertEquals("Жим ногами", copy.name)
+        assertEquals(setOf("Ноги"), copy.tags)
+        assertTrue(
+            on.machineLinks.rows.values.any {
+                it.machineId == copy.id && it.linkedMachineId == sashas.ivansPress.id
+            },
+        )
+        assertEquals(on.today, opened)
+        assertEquals(
+            listOf(copy.id),
+            runBlocking { on.visits.onDay(SASHA.userId, on.today) }?.planned,
+        )
+    }
+
+    @Test
+    fun another_account_s_machine_goes_into_a_plan_as_the_account_s_stand_in() {
+        val sashas = SashasGym()
+        val on = sashas.gym
+        val (copy, link) = linkedCopy(sashas.ivansPress, SASHA.userId, t0, emptySet())
+        val mine = Plan(PlanId.random(), SASHA.userId, "Ноги", emptyList(), t0, t0, false)
+        runBlocking {
+            on.machines.upsert(copy)
+            on.machineLinks.upsert(link)
+            on.plans.upsert(mine)
+        }
+        val vm = viewModel(on)
+
+        vm.choosePlan(PlacedMachine(sashas.ivansPress.id))
+        vm.addTo(mine.id)
+
+        assertEquals(
+            listOf(copy.id),
+            on.plans.rows
+                .getValue(mine.id)
+                .machineIds,
+        )
+        assertEquals(listOf(copy), runBlocking { on.machines.all(SASHA.userId) })
+    }
+
+    @Test
+    fun a_switch_during_the_stand_in_read_writes_and_opens_nothing() {
+        val sashas = SashasGym()
+        val on = sashas.gym
+        val vm = viewModel(on)
+        val gate = CompletableDeferred<Unit>()
+        on.machines.readGate = gate
+        var opened: CalendarDay? = null
+
+        vm.planToday(PlacedMachine(sashas.ivansPress.id)) { opened = it }
+        runBlocking { on.accounts.switchTo(ME.userId) }
+        gate.complete(Unit)
 
         assertNull(opened)
-        assertTrue(signed.visits.rows.isEmpty())
+        assertTrue(runBlocking { on.machines.all(SASHA.userId) }.isEmpty())
+        assertTrue(on.machineLinks.rows.isEmpty())
+        assertTrue(on.visits.rows.isEmpty())
     }
 
     /** Иван's press, with Олег's linked copy of it, and Олег's row, linked to nothing. */

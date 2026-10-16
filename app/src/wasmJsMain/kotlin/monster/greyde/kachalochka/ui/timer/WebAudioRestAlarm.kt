@@ -7,11 +7,13 @@ private const val BEEP_HERTZ = 880
 private const val BEEP_SECONDS = 0.2
 
 /** A short beep through the Web Audio API, while the tab is open. */
-class WebAudioRestAlarm : RestAlarm {
+class WebAudioRestAlarm(
+    sounds: RestSoundPreference,
+) : RestAlarm {
     private var timeout: Int? = null
 
     init {
-        wakeAudioOnGesture()
+        onGesture { if (sounds.sound.value.enabled) wakeAudio() }
     }
 
     override fun schedule(
@@ -29,21 +31,27 @@ class WebAudioRestAlarm : RestAlarm {
     }
 }
 
-// One audio context for the page: browsers limit how many a page may open. Safari starts audio
-// only inside a gesture's handler, so every tap wakes the context the beep plays on later.
+// Safari starts audio only inside a gesture's handler, so a tap wakes the context the beep plays
+// on later.
 @OptIn(ExperimentalWasmJsInterop::class)
-private fun wakeAudioOnGesture(): Unit =
+@Suppress("UNUSED_PARAMETER")
+private fun onGesture(wake: () -> Unit): Unit =
     js(
         """{
-        const wake = () => {
-            const Context = window.AudioContext || window.webkitAudioContext;
-            if (!Context) return;
-            const audio =
-                globalThis.kachalochkaAudio || (globalThis.kachalochkaAudio = new Context());
-            if (audio.state !== 'running') audio.resume().catch(() => {});
-        };
-        document.addEventListener('pointerdown', wake, { capture: true, passive: true });
-        document.addEventListener('touchend', wake, { capture: true, passive: true });
+        document.addEventListener('pointerdown', () => wake(), { capture: true, passive: true });
+        document.addEventListener('touchend', () => wake(), { capture: true, passive: true });
+    }""",
+    )
+
+// One audio context for the page: browsers limit how many a page may open.
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun wakeAudio(): Unit =
+    js(
+        """{
+        const Context = window.AudioContext || window.webkitAudioContext;
+        if (!Context) return;
+        const audio = globalThis.kachalochkaAudio || (globalThis.kachalochkaAudio = new Context());
+        if (audio.state !== 'running') audio.resume().catch(() => {});
     }""",
     )
 

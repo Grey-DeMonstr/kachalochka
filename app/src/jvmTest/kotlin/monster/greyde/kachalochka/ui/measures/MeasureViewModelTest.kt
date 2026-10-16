@@ -156,6 +156,30 @@ class MeasureViewModelTest {
     }
 
     @Test
+    fun minus_and_plus_wrap_the_day_of_the_cycle_within_its_length() {
+        woman()
+        record(cycleDay, today, 28.0)
+        val vm = viewModel(cycleDay.id)
+
+        vm.stepValue(+1)
+        assertEquals("1", vm.ui.entry.text)
+        vm.stepValue(-1)
+        assertEquals("28", vm.ui.entry.text)
+
+        runBlocking {
+            gym.profiles.upsert(
+                Profile.new(null, t0 + 1.minutes).copy(sex = Sex.Female, cycleLength = 30),
+            )
+        }
+        val longer = viewModel(cycleDay.id)
+        longer.typeValue("1")
+        longer.stepValue(-1)
+        assertEquals("30", longer.ui.entry.text)
+        longer.stepValue(+1)
+        assertEquals("1", longer.ui.entry.text)
+    }
+
+    @Test
     fun the_day_of_the_cycle_draws_its_phases_over_the_period_and_no_change() {
         woman()
         val start = CalendarDay(2023, 11, 1)

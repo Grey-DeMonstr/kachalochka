@@ -190,6 +190,19 @@ class PlanFormViewModelTest {
     }
 
     @Test
+    fun switching_accounts_while_a_new_plan_is_read_writes_nothing() {
+        val read = CompletableDeferred<Unit>()
+        gym.machines.readGate = read
+        val vm = viewModel(null, machine = row.id)
+
+        gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+        read.complete(Unit)
+
+        assertTrue(vm.state.value.done)
+        assertEquals(emptyList(), newPlans())
+    }
+
+    @Test
     fun a_failed_write_is_recorded_and_the_next_write_still_runs() {
         val vm = viewModel(legs.id)
         val refused = IllegalStateException("refused")

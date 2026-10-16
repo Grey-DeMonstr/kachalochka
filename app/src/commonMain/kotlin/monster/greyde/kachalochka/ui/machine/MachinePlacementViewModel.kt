@@ -54,9 +54,10 @@ data class PlacementUi(
 )
 
 /**
- * Puts the machine of a machine screen into a plan or into today's visit. A friend's machine
- * goes in as the account's machine of its cluster, else as a new linked copy. Every write checks
- * first that the account it is for is still the active one (spec §4.3).
+ * Puts the machine of a machine screen into a plan or into today's visit. A friend's machine, or
+ * another account's on the device, goes in as the account's machine of its cluster, else as a new
+ * linked copy. Every write checks first that the account it is for is still the active one (spec
+ * §4.3).
  */
 class MachinePlacementViewModel(
     private val plans: PlanRepository,
@@ -108,7 +109,7 @@ class MachinePlacementViewModel(
         mutableState.value = mutableState.value.copy(choices = null)
     }
 
-    /** [onStoodIn] follows once a friend's machine has the account's machine standing in. */
+    /** [onStoodIn] follows once another account's machine has the account's own standing in. */
     fun addTo(
         plan: PlanId,
         onStoodIn: () -> Unit = {},
@@ -154,10 +155,8 @@ class MachinePlacementViewModel(
             val owner = currentUser.id()
             val own = standIn(owner, machine, onStoodIn) ?: return@launch
             if (!stillActive(owner)) return@launch
-            val now = clock.now()
-            val today = CalendarDay.of(now, utcOffset.at(now))
-            SetRecorder(today, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
-                .plan(owner, listOf(own))
+            val today = today()
+            recorder(today).plan(owner, listOf(own))
             if (stillActive(owner)) onOpen(today)
         }
     }
@@ -176,9 +175,7 @@ class MachinePlacementViewModel(
         onStoodIn: () -> Unit,
     ): MachineId? {
         if (!stillActive(owner)) return null
-        if (!machine.ofFriend) {
-            return machines.byId(machine.id)?.takeIf { it.userId == owner && !it.deleted }?.id
-        }
+        if (!machine.ofFriend) return ownMachine(owner, machine, onStoodIn)
         val viewer = owner ?: return null
         val group =
             machine.group?.takeIf { it.owner == viewer }
@@ -198,6 +195,30 @@ class MachinePlacementViewModel(
         }
         onStoodIn()
         return own.id
+    }
+
+    /** Another account's stored machine stands in as the set form's [SetRecorder.ownCopy] does. */
+    private suspend fun ownMachine(
+        owner: UserId?,
+        machine: PlacedMachine,
+        onStoodIn: () -> Unit,
+    ): MachineId? {
+        val shown = machines.byId(machine.id)?.takeIf { !it.deleted } ?: return null
+        if (shown.userId == owner) return shown.id
+        val recorder = recorder(today())
+        val found = recorder.standIn(owner, shown)
+        if (!stillActive(owner)) return null
+        val own = found ?: recorder.ownCopy(owner, shown)
+        onStoodIn()
+        return own.id
+    }
+
+    private fun recorder(day: CalendarDay) =
+        SetRecorder(day, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
+
+    private fun today(): CalendarDay {
+        val now = clock.now()
+        return CalendarDay.of(now, utcOffset.at(now))
     }
 
     private suspend fun stillActive(owner: UserId?) = currentUser.id() == owner

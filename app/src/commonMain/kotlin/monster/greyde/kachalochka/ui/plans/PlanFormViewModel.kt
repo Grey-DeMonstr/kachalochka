@@ -129,7 +129,8 @@ class PlanFormViewModel(
             done = true
         } else {
             machineIds = startMachines()
-            write()
+            // After a switch during the reads, the plan would go to the previous account.
+            if (!done) write()
         }
         publish()
     }
