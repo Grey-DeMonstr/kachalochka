@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -20,6 +21,10 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.HeldWrites
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
+import monster.greyde.kachalochka.ui.friends.ME
+import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.olegTrainedOn
+import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -43,6 +48,7 @@ class PlanFormViewModelTest {
         id: PlanId?,
         fromVisit: CalendarDay? = null,
         machine: MachineId? = null,
+        gym: FakeGym = this.gym,
     ) = PlanFormViewModel(
         id,
         fromVisit,
@@ -54,6 +60,7 @@ class PlanFormViewModelTest {
         gym.accounts,
         gym.clock,
         gym.catalogue,
+        gym.machineReads,
         FailureLog { gym.failures += it },
         held,
     )
@@ -63,6 +70,29 @@ class PlanFormViewModelTest {
             .filter { it.id != legs.id }
 
     private fun stored() = gym.plans.rows.getValue(legs.id)
+
+    @Test
+    fun a_linked_friend_s_photo_stands_in_for_a_machine_without_one() =
+        runTest {
+            val signed = signedInGym()
+            val mine = Machine.new("Жим ногами", ME.userId, t0)
+            signed.machines.upsert(mine)
+            signed.olegTrainedOn(mine, ME)
+            val olegPress = signed.friends.machines.single { it.userId == OLEG.userId }
+            val olegs = Photo.new(olegPress.id, OLEG.userId, t0)
+            signed.friends.photos += olegs
+            val plan = Plan(PlanId.random(), ME.userId, "Ноги", listOf(mine.id), t0, t0, false)
+            signed.plans.upsert(plan)
+
+            val vm = viewModel(plan.id, gym = signed)
+
+            assertEquals(
+                olegs,
+                vm.state.value.rows
+                    .single()
+                    .photo,
+            )
+        }
 
     @BeforeTest
     fun setUp() =

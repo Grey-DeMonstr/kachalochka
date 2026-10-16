@@ -537,6 +537,10 @@ the account the form was opened for. The form itself sees the switch only after 
 without a write: on the web the new account's session is live by then, so the old account's plan
 would be refused by RLS or written across accounts (§4.3).
 
+The form reads the own machines with `MachineCatalogue.own` for its writes, and the group with
+`MachineReads.group` for the rows only: `ShownMachines` gives each row its cover, a linked friend's
+photo included, from the last group read first.
+
 A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
 member's `linked_machine_id`. Neither column is a foreign key and no policy checks either against
 `machine`: a link may reach the server before its own machine does, and the linked machine is

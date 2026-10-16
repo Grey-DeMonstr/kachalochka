@@ -26,7 +26,9 @@ import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.HeldWrites
 import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.machine.GroupMachines
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
+import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.OwnMachines
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 import kotlin.time.Clock
@@ -67,6 +69,7 @@ class PlanFormViewModel(
     private val accounts: Accounts,
     private val clock: Clock,
     private val catalogue: MachineCatalogue,
+    private val reads: MachineReads,
     private val failures: FailureLog,
     held: HeldWrites,
 ) : ViewModel() {
@@ -82,6 +85,8 @@ class PlanFormViewModel(
     private var owner: UserId? = null
     private var stored: Plan? = null
     private var own: OwnMachines? = null
+    private var group: GroupMachines? = null
+    private var groupReading: Job? = null
     private var reading: Job? = null
     private var pause: Job? = null
     private var name = ""
@@ -136,7 +141,20 @@ class PlanFormViewModel(
             // After a switch during the reads, the plan would go to the previous account.
             if (!done) write()
         }
+        if (!done) readGroup()
         publish()
+    }
+
+    private fun readGroup() {
+        val account = owner ?: return
+        groupReading?.cancel()
+        groupReading =
+            viewModelScope.launch {
+                reads.group(account).collect { read ->
+                    read.machines?.let { group = it }
+                    publish()
+                }
+            }
     }
 
     private suspend fun startMachines(): List<MachineId> {
@@ -306,7 +324,7 @@ class PlanFormViewModel(
     private fun rows(): List<PlanMachineUi> {
         val read = own ?: return emptyList()
         val byId = read.machines.associateBy { it.id }
-        val shown = ShownMachines(read, null)
+        val shown = ShownMachines(read, group)
         return machineIds.mapNotNull { id ->
             byId[id]?.let { PlanMachineUi(it.id, it.name, shown.cover(it.id)) }
         }

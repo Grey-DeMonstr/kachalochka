@@ -517,18 +517,19 @@ sets. The shared text counts only machines with sets. A started plan makes the d
 before its first set, so the calendar marks the day and friends see the visit. Plans sync like
 visits and friends never see them.
 
-The plan form opens from a row or from "Новый план". "Название" takes up to 40 characters and
-reads "Без названия" while empty. Below it are the plan's machines in order, each with its photo
-and a remove button. The order button in the top bar shows a drag handle at the left of every
-machine. "Добавить упражнение" opens the machine picker, which in a plan shows each machine's
+The plan form opens from a row or from "Новый план". "Название" takes up to 40 characters and reads
+"Без названия" while empty. Below it are the plan's machines in order, each with its photo — the
+one chosen in its form, else its first photo, else the first photo of a friend's machine linked
+with it — and a remove button. The order button in the top bar shows a drag handle at the left of
+every machine. "Добавить упражнение" opens the machine picker, which in a plan shows each machine's
 last result and offers no "Скопировать упражнение"; a machine already in the plan is not added
-twice. The pin button in the top bar ("Закрепить") pins the plan and stays lit while it is
-pinned; a second tap unpins it. The form saves itself: the plan when a machine is added, removed
-or moved and when the pin is tapped, the name a second after typing stops, when its field loses
-focus and when the form is left. A new plan comes into being with its first change. Back and the
-system back save and return to the list. A plan with neither a name nor machines is deleted, and
-its next change brings it back. The menu of a saved plan has "Удалить план", which asks
-"Удалить план?". Switching accounts saves the plan and returns to the list.
+twice. The pin button in the top bar ("Закрепить") pins the plan and stays lit while it is pinned;
+a second tap unpins it. The form saves itself: the plan when a machine is added, removed or moved
+and when the pin is tapped, the name a second after typing stops, when its field loses focus and
+when the form is left. A new plan comes into being with its first change. Back and the system back
+save and return to the list. A plan with neither a name nor machines is deleted, and its next
+change brings it back. The menu of a saved plan has "Удалить план", which asks "Удалить план?".
+Switching accounts saves the plan and returns to the list.
 
 The menu in the top bar of a visit with machines has "Сохранить как план". It opens the form of a
 new plan holding the visit's machines in the visit's order, planned ones included, and saves the

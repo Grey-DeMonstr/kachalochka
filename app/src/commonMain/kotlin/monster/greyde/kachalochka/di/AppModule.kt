@@ -164,6 +164,7 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
             )
         }
         viewModel { (machine: MachineId?) ->
