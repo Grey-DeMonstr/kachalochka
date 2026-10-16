@@ -84,6 +84,8 @@ class MeasureScreenTest {
             onNodeWithTag("top-bar-title").assertTextEquals("Weight")
             onNodeWithTag("period-Quarter").assertTextEquals("3 mo")
             onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82 kg")
+            onNodeWithTag("measure-last", useUnmergedTree = true)
+                .assertTextEquals("Last measured: 14 November, today")
         }
 
     @Test
@@ -122,9 +124,36 @@ class MeasureScreenTest {
             onNodeWithTag("save-value").performClick()
             waitForIdle()
 
-            onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82.5 кг")
+            onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82.1 кг")
         }
-        assertEquals(82.5, valueOn(today))
+        assertEquals(82.1, valueOn(today))
+    }
+
+    @Test
+    fun the_measure_tells_how_to_take_it_and_when_it_was_last_taken() {
+        runMeasure {
+            onNodeWithTag("measure-hint", useUnmergedTree = true)
+                .assertTextEquals(howToMeasure(MeasureKind.Weight)!!)
+            onNodeWithTag("measure-last", useUnmergedTree = true)
+                .assertTextEquals("Последний замер: 14 ноября, сегодня")
+        }
+    }
+
+    @Test
+    fun all_results_open_a_day_in_the_history() {
+        runMeasure {
+            onNodeWithTag("measure-history-date-1", useUnmergedTree = true)
+                .performScrollTo()
+                .assertTextEquals("7 ноября")
+            onNodeWithTag("measure-history-results-1", useUnmergedTree = true)
+                .assertTextEquals("82.4 кг")
+
+            onNodeWithTag("measure-history-1").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("Вес · история")
+            onNodeWithTag("entry-value").assertTextEquals("82.4")
+        }
     }
 
     @Test
@@ -140,7 +169,7 @@ class MeasureScreenTest {
             onNodeWithTag("entry-value").assertTextEquals("82.4")
             onNodeWithTag("delete-value").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("entry-value").assertTextEquals("")
+            onNodeWithTag("entry-value").assertTextEquals("83")
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()

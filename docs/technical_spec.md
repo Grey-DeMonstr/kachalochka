@@ -734,6 +734,12 @@ new row, and the trash soft-deletes it; a past day's write requests a sync at on
 a mode of `MeasureViewModel`, not a route, and draws its month with the calendar's `monthWeeks`,
 `MonthHeader` and `MonthGrid`.
 
+A day without a value starts the field from the latest earlier value; an untouched field then
+saves that value for the day. The −/+ step is `measureStep` in `domain/measures`: the coarsest of
+1 and 0.5 that every value of the measure is a multiple of, within 1e-6 for the double's rounding,
+else 0.1. "Все результаты" is the shared `AllResults` composable in `ui/components`, which also
+draws a machine's history; it takes `HistoryRowUi` rows and an optional tap handler.
+
 The body-fat formulas are pure functions in `domain/measures/BodyFat.kt` (`bodyFat`,
 `missingInputs`, `methodsReading`); a result outside 2–70 % is treated as none. "Замеры" finds the
 inputs by `MeasureKind`, never by name: the latest value of each kind, and sex, `birthDate` and

@@ -412,6 +412,9 @@ object RuStrings : Strings {
 
     override val noValues = "Нет значений"
     override val noValuesInPeriod = "За этот период значений нет"
+
+    override fun lastMeasured(day: String) = "Последний замер: $day"
+
     override val nameAndUnit = "Название и единица"
     override val deleteMeasure = "Удалить показатель"
     override val measure = "Показатель"

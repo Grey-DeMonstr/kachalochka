@@ -20,14 +20,17 @@ import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.measures.inPeriod
 import monster.greyde.kachalochka.core.domain.measures.isLocked
+import monster.greyde.kachalochka.core.domain.measures.measureStep
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.calendar.DayUi
 import monster.greyde.kachalochka.ui.calendar.monthRank
 import monster.greyde.kachalochka.ui.calendar.monthWeeks
+import monster.greyde.kachalochka.ui.components.HistoryRowUi
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
+import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.parseDecimal
@@ -35,15 +38,21 @@ import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
-/** [points] are the period's values, oldest first; [history] is open while shown. */
+/**
+ * [points] are the period's values, oldest first; [results] are all values, newest first;
+ * [history] is open while shown.
+ */
 data class MeasureUi(
     val name: String,
     val title: String,
     val unit: String,
+    val hint: String?,
     val period: MeasurePeriod,
     val points: List<Pair<CalendarDay, Double>>,
     val latest: String?,
+    val lastMeasured: String?,
     val change: String?,
+    val results: List<HistoryRowUi>,
     val entry: MeasureEntryUi,
     val history: MeasureHistoryUi?,
     val editing: EditMeasureUi?,
@@ -67,8 +76,6 @@ data class MeasureHistoryUi(
     val canShowNextMonth: Boolean,
     val weeks: List<List<DayUi?>>,
 )
-
-private const val STEP = 0.5
 
 data class EditMeasureUi(
     val name: String,
@@ -108,7 +115,7 @@ class MeasureViewModel(
     /** The day the entry shows; null follows today. */
     private var entryDay: CalendarDay? = null
 
-    /** Null shows the entry day's stored value. */
+    /** Null shows the entry day's start value. */
     private var typed: String? = null
 
     /** The history's month; null while the history is closed. */
@@ -146,11 +153,11 @@ class MeasureViewModel(
         publish()
     }
 
-    /** An empty entry starts from the latest value, the likeliest next one. */
     fun stepValue(direction: Int) {
         val text = mutableState.value?.entry?.text ?: return
-        val start = parseDecimal(text) ?: values.firstOrNull()?.value ?: 0.0
-        typed = formatNumber((start + direction * STEP).coerceAtLeast(0.0))
+        val start = parseDecimal(text) ?: 0.0
+        val step = measureStep(values.map { it.value })
+        typed = formatNumber((start + direction * step).coerceAtLeast(0.0))
         publish()
     }
 
@@ -221,6 +228,13 @@ class MeasureViewModel(
         entryDay = day
         typed = null
         publish()
+    }
+
+    /** Opens the history on [day]'s month with [day] in the entry. */
+    fun openDay(day: CalendarDay) {
+        if (day > today()) return
+        month = CalendarMonth.of(day)
+        chooseDay(day)
     }
 
     fun openEdit() {
@@ -297,6 +311,7 @@ class MeasureViewModel(
         val first = shownPeriod.firstOrNull()
         val last = shownPeriod.lastOrNull()
         val name = shown.shownName()
+        val unit = shown.shownUnit()
         val shownMonth = month
         mutableState.value =
             MeasureUi(
@@ -307,15 +322,25 @@ class MeasureViewModel(
                     } else {
                         "$name · ${AppStrings.current.history.lowercase()}"
                     },
-                unit = shown.shownUnit(),
+                unit = unit,
+                hint = shown.kind?.let(::howToMeasure),
                 period = period,
                 points = shownPeriod.map { it.day to it.value },
-                latest = values.firstOrNull()?.let { measureValue(it.value, shown.shownUnit()) },
+                latest = values.firstOrNull()?.let { measureValue(it.value, unit) },
+                lastMeasured = values.firstOrNull()?.let { lastMeasured(it.day, today) },
                 change =
                     if (first != null && last != null && first != last) {
                         measureDelta(last.value, first.value)
                     } else {
                         null
+                    },
+                results =
+                    values.map {
+                        HistoryRowUi(
+                            it.day,
+                            dayMonthLabel(it.day, today.year),
+                            measureValue(it.value, unit),
+                        )
                     },
                 entry = entry(today),
                 history =
@@ -338,10 +363,20 @@ class MeasureViewModel(
             )
     }
 
+    private fun lastMeasured(
+        day: CalendarDay,
+        today: CalendarDay,
+    ): String {
+        val ago = daysAgoLabel((today.epochDay - day.epochDay).toInt().coerceAtLeast(0))
+        return AppStrings.current.lastMeasured("${dayMonthLabel(day, today.year)}, $ago")
+    }
+
+    /** A day without a value starts from the one before it, the likeliest new value. */
     private fun entry(today: CalendarDay): MeasureEntryUi {
         val day = entryDay ?: today
         val stored = storedOn(day)
-        val text = typed ?: stored?.let { formatNumber(it.value) }.orEmpty()
+        val start = stored ?: values.firstOrNull { it.day < day }
+        val text = typed ?: start?.let { formatNumber(it.value) }.orEmpty()
         val value = parseDecimal(text)
         return MeasureEntryUi(
             day = day,

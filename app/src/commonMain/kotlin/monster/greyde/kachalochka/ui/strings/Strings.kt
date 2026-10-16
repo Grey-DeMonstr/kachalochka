@@ -361,6 +361,10 @@ interface Strings {
 
     val noValues: String
     val noValuesInPeriod: String
+
+    /** [day] as "12 октября, вчера". */
+    fun lastMeasured(day: String): String
+
     val nameAndUnit: String
     val deleteMeasure: String
     val measure: String

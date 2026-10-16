@@ -394,6 +394,9 @@ object EnStrings : Strings {
 
     override val noValues = "No values"
     override val noValuesInPeriod = "No values in this period"
+
+    override fun lastMeasured(day: String) = "Last measured: $day"
+
     override val nameAndUnit = "Name and unit"
     override val deleteMeasure = "Delete measure"
     override val measure = "Measure"

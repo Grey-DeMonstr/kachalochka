@@ -38,6 +38,7 @@ import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
 import monster.greyde.kachalochka.ui.calendar.MonthGrid
 import monster.greyde.kachalochka.ui.calendar.MonthHeader
 import monster.greyde.kachalochka.ui.components.AccentButton
+import monster.greyde.kachalochka.ui.components.AllResults
 import monster.greyde.kachalochka.ui.components.Choice
 import monster.greyde.kachalochka.ui.components.ChoiceRow
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
@@ -94,17 +95,23 @@ fun MeasureScreen(
         },
     ) {
         if (measure == null) return@Screen
+        val scroll = rememberScrollState()
+        // A result low in the list opens the history, whose calendar is at the top.
+        LaunchedEffect(measure.history != null) { scroll.scrollTo(0) }
         Column(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scroll)
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val history = measure.history
             if (history == null) {
-                SectionLabel(measure.entry.label, Modifier.testTag("measure-entry-title"))
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    SectionLabel(measure.entry.label, Modifier.testTag("measure-entry-title"))
+                    Hint(measure)
+                }
                 Entry(measure, viewModel)
                 Summary(measure)
                 val periods = MeasurePeriod.entries
@@ -120,6 +127,9 @@ fun MeasureScreen(
                     viewModel::openHistory,
                     Modifier.fillMaxWidth().testTag("edit-history"),
                 )
+                if (measure.results.isNotEmpty()) {
+                    Column { AllResults(measure.results, "measure-history", viewModel::openDay) }
+                }
             } else {
                 MonthHeader(
                     history.monthTitle,
@@ -129,12 +139,15 @@ fun MeasureScreen(
                 )
                 MonthGrid(history.weeks, onSelect = viewModel::chooseDay)
                 Rule()
-                Text(
-                    measure.entry.label,
-                    Modifier.testTag("measure-entry-title"),
-                    fontSize = 17.sp,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        measure.entry.label,
+                        Modifier.testTag("measure-entry-title"),
+                        fontSize = 17.sp,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Hint(measure)
+                }
                 Entry(measure, viewModel)
             }
         }
@@ -161,26 +174,50 @@ fun MeasureScreen(
     }
 }
 
+/** As the form shows it under the measure's name. */
+@Composable
+private fun Hint(measure: MeasureUi) {
+    measure.hint?.let {
+        Text(
+            it,
+            Modifier.testTag("measure-hint"),
+            fontSize = 12.sp,
+            lineHeight = 16.sp,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
+        )
+    }
+}
+
 @Composable
 private fun Summary(measure: MeasureUi) {
     val colors = MaterialTheme.colorScheme
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Text(
-            measure.latest ?: strings().noValues,
-            Modifier.testTag("measure-latest"),
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Medium,
-            color = colors.onBackground,
-        )
-        measure.change?.let {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Text(
+                measure.latest ?: strings().noValues,
+                Modifier.testTag("measure-latest"),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Medium,
+                color = colors.onBackground,
+            )
+            measure.change?.let {
+                Text(
+                    it,
+                    Modifier.padding(bottom = 4.dp).testTag("measure-change"),
+                    fontSize = 15.sp,
+                    color = colors.onBackground.copy(alpha = 0.55f),
+                )
+            }
+        }
+        measure.lastMeasured?.let {
             Text(
                 it,
-                Modifier.padding(bottom = 4.dp).testTag("measure-change"),
-                fontSize = 15.sp,
+                Modifier.testTag("measure-last"),
+                fontSize = 14.sp,
                 color = colors.onBackground.copy(alpha = 0.55f),
             )
         }

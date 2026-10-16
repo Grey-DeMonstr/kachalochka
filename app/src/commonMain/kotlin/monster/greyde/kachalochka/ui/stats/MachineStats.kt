@@ -1,7 +1,6 @@
 package monster.greyde.kachalochka.ui.stats
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,8 +28,9 @@ import monster.greyde.kachalochka.core.domain.gym.bestPerDay
 import monster.greyde.kachalochka.core.domain.gym.bestSet
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.ui.components.AllResults
 import monster.greyde.kachalochka.ui.components.ChipRow
-import monster.greyde.kachalochka.ui.components.SectionLabel
+import monster.greyde.kachalochka.ui.components.HistoryRowUi
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.setValue
@@ -42,12 +41,6 @@ import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.strings
 
 internal val BoxShape = RoundedCornerShape(8.dp)
-
-data class HistoryRowUi(
-    val day: CalendarDay,
-    val date: String,
-    val results: String,
-)
 
 /** [points] are each day's best weight, negative on a gravitron, over [start]..[end]. */
 data class MachineStatsUi(
@@ -170,31 +163,7 @@ internal fun MachineStats(
             StatsChart(machine.points, machine.start, machine.end, machine.zeroOnTop)
         }
     }
-    SectionLabel(strings().allResults, Modifier.padding(top = 24.dp, bottom = 8.dp))
-    machine.history.forEachIndexed { i, row ->
-        val opening = onOpenDay?.let { Modifier.clickable { it(row.day) } } ?: Modifier
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .then(opening)
-                .padding(vertical = 11.dp)
-                .testTag("stats-history-$i"),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                row.date,
-                modifier = Modifier.width(112.dp).testTag("stats-history-date-$i"),
-                fontSize = 14.sp,
-                color = colors.onBackground.copy(alpha = 0.55f),
-            )
-            Text(
-                row.results,
-                modifier = Modifier.testTag("stats-history-results-$i"),
-                fontSize = 15.sp,
-                color = colors.onBackground,
-            )
-        }
-    }
+    AllResults(machine.history, "stats-history", onOpenDay)
 }
 
 @Composable

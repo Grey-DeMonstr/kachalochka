@@ -20,6 +20,7 @@ import monster.greyde.kachalochka.core.domain.measures.missingDefaults
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.components.HistoryRowUi
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -214,29 +215,107 @@ class MeasureViewModelTest {
     }
 
     @Test
-    fun an_empty_day_steps_by_half_from_the_latest_value() {
+    fun an_empty_day_starts_from_the_latest_value_and_saves_it_as_it_is() {
         gym.clock.current = t0 + 1.days
         val vm = viewModel()
         assertEquals(
             MeasureEntryUi(
                 CalendarDay(2023, 11, 15),
                 "Сегодня, 15 ноября",
-                "",
-                canSave = false,
+                "82",
+                canSave = true,
                 canDelete = false,
             ),
             vm.ui.entry,
         )
 
-        vm.stepValue(+1)
-        assertEquals("82.5", vm.ui.entry.text)
-        vm.stepValue(-1)
-        vm.stepValue(-1)
-        assertEquals("81.5", vm.ui.entry.text)
         vm.saveValue()
 
-        assertEquals(81.5, stored(weight, CalendarDay(2023, 11, 15))?.value)
+        assertEquals(82.0, stored(weight, CalendarDay(2023, 11, 15))?.value)
         assertTrue(vm.ui.entry.canDelete)
+    }
+
+    @Test
+    fun a_measure_with_a_tenth_in_its_values_steps_by_a_tenth() {
+        val vm = viewModel()
+
+        vm.stepValue(+1)
+        assertEquals("82.1", vm.ui.entry.text)
+        vm.stepValue(-1)
+        vm.stepValue(-1)
+        assertEquals("81.9", vm.ui.entry.text)
+    }
+
+    @Test
+    fun a_measure_with_halves_steps_by_half() {
+        record(waist, CalendarDay(2023, 11, 1), 90.5)
+        val vm = viewModel(waist.id)
+
+        vm.stepValue(-1)
+
+        assertEquals("89.5", vm.ui.entry.text)
+    }
+
+    @Test
+    fun whole_values_and_no_values_step_by_one() {
+        val forearmVm = viewModel(forearm.id)
+        forearmVm.stepValue(+1)
+        assertEquals("32", forearmVm.ui.entry.text)
+
+        val wrist = Measure(MeasureId.random(), null, "Запястье", "см", null, 8, t0, false)
+        runBlocking { gym.measures.upsert(wrist) }
+        val wristVm = viewModel(wrist.id)
+        assertEquals("", wristVm.ui.entry.text)
+        wristVm.stepValue(+1)
+        assertEquals("1", wristVm.ui.entry.text)
+    }
+
+    @Test
+    fun a_predefined_measure_tells_how_to_take_it_and_the_user_s_own_does_not() {
+        assertEquals(howToMeasure(MeasureKind.Weight), viewModel().ui.hint)
+        assertNull(viewModel(forearm.id).ui.hint)
+    }
+
+    @Test
+    fun the_screen_tells_the_day_of_the_latest_value() {
+        assertEquals("Последний замер: 14 ноября, сегодня", viewModel().ui.lastMeasured)
+
+        gym.clock.current = t0 + 5.days
+
+        assertEquals("Последний замер: 14 ноября, 5 дней назад", viewModel().ui.lastMeasured)
+        val chest = seeded.first { it.kind == MeasureKind.Chest }
+        assertNull(viewModel(chest.id).ui.lastMeasured)
+    }
+
+    @Test
+    fun all_results_list_every_value_newest_first() {
+        assertEquals(
+            listOf(
+                HistoryRowUi(CalendarDay(2023, 11, 14), "14 ноября", "82 кг"),
+                HistoryRowUi(CalendarDay(2023, 11, 7), "7 ноября", "82.4 кг"),
+                HistoryRowUi(CalendarDay(2023, 10, 10), "10 октября", "83 кг"),
+                HistoryRowUi(CalendarDay(2023, 8, 1), "1 августа", "84 кг"),
+                HistoryRowUi(CalendarDay(2023, 5, 10), "10 мая", "85 кг"),
+                HistoryRowUi(CalendarDay(2022, 12, 1), "1 декабря 2022", "86 кг"),
+            ),
+            viewModel().ui.results,
+        )
+    }
+
+    @Test
+    fun a_result_opens_its_day_in_the_history() {
+        val day = CalendarDay(2023, 10, 10)
+        val vm = viewModel()
+
+        vm.openDay(day)
+
+        assertEquals("Октябрь 2023", vm.ui.history?.monthTitle)
+        assertEquals(
+            MeasureEntryUi(day, "Вторник, 10 октября", "83", canSave = false, canDelete = true),
+            vm.ui.entry,
+        )
+        assertTrue(vm.closeHistory())
+        assertEquals(CalendarDay(2023, 11, 14), vm.ui.entry.day)
     }
 
     @Test
@@ -270,7 +349,7 @@ class MeasureViewModelTest {
         vm.deleteValue()
 
         assertNull(stored(weight, day))
-        assertEquals("", vm.ui.entry.text)
+        assertEquals("83", vm.ui.entry.text)
         assertFalse(vm.ui.entry.canDelete)
         assertEquals(listOf(CalendarDay(2023, 11, 14)), vm.ui.history?.marked)
         assertEquals(1, gym.sync.requests)
