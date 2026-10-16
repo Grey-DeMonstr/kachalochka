@@ -7,9 +7,14 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
@@ -134,6 +139,40 @@ class MineChooserViewModelTest {
             Triple(link.userId, link.machineId, link.linkedMachineId),
         )
         assertEquals(1, gym.sync.requests)
+    }
+
+    @Test
+    fun a_choice_made_while_a_switch_is_still_reading_links_nothing_for_the_new_account() {
+        val misha =
+            AccountSession(
+                Account(UserId("22222222-2222-4222-8222-222222222222"), "m@example.test", "Миша"),
+                "access",
+                "refresh",
+                t0,
+            )
+        val two = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
+        two.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        two.friends.machines += olegs
+        runBlocking { two.machines.upsert(row) }
+        val vm =
+            MineChooserViewModel(
+                olegs.id,
+                olegs.name,
+                two.currentUser,
+                two.accounts,
+                two.profiles,
+                two.catalogue,
+                two.machineReads,
+            ).also { it.load() }
+        two.machines.readGate = CompletableDeferred()
+
+        runBlocking { two.accounts.switchTo(misha.account.userId) }
+        vm.choose(row.id) {}
+
+        assertTrue(
+            two.machineLinks.rows.values
+                .none { it.userId == misha.account.userId },
+        )
     }
 
     @Test

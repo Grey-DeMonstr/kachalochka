@@ -12,6 +12,8 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -29,6 +31,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 class MachineReadsTest {
     private val gym = signedInGym()
@@ -83,7 +86,7 @@ class MachineReadsTest {
             olegsGym()
             val gate = CompletableDeferred<Unit>().also { gym.friends.gate = it }
 
-            reads.machines(ME.userId).test {
+            reads.machines(ME.userId).test(timeout = 10.seconds) {
                 val first = awaitItem()
                 assertEquals(
                     listOf(myPress.id),
@@ -110,7 +113,7 @@ class MachineReadsTest {
             gym.friends.machines += newer
             val gate = CompletableDeferred<Unit>().also { gym.friends.gate = it }
 
-            reads.machines(ME.userId).test {
+            reads.machines(ME.userId).test(timeout = 10.seconds) {
                 val first = awaitItem()
                 assertFalse(first.group!!.fresh)
                 assertEquals(setOf(olegPress.id, olegRow.id), first.friendIds())
@@ -130,7 +133,7 @@ class MachineReadsTest {
             gym.catalogue.group(ME.userId)
             gym.friends.offline = true
 
-            reads.machines(ME.userId).test {
+            reads.machines(ME.userId).test(timeout = 10.seconds) {
                 assertFalse(awaitItem().group!!.fresh)
                 val next = awaitItem()
                 assertTrue(next.offline)
@@ -146,7 +149,7 @@ class MachineReadsTest {
             olegsGym()
             gym.friends.offline = true
 
-            reads.machines(ME.userId).test {
+            reads.machines(ME.userId).test(timeout = 10.seconds) {
                 assertTrue(awaitItem().waiting)
                 val next = awaitItem()
                 assertTrue(next.offline)
@@ -163,7 +166,7 @@ class MachineReadsTest {
             val machine = Machine.new("Тяга", null, t0)
             out.machines.upsert(machine)
 
-            out.machineReads.machines(null).test {
+            out.machineReads.machines(null).test(timeout = 10.seconds) {
                 val only = awaitItem()
                 assertEquals(
                     listOf(machine.id),
@@ -185,7 +188,7 @@ class MachineReadsTest {
             olegsGym(on)
             val gate = CompletableDeferred<Unit>().also { on.friends.gate = it }
 
-            on.machineReads.machines(ME.userId).test {
+            on.machineReads.machines(ME.userId).test(timeout = 10.seconds) {
                 awaitItem()
                 on.accounts.switchTo(misha.account.userId)
                 gate.complete(Unit)
@@ -196,8 +199,8 @@ class MachineReadsTest {
     @Test
     fun a_read_for_another_account_than_the_active_one_emits_nothing() =
         runTest {
-            reads.machines(PASHA.userId).test { awaitComplete() }
-            reads.group(PASHA.userId).test { awaitComplete() }
+            reads.machines(PASHA.userId).test(timeout = 10.seconds) { awaitComplete() }
+            reads.group(PASHA.userId).test(timeout = 10.seconds) { awaitComplete() }
         }
 
     @Test
@@ -205,11 +208,11 @@ class MachineReadsTest {
         runTest {
             olegsGym()
 
-            reads.group(ME.userId).test {
+            reads.group(ME.userId).test(timeout = 10.seconds) {
                 assertTrue(awaitItem().fresh)
                 awaitComplete()
             }
-            reads.group(ME.userId).test {
+            reads.group(ME.userId).test(timeout = 10.seconds) {
                 assertFalse(awaitItem().fresh)
                 assertTrue(awaitItem().fresh)
                 awaitComplete()
@@ -346,5 +349,28 @@ class MachineReadsTest {
 
             assertNotNull(all.last().group)
             assertEquals(1, gym.friends.reads)
+        }
+
+    @Test
+    fun a_cached_read_that_cannot_be_rebuilt_does_not_break_the_stream() =
+        runTest {
+            olegsGym()
+            var failing = false
+            val links =
+                object : MachineLinkRepository {
+                    override suspend fun upsert(link: MachineLink) = gym.machineLinks.upsert(link)
+
+                    override suspend fun all(owner: UserId?): List<MachineLink> {
+                        check(!failing) { "links unreadable" }
+                        return gym.machineLinks.all(owner)
+                    }
+                }
+            val over = gym.machineReadsOver(gym.catalogueOver(links))
+            over.group(ME.userId).toList()
+            failing = true
+
+            val again = over.group(ME.userId).toList()
+
+            assertTrue(again.last().offline)
         }
 }

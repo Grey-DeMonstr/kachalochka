@@ -60,7 +60,7 @@ class MachineReads(
             if (!isActive(owner)) return@flow
             if (cached != null) emit(cached)
             if (!isActive(owner)) return@flow
-            val fresh = freshRead(owner)
+            val fresh = freshRead(owner, cached)
             if (isActive(owner)) emit(fresh)
         }
 
@@ -95,8 +95,9 @@ class MachineReads(
                 show(null)
                 return@flow
             }
-            show(cachedRead(owner)) ?: return@flow
-            val last = show(freshRead(owner)) ?: return@flow
+            val cached = cachedRead(owner)
+            show(cached) ?: return@flow
+            val last = show(freshRead(owner, cached)) ?: return@flow
             if (!withCards) return@flow
             keepCards(owner, last)
             show(last.group)
@@ -120,12 +121,21 @@ class MachineReads(
     }
 
     private suspend fun cachedRead(owner: UserId): GroupRead? =
-        catalogue.lastGroup(owner)?.let { GroupRead(owner, it, fresh = false, offline = false) }
+        reading { catalogue.lastGroup(owner) }
+            .getOrNull()
+            ?.let { GroupRead(owner, it, fresh = false, offline = false) }
 
-    private suspend fun freshRead(owner: UserId): GroupRead =
+    /** A failed read falls back to the last good one, else to [cached]. */
+    private suspend fun freshRead(
+        owner: UserId,
+        cached: GroupRead?,
+    ): GroupRead =
         reading { catalogue.group(owner) }.fold(
             { GroupRead(owner, it, fresh = true, offline = false) },
-            { GroupRead(owner, catalogue.lastGroup(owner), fresh = false, offline = true) },
+            {
+                val last = reading { catalogue.lastGroup(owner) }.getOrNull() ?: cached?.machines
+                GroupRead(owner, last, fresh = false, offline = true)
+            },
         )
 
     private fun isActive(owner: UserId?) = accounts.activeId.value == owner

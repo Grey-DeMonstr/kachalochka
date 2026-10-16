@@ -10,7 +10,6 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.anyNameMatches
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
-import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
@@ -38,7 +37,6 @@ class MineChooserViewModel(
 
     private var shown: ShownMachines? = null
     private var preferred = PreferredWeightUnit.Kg
-    private var shownFor: UserId? = null
     private var loading: Job? = null
 
     /** The screen follows whoever is active, wherever the switch came from. */
@@ -53,7 +51,6 @@ class MineChooserViewModel(
             viewModelScope.launch {
                 val owner = currentUser.id()
                 preferred = profiles.preferredUnit(owner)
-                shownFor = owner
                 reads.machines(owner).collect { read ->
                     shown = read.shown
                     publish()
@@ -73,7 +70,7 @@ class MineChooserViewModel(
         val current = shown ?: return
         if (current.own.machines.none { it.id == id }) return
         if (current.clusters.sameMachine(id, friendMachine)) return
-        val offeredTo = shownFor
+        val offeredTo = current.own.owner
         writes.launch {
             val owner = currentUser.id() ?: return@launch
             if (owner != offeredTo) return@launch

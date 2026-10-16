@@ -217,7 +217,10 @@ class VisitViewModel(
     private var loadingFriends: Job? = null
     private var own: OwnMachines? = null
 
-    /** Group mates' machines, links and photos, read for [groupFor]; null until the read lands. */
+    /**
+     * Group mates' machines, links and photos, read for [groupFor]; null before the read lands and
+     * after a dropped read that failed again.
+     */
     private var group: GroupMachines? = null
     private var groupFor: UserId? = null
     private var loadingGroup: Job? = null

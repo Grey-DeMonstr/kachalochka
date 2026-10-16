@@ -308,7 +308,7 @@ class LinkChooserViewModel(
     ) {
         val read = group ?: return
         if (read.offeredGroups(own).flatten().none { it.machine.id == id }) return
-        val offeredTo = shownFor
+        val offeredTo = ownRead?.owner
         val copyFrom = id.takeIf { mutableState.value.copySettings }
         writes.launch {
             val owner = currentUser.id() ?: return@launch

@@ -160,10 +160,10 @@ class StatisticsViewModel(
     /** The own machines show at once; the group's, for the search, join from the shared read. */
     fun load() {
         loading?.cancel()
-        shown = null
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
+                if (shown?.own?.owner != owner) shown = null
                 val all = sets.all(owner)
                 setsByMachine = all.groupBy { it.machineId }
                 peaks = machinePeaks(all).associateBy { it.machineId }

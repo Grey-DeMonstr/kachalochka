@@ -565,6 +565,26 @@ class StatisticsViewModelTest {
             )
         }
 
+    @Test
+    fun a_search_takes_effect_at_once_while_the_same_account_reloads() =
+        runTest {
+            val on = signedInGym()
+            val pull = Machine.new("Тяга", ME.userId, t0)
+            on.machines.upsert(pull)
+            on.machines.upsert(Machine.new("Жим", ME.userId, t0))
+            val vm = viewModel(on = on)
+            on.machines.readGate = CompletableDeferred()
+            on.sync.completePass()
+
+            vm.search("тяг")
+
+            assertEquals(
+                listOf(pull.id),
+                vm.state.value.choices
+                    .map { it.id },
+            )
+        }
+
     private fun linkedMachine(on: FakeGym): Machine {
         on.friends.group("Зал на Лесной", owner = OLEG, ME)
         val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
