@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
 import monster.greyde.kachalochka.sync.startVisitNormalization
 import monster.greyde.kachalochka.ui.friends.warmGroups
+import monster.greyde.kachalochka.ui.machine.startLinkUpkeep
 import monster.greyde.kachalochka.ui.timer.startRestSound
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -25,6 +26,7 @@ class KachalochkaApplication : Application() {
             }.koin
         koin.followLiveSession()
         koin.warmGroups()
+        koin.startLinkUpkeep()
         // Signed-in accounts are normalized by the sync pass, once they have pulled.
         koin.startVisitNormalization(listOf(null))
         koin.startRestSound()

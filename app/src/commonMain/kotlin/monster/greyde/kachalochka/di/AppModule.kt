@@ -35,6 +35,7 @@ import monster.greyde.kachalochka.ui.friends.PendingJoin
 import monster.greyde.kachalochka.ui.home.HomeViewModel
 import monster.greyde.kachalochka.ui.machine.FriendMachineViewModel
 import monster.greyde.kachalochka.ui.machine.LinkChooserViewModel
+import monster.greyde.kachalochka.ui.machine.LinkUpkeep
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
@@ -82,6 +83,7 @@ val appModule =
         single { PhotoLoaders(get()) }
         single { AccountAvatars(get(), get()) }
         single { MachineCatalogue(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+        single { LinkUpkeep(get(), get()) }
         single { UnsavedChoices() }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
