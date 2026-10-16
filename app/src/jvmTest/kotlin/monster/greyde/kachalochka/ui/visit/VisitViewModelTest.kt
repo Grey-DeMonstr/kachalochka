@@ -136,6 +136,7 @@ class VisitViewModelTest {
         gym.texts,
         Nickname(gym.profiles, gym.accounts),
         gym.catalogue,
+        gym.machineReads,
         gym.profiles,
         AccountAvatars(gym.accounts, gym.profiles),
         gym.unsaved,
@@ -1443,6 +1444,29 @@ class VisitViewModelTest {
             val olegs = Photo.new(olegPress.id, olegPress.userId, t0)
             two.friends.photos += olegs
             two.sets.upsert(set(ivanVisit.id, ivanPress, 80.0, 8, 0, ivan.account.userId))
+
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+            assertEquals(
+                olegs,
+                vm.state.value
+                    ?.groups
+                    ?.single()
+                    ?.photo,
+            )
+        }
+
+    @Test
+    fun a_linked_friend_s_photo_read_before_shows_at_once() =
+        runTest {
+            val two = twoAccountGym()
+            two.olegTrainedOn(ivanPress, ivanFriend)
+            val olegPress = two.friends.machines.single { it.userId == OLEG.userId }
+            val olegs = Photo.new(olegPress.id, olegPress.userId, t0)
+            two.friends.photos += olegs
+            two.sets.upsert(set(ivanVisit.id, ivanPress, 80.0, 8, 0, ivan.account.userId))
+            two.catalogue.group(ivan.account.userId)
+            two.friends.gate = CompletableDeferred()
 
             val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 

@@ -69,6 +69,7 @@ import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.machine.GroupMachines
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
+import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.OwnMachines
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.share.TextSharing
@@ -187,6 +188,7 @@ class VisitViewModel(
     private val sharing: TextSharing,
     private val nickname: Nickname,
     private val catalogue: MachineCatalogue,
+    private val reads: MachineReads,
     private val profiles: ProfileRepository,
     private val avatars: AccountAvatars,
     unsaved: UnsavedChoices,
@@ -630,11 +632,11 @@ class VisitViewModel(
         if (owner == null) return
         loadingGroup =
             viewModelScope.launch {
-                reading { catalogue.group(owner) }.onSuccess { found ->
-                    if (groupFor != owner) return@onSuccess
-                    group = found
+                reads.group(owner).collect { read ->
+                    if (groupFor != owner) return@collect
+                    group = read.machines
                     publish()
-                    loadFriends()
+                    if (read.fresh) loadFriends()
                 }
             }
     }

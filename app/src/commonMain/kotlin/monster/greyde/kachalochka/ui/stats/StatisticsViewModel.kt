@@ -43,9 +43,7 @@ import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.shownLabel
 import monster.greyde.kachalochka.ui.format.shownWeight
 import monster.greyde.kachalochka.ui.friends.reading
-import monster.greyde.kachalochka.ui.machine.GroupMachines
-import monster.greyde.kachalochka.ui.machine.MachineCatalogue
-import monster.greyde.kachalochka.ui.machine.OwnMachines
+import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.AppStrings
@@ -115,7 +113,7 @@ class StatisticsViewModel(
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val sync: SyncTrigger,
-    private val catalogue: MachineCatalogue,
+    private val reads: MachineReads,
     private val sets: WorkoutSetRepository,
     private val profiles: ProfileRepository,
     private val measures: MeasureRepository,
@@ -132,8 +130,7 @@ class StatisticsViewModel(
     private var selected: MachineId? = initial
     private var period = StatsPeriod.Month
     private var sort = StatsSort.Recent
-    private var own: OwnMachines? = null
-    private var group: GroupMachines? = null
+    private var shown: ShownMachines? = null
     private var setsByMachine: Map<MachineId, List<WorkoutSet>> = emptyMap()
     private var peaks: Map<MachineId, MachinePeaks> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
@@ -143,7 +140,6 @@ class StatisticsViewModel(
     private var notice: String? = null
     private var query = ""
     private var loading: Job? = null
-    private var loadingGroup: Job? = null
 
     /**
      * Read ahead of the tap: a browser lets the clipboard be written only while a tap is recent,
@@ -161,14 +157,13 @@ class StatisticsViewModel(
         viewModelScope.launch { sync.completed.collect { load() } }
     }
 
-    /** The own data shows at once; the group's, for the search, follows if it answers. */
+    /** The own machines show at once; the group's, for the search, join from the shared read. */
     fun load() {
         loading?.cancel()
-        loadingGroup?.cancel()
+        shown = null
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                own = catalogue.own(owner)
                 val all = sets.all(owner)
                 setsByMachine = all.groupBy { it.machineId }
                 peaks = machinePeaks(all).associateBy { it.machineId }
@@ -177,23 +172,19 @@ class StatisticsViewModel(
                 if (owner != cycleOwner) cycle = null
                 grouping.read(owner)
                 sharer = reading { nickname.of(owner) }.getOrDefault("")
-                publish()
-                owner?.let(::loadGroup)
-                // The phases only decorate the chart, so a failed read leaves them out.
-                cycle =
-                    reading {
-                        cycleOf(profile, measures.all(owner), measurements.all(owner))
-                    }.getOrNull()
-                cycleOwner = owner
-                publish()
-            }
-    }
-
-    private fun loadGroup(owner: UserId) {
-        loadingGroup =
-            viewModelScope.launch {
-                group = reading { catalogue.group(owner) }.getOrNull()
-                publish()
+                launch {
+                    // The phases only decorate the chart, so a failed read leaves them out.
+                    cycle =
+                        reading {
+                            cycleOf(profile, measures.all(owner), measurements.all(owner))
+                        }.getOrNull()
+                    cycleOwner = owner
+                    publish()
+                }
+                reads.machines(owner).collect { read ->
+                    shown = read.shown
+                    publish()
+                }
             }
     }
 
@@ -246,8 +237,8 @@ class StatisticsViewModel(
     }
 
     private fun publish() {
-        val read = own ?: return
-        val shown = ShownMachines(read, group)
+        val shown = this.shown ?: return
+        val read = shown.own
         val now = clock.now()
         val today = CalendarDay.of(now, utcOffset.at(now))
         val start = period.start(today)

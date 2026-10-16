@@ -1,7 +1,9 @@
 package monster.greyde.kachalochka.ui.stats
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -86,7 +88,7 @@ class StatisticsViewModelTest {
         on.currentUser,
         on.accounts,
         on.sync,
-        on.catalogue,
+        on.machineReads,
         on.sets,
         on.profiles,
         on.measures,
@@ -526,6 +528,55 @@ class StatisticsViewModelTest {
             assertEquals(listOf(mine.id), found.map { it.id })
             assertNull(found.single().matched)
         }
+
+    @Test
+    fun linked_names_read_before_are_searched_at_once() =
+        runTest {
+            val on = signedInGym()
+            val mine = linkedMachine(on)
+            on.catalogue.group(ME.userId)
+            on.friends.gate = CompletableDeferred()
+            val vm = viewModel(on = on)
+
+            vm.search("гакк")
+
+            assertEquals(
+                listOf(mine.id),
+                vm.state.value.choices
+                    .map { it.id },
+            )
+        }
+
+    @Test
+    fun a_failed_re_read_keeps_the_linked_names_for_the_search() =
+        runTest {
+            val on = signedInGym()
+            val mine = linkedMachine(on)
+            val vm = viewModel(on = on)
+            on.friends.offline = true
+
+            on.sync.completePass()
+            vm.search("гакк")
+
+            assertEquals(
+                listOf(mine.id),
+                vm.state.value.choices
+                    .map { it.id },
+            )
+        }
+
+    private fun linkedMachine(on: FakeGym): Machine {
+        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
+        val (copy, link) = linkedCopy(olegs, ME.userId, t0)
+        val mine = copy.copy(name = "Присед в тренажёре")
+        on.friends.machines += olegs
+        runBlocking {
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+        }
+        return mine
+    }
 
     @Test
     fun offline_the_own_statistics_show_and_the_search_finds_own_names() =
