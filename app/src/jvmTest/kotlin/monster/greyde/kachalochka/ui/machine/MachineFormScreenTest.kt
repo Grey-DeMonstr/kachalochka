@@ -150,6 +150,8 @@ class MachineFormScreenTest {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = { saved += it })
         }) {
             onNodeWithTag("machine-name").performTextInput("Гакк")
+            onNodeWithTag("suggested-tags").assertDoesNotExist()
+            onNodeWithTag("friends-tags").assertDoesNotExist()
             onNodeWithTag("tag-Ноги").performScrollTo().assertIsOff().performClick()
             onNodeWithTag("new-tag").performScrollTo().performTextInput("Жим")
             onNodeWithTag("add-tag").performClick()
@@ -359,7 +361,7 @@ class MachineFormScreenTest {
         }
 
     @Test
-    fun friends_tags_follow_the_own_tags_before_the_new_tag_field() {
+    fun friends_tags_wait_behind_a_last_chip_after_the_new_tag_field() {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME)
         on.friends.machines +=
@@ -372,13 +374,55 @@ class MachineFormScreenTest {
         runScreenTest(on, screen = {
             MachineFormScreen(MachineFormArgs(null, null, "Гакк"), {}, {}, onSaved = {})
         }) {
-            onNodeWithText("Теги друзей", substring = true).assertDoesNotExist()
+            onNodeWithTag("friend-tag-Плечи").assertDoesNotExist()
             val own = onNodeWithTag("tag-Ноги").getUnclippedBoundsInRoot()
-            val friends = onNodeWithTag("friend-tag-Плечи").getUnclippedBoundsInRoot()
             val field = onNodeWithTag("new-tag").getUnclippedBoundsInRoot()
-            assertTrue(own.right <= friends.left || own.bottom <= friends.top)
-            assertTrue(friends.right <= field.left || friends.bottom <= field.top)
+            val chip = onNodeWithTag("friends-tags").assertTextEquals("Теги друзей")
+            val more = chip.getUnclippedBoundsInRoot()
+            assertTrue(own.right <= field.left || own.bottom <= field.top)
+            assertTrue(field.right <= more.left || field.bottom <= more.top)
+
+            chip.performScrollTo().performClick()
+            waitForIdle()
+
+            onNodeWithTag("friends-tags").assertDoesNotExist()
+            val friends = onNodeWithTag("friend-tag-Плечи").getUnclippedBoundsInRoot()
+            assertTrue(field.right <= friends.left || field.bottom <= friends.top)
         }
+    }
+
+    @Test
+    fun linked_machines_tags_are_suggested_first_and_a_tap_gives_one_to_the_machine() {
+        val on = signedInGym()
+        val now = on.clock.current
+        val olegs = Machine.new("Жим ногами", OLEG.userId, now).copy(tags = setOf("Квадрицепс"))
+        val (copy, link) = linkedCopy(olegs, ME.userId, now, emptySet())
+        val mine = copy.copy(tags = setOf("Ноги"))
+        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        on.friends.machines += olegs
+        runBlocking {
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+        }
+        runScreenTest(on, screen = {
+            MachineFormScreen(MachineFormArgs(mine.id, null, ""), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("friends-tags").assertDoesNotExist()
+            val icon = onNodeWithTag("suggested-tags").getUnclippedBoundsInRoot()
+            val suggested = onNodeWithTag("suggested-tag-Квадрицепс").getUnclippedBoundsInRoot()
+            val own = onNodeWithTag("tag-Ноги").getUnclippedBoundsInRoot()
+            assertTrue(icon.right <= suggested.left)
+            assertTrue(suggested.bottom <= own.top)
+
+            onNodeWithTag("suggested-tag-Квадрицепс").performScrollTo().performClick()
+            waitForIdle()
+
+            onNodeWithTag("suggested-tags").assertDoesNotExist()
+            onNodeWithTag("tag-Квадрицепс").assertIsOn()
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+        }
+        assertEquals(setOf("Ноги", "Квадрицепс"), runBlocking { on.machines.byId(mine.id)?.tags })
     }
 
     @Test

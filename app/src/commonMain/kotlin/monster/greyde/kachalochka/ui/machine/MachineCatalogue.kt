@@ -102,6 +102,13 @@ class ShownMachines(
         return mine + theirs
     }
 
+    /** The rows of the machines [linkedWith] names. */
+    fun linkedRows(machine: MachineId): List<Machine> {
+        val linked = linkedWith(machine).map { it.machineId }.toSet()
+        val friends = group?.friends.orEmpty().map { it.machine }
+        return (own.machines + friends).filter { it.id in linked }
+    }
+
     /** An own machine's chosen cover counts, and a friend's machine's as its owner chose it. */
     fun cover(machine: MachineId): Photo? {
         val chosen =

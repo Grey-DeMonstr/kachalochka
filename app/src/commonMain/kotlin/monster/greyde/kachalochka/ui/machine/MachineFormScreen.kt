@@ -340,6 +340,24 @@ private fun TagsSection(
     state: MachineFormState,
     viewModel: MachineFormViewModel,
 ) {
+    val suggested = state.suggestedTags
+    if (suggested.isNotEmpty()) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(Modifier.height(38.dp).testTag("suggested-tags"), Alignment.Center) {
+                Icon(
+                    PhosphorIcons.LinkSimple,
+                    strings().linkedTags,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            suggested.forEach { tag -> SuggestedTagChip(tag) { viewModel.toggleTag(tag) } }
+        }
+    }
+    var friendsShown by remember { mutableStateOf(false) }
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -347,8 +365,63 @@ private fun TagsSection(
         state.shownTags.forEach { tag ->
             TagChoiceChip(tag, state.chosen(tag), "tag-$tag") { viewModel.toggleTag(tag) }
         }
-        state.offeredFriendTags.forEach { FriendTagChip(it) { viewModel.toggleTag(it.tag) } }
         NewTagChip(state.newTag, viewModel::typeNewTag, viewModel::addNewTag)
+        val offered = state.offeredFriendTags
+        if (friendsShown) {
+            offered.forEach { FriendTagChip(it) { viewModel.toggleTag(it.tag) } }
+        } else if (offered.isNotEmpty()) {
+            FriendsTagsChip { friendsShown = true }
+        }
+    }
+}
+
+/** A linked machine's tag that this one lacks: dashed in the accent colour, added with a tap. */
+@Composable
+private fun SuggestedTagChip(
+    tag: String,
+    onAdd: () -> Unit,
+) {
+    val accent = MaterialTheme.colorScheme.primary
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        Modifier
+            .height(38.dp)
+            .clip(shape)
+            .dashedBorder(accent, 20.dp)
+            .clickable(onClick = onAdd)
+            .padding(start = 14.dp, end = 12.dp)
+            .testTag("suggested-tag-$tag"),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TagText(tag, fontSize = 13.sp, color = accent)
+        Icon(PhosphorIcons.Plus, null, tint = accent, modifier = Modifier.size(14.dp))
+    }
+}
+
+/** The last chip, standing for the friends' tags until it is tapped. */
+@Composable
+private fun FriendsTagsChip(onShow: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        Modifier
+            .height(38.dp)
+            .clip(shape)
+            .dashedBorder(colors.onBackground.copy(alpha = 0.35f), 20.dp)
+            .clickable(onClick = onShow)
+            .padding(start = 14.dp, end = 12.dp)
+            .testTag("friends-tags"),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(strings().friendsTags, fontSize = 15.sp, color = colors.onBackground)
+        Icon(
+            PhosphorIcons.CaretDown,
+            null,
+            tint = colors.onBackground.copy(alpha = 0.6f),
+            modifier = Modifier.size(14.dp),
+        )
     }
 }
 

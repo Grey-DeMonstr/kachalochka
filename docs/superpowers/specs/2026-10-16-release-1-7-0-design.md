@@ -77,6 +77,16 @@ Back with unsaved edits asks "Сохранить изменения?" with "Со
 dismissing the question stays in the form. "Сохранить" runs the ordinary save, recalculation
 question included, and then leaves.
 
+## Suggested tags
+
+The machine form's tags run in three parts, to keep the block short. First, when the machines of
+the linked list carry tags the machine lacks, one row with a link icon offers them as dashed chips
+in the accent colour, without avatars; a tap gives the tag in the account's spelling. Then the
+machine's own tags (on), the account's other tags (off) and "Новый тег". Last, the tags of the
+other friends' machines wait behind a "Теги друзей" chip that shows them in its place. The
+suggestions come from the group read the form already makes, so offline only own linked machines
+give them.
+
 ## Statistics search
 
 The machine choice is design 9b: a field showing the chosen machine, which on focus takes a

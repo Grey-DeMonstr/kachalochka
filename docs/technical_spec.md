@@ -431,6 +431,8 @@ Tags compare by `tagKey`, trimmed and lower-cased. The pure functions of `domain
 every rule: `distinctTags` keeps the spelling met first, `sortedTags` is the one display order,
 `hasAllTags` filters, `toggledTag` keeps a set free of two spellings of one tag, and
 `tagsSpelledAs` gives tags taken from another account the receiving account's spelling.
+`suggestedTags` gives the machine form the tags of `ShownMachines.linkedRows` that the machine
+lacks, in the account's spelling.
 `tagSections` groups by the keys and spells a section as its first item. Stored rows keep the
 typed spelling; the screens upper-case a tag only when they draw it, through `TagText`.
 `tagTitle` writes a section heading in capitals, so the shared visit and the statistics export

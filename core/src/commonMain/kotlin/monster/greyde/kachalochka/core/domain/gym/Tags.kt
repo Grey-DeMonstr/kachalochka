@@ -26,6 +26,13 @@ fun tagsSpelledAs(
     known: Iterable<String>,
 ): Set<String> = distinctTags(tags.map { spelledAs(it, known) }).toSet()
 
+/** The tags of the [linked] machines that [tags] lack, sorted and spelled as in [known]. */
+fun suggestedTags(
+    linked: Iterable<String>,
+    tags: Iterable<String>,
+    known: Iterable<String>,
+): List<String> = sortedTags(linked.map { spelledAs(it, known) }).filterNot { hasTag(tags, it) }
+
 fun hasTag(
     tags: Iterable<String>,
     tag: String,

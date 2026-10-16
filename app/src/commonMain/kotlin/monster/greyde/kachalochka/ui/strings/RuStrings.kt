@@ -235,6 +235,8 @@ object RuStrings : Strings {
     override val unlinkText = "Результаты друзей в этом упражнении перестанут показываться у вас."
     override val unlink = "Отвязать"
     override val newTag = "Новый тег"
+    override val linkedTags = "Теги связанных упражнений"
+    override val friendsTags = "Теги друзей"
     override val choiceTotal = "Всего"
     override val choicePerSide = "На сторону"
     override val choiceCounterweight = "Гравитрон"

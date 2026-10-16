@@ -47,4 +47,17 @@ class TagsTest {
         assertEquals(setOf("Жим"), toggledTag(setOf("Ноги", "Жим"), "НОГИ"))
         assertEquals(setOf("Ноги", "Спина"), toggledTag(setOf("Ноги"), "Спина"))
     }
+
+    @Test
+    fun linked_machines_suggest_each_tag_the_machine_lacks_once_in_the_account_s_spelling() {
+        assertEquals(
+            listOf("Жим", "Ноги"),
+            suggestedTags(
+                linked = listOf("ноги", "спина", "Жим", "НОГИ"),
+                tags = setOf("СПИНА"),
+                known = setOf("Ноги", "Спина"),
+            ),
+        )
+        assertEquals(emptyList(), suggestedTags(listOf("ноги"), setOf("Ноги"), setOf("Ноги")))
+    }
 }

@@ -36,6 +36,7 @@ import monster.greyde.kachalochka.core.domain.gym.sideFactor
 import monster.greyde.kachalochka.core.domain.gym.sidedSets
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.spelledAs
+import monster.greyde.kachalochka.core.domain.gym.suggestedTags
 import monster.greyde.kachalochka.core.domain.gym.tagKey
 import monster.greyde.kachalochka.core.domain.gym.tagsSpelledAs
 import monster.greyde.kachalochka.core.domain.gym.toggledTag
@@ -90,12 +91,25 @@ data class MachineFormState(
     val newTag: String = "",
     /** Friends' tags, offered until one is chosen and so becomes the account's own. */
     val friendTags: List<FriendTagUi> = emptyList(),
+    /** Every tag of the machines the edited one is linked with. */
+    val linkedTags: List<String> = emptyList(),
 ) {
+    /** Chosen tags first, so their spelling wins. */
+    val accountTags: Set<String>
+        get() = tags + knownTags
+
+    val suggestedTags: List<String>
+        get() = suggestedTags(linkedTags, tags, accountTags)
+
+    /** The chosen tags, then the account's other tags that are not suggested. */
     val shownTags: List<String>
-        get() = sortedTags(knownTags + tags)
+        get() = sortedTags(tags) + sortedTags(knownTags).filterNot(::chosenOrSuggested)
 
     val offeredFriendTags: List<FriendTagUi>
-        get() = friendTags.filterNot { hasTag(shownTags, it.tag) }
+        get() = friendTags.filterNot { hasTag(knownTags, it.tag) || chosenOrSuggested(it.tag) }
+
+    private fun chosenOrSuggested(tag: String): Boolean =
+        hasTag(tags, tag) || hasTag(suggestedTags, tag)
 
     fun chosen(tag: String): Boolean = hasTag(tags, tag)
 
@@ -244,8 +258,7 @@ class MachineFormViewModel(
             val source = group.friends.firstOrNull { it.machine.id == friendMachine }?.machine
             source ?: return@launch
             update { form ->
-                // The form's chosen tags come first, so their spelling wins over the known ones.
-                val tags = tagsSpelledAs(form.tags + source.tags, form.tags + form.knownTags)
+                val tags = tagsSpelledAs(form.tags + source.tags, form.accountTags)
                 form.copy(
                     name = source.name,
                     tags = tags,
@@ -287,6 +300,7 @@ class MachineFormViewModel(
         val owner = accounts.activeId.value
         if (shown == null || shown.userId != owner) {
             mutableLinking.value = LinkingUi(error = mutableLinking.value.error)
+            update { it.copy(linkedTags = emptyList()) }
             return
         }
         val ownLinks = machineLinks.all(owner)
@@ -305,9 +319,11 @@ class MachineFormViewModel(
             friendPhotos = friendPhotosOf(shown.id, group)
             showPhotos()
         }
+        val visible = ShownMachines(own, group)
+        update { form -> form.copy(linkedTags = visible.linkedRows(shown.id).flatMap { it.tags }) }
         mutableLinking.value =
             mutableLinking.value.copy(
-                linkedWith = group?.let { ShownMachines(own, it).linkedWith(shown.id) }.orEmpty(),
+                linkedWith = group?.let { visible.linkedWith(shown.id) }.orEmpty(),
                 canUnlink = (group?.links ?: ownLinks).any { it.touches(shown.id) },
             )
     }
@@ -444,7 +460,7 @@ class MachineFormViewModel(
     }
 
     fun toggleTag(tag: String) =
-        update { it.copy(tags = toggledTag(it.tags, spelledAs(tag, it.shownTags))) }
+        update { it.copy(tags = toggledTag(it.tags, spelledAs(tag, it.accountTags))) }
 
     fun typeNewTag(text: String) =
         update { it.copy(newTag = text.take(MachineFormState.TAG_LENGTH)) }
@@ -453,7 +469,7 @@ class MachineFormViewModel(
     fun addNewTag() =
         update { form ->
             val typed = form.newTag.trim().replace(Regex("""\s+"""), " ")
-            val tag = spelledAs(typed, form.shownTags)
+            val tag = spelledAs(typed, form.accountTags)
             val tags = if (tag.isEmpty() || hasTag(form.tags, tag)) form.tags else form.tags + tag
             form.copy(tags = tags, newTag = "")
         }

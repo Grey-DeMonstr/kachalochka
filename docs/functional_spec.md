@@ -177,11 +177,15 @@ and the weight step. The empty name and comment fields show "Название" a
 them. The unit is kg, lb or an own unit such as "плитка", whose name is then written
 after every weight on that machine, with no conversion. The weight step is any positive number,
 typed in its field. Under the comment, every tag of the account's machines is a chip to tap on or
-off, and a last "Новый тег" chip adds what is typed in it; a machine has any number of tags, and
-they are the account's own: a machine taken from a friend starts without any. Signed in and online,
-the tags of friends' machines the account has not got come between the account's tags and "Новый
-тег", as dashed chips with the friend's avatar; tapping one gives it to the machine, and saving
-makes it the account's own.
+off, the machine's own tags first, and a "Новый тег" chip after them adds what is typed in it; a
+machine has any number of tags. When the machines it is linked with carry tags it has not got,
+a row above the chips starts with a link icon and offers those tags as dashed chips in the accent
+colour; tapping one gives it to the machine, in the account's spelling when the account has the
+tag, and such a tag is not repeated among the account's chips. Offline, only the account's own
+linked machines offer tags. Signed in and online, the tags of other friends' machines the account
+has not got wait behind a last "Теги друзей" chip, which shows them in its place as dashed chips
+with the friend's avatar; tapping one gives it to the machine, and saving makes it the account's
+own.
 
 Tags have no letter case: "ноги" and "Ноги" are one tag, a machine never holds both, and a tag
 keeps the spelling it was first typed in. Every screen draws a tag in capitals, in a small font

@@ -143,6 +143,88 @@ class MachineFormViewModelTest {
         }
 
     @Test
+    fun linked_machines_suggest_the_tags_the_machine_lacks_apart_from_other_tags() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val oleg = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Олег")
+            gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend, oleg)
+            val hers =
+                Machine
+                    .new("Платформа", misha.account.userId, t0)
+                    .copy(tags = setOf("Квадрицепс", "НОГИ", "спина"))
+            val (copy, link) = linkedCopy(hers, ivan.account.userId, t0, emptySet())
+            val press = copy.copy(tags = setOf("Ноги"))
+            gym.machines.upsert(press)
+            gym.machineLinks.upsert(link)
+            gym.machines.upsert(
+                Machine.new("Тяга", ivan.account.userId, t0).copy(tags = setOf("Спина")),
+            )
+            gym.friends.machines +=
+                listOf(
+                    hers,
+                    Machine.new("Жим", oleg.userId, t0).copy(tags = setOf("Плечи", "квадрицепс")),
+                )
+
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            assertEquals(listOf("Квадрицепс", "Спина"), vm.state.value.suggestedTags)
+            assertEquals(listOf("Ноги"), vm.state.value.shownTags)
+            assertEquals(
+                listOf("Плечи"),
+                vm.state.value.offeredFriendTags
+                    .map { it.tag },
+            )
+
+            vm.toggleTag("спина")
+            vm.save {}
+
+            assertEquals(listOf("Квадрицепс"), vm.state.value.suggestedTags)
+            assertEquals(listOf("Ноги", "Спина"), vm.state.value.shownTags)
+            assertEquals(setOf("Ноги", "Спина"), gym.machines.byId(press.id)?.tags)
+        }
+
+    @Test
+    fun offline_only_the_own_linked_machines_suggest_tags() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            gym.friends.offline = true
+            val press = Machine.new("Жим ногами", ivan.account.userId, t0)
+            val squat =
+                Machine.new("Гакк", ivan.account.userId, t0).copy(tags = setOf("Ноги"))
+            gym.machines.upsert(press)
+            gym.machines.upsert(squat)
+            gym.machineLinks.upsert(
+                MachineLink(
+                    MachineLinkId.random(),
+                    ivan.account.userId,
+                    press.id,
+                    squat.id,
+                    t0,
+                    false,
+                ),
+            )
+
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            assertEquals(listOf("Ноги"), vm.state.value.suggestedTags)
+            assertEquals(emptyList(), vm.state.value.shownTags)
+        }
+
+    @Test
+    fun the_machine_s_own_tags_come_before_the_account_s_other_tags() =
+        runTest {
+            val press = Machine.new("Жим", null, t0).copy(tags = setOf("Спина"))
+            gym.machines.upsert(press)
+            gym.machines.upsert(
+                Machine.new("Присед", null, t0).copy(tags = setOf("Ноги", "Адукторы")),
+            )
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            assertEquals(listOf("Спина", "Адукторы", "Ноги"), vm.state.value.shownTags)
+            assertEquals(emptyList(), vm.state.value.suggestedTags)
+        }
+
+    @Test
     fun chosen_and_added_tags_are_saved_with_the_machine() =
         runTest {
             gym.machines.upsert(Machine.new("Присед", null, t0).copy(tags = setOf("Ноги")))
