@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.machine
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -36,6 +37,7 @@ class MineChooserViewModelTest {
             gym.accounts,
             gym.profiles,
             gym.catalogue,
+            gym.machineReads,
         ).also { it.load() }
 
     @BeforeTest
@@ -80,6 +82,32 @@ class MineChooserViewModelTest {
                 MachineLink(MachineLinkId.random(), ME.userId, legPress.id, pashas.id, t0, false),
             )
         }
+
+        val vm = viewModel()
+
+        assertEquals(
+            listOf(press.id),
+            vm.state.value.own
+                .map { it.id },
+        )
+    }
+
+    @Test
+    fun links_read_before_keep_joined_machines_out_at_once() {
+        val pashas = Machine.new("Жим", PASHA.userId, t0)
+        gym.friends.machines += pashas
+        gym.friends.links +=
+            MachineLink(MachineLinkId.random(), PASHA.userId, pashas.id, olegs.id, t0, false)
+        runBlocking {
+            gym.machineLinks.upsert(
+                MachineLink(MachineLinkId.random(), ME.userId, legPress.id, pashas.id, t0, false),
+            )
+            gym.catalogue.group(ME.userId)
+        }
+        // The read made the link direct; the cached read joins them through Pasha's.
+        gym.machineLinks.rows.values
+            .removeAll { it.linkedMachineId == olegs.id }
+        gym.friends.gate = CompletableDeferred()
 
         val vm = viewModel()
 

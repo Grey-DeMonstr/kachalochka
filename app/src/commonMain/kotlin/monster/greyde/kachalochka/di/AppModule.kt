@@ -211,10 +211,11 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
             )
         }
         viewModel { (machine: MachineId, name: String) ->
-            MineChooserViewModel(machine, name, get(), get(), get(), get())
+            MineChooserViewModel(machine, name, get(), get(), get(), get(), get())
         }
         viewModel { (machine: MachineId, owner: UserId) ->
             FriendMachineViewModel(

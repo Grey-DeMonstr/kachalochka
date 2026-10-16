@@ -16,7 +16,6 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.weightCaption
-import monster.greyde.kachalochka.ui.friends.reading
 
 data class MineChooserUiState(
     val query: String = "",
@@ -31,6 +30,7 @@ class MineChooserViewModel(
     private val accounts: Accounts,
     private val profiles: ProfileRepository,
     private val catalogue: MachineCatalogue,
+    private val reads: MachineReads,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MineChooserUiState(query = name))
     val state: StateFlow<MineChooserUiState> = mutableState
@@ -46,22 +46,18 @@ class MineChooserViewModel(
         viewModelScope.launch { accounts.activeId.collect { load() } }
     }
 
-    /** Own machines show at once; the friends' links that join some of them follow online. */
+    /** Own machines show at once; the friends' links that join some of them follow. */
     fun load() {
         loading?.cancel()
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                val own = catalogue.own(owner)
                 preferred = profiles.preferredUnit(owner)
                 shownFor = owner
-                shown = ShownMachines(own, null)
-                publish()
-                owner ?: return@launch
-                val group = reading { catalogue.group(owner) }.getOrNull() ?: return@launch
-                if (currentUser.id() != owner) return@launch
-                shown = ShownMachines(own, group)
-                publish()
+                reads.machines(owner).collect { read ->
+                    shown = read.shown
+                    publish()
+                }
             }
     }
 

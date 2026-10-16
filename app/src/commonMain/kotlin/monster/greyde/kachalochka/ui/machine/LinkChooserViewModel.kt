@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.identity.Accounts
@@ -39,7 +40,6 @@ import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.format.weightShift
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
@@ -99,6 +99,7 @@ class LinkChooserViewModel(
     private val profiles: ProfileRepository,
     private val photos: PhotoRepository,
     private val catalogue: MachineCatalogue,
+    private val reads: MachineReads,
     private val utcOffset: UtcOffset,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(LinkChooserUiState())
@@ -125,30 +126,35 @@ class LinkChooserViewModel(
         viewModelScope.launch { accounts.activeId.collect { load() } }
     }
 
-    /** Own machines show at once; friends' follow from the network, if it answers. */
+    /**
+     * Own machines show at once, then friends' from the last group read, then from the network. A
+     * machine that is not an own one asks for no group.
+     */
     fun load() {
         loading?.cancel()
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                val read = catalogue.own(owner)
-                val mine = read.machines
-                ownRead = read
-                if (!seeded) {
-                    mine.firstOrNull { it.id == machineId }?.let {
-                        seeded = true
-                        mutableState.value = mutableState.value.copy(query = start ?: it.name)
-                    }
-                }
                 preferred = profiles.preferredUnit(owner)
                 shownFor = owner
-                group = null
-                publish()
-                if (owner == null || mine.none { it.id == machineId }) return@launch
-                val found = reading { catalogue.group(owner) }.getOrNull()
-                if (currentUser.id() != owner) return@launch
-                group = found
-                publish()
+                reads
+                    .machines(owner)
+                    .transformWhile {
+                        emit(it)
+                        it.shown.own.machines
+                            .any { machine -> machine.id == machineId }
+                    }.collect { read ->
+                        val mine = read.shown.own
+                        val edited = mine.machines.firstOrNull { it.id == machineId }
+                        ownRead = mine
+                        if (!seeded && edited != null) {
+                            seeded = true
+                            mutableState.value =
+                                mutableState.value.copy(query = start ?: edited.name)
+                        }
+                        group = read.shown.group.takeIf { edited != null }
+                        publish()
+                    }
             }
     }
 

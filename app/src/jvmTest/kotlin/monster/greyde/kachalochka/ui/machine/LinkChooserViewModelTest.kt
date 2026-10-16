@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.machine
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -81,22 +82,26 @@ class LinkChooserViewModelTest {
         /** Replaces the search the chooser starts with; null keeps it. */
         query: String? = "",
         start: String? = null,
-    ) = LinkChooserViewModel(
-        machine,
-        start,
-        machines,
-        sets,
-        gym.currentUser,
-        gym.accounts,
-        gym.clock,
-        gym.sync,
-        gym.profiles,
-        gym.photos,
-        if (links === gym.machineLinks) gym.catalogue else gym.catalogueOver(links),
-        gym.utcOffset,
-    ).also { vm ->
-        vm.load()
-        query?.let(vm::onQueryChange)
+    ): LinkChooserViewModel {
+        val catalogue = if (links === gym.machineLinks) gym.catalogue else gym.catalogueOver(links)
+        return LinkChooserViewModel(
+            machine,
+            start,
+            machines,
+            sets,
+            gym.currentUser,
+            gym.accounts,
+            gym.clock,
+            gym.sync,
+            gym.profiles,
+            gym.photos,
+            catalogue,
+            if (catalogue === gym.catalogue) gym.machineReads else gym.machineReadsOver(catalogue),
+            gym.utcOffset,
+        ).also { vm ->
+            vm.load()
+            query?.let(vm::onQueryChange)
+        }
     }
 
     /** Олег's machines: his copy of [press], linked to it, and one of his own. */
@@ -310,6 +315,38 @@ class LinkChooserViewModelTest {
                 ?.single()
                 ?.photo,
         )
+    }
+
+    @Test
+    fun friends_machines_read_before_show_at_once() {
+        val (_, bench) = olegsMachines()
+        runBlocking { gym.catalogue.group(ME.userId) }
+        gym.friends.gate = CompletableDeferred()
+
+        val state = viewModel().state.value
+
+        assertEquals(listOf(bench.id), state.friends?.map { it.id })
+    }
+
+    @Test
+    fun offline_friends_machines_read_before_are_still_offered() {
+        val (_, bench) = olegsMachines()
+        runBlocking { gym.catalogue.group(ME.userId) }
+        gym.friends.offline = true
+
+        val state = viewModel().state.value
+
+        assertEquals(listOf(bench.id), state.friends?.map { it.id })
+    }
+
+    @Test
+    fun a_machine_the_account_does_not_own_asks_no_group() {
+        olegsMachines()
+        val before = gym.friends.reads
+
+        viewModel(machine = MachineId.random())
+
+        assertEquals(before, gym.friends.reads)
     }
 
     @Test
