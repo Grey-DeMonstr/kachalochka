@@ -342,6 +342,7 @@ object EnStrings : Strings {
     override val linkCopied = "Link copied"
     override val copied = "Copied"
     override val copyFailed = "Couldn't copy"
+    override val copyText = "Copy"
 
     override val children = "Children"
     override val noChildren = "No children yet"

@@ -29,7 +29,9 @@ import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.ShareSheetInviteSharing
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.SystemPhotoCapture
+import monster.greyde.kachalochka.ui.share.ClipboardTextCopying
 import monster.greyde.kachalochka.ui.share.ShareSheetTextSharing
+import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.DataStoreLanguagePreference
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
@@ -99,6 +101,7 @@ actual fun platformModule(): Module =
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
         single<TextSharing> { ShareSheetTextSharing(androidContext()) }
+        single<TextCopying> { ClipboardTextCopying(androidContext()) }
         single<InviteSharing> {
             ShareSheetInviteSharing(get(), webAppUrlFromBuild().ifBlank { null })
         }

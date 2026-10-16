@@ -360,6 +360,7 @@ object RuStrings : Strings {
     override val linkCopied = "Ссылка скопирована"
     override val copied = "Скопировано"
     override val copyFailed = "Не удалось скопировать"
+    override val copyText = "Скопировать"
 
     override val children = "Дети"
     override val noChildren = "Детей пока нет"

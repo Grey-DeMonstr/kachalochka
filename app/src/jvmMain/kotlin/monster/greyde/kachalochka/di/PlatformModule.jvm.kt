@@ -18,7 +18,9 @@ import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.UnavailableInviteSharing
 import monster.greyde.kachalochka.ui.photos.NoPhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
+import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.share.UnavailableTextCopying
 import monster.greyde.kachalochka.ui.share.UnavailableTextSharing
 import monster.greyde.kachalochka.ui.strings.InMemoryLanguagePreference
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
@@ -53,6 +55,7 @@ actual fun platformModule(): Module =
         single<SyncTrigger> { SyncTrigger {} }
         single<InviteSharing> { UnavailableInviteSharing }
         single<TextSharing> { UnavailableTextSharing }
+        single<TextCopying> { UnavailableTextCopying }
         single<JoinCodeStore> { InMemoryJoinCodeStore() }
         single<JoinCodeStore>(named(PARENT_CODE)) { InMemoryJoinCodeStore() }
         single { VisitStore.Device }

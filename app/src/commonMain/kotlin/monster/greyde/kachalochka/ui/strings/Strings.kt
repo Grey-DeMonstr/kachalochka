@@ -315,6 +315,7 @@ interface Strings {
     val linkCopied: String
     val copied: String
     val copyFailed: String
+    val copyText: String
 
     // Family
     val children: String

@@ -64,6 +64,18 @@ class FriendMachineScreenTest {
     }
 
     @Test
+    fun the_name_and_the_note_are_copied_with_their_buttons() {
+        runScreenTest(on, screen = {
+            FriendMachineScreen(olegPress.id, OLEG.userId, {}, {}, onTaken = {})
+        }) {
+            onNodeWithTag("copy-machine-name").performClick()
+            onNodeWithTag("copy-friend-machine-note").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf("Жим ногами", "Спинка на 4"), on.clipboard.copied)
+    }
+
+    @Test
     fun link_to_mine_hands_on_the_machine_s_name_and_a_linked_machine_opens() {
         val pashas = Machine.new("Платформа", PASHA.userId, on.clock.current)
         on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)

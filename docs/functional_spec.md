@@ -293,7 +293,8 @@ tags, its photos with the one the friend chose starred, its setup note, how its 
 and its platform in the machine's own unit, then the
 friend's statistics on it as the statistics screen shows a machine's — the period chips, the
 period's best set, the chart and "Все результаты" — in the viewer's unit. Nothing on it can be
-edited. Tapping a linked machine opens it: an own machine in its form, a friend's as this view.
+edited, but a copy button after the name and after the setup note puts that text on the
+clipboard, and a check shows on the button for two seconds. Tapping a linked machine opens it: an own machine in its form, a friend's as this view.
 "Взять себе" saves the account's own copy linked to it (see Group sharing) and opens that copy in
 the machine form. "Привязать к моему" opens a list of the account's machines with a search field,
 which starts with the friend's machine's name, as "Привязать к…" does; it leaves out the machines
