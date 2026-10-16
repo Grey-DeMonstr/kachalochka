@@ -141,9 +141,13 @@ object EnStrings : Strings {
 
     override fun replaceVisitText(
         date: String,
+        machines: String,
         sets: String,
-    ) = "$date already has a visit: $sets. It and its sets will disappear from the history " +
-        "and statistics."
+    ): String {
+        val content = listOf(machines, sets).filter { it.isNotEmpty() }.joinToString(", ")
+        return "$date already has a visit: $content. It and its sets will disappear from the " +
+            "history and statistics."
+    }
 
     override val previousMonth = "Previous month"
     override val nextMonth = "Next month"

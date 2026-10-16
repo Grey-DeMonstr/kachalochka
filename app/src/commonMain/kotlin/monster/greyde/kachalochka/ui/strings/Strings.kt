@@ -124,6 +124,7 @@ interface Strings {
 
     fun replaceVisitText(
         date: String,
+        machines: String,
         sets: String,
     ): String
 

@@ -158,8 +158,13 @@ object RuStrings : Strings {
 
     override fun replaceVisitText(
         date: String,
+        machines: String,
         sets: String,
-    ) = "На $date уже есть визит: $sets. Он и его подходы пропадут из истории и статистики."
+    ): String {
+        val content = listOf(machines, sets).filter { it.isNotEmpty() }.joinToString(", ")
+        return "На $date уже есть визит: $content. " +
+            "Он и его подходы пропадут из истории и статистики."
+    }
 
     override val previousMonth = "Предыдущий месяц"
     override val nextMonth = "Следующий месяц"

@@ -498,7 +498,7 @@ class CalendarViewModelTest {
             val replacement = assertNotNull(vm.state.value?.replacement)
             assertEquals("Заменить визит?", replacement.title)
             assertEquals(
-                "На 5 ноября уже есть визит: 1 подход. " +
+                "На 5 ноября уже есть визит: Жим ногами, 1 подход. " +
                     "Он и его подходы пропадут из истории и статистики.",
                 replacement.text,
             )
@@ -509,6 +509,25 @@ class CalendarViewModelTest {
             assertEquals(fifthVisit, gym.visits.byId(fifthVisit.id))
             assertEquals(twelfth, gym.visits.byId(sunday.id)?.day)
             assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun the_replace_question_names_every_machine_of_the_day_s_visit_in_visit_order() =
+        runTest {
+            gym.visits.upsert(fifthVisit)
+            gym.sets.upsert(set(fifthVisit, press, 0))
+            gym.sets.upsert(set(fifthVisit, row, 1))
+            gym.sets.upsert(set(fifthVisit, row, 2))
+            val vm = viewModel().also { it.refresh() }
+            vm.startMove(sunday.id)
+
+            vm.selectDay(fifth)
+
+            assertEquals(
+                "На 5 ноября уже есть визит: Жим ногами, Тяга верхнего блока, 3 подхода. " +
+                    "Он и его подходы пропадут из истории и статистики.",
+                assertNotNull(vm.state.value?.replacement).text,
+            )
         }
 
     @Test

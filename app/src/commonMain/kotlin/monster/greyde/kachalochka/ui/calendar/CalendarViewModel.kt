@@ -20,6 +20,7 @@ import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.VisitRows
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.allOn
 import monster.greyde.kachalochka.core.domain.gym.dayAt
@@ -141,6 +142,7 @@ class CalendarViewModel(
     private var removing: Visit? = null
     private var replacing: Visit? = null
     private var replacingSets: Int = 0
+    private var replacingMachines: String = ""
     private var reloading: Job? = null
     private var shownFor: UserId? = null
 
@@ -196,7 +198,9 @@ class CalendarViewModel(
         val occupant = all.filter { it.day == day }.maxWithOrNull(visitRecency)
         if (occupant != null) {
             viewModelScope.launch {
-                replacingSets = sets.forVisit(occupant.id).size
+                val occupantSets = sets.forVisit(occupant.id)
+                replacingSets = occupantSets.size
+                replacingMachines = machineNames(occupantSets)
                 replacing = occupant
                 publish()
             }
@@ -218,6 +222,7 @@ class CalendarViewModel(
                     ?.takeIf { it.visit.id != visit.id }
             if (arrived != null) {
                 replacingSets = arrived.sets.size
+                replacingMachines = machineNames(arrived.sets)
                 replacing = arrived.visit
                 publish()
                 return@launch
@@ -476,10 +481,16 @@ class CalendarViewModel(
             AppStrings.current.replaceVisitTitle,
             AppStrings.current.replaceVisitText(
                 dayMonthLabel(day, today.year),
+                replacingMachines,
                 setCount(replacingSets),
             ),
         )
     }
+
+    private fun machineNames(visitSets: List<WorkoutSet>): String =
+        groupByMachine(visitSets)
+            .mapNotNull { machinesById[it.machineId] }
+            .joinToString(", ") { it.name }
 
     private fun today(): CalendarDay {
         val now = clock.now()

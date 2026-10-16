@@ -291,7 +291,8 @@ the month is the chosen day's visit as a card: the account's avatar, every tag i
 Tapping it opens it on the visit screen, where its sets are added, edited, deleted and ordered as
 today's are. A day without a visit offers "Добавить визит". The card's "⋮" menu has "Перенести",
 which moves the visit, with its sets, to the day tapped next; if that day already has a visit, the
-app asks whether to replace it, and replacing removes it with its sets. Its "Сохранить как план"
+app asks whether to replace it, naming that visit's machines and its set count, and replacing
+removes it with its sets. Its "Сохранить как план"
 opens the form of a new plan with the visit's machines, as the visit's own menu does. Its "Удалить"
 asks "Удалить визит?" under the visit's date, then removes the visit and its sets from the history
 and the statistics.
