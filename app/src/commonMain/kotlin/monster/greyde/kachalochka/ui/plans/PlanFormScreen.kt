@@ -66,13 +66,13 @@ fun PlanFormScreen(
 ) {
     val viewModel: PlanFormViewModel = koinViewModel { parametersOf(planId, fromVisit, machine) }
     val state by viewModel.state.collectAsState()
+    LaunchedEffect(Unit) { viewModel.refresh() }
     LaunchedEffect(pickedMachineId) {
         if (pickedMachineId != null) {
             viewModel.add(pickedMachineId)
             onPickedMachineConsumed()
         }
     }
-    LaunchedEffect(Unit) { viewModel.refresh() }
     LaunchedEffect(state.done) { if (state.done) onDone() }
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),

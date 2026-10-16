@@ -200,13 +200,14 @@ class PlanFormViewModel(
     /** The machine form may have renamed, changed or deleted a machine since the last read. */
     fun refresh() {
         if (!loaded || done) return
-        reading?.cancel()
+        readGroup()
+        // A read in flight began after the form was left, and a queued write may wait for it.
+        if (reading?.isActive == true) return
         reading =
             viewModelScope.launch {
                 own = catalogue.own(owner)
                 publish()
             }
-        readGroup()
     }
 
     fun remove(id: MachineId) {

@@ -356,6 +356,22 @@ class PlanFormViewModelTest {
         }
 
     @Test
+    fun an_added_machine_is_written_also_when_the_form_refreshes_at_once() =
+        runTest {
+            val fresh = Machine.new("Гакк", null, t0)
+            val vm = viewModel(legs.id)
+            gym.machines.upsert(fresh)
+            val read = CompletableDeferred<Unit>()
+            gym.machines.readGate = read
+
+            vm.add(fresh.id)
+            vm.refresh()
+            read.complete(Unit)
+
+            assertEquals(listOf(press.id, row.id, fresh.id), stored().machineIds)
+        }
+
+    @Test
     fun the_name_is_written_trimmed_when_committed_not_while_typed() {
         val vm = viewModel(legs.id)
 
