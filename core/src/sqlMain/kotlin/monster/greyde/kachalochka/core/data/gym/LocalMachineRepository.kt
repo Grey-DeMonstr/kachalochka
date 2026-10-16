@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.data.gym
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
+import monster.greyde.kachalochka.core.data.db.MachineQueries
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -12,7 +13,7 @@ import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
 import kotlin.time.Instant
 
 class LocalMachineRepository(
-    database: KachalochkaDatabase,
+    private val database: KachalochkaDatabase,
     private val outbox: OutboxDao,
     private val dispatcher: CoroutineDispatcher,
 ) : MachineRepository {
@@ -20,39 +21,35 @@ class LocalMachineRepository(
 
     override suspend fun upsert(machine: Machine) =
         withContext(dispatcher) {
-            queries.transaction {
-                queries.upsert(
-                    machine.id.value,
-                    machine.userId?.value,
-                    machine.name,
-                    machine.setupNote,
-                    machine.weightMode.wireName(),
-                    machine.platformWeight,
-                    machine.platformIncluded,
-                    machine.unit.wireName(),
-                    machine.weightStep,
-                    machine.updatedAt,
-                    machine.deleted,
-                    machine.unitLabel,
-                    tagsText(machine.tags),
-                    machine.coverPhoto?.value,
-                )
+            database.transaction {
+                queries.write(machine)
                 if (machine.userId != null) {
                     outbox.enqueue(OutboxEntry(MACHINE_TABLE, machine.id.value, machine.updatedAt))
                 }
+                database.writeTagsOf(machine)
             }
         }
 
     override suspend fun byId(id: MachineId): Machine? =
-        withContext(dispatcher) { queries.byId(id.value, ::machineOf).executeAsOneOrNull() }
+        withContext(dispatcher) {
+            database.transactionWithResult {
+                queries.byId(id.value, ::machineOf).executeAsOneOrNull()?.let { machine ->
+                    machine.copy(tags = database.machineTags(listOf(id))[id].orEmpty())
+                }
+            }
+        }
 
     // SQLite folds case for ASCII only, so Cyrillic names are ordered here.
     override suspend fun all(owner: UserId?): List<Machine> =
         withContext(dispatcher) {
-            queries
-                .live(owner?.value, ::machineOf)
-                .executeAsList()
-                .sortedBy { it.name.lowercase() }
+            database.transactionWithResult {
+                val tags = database.ownerMachineTags(owner)
+                queries
+                    .live(owner?.value, ::machineOf)
+                    .executeAsList()
+                    .map { it.copy(tags = tags[it.id].orEmpty()) }
+                    .sortedBy { it.name.lowercase() }
+            }
         }
 
     override suspend fun named(
@@ -60,11 +57,32 @@ class LocalMachineRepository(
         name: String,
     ): Machine? =
         withContext(dispatcher) {
-            queries.named(name, owner?.value, ::machineOf).executeAsOneOrNull()
+            database.transactionWithResult {
+                queries.named(name, owner?.value, ::machineOf).executeAsOneOrNull()?.let {
+                    it.copy(tags = database.machineTags(listOf(it.id))[it.id].orEmpty())
+                }
+            }
         }
 }
 
-// The mapper takes every column of `SELECT *`, the legacy `link_id` included.
+internal fun MachineQueries.write(machine: Machine) =
+    upsert(
+        machine.id.value,
+        machine.userId?.value,
+        machine.name,
+        machine.setupNote,
+        machine.weightMode.wireName(),
+        machine.platformWeight,
+        machine.platformIncluded,
+        machine.unit.wireName(),
+        machine.weightStep,
+        machine.updatedAt,
+        machine.deleted,
+        machine.unitLabel,
+        machine.coverPhoto?.value,
+    )
+
+/** Without its tags, which live in `machine_tag`; the legacy columns are taken and dropped. */
 @Suppress("UNUSED_PARAMETER")
 internal fun machineOf(
     id: String,
@@ -95,6 +113,5 @@ internal fun machineOf(
     weightStep = weightStep,
     updatedAt = updatedAt,
     deleted = deleted,
-    tags = tagsOf(tags),
     coverPhoto = photoIdOf(coverPhoto),
 )

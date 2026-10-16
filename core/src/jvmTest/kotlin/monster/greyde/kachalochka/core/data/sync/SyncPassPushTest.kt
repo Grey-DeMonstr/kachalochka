@@ -3,7 +3,9 @@ package monster.greyde.kachalochka.core.data.sync
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.MACHINE_TAG_TABLE
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
+import monster.greyde.kachalochka.core.data.gym.TAG_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -57,6 +59,20 @@ class SyncPassPushTest {
                     .substringBefore(':'),
             )
             assertEquals(3, h.gateway.pushed.size)
+        }
+
+    @Test
+    fun a_machine_s_tags_follow_it_each_tag_before_its_link_and_both_before_visits() =
+        runTest {
+            h.visits.upsert(ownedVisit(IVAN))
+            h.machines.upsert(ownedPress(IVAN).copy(tags = setOf("ноги")))
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(
+                listOf(MACHINE_TABLE, TAG_TABLE, MACHINE_TAG_TABLE, VISIT_TABLE),
+                h.gateway.pushed.map { it.substringBefore(':') },
+            )
         }
 
     @Test

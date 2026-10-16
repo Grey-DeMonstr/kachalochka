@@ -7,13 +7,19 @@ import io.github.jan.supabase.storage.storage
 import io.ktor.http.ContentType
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.MACHINE_TAG_TABLE
 import monster.greyde.kachalochka.core.data.gym.MachineLinkRow
 import monster.greyde.kachalochka.core.data.gym.MachineRow
+import monster.greyde.kachalochka.core.data.gym.MachineTag
+import monster.greyde.kachalochka.core.data.gym.MachineTagRow
 import monster.greyde.kachalochka.core.data.gym.PHOTO_BUCKET
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.PhotoRow
 import monster.greyde.kachalochka.core.data.gym.PlanRow
+import monster.greyde.kachalochka.core.data.gym.TAG_TABLE
+import monster.greyde.kachalochka.core.data.gym.Tag
+import monster.greyde.kachalochka.core.data.gym.TagRow
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
@@ -82,6 +88,18 @@ class SupabaseSyncGateway(
         client.value.postgrest
             .from(PLAN_TABLE)
             .upsert(PlanRow.of(plan))
+    }
+
+    override suspend fun pushTag(tag: Tag) {
+        client.value.postgrest
+            .from(TAG_TABLE)
+            .upsert(TagRow.of(tag))
+    }
+
+    override suspend fun pushMachineTag(link: MachineTag) {
+        client.value.postgrest
+            .from(MACHINE_TAG_TABLE)
+            .upsert(MachineTagRow.of(link))
     }
 
     override suspend fun pushMeasure(measure: Measure) {
@@ -177,6 +195,20 @@ class SupabaseSyncGateway(
     ): List<Plan> =
         pullAll<PlanRow>(PLAN_TABLE, owner, since) { it.updatedAt to it.id }
             .map { it.toPlan() }
+
+    override suspend fun pullTags(
+        owner: UserId,
+        since: Instant?,
+    ): List<Tag> =
+        pullAll<TagRow>(TAG_TABLE, owner, since) { it.updatedAt to it.id }
+            .map { it.toTag() }
+
+    override suspend fun pullMachineTags(
+        owner: UserId,
+        since: Instant?,
+    ): List<MachineTag> =
+        pullAll<MachineTagRow>(MACHINE_TAG_TABLE, owner, since) { it.updatedAt to it.id }
+            .map { it.toMachineTag() }
 
     // Each page starts after the previous page's last (updated_at, id), so a row another device
     // edits between two fetches only moves later in the order and never makes the pull skip one.

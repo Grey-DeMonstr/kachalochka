@@ -22,6 +22,8 @@ import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.gym.WorkoutSetRow
 import monster.greyde.kachalochka.core.data.gym.machinePeaks
+import monster.greyde.kachalochka.core.data.gym.machineTags
+import monster.greyde.kachalochka.core.data.gym.withTags
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
@@ -187,7 +189,7 @@ class SupabaseFriendsRepository(
     }
 
     override suspend fun machines(member: UserId): List<Machine> =
-        liveMachines { eq("user_id", member.value) }.sortedBy { it.name.lowercase() }
+        taggedMachines { eq("user_id", member.value) }.sortedBy { it.name.lowercase() }
 
     override suspend fun photos(machine: MachineId): List<Photo> =
         postgrest
@@ -220,7 +222,7 @@ class SupabaseFriendsRepository(
     override suspend fun groupMachines(viewer: UserId): List<FriendMachine> {
         val mates = matesById(viewer)
         if (mates.isEmpty()) return emptyList()
-        return liveMachines { isIn("user_id", mates.keys.map { it.value }) }
+        return taggedMachines { isIn("user_id", mates.keys.map { it.value }) }
             .mapNotNull { machine ->
                 machine.userId?.let(mates::get)?.let { FriendMachine(machine, it) }
             }.sortedBy { it.machine.name.lowercase() }
@@ -368,6 +370,20 @@ class SupabaseFriendsRepository(
                 }
             }.decodeList<MachineRow>()
             .map { it.toMachine() }
+
+    /** Live machines with the tags of their owners' live `tag` rows, which [owners] picks. */
+    private suspend fun taggedMachines(owners: PostgrestFilterBuilder.() -> Unit): List<Machine> =
+        coroutineScope {
+            val machines = async { liveMachines(owners) }
+            val tags =
+                async {
+                    postgrest.machineTags(links = owners) {
+                        eq("deleted", false)
+                        owners()
+                    }
+                }
+            machines.await().withTags(tags.await())
+        }
 
     private suspend fun liveSets(
         newestFirst: Long? = null,

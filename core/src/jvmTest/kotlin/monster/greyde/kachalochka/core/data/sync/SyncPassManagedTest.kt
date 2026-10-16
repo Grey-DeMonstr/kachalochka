@@ -3,8 +3,10 @@ package monster.greyde.kachalochka.core.data.sync
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.MACHINE_TAG_TABLE
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
+import monster.greyde.kachalochka.core.data.gym.TAG_TABLE
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -70,13 +72,15 @@ class SyncPassManagedTest {
                     MACHINE_LINK_TABLE,
                     PHOTO_TABLE,
                     PLAN_TABLE,
+                    TAG_TABLE,
+                    MACHINE_TAG_TABLE,
                 ),
                 h.gateway.pulledTables
                     .filter { it.first == MISHA }
                     .map { it.second }
                     .toSet(),
             )
-            assertEquals(9, h.gateway.pulledTables.count { it.first == IVAN })
+            assertEquals(11, h.gateway.pulledTables.count { it.first == IVAN })
             assertTrue((MISHA to T0) in h.gateway.pulledSince)
         }
 

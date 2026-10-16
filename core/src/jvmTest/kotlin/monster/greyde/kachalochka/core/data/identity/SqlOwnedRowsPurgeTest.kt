@@ -2,6 +2,8 @@ package monster.greyde.kachalochka.core.data.identity
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
+import monster.greyde.kachalochka.core.data.gym.tagId
+import monster.greyde.kachalochka.core.data.gym.tagOf
 import monster.greyde.kachalochka.core.data.sync.IVAN
 import monster.greyde.kachalochka.core.data.sync.MISHA
 import monster.greyde.kachalochka.core.data.sync.SyncHarness
@@ -27,7 +29,7 @@ class SqlOwnedRowsPurgeTest {
 
     private suspend fun record(owner: UserId): Photo {
         val visit = ownedVisit(owner)
-        val press = ownedPress(owner)
+        val press = ownedPress(owner).copy(tags = setOf("ноги"))
         val neck = ownedMeasure(owner)
         val photo = Photo.new(press.id, owner, T0)
         h.visits.upsert(visit)
@@ -42,6 +44,11 @@ class SqlOwnedRowsPurgeTest {
         h.watermarks.advance(owner, T0)
         return photo
     }
+
+    private fun tag(owner: UserId) =
+        h.database.tagQueries
+            .byId(tagId(owner, "ноги"), ::tagOf)
+            .executeAsOneOrNull()
 
     @Test
     fun every_row_of_the_owner_leaves_the_device_and_nobody_else_s() =
@@ -61,6 +68,13 @@ class SqlOwnedRowsPurgeTest {
             assertEquals(emptyList(), h.photos.all(IVAN))
             assertNull(h.files.read(ivans.id))
             assertNull(h.watermarks.lastPullAt(IVAN))
+            assertNull(tag(IVAN))
+            assertEquals(
+                emptyList(),
+                h.database.machineTagQueries
+                    .liveNames(IVAN.value)
+                    .executeAsList(),
+            )
 
             assertEquals(1, h.visits.all(MISHA).size)
             assertEquals(1, h.plans.all(MISHA).size)
@@ -68,5 +82,13 @@ class SqlOwnedRowsPurgeTest {
             assertEquals(1, h.measurements.all(MISHA).size)
             assertNotNull(h.files.read(mishas.id))
             assertEquals(T0, h.watermarks.lastPullAt(MISHA))
+            assertNotNull(tag(MISHA))
+            assertEquals(
+                setOf("ноги"),
+                h.machines
+                    .all(MISHA)
+                    .single()
+                    .tags,
+            )
         }
 }

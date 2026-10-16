@@ -1,0 +1,25 @@
+CREATE TABLE tag (
+    id         TEXT NOT NULL PRIMARY KEY,
+    user_id    TEXT,
+    name       TEXT NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX tag_updated_at_idx ON tag (updated_at);
+
+CREATE TABLE machine_tag (
+    id         TEXT NOT NULL PRIMARY KEY,
+    user_id    TEXT,
+    machine_id TEXT NOT NULL,
+    tag_id     TEXT NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX machine_tag_updated_at_idx ON machine_tag (updated_at);
+CREATE INDEX machine_tag_machine_id_idx ON machine_tag (machine_id);
+CREATE INDEX machine_tag_tag_id_idx ON machine_tag (tag_id);
+
+-- The tags migration 0027 converted on the server may be older than the watermark.
+UPDATE syncState SET lastPullAt = NULL;

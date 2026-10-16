@@ -70,14 +70,15 @@ class GymWireTest {
     }
 
     @Test
-    fun a_machine_s_tags_travel_as_a_json_array() {
+    fun a_machine_row_sends_no_tags_so_an_upsert_leaves_older_clients_column_alone() {
         val machine =
             Machine
                 .new("Жим ногами", null, Instant.fromEpochSeconds(1_700_000_000))
-                .copy(tags = setOf("Ноги", "Жим"))
+                .copy(tags = setOf("ноги"))
+        val json = Json.encodeToString(MachineRow.of(machine))
 
-        assertEquals("""["Ноги","Жим"]""", MachineRow.of(machine).tags)
-        assertEquals(machine, MachineRow.of(machine).toMachine())
+        assertTrue("\"tags\"" !in json, json)
+        assertEquals(machine.copy(tags = emptySet()), MachineRow.of(machine).toMachine())
     }
 
     @Test

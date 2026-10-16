@@ -2,6 +2,11 @@ package monster.greyde.kachalochka.core.data.db
 
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import monster.greyde.kachalochka.core.data.gym.Tag
+import monster.greyde.kachalochka.core.data.gym.machineTagOf
+import monster.greyde.kachalochka.core.data.gym.tagConversion
+import monster.greyde.kachalochka.core.data.gym.tagId
+import monster.greyde.kachalochka.core.data.gym.tagOf
 import monster.greyde.kachalochka.core.data.gym.visitOf
 import monster.greyde.kachalochka.core.data.gym.workoutSetOf
 import monster.greyde.kachalochka.core.data.profile.profileOf
@@ -18,6 +23,7 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 /**
@@ -163,6 +169,7 @@ class SchemaMigrationTest {
         exec("DROP TABLE measurement")
         exec("DROP TABLE photo")
         exec("DROP TABLE workout_plan")
+        dropTagTables()
     }
 
     /** Every version before 6 declares the profile table this way. */
@@ -639,6 +646,56 @@ class SchemaMigrationTest {
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
+    @Test
+    fun version_19_gains_the_tag_tables_with_every_machine_s_tags_and_pulls_again() {
+        val owner = UserId("11111111-1111-4111-8111-111111111111")
+        val gone = MachineId("0e000000-0000-4000-8000-00000000000e")
+        KachalochkaDatabase.Schema.create(driver)
+        dropTagTables()
+        exec(
+            "INSERT INTO machine(id, user_id, name, weight_mode, unit, weight_step, updated_at, " +
+                "tags) VALUES ('${PRESS.value}', '${owner.value}', 'Жим', 'total', 'kg', " +
+                "2.5, 1, '[\"Ноги\", \" Жим  лёжа \"]')",
+        )
+        exec(
+            "INSERT INTO machine(id, user_id, name, weight_mode, unit, weight_step, updated_at, " +
+                "deleted, tags) VALUES ('${gone.value}', '${owner.value}', 'Тяга', 'total', " +
+                "'kg', 2.5, 1, 1, '[\"ноги\", \"Спина\"]')",
+        )
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 19, 20, tagConversion(fixedClock(at(5))))
+
+        val database = kachalochkaDatabase(driver)
+
+        fun tag(name: String) =
+            database.tagQueries.byId(tagId(owner, name), ::tagOf).executeAsOne()
+        assertEquals(Tag(tagId(owner, "ноги"), owner, "ноги", at(5), false), tag("ноги"))
+        assertEquals(false, tag("жим лёжа").deleted)
+        assertEquals(true, tag("спина").deleted)
+        assertEquals(
+            listOf(false, false),
+            database.machineTagQueries
+                .forMachine(PRESS.value, ::machineTagOf)
+                .executeAsList()
+                .map { it.deleted },
+        )
+        assertEquals(
+            listOf(true, true),
+            database.machineTagQueries
+                .forMachine(gone.value, ::machineTagOf)
+                .executeAsList()
+                .map { it.deleted },
+        )
+        assertEquals(7L, number("SELECT COUNT(*) FROM outbox"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
+    private fun dropTagTables() {
+        exec("DROP TABLE tag")
+        exec("DROP TABLE machine_tag")
+    }
+
     /** Versions 5 to 12 declare the machine table this way. */
     private fun version12MachineTable() {
         exec("DROP TABLE machine")
@@ -730,6 +787,7 @@ class SchemaMigrationTest {
         version12MachineTable()
         version13VisitTable()
         exec("DROP TABLE workout_plan")
+        dropTagTables()
     }
 
     /** Versions 6 to 8 declare the profile table this way. */
@@ -757,9 +815,15 @@ class SchemaMigrationTest {
         version12MachineTable()
         version13VisitTable()
         exec("DROP TABLE workout_plan")
+        dropTagTables()
     }
 
     private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)
+
+    private fun fixedClock(now: Instant) =
+        object : Clock {
+            override fun now(): Instant = now
+        }
 
     private companion object {
         val VISIT = VisitId("0a000000-0000-4000-8000-00000000000a")

@@ -2,8 +2,12 @@ package monster.greyde.kachalochka.core.data.sync
 
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.MACHINE_TAG_TABLE
+import monster.greyde.kachalochka.core.data.gym.MachineTag
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
+import monster.greyde.kachalochka.core.data.gym.TAG_TABLE
+import monster.greyde.kachalochka.core.data.gym.Tag
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -44,6 +48,8 @@ class FakeSyncGateway(
     var measurementsToPull: List<Measurement> = emptyList()
     var photosToPull: List<Photo> = emptyList()
     var plansToPull: List<Plan> = emptyList()
+    var tagsToPull: List<Tag> = emptyList()
+    var machineTagsToPull: List<MachineTag> = emptyList()
 
     /** The bytes each live photo push carried. */
     val uploaded = mutableMapOf<PhotoId, ByteArray>()
@@ -68,6 +74,10 @@ class FakeSyncGateway(
         record(MACHINE_LINK_TABLE, link.id.value)
 
     override suspend fun pushPlan(plan: Plan) = record(PLAN_TABLE, plan.id.value)
+
+    override suspend fun pushTag(tag: Tag) = record(TAG_TABLE, tag.id)
+
+    override suspend fun pushMachineTag(link: MachineTag) = record(MACHINE_TAG_TABLE, link.id)
 
     override suspend fun pushMeasure(measure: Measure) = record(MEASURE_TABLE, measure.id.value)
 
@@ -130,6 +140,18 @@ class FakeSyncGateway(
         owner: UserId,
         since: Instant?,
     ) = pull(PLAN_TABLE, owner, since) { plansToPull.filter { it.userId == owner } }
+
+    override suspend fun pullTags(
+        owner: UserId,
+        since: Instant?,
+    ) = pull(TAG_TABLE, owner, since) { tagsToPull.filter { it.userId == owner } }
+
+    override suspend fun pullMachineTags(
+        owner: UserId,
+        since: Instant?,
+    ) = pull(MACHINE_TAG_TABLE, owner, since) {
+        machineTagsToPull.filter { it.userId == owner }
+    }
 
     private fun <T> pull(
         table: String,

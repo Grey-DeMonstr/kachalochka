@@ -1,14 +1,16 @@
 package monster.greyde.kachalochka.core.data.sync
 
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
+import monster.greyde.kachalochka.core.data.gym.MachineTag
+import monster.greyde.kachalochka.core.data.gym.Tag
 import monster.greyde.kachalochka.core.data.gym.machineIdsText
 import monster.greyde.kachalochka.core.data.gym.machineLinkOf
 import monster.greyde.kachalochka.core.data.gym.machineOf
+import monster.greyde.kachalochka.core.data.gym.machineTagOf
 import monster.greyde.kachalochka.core.data.gym.photoOf
 import monster.greyde.kachalochka.core.data.gym.planOf
-import monster.greyde.kachalochka.core.data.gym.tagsText
+import monster.greyde.kachalochka.core.data.gym.tagOf
 import monster.greyde.kachalochka.core.data.gym.visitOf
-import monster.greyde.kachalochka.core.data.gym.wireName
 import monster.greyde.kachalochka.core.data.gym.workoutSetOf
 import monster.greyde.kachalochka.core.data.gym.write
 import monster.greyde.kachalochka.core.data.measures.measureOf
@@ -54,23 +56,12 @@ class LocalSyncRows(
 
     fun plan(id: String): Plan? = database.planQueries.byId(id, ::planOf).executeAsOneOrNull()
 
-    fun writeMachine(machine: Machine) =
-        database.machineQueries.upsert(
-            machine.id.value,
-            machine.userId?.value,
-            machine.name,
-            machine.setupNote,
-            machine.weightMode.wireName(),
-            machine.platformWeight,
-            machine.platformIncluded,
-            machine.unit.wireName(),
-            machine.weightStep,
-            machine.updatedAt,
-            machine.deleted,
-            machine.unitLabel,
-            tagsText(machine.tags),
-            machine.coverPhoto?.value,
-        )
+    fun tag(id: String): Tag? = database.tagQueries.byId(id, ::tagOf).executeAsOneOrNull()
+
+    fun machineTag(id: String): MachineTag? =
+        database.machineTagQueries.byId(id, ::machineTagOf).executeAsOneOrNull()
+
+    fun writeMachine(machine: Machine) = database.machineQueries.write(machine)
 
     fun writeVisit(visit: Visit) =
         database.visitQueries.upsert(
@@ -109,6 +100,10 @@ class LocalSyncRows(
     fun writeMeasurement(measurement: Measurement) = database.measurementQueries.write(measurement)
 
     fun writePhoto(photo: Photo) = database.photoQueries.write(photo)
+
+    fun writeTag(tag: Tag) = database.tagQueries.write(tag)
+
+    fun writeMachineTag(link: MachineTag) = database.machineTagQueries.write(link)
 
     fun transaction(body: () -> Unit) = database.transaction { body() }
 }

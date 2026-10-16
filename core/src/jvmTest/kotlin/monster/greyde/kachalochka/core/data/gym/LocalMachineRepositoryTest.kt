@@ -12,6 +12,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 class LocalMachineRepositoryTest {
@@ -19,6 +20,7 @@ class LocalMachineRepositoryTest {
     private val outbox = OutboxDao(database)
     private val repository = LocalMachineRepository(database, outbox, Dispatchers.Unconfined)
     private val now = Instant.fromEpochMilliseconds(1_700_000_000_123)
+    private val ivan = UserId("11111111-1111-4111-8111-111111111111")
 
     private val sled =
         Machine.new("Жим ногами", null, now).copy(
@@ -39,13 +41,86 @@ class LocalMachineRepositoryTest {
         }
 
     @Test
-    fun a_machine_keeps_its_tags() =
+    fun a_machine_keeps_its_tags_as_keys() =
         runTest {
-            val tagged = sled.copy(tags = setOf("Ноги", "Жим"))
+            val tagged = sled.copy(tags = setOf("Ноги", " жим  лёжа"))
 
             repository.upsert(tagged)
 
-            assertEquals(tagged, repository.byId(sled.id))
+            assertEquals(tagged.copy(tags = setOf("ноги", "жим лёжа")), repository.byId(sled.id))
+            assertEquals(setOf("ноги", "жим лёжа"), repository.all(null).single().tags)
+            assertEquals(setOf("ноги", "жим лёжа"), repository.named(null, sled.name)?.tags)
+        }
+
+    @Test
+    fun an_owned_machine_s_tags_are_rows_of_their_own_and_enqueued_with_it() =
+        runTest {
+            val press = Machine.new("Жим", ivan, now).copy(tags = setOf("Ноги"))
+
+            repository.upsert(press)
+
+            assertEquals(
+                setOf(
+                    MACHINE_TABLE to press.id.value,
+                    TAG_TABLE to tagId(ivan, "ноги"),
+                    MACHINE_TAG_TABLE to machineTagId(press.id, "ноги"),
+                ),
+                outbox.pending().map { it.tableName to it.rowId }.toSet(),
+            )
+            assertEquals(
+                "ноги",
+                database.tagQueries
+                    .byId(tagId(ivan, "ноги"), ::tagOf)
+                    .executeAsOne()
+                    .name,
+            )
+        }
+
+    @Test
+    fun a_tag_no_live_machine_holds_any_more_is_deleted_and_one_still_held_stays() =
+        runTest {
+            val press = Machine.new("Жим", ivan, now).copy(tags = setOf("ноги", "спина"))
+            val row = Machine.new("Тяга", ivan, now).copy(tags = setOf("спина"))
+            repository.upsert(press)
+            repository.upsert(row)
+
+            repository.upsert(press.copy(tags = emptySet(), updatedAt = now + 1.minutes))
+
+            fun tag(name: String) =
+                database.tagQueries.byId(tagId(ivan, name), ::tagOf).executeAsOne()
+            assertEquals(true, tag("ноги").deleted)
+            assertEquals(false, tag("спина").deleted)
+            assertEquals(emptySet(), repository.byId(press.id)?.tags)
+            assertEquals(setOf("спина"), repository.byId(row.id)?.tags)
+        }
+
+    @Test
+    fun a_deleted_machine_loses_its_tags_and_their_rows() =
+        runTest {
+            val press = Machine.new("Жим", ivan, now).copy(tags = setOf("ноги"))
+            repository.upsert(press)
+
+            repository.upsert(press.copy(deleted = true, updatedAt = now + 1.minutes))
+
+            assertEquals(emptySet(), repository.byId(press.id)?.tags)
+            assertEquals(
+                true,
+                database.tagQueries
+                    .byId(tagId(ivan, "ноги"), ::tagOf)
+                    .executeAsOne()
+                    .deleted,
+            )
+        }
+
+    @Test
+    fun owners_read_their_own_tags_only() =
+        runTest {
+            val misha = UserId("22222222-2222-4222-8222-222222222222")
+            repository.upsert(Machine.new("Жим", ivan, now).copy(tags = setOf("ноги")))
+            repository.upsert(Machine.new("Жим", misha, now).copy(tags = setOf("спина")))
+
+            assertEquals(setOf("ноги"), repository.all(ivan).single().tags)
+            assertEquals(setOf("спина"), repository.all(misha).single().tags)
         }
 
     @Test

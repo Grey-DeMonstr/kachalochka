@@ -5,9 +5,13 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.MACHINE_TAG_TABLE
+import monster.greyde.kachalochka.core.data.gym.MachineTag
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.PhotoFiles
+import monster.greyde.kachalochka.core.data.gym.TAG_TABLE
+import monster.greyde.kachalochka.core.data.gym.Tag
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -79,6 +83,16 @@ class SyncPass(
                             gateway.pushSet(it)
                         }
 
+                    TAG_TABLE ->
+                        pushRow(entry, owner, db { rows.tag(entry.rowId) }, { it.userId }) {
+                            gateway.pushTag(it)
+                        }
+
+                    MACHINE_TAG_TABLE ->
+                        pushRow(entry, owner, db { rows.machineTag(entry.rowId) }, { it.userId }) {
+                            gateway.pushMachineTag(it)
+                        }
+
                     PLAN_TABLE ->
                         pushRow(entry, owner, db { rows.plan(entry.rowId) }, { it.userId }) {
                             gateway.pushPlan(it)
@@ -148,6 +162,8 @@ class SyncPass(
                     if (guarded) emptyList() else gateway.pullMeasurements(owner, since),
                     gateway.pullPhotos(owner, since),
                     gateway.pullPlans(owner, since),
+                    gateway.pullTags(owner, since),
+                    gateway.pullMachineTags(owner, since),
                 )
         }
         val rowsPulled = pulled ?: return false
@@ -190,6 +206,12 @@ class SyncPass(
                 rowsPulled.plans.forEach {
                     if ((PLAN_TABLE to it.id.value) !in pending) rows.writePlan(it)
                 }
+                rowsPulled.tags.forEach {
+                    if ((TAG_TABLE to it.id) !in pending) rows.writeTag(it)
+                }
+                rowsPulled.machineTags.forEach {
+                    if ((MACHINE_TAG_TABLE to it.id) !in pending) rows.writeMachineTag(it)
+                }
                 rowsPulled.newestUpdatedAt?.let { watermarks.advance(owner, it) }
             }
         }
@@ -206,6 +228,8 @@ class SyncPass(
         val measurements: List<Measurement>,
         val photos: List<Photo>,
         val plans: List<Plan>,
+        val tags: List<Tag>,
+        val machineTags: List<MachineTag>,
     ) {
         val newestUpdatedAt: Instant? =
             (
@@ -213,7 +237,8 @@ class SyncPass(
                     sets.map { it.updatedAt } + profiles.map { it.updatedAt } +
                     links.map { it.updatedAt } + measures.map { it.updatedAt } +
                     measurements.map { it.updatedAt } + photos.map { it.updatedAt } +
-                    plans.map { it.updatedAt }
+                    plans.map { it.updatedAt } + tags.map { it.updatedAt } +
+                    machineTags.map { it.updatedAt }
             ).maxOrNull()
     }
 
@@ -257,11 +282,14 @@ class SyncPass(
     private suspend fun <T> db(read: () -> T): T = withContext(dispatcher) { read() }
 
     private companion object {
-        // The server checks a set's visit and machine. It checks nothing a link, a plan or a value
-        // names, but each follows the rows it names, so a reader never meets it before them.
+        // The server checks a set's visit and machine. It checks nothing a link, a plan, a tag's
+        // link or a value names, but each follows the rows it names, so a reader never meets it
+        // before them.
         val PUSH_RANK =
             listOf(
                 MACHINE_TABLE,
+                TAG_TABLE,
+                MACHINE_TAG_TABLE,
                 VISIT_TABLE,
                 PLAN_TABLE,
                 PROFILE_TABLE,

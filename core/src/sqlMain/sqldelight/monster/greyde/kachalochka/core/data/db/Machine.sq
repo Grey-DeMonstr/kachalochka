@@ -17,7 +17,7 @@ CREATE TABLE machine (
     unit_label        TEXT    NOT NULL DEFAULT '',
     -- Where 4.sqm's ALTER TABLE puts it. Never read: links live in machine_link.
     link_id           TEXT,
-    -- Last, where 12.sqm's ALTER TABLE puts it: a JSON array.
+    -- Where 12.sqm's ALTER TABLE puts it: a JSON array, read only by the conversion to tag rows.
     tags              TEXT    NOT NULL DEFAULT '[]',
     -- Last, where 16.sqm's ALTER TABLE puts it.
     cover_photo       TEXT
@@ -27,8 +27,8 @@ CREATE INDEX machine_updated_at_idx ON machine (updated_at);
 
 upsert:
 INSERT OR REPLACE INTO machine(id, user_id, name, setup_note, weight_mode, platform_weight,
-    platform_included, unit, weight_step, updated_at, deleted, unit_label, tags, cover_photo)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    platform_included, unit, weight_step, updated_at, deleted, unit_label, cover_photo)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 byId:
 SELECT * FROM machine WHERE id = ?;
@@ -42,6 +42,11 @@ SELECT * FROM machine
 WHERE deleted = 0 AND name = :name
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 LIMIT 1;
+
+tagMirrors:
+SELECT id, user_id, deleted, tags FROM machine
+WHERE tags <> '[]'
+  AND NOT EXISTS (SELECT 1 FROM machine_tag WHERE machine_tag.machine_id = machine.id);
 
 ownerlessIds:
 SELECT id FROM machine WHERE user_id IS NULL;

@@ -21,6 +21,8 @@ class SqlOwnedRowsPurge(
                 database.workoutSetQueries.purgeOwner(id)
                 database.visitQueries.purgeOwner(id)
                 database.machineLinkQueries.purgeOwner(id)
+                database.machineTagQueries.purgeOwner(id)
+                database.tagQueries.purgeOwner(id)
                 database.photoQueries.purgeOwner(id)
                 database.planQueries.purgeOwner(id)
                 database.machineQueries.purgeOwner(id)

@@ -1,0 +1,31 @@
+import kotlin.Boolean;
+import kotlin.time.Instant;
+
+CREATE TABLE tag (
+    id         TEXT NOT NULL PRIMARY KEY,
+    user_id    TEXT,
+    name       TEXT NOT NULL,
+    updated_at INTEGER AS Instant NOT NULL,
+    deleted    INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+CREATE INDEX tag_updated_at_idx ON tag (updated_at);
+
+upsert:
+INSERT OR REPLACE INTO tag(id, user_id, name, updated_at, deleted)
+VALUES (?, ?, ?, ?, ?);
+
+byId:
+SELECT * FROM tag WHERE id = ?;
+
+byIds:
+SELECT * FROM tag WHERE id IN ?;
+
+ownerless:
+SELECT * FROM tag WHERE user_id IS NULL;
+
+forget:
+DELETE FROM tag WHERE id = ?;
+
+purgeOwner:
+DELETE FROM tag WHERE user_id = ?;

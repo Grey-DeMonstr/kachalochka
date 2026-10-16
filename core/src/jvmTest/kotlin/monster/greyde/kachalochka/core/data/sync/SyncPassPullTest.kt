@@ -2,8 +2,13 @@ package monster.greyde.kachalochka.core.data.sync
 
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
+import monster.greyde.kachalochka.core.data.gym.MACHINE_TAG_TABLE
+import monster.greyde.kachalochka.core.data.gym.MachineTag
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
+import monster.greyde.kachalochka.core.data.gym.Tag
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
+import monster.greyde.kachalochka.core.data.gym.machineTagId
+import monster.greyde.kachalochka.core.data.gym.tagId
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -20,6 +25,45 @@ import kotlin.time.Duration.Companion.hours
 
 class SyncPassPullTest {
     private val h = SyncHarness()
+
+    @Test
+    fun a_pulled_machine_takes_its_tags_from_the_pulled_tag_rows() =
+        runTest {
+            val press = ownedPress(IVAN)
+            val tag = Tag(tagId(IVAN, "ноги"), IVAN, "ноги", T0 + 3.hours, false)
+            val link =
+                MachineTag(machineTagId(press.id, "ноги"), IVAN, press.id, tag.id, T0, false)
+            h.gateway.machinesToPull = listOf(press)
+            h.gateway.tagsToPull = listOf(tag)
+            h.gateway.machineTagsToPull = listOf(link)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(setOf("ноги"), h.machines.byId(press.id)?.tags)
+            assertEquals(T0 + 3.hours, h.watermarks.lastPullAt(IVAN))
+        }
+
+    @Test
+    fun a_tag_link_waiting_in_the_outbox_survives_the_pull_that_would_overwrite_it() =
+        runTest {
+            val press = ownedPress(IVAN).copy(tags = setOf("ноги"))
+            h.machines.upsert(press)
+            h.gateway.failing = MACHINE_TAG_TABLE
+            val link =
+                MachineTag(
+                    machineTagId(press.id, "ноги"),
+                    IVAN,
+                    press.id,
+                    tagId(IVAN, "ноги"),
+                    T0,
+                    true,
+                )
+            h.gateway.machineTagsToPull = listOf(link)
+
+            h.pass.run(listOf(IVAN))
+
+            assertEquals(setOf("ноги"), h.machines.byId(press.id)?.tags)
+        }
 
     @Test
     fun a_pulled_visit_keeps_the_machines_planned_for_it() =

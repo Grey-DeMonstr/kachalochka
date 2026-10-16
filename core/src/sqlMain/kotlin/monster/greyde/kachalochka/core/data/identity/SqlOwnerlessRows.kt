@@ -5,10 +5,17 @@ import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
+import monster.greyde.kachalochka.core.data.gym.MACHINE_TAG_TABLE
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
+import monster.greyde.kachalochka.core.data.gym.TAG_TABLE
+import monster.greyde.kachalochka.core.data.gym.Tag
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
+import monster.greyde.kachalochka.core.data.gym.machineTagOf
+import monster.greyde.kachalochka.core.data.gym.tagId
+import monster.greyde.kachalochka.core.data.gym.tagOf
+import monster.greyde.kachalochka.core.data.gym.write
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
 import monster.greyde.kachalochka.core.data.measures.MEASURE_TABLE
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
@@ -57,8 +64,33 @@ class SqlOwnerlessRows(
                 enqueue(MEASUREMENT_TABLE, measurementIds, now)
                 enqueue(PHOTO_TABLE, photoIds, now)
                 enqueue(PLAN_TABLE, planIds, now)
+                claimTags(owner, now)
             }
         }
+
+    // A tag's id names its owner, so a claimed tag takes the owner's id and joins the owner's own
+    // row of that name.
+    private fun claimTags(
+        owner: UserId,
+        now: Instant,
+    ) {
+        val tags = database.tagQueries.ownerless(::tagOf).executeAsList()
+        val names = tags.associate { it.id to it.name }
+        database.machineTagQueries.ownerless(::machineTagOf).executeAsList().forEach { link ->
+            val claimed = names[link.tagId]?.let { tagId(owner, it) } ?: link.tagId
+            database.machineTagQueries.write(
+                link.copy(userId = owner, tagId = claimed, updatedAt = now),
+            )
+            enqueue(MACHINE_TAG_TABLE, listOf(link.id), now)
+        }
+        tags.forEach { tag ->
+            val claimed = tagId(owner, tag.name)
+            val held = database.machineTagQueries.liveUses(claimed).executeAsOne() > 0
+            database.tagQueries.forget(tag.id)
+            database.tagQueries.write(Tag(claimed, owner, tag.name, now, deleted = !held))
+            enqueue(TAG_TABLE, listOf(claimed), now)
+        }
+    }
 
     private fun enqueue(
         table: String,

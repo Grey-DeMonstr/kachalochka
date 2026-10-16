@@ -201,7 +201,7 @@ Every synced row carries:
 
 | Column | Rule |
 |---|---|
-| `id` | UUID v4, generated on the client at creation. Never reassigned |
+| `id` | UUID v4, generated on the client at creation; for `tag` and `machine_tag` a UUID v5 of the content (§4.5). Never reassigned |
 | `user_id` | Owner. Null while the Android user is not logged in (§4.3) |
 | `updated_at` | UTC instant, set by the writer on every change |
 | `deleted` | Soft-delete flag. Rows are never physically deleted by clients |
@@ -235,12 +235,12 @@ failing a pull.
 - **Push.** Every local write appends the row's id and table to an `outbox`, which names only the
   table and the row, not its owner. A pass reads each row to learn who owns it: an entry for
   another account's row waits for that account's own turn, and an entry whose row is gone or
-  unowned is dropped. A pass pushes entries by table rank: `machine`, `visit`, `workout_plan`,
-  `profile`, `measure`, `machine_link`, `photo`, `workout_set`, then `measurement`, because
-  the server checks a set's visit and machine, which the local SQLite does not. The server checks
-  nothing a link, a plan or a measure's value names, but each follows the rows it names, so a
-  reader never meets it before them. An entry is removed after a successful push only if nothing
-  re-enqueued it in the meantime.
+  unowned is dropped. A pass pushes entries by table rank: `machine`, `tag`, `machine_tag`,
+  `visit`, `workout_plan`, `profile`, `measure`, `machine_link`, `photo`, `workout_set`, then
+  `measurement`, because the server checks a set's visit and machine, which the local SQLite does
+  not. The server checks nothing a link, a plan, a tag's link or a measure's value names, but each
+  follows the rows it names, so a reader never meets it before them. An entry is removed after a
+  successful push only if nothing re-enqueued it in the meantime.
 - **Pull.** The sync pass fetches every row of every table newer than the account's pull
   watermark, keyset-paged on `(updated_at, id)` using the values the server returned for the last
   row of the previous page, and stops once a page comes back empty. It writes nothing, and leaves
@@ -273,8 +273,8 @@ failing a pull.
   by the first local schema migration (`1.sqm`), so each account, managed ones included, has its
   own pull watermark. Pushing only the active account would leave a guest's sets enqueued until
   somebody happened to switch back to them. A managed account's pass pushes and pulls only
-  `machine`, `visit`, `workout_set`, `machine_link`, `photo` and `workout_plan`, the tables its
-  guardian may write. An entry of its `profile`, `measure` or `measurement`, which only the
+  `machine`, `tag`, `machine_tag`, `visit`, `workout_set`, `machine_link`, `photo` and
+  `workout_plan`, the tables its guardian may write. An entry of its `profile`, `measure` or `measurement`, which only the
   account itself can have written before it became managed, stays in the outbox unpushed, since
   the server would refuse it; it goes out once the account signs in on the device itself.
 
@@ -294,7 +294,8 @@ already reached the server, `ServerSyncTrigger` emits on every request instead.
 Android works without an account: rows are created with a null `user_id` and never pushed. On the
 first successful sign-in, every row with null `user_id`, the anonymous profile included, is
 stamped with that user's id and enqueued in the outbox. The profile keeps its `updated_at`, so
-the account's own newer profile still wins `forOwner`. Accounts added afterwards claim nothing
+the account's own newer profile still wins `forOwner`. An anonymous tag, whose id names no owner,
+is replaced by the owner's row of its name (§4.5); it was never pushed, so no server row is lost. Accounts added afterwards claim nothing
 and start empty.
 
 Several accounts are signed in at once and one of them is active; the active one owns whatever is
@@ -433,32 +434,59 @@ friends' machines, and "Упражнение друга" reads its machine's wit
 
 ### 4.5 Gym data
 
-Four synced tables: `machine`, `visit`, `workout_set` and `machine_link`. `workout_set` is not
-called `set` — a keyword in both SQLDelight's dialect and Postgres. Weights are `Double`; every
-step and every typed weight is rounded to three decimals so a running total never drifts. The
-weight-counting mode and the unit are enums, mapped to the wire names `total` / `per_side` /
-`counterweight` and `kg` / `lb` / `custom` by one shared mapping in `core/data/gym`, used by both
-implementations. A name the mapping does not know reads as `total` or `kg`: one unreadable row must
-not stop a pull, and clients from 1.0.2 to 1.1.0 read a gravitron's `counterweight` as `total`. A
-custom unit's name is `unit_label`, empty for kg and lb. `machine.tags` is a JSON array of the
-machine's tag names, trimmed and distinct, `[]` for none; unreadable text or entries read as no
-tags, as `friend_colors` does. `linkedCopy` takes the friend's tags through `tagsSpelledAs` over
-the receiving account's tags, so a copy never brings a second spelling of a tag. Migration
-`0017` and `12.sqm` add the column, and `12.sqm` resets `lastPullAt`.
+Six synced tables: `machine`, `visit`, `workout_set`, `machine_link`, `tag` and `machine_tag`.
+`workout_set` is not called `set` — a keyword in both SQLDelight's dialect and Postgres. Weights
+are `Double`; every step and every typed weight is rounded to three decimals so a running total
+never drifts. The weight-counting mode and the unit are enums, mapped to the wire names `total` /
+`per_side` / `counterweight` and `kg` / `lb` / `custom` by one shared mapping in `core/data/gym`,
+used by both implementations. A name the mapping does not know reads as `total` or `kg`: one
+unreadable row must not stop a pull, and clients from 1.0.2 to 1.1.0 read a gravitron's
+`counterweight` as `total`. A custom unit's name is `unit_label`, empty for kg and lb.
 
-Tags compare by `tagKey`, trimmed and lower-cased. The pure functions of `domain/gym/Tags.kt` hold
+Tags are rows: `tag` (`name`) holds one row per owner and name, and `machine_tag` (`machine_id`,
+`tag_id`) links a machine to a tag, many to many. Neither id column of `machine_tag` is a foreign
+key, as on `machine_link`: a link may reach the server before its machine or its tag. A name is
+stored as its `tagKey`, on every write path. Ids follow from the content: a tag's id is the UUID v5
+of `"<owner>/<name>"`, the owner empty while anonymous, and a link's id the UUID v5 of
+`"<machine id>/<name>"`, both in one namespace (`TagWire.kt`), so the same tag added on two devices
+offline, or converted on the server and on a device, is one row. `uuidV5` and its SHA-1 are pure
+Kotlin in `domain/identity` and give the bytes of Postgres' `uuid_generate_v5` for UTF-8 names.
+
+`Machine.tags` stays the domain view. Both repositories read it from a machine's live links and
+the tags they name, and an upsert writes it through `tagWrites`: the rows of the machine's tags
+made live, the links of names it no longer has soft-deleted, all of them for a deleted machine,
+and a tag no live link holds any more soft-deleted. On Android that is one transaction with the
+machine, and every owned row is enqueued; the web writes the machine, then the tags, then the
+links, and a retry writes the same rows. A group mate's machine takes its tags from the mate's
+live rows (`machineTags`), which row-level security shows as it shows `machine_link`. A claim
+(§4.3) gives an anonymous tag the owner's id, joining a row of that name the account already has,
+and points its links at it.
+
+`machine.tags`, the JSON array of names that migration `0017` and `12.sqm` added, stays in both
+schemas for the upserts of clients before 1.7.1 and is unused after the conversion. `MachineRow`
+has no such field, so an upsert leaves the server column as it is, and the local upsert leaves the
+column at its default, `'[]'`. Migration `0027` converted every machine's array once on the server,
+deleted machines' too; a tag only deleted machines hold is written deleted, and text that is not
+an array of strings gives no tags. `19.sqm` adds the tables and resets `lastPullAt`, and
+`tagConversion` runs right after it, inside the migration and so before any read, write or sync
+pass: every machine whose column holds names and which has no link at all gets its rows, with the
+ids the server gave them, and the owned ones are enqueued. Tags an older client writes reach only
+its own column.
+
+Tags compare by `tagKey`: trimmed, inner whitespace joined to one space, in lower case; `0027`
+makes the same key in SQL. The pure functions of `domain/gym/Tags.kt` hold
 every rule: `distinctTags` keeps the spelling met first, `sortedTags` is the one display order,
 `hasAllTags` filters, `toggledTag` keeps a set free of two spellings of one tag, and
 `tagsSpelledAs` gives tags taken from another account the receiving account's spelling.
 `suggestedTags` gives the machine form the tags of `ShownMachines.linkedRows` that the machine
 lacks, in the account's spelling.
-`tagSections` groups by the keys and spells a section as its first item. Stored rows keep the
-typed spelling; the screens upper-case a tag only when they draw it, through `TagText`.
+`tagSections` groups by the keys and spells a section as its first item. The screens upper-case a
+tag only when they draw it, through `TagText`.
 `tagTitle` writes a section heading in capitals, so the shared visit and the statistics export
 read as the screens draw, and `withTags` quotes tags in capitals too.
 
 `workout_plan` holds an account's plans: `name`, `machine_ids` — a JSON array of machine ids in
-plan order, read like `machine.tags`, so an entry that is not an id is dropped — `created_at`
+plan order, read leniently, so an entry that is not an id is dropped — `created_at`
 and `pinned`. `planOrder` lists pinned plans first, then by `created_at`, on both platforms.
 Starting a pinned plan keeps it, so it asks nothing. It is not called `plan`, a keyword in
 SQLite. It is private to its owner, like `measure`. A started plan's machines go to
@@ -887,11 +915,12 @@ Row-level security enforces every visibility rule from the functional spec:
   set only into a visit and on a machine of the set's own owner, and a photo only of a machine or
   profile of the photo's own owner; a `before update` trigger keeps a row's `user_id` from
   changing.
-- A user reads their own rows and the live `machine`, `visit`, `workout_set`, `machine_link` and
-  `photo` rows of everyone who shares a live group with them, through the security-definer
-  function `shares_group_with`; the `photos` bucket's read policy applies it to the first folder
-  of an object's name. A guardian also reads every `machine`, `visit`, `workout_set`,
-  `machine_link`, `photo` and `workout_plan` row of the children they guard, deleted ones
+- A user reads their own rows and the live `machine`, `visit`, `workout_set`, `machine_link`,
+  `photo`, `tag` and `machine_tag` rows of everyone who shares a live group with them, through the
+  security-definer function `shares_group_with`; the `photos` bucket's read policy applies it to
+  the first folder of an object's name. A guardian also reads every `machine`, `visit`,
+  `workout_set`, `machine_link`, `photo`, `tag`, `machine_tag` and `workout_plan` row of the
+  children they guard, deleted ones
   included, since their device syncs them (§4.2), and the `photos` bucket admits them to those
   children's folders. `profile`, `measure` and `measurement` stay readable by their owner alone,
   and `workout_plan` by its owner and their guardians; none of them has a group policy.

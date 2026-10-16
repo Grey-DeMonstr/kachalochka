@@ -9,6 +9,7 @@ import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.gym.DirectoryPhotoFiles
 import monster.greyde.kachalochka.core.data.gym.PhotoFiles
+import monster.greyde.kachalochka.core.data.gym.tagConversion
 import monster.greyde.kachalochka.core.data.identity.AccountStorage
 import monster.greyde.kachalochka.core.data.identity.DataStoreAccountStorage
 import okio.Path.Companion.toPath
@@ -16,12 +17,22 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import kotlin.time.Clock
 
 actual fun corePlatformModule(): Module =
     module {
         includes(sqlModule())
         single<SqlDriver> {
-            AndroidSqliteDriver(KachalochkaDatabase.Schema, androidContext(), "kachalochka.db")
+            AndroidSqliteDriver(
+                schema = KachalochkaDatabase.Schema,
+                context = androidContext(),
+                name = "kachalochka.db",
+                callback =
+                    AndroidSqliteDriver.Callback(
+                        KachalochkaDatabase.Schema,
+                        tagConversion(Clock.System),
+                    ),
+            )
         }
         single<DataStore<Preferences>>(named("accounts")) {
             val context: Context = androidContext()

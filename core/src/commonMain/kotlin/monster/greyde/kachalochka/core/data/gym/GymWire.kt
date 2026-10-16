@@ -41,8 +41,6 @@ fun WeightUnit.wireName(): String =
         WeightUnit.Custom -> "custom"
     }
 
-internal fun tagsText(tags: Set<String>): String = Json.encodeToString(tags.toList())
-
 internal fun photoIdOf(id: String?): PhotoId? =
     id?.let {
         try {
@@ -52,8 +50,8 @@ internal fun photoIdOf(id: String?): PhotoId? =
         }
     }
 
-// Another client's text is outside this one's control, and one unreadable entry must not stop a
-// pull or cost the tags that can be read.
+// Another client's text is outside this one's control, and one unreadable entry must not stop the
+// conversion to tag rows or cost the tags that can be read.
 internal fun tagsOf(text: String): Set<String> {
     val entries =
         try {
@@ -104,7 +102,6 @@ internal data class MachineRow(
     @SerialName("weight_step") val weightStep: Double,
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
-    val tags: String,
     @SerialName("cover_photo") val coverPhoto: String?,
 ) {
     fun toMachine(): Machine =
@@ -121,7 +118,6 @@ internal data class MachineRow(
             weightStep = weightStep,
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
-            tags = tagsOf(tags),
             coverPhoto = photoIdOf(coverPhoto),
         )
 
@@ -140,7 +136,6 @@ internal data class MachineRow(
                 weightStep = machine.weightStep,
                 updatedAt = machine.updatedAt.toString(),
                 deleted = machine.deleted,
-                tags = tagsText(machine.tags),
                 coverPhoto = machine.coverPhoto?.value,
             )
     }

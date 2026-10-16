@@ -1,5 +1,7 @@
 package monster.greyde.kachalochka.core.data.sync
 
+import monster.greyde.kachalochka.core.data.gym.MachineTag
+import monster.greyde.kachalochka.core.data.gym.Tag
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Photo
@@ -25,6 +27,10 @@ interface SyncGateway {
     suspend fun pushMachineLink(link: MachineLink)
 
     suspend fun pushPlan(plan: Plan)
+
+    suspend fun pushTag(tag: Tag)
+
+    suspend fun pushMachineTag(link: MachineTag)
 
     suspend fun pushMeasure(measure: Measure)
 
@@ -80,4 +86,14 @@ interface SyncGateway {
         owner: UserId,
         since: Instant?,
     ): List<Plan>
+
+    suspend fun pullTags(
+        owner: UserId,
+        since: Instant?,
+    ): List<Tag>
+
+    suspend fun pullMachineTags(
+        owner: UserId,
+        since: Instant?,
+    ): List<MachineTag>
 }

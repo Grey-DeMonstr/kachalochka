@@ -1,7 +1,22 @@
 package monster.greyde.kachalochka.core.domain.gym
 
-/** What tags compare by: tags that differ only in letter case or outer spaces are one tag. */
-fun tagKey(tag: String): String = tag.trim().lowercase()
+/**
+ * What tags compare by and are stored as: tags that differ only in letter case or in spaces are
+ * one tag. Migration 0027 makes the same key in SQL.
+ */
+fun tagKey(tag: String): String =
+    buildString {
+        var space = false
+        tag.trim().forEach {
+            if (it.isWhitespace()) {
+                space = true
+            } else {
+                if (space) append(' ')
+                space = false
+                append(it)
+            }
+        }
+    }.lowercase()
 
 fun sameTag(
     a: String,

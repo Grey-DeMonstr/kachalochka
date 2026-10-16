@@ -14,6 +14,12 @@ class TagsTest {
     }
 
     @Test
+    fun a_key_is_trimmed_with_inner_spaces_joined_to_one_in_lower_case() {
+        assertEquals("жим лёжа", tagKey(" Жим \t  ЛЁЖА\n"))
+        assertTrue(sameTag("жим лёжа", "Жим  лёжа"))
+    }
+
+    @Test
     fun each_tag_is_kept_once_in_the_spelling_met_first() {
         assertEquals(listOf("Ноги", "Руки"), distinctTags(listOf("Ноги", "Руки", "ноги", "РУКИ")))
     }

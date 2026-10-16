@@ -1,0 +1,49 @@
+import kotlin.Boolean;
+import kotlin.time.Instant;
+
+CREATE TABLE machine_tag (
+    id         TEXT NOT NULL PRIMARY KEY,
+    user_id    TEXT,
+    machine_id TEXT NOT NULL,
+    tag_id     TEXT NOT NULL,
+    updated_at INTEGER AS Instant NOT NULL,
+    deleted    INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+CREATE INDEX machine_tag_updated_at_idx ON machine_tag (updated_at);
+CREATE INDEX machine_tag_machine_id_idx ON machine_tag (machine_id);
+CREATE INDEX machine_tag_tag_id_idx ON machine_tag (tag_id);
+
+upsert:
+INSERT OR REPLACE INTO machine_tag(id, user_id, machine_id, tag_id, updated_at, deleted)
+VALUES (?, ?, ?, ?, ?, ?);
+
+byId:
+SELECT * FROM machine_tag WHERE id = ?;
+
+forMachine:
+SELECT * FROM machine_tag WHERE machine_id = ?;
+
+liveNamesOf:
+SELECT machine_tag.machine_id, tag.name FROM machine_tag
+JOIN tag ON tag.id = machine_tag.tag_id
+WHERE machine_tag.deleted = 0 AND machine_tag.machine_id IN ?;
+
+liveNames:
+SELECT machine_tag.machine_id, tag.name FROM machine_tag
+JOIN tag ON tag.id = machine_tag.tag_id
+WHERE machine_tag.deleted = 0
+  AND ((:owner IS NULL AND machine_tag.user_id IS NULL) OR machine_tag.user_id = :owner);
+
+heldElsewhere:
+SELECT DISTINCT tag_id FROM machine_tag
+WHERE deleted = 0 AND machine_id <> :machine AND tag_id IN :tags;
+
+liveUses:
+SELECT COUNT(*) FROM machine_tag WHERE deleted = 0 AND tag_id = ?;
+
+ownerless:
+SELECT * FROM machine_tag WHERE user_id IS NULL;
+
+purgeOwner:
+DELETE FROM machine_tag WHERE user_id = ?;

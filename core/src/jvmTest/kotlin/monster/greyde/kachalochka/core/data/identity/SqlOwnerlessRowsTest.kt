@@ -11,8 +11,13 @@ import monster.greyde.kachalochka.core.data.gym.LocalPlanRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
+import monster.greyde.kachalochka.core.data.gym.MACHINE_TAG_TABLE
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
+import monster.greyde.kachalochka.core.data.gym.TAG_TABLE
+import monster.greyde.kachalochka.core.data.gym.machineTagId
+import monster.greyde.kachalochka.core.data.gym.tagId
+import monster.greyde.kachalochka.core.data.gym.tagOf
 import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -260,6 +265,37 @@ class SqlOwnerlessRowsTest {
                 outbox.pending().any {
                     it.tableName == PHOTO_TABLE && it.rowId == anonymous.id.value
                 },
+            )
+        }
+
+    @Test
+    fun a_claimed_tag_takes_the_owner_s_id_and_joins_the_owner_s_row_of_that_name() =
+        runTest {
+            val anonymous = Machine.new("Жим", null, t0).copy(tags = setOf("ноги", "спина"))
+            val own = Machine.new("Тяга", owner, t0).copy(tags = setOf("ноги"))
+            machines.upsert(anonymous)
+            machines.upsert(own)
+
+            rows.claim(owner)
+
+            assertEquals(setOf("ноги", "спина"), machines.byId(anonymous.id)?.tags)
+            assertEquals(
+                setOf(tagId(owner, "ноги"), tagId(owner, "спина")),
+                database.tagQueries
+                    .byIds(listOf(tagId(owner, "ноги"), tagId(owner, "спина")), ::tagOf)
+                    .executeAsList()
+                    .filter { !it.deleted && it.userId == owner }
+                    .map { it.id }
+                    .toSet(),
+            )
+            assertEquals(emptyList(), database.tagQueries.ownerless(::tagOf).executeAsList())
+            assertTrue(
+                outbox.pending().map { it.tableName to it.rowId }.containsAll(
+                    listOf(
+                        TAG_TABLE to tagId(owner, "спина"),
+                        MACHINE_TAG_TABLE to machineTagId(anonymous.id, "спина"),
+                    ),
+                ),
             )
         }
 }
