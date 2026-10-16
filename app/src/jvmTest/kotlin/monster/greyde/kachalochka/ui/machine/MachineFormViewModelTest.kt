@@ -1388,6 +1388,20 @@ class MachineFormViewModelTest {
         }
 
     @Test
+    fun weights_compare_by_value_and_an_unreadable_one_by_its_text() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0).copy(platformWeight = 20.0)
+            gym.machines.upsert(press)
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            vm.update { it.copy(platformWeight = "20.0", weightStep = "2.50") }
+            assertTrue(vm.requestLeave())
+
+            vm.update { it.copy(weightStep = "x") }
+            assertFalse(vm.requestLeave())
+        }
+
+    @Test
     fun every_kind_of_edit_counts() =
         runTest {
             val (press, mine, theirs) = pressWithFriendsPhoto()

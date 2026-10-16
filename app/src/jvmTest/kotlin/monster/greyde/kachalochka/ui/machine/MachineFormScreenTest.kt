@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.machine
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
@@ -19,6 +20,10 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
@@ -142,12 +147,18 @@ class MachineFormScreenTest {
         )
     }
 
-    /** Иван's press, opened in the form, with the number of backs and saves it asked for. */
+    /** A saved machine opened in the form, the system back, and the backs and saves asked for. */
     private class LeaveRun(
         val press: Machine,
     ) {
         var backs = 0
         val saved = mutableListOf<MachineId>()
+        val dispatcher = NavigationEventDispatcher()
+        val systemBack = DirectNavigationEventInput().also(dispatcher::addInput)
+        val owner =
+            object : NavigationEventDispatcherOwner {
+                override val navigationEventDispatcher = dispatcher
+            }
     }
 
     private fun leaveRun(
@@ -176,12 +187,14 @@ class MachineFormScreenTest {
             }
         }
         runScreenTest(gym, screen = {
-            MachineFormScreen(
-                MachineFormArgs(run.press.id, null, ""),
-                onBack = { run.backs++ },
-                onOpenSettings = {},
-                onSaved = { run.saved += it },
-            )
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides run.owner) {
+                MachineFormScreen(
+                    MachineFormArgs(run.press.id, null, ""),
+                    onBack = { run.backs++ },
+                    onOpenSettings = {},
+                    onSaved = { run.saved += it },
+                )
+            }
         }) { block(run) }
     }
 
@@ -193,6 +206,44 @@ class MachineFormScreenTest {
 
             assertEquals(1, run.backs)
             onNodeWithTag("leave-save").assertDoesNotExist()
+        }
+
+    @Test
+    fun system_back_from_an_untouched_form_leaves_at_once() =
+        leaveRun { run ->
+            waitForIdle()
+            runOnIdle { run.systemBack.backCompleted() }
+            waitForIdle()
+
+            assertEquals(1, run.backs)
+            onNodeWithTag("leave-save").assertDoesNotExist()
+        }
+
+    @Test
+    fun system_back_with_edits_asks_first() =
+        leaveRun { run ->
+            onNodeWithTag("machine-note").performTextInput("Сиденье на 4")
+            runOnIdle { run.systemBack.backCompleted() }
+            waitForIdle()
+
+            assertEquals(0, run.backs)
+            onNodeWithText("Сохранить изменения?").assertExists()
+        }
+
+    @Test
+    fun dismissing_the_question_stays_in_the_form() =
+        leaveRun { run ->
+            onNodeWithTag("machine-note").performTextInput("Сиденье на 4")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+
+            runOnIdle { run.systemBack.backCompleted() }
+            waitForIdle()
+
+            onNodeWithTag("leave-save").assertDoesNotExist()
+            assertEquals(0, run.backs)
+            assertEquals(emptyList(), run.saved)
+            onNodeWithTag("machine-note").assertTextEquals("Сиденье на 4")
         }
 
     @Test

@@ -127,18 +127,18 @@ data class MachineFormState(
     val weightStepValue: Double?
         get() = parseDecimal(weightStep)?.let(::roundWeight)?.takeIf { it > 0 }
 
-    /** The values a save writes, without the offers around them. */
+    /** The values a save writes, without the offers around them; "20.0" is the same as "20". */
     val edits: MachineFormState
         get() =
             MachineFormState(
                 name = name.trim(),
                 setupNote = setupNote.trim(),
                 weightMode = weightMode,
-                platformWeight = platformWeight,
+                platformWeight = platformWeightValue?.let(::formatNumber) ?: platformWeight,
                 platformIncluded = platformIncluded,
                 unit = unit,
                 unitLabel = if (unit == WeightUnit.Custom) unitLabel.trim() else "",
-                weightStep = weightStep,
+                weightStep = weightStepValue?.let(::formatNumber) ?: weightStep,
                 tags = tags,
             )
 
