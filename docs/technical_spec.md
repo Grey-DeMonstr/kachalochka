@@ -602,21 +602,26 @@ machine also matches by the names of the friends' machines in its cluster
 (`ShownMachines.linkedNames`), known only after the group read; the statistics read the group for
 this.
 
-`MachineCatalogue` in `app/ui/machine` is the one reader of all of this. Its `own` read gives an
-account's live machines, photos and links from the device; its `group` read gives the group
-mates' machines with their tags, links and photos from the network in one request,
-`FriendsRepository.groupGym`, which the server's `group_gym` (migration `0028`) answers under the
-invoker's row-level security, the members it found the mates by included; `clusters` reads
-only the links, for screens that just name a friend's machine after the viewer's own; `take`
-writes the own copy and its link; `standIn` gives the own machine of a friend's machine's
-cluster, from a group read and the own links read again, else `take`s it; and `link` writes
-one own link to a friend's machine.
+`MachineCatalogue` in `app/ui/machine` is the one reader of all of this and the one writer of
+`machine_link` rows. Its `own` read gives an account's live machines, photos and links from the
+device; its `group` read gives the group mates' machines with their tags, links and photos from
+the network in one request, `FriendsRepository.groupGym`, which the server's `group_gym`
+(migration `0028`) answers under the invoker's row-level security, the members it found the mates
+by included; `clusters` reads only the links, for screens that just name a friend's machine after
+the viewer's own. Its writes: `take` writes the own copy of a friend's machine and its link;
+`friendStandIn` gives the own machine of a friend's machine's cluster, from a group read and the
+own links read again, else `take`s it; `link` writes one own link to a friend's machine;
+`deviceStandIn` and `ownCopy` serve another account on the device (see `SetRecorder` below);
+`unlink`, `repointFriends` and `moveLinks` serve the machine form and the chooser (see below).
+Every link write runs under one mutex and reads the own links again first, so two writes at the
+same time never write the same link. Server calls run before the mutex is taken. A write requests
+a sync when it wrote anything, also when it is stopped halfway; `unlink` always requests one, and
+`moveLinks` none, because the merge requests one after its last row. Once the server changed
+friends' links, `unlink` and `repointFriends` drop the account's last group read.
 After a group read that succeeds, and after `take` and `link` with the group read the screen
 holds, the catalogue writes `missingDirectLinks` for the account the read was made for, a managed
-child included, and requests a sync when it wrote anything, also when it is stopped halfway. A
-mutex lets one upkeep run at a time, and each reads the own links again first, so two at once
-never write the same link. A failed upkeep goes to `FailureLog` and fails nothing: the group read
-keeps the links seen before it, and the link that `take` or `link` wrote first stays.
+child included. A failed upkeep goes to `FailureLog` and fails nothing: the group read keeps the
+links seen before it, and the link that `take` or `link` wrote first stays.
 `LinkUpkeep` makes a group read for every account that becomes active, at start and on each
 switch, so the links that friends made since reach the account's machines without a screen that
 reads the group. A read that fails, as offline, waits for the next start or switch.
@@ -636,23 +641,25 @@ list draws, in the viewer's unit; the machine list and the picker group friends'
 each owner with the colour `FriendColorStore` gives them.
 
 The machine form's "Привязать к…" chooser (`LinkChooserViewModel`) links an own machine to a
-friend's through `MachineCatalogue.link`, and merges two own machines. A merge removes a
-duplicate and writes no link. The dialog lets the user choose the machine that stays and preselects
+friend's through `MachineCatalogue.link`, and merges two own machines. A merge removes a duplicate
+and writes no link. The dialog lets the user choose the machine that stays and preselects
 `suggestedToKeep`: the machine whose latest live set is later, one without sets counting as oldest
 and a tie suggesting the edited one. Imported history makes duplicates with older sets, so this
-suggests the machine in use. `mergedMachines` returns the rows to write — the removed machine's
-sets, photos and own links moved to the kept one (a link the kept one already has, or one into it,
-is soft-deleted instead) and the removed machine soft-deleted. With the dialog's recalculation on,
-the moved sets also take `platformShift(removed, kept)` (see below). Signed
-in, friends' links into the removed machine are moved first through
-`FriendsRepository.repointLinks`, called only when `groupLinks` shows one; if the server does not
-answer nothing is written. The rows are then written sets first and the machine last, and a sync is
-requested. "Отвязать от друзей" breaks every direct link of the machine the same way round:
-`FriendsRepository.breakLinks` first, then the own links touching it soft-deleted locally. The form
-reads the links again whenever it is shown, and the machine's page reads friends' results again on
-`refresh()` and after a sync pass, because the chooser changes links on another screen. A merge
-started from a visit hands the kept machine to the visit's page, and the page closes on an own
-machine that has been deleted rather than record a set on it.
+suggests the machine in use. `mergedMachines` returns the rows to write: the removed machine's sets
+and photos moved to the kept one, and the removed machine soft-deleted. `mergedLinks` gives its own
+links moved to the kept one; a link the kept one already has, or one into it, is soft-deleted
+instead. With the dialog's recalculation on, the moved sets also take
+`platformShift(removed, kept)` (see below). Signed in, `MachineCatalogue.repointFriends` first
+moves friends' links into the removed machine through `FriendsRepository.repointLinks`, called only
+when `groupLinks` shows one; if the server does not answer nothing is written. The rows are then
+written sets first, the links through `MachineCatalogue.moveLinks`, and the machine last, and a
+sync is requested.
+"Отвязать от друзей" (`MachineCatalogue.unlink`) breaks every direct link of the machine the same
+way round: `FriendsRepository.breakLinks` first, then the own links touching it soft-deleted
+locally. The form reads the links again whenever it is shown, and the machine's page reads friends'
+results again on `refresh()` and after a sync pass, because the chooser changes links on another
+screen. A merge started from a visit hands the kept machine to the visit's page, and the page
+closes on an own machine that has been deleted rather than record a set on it.
 
 A set's total is its weight plus the platform when the platform is not added to the record.
 `platformShift(from, to)` is what every weight recorded under `from`'s platform changes by to keep
@@ -716,35 +723,35 @@ writes only those whose position changed, so sets sharing a position still land 
 order.
 
 Every write to a day's sets goes through `SetRecorder` in `app/ui/visit`: it finds or creates the
-day's visit, replaces a machine of another account with the active account's own copy of it,
-gives a new set its position and instant, starts the rest timer for today's set and requests a
-sync for another day's, and amends, removes and reorders sets under the same rule. The other
-account is one on the device, such as a child, so `ownCopy` reads both accounts' links locally:
-the account's machine of the shown one's cluster stands in for it, else one of the same trimmed,
-case-blind name (`ownStandIn`). Else it writes a `linkedCopy` and the links from the copy to
-every machine of that cluster (`missingDirectLinks`); the group read's upkeep adds the friends'
-machines those local links do not reach. `standIn` finds the same machine without a write, so
-after a switch the page shows the history the next save extends. "Повторить сегодня" on the
-calendar and the visit screen calls `planFrom` of a recorder for today: it plans the shown visit's
-`visitMachines` as starting a plan does. The visit view model keeps the state of the machine's
-page and its set form, both drawn by the visit screen over its list, and hands the recorder what
-to write.
+day's visit, gives a new set its position and instant, starts the rest timer for today's set and
+requests a sync for another day's, and amends, removes and reorders sets under the same rule. A set
+goes on the active account's own machine, which the visit view model gets from
+`MachineCatalogue.ownCopy`. The other account is one on the device, such as a child, so `ownCopy`
+reads both accounts' links locally: the account's machine of the shown one's cluster stands in for
+it, else one of the same trimmed, case-blind name (`ownStandIn`). Else it writes a `linkedCopy` and
+the links from the copy to every machine of that cluster (`missingDirectLinks`); the group read's
+upkeep adds the friends' machines those local links do not reach. `deviceStandIn` finds the same
+machine without a write, so after a switch the page shows the history the next save extends.
+"Повторить сегодня" on the calendar and the visit screen calls `planFrom` of a recorder for today:
+it plans the shown visit's `visitMachines` as starting a plan does. The visit view model keeps the
+state of the machine's page and its set form, both drawn by the visit screen over its list, and
+hands the recorder what to write.
 
 `MachinePlacementViewModel` in `app/ui/machine` serves the "⋮" menu that the machine form, the
 visit's machine page and "Упражнение друга" share (`MachineMenu`, `PlanChooser`,
 `PlacementNotice`). An own machine is used only while it is the active account's live machine.
-Another account's machine on the device, such as a parent's on the visit's page after a switch to
-a child, goes through the set form's rule: `SetRecorder.standIn`, else `ownCopy`. A friend's
-machine is replaced by `MachineCatalogue.standIn` over the group read "Упражнение друга" holds,
-when it was made for the active account, else over a new one. A failed read only shows "Нет связи
-с сервером", and a machine the read no longer has "Упражнение больше недоступно".
-"В план…" reads the plans in `planOrder` with `planTitle` names and keeps the account it read
-them for. Each action checks that the account is still active (§4.3) before the stand-in, after
-the group read, before each write and before it navigates; a switch also closes the choice and
-drops the notice. A pick reads the plan again and appends the machine when it is absent.
-"Сегодня" calls `plan` of a recorder for today. A notice carries the machine it is for, so
-another machine's page in the same visit does not show it. "Упражнение друга" reads again after a
-copy, so it stops offering "Взять себе".
+Another account's machine on the device, such as a parent's on the visit's page after a switch to a
+child, goes through the set form's rule: `MachineCatalogue.deviceStandIn`, else `ownCopy`. A
+friend's machine is replaced by `MachineCatalogue.friendStandIn` over the group read "Упражнение
+друга" holds, when it was made for the active account, else over a new one. A failed read only
+shows "Нет связи с сервером", and a machine the read no longer has "Упражнение больше недоступно".
+"В план…" reads the plans in `planOrder` with `planTitle` names and keeps the account it read them
+for. Each action checks that the account is still active (§4.3) before the stand-in, after the
+group read, before each write and before it navigates; a switch also closes the choice and drops
+the notice. A pick reads the plan again and appends the machine when it is absent. "Сегодня" calls
+`plan` of a recorder for today. A notice carries the machine it is for, so another machine's page
+in the same visit does not show it. "Упражнение друга" reads again after a copy, so it stops
+offering "Взять себе".
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward
