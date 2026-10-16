@@ -13,6 +13,9 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.tagKey
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.startCoroutine
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -47,24 +50,39 @@ internal fun MachineTagQueries.write(link: MachineTag) =
     )
 
 /** Writes and enqueues the rows that give [machine] its tags; the caller holds a transaction. */
-internal fun KachalochkaDatabase.writeTagsOf(machine: Machine) {
-    val stored = machineTagQueries.forMachine(machine.id.value, ::machineTagOf).executeAsList()
-    val named = machine.tags.map { tagId(machine.userId, it) } + stored.map { it.tagId }
-    val storedTags = tagQueries.byIds(named.distinct(), ::tagOf).executeAsList()
-    val dropped = stored.filter { !it.deleted }.map { it.tagId }.distinct()
-    val heldElsewhere =
-        if (dropped.isEmpty()) {
-            emptySet()
-        } else {
-            machineTagQueries.heldElsewhere(machine.id.value, dropped).executeAsList().toSet()
-        }
-    write(tagWrites(machine, stored, storedTags, heldElsewhere))
+internal fun KachalochkaDatabase.writeTagsOf(machine: Machine) =
+    withoutSuspending { SqlTagRows(this).writeTagsOf(machine) }
+
+// SQLDelight's transaction takes a blocking body, and SqlTagRows never suspends.
+private fun withoutSuspending(block: suspend () -> Unit) {
+    var result: Result<Unit>? = null
+    block.startCoroutine(Continuation(EmptyCoroutineContext) { result = it })
+    checkNotNull(result) { "SqlTagRows suspended" }.getOrThrow()
 }
 
-internal fun KachalochkaDatabase.write(writes: TagWrites) {
-    writes.tags.forEach { write(it) }
-    writes.links.forEach { write(it) }
-    writes.unused.forEach { write(it) }
+/** The tag flow's rows in SQLite; the caller holds a transaction. */
+internal class SqlTagRows(
+    private val database: KachalochkaDatabase,
+) : TagRowStore {
+    override suspend fun linksOf(machine: Machine): List<MachineTag> =
+        database.machineTagQueries.forMachine(machine.id.value, ::machineTagOf).executeAsList()
+
+    override suspend fun tags(ids: List<String>): List<Tag> =
+        database.tagQueries.byIds(ids, ::tagOf).executeAsList()
+
+    override suspend fun heldElsewhere(
+        machine: Machine,
+        tags: List<String>,
+    ): Set<String> =
+        database.machineTagQueries
+            .heldElsewhere(machine.id.value, tags)
+            .executeAsList()
+            .toSet()
+
+    override suspend fun upsertTags(tags: List<Tag>) = tags.forEach { database.write(it) }
+
+    override suspend fun upsertLinks(links: List<MachineTag>) =
+        links.forEach { database.write(it) }
 }
 
 internal fun KachalochkaDatabase.write(tag: Tag) {

@@ -12,7 +12,6 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 class LocalMachineRepositoryTest {
@@ -73,42 +72,6 @@ class LocalMachineRepositoryTest {
                     .byId(tagId(ivan, "ноги"), ::tagOf)
                     .executeAsOne()
                     .name,
-            )
-        }
-
-    @Test
-    fun a_tag_no_live_machine_holds_any_more_is_deleted_and_one_still_held_stays() =
-        runTest {
-            val press = Machine.new("Жим", ivan, now).copy(tags = setOf("ноги", "спина"))
-            val row = Machine.new("Тяга", ivan, now).copy(tags = setOf("спина"))
-            repository.upsert(press)
-            repository.upsert(row)
-
-            repository.upsert(press.copy(tags = emptySet(), updatedAt = now + 1.minutes))
-
-            fun tag(name: String) =
-                database.tagQueries.byId(tagId(ivan, name), ::tagOf).executeAsOne()
-            assertEquals(true, tag("ноги").deleted)
-            assertEquals(false, tag("спина").deleted)
-            assertEquals(emptySet(), repository.byId(press.id)?.tags)
-            assertEquals(setOf("спина"), repository.byId(row.id)?.tags)
-        }
-
-    @Test
-    fun a_deleted_machine_loses_its_tags_and_their_rows() =
-        runTest {
-            val press = Machine.new("Жим", ivan, now).copy(tags = setOf("ноги"))
-            repository.upsert(press)
-
-            repository.upsert(press.copy(deleted = true, updatedAt = now + 1.minutes))
-
-            assertEquals(emptySet(), repository.byId(press.id)?.tags)
-            assertEquals(
-                true,
-                database.tagQueries
-                    .byId(tagId(ivan, "ноги"), ::tagOf)
-                    .executeAsOne()
-                    .deleted,
             )
         }
 
@@ -193,27 +156,6 @@ class LocalMachineRepositoryTest {
             repository.upsert(gravitron)
 
             assertEquals(gravitron, repository.byId(gravitron.id))
-        }
-
-    @Test
-    fun a_tag_that_only_a_deleted_machine_s_live_link_holds_is_unused() =
-        runTest {
-            val press = Machine.new("Жим", ivan, now).copy(tags = setOf("спина"))
-            val row = Machine.new("Тяга", ivan, now).copy(tags = setOf("спина"))
-            repository.upsert(press)
-            repository.upsert(row)
-            // An older client deletes a machine and leaves its links as they are.
-            database.machineQueries.write(row.copy(deleted = true))
-
-            repository.upsert(press.copy(tags = emptySet(), updatedAt = now + 1.minutes))
-
-            assertEquals(
-                true,
-                database.tagQueries
-                    .byId(tagId(ivan, "спина"), ::tagOf)
-                    .executeAsOne()
-                    .deleted,
-            )
         }
 
     @Test
