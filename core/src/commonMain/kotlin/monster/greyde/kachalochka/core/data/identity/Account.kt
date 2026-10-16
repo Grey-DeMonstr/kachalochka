@@ -12,7 +12,12 @@ data class Account(
     /** The Google picture's address, when Google sent one. */
     val pictureUrl: String? = null,
     val kind: AccountKind = AccountKind.Google,
+    /** From the account's own profile; a managed account's [displayName] already carries it. */
+    val nickname: String? = null,
 ) {
+    /** The name the app writes for this account: the nickname, else the Google name. */
+    val shownName: String get() = nickname?.takeIf { it.isNotBlank() } ?: displayName
+
     /** The account whose session acts for this one; null for a Google account. */
     val guardianId: UserId? get() = (kind as? AccountKind.Managed)?.guardianId
 

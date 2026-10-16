@@ -8,6 +8,8 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -18,7 +20,9 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasProgressBarRangeInfo
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -659,6 +663,34 @@ class VisitScreenTest {
                     .single()
                     .userId,
             )
+        }
+    }
+
+    @Test
+    fun person_chips_name_only_the_active_person_by_nickname_and_scroll_to_everybody() {
+        val guests =
+            (3..6).map { session("3333333$it-3333-4333-8333-333333333333", "Гость Номер $it") }
+        val crowd = FakeGym().withAccounts(ivan, misha, *guests.toTypedArray(), active = ivan)
+        val visit = sharedVisit.copy(day = crowd.today)
+        val press = Machine.new("Жим ногами", ivan.account.userId, crowd.clock.current)
+        runBlocking {
+            crowd.visits.upsert(visit)
+            crowd.machines.upsert(press)
+            crowd.accountStore.rememberNickname(ivan.account.userId, "Ванёк")
+        }
+        runScreenTest(crowd, screen = { visitScreen(day = crowd.today, picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("person-chips").assert(hasScrollAction())
+            onNodeWithTag("person-${ivan.account.userId.value}").assert(hasText("Ванёк"))
+            onNodeWithTag("person-${misha.account.userId.value}")
+                .assert(hasText("Миша").not())
+                .assertContentDescriptionEquals("Миша")
+
+            onNodeWithTag("person-add").performScrollTo().assertIsDisplayed()
+            onNodeWithTag("person-${guests.last().account.userId.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("person-${guests.last().account.userId.value}")
+                .assert(hasText("Гость Номер 6"))
         }
     }
 

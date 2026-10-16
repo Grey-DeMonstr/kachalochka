@@ -331,6 +331,14 @@ switching to it again is a retry rather than adding it back.
 
 `CurrentUser` is one `commonMain` implementation reading that store's active id, on both targets.
 
+`Account.shownName`, the nickname when not blank, else the Google name, is the name every screen
+writes for an account; only the placeholder of Settings' "Ник" shows the Google name. The web can
+read only the active account's profile, so a Google account's entry in the store keeps its
+nickname. `AccountAvatars` gives the store the nickname of every profile it reads, and Settings
+the one it opens and saves; a profile that cannot be read keeps the stored nickname, and so do a
+token refresh and a new sign-in. A managed entry keeps none: its name from `my_family` already is
+`member_display_name` (§5.2).
+
 A managed account is a child linked to one of the device's Google accounts (§5.2). It has no
 session: its entry in the account store names the guardian whose session acts for it,
 `actingSessionOf` answers with that session, and a switch to the child makes the guardian's

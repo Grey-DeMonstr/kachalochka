@@ -75,6 +75,71 @@ class PersistedAccountStoreTest {
     }
 
     @Test
+    fun a_remembered_nickname_is_the_shown_name_and_survives_a_restart() =
+        runTest {
+            val storage = FakeStorage()
+            PersistedAccountStore(storage).run {
+                add(ivan)
+                rememberNickname(ivan.account.userId, "Ванёк")
+            }
+
+            val shown = PersistedAccountStore(storage).accounts.value.single()
+
+            assertEquals("Ванёк", shown.shownName)
+            assertEquals("Ivan", shown.displayName)
+        }
+
+    @Test
+    fun a_blank_nickname_shows_the_google_name() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+
+            store.rememberNickname(ivan.account.userId, "  ")
+
+            val shown = store.accounts.value.single()
+            assertNull(shown.nickname)
+            assertEquals("Ivan", shown.shownName)
+        }
+
+    @Test
+    fun fresh_tokens_and_a_new_sign_in_keep_the_remembered_nickname() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            store.rememberNickname(ivan.account.userId, "Ванёк")
+
+            store.replaceSession(ivan.copy(accessToken = "fresh"))
+            assertEquals(
+                "Ванёк",
+                store.accounts.value
+                    .single()
+                    .nickname,
+            )
+
+            store.add(ivan.copy(accessToken = "again"))
+            assertEquals(
+                "Ванёк",
+                store.accounts.value
+                    .single()
+                    .nickname,
+            )
+        }
+
+    @Test
+    fun a_managed_account_keeps_the_name_its_guardian_s_server_gave() =
+        runTest {
+            val store = PersistedAccountStore(FakeStorage())
+            store.add(ivan)
+            val sasha = managedChild(ivan)
+            store.setManaged(listOf(sasha))
+
+            store.rememberNickname(SASHA_ID, "Санёк")
+
+            assertEquals(listOf(ivan.account, sasha), store.accounts.value)
+        }
+
+    @Test
     fun switching_changes_only_the_active_id() =
         runTest {
             val store = PersistedAccountStore(FakeStorage())

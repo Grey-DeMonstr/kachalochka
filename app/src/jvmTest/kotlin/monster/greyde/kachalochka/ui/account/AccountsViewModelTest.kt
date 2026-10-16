@@ -114,6 +114,31 @@ class AccountsViewModelTest {
             )
         }
 
+    @Test
+    fun an_account_shows_its_profile_s_nickname_instead_of_its_google_name() =
+        runTest {
+            val id = UserId("11111111-1111-4111-8111-111111111111")
+            val session =
+                AccountSession(
+                    Account(id, "sam@example.test", "Sam Smith"),
+                    "access",
+                    "refresh",
+                    Instant.fromEpochSeconds(0),
+                )
+            val sync = RecordingSyncTrigger()
+            val viewModel = viewModel(SucceedingSignIn(session), sync)
+            viewModel.addAccount()
+
+            profiles.upsert(Profile.new(id, Instant.fromEpochSeconds(0)).copy(displayName = "Сэм"))
+            sync.completePass()
+
+            val shown =
+                viewModel.state.value.accounts
+                    .single()
+            assertEquals("Сэм", shown.displayName)
+            assertEquals("С", shown.monogram)
+        }
+
     /**
      * `addAccount()` fires and forgets on `viewModelScope`, so a failure escapes as an uncaught
      * exception on `Dispatchers.Main` rather than a thrown one; `runTest` is what surfaces that

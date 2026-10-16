@@ -358,6 +358,40 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun a_saved_nickname_becomes_the_account_s_shown_name_and_the_placeholder_stays() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            val vm = viewModel()
+
+            vm.type("Ванёк")
+            vm.apply()
+
+            assertEquals(
+                "Ванёк",
+                gym.accounts.accounts.value
+                    .single()
+                    .shownName,
+            )
+            assertEquals("Иван", vm.ui.placeholder)
+        }
+
+    @Test
+    fun opening_settings_remembers_the_stored_nickname() =
+        runTest {
+            gym.withAccounts(ivan, active = ivan)
+            gym.profiles.upsert(Profile.new(ivan.account.userId, t0).copy(displayName = "Ванёк"))
+
+            viewModel()
+
+            assertEquals(
+                "Ванёк",
+                gym.accounts.accounts.value
+                    .single()
+                    .shownName,
+            )
+        }
+
+    @Test
     fun deleting_is_offered_only_to_a_signed_in_account() =
         runTest {
             assertFalse(viewModel().deletion.value.available)

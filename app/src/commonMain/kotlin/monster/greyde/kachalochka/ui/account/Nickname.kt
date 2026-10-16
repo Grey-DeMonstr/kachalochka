@@ -20,7 +20,7 @@ class Nickname(
         if (nickname != null) return nickname
         return accounts.accounts.value
             .firstOrNull { it.userId == owner }
-            ?.displayName
+            ?.shownName
             .orEmpty()
     }
 }

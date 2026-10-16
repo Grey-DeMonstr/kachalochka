@@ -145,7 +145,7 @@ class MachineCatalogue(
     private fun me(owner: UserId?): Friend? {
         val account = accounts.accounts.value.firstOrNull { it.userId == owner } ?: return null
         val avatar = accountAvatar(account, avatars.photos.value)
-        return Friend(account.userId, account.displayName, avatar)
+        return Friend(account.userId, account.shownName, avatar)
     }
 
     /** Machines joined by the owner's live links and the group mates', the latter read online. */

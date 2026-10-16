@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -394,7 +397,10 @@ private fun PersonChips(
 ) {
     val colors = MaterialTheme.colorScheme
     Row(
-        Modifier.fillMaxWidth(),
+        Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .testTag("person-chips"),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -418,6 +424,7 @@ private fun PersonChips(
     }
 }
 
+/** Only the active person's name is written, so the avatars of a whole family fit in view. */
 @Composable
 private fun PersonChip(
     person: AccountUi,
@@ -425,38 +432,32 @@ private fun PersonChip(
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = CircleShape
-    Row(
+    val chip =
         Modifier
             .height(ChipHeight)
             .clip(shape)
-            .then(
-                if (person.active) {
-                    Modifier.background(colors.primary.copy(alpha = 0.14f))
-                } else {
-                    Modifier
-                },
-            ).border(
-                1.dp,
-                if (person.active) colors.primary else colors.onBackground.copy(alpha = 0.16f),
-                shape,
-            ).selectable(selected = person.active, onClick = onClick)
-            .padding(start = 5.dp, end = 14.dp)
-            .testTag("person-${person.id.value}"),
+            .selectable(selected = person.active, onClick = onClick)
+            .semantics { contentDescription = person.displayName }
+            .testTag("person-${person.id.value}")
+    if (!person.active) {
+        PersonAvatar(person.id, person.displayName, person.avatar, chip, ChipHeight, false)
+        return
+    }
+    Row(
+        chip
+            .background(colors.primary.copy(alpha = 0.14f))
+            .border(1.dp, colors.primary, shape)
+            .padding(start = 5.dp, end = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PersonAvatar(
-            person.id,
-            person.displayName,
-            person.avatar,
-            size = 38.dp,
-            accent = person.active,
-        )
+        PersonAvatar(person.id, person.displayName, person.avatar, size = 38.dp)
         Text(
             person.displayName,
             fontSize = 15.sp,
             letterSpacing = 0.em,
-            color = if (person.active) colors.onPrimaryContainer else colors.onBackground,
+            maxLines = 1,
+            color = colors.onPrimaryContainer,
         )
     }
 }

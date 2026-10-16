@@ -20,6 +20,7 @@ private data class StoredAccount(
     val expiresAtMillis: Long,
     // Accounts stored before pictures have none until their next refresh.
     val pictureUrl: String? = null,
+    val nickname: String? = null,
 )
 
 @Serializable
@@ -68,8 +69,9 @@ class PersistedAccountStore(
     override suspend fun add(session: AccountSession) {
         lock.withLock {
             val id = session.account.userId
+            val kept = withNicknameOf(session)
             sessions.removeAll { it.account.userId == id }
-            sessions.add(session)
+            sessions.add(kept)
             managed.removeAll { it.userId == id }
             activeState.value = id
             publish()
@@ -105,7 +107,7 @@ class PersistedAccountStore(
         lock.withLock {
             val index = sessions.indexOfFirst { it.account.userId == session.account.userId }
             if (index < 0) return
-            sessions[index] = session
+            sessions[index] = withNicknameOf(session)
             publish()
         }
     }
@@ -137,6 +139,28 @@ class PersistedAccountStore(
             }
             publish()
         }
+    }
+
+    override suspend fun rememberNickname(
+        id: UserId,
+        nickname: String?,
+    ) {
+        val kept = nickname?.trim()?.takeIf { it.isNotEmpty() }
+        lock.withLock {
+            val index = sessions.indexOfFirst { it.account.userId == id }
+            if (index < 0) return
+            val session = sessions[index]
+            if (session.account.nickname == kept) return
+            sessions[index] = session.copy(account = session.account.copy(nickname = kept))
+            publish()
+        }
+    }
+
+    // The session Google or a token refresh hands over knows nothing of the profile.
+    private fun withNicknameOf(session: AccountSession): AccountSession {
+        val known = sessions.firstOrNull { it.account.userId == session.account.userId }
+        val nickname = session.account.nickname ?: known?.account?.nickname
+        return session.copy(account = session.account.copy(nickname = nickname))
     }
 
     private fun listed(): List<Account> = sessions.map { it.account } + managed
@@ -173,7 +197,13 @@ class PersistedAccountStore(
 
     private fun toSession(stored: StoredAccount) =
         AccountSession(
-            Account(UserId(stored.userId), stored.email, stored.displayName, stored.pictureUrl),
+            Account(
+                UserId(stored.userId),
+                stored.email,
+                stored.displayName,
+                stored.pictureUrl,
+                nickname = stored.nickname,
+            ),
             stored.accessToken,
             stored.refreshToken,
             Instant.fromEpochMilliseconds(stored.expiresAtMillis),
@@ -188,6 +218,7 @@ class PersistedAccountStore(
             session.refreshToken,
             session.expiresAt.toEpochMilliseconds(),
             session.account.pictureUrl,
+            session.account.nickname,
         )
 
     private fun toManaged(stored: StoredManaged) =

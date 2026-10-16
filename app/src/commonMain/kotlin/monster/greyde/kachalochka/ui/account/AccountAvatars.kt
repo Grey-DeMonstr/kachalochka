@@ -9,7 +9,8 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 
 /**
  * The photo each signed-in account chose, from its profile. One per process, so every top bar
- * shows the same; a profile another account cannot read keeps what was read before.
+ * shows the same; a profile another account cannot read keeps what was read before. The same read
+ * gives the account store each account's nickname.
  */
 class AccountAvatars(
     private val accounts: Accounts,
@@ -24,8 +25,9 @@ class AccountAvatars(
             accounts.accounts.value
                 .mapNotNull { account ->
                     val id = account.userId
-                    val photo =
-                        runCatching { profiles.forOwner(id)?.avatarPhoto }.getOrElse { before[id] }
+                    val read = runCatching { profiles.forOwner(id) }
+                    read.getOrNull()?.let { accounts.rememberNickname(id, it.displayName) }
+                    val photo = read.map { it?.avatarPhoto }.getOrElse { before[id] }
                     photo?.let { id to it }
                 }.toMap()
     }

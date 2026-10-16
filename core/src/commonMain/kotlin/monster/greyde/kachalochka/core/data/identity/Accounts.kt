@@ -44,6 +44,11 @@ class Accounts(
         }
     }
 
+    suspend fun rememberNickname(
+        id: UserId,
+        nickname: String?,
+    ) = store.rememberNickname(id, nickname)
+
     suspend fun signOut(id: UserId) {
         store.remove(id)
         val next = store.activeId.value?.let { store.actingSessionOf(it) }

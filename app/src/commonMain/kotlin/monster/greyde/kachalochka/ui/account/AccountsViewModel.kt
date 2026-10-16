@@ -44,9 +44,9 @@ fun accountsUi(
     accounts.map {
         AccountUi(
             it.userId,
-            it.displayName,
+            it.shownName,
             it.email,
-            monogram(it.displayName),
+            monogram(it.shownName),
             it.userId == activeId,
             accountAvatar(it, chosen),
             managed = it.isManaged,

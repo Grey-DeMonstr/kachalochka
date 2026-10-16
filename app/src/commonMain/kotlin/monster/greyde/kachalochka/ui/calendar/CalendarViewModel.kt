@@ -453,7 +453,7 @@ class CalendarViewModel(
         val account =
             accounts.accounts.value.firstOrNull { it.userId == shownFor } ?: return null
         val avatar = accountAvatar(account, avatars.photos.value)
-        return PersonUi(account.userId, account.displayName, avatar)
+        return PersonUi(account.userId, account.shownName, avatar)
     }
 
     private fun removalUi(

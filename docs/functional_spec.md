@@ -123,8 +123,9 @@ grouped by tags, the machine lines form the same sections, separated by an empty
 one starting with a line of its tags in capitals ("НОГИ").
 
 Adding or editing a set uses the same form, which slides up over the page. Adding shows the
-signed-in accounts as a row of chips, then "#4 Новый подход"; editing shows "#3 Правка: 70 кг ×
-10". Weight and reps steppers follow, both typed as well, the weight with a comma or a point; − and
+signed-in accounts as a row of avatar chips, which scrolls sideways when they do not fit. Only the
+active person's avatar is followed by their name; the last chip adds an account. "#4 Новый подход"
+follows; editing shows "#3 Правка: 70 кг × 10". Weight and reps steppers follow, both typed as well, the weight with a comma or a point; − and
 + step the weight by the machine's weight step and the reps by one, and reps that are not a whole
 number above zero cannot be saved. The weight is the one place where the machine's own unit comes
 first: it is typed and stepped in that unit, written beside it ("65 lb"), a gravitron's with "−"
@@ -345,8 +346,9 @@ carries a link to the web app. Opening it asks "Добавить родител�
 linking, and a link opened while signed out is offered to whichever account signs in next in
 that browser.
 
-A linked child appears in each of their parents' account menus and among the set form's chips,
-with their avatar, their name and "Ребёнок" under it, on Android and on the web; one child under
+A linked child appears in each of their parents' account menus, with their avatar, their nickname
+(else their Google name) and "Ребёнок" under it, and among the set form's avatar chips, on Android
+and on the web; one child under
 two parents signed in on one device appears once. Choosing the child records for them exactly as
 for any account: the home card, the visit and its sets, the machines with their photos and links,
 the calendar, the statistics and the plans are the child's, and they sync between the parent's
@@ -373,8 +375,9 @@ asks "Применить изменения?", with "Применить" and "Н
 left of "Ник"; tapping it offers "Снять фото" and "Из галереи", as a machine's photo does, and,
 once a photo is chosen, "Удалить", which brings the Google picture back. Its "Ник" field, for the
 signed-in account, takes up to 40 characters; the Google account name is shown as a placeholder and
-used when the field is left blank. Friends see this nickname instead of the Google name, and it
-heads a visit shared as text. Пол (Мужской / Женский), Дата рождения (ДД.ММ.ГГГГ, from 1900 to
+used when the field is left blank. A nickname replaces the Google name everywhere: in the account
+menu, the set form and every list of people. Friends see it too, and it heads a visit shared as
+text. Пол (Мужской / Женский), Дата рождения (ДД.ММ.ГГГГ, from 1900 to
 today) and Рост, см (50 to 250) feed the body fat formulas; they are there without an account too,
 and an emptied field clears its value. Nobody else sees them.
 

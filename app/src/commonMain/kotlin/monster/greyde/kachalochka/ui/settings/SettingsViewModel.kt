@@ -163,10 +163,11 @@ class SettingsViewModel(
             return
         }
         val stored = profiles.forOwner(owner)
+        if (owner != null && stored != null) accounts.rememberNickname(owner, stored.displayName)
         val placeholder = account?.displayName.orEmpty()
         savedAvatar =
-            account?.let {
-                AvatarUi(it.userId, it.displayName, Avatar(stored?.avatarPhoto, it.pictureUrl))
+            accounts.accounts.value.firstOrNull { it.userId == owner }?.let {
+                AvatarUi(it.userId, it.shownName, Avatar(stored?.avatarPhoto, it.pictureUrl))
             }
         mutableAvatar.value = savedAvatar
         val shown =
@@ -302,6 +303,7 @@ class SettingsViewModel(
                 existing.avatarPhoto
             }
         profiles.upsert(edited.copy(avatarPhoto = photo, updatedAt = now))
+        owner?.let { accounts.rememberNickname(it, edited.displayName) }
         sync.request()
         if (avatar != null) {
             avatars.refresh()

@@ -31,4 +31,13 @@ interface AccountStore {
      * in with Google here, is left out; when the active one goes, its guardian becomes active.
      */
     suspend fun setManaged(children: List<Account>)
+
+    /**
+     * Keeps [nickname], read from the profile of the Google account [id], with its entry: the web
+     * can read only the active account's profile. A blank one is forgotten.
+     */
+    suspend fun rememberNickname(
+        id: UserId,
+        nickname: String?,
+    )
 }
