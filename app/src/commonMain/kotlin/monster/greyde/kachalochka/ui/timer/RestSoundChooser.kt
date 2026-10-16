@@ -14,7 +14,7 @@ class RestSoundLaunchers(
     val pick: (current: String?) -> Unit,
     /** Asks for the right to show the rest as a notification, where the platform needs it. */
     val allowNotifications: () -> Unit,
-    val nameOf: (uri: String?) -> String,
+    val nameOf: suspend (uri: String?) -> String,
 )
 
 object FixedRestSound : RestSoundChooser {

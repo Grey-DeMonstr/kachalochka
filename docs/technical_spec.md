@@ -146,7 +146,7 @@ the preference. While the sound is on, each rest that has not ended goes to the 
 `RestAlarm`, which replaces the earlier schedule; switching the sound off cancels it. Android's
 `ServiceRestAlarm` hands the rest to a foreground service (§6). The web's `WebAudioRestAlarm` sets
 a timeout that plays an 880 Hz beep of 200 ms through the Web Audio API, in one audio context per
-page, woken at the rest's start because browsers keep audio asleep until a gesture. Settings
+page that every tap wakes, because Safari starts audio only inside a gesture's handler. Settings
 picks the Android sound through `RestSoundChooser`; the web's `FixedRestSound` offers no choice.
 
 Every gym weight shown passes through `app/ui/format/WeightUnits.kt`: `shownUnit` picks the unit
@@ -971,8 +971,9 @@ builds them from its own address.
   system gives such a service, and its timeout stops it. It shows the rest as a countdown
   notification on its own low-importance channel, so the channel makes no sound. At the end it
   plays the chosen notification sound itself as media with transient ducking focus: media goes to
-  the headphones at the volume the user listens at, and the silent mode does not mute it. A
-  chosen sound that cannot be played falls back to the default one. A partial wake lock
+  the headphones at the volume the user listens at, and the silent mode does not mute it. Focus
+  that is refused, as in a call, leaves the rest silent. A chosen sound that cannot be played
+  falls back to the default one. A partial wake lock
   (`WAKE_LOCK`) until the end keeps the delay running with the screen locked. The service stops
   after the sound, and a new rest restarts it. Settings picks the sound with the system ringtone
   picker (`ACTION_RINGTONE_PICKER`, notification sounds, no silence) and, on switching the sound

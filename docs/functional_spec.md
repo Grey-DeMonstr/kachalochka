@@ -39,7 +39,7 @@ rest. On Android the row "Звук" under the choice opens the system's notifica
 default one at first. The sound comes through the headphones when they are on, also with the
 screen locked and in silent mode, while a notification counts the rest down. Switching the sound
 on asks for the right to show notifications on Android 13 and later; without it the sound still
-plays. The web plays a short beep while its tab is open. There is no vibration.
+plays. The web plays a short beep while its tab is open.
 
 # Use cases
 

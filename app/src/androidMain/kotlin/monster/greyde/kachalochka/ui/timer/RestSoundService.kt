@@ -156,40 +156,44 @@ class RestSoundService : Service() {
             .build()
     }
 
-    /** A chosen sound that is gone, or unreadable, gives way to the default one. */
+    /**
+     * A chosen sound that is gone, or unreadable, gives way to the default one. Without the audio
+     * focus, as in a phone call, the rest ends in silence.
+     */
     private fun play(sound: String?) {
+        val request =
+            AudioFocusRequest
+                .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                .setAudioAttributes(attributes)
+                .build()
+        val granted = getSystemService(AudioManager::class.java).requestAudioFocus(request)
+        if (granted != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return finish()
+        focus = request
         val default = Settings.System.DEFAULT_NOTIFICATION_URI
         val started = start(sound?.toUri() ?: default) || (sound != null && start(default))
         if (!started) finish()
     }
 
-    private fun start(uri: Uri): Boolean =
-        try {
-            val request =
-                AudioFocusRequest
-                    .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                    .setAudioAttributes(attributes)
-                    .build()
-            getSystemService(AudioManager::class.java).requestAudioFocus(request)
-            focus = request
-            player =
-                MediaPlayer().apply {
-                    setAudioAttributes(attributes)
-                    setDataSource(this@RestSoundService, uri)
-                    setOnCompletionListener { finish() }
-                    setOnErrorListener { _, _, _ ->
-                        finish()
-                        true
-                    }
-                    prepare()
-                    start()
-                }
+    private fun start(uri: Uri): Boolean {
+        val media = MediaPlayer()
+        return try {
+            media.setAudioAttributes(attributes)
+            media.setDataSource(this, uri)
+            media.setOnCompletionListener { finish() }
+            media.setOnErrorListener { _, _, _ ->
+                finish()
+                true
+            }
+            media.prepare()
+            media.start()
+            player = media
             true
         } catch (unplayable: Exception) {
             Log.w(LOG_TAG, "Could not play the rest sound", unplayable)
-            release()
+            media.release()
             false
         }
+    }
 
     private fun finish() {
         release()

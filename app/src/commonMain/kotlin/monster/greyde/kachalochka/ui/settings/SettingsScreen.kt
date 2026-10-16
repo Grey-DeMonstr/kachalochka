@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -227,7 +228,7 @@ private fun RestSoundSection(
         },
     )
     if (sound.enabled && launchers != null) {
-        val name = remember(sound.uri, launchers) { launchers.nameOf(sound.uri) }
+        val name by produceState("", sound.uri, launchers) { value = launchers.nameOf(sound.uri) }
         Row(
             Modifier
                 .fillMaxWidth()

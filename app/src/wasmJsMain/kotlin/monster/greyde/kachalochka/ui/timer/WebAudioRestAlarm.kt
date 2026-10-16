@@ -10,6 +10,10 @@ private const val BEEP_SECONDS = 0.2
 class WebAudioRestAlarm : RestAlarm {
     private var timeout: Int? = null
 
+    init {
+        wakeAudioOnGesture()
+    }
+
     override fun schedule(
         end: Instant,
         sound: String?,
@@ -25,8 +29,24 @@ class WebAudioRestAlarm : RestAlarm {
     }
 }
 
-// One audio context for the page: browsers limit how many a page may open. It is woken at the
-// start of the rest, closest to the tap, since a browser may keep audio asleep until a tap.
+// One audio context for the page: browsers limit how many a page may open. Safari starts audio
+// only inside a gesture's handler, so every tap wakes the context the beep plays on later.
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun wakeAudioOnGesture(): Unit =
+    js(
+        """{
+        const wake = () => {
+            const Context = window.AudioContext || window.webkitAudioContext;
+            if (!Context) return;
+            const audio =
+                globalThis.kachalochkaAudio || (globalThis.kachalochkaAudio = new Context());
+            if (audio.state !== 'running') audio.resume().catch(() => {});
+        };
+        document.addEventListener('pointerdown', wake, { capture: true, passive: true });
+        document.addEventListener('touchend', wake, { capture: true, passive: true });
+    }""",
+    )
+
 @OptIn(ExperimentalWasmJsInterop::class)
 @Suppress("UNUSED_PARAMETER")
 private fun beepAfter(
@@ -39,7 +59,6 @@ private fun beepAfter(
         const Context = window.AudioContext || window.webkitAudioContext;
         if (!Context) return 0;
         const audio = globalThis.kachalochkaAudio || (globalThis.kachalochkaAudio = new Context());
-        audio.resume().catch(() => {});
         return setTimeout(() => {
             audio.resume().then(() => {
                 const start = audio.currentTime;

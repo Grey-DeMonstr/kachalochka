@@ -21,6 +21,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.core.net.toUri
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
 private const val LOG_TAG = "Kachalochka"
@@ -60,7 +62,7 @@ class SystemRestSoundChooser(
                         permission.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 },
-                nameOf = ::nameOf,
+                nameOf = { withContext(Dispatchers.IO) { nameOf(it) } },
             )
         }
     }
