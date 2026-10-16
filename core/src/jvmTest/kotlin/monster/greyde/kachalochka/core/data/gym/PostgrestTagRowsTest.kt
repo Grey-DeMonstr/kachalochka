@@ -17,8 +17,8 @@ import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class PostgrestTagRowsTest {
@@ -84,6 +84,10 @@ class PostgrestTagRowsTest {
             assertEquals("eq.${press.id.value}", request.url.parameters["machine_id"])
             assertEquals("eq.${ivan.value}", request.url.parameters["user_id"])
             assertEquals(listOf(held), links)
+            assertEquals(
+                setOf("machine_id", "user_id", "order", "offset", "limit", "select"),
+                request.url.parameters.names(),
+            )
         }
 
     @Test
@@ -118,12 +122,50 @@ class PostgrestTagRowsTest {
             assertEquals("eq.false", links["deleted"])
             assertEquals("eq.${ivan.value}", links["user_id"])
             assertEquals("neq.${press.id.value}", links["machine_id"])
-            assertTrue(links["tag_id"].orEmpty().startsWith("in.("))
+            assertEquals("in.(${onA.tagId},${onB.tagId})", links["tag_id"])
             val machines = requests.getValue(MACHINE_TABLE).url.parameters
             assertEquals("eq.false", machines["deleted"])
             assertEquals("eq.${ivan.value}", machines["user_id"])
-            assertTrue(machineA.id.value in machines["id"].orEmpty())
-            assertTrue(machineB.id.value in machines["id"].orEmpty())
+            assertEquals("in.(${machineA.id.value},${machineB.id.value})", machines["id"])
+        }
+
+    @Test
+    fun an_ownerless_machine_s_held_elsewhere_reads_match_no_owner() =
+        runTest {
+            val loose = Machine.new("Жим", null, t0)
+            val other = Machine.new("Тяга", null, t0)
+            val onOther = link(other, "ноги")
+            val engine =
+                engineAnswering(
+                    MACHINE_TAG_TABLE to linksJson(listOf(onOther)),
+                    MACHINE_TABLE to machinesJson(listOf(other)),
+                )
+
+            val held = rowsOn(engine).heldElsewhere(loose, listOf(onOther.tagId))
+
+            assertEquals(setOf(onOther.tagId), held)
+            val requests = engine.requestHistory.associateBy { it.table() }
+            assertEquals("is.null", requests.getValue(MACHINE_TAG_TABLE).url.parameters["user_id"])
+            assertEquals("is.null", requests.getValue(MACHINE_TABLE).url.parameters["user_id"])
+        }
+
+    @Test
+    fun tags_are_read_by_id() =
+        runTest {
+            val legs = tag("ноги")
+            val back = tag("спина")
+            val engine =
+                engineAnswering(
+                    TAG_TABLE to Json.encodeToString(listOf(legs, back).map(TagRow::of)),
+                )
+
+            val tags = rowsOn(engine).tags(listOf(legs.id, back.id))
+
+            val request = engine.requestHistory.single()
+            assertEquals(TAG_TABLE, request.table())
+            assertEquals(HttpMethod.Get, request.method)
+            assertEquals("in.(${legs.id},${back.id})", request.url.parameters["id"])
+            assertEquals(listOf(legs, back), tags)
         }
 
     @Test
@@ -159,6 +201,12 @@ class PostgrestTagRowsTest {
             )
             assertEquals(MACHINE_TAG_TABLE, linkRequest.table())
             assertEquals(HttpMethod.Post, linkRequest.method)
+            listOf(tagRequest, linkRequest).forEach {
+                assertContains(
+                    it.headers[HttpHeaders.Prefer].orEmpty(),
+                    "resolution=merge-duplicates",
+                )
+            }
             assertEquals(
                 listOf(MachineTagRow.of(link)),
                 Json.decodeFromString<List<MachineTagRow>>(
