@@ -226,6 +226,8 @@ object EnStrings : Strings {
 
     override val recalculate = "Recalculate"
     override val keepAsRecorded = "Keep as recorded"
+    override val saveChangesTitle = "Save changes?"
+    override val dontSave = "Don't save"
 
     override val unitName = "Unit name"
     override val unlinkTitle = "Unlink the machine?"

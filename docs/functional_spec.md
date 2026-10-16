@@ -222,7 +222,15 @@ for both. A star marks the photo standing for the machine in every list. Tapping
 over the whole screen, where a swipe shows the next or the previous photo of the row, with
 "Удалить" for an own photo and "Сделать основным" for any but the starred one. New and removed
 photos and the chosen one are part of the form's edits: "Сохранить" writes them, and leaving the
-form drops them. A photo is shrunk to at most 1600 pixels on its long edge before it is kept.
+form unsaved drops them. A photo is shrunk to at most 1600 pixels on its long edge before it is
+kept.
+
+Back, in the top bar or the system's, leaves the form at once when nothing differs from what the
+form started with: the saved machine, or the empty or pre-filled values of a new one. Otherwise it
+asks "Сохранить изменения?". "Сохранить" saves as the form's own button does, "Пересчитать
+историю?" included, and then goes where that button goes; it is off while the form cannot be
+saved. "Не сохранять" drops the edits and leaves. Dismissing the question stays in the form. Text
+typed in "Новый тег" but not added is no edit.
 
 The form of a saved machine of the active account has "Привязать к…". It opens a list with a search
 field, which starts with the machine's name: "Мои упражнения", the account's other machines, and,

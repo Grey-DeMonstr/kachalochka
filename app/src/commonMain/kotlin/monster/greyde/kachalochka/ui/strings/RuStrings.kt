@@ -243,6 +243,8 @@ object RuStrings : Strings {
 
     override val recalculate = "Пересчитать"
     override val keepAsRecorded = "Оставить как есть"
+    override val saveChangesTitle = "Сохранить изменения?"
+    override val dontSave = "Не сохранять"
 
     override val unitName = "Название единицы"
     override val unlinkTitle = "Отвязать упражнение?"

@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.machine
 
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
@@ -139,6 +140,137 @@ class MachineFormScreenTest {
                 .getValue(recorded.id)
                 .weight,
         )
+    }
+
+    /** Иван's press, opened in the form, with the number of backs and saves it asked for. */
+    private class LeaveRun(
+        val press: Machine,
+    ) {
+        var backs = 0
+        val saved = mutableListOf<MachineId>()
+    }
+
+    private fun leaveRun(
+        recorded: Boolean = false,
+        block: ComposeUiTest.(LeaveRun) -> Unit,
+    ) {
+        val t0 = gym.clock.current
+        val run = LeaveRun(Machine.new("Жим ногами", null, t0))
+        runBlocking {
+            gym.machines.upsert(run.press)
+            if (recorded) {
+                gym.sets.upsert(
+                    WorkoutSet(
+                        WorkoutSetId.random(),
+                        null,
+                        VisitId.random(),
+                        run.press.id,
+                        70.0,
+                        10,
+                        0,
+                        t0,
+                        t0,
+                        false,
+                    ),
+                )
+            }
+        }
+        runScreenTest(gym, screen = {
+            MachineFormScreen(
+                MachineFormArgs(run.press.id, null, ""),
+                onBack = { run.backs++ },
+                onOpenSettings = {},
+                onSaved = { run.saved += it },
+            )
+        }) { block(run) }
+    }
+
+    @Test
+    fun back_from_an_untouched_form_leaves_at_once() =
+        leaveRun { run ->
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+
+            assertEquals(1, run.backs)
+            onNodeWithTag("leave-save").assertDoesNotExist()
+        }
+
+    @Test
+    fun back_with_edits_asks_and_can_drop_them() =
+        leaveRun { run ->
+            onNodeWithTag("machine-note").performTextInput("Сиденье на 4")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            assertEquals(0, run.backs)
+            onNodeWithText("Сохранить изменения?").assertExists()
+
+            onNodeWithTag("leave-dont-save").assertTextEquals("Не сохранять").performClick()
+            waitForIdle()
+
+            assertEquals(1, run.backs)
+            assertEquals(emptyList(), run.saved)
+            assertEquals("", runBlocking { gym.machines.byId(run.press.id) }?.setupNote)
+        }
+
+    @Test
+    fun saving_from_the_question_leaves_the_way_the_save_button_does() =
+        leaveRun { run ->
+            onNodeWithTag("machine-note").performTextInput("Сиденье на 4")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+
+            onNodeWithTag("leave-save").assertTextEquals("Сохранить").performClick()
+            waitForIdle()
+
+            assertEquals(listOf(run.press.id), run.saved)
+            assertEquals(0, run.backs)
+            assertEquals(
+                "Сиденье на 4",
+                runBlocking { gym.machines.byId(run.press.id) }?.setupNote,
+            )
+        }
+
+    @Test
+    fun saving_from_the_question_asks_about_recorded_sets_first() =
+        leaveRun(recorded = true) { run ->
+            onNodeWithTag("platform-weight").performScrollTo().performTextReplacement("25")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("leave-save").performClick()
+            waitForIdle()
+            assertEquals(emptyList(), run.saved)
+            onNodeWithTag("leave-save").assertDoesNotExist()
+
+            onNodeWithTag("keep-recorded-sets").performClick()
+            waitForIdle()
+
+            assertEquals(listOf(run.press.id), run.saved)
+        }
+
+    @Test
+    fun a_form_that_cannot_be_saved_can_only_drop_its_edits() =
+        leaveRun { run ->
+            onNodeWithTag("machine-name").performTextReplacement("")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+
+            onNodeWithTag("leave-save").assertIsNotEnabled()
+            onNodeWithTag("leave-dont-save").assertIsEnabled()
+        }
+
+    @Test
+    fun the_leave_question_speaks_english() {
+        runScreenTestInEnglish(gym, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, "Hack"), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("machine-note").performTextInput("Seat at 4")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+
+            onNodeWithText("Save changes?").assertExists()
+            onNodeWithTag("leave-save").assertTextEquals("Save")
+            onNodeWithTag("leave-dont-save").assertTextEquals("Don't save")
+        }
     }
 
     @Test

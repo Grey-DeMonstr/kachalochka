@@ -54,6 +54,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -106,6 +109,13 @@ fun MachineFormScreen(
     val linking by viewModel.linking.collectAsState()
     val photos by viewModel.photos.collectAsState()
     val recalculation by viewModel.recalculation.collectAsState()
+    val confirmingLeave by viewModel.confirmingLeave.collectAsState()
+    val leave = { if (viewModel.requestLeave()) onBack() }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = true,
+        onBackCompleted = leave,
+    )
     val capture: PhotoCapture = koinInject()
     val launchers = capture.rememberLaunchers(viewModel::addPhoto)
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
@@ -118,7 +128,7 @@ fun MachineFormScreen(
     }
     Screen(
         "",
-        onBack = onBack,
+        onBack = leave,
         onOpenSettings = onOpenSettings,
         actions = {
             args.machineId?.let { id ->
@@ -274,6 +284,31 @@ fun MachineFormScreen(
                     onClick = viewModel::keepRecorded,
                     modifier = Modifier.testTag("keep-recorded-sets"),
                 ) { Text(strings().keepAsRecorded) }
+            },
+        )
+    }
+    if (confirmingLeave) {
+        AlertDialog(
+            onDismissRequest = viewModel::stay,
+            title = { Text(strings().saveChangesTitle) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.stay()
+                        viewModel.save(onSaved)
+                    },
+                    enabled = state.canSave,
+                    modifier = Modifier.testTag("leave-save"),
+                ) { Text(strings().save) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.stay()
+                        onBack()
+                    },
+                    modifier = Modifier.testTag("leave-dont-save"),
+                ) { Text(strings().dontSave) }
             },
         )
     }

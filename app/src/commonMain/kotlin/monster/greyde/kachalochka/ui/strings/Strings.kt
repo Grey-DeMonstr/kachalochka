@@ -203,6 +203,8 @@ interface Strings {
 
     val recalculate: String
     val keepAsRecorded: String
+    val saveChangesTitle: String
+    val dontSave: String
 
     val unitName: String
     val unlinkTitle: String

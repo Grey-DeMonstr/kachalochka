@@ -1338,4 +1338,96 @@ class MachineFormViewModelTest {
             )
             assertEquals("Сиденье на 4", vm.state.value.setupNote)
         }
+
+    @Test
+    fun leaving_an_untouched_form_asks_nothing() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0).copy(tags = setOf("Ноги"))
+            gym.machines.upsert(press)
+            val forms =
+                listOf(
+                    MachineFormArgs(press.id, null, ""),
+                    MachineFormArgs(null, null, ""),
+                    MachineFormArgs(null, null, "Гакк", listOf("Ноги")),
+                    MachineFormArgs(null, press.id, "Жим ногами 2"),
+                )
+
+            forms.forEach { args ->
+                val vm = viewModel(args).also { it.load() }
+                assertTrue(vm.requestLeave(), "$args")
+                assertFalse(vm.confirmingLeave.value)
+            }
+        }
+
+    @Test
+    fun leaving_with_an_edit_asks_and_staying_keeps_the_form() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.machines.upsert(press)
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+
+            vm.update { it.copy(setupNote = "Сиденье на 4") }
+
+            assertFalse(vm.requestLeave())
+            assertTrue(vm.confirmingLeave.value)
+            vm.stay()
+            assertFalse(vm.confirmingLeave.value)
+            assertEquals("Сиденье на 4", vm.state.value.setupNote)
+        }
+
+    @Test
+    fun an_edit_typed_back_to_the_start_is_no_change() =
+        runTest {
+            val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+
+            vm.update { it.copy(name = "Гакк-машина") }
+            vm.update { it.copy(name = "Гакк") }
+            vm.typeNewTag("Ноги")
+
+            assertTrue(vm.requestLeave())
+        }
+
+    @Test
+    fun every_kind_of_edit_counts() =
+        runTest {
+            val (press, mine, theirs) = pressWithFriendsPhoto()
+            val edits: List<(MachineFormViewModel) -> Unit> =
+                listOf(
+                    { it.update { form -> form.copy(name = "Жим") } },
+                    { it.toggleTag("Ноги") },
+                    { it.update { form -> form.copy(weightMode = WeightMode.PerSide) } },
+                    { it.update { form -> form.copy(platformWeight = "20") } },
+                    { it.update { form -> form.copy(platformIncluded = true) } },
+                    { it.chooseUnit(WeightUnit.Lb) },
+                    { it.update { form -> form.copy(weightStep = "5") } },
+                    { it.addPhoto(byteArrayOf(9)) },
+                    { it.removePhoto(mine.id.value) },
+                    { it.makeCover(theirs.id.value) },
+                )
+
+            edits.forEachIndexed { index, edit ->
+                val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+                edit(vm)
+                assertFalse(vm.requestLeave(), "edit $index")
+            }
+        }
+
+    @Test
+    fun a_switch_alone_is_no_change_but_a_photo_taken_before_it_is() =
+        runTest {
+            gym.withAccounts(ivan, misha, active = ivan)
+            val press = Machine.new("Жим ногами", ivan.account.userId, t0)
+            gym.machines.upsert(press)
+            val photo = Photo.new(press.id, ivan.account.userId, t0)
+            gym.photos.add(photo, byteArrayOf(1))
+            gym.machines.upsert(press.copy(coverPhoto = photo.id))
+            val untouched = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            val taken = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            taken.addPhoto(byteArrayOf(2))
+
+            gym.accounts.switchTo(misha.account.userId)
+
+            assertTrue(untouched.requestLeave())
+            assertFalse(taken.requestLeave())
+        }
 }

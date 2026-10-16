@@ -127,6 +127,21 @@ data class MachineFormState(
     val weightStepValue: Double?
         get() = parseDecimal(weightStep)?.let(::roundWeight)?.takeIf { it > 0 }
 
+    /** The values a save writes, without the offers around them. */
+    val edits: MachineFormState
+        get() =
+            MachineFormState(
+                name = name.trim(),
+                setupNote = setupNote.trim(),
+                weightMode = weightMode,
+                platformWeight = platformWeight,
+                platformIncluded = platformIncluded,
+                unit = unit,
+                unitLabel = if (unit == WeightUnit.Custom) unitLabel.trim() else "",
+                weightStep = weightStep,
+                tags = tags,
+            )
+
     val canSave: Boolean
         get() =
             name.isNotBlank() &&
@@ -204,6 +219,12 @@ class MachineFormViewModel(
     private var loaded = false
     private var readingLinks: Job? = null
 
+    /** What the form started with, pre-filled or loaded, to tell whether back drops edits. */
+    private var startEdits = mutableState.value.edits
+    private var startCover: PhotoId? = null
+    private val mutableConfirmingLeave = MutableStateFlow(false)
+    val confirmingLeave: StateFlow<Boolean> = mutableConfirmingLeave
+
     /** A switch keeps the typed edits and drops the row under them, which it no longer owns. */
     init {
         viewModelScope.launch {
@@ -214,6 +235,7 @@ class MachineFormViewModel(
                     removedPhotos = emptyList()
                     friendPhotos = emptyList()
                     coverChoice = null
+                    startCover = null
                     showPhotos()
                 }
                 refreshLinks()
@@ -244,8 +266,10 @@ class MachineFormViewModel(
             val owner = currentUser.id()
             val known = machines.all(owner).flatMap { it.tags }.toSet()
             mutableState.value = shown.copy(knownTags = known, openedTags = shown.tags)
+            startEdits = shown.edits
             savedPhotos = current?.let { photoRows.forMachine(it.id) }.orEmpty()
             coverChoice = current?.coverPhoto
+            startCover = coverChoice
             showPhotos()
             refreshLinks()
             owner?.let { readFriendTags(it) }
@@ -424,6 +448,23 @@ class MachineFormViewModel(
             coverChoice?.value?.takeIf { chosen -> shown.any { it.key == chosen } }
                 ?: shown.firstOrNull()?.key
         mutablePhotos.value = shown.map { it.copy(cover = it.key == cover) }
+    }
+
+    /** True when the form may close now; otherwise it asks about the unsaved edits. */
+    fun requestLeave(): Boolean {
+        if (!changed()) return true
+        mutableConfirmingLeave.value = true
+        return false
+    }
+
+    private fun changed(): Boolean =
+        mutableState.value.edits != startEdits ||
+            takenPhotos.isNotEmpty() ||
+            removedPhotos.isNotEmpty() ||
+            coverChoice != startCover
+
+    fun stay() {
+        mutableConfirmingLeave.value = false
     }
 
     fun update(change: (MachineFormState) -> MachineFormState) {
