@@ -139,6 +139,16 @@ gives the same text as its weights and its reps, which a row wraps apart when th
 only shortly after the user's gesture. The statistics export does the same; its text comes from
 `statsExportText` in `app/ui/stats`, built from the cards as shown.
 
+The rest timer's sound is a device setting, `RestSoundPreference` (enabled, and on Android the
+chosen sound's URI, null for the default one), stored as the theme mode is (§10). The process-wide
+`RestSoundScheduler`, started next to the visit normalization, watches `RestTimer.startedAt` and
+the preference. While the sound is on, each rest that has not ended goes to the platform's
+`RestAlarm`, which replaces the earlier schedule; switching the sound off cancels it. Android's
+`ServiceRestAlarm` hands the rest to a foreground service (§6). The web's `WebAudioRestAlarm` sets
+a timeout that plays an 880 Hz beep of 200 ms through the Web Audio API, in one audio context per
+page, woken at the rest's start because browsers keep audio asleep until a gesture. Settings
+picks the Android sound through `RestSoundChooser`; the web's `FixedRestSound` offers no choice.
+
 Every gym weight shown passes through `app/ui/format/WeightUnits.kt`: `shownUnit` picks the unit
 for a machine's unit and the profile's `PreferredWeightUnit`, `shownWeight` converts to the
 nearest half unit and `shownStep` to one decimal. The formatters that write a machine's weights
@@ -956,6 +966,17 @@ builds them from its own address.
 - Google sign-in goes through Credential Manager, whose sheet needs an `Activity` rather than the
   `Application`, so the implementation takes a context supplier the Activity installs.
 - The sync pass is a WorkManager job so it survives the app being backgrounded.
+- The rest sound plays from `RestSoundService`, a `shortService` foreground service declared in
+  the `app` manifest with `FOREGROUND_SERVICE`; a rest is far shorter than the few minutes the
+  system gives such a service, and its timeout stops it. It shows the rest as a countdown
+  notification on its own low-importance channel, so the channel makes no sound. At the end it
+  plays the chosen notification sound itself as media with transient ducking focus: media goes to
+  the headphones at the volume the user listens at, and the silent mode does not mute it. A
+  chosen sound that cannot be played falls back to the default one. A partial wake lock
+  (`WAKE_LOCK`) until the end keeps the delay running with the screen locked. The service stops
+  after the sound, and a new rest restarts it. Settings picks the sound with the system ringtone
+  picker (`ACTION_RINGTONE_PICKER`, notification sounds, no silence) and, on switching the sound
+  on, asks for `POST_NOTIFICATIONS` on Android 13 and later; the sound plays without it.
 - Release builds are minified and resource-shrunk by R8; the app bundle carries the mapping file
   Play uses to deobfuscate crashes. Class names do not survive R8, so code must never compare
   them: a platform error that common code reacts to is wrapped in a type `core` owns, as

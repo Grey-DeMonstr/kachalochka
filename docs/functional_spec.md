@@ -33,6 +33,14 @@ Moving between screens is a short fade that never flashes a colour outside the t
 has an "Анимация переходов" field for its length in milliseconds, 0 to 1000, 150 by default;
 0 switches screens instantly. Like the theme, it is remembered on the device and not synced.
 
+Settings has "Звук таймера" — Выключен or Включён, Выключен by default — remembered on the device
+and applied with the rest of the settings. With it on, the rest timer sounds at the end of each
+rest. On Android the row "Звук" under the choice opens the system's notification sounds, the
+default one at first. The sound comes through the headphones when they are on, also with the
+screen locked and in silent mode, while a notification counts the rest down. Switching the sound
+on asks for the right to show notifications on Android 13 and later; without it the sound still
+plays. The web plays a short beep while its tab is open. There is no vibration.
+
 # Use cases
 
 ## Regular gym visit

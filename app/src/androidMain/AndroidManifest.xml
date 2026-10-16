@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <application>
+        <!-- A rest is far shorter than the few minutes the system allows a short service. -->
+        <service
+            android:name="monster.greyde.kachalochka.ui.timer.RestSoundService"
+            android:exported="false"
+            android:foregroundServiceType="shortService" />
+    </application>
 </manifest>

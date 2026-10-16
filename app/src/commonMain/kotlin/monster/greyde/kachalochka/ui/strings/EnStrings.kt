@@ -473,6 +473,13 @@ object EnStrings : Strings {
 
     override fun transitionsHint(max: Int) = "Milliseconds, up to $max; 0 switches instantly"
 
+    override val restSound = "Timer sound"
+    override val restSoundOff = "Off"
+    override val restSoundOn = "On"
+    override val restSoundChoice = "Sound"
+    override val restSoundHint = "Plays when the rest ends."
+    override val restNotificationChannel = "Rest timer"
+    override val restNotificationTitle = "Rest"
     override val apply = "Apply"
     override val applyTitle = "Apply the changes?"
     override val discard = "Don't apply"

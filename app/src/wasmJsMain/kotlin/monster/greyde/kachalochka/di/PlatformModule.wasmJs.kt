@@ -30,6 +30,12 @@ import monster.greyde.kachalochka.ui.strings.SystemLanguage
 import monster.greyde.kachalochka.ui.theme.LocalStorageThemePreference
 import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.theme.ThemePreference
+import monster.greyde.kachalochka.ui.timer.FixedRestSound
+import monster.greyde.kachalochka.ui.timer.LocalStorageRestSoundPreference
+import monster.greyde.kachalochka.ui.timer.RestAlarm
+import monster.greyde.kachalochka.ui.timer.RestSoundChooser
+import monster.greyde.kachalochka.ui.timer.RestSoundPreference
+import monster.greyde.kachalochka.ui.timer.WebAudioRestAlarm
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -39,6 +45,9 @@ actual fun platformModule(): Module =
         single<ThemePreference> { LocalStorageThemePreference() }
         single<TransitionPreference> { LocalStorageTransitionPreference() }
         single<LanguagePreference> { LocalStorageLanguagePreference() }
+        single<RestSoundPreference> { LocalStorageRestSoundPreference() }
+        single<RestAlarm> { WebAudioRestAlarm() }
+        single<RestSoundChooser> { FixedRestSound }
         single { SystemLanguage { window.navigator.language } }
         single<GoogleSignIn> { RedirectGoogleSignIn(get()) }
         single { SignInRequired(true) }

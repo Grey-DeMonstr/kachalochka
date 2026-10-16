@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.runScreenTestInEnglish
+import monster.greyde.kachalochka.ui.timer.RestSound
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -93,6 +94,45 @@ class SettingsScreenTest {
         runScreenTest(FakeGym(), screen = { settings() }) {
             onNodeWithTag("transition-millis").assertTextEquals("150")
         }
+    }
+
+    @Test
+    fun switching_the_timer_sound_on_asks_for_notifications_and_waits_for_apply() {
+        val gym = FakeGym()
+        runScreenTest(gym, screen = { settings() }) {
+            onNodeWithTag("rest-sound-off").performScrollTo().assertIsSelected()
+            onNodeWithTag("rest-sound-pick").assertDoesNotExist()
+
+            onNodeWithTag("rest-sound-on").performScrollTo().performClick()
+
+            onNodeWithTag("rest-sound-pick").assertExists()
+            assertEquals(false, gym.restSounds.sound.value.enabled)
+            onNodeWithTag("apply-settings").performScrollTo().performClick()
+            waitForIdle()
+        }
+        assertEquals(1, gym.restSoundChooser.notificationAsks)
+        assertEquals(true, gym.restSounds.sound.value.enabled)
+    }
+
+    @Test
+    fun a_picked_timer_sound_shows_its_name_and_waits_for_apply() {
+        val gym = FakeGym()
+        runBlocking { gym.restSounds.set(RestSound(enabled = true)) }
+        runScreenTest(gym, screen = { settings() }) {
+            onNodeWithTag(
+                "rest-sound-name",
+                useUnmergedTree = true,
+            ).assertTextEquals("По умолчанию")
+
+            onNodeWithTag("rest-sound-pick").performScrollTo().performClick()
+
+            onNodeWithTag("rest-sound-name", useUnmergedTree = true)
+                .assertTextEquals("content://sound/7")
+            onNodeWithTag("apply-settings").performScrollTo().performClick()
+            waitForIdle()
+        }
+        assertEquals(RestSound(true, "content://sound/7"), gym.restSounds.sound.value)
+        assertEquals(0, gym.restSoundChooser.notificationAsks)
     }
 
     @Test

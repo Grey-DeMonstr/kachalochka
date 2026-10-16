@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
 import monster.greyde.kachalochka.sync.startVisitNormalization
 import monster.greyde.kachalochka.ui.friends.warmGroups
+import monster.greyde.kachalochka.ui.timer.startRestSound
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
@@ -26,6 +27,7 @@ class KachalochkaApplication : Application() {
         koin.warmGroups()
         // Signed-in accounts are normalized by the sync pass, once they have pulled.
         koin.startVisitNormalization(listOf(null))
+        koin.startRestSound()
         val sync = koin.get<SyncTrigger>()
         // At launch and on every return to the foreground; leaving the app ends a session, so
         // what it recorded goes out then too.

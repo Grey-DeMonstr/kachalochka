@@ -437,6 +437,13 @@ interface Strings {
 
     fun transitionsHint(max: Int): String
 
+    val restSound: String
+    val restSoundOff: String
+    val restSoundOn: String
+    val restSoundChoice: String
+    val restSoundHint: String
+    val restNotificationChannel: String
+    val restNotificationTitle: String
     val apply: String
     val applyTitle: String
     val discard: String

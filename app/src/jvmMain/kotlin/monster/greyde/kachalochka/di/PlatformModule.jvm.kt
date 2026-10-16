@@ -26,6 +26,12 @@ import monster.greyde.kachalochka.ui.strings.SystemLanguage
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.theme.ThemePreference
+import monster.greyde.kachalochka.ui.timer.FixedRestSound
+import monster.greyde.kachalochka.ui.timer.InMemoryRestSoundPreference
+import monster.greyde.kachalochka.ui.timer.NoRestAlarm
+import monster.greyde.kachalochka.ui.timer.RestAlarm
+import monster.greyde.kachalochka.ui.timer.RestSoundChooser
+import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -36,6 +42,9 @@ actual fun platformModule(): Module =
         single<ThemePreference> { InMemoryThemePreference() }
         single<TransitionPreference> { InMemoryTransitionPreference() }
         single<LanguagePreference> { InMemoryLanguagePreference() }
+        single<RestSoundPreference> { InMemoryRestSoundPreference() }
+        single<RestAlarm> { NoRestAlarm }
+        single<RestSoundChooser> { FixedRestSound }
         // The host tests assert Russian text, whatever the machine running them speaks.
         single { SystemLanguage { "ru" } }
         single<GoogleSignIn> { UnavailableGoogleSignIn }

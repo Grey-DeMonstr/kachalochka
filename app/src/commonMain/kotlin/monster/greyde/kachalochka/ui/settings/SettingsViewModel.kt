@@ -35,6 +35,8 @@ import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.theme.ThemePreference
+import monster.greyde.kachalochka.ui.timer.RestSound
+import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -87,6 +89,7 @@ data class DeviceUi(
     val theme: ThemeMode,
     val transition: String,
     val language: AppLanguage,
+    val restSound: RestSound,
 )
 
 /** Account deletion: offered while an account is signed in, under "Дополнительно". */
@@ -112,6 +115,7 @@ class SettingsViewModel(
     private val themes: ThemePreference,
     private val transitions: TransitionPreference,
     private val languages: LanguagePreference,
+    private val restSounds: RestSoundPreference,
     private val photos: PhotoRepository,
     private val avatars: AccountAvatars,
 ) : ViewModel() {
@@ -149,7 +153,12 @@ class SettingsViewModel(
     }
 
     private fun storedDevice() =
-        DeviceUi(themes.mode.value, transitions.millis.value.toString(), languages.language.value)
+        DeviceUi(
+            themes.mode.value,
+            transitions.millis.value.toString(),
+            languages.language.value,
+            restSounds.sound.value,
+        )
 
     private suspend fun load() {
         val owner = currentUser.id()
@@ -220,6 +229,12 @@ class SettingsViewModel(
 
     fun chooseLanguage(language: AppLanguage) = editDevice { it.copy(language = language) }
 
+    fun chooseRestSound(enabled: Boolean) =
+        editDevice { it.copy(restSound = it.restSound.copy(enabled = enabled)) }
+
+    fun pickRestSound(uri: String?) =
+        editDevice { it.copy(restSound = it.restSound.copy(uri = uri)) }
+
     /** Text that is not a length in range is refused, so the field keeps its last valid value. */
     fun typeTransition(text: String) {
         if (transitionMillisOrNull(text) != null) editDevice { it.copy(transition = text) }
@@ -279,6 +294,7 @@ class SettingsViewModel(
             withContext(NonCancellable) {
                 themes.set(device.theme)
                 languages.set(device.language)
+                restSounds.set(device.restSound)
                 transitionMillisOrNull(device.transition)?.let { transitions.set(it) }
                 if ((writeProfile || avatar != null) && shown != null) {
                     saveProfile(owner, shown.takeIf { writeProfile }, avatar)

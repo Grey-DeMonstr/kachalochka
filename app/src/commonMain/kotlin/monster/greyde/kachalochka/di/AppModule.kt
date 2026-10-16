@@ -51,6 +51,7 @@ import monster.greyde.kachalochka.ui.plans.PlanFormViewModel
 import monster.greyde.kachalochka.ui.plans.PlansViewModel
 import monster.greyde.kachalochka.ui.settings.SettingsViewModel
 import monster.greyde.kachalochka.ui.stats.StatisticsViewModel
+import monster.greyde.kachalochka.ui.timer.RestSoundScheduler
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
 import monster.greyde.kachalochka.ui.visit.VisitViewModel
@@ -68,6 +69,7 @@ val appModule =
         single<Ticker> { Ticker { delay(1.seconds) } }
         single<UtcOffset> { UtcOffset(::platformUtcOffset) }
         single { RestTimer(get()) }
+        single { RestSoundScheduler(get(), get(), get(), get()) }
         single {
             val offset: UtcOffset = get()
             VisitNormalizer(get(), get(), get(), offset::at)

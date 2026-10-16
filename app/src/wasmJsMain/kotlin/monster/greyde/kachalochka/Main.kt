@@ -26,6 +26,7 @@ import monster.greyde.kachalochka.ui.friends.joinCodeOf
 import monster.greyde.kachalochka.ui.friends.parentCodeOf
 import monster.greyde.kachalochka.ui.friends.warmGroups
 import monster.greyde.kachalochka.ui.friends.withoutInviteCodes
+import monster.greyde.kachalochka.ui.timer.startRestSound
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import org.koin.core.qualifier.named
@@ -54,6 +55,7 @@ fun main() {
         koin.warmGroups()
         // The active account, reached through its id, is the only owner the web reads.
         koin.startVisitNormalization(emptyList())
+        koin.startRestSound()
         followFamily(koin.get())
         ComposeViewport(document.getElementById("app")!!) { App() }
     }

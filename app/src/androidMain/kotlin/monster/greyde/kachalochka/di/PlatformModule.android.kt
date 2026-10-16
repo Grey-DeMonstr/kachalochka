@@ -38,6 +38,12 @@ import monster.greyde.kachalochka.ui.theme.DataStoreThemePreference
 import monster.greyde.kachalochka.ui.theme.EdgeToEdgeSystemBars
 import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.theme.ThemePreference
+import monster.greyde.kachalochka.ui.timer.DataStoreRestSoundPreference
+import monster.greyde.kachalochka.ui.timer.RestAlarm
+import monster.greyde.kachalochka.ui.timer.RestSoundChooser
+import monster.greyde.kachalochka.ui.timer.RestSoundPreference
+import monster.greyde.kachalochka.ui.timer.ServiceRestAlarm
+import monster.greyde.kachalochka.ui.timer.SystemRestSoundChooser
 import okio.Path.Companion.toPath
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
@@ -77,6 +83,14 @@ actual fun platformModule(): Module =
                 CoroutineScope(SupervisorJob() + Dispatchers.Default),
             )
         }
+        single<RestSoundPreference> {
+            DataStoreRestSoundPreference(
+                get(),
+                CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            )
+        }
+        single<RestAlarm> { ServiceRestAlarm(androidContext()) }
+        single<RestSoundChooser> { SystemRestSoundChooser(androidContext()) }
         single { SystemLanguage { Locale.getDefault().toLanguageTag() } }
         single { ActivityHolder() }
         single { WorkManagerSyncTrigger(androidContext()) } bind SyncTrigger::class

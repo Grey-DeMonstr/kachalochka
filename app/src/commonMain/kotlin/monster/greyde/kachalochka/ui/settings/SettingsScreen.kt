@@ -59,6 +59,8 @@ import monster.greyde.kachalochka.ui.photos.photoLoader
 import monster.greyde.kachalochka.ui.strings.AppLanguage
 import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.ThemeMode
+import monster.greyde.kachalochka.ui.timer.RestSound
+import monster.greyde.kachalochka.ui.timer.RestSoundChooser
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -118,6 +120,8 @@ fun SettingsScreen(
                 KeyboardOptions(keyboardType = KeyboardType.Number),
             )
             Hint(strings().transitionsHint(MAX_TRANSITION_MILLIS))
+            SectionTitle(strings().restSound)
+            RestSoundSection(device.restSound, viewModel)
             AccentButton(
                 strings().apply,
                 PhosphorIcons.Check,
@@ -201,6 +205,55 @@ private fun Hint(text: String) {
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.64f),
     )
+}
+
+@Composable
+private fun RestSoundSection(
+    sound: RestSound,
+    viewModel: SettingsViewModel,
+) {
+    val chooser: RestSoundChooser = koinInject()
+    val launchers = chooser.rememberLaunchers(viewModel::pickRestSound)
+    ChoiceRow(
+        listOf(
+            Choice(strings().restSoundOff, "rest-sound-off"),
+            Choice(strings().restSoundOn, "rest-sound-on"),
+        ),
+        selected = if (sound.enabled) 1 else 0,
+        onSelect = {
+            val on = it == 1
+            if (on && !sound.enabled) launchers?.allowNotifications?.invoke()
+            viewModel.chooseRestSound(on)
+        },
+    )
+    if (sound.enabled && launchers != null) {
+        val name = remember(sound.uri, launchers) { launchers.nameOf(sound.uri) }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable { launchers.pick(sound.uri) }
+                .padding(vertical = 8.dp)
+                .testTag("rest-sound-pick"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                FieldLabel(strings().restSoundChoice)
+                Text(
+                    name,
+                    Modifier.testTag("rest-sound-name"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.64f),
+                )
+            }
+            Icon(
+                PhosphorIcons.CaretRight,
+                null,
+                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+    Hint(strings().restSoundHint)
 }
 
 @Composable

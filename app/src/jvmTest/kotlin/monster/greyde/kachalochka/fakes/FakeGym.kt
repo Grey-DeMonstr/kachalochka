@@ -73,6 +73,7 @@ import monster.greyde.kachalochka.ui.photos.PhotoLaunchers
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.SystemBars
+import monster.greyde.kachalochka.ui.timer.InMemoryRestSoundPreference
 import monster.greyde.kachalochka.ui.timer.Ticker
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -446,6 +447,8 @@ class FakeGym(
     val texts = RecordingTextSharing()
     val footer = RecordingPageFooter()
     val themes = InMemoryThemePreference()
+    val restSounds = InMemoryRestSoundPreference()
+    val restSoundChooser = InstantRestSoundChooser("content://sound/7")
     val systemBars = RecordingSystemBars()
     val joinCodes = InMemoryJoinCodeStore()
     val parentCodes = InMemoryJoinCodeStore()

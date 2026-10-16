@@ -46,6 +46,8 @@ import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.theme.ThemePreference
+import monster.greyde.kachalochka.ui.timer.RestSoundChooser
+import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import monster.greyde.kachalochka.ui.timer.Ticker
 import org.koin.compose.KoinApplication
 import org.koin.core.module.dsl.viewModelOf
@@ -86,6 +88,8 @@ fun fakeGymModule(gym: FakeGym) =
         single<JoinCodeStore>(named(PARENT_CODE)) { gym.parentCodes }
         single<PageFooter> { gym.footer }
         single<ThemePreference> { gym.themes }
+        single<RestSoundPreference> { gym.restSounds }
+        single<RestSoundChooser> { gym.restSoundChooser }
         single<SystemBars> { gym.systemBars }
         single { gym.unsaved }
         viewModelOf(::AccountsViewModel)

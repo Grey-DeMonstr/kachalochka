@@ -492,6 +492,13 @@ object RuStrings : Strings {
 
     override fun transitionsHint(max: Int) = "Миллисекунды, до $max; 0 — без анимации"
 
+    override val restSound = "Звук таймера"
+    override val restSoundOff = "Выключен"
+    override val restSoundOn = "Включён"
+    override val restSoundChoice = "Звук"
+    override val restSoundHint = "Звучит в конце отдыха."
+    override val restNotificationChannel = "Таймер отдыха"
+    override val restNotificationTitle = "Отдых"
     override val apply = "Применить"
     override val applyTitle = "Применить изменения?"
     override val discard = "Не применять"

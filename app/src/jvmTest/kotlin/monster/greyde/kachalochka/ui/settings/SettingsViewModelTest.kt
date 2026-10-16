@@ -24,6 +24,8 @@ import monster.greyde.kachalochka.ui.strings.AppLanguage
 import monster.greyde.kachalochka.ui.strings.InMemoryLanguagePreference
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.ThemeMode
+import monster.greyde.kachalochka.ui.timer.InMemoryRestSoundPreference
+import monster.greyde.kachalochka.ui.timer.RestSound
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -50,6 +52,7 @@ class SettingsViewModelTest {
     private val themes = InMemoryThemePreference()
     private val transitions = InMemoryTransitionPreference()
     private val languages = InMemoryLanguagePreference()
+    private val restSounds = InMemoryRestSoundPreference()
 
     private fun viewModel() =
         SettingsViewModel(
@@ -63,6 +66,7 @@ class SettingsViewModelTest {
             themes,
             transitions,
             languages,
+            restSounds,
             gym.photos,
             AccountAvatars(gym.accounts, gym.profiles),
         )
@@ -537,6 +541,35 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun the_timer_sound_is_off_and_switches_on_only_when_applied() =
+        runTest {
+            val vm = viewModel()
+            assertFalse(vm.device.value.restSound.enabled)
+
+            vm.chooseRestSound(true)
+
+            assertFalse(restSounds.sound.value.enabled)
+            assertTrue(vm.canApply.value)
+            vm.apply()
+            assertEquals(RestSound(enabled = true), restSounds.sound.value)
+            assertFalse(vm.canApply.value)
+        }
+
+    @Test
+    fun a_picked_sound_waits_for_apply() =
+        runTest {
+            restSounds.set(RestSound(enabled = true))
+            val vm = viewModel()
+
+            vm.pickRestSound("content://sound/7")
+
+            assertEquals("content://sound/7", vm.device.value.restSound.uri)
+            assertNull(restSounds.sound.value.uri)
+            vm.apply()
+            assertEquals(RestSound(true, "content://sound/7"), restSounds.sound.value)
+        }
+
+    @Test
     fun an_invalid_profile_field_holds_back_every_change() =
         runTest {
             val vm = viewModel()
@@ -664,6 +697,7 @@ class SettingsViewModelTest {
                     themes,
                     transitions,
                     GatedLanguages(gate),
+                    restSounds,
                     gym.photos,
                     AccountAvatars(gym.accounts, gym.profiles),
                 )
