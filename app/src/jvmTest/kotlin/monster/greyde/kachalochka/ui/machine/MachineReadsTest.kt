@@ -56,7 +56,7 @@ class MachineReadsTest {
 
     private fun setOn(
         machine: Machine,
-        owner: UserId,
+        owner: UserId?,
     ) = WorkoutSet(
         WorkoutSetId.random(),
         owner,
@@ -282,6 +282,58 @@ class MachineReadsTest {
 
             assertTrue(first.friendPeaks.isEmpty())
             assertTrue(first.colors.isEmpty())
+        }
+
+    @Test
+    fun signed_out_cards_carry_the_local_peaks() =
+        runTest {
+            val out = FakeGym()
+            val machine = Machine.new("Тяга", null, t0)
+            out.machines.upsert(machine)
+            out.sets.upsert(setOn(machine, null))
+
+            val only =
+                out.machineReads
+                    .machines(null, withCards = true)
+                    .toList()
+                    .single()
+
+            assertEquals(listOf(machine.id), only.ownPeaks.map { it.machineId })
+            assertTrue(only.friendPeaks.isEmpty())
+        }
+
+    @Test
+    fun a_group_stream_stops_when_the_account_changes_after_the_cached_read() =
+        runTest {
+            val on = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
+            olegsGym(on)
+            on.catalogue.group(ME.userId)
+            val before = on.friends.reads
+
+            val seen = mutableListOf<GroupRead>()
+            on.machineReads.group(ME.userId).collect {
+                seen += it
+                on.accounts.switchTo(misha.account.userId)
+            }
+
+            assertEquals(1, seen.size)
+            assertEquals(before, on.friends.reads)
+        }
+
+    @Test
+    fun cards_are_not_read_once_the_account_has_changed() =
+        runTest {
+            val on = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
+            olegsGym(on)
+            on.friends.sets += setOn(olegRow, OLEG.userId)
+
+            var seen = 0
+            on.machineReads.machines(ME.userId, withCards = true).collect {
+                if (++seen == 2) on.accounts.switchTo(misha.account.userId)
+            }
+
+            assertEquals(2, seen)
+            assertEquals(1, on.friends.reads)
         }
 
     @Test

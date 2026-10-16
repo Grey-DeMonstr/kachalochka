@@ -57,7 +57,9 @@ class MachineReads(
         flow {
             if (!isActive(owner)) return@flow
             val cached = cachedRead(owner)
-            if (cached != null && isActive(owner)) emit(cached)
+            if (!isActive(owner)) return@flow
+            if (cached != null) emit(cached)
+            if (!isActive(owner)) return@flow
             val fresh = freshRead(owner)
             if (isActive(owner)) emit(fresh)
         }
@@ -79,17 +81,13 @@ class MachineReads(
                 if (!isActive(owner)) return null
                 val shown = ShownMachines(own, group?.machines)
                 val read =
-                    if (withCards && owner != null) {
-                        MachineRead(
-                            shown,
-                            group,
-                            ownPeaks,
-                            lastPeaks.value[owner].orEmpty(),
-                            lastColors.value[owner].orEmpty(),
-                        )
-                    } else {
-                        MachineRead(shown, group)
-                    }
+                    MachineRead(
+                        shown,
+                        group,
+                        ownPeaks,
+                        owner?.takeIf { withCards }?.let { lastPeaks.value[it] }.orEmpty(),
+                        owner?.takeIf { withCards }?.let { lastColors.value[it] }.orEmpty(),
+                    )
                 emit(read)
                 return read
             }
@@ -108,14 +106,17 @@ class MachineReads(
         owner: UserId,
         last: MachineRead,
     ) {
-        reading { friends.groupPeaks(owner) }
-            .onSuccess { peaks -> lastPeaks.update { it + (owner to peaks) } }
+        if (!isActive(owner)) return
+        val peaks = reading { friends.groupPeaks(owner) }
+        if (!isActive(owner)) return
+        peaks.onSuccess { found -> lastPeaks.update { it + (owner to found) } }
         val offered =
             last.shown.offered
                 .map { it.owner.userId }
                 .distinct()
-        reading { friendColors.colorsFor(owner, offered) }
-            .onSuccess { colors -> lastColors.update { it + (owner to colors) } }
+        val colors = reading { friendColors.colorsFor(owner, offered) }
+        if (!isActive(owner)) return
+        colors.onSuccess { found -> lastColors.update { it + (owner to found) } }
     }
 
     private suspend fun cachedRead(owner: UserId): GroupRead? =
