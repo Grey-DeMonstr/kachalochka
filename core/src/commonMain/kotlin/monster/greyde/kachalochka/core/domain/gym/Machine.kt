@@ -60,7 +60,7 @@ fun ownStandIn(
 }
 
 /** Machine names that differ only in letter case or outer spaces are one name. */
-internal fun sameName(
+fun sameName(
     a: String,
     b: String,
 ): Boolean = a.trim().equals(b.trim(), ignoreCase = true)

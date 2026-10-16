@@ -81,7 +81,7 @@ fun MachineCard(
                     }
                 }
                 if (card.linkedWith.isNotEmpty()) {
-                    LinkedMachines(card.linkedWith, "card-linked-$id")
+                    LinkedMachines(card.linkedWith, "card-linked-$id", card.name)
                 }
                 if (card.inVisit) {
                     Text(
@@ -168,7 +168,7 @@ internal fun MachineRow(
             MachineThumbnail(photo, PhosphorIcons.Image)
             Column(Modifier.weight(1f)) {
                 Text(name, fontSize = 17.sp, color = colors.onBackground)
-                if (linkedWith.isNotEmpty()) LinkedMachines(linkedWith, "$tag-linked")
+                if (linkedWith.isNotEmpty()) LinkedMachines(linkedWith, "$tag-linked", name)
                 detail?.let {
                     Text(it, fontSize = 13.sp, color = colors.onBackground.copy(alpha = 0.52f))
                 }

@@ -129,7 +129,7 @@ private fun FriendVisitList(
                         tag = id,
                     )
                     if (group.linkedWith.isNotEmpty()) {
-                        LinkedMachines(group.linkedWith, "friend-linked-$id")
+                        LinkedMachines(group.linkedWith, "friend-linked-$id", group.title)
                     }
                 }
             }

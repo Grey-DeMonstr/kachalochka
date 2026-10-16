@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasAnyAncestor
@@ -21,6 +22,7 @@ import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
+import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -111,7 +113,8 @@ class MachineListScreenTest {
         val on = signedInGym()
         on.friends.group("Зал на Лесной", owner = OLEG, ME)
         val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
-        val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
+        val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
+        val mine = copy.copy(name = "Жим")
         on.friends.machines += olegs
         runBlocking {
             on.machines.upsert(mine)
@@ -122,6 +125,53 @@ class MachineListScreenTest {
             val row = hasAnyAncestor(hasTestTag("card-linked-${mine.id.value}-${olegs.id.value}"))
             onNode(hasText("Гакк-машина") and row, useUnmergedTree = true).assertIsDisplayed()
             onNode(hasText("О") and row, useUnmergedTree = true).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun linked_machines_of_one_name_share_it_and_the_machine_s_own_name_is_not_written() {
+        val on = signedInGym()
+        on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
+        val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
+        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, on.clock.current, emptySet())
+        val mine = copy.copy(name = "ГАКК-МАШИНА ")
+        on.friends.machines += listOf(olegs, pashas.copy(name = "гакк-машина"))
+        on.friends.links += pashaLink
+        runBlocking {
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+        }
+        runScreenTest(on, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
+            waitForIdle()
+            val row = hasAnyAncestor(hasTestTag("card-linked-${mine.id.value}-${olegs.id.value}"))
+            onNode(hasText("О") and row, useUnmergedTree = true).assertIsDisplayed()
+            onNode(hasText("П") and row, useUnmergedTree = true).assertIsDisplayed()
+            onAllNodes(hasText("Гакк-машина", ignoreCase = true) and row, useUnmergedTree = true)
+                .assertCountEquals(0)
+        }
+    }
+
+    @Test
+    fun linked_machines_of_other_names_share_a_name_once() {
+        val on = signedInGym()
+        on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
+        val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current, emptySet())
+        val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, on.clock.current, emptySet())
+        val mine = copy.copy(name = "Жим")
+        on.friends.machines += listOf(olegs, pashas.copy(name = "гакк-машина"))
+        on.friends.links += pashaLink
+        runBlocking {
+            on.machines.upsert(mine)
+            on.machineLinks.upsert(link)
+        }
+        runScreenTest(on, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
+            waitForIdle()
+            val row = hasAnyAncestor(hasTestTag("card-linked-${mine.id.value}-${olegs.id.value}"))
+            onNode(hasText("Гакк-машина") and row, useUnmergedTree = true).assertIsDisplayed()
+            onNode(hasText("О") and row, useUnmergedTree = true).assertIsDisplayed()
+            onNode(hasText("П") and row, useUnmergedTree = true).assertIsDisplayed()
         }
     }
 

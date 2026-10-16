@@ -540,7 +540,11 @@ only the links of the user's group mates, so a chain through a person outside th
 stops there.
 Every list of linked machines starts with a link icon and puts the owner's avatar before each
 machine name: the user's own machines first, then the friends' by owner and then by name. In the
-form, tapping one opens it: an own machine in its form, a friend's as from the machine list.
+machine list, the pickers and the friend's visit, machines with the same name (letter case and
+outer spaces ignored) show it once, after all their owners' avatars. A name equal to the name of
+the machine itself is not written, and only the avatars stay. In the form and in a friend's
+machine, each linked machine has its own row, and tapping one opens it: an own machine in its
+form, a friend's as from the machine list.
 "Отвязать от друзей" in the form's menu,
 after a confirmation, breaks every link between the machine and friends' machines, whichever side
 made it.
