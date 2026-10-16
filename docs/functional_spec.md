@@ -640,9 +640,12 @@ Every list of linked machines starts with a link icon and puts the owner's avata
 machine name: the user's own machines first, then the friends' by owner and then by name. In the
 machine list, the pickers and the friend's visit, machines with the same name (letter case and
 outer spaces ignored) show it once, after all their owners' avatars. A name equal to the name of
-the machine itself is not written, and only the avatars stay. In the form and in a friend's
-machine, each linked machine has its own row, and tapping one opens it: an own machine in its
-form, a friend's as from the machine list.
+the machine itself is not written, and only the avatars stay. The owners' avatars before one name
+overlap, the first on top. The link icon stays alone at the left: every line of names starts after
+it. A long name wraps under its own first line, which stays on one line with its avatars; a name
+that does not fit after the one before starts a new line. In the form and in a friend's machine,
+each linked machine has its own row, and tapping one opens it: an own machine in its form, a
+friend's as from the machine list.
 Once the friends' machines are read, the machine list, the picker, the form, "Привязать к…",
 "Привязать к моему", a friend's machine, the visit screen and the statistics use that read at
 once and bring it up to date when the server answers; the machine list and the picker also show
