@@ -18,7 +18,5 @@
       "WebFetch(domain:supabase.com)"
     ]
   },
-  "enabledPlugins": {
-    "superpowers@claude-plugins-official": true
-  }
+  "enabledPlugins": {}
 }
