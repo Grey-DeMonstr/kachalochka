@@ -333,6 +333,38 @@ class AppTest {
         }
     }
 
+    @Test
+    fun a_machine_opened_from_a_plan_returns_to_it_as_edited() {
+        val now = gym.clock.current
+        val press = Machine.new("Жим ногами", null, now)
+        val legs = Plan(PlanId.random(), null, "Ноги", listOf(press.id), now, now, false)
+        runBlocking {
+            gym.machines.upsert(press)
+            gym.plans.upsert(legs)
+        }
+        runApp {
+            onNodeWithTag("section-plans").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-row-${legs.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-machine-${press.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-name").assertTextContains("Жим ногами")
+            onNodeWithTag("machine-name").performTextReplacement("Платформа")
+            onNodeWithTag("save-machine").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("План")
+            onNodeWithText("Платформа").assertIsDisplayed()
+            assertEquals(
+                listOf(press.id),
+                gym.plans.rows
+                    .getValue(legs.id)
+                    .machineIds,
+            )
+        }
+    }
+
     /** A new "Жим ногами" and its duplicate "Жим ногами старый", which has a set already. */
     private fun duplicatePresses(): Pair<Machine, Machine> {
         val now = gym.clock.current

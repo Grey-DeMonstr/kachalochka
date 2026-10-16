@@ -52,6 +52,7 @@ import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.SquareToggleButton
 import monster.greyde.kachalochka.ui.components.TagText
+import monster.greyde.kachalochka.ui.components.clickableUnless
 import monster.greyde.kachalochka.ui.components.dragOutline
 import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
@@ -414,12 +415,6 @@ internal fun TagChip(
         color = colors.onPrimaryContainer,
     )
 }
-
-/** Keeps the drag handle its own node for tests and accessibility. */
-internal fun Modifier.clickableUnless(
-    ordering: Boolean,
-    onClick: () -> Unit,
-): Modifier = if (ordering) this else clickable(onClick = onClick)
 
 @Composable
 internal fun SetRow(

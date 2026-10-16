@@ -539,7 +539,9 @@ would be refused by RLS or written across accounts (§4.3).
 
 The form reads the own machines with `MachineCatalogue.own` for its writes, and the group with
 `MachineReads.group` for the rows only: `ShownMachines` gives each row its cover, a linked friend's
-photo included, from the last group read first.
+photo included, from the last group read first. A row opens the machine form with `fromList`, so
+its save returns to the plan, and the screen calls `refresh` each time it is shown again, which
+reads the own machines and the group again.
 
 A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
 member's `linked_machine_id`. Neither column is a foreign key and no policy checks either against

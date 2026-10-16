@@ -72,6 +72,21 @@ class PlanFormViewModelTest {
     private fun stored() = gym.plans.rows.getValue(legs.id)
 
     @Test
+    fun shown_again_it_shows_a_machine_as_its_form_left_it() =
+        runTest {
+            val vm = viewModel(legs.id)
+            gym.machines.upsert(press.copy(name = "Платформа"))
+
+            vm.refresh()
+
+            assertEquals(
+                listOf("Платформа", "Тяга"),
+                vm.state.value.rows
+                    .map { it.name },
+            )
+        }
+
+    @Test
     fun a_linked_friend_s_photo_stands_in_for_a_machine_without_one() =
         runTest {
             val signed = signedInGym()

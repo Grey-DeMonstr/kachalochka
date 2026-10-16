@@ -220,6 +220,9 @@ fun App() {
                         onDone = { navController.popBackStack() },
                         fromVisit = route.fromVisit?.let(CalendarDay::parse),
                         machine = route.machineId?.let(::MachineId),
+                        onOpenMachine = {
+                            navController.navigate(MachineFormRoute(it.value, fromList = true))
+                        },
                     )
                 }
                 composable<MeasuresRoute> {

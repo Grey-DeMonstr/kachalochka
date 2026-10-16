@@ -111,6 +111,75 @@ class PlanFormScreenTest {
         }
 
     @Test
+    fun tapping_a_machine_opens_its_form() {
+        val opened = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            PlanFormScreen(
+                legs.id,
+                null,
+                {},
+                {},
+                {},
+                onDone = { done++ },
+                onOpenMachine = { opened += it },
+            )
+        }) {
+            waitForIdle()
+            onNodeWithTag("plan-machine-${press.id.value}").performClick()
+            waitForIdle()
+            assertEquals(listOf(press.id), opened)
+            assertEquals(0, done)
+        }
+    }
+
+    @Test
+    fun the_remove_button_removes_without_opening_the_machine() {
+        val opened = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            PlanFormScreen(
+                legs.id,
+                null,
+                {},
+                {},
+                {},
+                onDone = { done++ },
+                onOpenMachine = { opened += it },
+            )
+        }) {
+            waitForIdle()
+            onNodeWithTag("remove-${press.id.value}").performClick()
+            waitForIdle()
+            assertEquals(emptyList(), opened)
+            assertEquals(emptyList(), stored().machineIds)
+        }
+    }
+
+    @Test
+    fun while_ordering_a_tap_on_a_machine_opens_nothing() {
+        val back = Plan(PlanId.random(), null, "Спина", listOf(press.id, row.id), t0, t0, false)
+        runBlocking { gym.plans.upsert(back) }
+        val opened = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            PlanFormScreen(
+                back.id,
+                null,
+                {},
+                {},
+                {},
+                onDone = { done++ },
+                onOpenMachine = { opened += it },
+            )
+        }) {
+            waitForIdle()
+            onNodeWithTag("plan-reorder").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-machine-${row.id.value}").performClick()
+            waitForIdle()
+            assertEquals(emptyList(), opened)
+        }
+    }
+
+    @Test
     fun the_name_is_written_when_its_field_loses_focus() =
         runScreenTest(gym, screen = {
             PlanFormScreen(legs.id, null, {}, {}, {}, onDone = { done++ })

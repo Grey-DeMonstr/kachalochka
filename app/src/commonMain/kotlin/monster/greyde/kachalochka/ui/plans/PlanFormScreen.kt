@@ -42,6 +42,7 @@ import monster.greyde.kachalochka.ui.components.SectionLabel
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.SquareToggleButton
 import monster.greyde.kachalochka.ui.components.TextInput
+import monster.greyde.kachalochka.ui.components.clickableUnless
 import monster.greyde.kachalochka.ui.components.dragOutline
 import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
@@ -61,6 +62,7 @@ fun PlanFormScreen(
     onDone: () -> Unit,
     fromVisit: CalendarDay? = null,
     machine: MachineId? = null,
+    onOpenMachine: (MachineId) -> Unit = {},
 ) {
     val viewModel: PlanFormViewModel = koinViewModel { parametersOf(planId, fromVisit, machine) }
     val state by viewModel.state.collectAsState()
@@ -70,6 +72,7 @@ fun PlanFormScreen(
             onPickedMachineConsumed()
         }
     }
+    LaunchedEffect(Unit) { viewModel.refresh() }
     LaunchedEffect(state.done) { if (state.done) onDone() }
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
@@ -128,6 +131,7 @@ fun PlanFormScreen(
                         index,
                         order,
                         state.ordering,
+                        onOpen = { onOpenMachine(row.id) },
                         onRemove = { viewModel.remove(row.id) },
                         onDrop = viewModel::move,
                     )
@@ -162,6 +166,7 @@ private fun PlanMachineRow(
     index: Int,
     order: ReorderState,
     ordering: Boolean,
+    onOpen: () -> Unit,
     onRemove: () -> Unit,
     onDrop: (from: Int, to: Int) -> Unit,
 ) {
@@ -171,6 +176,7 @@ private fun PlanMachineRow(
         Row(
             Modifier
                 .fillMaxWidth()
+                .clickableUnless(ordering, onOpen)
                 .padding(vertical = 8.dp)
                 .testTag("plan-machine-$id"),
             horizontalArrangement = Arrangement.spacedBy(12.dp),

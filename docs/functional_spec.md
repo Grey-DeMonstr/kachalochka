@@ -520,8 +520,10 @@ visits and friends never see them.
 The plan form opens from a row or from "Новый план". "Название" takes up to 40 characters and reads
 "Без названия" while empty. Below it are the plan's machines in order, each with its photo — the
 one chosen in its form, else its first photo, else the first photo of a friend's machine linked
-with it — and a remove button. The order button in the top bar shows a drag handle at the left of
-every machine. "Добавить упражнение" opens the machine picker, which in a plan shows each machine's
+with it — and a remove button. Tapping a machine opens its form; back or "Сохранить" returns to
+the plan, which shows the machine as the form left it. The order button in the top bar shows a
+drag handle at the left of every machine. While it is on, tapping a machine opens nothing.
+"Добавить упражнение" opens the machine picker, which in a plan shows each machine's
 last result and offers no "Скопировать упражнение"; a machine already in the plan is not added
 twice. The pin button in the top bar ("Закрепить") pins the plan and stays lit while it is pinned;
 a second tap unpins it. The form saves itself: the plan when a machine is added, removed or moved

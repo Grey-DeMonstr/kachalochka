@@ -117,6 +117,7 @@ class PlanFormViewModel(
                     serially(::load)
                 } else if (active != owner) {
                     pause?.cancel()
+                    groupReading?.cancel()
                     done = true
                     publish()
                 }
@@ -194,6 +195,18 @@ class PlanFormViewModel(
                 }
         }
         store(leaving = false)
+    }
+
+    /** The machine form may have renamed, changed or deleted a machine since the last read. */
+    fun refresh() {
+        if (!loaded || done) return
+        reading?.cancel()
+        reading =
+            viewModelScope.launch {
+                own = catalogue.own(owner)
+                publish()
+            }
+        readGroup()
     }
 
     fun remove(id: MachineId) {
