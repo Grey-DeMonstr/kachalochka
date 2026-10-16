@@ -71,6 +71,7 @@ class AccountsViewModel(
     private val accounts: Accounts,
     private val sync: SyncTrigger,
     private val avatars: AccountAvatars,
+    private val held: HeldWrites,
 ) : ViewModel() {
     val state: StateFlow<AccountsUi> =
         combine(
@@ -100,7 +101,10 @@ class AccountsViewModel(
     }
 
     fun switchTo(id: UserId) {
-        viewModelScope.launch { accounts.switchTo(id) }
+        viewModelScope.launch {
+            held.writeAll()
+            accounts.switchTo(id)
+        }
     }
 
     fun signOutActive() {

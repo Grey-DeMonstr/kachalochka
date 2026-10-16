@@ -18,6 +18,7 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.account.HeldWrites
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -36,6 +37,7 @@ class PlanFormViewModelTest {
     private val legs = Plan(PlanId.random(), null, "Ноги", listOf(press.id, row.id), t0, t0, false)
 
     private val main = UnconfinedTestDispatcher()
+    private val held = HeldWrites()
 
     private fun viewModel(
         id: PlanId?,
@@ -53,6 +55,7 @@ class PlanFormViewModelTest {
         gym.clock,
         gym.catalogue,
         FailureLog { gym.failures += it },
+        held,
     )
 
     private fun newPlans() =
@@ -188,6 +191,19 @@ class PlanFormViewModelTest {
         assertTrue(vm.state.value.done)
         assertEquals(legs, stored())
     }
+
+    @Test
+    fun a_switch_from_the_account_menu_writes_the_typed_name_first() =
+        runTest(main) {
+            val vm = viewModel(legs.id)
+            vm.typeName("Спина")
+
+            held.writeAll()
+            gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+
+            assertTrue(vm.state.value.done)
+            assertEquals("Спина", stored().name)
+        }
 
     @Test
     fun switching_accounts_while_a_new_plan_is_read_writes_nothing() {

@@ -88,7 +88,7 @@ class AccountsViewModelTest {
                 NoOpOwnerlessRows(),
                 NoWatermarkReset,
             )
-        return AccountsViewModel(accounts, sync, AccountAvatars(accounts, reads))
+        return AccountsViewModel(accounts, sync, AccountAvatars(accounts, reads), HeldWrites())
     }
 
     @Test

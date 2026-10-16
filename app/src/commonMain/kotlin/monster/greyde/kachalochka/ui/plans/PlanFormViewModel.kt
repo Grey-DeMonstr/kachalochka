@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.ui.plans
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -23,6 +24,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.account.HeldWrites
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.OwnMachines
@@ -66,6 +68,7 @@ class PlanFormViewModel(
     private val clock: Clock,
     private val catalogue: MachineCatalogue,
     private val failures: FailureLog,
+    held: HeldWrites,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PlanFormUiState())
     val state: StateFlow<PlanFormUiState> = mutableState
@@ -87,6 +90,7 @@ class PlanFormViewModel(
     private var ordering = false
     private var confirmingDelete = false
     private var done = false
+    private val release = held.hold(::writeHeld)
 
     init {
         viewModelScope.launch {
@@ -225,6 +229,25 @@ class PlanFormViewModel(
             }
         }
     }
+
+    /** Writes the name typed since the last write; a switch to another account waits for it. */
+    private suspend fun writeHeld() {
+        pause?.cancel()
+        val written = CompletableDeferred<Unit>()
+        serially {
+            try {
+                reading?.join()
+                if (loaded && !done) write()
+            } finally {
+                written.complete(Unit)
+            }
+        }
+        // A cleared form never runs its queue again.
+        viewModelScope.coroutineContext[Job]?.invokeOnCompletion { written.complete(Unit) }
+        written.await()
+    }
+
+    override fun onCleared() = release()
 
     private fun serially(task: suspend () -> Unit) {
         queue.trySend(task)
