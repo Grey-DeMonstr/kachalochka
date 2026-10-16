@@ -15,11 +15,8 @@ fun linkSuggestions(
             val cluster = clusters.of(machine.id)
             val merges =
                 own.filter {
-                    it.id != machine.id && (it.id in cluster || it.name.sameName(machine.name))
+                    it.id != machine.id && (it.id in cluster || sameName(it.name, machine.name))
                 }
             machine.id to merges.sortedWith(byName)
         }.filterValues { it.isNotEmpty() }
 }
-
-private fun String.sameName(other: String): Boolean =
-    trim().equals(other.trim(), ignoreCase = true)

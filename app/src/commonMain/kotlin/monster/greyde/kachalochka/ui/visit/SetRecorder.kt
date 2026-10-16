@@ -3,7 +3,9 @@ package monster.greyde.kachalochka.ui.visit
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.ShownVisit
@@ -13,7 +15,10 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.dayVisit
+import monster.greyde.kachalochka.core.domain.gym.linkedCopy
+import monster.greyde.kachalochka.core.domain.gym.missingDirectLinks
 import monster.greyde.kachalochka.core.domain.gym.nextPosition
+import monster.greyde.kachalochka.core.domain.gym.ownStandIn
 import monster.greyde.kachalochka.core.domain.gym.recordingInstant
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.startedPlanned
@@ -31,6 +36,7 @@ class SetRecorder(
     private val day: CalendarDay,
     private val visits: VisitRepository,
     private val machines: MachineRepository,
+    private val links: MachineLinkRepository,
     private val sets: WorkoutSetRepository,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
@@ -128,16 +134,27 @@ class SetRecorder(
         if (changed.isNotEmpty()) pushIfPast()
     }
 
-    /** The owner's own machine standing for [shown]: itself, one of the same name, or a mirror. */
+    /**
+     * The owner's own machine standing for [shown], another account's on the device: its
+     * [ownStandIn], else a new copy linked to [shown] and to the rest of its cluster, as the two
+     * accounts' own links show it (spec §4.5).
+     */
     suspend fun ownCopy(
         owner: UserId?,
         shown: Machine,
     ): Machine {
         if (shown.userId == owner) return shown
-        machines.named(owner, shown.name)?.let { return it }
-        val mirrored = shown.copy(id = MachineId.random(), userId = owner, updatedAt = clock.now())
-        machines.upsert(mirrored)
-        return mirrored
+        val own = machines.all(owner)
+        val known = links.all(owner) + links.all(shown.userId)
+        val clusters = MachineClusters(known)
+        ownStandIn(shown, own, clusters)?.let { return it }
+        val now = clock.now()
+        val (copy, link) = linkedCopy(shown, owner, now, own.flatMap { it.tags })
+        machines.upsert(copy)
+        links.upsert(link)
+        missingDirectLinks(owner, listOf(copy.id), clusters.of(shown.id), known + link, now)
+            .forEach { links.upsert(it) }
+        return copy
     }
 
     private suspend fun shownOrNew(owner: UserId?): ShownVisit {

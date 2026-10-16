@@ -48,11 +48,32 @@ data class Machine(
     }
 }
 
-/** [owner]'s copy of a friend's machine, and the link that makes them one machine. */
+/** Of [own], the machine that stands for [shown]: one of its cluster, else one of its name. */
+fun ownStandIn(
+    shown: Machine,
+    own: List<Machine>,
+    clusters: MachineClusters,
+): Machine? {
+    val cluster = clusters.of(shown.id)
+    return own.firstOrNull { it.id in cluster }
+        ?: own.firstOrNull { sameName(it.name, shown.name) }
+}
+
+/** Machine names that differ only in letter case or outer spaces are one name. */
+internal fun sameName(
+    a: String,
+    b: String,
+): Boolean = a.trim().equals(b.trim(), ignoreCase = true)
+
+/**
+ * [owner]'s copy of a friend's machine, and the link that makes them one machine. The copy takes
+ * the friend's tags, spelled as in [known], the owner's tags.
+ */
 fun linkedCopy(
     friend: Machine,
     owner: UserId?,
     now: Instant,
+    known: Iterable<String> = emptySet(),
 ): Pair<Machine, MachineLink> {
     val copy =
         friend.copy(
@@ -60,7 +81,7 @@ fun linkedCopy(
             userId = owner,
             updatedAt = now,
             deleted = false,
-            tags = emptySet(),
+            tags = tagsSpelledAs(friend.tags, known),
         )
     return copy to MachineLink(MachineLinkId.random(), owner, copy.id, friend.id, now, false)
 }

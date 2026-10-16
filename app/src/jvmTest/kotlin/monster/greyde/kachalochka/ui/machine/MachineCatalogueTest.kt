@@ -363,6 +363,19 @@ class MachineCatalogueTest {
         }
 
     @Test
+    fun a_taken_machine_keeps_its_tags_in_the_account_s_spelling() =
+        runTest {
+            olegsGym()
+            gym.machines.upsert(myPress.copy(tags = setOf("НОГИ")))
+            val tagged = olegRow.copy(tags = setOf("ноги", "Спина"))
+            gym.friends.machines.replaceAll { if (it.id == olegRow.id) tagged else it }
+
+            val copy = catalogue.take(ME.userId, tagged, catalogue.group(ME.userId))
+
+            assertEquals(setOf("НОГИ", "Спина"), copy.tags)
+        }
+
+    @Test
     fun linking_an_own_machine_to_a_friend_s_links_it_to_the_whole_cluster() =
         runTest {
             olegsGym()

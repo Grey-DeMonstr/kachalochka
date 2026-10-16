@@ -139,7 +139,10 @@ taps. Editing offers
 "Сохранить", which closes the form, and a trash button that deletes the set. "Отмена", swiping the
 form down, or back, closes it, leaving any edit; starting to order closes the page. Tapping another
 account's chip switches to it: the shown history follows that person, and the set is recorded
-into their own visit. The chips show who records, so the button stays "Добавить".
+into their own visit. It goes to that person's machine linked with the shown one, else to their
+machine of the same name in any letter case. Without either, the app makes them a copy of the
+shown machine with its tags, linked to it and to the machines it is linked with. The chips show
+who records, so the button stays "Добавить".
 
 Every list of machines draws a machine the same way: its photo, its name, its tags, then, for the
 account's own machine, signed in and online, a link icon with the machines it is linked with, each
@@ -521,8 +524,9 @@ ends every row but the user's own with a colour dot. Tapping it opens a palette 
 the chosen one marks that friend's visits in the user's calendar and in the friend's calendar,
 opened from the group.
 
-A machine can be taken from a friend's list: the copy keeps the friend's settings and stays linked
-to the friend's machine as one physical machine. An own machine can also be linked to a friend's
+A machine can be taken from a friend's list: the copy keeps the friend's settings and tags and
+stays linked to the friend's machine as one physical machine. A tag the user already has in
+another letter case keeps the user's spelling. An own machine can also be linked to a friend's
 with "Привязать к…" in its form, or from the friend's machine with "Привязать к моему". Machines
 linked directly or through other friends' links are one machine: the picker no longer offers the
 friend's machine beside the user's own, the machine's page shows each friend's latest visit on it

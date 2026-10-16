@@ -423,7 +423,8 @@ implementations. A name the mapping does not know reads as `total` or `kg`: one 
 not stop a pull, and clients from 1.0.2 to 1.1.0 read a gravitron's `counterweight` as `total`. A
 custom unit's name is `unit_label`, empty for kg and lb. `machine.tags` is a JSON array of the
 machine's tag names, trimmed and distinct, `[]` for none; unreadable text or entries read as no
-tags, as `friend_colors` does. Tags are personal: `linkedCopy` starts without any. Migration
+tags, as `friend_colors` does. `linkedCopy` takes the friend's tags through `tagsSpelledAs` over
+the receiving account's tags, so a copy never brings a second spelling of a tag. Migration
 `0017` and `12.sqm` add the column, and `12.sqm` resets `lastPullAt`.
 
 Tags compare by `tagKey`, trimmed and lower-cased. The pure functions of `domain/gym/Tags.kt` hold
@@ -611,9 +612,14 @@ order.
 Every write to a day's sets goes through `SetRecorder` in `app/ui/visit`: it finds or creates the
 day's visit, replaces a machine of another account with the active account's own copy of it,
 gives a new set its position and instant, starts the rest timer for today's set and requests a
-sync for another day's, and amends, removes and reorders sets under the same rule. The visit view
-model keeps the state of the machine's page and its set form, both drawn by the visit screen over
-its list, and hands the recorder what to write.
+sync for another day's, and amends, removes and reorders sets under the same rule. The other
+account is one on the device, such as a child, so `ownCopy` reads both accounts' links locally:
+the account's machine of the shown one's cluster stands in for it, else one of the same trimmed,
+case-blind name (`ownStandIn`). Else it writes a `linkedCopy` and the links from the copy to
+every machine of that cluster (`missingDirectLinks`); the group read's upkeep adds the friends'
+machines those local links do not reach. The visit view model keeps the state of the machine's
+page and its set form, both drawn by the visit screen over its list, and hands the recorder what
+to write.
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

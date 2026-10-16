@@ -14,6 +14,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.DEFAULT_REPS
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.SetValues
@@ -174,6 +175,7 @@ class VisitViewModel(
     private val day: CalendarDay,
     private val visits: VisitRepository,
     private val machines: MachineRepository,
+    links: MachineLinkRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
@@ -193,7 +195,7 @@ class VisitViewModel(
     val state: StateFlow<VisitUiState?> = mutableState
     private val writes = WriteGuard(viewModelScope)
     private val recorder =
-        SetRecorder(day, visits, machines, sets, clock, utcOffset, restTimer, sync)
+        SetRecorder(day, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
 
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var visitSets: List<WorkoutSet> = emptyList()

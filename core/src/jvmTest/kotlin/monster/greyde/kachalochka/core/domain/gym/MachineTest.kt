@@ -44,12 +44,54 @@ class MachineTest {
     }
 
     @Test
-    fun a_linked_copy_starts_without_the_friend_s_tags() {
-        val theirs = Machine.new("Жим ногами", oleg, T0).copy(tags = setOf("Ноги"))
+    fun a_linked_copy_keeps_the_friend_s_tags() {
+        val theirs = Machine.new("Жим ногами", oleg, T0).copy(tags = setOf("Ноги", "Спина"))
 
         val (mine, _) = linkedCopy(theirs, ivan, T0)
 
-        assertEquals(emptySet(), mine.tags)
+        assertEquals(setOf("Ноги", "Спина"), mine.tags)
+    }
+
+    @Test
+    fun a_linked_copy_spells_a_tag_the_account_has_as_the_account_does() {
+        val theirs = Machine.new("Жим ногами", oleg, T0).copy(tags = setOf("ноги", "Спина"))
+
+        val (mine, _) = linkedCopy(theirs, ivan, T0, known = listOf("НОГИ", "Руки"))
+
+        assertEquals(setOf("НОГИ", "Спина"), mine.tags)
+    }
+
+    @Test
+    fun the_owner_s_machine_of_the_shown_one_s_cluster_stands_in_for_it_before_a_namesake() {
+        val theirs = Machine.new("Жим ногами", oleg, T0)
+        val namesake = Machine.new("Жим ногами", ivan, T0)
+        val linked = Machine.new("Платформа", ivan, T0)
+        val link = MachineLink(MachineLinkId.random(), oleg, theirs.id, linked.id, T0, false)
+
+        val standIn = ownStandIn(theirs, listOf(namesake, linked), MachineClusters(listOf(link)))
+
+        assertEquals(linked, standIn)
+    }
+
+    @Test
+    fun without_a_linked_machine_one_of_the_same_name_in_any_letter_case_stands_in() {
+        val theirs = Machine.new("Жим ногами", oleg, T0)
+        val namesake = Machine.new(" жим НОГАМИ", ivan, T0)
+        val other = Machine.new("Тяга", ivan, T0)
+
+        val standIn = ownStandIn(theirs, listOf(other, namesake), MachineClusters(emptyList()))
+
+        assertEquals(namesake, standIn)
+    }
+
+    @Test
+    fun nothing_stands_in_for_a_machine_the_owner_has_not_got() {
+        val theirs = Machine.new("Жим ногами", oleg, T0)
+
+        val standIn =
+            ownStandIn(theirs, listOf(Machine.new("Тяга", ivan, T0)), MachineClusters(emptyList()))
+
+        assertEquals(null, standIn)
     }
 
     @Test

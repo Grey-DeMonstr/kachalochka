@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
@@ -41,6 +42,7 @@ class PlansViewModel(
     private val plans: PlanRepository,
     private val visits: VisitRepository,
     private val machines: MachineRepository,
+    private val links: MachineLinkRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
@@ -113,7 +115,7 @@ class PlansViewModel(
             if (owner != shownTo) return@launch
             val now = clock.now()
             val today = CalendarDay.of(now, utcOffset.at(now))
-            SetRecorder(today, visits, machines, sets, clock, utcOffset, restTimer, sync)
+            SetRecorder(today, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
                 .plan(owner, plan.machineIds)
             plans.upsert(plan.copy(deleted = true, updatedAt = clock.now()))
             onStarted(today)
