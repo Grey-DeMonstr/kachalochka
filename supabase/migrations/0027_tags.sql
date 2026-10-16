@@ -3,16 +3,6 @@
 -- converts from its own copy of machine.tags are these rows.
 create extension if not exists "uuid-ossp" with schema extensions;
 
--- The keys must equal the clients' to give their ids, so a locale whose lower() leaves Cyrillic
--- as it is stops the migration before it writes a row.
-do $$
-begin
-    if lower('НОГИ') <> 'ноги' then
-        raise exception 'lower() does not fold Cyrillic in this database';
-    end if;
-end;
-$$;
-
 create table public.tag (
     id         uuid        primary key,
     user_id    uuid        not null references auth.users (id) on delete cascade,

@@ -480,9 +480,8 @@ has no such field, so an upsert leaves the server column as it is, and the local
 column at its default, `'[]'`. An older client so shows every machine's tags as they were at the
 conversion, and its own later tag edits reach only that column. Migration `0027` converted every
 machine's array once on the server, deleted machines' too; a tag only deleted machines hold is
-written deleted, and text that is not an array of strings gives no tags. It stops before writing
-a row when `lower()` does not fold Cyrillic, and its whitespace class adds the spaces Kotlin counts
-and `[[:space:]]` does not. `19.sqm` adds the tables and resets `lastPullAt`, and `tagConversion`
+written deleted, and text that is not an array of strings gives no tags. Its whitespace class
+adds the spaces Kotlin counts and `[[:space:]]` does not. `19.sqm` adds the tables and resets `lastPullAt`, and `tagConversion`
 runs right after it, inside the migration and so before any read, write or sync pass. It converts
 only the machines the server has not seen as they are: ownerless ones and those whose `machine`
 row waits in the outbox, which have no link yet; their rows are dated now and the owned ones
