@@ -65,10 +65,12 @@ import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.Invite
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
+import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoLaunchers
 import monster.greyde.kachalochka.ui.share.TextCopying
@@ -460,6 +462,17 @@ class FakeGym(
     )
 
     val catalogue = catalogueOver(machineLinks)
+
+    fun machineReadsOver(catalogue: MachineCatalogue = this.catalogue) =
+        MachineReads(
+            catalogue,
+            accounts,
+            sets,
+            friends,
+            FriendColorStore(profiles, clock, friends),
+        )
+
+    val machineReads = machineReadsOver()
     val unsaved = UnsavedChoices()
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()

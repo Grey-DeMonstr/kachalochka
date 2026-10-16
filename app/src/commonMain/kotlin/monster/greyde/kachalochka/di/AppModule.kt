@@ -43,6 +43,7 @@ import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
 import monster.greyde.kachalochka.ui.machine.MachineListViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePlacementViewModel
+import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.MineChooserViewModel
 import monster.greyde.kachalochka.ui.measures.BodyFatViewModel
 import monster.greyde.kachalochka.ui.measures.MeasureViewModel
@@ -84,6 +85,7 @@ val appModule =
         single { PhotoLoaders(get()) }
         single { AccountAvatars(get(), get()) }
         single { MachineCatalogue(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+        single { MachineReads(get(), get(), get(), get(), get()) }
         single { LinkUpkeep(get(), get()) }
         single { UnsavedChoices() }
         single {
