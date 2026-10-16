@@ -599,8 +599,7 @@ distance from the typed text to any part of the name (Sellers' algorithm), in lo
 a limit that grows with the typed length. `matchedPart` gives the indices of that part, for a
 highlight; of equally close parts, the first to end on the typed text's last letter. An own
 machine also matches by the names of the friends' machines in its cluster
-(`ShownMachines.linkedNames`), known only after the group read; the statistics read the group for
-this.
+(`ShownMachines.linkedNames`), known once a group read, cached or fresh, is in.
 
 `MachineCatalogue` in `app/ui/machine` is the one reader of all of this and the one place the
 screens write `machine_link` rows. Its `own` read gives an account's live machines, photos and
@@ -629,8 +628,18 @@ reads the group. A read that fails, as offline, waits for the next start or swit
 Group reads for one account share the read in flight, so the screens a sync pass reloads together
 send one request; when the screen that started it closes, the others read again. The catalogue
 keeps the last read of each account in memory, and `lastGroup` joins it to the own links read
-again, so the machine list, the picker, the form and "Упражнение друга" show it at once and the
-fresh read follows. The form reads the group once per load, for its links, photos and tags.
+again.
+
+`MachineReads` gives each screen one stream per account. `machines` emits the own read first,
+joined to the last group read when there is one, then the fresh read. `group` is the same without
+the own read, for the visit screen, which reads its own machines on each reload. A read that
+fails emits the last good one, marked offline. With `withCards`, `machines` adds both peaks and
+the friends' colours and keeps the last good ones per account. A stream ends without a further
+emission once its account is no longer active. The machine list, the picker, the form, both link
+choosers, "Упражнение друга", the visit screen and the statistics take friends' machines only
+from it. "Упражнение друга" shows "Нет связи с сервером" on an offline emission, and the form
+skips the own-only emission while it waits, so a re-read keeps its linked machines. The form
+reads the group once per load, for its links, photos and tags.
 
 `ShownMachines` joins an own read with a group read into what a screen shows, the clusters, each
 machine's cover photo and the friends' machines offered, and drops a group read made for another
@@ -640,6 +649,11 @@ another is active.
 `MachineCards` turns what a screen read — `ShownMachines` and both peaks — into the card every
 list draws, in the viewer's unit; the machine list and the picker group friends' cards by owner,
 each owner with the colour `FriendColorStore` gives them.
+
+`listing` in `MachineListing.kt` turns one read and a `MachineQuery` (the typed text, the chosen
+tags, the machines the visit holds, the suggestion chip) into what the list and the picker draw:
+`rankMachines` for the own machines, `nameMatches` and `hasAllTags` for the friends', `heldTags`,
+the tag chips and `MachineCards`.
 
 The machine form's "Привязать к…" chooser (`LinkChooserViewModel`) links an own machine to a
 friend's through `MachineCatalogue.link`, and merges two own machines. A merge removes a duplicate
