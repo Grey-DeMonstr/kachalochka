@@ -24,26 +24,32 @@ SELECT * FROM machine_tag WHERE id = ?;
 forMachine:
 SELECT * FROM machine_tag WHERE machine_id = ?;
 
+-- A link counts only between a machine and a tag of its own owner.
 liveNamesOf:
 SELECT machine_tag.machine_id, tag.name FROM machine_tag
-JOIN tag ON tag.id = machine_tag.tag_id
+JOIN machine ON machine.id = machine_tag.machine_id AND machine.user_id IS machine_tag.user_id
+JOIN tag ON tag.id = machine_tag.tag_id AND tag.user_id IS machine_tag.user_id
 WHERE machine_tag.deleted = 0 AND machine_tag.machine_id IN ?;
 
 liveNames:
 SELECT machine_tag.machine_id, tag.name FROM machine_tag
-JOIN tag ON tag.id = machine_tag.tag_id
+JOIN machine ON machine.id = machine_tag.machine_id AND machine.user_id IS machine_tag.user_id
+JOIN tag ON tag.id = machine_tag.tag_id AND tag.user_id IS machine_tag.user_id
 WHERE machine_tag.deleted = 0
   AND ((:owner IS NULL AND machine_tag.user_id IS NULL) OR machine_tag.user_id = :owner);
 
+-- A tag is in use while a live link from a live machine of its owner holds it.
 heldElsewhere:
-SELECT DISTINCT tag_id FROM machine_tag
-WHERE deleted = 0 AND machine_id <> :machine AND tag_id IN :tags;
-
-liveUses:
-SELECT COUNT(*) FROM machine_tag WHERE deleted = 0 AND tag_id = ?;
+SELECT DISTINCT machine_tag.tag_id FROM machine_tag
+JOIN machine ON machine.id = machine_tag.machine_id AND machine.user_id IS machine_tag.user_id
+WHERE machine_tag.deleted = 0 AND machine.deleted = 0
+  AND machine_tag.machine_id <> :machine AND machine_tag.tag_id IN :tags;
 
 ownerless:
 SELECT * FROM machine_tag WHERE user_id IS NULL;
+
+forget:
+DELETE FROM machine_tag WHERE id = ?;
 
 purgeOwner:
 DELETE FROM machine_tag WHERE user_id = ?;

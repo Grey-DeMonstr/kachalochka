@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.data.sync
 
 import kotlinx.coroutines.Dispatchers
+import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.gym.InMemoryPhotoFiles
 import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
@@ -110,8 +111,9 @@ internal fun ownedMeasurement(
     false,
 )
 
-internal class SyncHarness {
-    val database = inMemoryDatabase()
+internal class SyncHarness(
+    val database: KachalochkaDatabase = inMemoryDatabase(),
+) {
     val outbox = OutboxDao(database)
     val visits = LocalVisitRepository(database, outbox, Dispatchers.Unconfined)
     val machines = LocalMachineRepository(database, outbox, Dispatchers.Unconfined)

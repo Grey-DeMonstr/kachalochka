@@ -50,25 +50,10 @@ internal fun photoIdOf(id: String?): PhotoId? =
         }
     }
 
-// Another client's text is outside this one's control, and one unreadable entry must not stop the
-// conversion to tag rows or cost the tags that can be read.
-internal fun tagsOf(text: String): Set<String> {
-    val entries =
-        try {
-            Json.parseToJsonElement(text) as? JsonArray
-        } catch (_: SerializationException) {
-            null
-        } ?: return emptySet()
-    return entries
-        .mapNotNull { (it as? JsonPrimitive)?.takeIf { value -> value.isString }?.content?.trim() }
-        .filter { it.isNotEmpty() }
-        .toSet()
-}
-
 internal fun machineIdsText(ids: List<MachineId>): String =
     Json.encodeToString(ids.map { it.value })
 
-// Read like tags: an entry another client wrote that is not an id is dropped, not fatal.
+// An entry another client wrote that is not an id is dropped, not fatal.
 internal fun machineIdsOf(text: String): List<MachineId> {
     val entries =
         try {

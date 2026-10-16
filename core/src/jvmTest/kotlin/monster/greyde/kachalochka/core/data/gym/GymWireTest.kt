@@ -116,10 +116,4 @@ class GymWireTest {
             row.toPeaks(),
         )
     }
-
-    @Test
-    fun unreadable_tags_read_as_none() {
-        assertEquals(emptySet(), tagsOf("{"))
-        assertEquals(setOf("Ноги"), tagsOf("""["Ноги", 3, " Ноги "]"""))
-    }
 }

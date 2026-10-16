@@ -194,4 +194,41 @@ class LocalMachineRepositoryTest {
 
             assertEquals(gravitron, repository.byId(gravitron.id))
         }
+
+    @Test
+    fun a_tag_that_only_a_deleted_machine_s_live_link_holds_is_unused() =
+        runTest {
+            val press = Machine.new("Жим", ivan, now).copy(tags = setOf("спина"))
+            val row = Machine.new("Тяга", ivan, now).copy(tags = setOf("спина"))
+            repository.upsert(press)
+            repository.upsert(row)
+            // An older client deletes a machine and leaves its links as they are.
+            database.machineQueries.write(row.copy(deleted = true))
+
+            repository.upsert(press.copy(tags = emptySet(), updatedAt = now + 1.minutes))
+
+            assertEquals(
+                true,
+                database.tagQueries
+                    .byId(tagId(ivan, "спина"), ::tagOf)
+                    .executeAsOne()
+                    .deleted,
+            )
+        }
+
+    @Test
+    fun a_link_of_another_owner_on_a_machine_is_not_its_tag() =
+        runTest {
+            val mate = UserId("33333333-3333-4333-8333-333333333333")
+            val press = Machine.new("Жим", ivan, now)
+            repository.upsert(press)
+            val theirs = Tag(tagId(mate, "чужой"), mate, "чужой", now, false)
+            database.tagQueries.write(theirs)
+            database.machineTagQueries.write(
+                MachineTag(machineTagId(press.id, "чужой"), mate, press.id, theirs.id, now, false),
+            )
+
+            assertEquals(emptySet(), repository.byId(press.id)?.tags)
+            assertEquals(emptySet(), repository.all(ivan).single().tags)
+        }
 }

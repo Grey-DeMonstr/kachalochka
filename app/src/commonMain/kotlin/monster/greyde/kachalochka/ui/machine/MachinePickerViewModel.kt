@@ -43,22 +43,29 @@ data class TagChoiceUi(
     val chosen: Boolean,
 )
 
-/** The chips of the tags [machines] hold, [chosen] marked. */
+/** The chips of the tags [machines] hold and of the [chosen] ones, [chosen] marked. */
 internal fun tagChoices(
     machines: List<Machine>,
     chosen: Set<String>,
 ): List<TagChoiceUi> {
-    val tags = sortedTags(machines.flatMap { it.tags })
+    val tags = sortedTags(machines.flatMap { it.tags } + chosen)
     return tags.map { TagChoiceUi(it, hasTag(chosen, it)) }
 }
 
-/** Of [chosen], the tags [machines] still hold: a tag no machine holds is deleted. */
+/**
+ * Of [chosen], the tags [shown]'s machines still hold: a tag no machine holds is deleted. Without
+ * a group read, a tag the own machines lack may still be a friend's, so it stays.
+ */
 internal fun heldTags(
     chosen: Set<String>,
-    machines: List<Machine>,
+    shown: ShownMachines,
 ): Set<String> {
-    val held = machines.flatMap { it.tags }
-    return chosen.filterTo(mutableSetOf()) { hasTag(held, it) }
+    val held = shown.own.machines.flatMap { it.tags }
+    val friendsKnown = shown.group != null || shown.own.owner == null
+    val friends = shown.offered.flatMap { it.machine.tags }
+    return chosen.filterTo(mutableSetOf()) {
+        hasTag(held, it) || !friendsKnown || hasTag(friends, it)
+    }
 }
 
 data class PickerUiState(
@@ -200,7 +207,7 @@ class MachinePickerViewModel(
         val ownMachines = shown?.own?.machines.orEmpty()
         val offered = shown?.offered.orEmpty()
         val machines = ownMachines + offered.map { it.machine }
-        if (shown != null) chosenTags = heldTags(chosenTags, machines)
+        if (shown != null) chosenTags = heldTags(chosenTags, shown)
         val sort = sorting.current
         val ownOrder = machineOrder(sort, ownPeaks.associateBy { it.machineId })
         val ranking =

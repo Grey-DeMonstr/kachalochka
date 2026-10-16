@@ -43,9 +43,14 @@ WHERE deleted = 0 AND name = :name
   AND ((:owner IS NULL AND user_id IS NULL) OR user_id = :owner)
 LIMIT 1;
 
+-- A pushed machine takes its tag rows from the server, which converted the same column at the
+-- same time; only rows that never reached it are converted here.
 tagMirrors:
 SELECT id, user_id, deleted, tags FROM machine
 WHERE tags <> '[]'
+  AND (user_id IS NULL OR EXISTS (
+      SELECT 1 FROM outbox WHERE outbox.tableName = 'machine' AND outbox.rowId = machine.id
+  ))
   AND NOT EXISTS (SELECT 1 FROM machine_tag WHERE machine_tag.machine_id = machine.id);
 
 ownerlessIds:

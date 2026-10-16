@@ -181,6 +181,28 @@ class MachineListViewModelTest {
         }
 
     @Test
+    fun a_chosen_friend_s_tag_stays_while_the_friends_cannot_be_read() =
+        runTest {
+            val (on, olegPress) = olegsGym()
+            on.friends.machines.replaceAll {
+                if (it.id == olegPress.id) it.copy(tags = setOf("плечи")) else it
+            }
+            on.machines.upsert(Machine.new("Присед", ME.userId, t0))
+            val vm = viewModel(on).also { it.load() }
+            vm.toggleTag("плечи")
+
+            on.friends.offline = true
+            vm.load()
+
+            assertEquals(
+                listOf("плечи" to true),
+                vm.state.value.tags
+                    .map { it.name to it.chosen },
+            )
+            assertEquals(emptyList(), vm.state.value.own)
+        }
+
+    @Test
     fun a_chosen_tag_no_machine_has_any_more_stops_filtering() =
         runTest {
             val press = Machine.new("Жим", null, t0).copy(tags = setOf("ноги"))

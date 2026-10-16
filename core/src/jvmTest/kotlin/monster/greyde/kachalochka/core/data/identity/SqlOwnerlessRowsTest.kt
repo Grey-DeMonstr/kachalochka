@@ -15,9 +15,12 @@ import monster.greyde.kachalochka.core.data.gym.MACHINE_TAG_TABLE
 import monster.greyde.kachalochka.core.data.gym.PHOTO_TABLE
 import monster.greyde.kachalochka.core.data.gym.PLAN_TABLE
 import monster.greyde.kachalochka.core.data.gym.TAG_TABLE
+import monster.greyde.kachalochka.core.data.gym.Tag
 import monster.greyde.kachalochka.core.data.gym.machineTagId
+import monster.greyde.kachalochka.core.data.gym.machineTagOf
 import monster.greyde.kachalochka.core.data.gym.tagId
 import monster.greyde.kachalochka.core.data.gym.tagOf
+import monster.greyde.kachalochka.core.data.gym.write
 import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
 import monster.greyde.kachalochka.core.data.measures.MEASUREMENT_TABLE
@@ -296,6 +299,35 @@ class SqlOwnerlessRowsTest {
                         MACHINE_TAG_TABLE to machineTagId(anonymous.id, "спина"),
                     ),
                 ),
+            )
+        }
+
+    @Test
+    fun an_anonymous_tag_nothing_holds_is_forgotten_and_leaves_the_owner_s_tag_alone() =
+        runTest {
+            val anonymous = Machine.new("Жим", null, t0).copy(tags = setOf("ноги"))
+            machines.upsert(anonymous)
+            machines.upsert(anonymous.copy(tags = emptySet(), updatedAt = t0 + 1.hours))
+            val pulled = Tag(tagId(owner, "ноги"), owner, "ноги", t0, deleted = false)
+            database.tagQueries.write(pulled)
+
+            rows.claim(owner)
+
+            assertEquals(
+                pulled,
+                database.tagQueries.byId(pulled.id, ::tagOf).executeAsOne(),
+            )
+            assertEquals(emptyList(), database.tagQueries.ownerless(::tagOf).executeAsList())
+            assertEquals(
+                emptyList(),
+                database.machineTagQueries
+                    .forMachine(anonymous.id.value, ::machineTagOf)
+                    .executeAsList(),
+            )
+            assertTrue(
+                outbox.pending().none {
+                    it.tableName == TAG_TABLE || it.tableName == MACHINE_TAG_TABLE
+                },
             )
         }
 }

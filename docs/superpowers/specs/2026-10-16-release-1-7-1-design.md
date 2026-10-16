@@ -30,19 +30,26 @@ writes them for a managed child as it writes the child's machines.
 - **Ids follow from the content.** A tag's id is a UUID v5 of its owner and name, a
   `machine_tag`'s id a UUID v5 of its machine and tag name, in one fixed namespace. The same tag
   added on two devices offline, or converted on the server and on a device, is one row, so no
-  reader meets two rows for one tag.
+  reader meets two rows for one tag. Because a group mate can compute these ids, the server
+  accepts a row only when its id follows from its content and a link names a machine and a tag
+  of its own owner; readers ignore a link of another owner.
 - **`Machine.tags` stays the domain view.** Repositories assemble it from the tables and write it
   through: a machine's upsert makes its tags' rows live and soft-deletes the `machine_tag` rows of
   the names it no longer has. A deleted machine loses its `machine_tag` rows.
-- **An unused tag is deleted.** When no live machine of the owner holds a tag any more, the tag's
-  row is soft-deleted in the same write. The machine form drops the chip of a tag that neither the
-  edited machine nor another own machine holds, and the machine list and the picker drop a chosen
-  tag that no machine has.
-- **Older clients.** The user asks everyone to update; until then an older client may show no
-  tags. `machine.tags` stays in both schemas only so that an older client's machine upsert still
-  succeeds. Apart from the conversion, nothing writes or reads it, as with 1.0.2's `link_id`.
+- **An unused tag is deleted.** When no live link from a live machine of the owner holds a tag
+  any more, the tag's row is soft-deleted in the same write. The machine form drops the chip of a
+  tag that neither the edited machine nor another own machine holds, and the machine list and
+  the picker drop a chosen tag that no machine has; while the friends' machines cannot be read, a
+  chosen tag the own machines lack stays.
+- **Older clients.** The user asks everyone to update; until then an older client shows each
+  machine's tags as they were at the conversion, not newer ones. `machine.tags` stays in both
+  schemas only so that an older client's machine upsert still succeeds. Apart from the
+  conversion, nothing writes or reads it, as with 1.0.2's `link_id`.
 - **Conversion.** Migration `0027` converts every machine's `tags` once on the server.
-  `19.sqm` adds the tables and resets `lastPullAt`; at start, before any write or sync pass, a
-  device gives every local machine whose old `tags` column holds tags but which has no
-  `machine_tag` row at all its rows from that column, and enqueues them. The ids match the
-  server's, so a push of a converted row changes nothing.
+  `19.sqm` adds the tables and resets `lastPullAt`, so a device takes the server's rows on its
+  next pull. Inside that migration, before any write or sync pass, a device converts only the
+  machines the server has not seen as they are: ownerless ones, and those whose `machine` row
+  waits in the outbox. Each gets its rows from its old `tags` column, dated now, and the owned
+  ones are enqueued. Every other machine keeps the server's rows, so a converted device never
+  pushes its old column over a tag edit made since the server's conversion. A machine that
+  cannot be converted is skipped, and the database still opens.

@@ -198,10 +198,13 @@ last "Новый тег" chip adds what is typed in it.
 
 Tags have no letter case and no extra spaces: "ноги", "Ноги" and " НОГИ " are one tag, kept in
 lower case, and a machine never holds two forms of one tag. A tag that no machine of the account
-holds any more is deleted: it is no longer offered as a chip, and a list or picker filtered by it
-drops the filter. Every screen draws a tag in capitals, in a small font with wide letter spacing:
-the chips, the machine rows and pages, the section headings of the visit and of the statistics,
-the calendar's cards ("СПИНА · ГРУДЬ") and a friend's machine.
+holds any more, deleted machines left out, is deleted: it is no longer offered as a chip, and a
+list or picker filtered by it drops the filter, though a filter by a friend's tag stays while the
+friends' machines cannot be read. An app older than 1.7.1 shows each machine's tags as they were
+when the account's tags moved to 1.7.1, and tags edited in it reach no other app. Every screen
+draws a tag in capitals, in a small font with wide letter spacing: the chips, the machine rows
+and pages, the section headings of the visit and of the statistics, the calendar's cards
+("СПИНА · ГРУДЬ") and a friend's machine.
 
 A set's total weight is its weight plus the platform when the platform is not added to the record.
 When "Сохранить" changes that for a machine with recorded sets (for example, a platform typed in
@@ -294,7 +297,8 @@ and its platform in the machine's own unit, then the
 friend's statistics on it as the statistics screen shows a machine's — the period chips, the
 period's best set, the chart and "Все результаты" — in the viewer's unit. Nothing on it can be
 edited, but a copy button after the name and after the setup note puts that text on the
-clipboard, and a check shows on the button for two seconds. Tapping a linked machine opens it: an own machine in its form, a friend's as this view.
+clipboard, and a check shows on the button for two seconds. Tapping a linked machine opens it:
+an own machine in its form, a friend's as this view.
 "Взять себе" saves the account's own copy linked to it (see Group sharing) and opens that copy in
 the machine form. "Привязать к моему" opens a list of the account's machines with a search field,
 which starts with the friend's machine's name, as "Привязать к…" does; it leaves out the machines
@@ -454,12 +458,13 @@ height is missing, a line under the rows leads to Settings.
 Each "Процент жира" row ends with a chevron; tapping it opens that formula's chart, titled with
 the formula's name ("ВМС США"). Under the title, where a measure's screen shows how to take it,
 the chart names every input the formula reads ("Нужно: пол, рост, талия, шея"). It shows the
-latest result, its change over the chosen period and the day of the latest result, the same periods and chart as a measure, and "Все результаты": every
-result, newest first. A point falls on every day with a value of one of the formula's measures,
-from the first day all of them have one. On a day without its own value, a measure takes the
-straight line between its values before and after that day, and keeps its last value after them.
-Age is counted on each day. A result outside 2–70 % gives no point. Without a result the chart
-shows "Нет значений", and a missing sex, birth date or height adds the link to Settings.
+latest result, its change over the chosen period and the day of the latest result, the same
+periods and chart as a measure, and "Все результаты": every result, newest first. A point
+falls on every day with a value of one of the formula's measures, from the first day all of them
+have one. On a day without its own value, a measure takes the straight line between its values
+before and after that day, and keeps its last value after them. Age is counted on each day. A
+result outside 2–70 % gives no point. Without a result the chart shows "Нет значений", and a
+missing sex, birth date or height adds the link to Settings.
 
 Each measure row ends with a chevron; tapping it opens the measure. The screen starts with today's
 value ("Сегодня, 29 сентября"); a predefined measure shows under it how to take it, as "Новый

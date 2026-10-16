@@ -144,7 +144,7 @@ class MachineListViewModel(
         val ownMachines = shown?.own?.machines.orEmpty()
         val offered = shown?.offered.orEmpty()
         val machines = ownMachines + offered.map { it.machine }
-        if (shown != null) chosenTags = heldTags(chosenTags, machines)
+        if (shown != null) chosenTags = heldTags(chosenTags, shown)
         val now = clock.now()
         val offset = utcOffset.at(now)
         val cards =

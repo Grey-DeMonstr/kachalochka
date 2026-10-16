@@ -647,9 +647,10 @@ class SchemaMigrationTest {
     }
 
     @Test
-    fun version_19_gains_the_tag_tables_with_every_machine_s_tags_and_pulls_again() {
+    fun version_19_gains_the_tag_tables_with_the_unpushed_machines_tags_and_pulls_again() {
         val owner = UserId("11111111-1111-4111-8111-111111111111")
         val gone = MachineId("0e000000-0000-4000-8000-00000000000e")
+        val pushed = MachineId("0f000000-0000-4000-8000-00000000000f")
         KachalochkaDatabase.Schema.create(driver)
         dropTagTables()
         exec(
@@ -662,6 +663,16 @@ class SchemaMigrationTest {
                 "deleted, tags) VALUES ('${gone.value}', '${owner.value}', 'Тяга', 'total', " +
                 "'kg', 2.5, 1, 1, '[\"ноги\", \"Спина\"]')",
         )
+        exec(
+            "INSERT INTO machine(id, user_id, name, weight_mode, unit, weight_step, updated_at, " +
+                "tags) VALUES ('${pushed.value}', '${owner.value}', 'Присед', 'total', 'kg', " +
+                "2.5, 1, '[\"ноги\"]')",
+        )
+        listOf(PRESS, gone).forEach {
+            exec(
+                "INSERT INTO outbox(tableName, rowId, enqueuedAt) VALUES ('machine', '${it.value}', 1)",
+            )
+        }
         exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
 
         KachalochkaDatabase.Schema.migrate(driver, 19, 20, tagConversion(fixedClock(at(5))))
@@ -687,7 +698,11 @@ class SchemaMigrationTest {
                 .executeAsList()
                 .map { it.deleted },
         )
-        assertEquals(7L, number("SELECT COUNT(*) FROM outbox"))
+        assertEquals(
+            emptyList(),
+            database.machineTagQueries.forMachine(pushed.value, ::machineTagOf).executeAsList(),
+        )
+        assertEquals(9L, number("SELECT COUNT(*) FROM outbox"))
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 

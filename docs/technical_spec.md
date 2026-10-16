@@ -201,7 +201,7 @@ Every synced row carries:
 
 | Column | Rule |
 |---|---|
-| `id` | UUID v4, generated on the client at creation; for `tag` and `machine_tag` a UUID v5 of the content (§4.5). Never reassigned |
+| `id` | UUID v4 made on the client at creation, UUID v5 of the content for tags (§4.5) |
 | `user_id` | Owner. Null while the Android user is not logged in (§4.3) |
 | `updated_at` | UTC instant, set by the writer on every change |
 | `deleted` | Soft-delete flag. Rows are never physically deleted by clients |
@@ -274,9 +274,10 @@ failing a pull.
   own pull watermark. Pushing only the active account would leave a guest's sets enqueued until
   somebody happened to switch back to them. A managed account's pass pushes and pulls only
   `machine`, `tag`, `machine_tag`, `visit`, `workout_set`, `machine_link`, `photo` and
-  `workout_plan`, the tables its guardian may write. An entry of its `profile`, `measure` or `measurement`, which only the
-  account itself can have written before it became managed, stays in the outbox unpushed, since
-  the server would refuse it; it goes out once the account signs in on the device itself.
+  `workout_plan`, the tables its guardian may write. An entry of its `profile`, `measure` or
+  `measurement`, which only the account itself can have written before it became managed, stays
+  in the outbox unpushed, since the server would refuse it; it goes out once the account signs in
+  on the device itself.
 
 Sync runs on a second `SupabaseClient` that installs no `Auth`; its `accessToken` resolver asks
 for the token of the account the pass is currently on. The UI's client and its active session are
@@ -294,9 +295,8 @@ already reached the server, `ServerSyncTrigger` emits on every request instead.
 Android works without an account: rows are created with a null `user_id` and never pushed. On the
 first successful sign-in, every row with null `user_id`, the anonymous profile included, is
 stamped with that user's id and enqueued in the outbox. The profile keeps its `updated_at`, so
-the account's own newer profile still wins `forOwner`. An anonymous tag, whose id names no owner,
-is replaced by the owner's row of its name (§4.5); it was never pushed, so no server row is lost. Accounts added afterwards claim nothing
-and start empty.
+the account's own newer profile still wins `forOwner`. Tags are claimed apart (§4.5), because
+a tag's id names its owner. Accounts added afterwards claim nothing and start empty.
 
 Several accounts are signed in at once and one of them is active; the active one owns whatever is
 recorded now. Their rows share one local database, which is why reads are scoped by owner (§3)
@@ -445,33 +445,49 @@ unreadable row must not stop a pull, and clients from 1.0.2 to 1.1.0 read a grav
 
 Tags are rows: `tag` (`name`) holds one row per owner and name, and `machine_tag` (`machine_id`,
 `tag_id`) links a machine to a tag, many to many. Neither id column of `machine_tag` is a foreign
-key, as on `machine_link`: a link may reach the server before its machine or its tag. A name is
-stored as its `tagKey`, on every write path. Ids follow from the content: a tag's id is the UUID v5
-of `"<owner>/<name>"`, the owner empty while anonymous, and a link's id the UUID v5 of
-`"<machine id>/<name>"`, both in one namespace (`TagWire.kt`), so the same tag added on two devices
-offline, or converted on the server and on a device, is one row. `uuidV5` and its SHA-1 are pure
-Kotlin in `domain/identity` and give the bytes of Postgres' `uuid_generate_v5` for UTF-8 names.
+key, as on `machine_link`. A name is stored as its `tagKey`, on every write path. Ids follow from
+the content: a tag's id is the UUID v5 of `"<owner>/<name>"`, the owner empty while anonymous, and
+a link's id the UUID v5 of `"<machine id>/<name>"`, both in one namespace (`TagWire.kt`), so the
+same tag added on two devices offline, or converted on the server and on a device, is one row.
+`uuidV5` and its SHA-1 are pure Kotlin in `domain/identity` and give the bytes of Postgres'
+`uuid_generate_v5` for UTF-8 names.
+
+A group mate can read the owner's ids, so migration `0027` checks every write against its
+content: a tag's id must be `tag_content_id` of its owner and name, and a link must name a machine
+and a tag of its own owner and carry the id of that machine and that tag's name. The sync pass
+pushes machines, then tags, then links, and the web writes in the same order, so the rows a link
+needs are on the server first; a link refused because its machine has not arrived waits in the
+outbox for a later pass. Readers count a link only between a machine and a tag of the link's own
+owner (`withTagRows`, and the joins of `MachineTag.sq`), so a mate's row naming the machine is
+never its tag.
 
 `Machine.tags` stays the domain view. Both repositories read it from a machine's live links and
-the tags they name, and an upsert writes it through `tagWrites`: the rows of the machine's tags
-made live, the links of names it no longer has soft-deleted, all of them for a deleted machine,
-and a tag no live link holds any more soft-deleted. On Android that is one transaction with the
-machine, and every owned row is enqueued; the web writes the machine, then the tags, then the
-links, and a retry writes the same rows. A group mate's machine takes its tags from the mate's
-live rows (`machineTags`), which row-level security shows as it shows `machine_link`. A claim
-(§4.3) gives an anonymous tag the owner's id, joining a row of that name the account already has,
-and points its links at it.
+the tags they name, whatever the tag row's `deleted`, and an upsert writes it through `tagWrites`:
+the rows of the machine's tags made live, the links of names it no longer has soft-deleted, all of
+them for a deleted machine, and a tag soft-deleted once no live link from a live machine of its
+owner holds it. On Android that is one transaction with the machine, and every owned row is
+enqueued; the web writes the machine, the live tags, the links and then the deletions of unused
+tags, and a retry writes the same rows. A group mate's machine takes its tags from the mate's live
+rows (`tagRows`), which row-level security shows as it shows `machine_link`. A claim (§4.3) takes
+over only the anonymous links of live machines and the tags they hold: each such link gets the
+owner and points at the owner's tag of its name, written live; every other anonymous tag row and
+link is forgotten, since it was never pushed and, written as the owner's, could delete a tag the
+server holds live.
 
 `machine.tags`, the JSON array of names that migration `0017` and `12.sqm` added, stays in both
 schemas for the upserts of clients before 1.7.1 and is unused after the conversion. `MachineRow`
 has no such field, so an upsert leaves the server column as it is, and the local upsert leaves the
-column at its default, `'[]'`. Migration `0027` converted every machine's array once on the server,
-deleted machines' too; a tag only deleted machines hold is written deleted, and text that is not
-an array of strings gives no tags. `19.sqm` adds the tables and resets `lastPullAt`, and
-`tagConversion` runs right after it, inside the migration and so before any read, write or sync
-pass: every machine whose column holds names and which has no link at all gets its rows, with the
-ids the server gave them, and the owned ones are enqueued. Tags an older client writes reach only
-its own column.
+column at its default, `'[]'`. An older client so shows every machine's tags as they were at the
+conversion, and its own later tag edits reach only that column. Migration `0027` converted every
+machine's array once on the server, deleted machines' too; a tag only deleted machines hold is
+written deleted, and text that is not an array of strings gives no tags. It stops before writing
+a row when `lower()` does not fold Cyrillic, and its whitespace class adds the spaces Kotlin counts
+and `[[:space:]]` does not. `19.sqm` adds the tables and resets `lastPullAt`, and `tagConversion`
+runs right after it, inside the migration and so before any read, write or sync pass. It converts
+only the machines the server has not seen as they are: ownerless ones and those whose `machine`
+row waits in the outbox, which have no link yet; their rows are dated now and the owned ones
+enqueued. Every other machine takes its tag rows from the server on the next pull. A machine that
+cannot be converted is skipped, so the database still opens.
 
 Tags compare by `tagKey`: trimmed, inner whitespace joined to one space, in lower case; `0027`
 makes the same key in SQL. With every stored name a key, the comparison matters only for text
@@ -480,14 +496,15 @@ functions of `domain/gym/Tags.kt` hold every rule: `sortedTags` is the one displ
 `hasAllTags` filters, `toggledTag` keeps a set free of two forms of one tag, and `suggestedTags`
 gives the machine form the tags of `ShownMachines.linkedRows` that the machine lacks. A
 `linkedCopy` takes the friend's tags as they are. `tagSections` groups by the keys. The screens
-upper-case a tag only when they draw it, through `TagText`.
+upper-case a tag only when they draw it, through `TagText`. `tagTitle` writes a section heading in
+capitals, so the shared visit and the statistics export read as the screens draw, and `withTags`
+quotes tags in capitals too.
 
 The machine form shows the machine's tags as opened first, then the account's other tags; a tag
 neither the edited machine nor another own machine holds (`MachineFormState.accountTags`) loses
 its chip, since a save would delete it. The machine list and the picker keep a chosen tag only
-while a machine they show holds it (`heldTags`).
-`tagTitle` writes a section heading in capitals, so the shared visit and the statistics export
-read as the screens draw, and `withTags` quotes tags in capitals too.
+while a machine they show holds it (`heldTags`); while the friends' machines cannot be read, a
+chosen tag the own machines lack stays, since a friend's machine may hold it.
 
 `workout_plan` holds an account's plans: `name`, `machine_ids` — a JSON array of machine ids in
 plan order, read leniently, so an entry that is not an id is dropped — `created_at`
@@ -924,10 +941,10 @@ Row-level security enforces every visibility rule from the functional spec:
   security-definer function `shares_group_with`; the `photos` bucket's read policy applies it to
   the first folder of an object's name. A guardian also reads every `machine`, `visit`,
   `workout_set`, `machine_link`, `photo`, `tag`, `machine_tag` and `workout_plan` row of the
-  children they guard, deleted ones
-  included, since their device syncs them (§4.2), and the `photos` bucket admits them to those
-  children's folders. `profile`, `measure` and `measurement` stay readable by their owner alone,
-  and `workout_plan` by its owner and their guardians; none of them has a group policy.
+  children they guard, deleted ones included, since their device syncs them (§4.2), and the
+  `photos` bucket admits them to those children's folders. `profile`, `measure` and
+  `measurement` stay readable by their owner alone, and `workout_plan` by its owner and their
+  guardians; none of them has a group policy.
 - A friend's link into one's own machine is changed only through two security-definer
   functions, called by `FriendsRepository.breakLinks` and `repointLinks`.
   `break_machine_links(machine)` soft-deletes the live links pointing at `machine`

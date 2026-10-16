@@ -22,8 +22,8 @@ import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
 import monster.greyde.kachalochka.core.data.gym.WorkoutSetRow
 import monster.greyde.kachalochka.core.data.gym.machinePeaks
-import monster.greyde.kachalochka.core.data.gym.machineTags
-import monster.greyde.kachalochka.core.data.gym.withTags
+import monster.greyde.kachalochka.core.data.gym.tagRows
+import monster.greyde.kachalochka.core.data.gym.withTagRows
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
@@ -371,18 +371,18 @@ class SupabaseFriendsRepository(
             }.decodeList<MachineRow>()
             .map { it.toMachine() }
 
-    /** Live machines with the tags of their owners' live `tag` rows, which [owners] picks. */
+    /** Live machines with their owners' live tags; [owners] picks the owners. */
     private suspend fun taggedMachines(owners: PostgrestFilterBuilder.() -> Unit): List<Machine> =
         coroutineScope {
             val machines = async { liveMachines(owners) }
             val tags =
                 async {
-                    postgrest.machineTags(links = owners) {
+                    postgrest.tagRows(links = owners) {
                         eq("deleted", false)
                         owners()
                     }
                 }
-            machines.await().withTags(tags.await())
+            machines.await().withTagRows(tags.await())
         }
 
     private suspend fun liveSets(
