@@ -45,7 +45,7 @@ internal suspend fun TagRowStore.writeTagsOf(machine: Machine) {
  * The rows a machine's write changes, in the order the web writes them: a link never names a tag
  * that is not live yet, and a tag is deleted only once its last link is.
  */
-internal class TagWrites(
+private class TagWrites(
     val tags: List<Tag>,
     val links: List<MachineTag>,
     val unused: List<Tag>,
@@ -56,7 +56,7 @@ internal class TagWrites(
  * its tags name. A tag no live link holds any more, here or in [heldElsewhere], is deleted; a
  * stored link of another owner is not the machine's.
  */
-internal fun tagWrites(
+private fun tagWrites(
     machine: Machine,
     stored: List<MachineTag>,
     storedTags: List<Tag>,

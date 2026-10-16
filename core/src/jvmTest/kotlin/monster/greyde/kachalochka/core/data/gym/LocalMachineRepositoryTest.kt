@@ -52,6 +52,17 @@ class LocalMachineRepositoryTest {
         }
 
     @Test
+    fun a_deleted_machine_reads_back_without_tags() =
+        runTest {
+            val press = Machine.new("Жим", ivan, now).copy(tags = setOf("ноги"))
+            repository.upsert(press)
+
+            repository.upsert(press.copy(deleted = true))
+
+            assertEquals(emptySet(), repository.byId(press.id)?.tags)
+        }
+
+    @Test
     fun an_owned_machine_s_tags_are_rows_of_their_own_and_enqueued_with_it() =
         runTest {
             val press = Machine.new("Жим", ivan, now).copy(tags = setOf("Ноги"))

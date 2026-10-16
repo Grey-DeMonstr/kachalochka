@@ -463,17 +463,22 @@ owner (`withTagRows`, and the joins of `MachineTag.sq`), so a mate's row naming 
 never its tag.
 
 `Machine.tags` stays the domain view. Both repositories read it from a machine's live links and
-the tags they name, whatever the tag row's `deleted`, and an upsert writes it through `tagWrites`:
-the rows of the machine's tags made live, the links of names it no longer has soft-deleted, all of
-them for a deleted machine, and a tag soft-deleted once no live link from a live machine of its
-owner holds it. On Android that is one transaction with the machine, and every owned row is
-enqueued; the web writes the machine, the live tags, the links and then the deletions of unused
-tags, and a retry writes the same rows. A group mate's machine takes its tags from the mate's live
-rows (`tagRows`), which row-level security shows as it shows `machine_link`. A claim (§4.3) takes
-over only the anonymous links of live machines and the tags they hold: each such link gets the
-owner and points at the owner's tag of its name, written live; every other anonymous tag row and
-link is forgotten, since it was never pushed and, written as the owner's, could delete a tag the
-server holds live.
+the tags they name, whatever the tag row's `deleted`. An upsert writes it through `writeTagsOf`
+(`TagRowStore.kt`), one flow for both platforms behind the `TagRowStore` port: it reads the
+machine's stored links, the tags they and the machine name, and which dropped tags a live link
+from another live machine of the owner holds. Then it writes the machine's tags made live, the
+links (those of names the machine no longer has soft-deleted, all of them for a deleted machine),
+and last the soft deletion of each tag that no live link from a live machine of its owner holds.
+`SqlTagRows` and `PostgrestTagRows` only map these calls to rows. One test suite runs the flow on
+`SqlTagRows` and on an in-memory store, and the PostgREST requests have tests of their own. On
+Android the flow runs in one transaction with the machine, and every owned row is enqueued;
+SQLDelight runs a transaction as a blocking body, so `SqlTagRows` never suspends. The web writes
+the machine first, and a retry writes the same rows. A group mate's machine takes its tags from the
+mate's live rows (`tagRows`), which row-level security shows as it shows `machine_link`. A claim
+(§4.3) takes over only the anonymous links of live machines and the tags they hold: each such link
+gets the owner and points at the owner's tag of its name, written live; every other anonymous tag
+row and link is forgotten, since it was never pushed and, written as the owner's, could delete a
+tag the server holds live.
 
 `machine.tags`, the JSON array of names that migration `0017` and `12.sqm` added, stays in both
 schemas for the upserts of clients before 1.7.1 and is unused after the conversion. `MachineRow`
