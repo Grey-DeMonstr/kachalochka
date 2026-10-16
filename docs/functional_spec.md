@@ -523,15 +523,15 @@ one chosen in its form, else its first photo, else the first photo of a friend's
 with it — and a remove button. Tapping a machine opens its form; back or "Сохранить" returns to
 the plan, which shows the machine as the form left it. The order button in the top bar shows a
 drag handle at the left of every machine. While it is on, tapping a machine opens nothing.
-"Добавить упражнение" opens the machine picker, which in a plan shows each machine's
-last result and offers no "Скопировать упражнение"; a machine already in the plan is not added
-twice. The pin button in the top bar ("Закрепить") pins the plan and stays lit while it is pinned;
-a second tap unpins it. The form saves itself: the plan when a machine is added, removed or moved
-and when the pin is tapped, the name a second after typing stops, when its field loses focus and
-when the form is left. A new plan comes into being with its first change. Back and the system back
-save and return to the list. A plan with neither a name nor machines is deleted, and its next
-change brings it back. The menu of a saved plan has "Удалить план", which asks "Удалить план?".
-Switching accounts saves the plan and returns to the list.
+"Добавить упражнение" opens the machine picker, which in a plan shows each machine's last result
+and offers no "Скопировать упражнение"; a machine already in the plan is not added twice. The pin
+button in the top bar ("Закрепить") pins the plan and stays lit while it is pinned; a second tap
+unpins it. The form saves itself: the plan when a machine is added, removed or moved and when the
+pin is tapped, the name a second after typing stops, when its field loses focus and when the form
+is left. A new plan comes into being with its first change. Back and the system back save and
+return to the list. A plan with neither a name nor machines is deleted, and its next change brings
+it back. The menu of a saved plan has "Удалить план", which asks "Удалить план?". Switching
+accounts saves the plan and returns to the list.
 
 The menu in the top bar of a visit with machines has "Сохранить как план". It opens the form of a
 new plan holding the visit's machines in the visit's order, planned ones included, and saves the

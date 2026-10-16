@@ -7,7 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -93,7 +94,7 @@ fun LinkedMachines(
                 PhosphorIcons.LinkSimple,
                 null,
                 tint = muted,
-                modifier = Modifier.size(14.dp).testTag("$tag-icon"),
+                modifier = Modifier.requiredSize(14.dp).testTag("$tag-icon"),
             )
         }
         // A separate column after the icon, so a long name wraps under itself.
@@ -111,17 +112,20 @@ fun LinkedMachines(
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
                     Box(Modifier.height(line), contentAlignment = Alignment.Center) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(-AVATAR_OVERLAP)) {
-                            group.machines.forEachIndexed { index, it ->
+                        Row(
+                            Modifier.wrapContentHeight(unbounded = true),
+                            horizontalArrangement = Arrangement.spacedBy(-AVATAR_OVERLAP),
+                        ) {
+                            group.machines.forEachIndexed { index, entry ->
                                 PersonAvatar(
-                                    it.owner.userId,
-                                    it.owner.displayName,
-                                    it.owner.avatar,
+                                    entry.owner.userId,
+                                    entry.owner.displayName,
+                                    entry.owner.avatar,
                                     // The first owner stays whole; the disc hides the one below.
                                     Modifier
                                         .zIndex((group.machines.size - index).toFloat())
                                         .background(colors.background, CircleShape)
-                                        .testTag("$tag-avatar-${it.machineId.value}"),
+                                        .testTag("$tag-avatar-${entry.machineId.value}"),
                                     size = 18.dp,
                                 )
                             }

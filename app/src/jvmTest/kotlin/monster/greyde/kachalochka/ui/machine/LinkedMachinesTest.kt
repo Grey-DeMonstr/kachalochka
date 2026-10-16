@@ -2,7 +2,9 @@ package monster.greyde.kachalochka.ui.machine
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -10,10 +12,12 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.fakes.FakeGym
@@ -88,6 +92,25 @@ class LinkedMachinesTest {
             assertTrue(name.height > 30.dp, "the name wraps")
             assertTrue(name.left >= second.right, "the name wraps under itself")
             assertNear(5.dp, first.right - second.left)
+        }
+    }
+
+    @Test
+    fun an_avatar_stays_round_at_a_small_font_size() {
+        val oleg = linked(OLEG, "Тяга")
+        runScreenTest(FakeGym(), screen = {
+            val density = LocalDensity.current
+            CompositionLocalProvider(
+                LocalDensity provides Density(density.density, fontScale = 0.85f),
+            ) { LinkedMachines(listOf(oleg), "linked") }
+        }) {
+            waitForIdle()
+            val avatar = avatar(oleg)
+
+            assertTrue(
+                abs((avatar.width - avatar.height).value) <= 0.5f,
+                "${avatar.width} x ${avatar.height} is not round",
+            )
         }
     }
 
