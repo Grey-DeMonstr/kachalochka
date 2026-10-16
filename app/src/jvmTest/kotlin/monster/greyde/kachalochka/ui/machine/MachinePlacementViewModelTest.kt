@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.machine
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -13,6 +14,8 @@ import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -54,6 +57,7 @@ class MachinePlacementViewModelTest {
             on.machineLinks,
             on.sets,
             on.currentUser,
+            on.accounts,
             on.catalogue,
             on.clock,
             on.utcOffset,
@@ -251,5 +255,106 @@ class MachinePlacementViewModelTest {
         vm.newPlan { opened = it }
 
         assertEquals(olegs.myPress.id, opened)
+    }
+
+    /** Олег's gym with Саша, Иван's child, beside Иван on the device. */
+    private fun olegsGymWithSasha(): OlegsGym {
+        val olegs = OlegsGym()
+        olegs.gym.withChild(childAccount(SASHA, IVAN_SESSION))
+        return olegs
+    }
+
+    @Test
+    fun a_switch_during_a_friend_s_read_writes_and_opens_nothing() {
+        val olegs = olegsGymWithSasha()
+        val on = olegs.gym
+        val vm = viewModel(on)
+        val gate = CompletableDeferred<Unit>()
+        on.friends.gate = gate
+        var opened: CalendarDay? = null
+
+        vm.planToday(PlacedMachine(olegs.olegRow.id, ofFriend = true)) { opened = it }
+        runBlocking { on.accounts.switchTo(SASHA.userId) }
+        gate.complete(Unit)
+
+        assertNull(opened)
+        assertEquals(listOf(olegs.myPress), runBlocking { on.machines.all(ME.userId) })
+        assertTrue(on.visits.rows.isEmpty())
+        assertNull(vm.state.value.notice)
+    }
+
+    @Test
+    fun a_switch_during_a_friend_s_read_leaves_the_plan_as_it_was() {
+        val olegs = olegsGymWithSasha()
+        val on = olegs.gym
+        val mine = Plan(PlanId.random(), ME.userId, "Ноги", emptyList(), t0, t0, false)
+        runBlocking { on.plans.upsert(mine) }
+        val vm = viewModel(on)
+        vm.choosePlan(PlacedMachine(olegs.olegRow.id, ofFriend = true))
+        val gate = CompletableDeferred<Unit>()
+        on.friends.gate = gate
+
+        vm.addTo(mine.id)
+        runBlocking { on.accounts.switchTo(SASHA.userId) }
+        gate.complete(Unit)
+
+        assertEquals(mine, on.plans.rows.getValue(mine.id))
+        assertEquals(listOf(olegs.myPress), runBlocking { on.machines.all(ME.userId) })
+    }
+
+    @Test
+    fun a_switch_closes_the_choice_and_drops_the_notice() {
+        val olegs = olegsGymWithSasha()
+        val on = olegs.gym
+        val mine = Plan(PlanId.random(), ME.userId, "Ноги", emptyList(), t0, t0, false)
+        runBlocking { on.plans.upsert(mine) }
+        val vm = viewModel(on)
+        val placed = PlacedMachine(olegs.olegPress.id, ofFriend = true)
+        vm.choosePlan(placed)
+        vm.addTo(mine.id)
+        vm.choosePlan(placed)
+
+        runBlocking { on.accounts.switchTo(SASHA.userId) }
+
+        assertEquals(PlacementUi(), vm.state.value)
+        vm.addTo(mine.id)
+        assertEquals(
+            listOf(olegs.myPress.id),
+            on.plans.rows
+                .getValue(mine.id)
+                .machineIds,
+        )
+    }
+
+    @Test
+    fun a_friend_s_machine_gone_from_the_group_says_so() {
+        val olegs = OlegsGym()
+        val gone = Machine.new("Гакк", OLEG.userId, t0)
+        val vm = viewModel(olegs.gym)
+        var opened: CalendarDay? = null
+
+        vm.planToday(PlacedMachine(gone.id, ofFriend = true)) { opened = it }
+
+        assertNull(opened)
+        assertEquals(
+            PlacementNoticeUi(gone.id, "Упражнение больше недоступно"),
+            vm.state.value.notice,
+        )
+    }
+
+    @Test
+    fun a_group_read_the_screen_holds_is_used_and_a_copy_made_from_it_counts() {
+        val olegs = OlegsGym()
+        val on = olegs.gym
+        val held = runBlocking { on.catalogue.group(ME.userId) }
+        val reads = on.friends.reads
+        val vm = viewModel(on)
+        val placed = PlacedMachine(olegs.olegRow.id, ofFriend = true, group = held)
+
+        vm.planToday(placed) {}
+        vm.planToday(placed) {}
+
+        assertEquals(reads, on.friends.reads)
+        assertEquals(1, runBlocking { on.machines.all(ME.userId) }.count { it.name == "Тяга" })
     }
 }

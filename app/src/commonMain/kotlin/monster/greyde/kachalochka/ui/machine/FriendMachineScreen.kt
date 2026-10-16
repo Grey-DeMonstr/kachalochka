@@ -66,7 +66,6 @@ fun FriendMachineScreen(
     val offline by viewModel.offline.collectAsState()
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
     val placement: MachinePlacementViewModel = koinViewModel()
-    val placed = PlacedMachine(machineId, ofFriend = true)
     // Taking is offered only while no own machine stands in, so only then is a copy written.
     val onStoodIn = { if (state?.canTake == true) viewModel.refresh() }
     // The view model already loads once created: it follows accounts.activeId from init.
@@ -77,8 +76,8 @@ fun FriendMachineScreen(
         actions = {
             if (state != null && !offline) {
                 MachineMenu(
-                    onToPlan = { placement.choosePlan(placed) },
-                    onToday = { placement.planToday(placed, onStoodIn, onOpenVisit) },
+                    onToPlan = { placement.choosePlan(viewModel.placed()) },
+                    onToday = { placement.planToday(viewModel.placed(), onStoodIn, onOpenVisit) },
                 )
             }
         },

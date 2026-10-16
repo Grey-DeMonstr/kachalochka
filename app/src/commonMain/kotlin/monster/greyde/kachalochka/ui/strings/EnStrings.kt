@@ -126,6 +126,7 @@ object EnStrings : Strings {
     override val toPlan = "Add to plan…"
     override val toToday = "Today"
     override val choosePlan = "Which plan?"
+    override val machineGone = "The machine is no longer available"
 
     override fun addedTo(plan: String) = "Added to “$plan”"
 

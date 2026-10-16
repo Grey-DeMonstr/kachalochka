@@ -180,8 +180,8 @@ class MachineCatalogue(
     }
 
     /**
-     * [owner]'s machine of [friend]'s cluster in [group], else a new copy [take] writes; null
-     * when [group] lacks [friend].
+     * [owner]'s machine of [friend]'s cluster, else a new copy [take] writes; null when [group]
+     * lacks [friend]. The own links are read again, so a copy written after [group] counts.
      */
     suspend fun standIn(
         owner: UserId,
@@ -189,7 +189,7 @@ class MachineCatalogue(
         group: GroupMachines,
     ): Machine? {
         val shown = group.friends.firstOrNull { it.machine.id == friend }?.machine ?: return null
-        val cluster = group.clusters.of(friend)
+        val cluster = MachineClusters(group.links + links.all(owner)).of(friend)
         return machines.all(owner).firstOrNull { it.id in cluster } ?: take(owner, shown, group)
     }
 

@@ -540,7 +540,8 @@ account's live machines, photos and links from the device; its `group` read give
 mates' machines, links and photos from the network, in one parallel request; `clusters` reads
 only the links, for screens that just name a friend's machine after the viewer's own; `take`
 writes the own copy and its link; `standIn` gives the own machine of a friend's machine's
-cluster in a group read, else `take`s it; and `link` writes one own link to a friend's machine.
+cluster, from a group read and the own links read again, else `take`s it; and `link` writes
+one own link to a friend's machine.
 After a group read that succeeds, and after `take` and `link` with the group read the screen
 holds, the catalogue writes `missingDirectLinks` for the account the read was made for, a managed
 child included, and requests a sync when it wrote anything, also when it is stopped halfway. A
@@ -654,14 +655,17 @@ to write.
 
 `MachinePlacementViewModel` in `app/ui/machine` serves the "⋮" menu that the machine form, the
 visit's machine page and "Упражнение друга" share (`MachineMenu`, `PlanChooser`,
-`PlacementNotice`). An own machine is used only while it is the active account's live machine; a
-friend's machine is replaced by `MachineCatalogue.standIn` over a new group read, and a failed
-read only shows "Нет связи с сервером". "В план…" reads the plans in `planOrder` with
-`planTitle` names and keeps the account it read them for; a pick checks that account again
-(§4.3), reads the plan again and appends the machine when it is absent. "Сегодня" calls `plan` of
-a recorder for today. A notice carries the machine it is for, so another machine's page in the
-same visit does not show it. "Упражнение друга" reads again after a copy, so it stops offering
-"Взять себе".
+`PlacementNotice`). An own machine is used only while it is the active account's live machine. A
+friend's machine is replaced by `MachineCatalogue.standIn` over the group read "Упражнение друга"
+holds, when it was made for the active account, else over a new one. A failed read only shows
+"Нет связи с сервером", and a machine the read no longer has "Упражнение больше недоступно".
+"В план…" reads the plans in `planOrder` with `planTitle` names and keeps the account it read
+them for. Each action checks that the account is still active (§4.3) before the stand-in, after
+the group read, before each write and before it navigates; a switch also closes the choice and
+drops the notice. A pick reads the plan again and appends the machine when it is absent.
+"Сегодня" calls `plan` of a recorder for today. A notice carries the machine it is for, so
+another machine's page in the same visit does not show it. "Упражнение друга" reads again after a
+copy, so it stops offering "Взять себе".
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

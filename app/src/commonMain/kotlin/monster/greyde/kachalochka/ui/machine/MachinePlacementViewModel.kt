@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -25,10 +26,14 @@ import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.visit.SetRecorder
 import kotlin.time.Clock
 
-/** A machine a screen shows: the account's own, or a group mate's when [ofFriend]. */
+/**
+ * A machine a screen shows: the account's own, or a group mate's when [ofFriend]. [group] is the
+ * group read the screen holds, used instead of a new one when it was made for the active account.
+ */
 data class PlacedMachine(
     val id: MachineId,
     val ofFriend: Boolean = false,
+    val group: GroupMachines? = null,
 )
 
 data class PlanChoiceUi(
@@ -50,7 +55,8 @@ data class PlacementUi(
 
 /**
  * Puts the machine of a machine screen into a plan or into today's visit. A friend's machine
- * goes in as the account's machine of its cluster, else as a new linked copy.
+ * goes in as the account's machine of its cluster, else as a new linked copy. Every write checks
+ * first that the account it is for is still the active one (spec §4.3).
  */
 class MachinePlacementViewModel(
     private val plans: PlanRepository,
@@ -59,6 +65,7 @@ class MachinePlacementViewModel(
     private val links: MachineLinkRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
+    private val accounts: Accounts,
     private val catalogue: MachineCatalogue,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
@@ -72,6 +79,15 @@ class MachinePlacementViewModel(
     /** The machine the open choice is for, and the account it was offered to. */
     private var choosing: Pair<PlacedMachine, UserId?>? = null
 
+    init {
+        viewModelScope.launch {
+            accounts.activeId.collect {
+                choosing = null
+                mutableState.value = PlacementUi()
+            }
+        }
+    }
+
     fun choosePlan(machine: PlacedMachine) {
         viewModelScope.launch {
             val owner = currentUser.id()
@@ -81,6 +97,7 @@ class MachinePlacementViewModel(
                     val live = plan.machineIds.mapNotNull(names::get)
                     PlanChoiceUi(plan.id, planTitle(plan.name, live))
                 }
+            if (!stillActive(owner)) return@launch
             choosing = machine to owner
             mutableState.value = PlacementUi(choices = choices)
         }
@@ -103,10 +120,9 @@ class MachinePlacementViewModel(
         val (machine, owner) = choosing ?: return
         cancelChoice()
         writes.launch {
-            if (currentUser.id() != owner) return@launch
             val own = standIn(owner, machine, onStoodIn) ?: return@launch
             val stored = plans.byId(plan)?.takeIf { it.userId == owner && !it.deleted }
-            if (stored == null) return@launch
+            if (stored == null || !stillActive(owner)) return@launch
             if (own !in stored.machineIds) {
                 plans.upsert(
                     stored.copy(machineIds = stored.machineIds + own, updatedAt = clock.now()),
@@ -123,8 +139,8 @@ class MachinePlacementViewModel(
         val (machine, owner) = choosing ?: return
         cancelChoice()
         writes.launch {
-            if (currentUser.id() != owner) return@launch
-            standIn(owner, machine, onStoodIn)?.let(onOpen)
+            val own = standIn(owner, machine, onStoodIn) ?: return@launch
+            if (stillActive(owner)) onOpen(own)
         }
     }
 
@@ -137,11 +153,12 @@ class MachinePlacementViewModel(
         writes.launch {
             val owner = currentUser.id()
             val own = standIn(owner, machine, onStoodIn) ?: return@launch
+            if (!stillActive(owner)) return@launch
             val now = clock.now()
             val today = CalendarDay.of(now, utcOffset.at(now))
             SetRecorder(today, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
                 .plan(owner, listOf(own))
-            onOpen(today)
+            if (stillActive(owner)) onOpen(today)
         }
     }
 
@@ -149,22 +166,41 @@ class MachinePlacementViewModel(
         mutableState.value = mutableState.value.copy(notice = null)
     }
 
-    /** [owner]'s machine for [machine]; null when there is none to use or the read failed. */
+    /**
+     * [owner]'s machine for [machine], or null when there is none to use, the read failed or
+     * another account became active meanwhile.
+     */
     private suspend fun standIn(
         owner: UserId?,
         machine: PlacedMachine,
         onStoodIn: () -> Unit,
     ): MachineId? {
+        if (!stillActive(owner)) return null
         if (!machine.ofFriend) {
             return machines.byId(machine.id)?.takeIf { it.userId == owner && !it.deleted }?.id
         }
         val viewer = owner ?: return null
-        return reading { catalogue.standIn(viewer, machine.id, catalogue.group(viewer)) }
-            .onFailure { notice(machine, AppStrings.current.offline) }
-            .getOrNull()
-            ?.also { onStoodIn() }
-            ?.id
+        val group =
+            machine.group?.takeIf { it.owner == viewer }
+                ?: reading { catalogue.group(viewer) }.getOrElse {
+                    if (stillActive(viewer)) notice(machine, AppStrings.current.offline)
+                    return null
+                }
+        if (!stillActive(viewer)) return null
+        val own =
+            reading { catalogue.standIn(viewer, machine.id, group) }.getOrElse {
+                notice(machine, AppStrings.current.offline)
+                return null
+            }
+        if (own == null) {
+            notice(machine, AppStrings.current.machineGone)
+            return null
+        }
+        onStoodIn()
+        return own.id
     }
+
+    private suspend fun stillActive(owner: UserId?) = currentUser.id() == owner
 
     private fun notice(
         machine: PlacedMachine,

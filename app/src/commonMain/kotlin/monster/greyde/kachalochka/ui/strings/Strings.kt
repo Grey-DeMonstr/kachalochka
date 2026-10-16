@@ -108,6 +108,7 @@ interface Strings {
     val toPlan: String
     val toToday: String
     val choosePlan: String
+    val machineGone: String
 
     fun addedTo(plan: String): String
 

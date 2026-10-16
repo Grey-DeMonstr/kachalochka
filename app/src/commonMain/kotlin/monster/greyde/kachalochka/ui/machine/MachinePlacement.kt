@@ -101,11 +101,11 @@ internal fun PlanChooser(
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 choices.forEach { choice ->
-                    ChoiceRow(choice.title, "plan-choice-${choice.id.value}") {
+                    PlanRow(choice.title, "plan-choice-${choice.id.value}") {
                         viewModel.addTo(choice.id, onStoodIn)
                     }
                 }
-                ChoiceRow(strings().newPlan, "plan-choice-new") {
+                PlanRow(strings().newPlan, "plan-choice-new") {
                     viewModel.newPlan(onStoodIn, onNewPlan)
                 }
             }
@@ -122,7 +122,7 @@ internal fun PlanChooser(
 }
 
 @Composable
-private fun ChoiceRow(
+private fun PlanRow(
     text: String,
     tag: String,
     onClick: () -> Unit,

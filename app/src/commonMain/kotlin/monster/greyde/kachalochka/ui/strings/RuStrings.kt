@@ -143,6 +143,7 @@ object RuStrings : Strings {
     override val toPlan = "В план…"
     override val toToday = "Сегодня"
     override val choosePlan = "В какой план?"
+    override val machineGone = "Упражнение больше недоступно"
 
     override fun addedTo(plan: String) = "Добавлено в «$plan»"
 

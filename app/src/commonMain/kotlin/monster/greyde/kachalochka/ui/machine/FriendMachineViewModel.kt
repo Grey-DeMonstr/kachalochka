@@ -133,6 +133,9 @@ class FriendMachineViewModel(
             }
     }
 
+    /** The shown machine with the group read it came from, to place it elsewhere. */
+    fun placed(): PlacedMachine = PlacedMachine(machineId, ofFriend = true, group = read?.group)
+
     fun choosePeriod(chosen: StatsPeriod) {
         period = chosen
         read?.let { mutableState.value = uiOf(it) }
