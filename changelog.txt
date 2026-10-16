@@ -1,5 +1,14 @@
 Kachalochka - Changelog
 
+1.7.2
+
+- Friends' machines show at once on every machine screen.
+- A tap on a machine in a plan opens it.
+- A long linked machine name starts on the line of its link icon, after overlapping avatars.
+- Fixed: a plan shows no photo of a linked friend's machine.
+- Fixed: a friend's machine added twice at once is copied twice.
+
+
 1.7.1
 
 - A friend's machine name and setup note can be copied.
