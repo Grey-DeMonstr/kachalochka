@@ -642,9 +642,9 @@ machine, each linked machine has its own row, and tapping one opens it: an own m
 form, a friend's as from the machine list.
 Once the friends' machines are read, the machine list, the picker, the form, "Привязать к…",
 "Привязать к моему", a friend's machine, the visit screen and the statistics use that read at
-once, with the friends' records, colours and photos, and bring it up to date when the server
-answers. When the server does not answer, they keep the last read; only a friend's machine says
-"Нет связи с сервером" instead.
+once and bring it up to date when the server answers; the machine list and the picker also show
+the friends' records and colours from it. When the server does not answer, they keep the last
+read; only a friend's machine says "Нет связи с сервером" instead.
 "Отвязать от друзей" in the form's menu,
 after a confirmation, breaks every link between the machine and friends' machines, whichever side
 made it.

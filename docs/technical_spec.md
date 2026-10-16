@@ -634,10 +634,11 @@ again.
 joined to the last group read when there is one, then the fresh read. `group` is the same without
 the own read, for the visit screen, which reads its own machines on each reload. A read that
 fails emits the last good one, marked offline. With `withCards`, `machines` adds both peaks and
-the friends' colours and keeps the last good ones per account. A stream ends without a further
-emission once its account is no longer active. The machine list, the picker, the form, both link
-choosers, "Упражнение друга", the visit screen and the statistics take friends' machines only
-from it. "Упражнение друга" shows "Нет связи с сервером" on an offline emission, and the form
+the friends' colours and keeps the last good friends' peaks and colours per account. A stream
+ends without a further emission once its account is no longer active. The machine list, the
+picker, the form, both link choosers, "Упражнение друга", the visit screen and the statistics
+take friends' machines only from it; the form's copy of a friend's settings reads the group
+itself. "Упражнение друга" shows "Нет связи с сервером" on an offline emission, and the form
 skips the own-only emission while it waits, so a re-read keeps its linked machines. The form
 reads the group once per load, for its links, photos and tags.
 
