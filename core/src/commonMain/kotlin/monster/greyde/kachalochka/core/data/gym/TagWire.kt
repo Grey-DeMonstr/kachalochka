@@ -94,65 +94,6 @@ internal data class MachineTagRow(
 }
 
 /**
- * The rows a machine's write changes, in the order the web writes them: a link never names a tag
- * that is not live yet, and a tag is deleted only once its last link is.
- */
-internal class TagWrites(
-    val tags: List<Tag>,
-    val links: List<MachineTag>,
-    val unused: List<Tag>,
-)
-
-/**
- * The rows that give [machine] its tags, from its [stored] links and the [storedTags] they and
- * its tags name. A tag no live link holds any more, here or in [heldElsewhere], is deleted; a
- * stored link of another owner is not the machine's.
- */
-internal fun tagWrites(
-    machine: Machine,
-    stored: List<MachineTag>,
-    storedTags: List<Tag>,
-    heldElsewhere: Set<String>,
-): TagWrites {
-    val owner = machine.userId
-    val now = machine.updatedAt
-    val names =
-        if (machine.deleted) emptySet() else machine.tags.map(::tagKey).filter { it.isNotEmpty() }
-    val tagsById = storedTags.associateBy { it.id }
-    val own = stored.filter { it.userId == owner }
-    val linksById = own.associateBy { it.id }
-    val wanted = names.distinct().map { Tag(tagId(owner, it), owner, it, now, false) }
-    val liveTags =
-        wanted.filter { tag ->
-            tagsById[tag.id]?.let { it.deleted || it.name != tag.name || it.userId != owner }
-                ?: true
-        }
-    val wantedLinks =
-        wanted.map {
-            MachineTag(machineTagId(machine.id, it.name), owner, machine.id, it.id, now, false)
-        }
-    val liveLinks =
-        wantedLinks.filter { link ->
-            linksById[link.id]?.let { it.deleted || it.tagId != link.tagId } ?: true
-        }
-    val wantedIds = wantedLinks.map { it.id }.toSet()
-    val dropped =
-        own
-            .filter { !it.deleted && it.id !in wantedIds }
-            .map { it.copy(updatedAt = now, deleted = true) }
-    val kept = wanted.map { it.id }.toSet()
-    val unused =
-        dropped
-            .map { it.tagId }
-            .distinct()
-            .filter { it !in kept && it !in heldElsewhere }
-            .mapNotNull { tagsById[it] }
-            .filter { !it.deleted }
-            .map { it.copy(updatedAt = now, deleted = true) }
-    return TagWrites(liveTags, liveLinks + dropped, unused)
-}
-
-/**
  * [machines] with the tags their live [links] name in [tags]. Only a link and a tag of the
  * machine's own owner count: a group mate's row naming the machine is not its tag.
  */

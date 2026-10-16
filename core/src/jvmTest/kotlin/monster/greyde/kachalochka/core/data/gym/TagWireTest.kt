@@ -6,22 +6,12 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 class TagWireTest {
     private val ivan = UserId("11111111-1111-4111-8111-111111111111")
     private val t0 = Instant.parse("2026-10-16T10:00:00Z")
     private val press = Machine.new("Жим ногами", ivan, t0)
-
-    private fun written(
-        machine: Machine,
-        stored: TagWrites = TagWrites(emptyList(), emptyList(), emptyList()),
-        heldElsewhere: Set<String> = emptySet(),
-    ) = tagWrites(machine, stored.links, stored.tags + stored.unused, heldElsewhere)
-
-    private fun TagWrites.isEmpty() = tags.isEmpty() && links.isEmpty() && unused.isEmpty()
 
     @Test
     fun ids_are_uuid_v5_of_the_owner_or_machine_and_the_key_as_postgres_makes_them() {
@@ -34,86 +24,17 @@ class TagWireTest {
     }
 
     @Test
-    fun a_machine_s_tags_become_one_live_tag_and_link_per_key() {
-        val writes = written(press.copy(tags = setOf("Ноги", "ноги ", "Спина")))
-
-        assertEquals(
-            listOf(
-                Tag(tagId(ivan, "ноги"), ivan, "ноги", t0, false),
-                Tag(tagId(ivan, "спина"), ivan, "спина", t0, false),
-            ),
-            writes.tags,
-        )
-        assertEquals(
-            listOf("ноги", "спина").map {
-                MachineTag(machineTagId(press.id, it), ivan, press.id, tagId(ivan, it), t0, false)
-            },
-            writes.links,
-        )
-    }
-
-    @Test
-    fun an_unchanged_machine_writes_nothing() {
-        val tagged = press.copy(tags = setOf("ноги"))
-        val stored = written(tagged)
-
-        assertTrue(written(tagged.copy(updatedAt = t0 + 1.minutes), stored).isEmpty())
-    }
-
-    @Test
-    fun a_dropped_tag_loses_its_link_and_its_row_once_no_other_machine_holds_it() {
-        val tagged = press.copy(tags = setOf("ноги", "спина"))
-        val stored = written(tagged)
-        val later = t0 + 1.minutes
-
-        val writes = written(tagged.copy(tags = setOf("ноги"), updatedAt = later), stored)
-        val heldWrites =
-            written(
-                tagged.copy(tags = setOf("ноги"), updatedAt = later),
-                stored,
-                heldElsewhere = setOf(tagId(ivan, "спина")),
-            )
-
-        val back = stored.links.single { it.tagId == tagId(ivan, "спина") }
-        assertEquals(listOf(back.copy(updatedAt = later, deleted = true)), writes.links)
-        assertEquals(emptyList(), writes.tags)
-        assertEquals(
-            listOf(Tag(tagId(ivan, "спина"), ivan, "спина", later, true)),
-            writes.unused,
-        )
-        assertEquals(emptyList(), heldWrites.unused)
-    }
-
-    @Test
-    fun a_deleted_machine_loses_every_link() {
-        val tagged = press.copy(tags = setOf("ноги"))
-        val stored = written(tagged)
-
-        val writes = written(tagged.copy(deleted = true), stored)
-
-        assertEquals(stored.links.map { it.copy(deleted = true) }, writes.links)
-        assertEquals(stored.tags.map { it.copy(deleted = true) }, writes.unused)
-    }
-
-    @Test
-    fun a_tag_given_back_is_live_again_under_the_same_ids() {
-        val tagged = press.copy(tags = setOf("ноги"))
-        val first = written(tagged)
-        val removed = written(tagged.copy(tags = emptySet()), first)
-
-        val again = written(tagged, removed)
-
-        assertEquals(first.tags, again.tags)
-        assertEquals(first.links, again.links)
-    }
-
-    @Test
     fun machines_read_the_names_of_their_live_links() {
-        val tagged = written(press.copy(tags = setOf("ноги", "спина")))
-        val back = tagId(ivan, "спина")
-        val links = tagged.links.map { it.copy(deleted = it.tagId == back) }
+        val live = Tag(tagId(ivan, "ноги"), ivan, "ноги", t0, false)
+        val back = Tag(tagId(ivan, "спина"), ivan, "спина", t0, false)
+        val links =
+            listOf(live to false, back to true).map { (tag, deleted) ->
+                MachineTag(machineTagId(press.id, tag.name), ivan, press.id, tag.id, t0, deleted)
+            }
 
-        assertEquals(setOf("ноги"), listOf(press).withTagRows(links, tagged.tags).single().tags)
+        val read = listOf(press).withTagRows(links, listOf(live, back)).single()
+
+        assertEquals(setOf("ноги"), read.tags)
     }
 
     @Test
@@ -131,26 +52,9 @@ class TagWireTest {
     }
 
     @Test
-    fun a_stored_link_of_another_owner_is_never_dropped_by_the_machine_s_write() {
-        val mate = UserId("33333333-3333-4333-8333-333333333333")
-        val link =
-            MachineTag(
-                machineTagId(press.id, "чужой"),
-                mate,
-                press.id,
-                tagId(mate, "чужой"),
-                t0,
-                false,
-            )
-
-        assertTrue(written(press, TagWrites(emptyList(), listOf(link), emptyList())).isEmpty())
-    }
-
-    @Test
     fun rows_travel_in_the_wire_format() {
-        val writes = written(press.copy(tags = setOf("ноги")))
-        val tag = writes.tags.single()
-        val link = writes.links.single()
+        val tag = Tag(tagId(ivan, "ноги"), ivan, "ноги", t0, false)
+        val link = MachineTag(machineTagId(press.id, "ноги"), ivan, press.id, tag.id, t0, false)
 
         assertEquals(
             """{"id":"${tag.id}","user_id":"${ivan.value}","name":"ноги",""" +
