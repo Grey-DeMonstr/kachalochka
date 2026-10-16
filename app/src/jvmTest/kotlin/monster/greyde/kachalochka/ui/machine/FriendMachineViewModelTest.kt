@@ -72,6 +72,7 @@ class FriendMachineViewModelTest {
             OLEG.userId,
             gym.friends,
             gym.catalogue,
+            gym.machineReads,
             gym.currentUser,
             gym.accounts,
             gym.profiles,
@@ -122,6 +123,17 @@ class FriendMachineViewModelTest {
         assertEquals("25 кг · рядом с названием", state.platform)
         assertTrue(state.canTake)
         assertFalse(vm.offline.value)
+    }
+
+    @Test
+    fun offline_after_an_earlier_read_it_still_says_so() {
+        viewModel()
+        on.friends.offline = true
+
+        val vm = viewModel()
+
+        assertTrue(vm.offline.value)
+        assertNull(vm.state.value)
     }
 
     @Test

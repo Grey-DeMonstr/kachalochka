@@ -61,6 +61,7 @@ class MachineFormViewModelTest {
             gym.machineLinks,
             gym.photos,
             gym.catalogue,
+            gym.machineReads,
             gym.sets,
         )
 
@@ -111,6 +112,7 @@ class MachineFormViewModelTest {
         on.machineLinks,
         on.photos,
         on.catalogue,
+        on.machineReads,
         on.sets,
     )
 
@@ -175,6 +177,46 @@ class MachineFormViewModelTest {
             on.friends.gate = gate
 
             val vm = formOn(on, MachineFormArgs(copy.id, null, "")).also { it.load() }
+
+            assertEquals(
+                listOf(olegs.id),
+                vm.linking.value.linkedWith
+                    .map { it.machineId },
+            )
+            gate.complete(Unit)
+            assertEquals(
+                listOf(olegs.id),
+                vm.linking.value.linkedWith
+                    .map { it.machineId },
+            )
+        }
+
+    @Test
+    fun shown_again_without_a_cached_read_the_form_keeps_its_links_while_it_reads() =
+        runTest {
+            val on = signedInGym()
+            val (copy, olegs) = on.myCopyOfOlegsPress()
+            val catalogue = on.catalogueOver(on.machineLinks)
+            val vm =
+                MachineFormViewModel(
+                    MachineFormArgs(copy.id, null, ""),
+                    on.machines,
+                    on.currentUser,
+                    on.accounts,
+                    on.clock,
+                    on.machineLinks,
+                    on.photos,
+                    catalogue,
+                    on.machineReadsOver(catalogue),
+                    on.sets,
+                ).also { it.load() }
+            on.friends.links += linkedCopy(olegs, OLEG.userId, t0).second
+            assertTrue(catalogue.repointFriends(ME.userId, olegs.id, MachineId.random()))
+            assertNull(catalogue.lastGroup(ME.userId))
+            val gate = CompletableDeferred<Unit>()
+            on.friends.gate = gate
+
+            vm.load()
 
             assertEquals(
                 listOf(olegs.id),

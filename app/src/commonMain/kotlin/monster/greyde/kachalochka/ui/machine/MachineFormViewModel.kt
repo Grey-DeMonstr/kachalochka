@@ -188,6 +188,7 @@ class MachineFormViewModel(
     private val machineLinks: MachineLinkRepository,
     private val photoRows: PhotoRepository,
     private val catalogue: MachineCatalogue,
+    private val reads: MachineReads,
     private val sets: WorkoutSetRepository,
 ) : ViewModel() {
     private val mutableState =
@@ -310,8 +311,8 @@ class MachineFormViewModel(
 
     /**
      * Own links are on hand offline; friends' links, machines, photos and tags need the network.
-     * The last group read shows them at once, and the group is read once for all of them; without
-     * either the form names no friends' machines.
+     * The last group read shows them at once, and the group is read once for all of them; with a
+     * read on the way and none cached, the form keeps the friends' machines it names.
      */
     private suspend fun readLinks() {
         val owner = accounts.activeId.value
@@ -328,28 +329,27 @@ class MachineFormViewModel(
                 }
         }
         // Before the load the form has no machine yet, so it waits for the load's own read.
-        val reader = owner?.takeIf { loaded }
-        val last = reader?.let { catalogue.lastGroup(it) }
-        last?.let { showGroup(owner, shown, ownLinks, it) }
-        val group = reader?.let { reading { catalogue.group(it) }.getOrNull() } ?: last
-        showGroup(owner, shown, ownLinks, group)
+        if (!loaded) return
+        reads.machines(owner).collect { read ->
+            if (!read.waiting) showGroup(owner, shown, ownLinks, read)
+        }
     }
 
-    private suspend fun showGroup(
+    private fun showGroup(
         owner: UserId?,
         shown: Machine?,
         ownLinks: List<MachineLink>,
-        group: GroupMachines?,
+        read: MachineRead,
     ) {
-        val own = catalogue.own(owner)
         if (accounts.activeId.value != owner || existing?.id != shown?.id) return
+        val group = read.group?.machines
         group?.let { update { form -> form.copy(friendTags = friendTagsOf(it)) } }
         if (shown == null) return
         if (group != null) {
             friendPhotos = friendPhotosOf(shown.id, group)
             showPhotos()
         }
-        val visible = ShownMachines(own, group)
+        val visible = read.shown
         update { form -> form.copy(linkedTags = visible.linkedRows(shown.id).flatMap { it.tags }) }
         mutableLinking.value =
             mutableLinking.value.copy(

@@ -61,6 +61,7 @@ class FriendMachineViewModel(
     private val owner: UserId,
     private val friends: FriendsRepository,
     private val catalogue: MachineCatalogue,
+    private val reads: MachineReads,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val profiles: ProfileRepository,
@@ -106,6 +107,7 @@ class FriendMachineViewModel(
     /**
      * Cancels the load in flight, so one for a previous account never lands last. The friend's
      * sets are read beside the group; the last group read shows the machine before either lands.
+     * A server that does not answer shows no machine, not the cached one.
      */
     fun refresh() {
         loading?.cancel()
@@ -117,16 +119,32 @@ class FriendMachineViewModel(
                     coroutineScope {
                         val sets = async { friends.setsOn(owner, machineId) }
                         val preferred = profiles.preferredUnit(viewer)
-                        catalogue.lastGroup(viewer)?.let { readOf(viewer, it, preferred) }?.let {
-                            show(viewer, it)
+                        var offline = false
+                        reads.machines(viewer).collect { read ->
+                            val group = read.group ?: return@collect
+                            if (read.offline) {
+                                forgetShown()
+                                sets.cancel()
+                                offline = true
+                                return@collect
+                            }
+                            val found = readOf(read, preferred)
+                            when {
+                                !group.fresh -> found?.let { show(viewer, it) }
+                                found == null -> {
+                                    forgetShown()
+                                    sets.cancel()
+                                }
+                                else -> {
+                                    show(viewer, found)
+                                    show(viewer, found.copy(sets = sets.await()))
+                                }
+                            }
                         }
-                        val found = readOf(viewer, catalogue.group(viewer), preferred)
-                        if (found == null) sets.cancel() else show(viewer, found)
-                        found?.copy(sets = sets.await())
+                        offline
                     }
-                }.onSuccess { found ->
-                    if (found == null) forgetShown() else show(viewer, found)
-                    mutableOffline.value = false
+                }.onSuccess { offline ->
+                    mutableOffline.value = offline
                 }.onFailure {
                     forgetShown()
                     mutableOffline.value = true
@@ -140,18 +158,17 @@ class FriendMachineViewModel(
         mutableState.value = null
     }
 
-    private suspend fun readOf(
-        viewer: UserId,
-        group: GroupMachines,
+    private fun readOf(
+        read: MachineRead,
         preferred: PreferredWeightUnit,
     ): Read? {
+        val group = read.group?.machines ?: return null
         val found = group.friends.firstOrNull(::isShown) ?: return null
-        val own = catalogue.own(viewer)
-        val shown = ShownMachines(own, group)
+        val shown = read.shown
         return Read(
             found,
             group,
-            own.machines.any { shown.clusters.sameMachine(it.id, machineId) },
+            shown.own.machines.any { shown.clusters.sameMachine(it.id, machineId) },
             shown.linkedWith(machineId),
             group.photos.filter { it.machineId == machineId }.sortedWith(photoOrder),
             preferred,
