@@ -123,6 +123,12 @@ object EnStrings : Strings {
         "Its machines will be added to today's visit, and the plan will disappear from the list."
     override val saveAsPlan = "Save as plan"
     override val repeatToday = "Repeat today"
+    override val toPlan = "Add to plan…"
+    override val toToday = "Today"
+    override val choosePlan = "Which plan?"
+
+    override fun addedTo(plan: String) = "Added to “$plan”"
+
     override val reps = "reps"
     override val comment = "Comment"
     override val deleteSet = "Delete set"

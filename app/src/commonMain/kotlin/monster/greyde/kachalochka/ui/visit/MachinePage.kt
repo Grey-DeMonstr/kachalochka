@@ -53,6 +53,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountUi
 import monster.greyde.kachalochka.ui.account.PersonAvatar
@@ -66,8 +68,14 @@ import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.Stepper
 import monster.greyde.kachalochka.ui.components.TextInput
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.machine.MachineMenu
+import monster.greyde.kachalochka.ui.machine.MachinePlacementViewModel
+import monster.greyde.kachalochka.ui.machine.PlacedMachine
+import monster.greyde.kachalochka.ui.machine.PlacementNotice
+import monster.greyde.kachalochka.ui.machine.PlanChooser
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
 import monster.greyde.kachalochka.ui.strings.strings
+import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
 
 /** Frame 7c: one machine of the visit, its record, last time, friends and the day's sets. */
@@ -79,8 +87,13 @@ internal fun MachinePage(
     onOpenMachineSettings: () -> Unit,
     onOpenStatistics: () -> Unit,
     onAddAccount: () -> Unit,
+    canPlanToday: Boolean,
+    onOpenVisit: (CalendarDay) -> Unit,
+    onNewPlan: (MachineId) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val placement: MachinePlacementViewModel = koinViewModel()
+    val placed = PlacedMachine(page.machineId)
     Screen(
         "",
         onBack = { viewModel.closeSheet() },
@@ -98,9 +111,19 @@ internal fun MachinePage(
                 onOpenMachineSettings,
                 Modifier.testTag("machine-settings"),
             )
+            MachineMenu(
+                onToPlan = { placement.choosePlan(placed) },
+                onToday =
+                    if (canPlanToday) {
+                        { placement.planToday(placed, onOpen = onOpenVisit) }
+                    } else {
+                        null
+                    },
+            )
         },
         timer = true,
     ) {
+        PlacementNotice(placement, page.machineId, Modifier.padding(horizontal = 16.dp))
         Box(Modifier.weight(1f).fillMaxWidth().testTag("machine-page")) {
             Column(
                 Modifier
@@ -220,6 +243,7 @@ internal fun MachinePage(
             }
         }
     }
+    PlanChooser(placement, onNewPlan)
 }
 
 @Composable

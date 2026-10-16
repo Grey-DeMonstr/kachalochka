@@ -60,8 +60,9 @@ fun PlanFormScreen(
     onAddMachine: () -> Unit,
     onDone: () -> Unit,
     fromVisit: CalendarDay? = null,
+    machine: MachineId? = null,
 ) {
-    val viewModel: PlanFormViewModel = koinViewModel { parametersOf(planId, fromVisit) }
+    val viewModel: PlanFormViewModel = koinViewModel { parametersOf(planId, fromVisit, machine) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(pickedMachineId) {
         if (pickedMachineId != null) {

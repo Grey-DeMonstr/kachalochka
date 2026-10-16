@@ -179,6 +179,20 @@ class MachineCatalogue(
         return copy
     }
 
+    /**
+     * [owner]'s machine of [friend]'s cluster in [group], else a new copy [take] writes; null
+     * when [group] lacks [friend].
+     */
+    suspend fun standIn(
+        owner: UserId,
+        friend: MachineId,
+        group: GroupMachines,
+    ): Machine? {
+        val shown = group.friends.firstOrNull { it.machine.id == friend }?.machine ?: return null
+        val cluster = group.clusters.of(friend)
+        return machines.all(owner).firstOrNull { it.id in cluster } ?: take(owner, shown, group)
+    }
+
     /** [machine], [owner]'s own, links to [friend] and to the rest of its cluster in [group]. */
     suspend fun link(
         owner: UserId,

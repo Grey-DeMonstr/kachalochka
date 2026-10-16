@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.components.AccentButton
@@ -50,6 +51,8 @@ fun FriendMachineScreen(
     /** True once "Привязать к моему" has written a link, so the links are read again. */
     linked: Boolean = false,
     onLinkedConsumed: () -> Unit = {},
+    onOpenVisit: (CalendarDay) -> Unit = {},
+    onNewPlan: (MachineId) -> Unit = {},
 ) {
     val viewModel: FriendMachineViewModel = koinViewModel { parametersOf(machineId, ownerId) }
     LaunchedEffect(Unit) { viewModel.speak() }
@@ -62,9 +65,26 @@ fun FriendMachineScreen(
     val state by viewModel.state.collectAsState()
     val offline by viewModel.offline.collectAsState()
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
+    val placement: MachinePlacementViewModel = koinViewModel()
+    val placed = PlacedMachine(machineId, ofFriend = true)
+    // Taking is offered only while no own machine stands in, so only then is a copy written.
+    val onStoodIn = { if (state?.canTake == true) viewModel.refresh() }
     // The view model already loads once created: it follows accounts.activeId from init.
-    Screen(strings().friendMachine, onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(
+        strings().friendMachine,
+        onBack = onBack,
+        onOpenSettings = onOpenSettings,
+        actions = {
+            if (state != null && !offline) {
+                MachineMenu(
+                    onToPlan = { placement.choosePlan(placed) },
+                    onToday = { placement.planToday(placed, onStoodIn, onOpenVisit) },
+                )
+            }
+        },
+    ) {
         val current = state
+        PlacementNotice(placement, machineId, Modifier.padding(horizontal = 16.dp))
         if (offline) {
             OfflineNotice(onRetry = viewModel::refresh)
         } else if (current != null) {
@@ -144,6 +164,7 @@ fun FriendMachineScreen(
             }
         }
     }
+    PlanChooser(placement, onNewPlan, onStoodIn)
     opened?.let { PhotoViewer(state?.photos.orEmpty(), it, onClose = { opened = null }) }
 }
 

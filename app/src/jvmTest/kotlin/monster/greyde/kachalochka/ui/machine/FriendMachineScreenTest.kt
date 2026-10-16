@@ -8,11 +8,15 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import kotlinx.coroutines.runBlocking
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.Plan
+import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
@@ -157,6 +161,66 @@ class FriendMachineScreenTest {
         }) {
             onNodeWithTag("friends-offline").assertTextEquals("Нет связи с сервером")
             onNodeWithTag("take-machine").assertDoesNotExist()
+            onNodeWithTag("machine-menu").assertDoesNotExist()
         }
+    }
+
+    @Test
+    fun a_plan_takes_the_account_s_copy_and_taking_is_no_longer_offered() {
+        val legs =
+            Plan(
+                PlanId.random(),
+                ME.userId,
+                "Ноги",
+                emptyList(),
+                on.clock.current,
+                on.clock.current,
+                false,
+            )
+        runBlocking { on.plans.upsert(legs) }
+        runScreenTest(on, screen = {
+            FriendMachineScreen(olegPress.id, OLEG.userId, {}, {}, {})
+        }) {
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("machine-to-plan").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-choice-${legs.id.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("placement-notice").assertTextEquals("Добавлено в «Ноги»")
+            onNodeWithTag("take-machine").assertDoesNotExist()
+        }
+        val copy = runBlocking { on.machines.all(ME.userId) }.single()
+        assertEquals(
+            listOf(copy.id),
+            on.plans.rows
+                .getValue(legs.id)
+                .machineIds,
+        )
+    }
+
+    @Test
+    fun today_plans_the_account_s_copy_and_opens_today() {
+        val days = mutableListOf<CalendarDay>()
+        runScreenTest(on, screen = {
+            FriendMachineScreen(
+                olegPress.id,
+                OLEG.userId,
+                {},
+                {},
+                {},
+                onOpenVisit = { days += it },
+            )
+        }) {
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("machine-to-today").performClick()
+            waitForIdle()
+        }
+        val copy = runBlocking { on.machines.all(ME.userId) }.single()
+        assertEquals(listOf(on.today), days)
+        assertEquals(
+            listOf(copy.id),
+            runBlocking { on.visits.onDay(ME.userId, on.today) }?.planned,
+        )
     }
 }

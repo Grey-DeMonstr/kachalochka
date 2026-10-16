@@ -140,6 +140,12 @@ object RuStrings : Strings {
         "Его упражнения добавятся в сегодняшний визит, а сам план исчезнет из списка."
     override val saveAsPlan = "Сохранить как план"
     override val repeatToday = "Повторить сегодня"
+    override val toPlan = "В план…"
+    override val toToday = "Сегодня"
+    override val choosePlan = "В какой план?"
+
+    override fun addedTo(plan: String) = "Добавлено в «$plan»"
+
     override val reps = "повторы"
     override val comment = "Комментарий"
     override val deleteSet = "Удалить подход"

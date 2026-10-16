@@ -411,6 +411,39 @@ class MachineCatalogueTest {
         }
 
     @Test
+    fun a_friend_s_machine_stands_in_as_the_account_s_machine_of_its_cluster() =
+        runTest {
+            olegsGym()
+
+            val own = catalogue.standIn(ME.userId, olegPress.id, catalogue.group(ME.userId))
+
+            assertEquals(myPress, own)
+            assertEquals(listOf(myPress), gym.machines.all(ME.userId))
+        }
+
+    @Test
+    fun a_friend_s_machine_without_an_own_one_in_its_cluster_stands_in_as_a_linked_copy() =
+        runTest {
+            olegsGym()
+
+            val own = catalogue.standIn(ME.userId, olegRow.id, catalogue.group(ME.userId))
+
+            assertEquals("Тяга", own?.name)
+            assertEquals(own, own?.id?.let { gym.machines.byId(it) })
+            assertTrue(own?.id to olegRow.id in linkedPairs())
+        }
+
+    @Test
+    fun a_machine_the_group_read_lacks_has_no_stand_in() =
+        runTest {
+            olegsGym()
+
+            assertNull(
+                catalogue.standIn(ME.userId, MachineId.random(), catalogue.group(ME.userId)),
+            )
+        }
+
+    @Test
     fun linking_an_own_machine_to_a_friend_s_links_it_to_the_whole_cluster() =
         runTest {
             olegsGym()

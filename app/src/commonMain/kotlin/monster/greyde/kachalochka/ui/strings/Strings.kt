@@ -105,6 +105,12 @@ interface Strings {
     val startPlanText: String
     val saveAsPlan: String
     val repeatToday: String
+    val toPlan: String
+    val toToday: String
+    val choosePlan: String
+
+    fun addedTo(plan: String): String
+
     val reps: String
     val comment: String
     val deleteSet: String

@@ -21,9 +21,12 @@ import androidx.compose.ui.test.swipeLeft
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.Plan
+import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -476,6 +479,70 @@ class MachineFormScreenTest {
             onNodeWithTag("machine-menu").assertDoesNotExist()
             onNodeWithTag("link-machine").assertDoesNotExist()
         }
+
+    @Test
+    fun a_saved_machine_goes_into_a_chosen_plan_and_the_form_says_so() {
+        val now = gym.clock.current
+        val press = Machine.new("Жим ногами", null, now)
+        val legs = Plan(PlanId.random(), null, "Ноги", emptyList(), now, now, false)
+        runBlocking {
+            gym.machines.upsert(press)
+            gym.plans.upsert(legs)
+        }
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(press.id, null, ""), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("unlink-machine").assertDoesNotExist()
+            onNodeWithTag("machine-to-plan").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-choice-new").assertTextEquals("Новый план")
+            onNodeWithTag("plan-choice-${legs.id.value}").assertTextEquals("Ноги").performClick()
+            waitForIdle()
+
+            onNodeWithTag("plan-choice-new").assertDoesNotExist()
+            onNodeWithTag("placement-notice").assertTextEquals("Добавлено в «Ноги»")
+            assertEquals(
+                listOf(press.id),
+                gym.plans.rows
+                    .getValue(legs.id)
+                    .machineIds,
+            )
+            onNodeWithTag("placement-notice").performClick()
+            waitForIdle()
+            onNodeWithTag("placement-notice").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun a_saved_machine_s_menu_opens_a_new_plan_or_today_s_visit_for_it() {
+        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        runBlocking { gym.machines.upsert(press) }
+        val newPlans = mutableListOf<MachineId>()
+        val visits = mutableListOf<CalendarDay>()
+        runScreenTest(gym, screen = {
+            MachineFormScreen(
+                MachineFormArgs(press.id, null, ""),
+                {},
+                {},
+                onSaved = {},
+                onNewPlan = { newPlans += it },
+                onOpenVisit = { visits += it },
+            )
+        }) {
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("machine-to-plan").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-choice-new").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("machine-to-today").assertTextEquals("Сегодня").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(press.id), newPlans)
+        assertEquals(listOf(gym.today), visits)
+        assertEquals(listOf(press.id), runBlocking { gym.visits.onDay(null, gym.today) }?.planned)
+    }
 
     @Test
     fun a_saved_machine_offers_linking_and_names_the_machines_it_is_linked_with() {

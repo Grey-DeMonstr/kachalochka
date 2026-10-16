@@ -39,6 +39,7 @@ import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
 import monster.greyde.kachalochka.ui.machine.MachineListViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
+import monster.greyde.kachalochka.ui.machine.MachinePlacementViewModel
 import monster.greyde.kachalochka.ui.machine.MineChooserViewModel
 import monster.greyde.kachalochka.ui.measures.MeasureViewModel
 import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
@@ -91,6 +92,7 @@ val appModule =
         viewModelOf(::PlansViewModel)
         viewModelOf(::ChildrenViewModel)
         viewModelOf(::GuardiansViewModel)
+        viewModelOf(::MachinePlacementViewModel)
         viewModel { (day: CalendarDay?) ->
             MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get())
         }
@@ -136,10 +138,11 @@ val appModule =
                 get(),
             )
         }
-        viewModel { (plan: PlanId?, fromVisit: CalendarDay?) ->
+        viewModel { (plan: PlanId?, fromVisit: CalendarDay?, machine: MachineId?) ->
             PlanFormViewModel(
                 plan,
                 fromVisit,
+                machine,
                 get(),
                 get(),
                 get(),

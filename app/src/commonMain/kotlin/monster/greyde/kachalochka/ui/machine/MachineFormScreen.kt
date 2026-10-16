@@ -27,8 +27,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -56,6 +54,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
@@ -94,11 +93,15 @@ fun MachineFormScreen(
     onOpenFriendMachine: (MachineId, UserId) -> Unit = { _, _ -> },
     onOpenMachine: (MachineId) -> Unit = {},
     onOpenStatistics: (MachineId) -> Unit = {},
+    onOpenVisit: (CalendarDay) -> Unit = {},
+    onNewPlan: (MachineId) -> Unit = {},
     /** A friend's machine whose settings the link chooser handed back. */
     copySettingsFrom: MachineId? = null,
     onCopyConsumed: () -> Unit = {},
 ) {
     val viewModel: MachineFormViewModel = koinViewModel { parametersOf(args) }
+    val placement: MachinePlacementViewModel = koinViewModel()
+    val placed = args.machineId?.let(::PlacedMachine)
     val state by viewModel.state.collectAsState()
     val linking by viewModel.linking.collectAsState()
     val photos by viewModel.photos.collectAsState()
@@ -126,9 +129,16 @@ fun MachineFormScreen(
                     Modifier.testTag("machine-statistics"),
                 )
             }
-            if (linking.canUnlink) MachineMenu(viewModel::askToUnlink)
+            MachineMenu(
+                onToPlan = placed?.let { { placement.choosePlan(it) } },
+                onToday = placed?.let { { placement.planToday(it, onOpen = onOpenVisit) } },
+                onUnlink = if (linking.canUnlink) viewModel::askToUnlink else null,
+            )
         },
     ) {
+        placed?.let {
+            PlacementNotice(placement, it.id, Modifier.padding(horizontal = 16.dp))
+        }
         Column(
             Modifier
                 .weight(1f)
@@ -267,6 +277,7 @@ fun MachineFormScreen(
             },
         )
     }
+    PlanChooser(placement, onNewPlan)
     if (linking.confirmingUnlink) {
         ConfirmDialog(
             title = strings().unlinkTitle,
@@ -683,28 +694,5 @@ private fun WeightStepRow(
             unitLabel(state.unit, state.unitLabel),
             "weight-step",
         )
-    }
-}
-
-@Composable
-private fun MachineMenu(onUnlink: () -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        SquareIconButton(
-            PhosphorIcons.DotsThreeVertical,
-            strings().more,
-            { expanded = true },
-            Modifier.testTag("machine-menu"),
-        )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(
-                text = { Text(strings().unlinkFromFriends) },
-                onClick = {
-                    expanded = false
-                    onUnlink()
-                },
-                modifier = Modifier.testTag("unlink-machine"),
-            )
-        }
     }
 }

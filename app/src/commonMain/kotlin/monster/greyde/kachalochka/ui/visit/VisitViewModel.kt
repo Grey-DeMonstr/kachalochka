@@ -99,6 +99,7 @@ data class VisitUiState(
     val canGroupByTag: Boolean = false,
     val canOrder: Boolean = false,
     val canRepeatToday: Boolean = false,
+    val isToday: Boolean = false,
 )
 
 data class VisitSectionUi(
@@ -679,6 +680,7 @@ class VisitViewModel(
                 canShare = visitSets.isNotEmpty(),
                 canOrder = visitSets.isNotEmpty(),
                 canRepeatToday = groups.isNotEmpty() && !isToday,
+                isToday = isToday,
                 notice = notice,
             )
     }

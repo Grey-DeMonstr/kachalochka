@@ -44,6 +44,8 @@ import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.Plan
+import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -810,6 +812,74 @@ class VisitScreenTest {
     }
 
     @Test
+    fun the_page_of_today_s_visit_puts_its_machine_into_a_plan_but_not_into_today() {
+        val now = gym.clock.current
+        val legs = Plan(PlanId.random(), null, "Ноги", emptyList(), now, now, false)
+        runBlocking { gym.plans.upsert(legs) }
+        runScreenTest(gym, screen = { visitScreen(opened = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-to-today").assertDoesNotExist()
+            onNodeWithTag("machine-to-plan").assertTextEquals("В план…").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-choice-${legs.id.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("placement-notice").assertTextEquals("Добавлено в «Ноги»")
+        }
+        assertEquals(
+            listOf(press.id),
+            gym.plans.rows
+                .getValue(legs.id)
+                .machineIds,
+        )
+    }
+
+    @Test
+    fun the_page_of_another_day_plans_its_machine_today_or_in_a_new_plan() {
+        val past = CalendarDay(2023, 11, 7)
+        runBlocking {
+            val now = gym.clock.current
+            val pastVisit = Visit(VisitId.random(), null, past, now - 7.days, now, false)
+            gym.visits.upsert(pastVisit)
+            gym.machines.upsert(row)
+            gym.sets.upsert(
+                recorded.copy(
+                    id = WorkoutSetId.random(),
+                    visitId = pastVisit.id,
+                    machineId = row.id,
+                ),
+            )
+        }
+        val days = mutableListOf<CalendarDay>()
+        val plans = mutableListOf<MachineId>()
+        runScreenTest(gym, screen = {
+            visitScreen(
+                day = past,
+                opened = row.id,
+                onOpenVisit = { days += it },
+                onNewPlan = { plans += it },
+            )
+        }) {
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-to-today").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-to-plan").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-choice-new").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf(gym.today), days)
+        assertEquals(listOf(row.id), plans)
+        assertEquals(listOf(row.id), runBlocking { gym.visits.onDay(null, gym.today) }?.planned)
+    }
+
+    @Test
     fun a_machine_opened_from_its_statistics_shows_its_page_without_the_form() {
         var consumed = false
         runScreenTest(gym, screen = {
@@ -1001,6 +1071,7 @@ class VisitScreenTest {
         onBack: () -> Unit = {},
         onSaveAsPlan: () -> Unit = {},
         onOpenVisit: (CalendarDay) -> Unit = {},
+        onNewPlan: (MachineId) -> Unit = {},
     ) = VisitScreen(
         day = day,
         pickedMachineId = picked,
@@ -1014,5 +1085,6 @@ class VisitScreenTest {
         onOpenStatistics = onOpenStatistics,
         onSaveAsPlan = onSaveAsPlan,
         onOpenVisit = onOpenVisit,
+        onNewPlan = onNewPlan,
     )
 }

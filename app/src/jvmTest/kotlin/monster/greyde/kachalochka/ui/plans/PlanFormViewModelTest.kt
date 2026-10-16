@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -39,9 +40,11 @@ class PlanFormViewModelTest {
     private fun viewModel(
         id: PlanId?,
         fromVisit: CalendarDay? = null,
+        machine: MachineId? = null,
     ) = PlanFormViewModel(
         id,
         fromVisit,
+        machine,
         gym.plans,
         gym.visits,
         gym.sets,
@@ -106,6 +109,19 @@ class PlanFormViewModelTest {
                     .planned,
             )
         }
+
+    @Test
+    fun a_plan_made_for_a_machine_holds_it_and_is_written_at_once() {
+        val vm = viewModel(null, machine = row.id)
+
+        assertEquals(
+            listOf(row.id),
+            vm.state.value.rows
+                .map { it.id },
+        )
+        assertEquals(listOf(row.id), newPlans().single().machineIds)
+        assertTrue(vm.state.value.canDelete)
+    }
 
     @Test
     fun a_new_plan_is_written_at_its_first_change() {

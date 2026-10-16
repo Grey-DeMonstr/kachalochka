@@ -73,6 +73,7 @@ fun VisitScreen(
     onOpenStatistics: (MachineId) -> Unit = {},
     onSaveAsPlan: () -> Unit = {},
     onOpenVisit: (CalendarDay) -> Unit = {},
+    onNewPlan: (MachineId) -> Unit = {},
     /** A machine whose page opens without the set form, as a tap on its row opens it. */
     openedMachineId: MachineId? = null,
     onOpenedMachineConsumed: () -> Unit = {},
@@ -110,6 +111,9 @@ fun VisitScreen(
             },
             onOpenStatistics = { onOpenStatistics(page.machineId) },
             onAddAccount = accountsViewModel::addAccount,
+            canPlanToday = current?.isToday == false,
+            onOpenVisit = onOpenVisit,
+            onNewPlan = onNewPlan,
         )
         return
     }

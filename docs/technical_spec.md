@@ -454,8 +454,10 @@ SQLite. It is private to its owner, like `measure`. A started plan's machines go
 `visit.planned`, the same kind of array: `startedPlanned` appends the plan's live machines the
 visit neither recorded nor planned, and the visit screen shows `plannedWithoutSets` as planned
 rows. A plan made from a visit (`PlanRoute.fromVisit`) starts from `visitMachines`, the visit's
-machines in list order. Readers skip ids that name no live machine, so a machine merged away
-drops out of plans. Migration `0018` and `13.sqm` add both; `13.sqm` resets `lastPullAt`.
+machines in list order, and one made for a machine (`PlanRoute.machineId`) from that machine
+alone; both are written as the form opens. Readers skip ids that name no live machine, so a
+machine merged away drops out of plans. Migration `0018` and `13.sqm` add both; `13.sqm` resets
+`lastPullAt`.
 Migration `0025` and `17.sqm` add `pinned`; `17.sqm` resets `lastPullAt` too.
 
 `PlanFormViewModel` saves the plan itself. Each change of the machines or the pin, a pause of
@@ -537,13 +539,14 @@ friends' machines in its cluster (`ShownMachines.linkedNames`), known only after
 account's live machines, photos and links from the device; its `group` read gives the group
 mates' machines, links and photos from the network, in one parallel request; `clusters` reads
 only the links, for screens that just name a friend's machine after the viewer's own; `take`
-writes the own copy and its link; and `link` writes one own link to a friend's machine. After a
-group read that succeeds, and after `take` and `link` with the group read the screen holds, the
-catalogue writes `missingDirectLinks` for the account the read was made for, a managed child
-included, and requests a sync when it wrote anything, also when it is stopped halfway. A mutex
-lets one upkeep run at a time, and each reads the own links again first, so two at once never
-write the same link. A failed upkeep goes to `FailureLog` and fails nothing: the group read keeps
-the links seen before it, and the link that `take` or `link` wrote first stays.
+writes the own copy and its link; `standIn` gives the own machine of a friend's machine's
+cluster in a group read, else `take`s it; and `link` writes one own link to a friend's machine.
+After a group read that succeeds, and after `take` and `link` with the group read the screen
+holds, the catalogue writes `missingDirectLinks` for the account the read was made for, a managed
+child included, and requests a sync when it wrote anything, also when it is stopped halfway. A
+mutex lets one upkeep run at a time, and each reads the own links again first, so two at once
+never write the same link. A failed upkeep goes to `FailureLog` and fails nothing: the group read
+keeps the links seen before it, and the link that `take` or `link` wrote first stays.
 
 `ShownMachines` joins an own read with a group read into what a screen shows, the clusters, each
 machine's cover photo and the friends' machines offered, and drops a group read made for another
@@ -648,6 +651,17 @@ calendar and the visit screen calls `planFrom` of a recorder for today: it plans
 `visitMachines` as starting a plan does. The visit view model keeps the state of the machine's
 page and its set form, both drawn by the visit screen over its list, and hands the recorder what
 to write.
+
+`MachinePlacementViewModel` in `app/ui/machine` serves the "⋮" menu that the machine form, the
+visit's machine page and "Упражнение друга" share (`MachineMenu`, `PlanChooser`,
+`PlacementNotice`). An own machine is used only while it is the active account's live machine; a
+friend's machine is replaced by `MachineCatalogue.standIn` over a new group read, and a failed
+read only shows "Нет связи с сервером". "В план…" reads the plans in `planOrder` with
+`planTitle` names and keeps the account it read them for; a pick checks that account again
+(§4.3), reads the plan again and appends the machine when it is absent. "Сегодня" calls `plan` of
+a recorder for today. A notice carries the machine it is for, so another machine's page in the
+same visit does not show it. "Упражнение друга" reads again after a copy, so it stops offering
+"Взять себе".
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

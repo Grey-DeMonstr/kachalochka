@@ -645,6 +645,82 @@ class AppTest {
         }
     }
 
+    private fun savedPress(): Machine {
+        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        runBlocking { gym.machines.upsert(press) }
+        return press
+    }
+
+    @Test
+    fun today_from_a_machine_s_form_opens_today_s_visit_and_back_returns_to_the_form() {
+        val press = savedPress()
+        runApp {
+            onNodeWithTag("section-machines").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-list-row-${press.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-to-today").performClick()
+            waitForIdle()
+
+            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
+            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Запланировано")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-name").assertTextContains("Жим ногами")
+        }
+    }
+
+    @Test
+    fun a_new_plan_from_a_machine_s_form_holds_it_and_back_returns_to_the_form() {
+        val press = savedPress()
+        runApp {
+            onNodeWithTag("section-machines").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-list-row-${press.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-to-plan").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-choice-new").performClick()
+            waitForIdle()
+
+            onNodeWithTag("top-bar-title").assertTextEquals("План")
+            onNodeWithTag("plan-machine-${press.id.value}").assertIsDisplayed()
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-name").assertTextContains("Жим ногами")
+        }
+        assertEquals(listOf(press.id), runBlocking { gym.plans.all(null) }.single().machineIds)
+    }
+
+    @Test
+    fun today_from_a_friend_s_machine_plans_the_account_s_copy_and_back_returns_to_it() {
+        gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val olegPress = Machine.new("Жим ногами", OLEG.userId, gym.clock.current)
+        gym.friends.machines += olegPress
+        runApp {
+            onNodeWithTag("section-machines").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-list-friend-${olegPress.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-to-today").performClick()
+            waitForIdle()
+
+            val copy = runBlocking { gym.machines.all(ME.userId) }.single()
+            onNodeWithTag("group-summary-${copy.id.value}").assertTextEquals("Запланировано")
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-title").assertTextEquals("Упражнение друга")
+            onNodeWithTag("take-machine").assertDoesNotExist()
+        }
+    }
+
     @Test
     fun a_machine_picked_for_a_new_plan_lands_in_its_form() =
         runApp {

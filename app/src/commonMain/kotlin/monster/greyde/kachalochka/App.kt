@@ -216,6 +216,7 @@ fun App() {
                         onAddMachine = { navController.navigate(MachinePickerRoute()) },
                         onDone = { navController.popBackStack() },
                         fromVisit = route.fromVisit?.let(CalendarDay::parse),
+                        machine = route.machineId?.let(::MachineId),
                     )
                 }
                 composable<MeasuresRoute> {
@@ -295,6 +296,8 @@ fun App() {
                         },
                         linked = linked,
                         onLinkedConsumed = { entry.savedStateHandle[LINKED_MINE] = false },
+                        onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
+                        onNewPlan = { navController.navigate(PlanRoute(machineId = it.value)) },
                     )
                 }
                 composable<MineChooserRoute> { entry ->
@@ -369,6 +372,7 @@ fun App() {
                             navController.navigate(PlanRoute(fromVisit = route.day))
                         },
                         onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
+                        onNewPlan = { navController.navigate(PlanRoute(machineId = it.value)) },
                     )
                 }
                 composable<MachinePickerRoute> { entry ->
@@ -430,6 +434,8 @@ fun App() {
                             )
                         },
                         onOpenStatistics = { navController.navigate(StatisticsRoute(it.value)) },
+                        onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
+                        onNewPlan = { navController.navigate(PlanRoute(machineId = it.value)) },
                     )
                 }
                 composable<LinkChooserRoute> { entry ->

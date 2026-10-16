@@ -51,12 +51,13 @@ data class PlanMachineUi(
 
 /**
  * Writes the plan on every change of its machines or pin, and its name after a pause in typing, on
- * [commitName] and on [leave]. A new plan starts with the machines of the account's visit on
- * [fromVisit], when given.
+ * [commitName] and on [leave]. A new plan starts with [machine], or with the machines of the
+ * account's visit on [fromVisit], when given.
  */
 class PlanFormViewModel(
     private val planId: PlanId?,
     private val fromVisit: CalendarDay?,
+    private val machine: MachineId?,
     private val plans: PlanRepository,
     private val visits: VisitRepository,
     private val sets: WorkoutSetRepository,
@@ -134,6 +135,7 @@ class PlanFormViewModel(
     }
 
     private suspend fun startMachines(): List<MachineId> {
+        machine?.let { return listOf(it) }
         val day = fromVisit ?: return emptyList()
         val shown = visits.shownOn(owner, day, sets, utcOffset::at) ?: return emptyList()
         return visitMachines(shown.sets, shown.visit.planned)
