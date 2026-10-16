@@ -444,18 +444,20 @@ class FakeGym(
     val avatars = AccountAvatars(accounts, profiles)
     val failures = mutableListOf<Throwable>()
 
-    fun catalogueOver(links: MachineLinkRepository) =
-        MachineCatalogue(
-            machines,
-            photos,
-            links,
-            friends,
-            clock,
-            sync,
-            accounts,
-            avatars,
-            FailureLog { failures += it },
-        )
+    fun catalogueOver(
+        links: MachineLinkRepository,
+        machines: MachineRepository = this.machines,
+    ) = MachineCatalogue(
+        machines,
+        photos,
+        links,
+        friends,
+        clock,
+        sync,
+        accounts,
+        avatars,
+        FailureLog { failures += it },
+    )
 
     val catalogue = catalogueOver(machineLinks)
     val unsaved = UnsavedChoices()

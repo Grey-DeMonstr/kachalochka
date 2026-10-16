@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
+import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -755,6 +756,41 @@ class MachineCatalogueTest {
 
             assertEquals(1, gym.machineLinks.rows.size)
             assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_device_copy_stopped_before_its_link_still_asks_for_a_sync() =
+        runTest {
+            val sashas = Machine.new("Гакк", SASHA.userId, t0)
+            gym.machines.upsert(sashas)
+            val stuck =
+                object : MachineRepository by gym.machines {
+                    override suspend fun upsert(machine: Machine) {
+                        gym.machines.upsert(machine)
+                        awaitCancellation()
+                    }
+                }
+
+            val copying =
+                launch { gym.catalogueOver(gym.machineLinks, stuck).ownCopy(ME.userId, sashas) }
+            testScheduler.advanceUntilIdle()
+            copying.cancel()
+            copying.join()
+
+            assertEquals(2, gym.machines.rows.size)
+            assertTrue(gym.machineLinks.rows.isEmpty())
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun an_own_machine_is_its_own_copy_and_nothing_is_written() =
+        runTest {
+            gym.machines.upsert(myPress)
+
+            assertEquals(myPress, catalogue.ownCopy(ME.userId, myPress))
+            assertTrue(gym.machineLinks.rows.isEmpty())
+            assertEquals(1, gym.machines.rows.size)
+            assertEquals(0, gym.sync.requests)
         }
 
     @Test

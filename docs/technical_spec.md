@@ -602,22 +602,23 @@ machine also matches by the names of the friends' machines in its cluster
 (`ShownMachines.linkedNames`), known only after the group read; the statistics read the group for
 this.
 
-`MachineCatalogue` in `app/ui/machine` is the one reader of all of this and the one writer of
-`machine_link` rows. Its `own` read gives an account's live machines, photos and links from the
-device; its `group` read gives the group mates' machines with their tags, links and photos from
-the network in one request, `FriendsRepository.groupGym`, which the server's `group_gym`
-(migration `0028`) answers under the invoker's row-level security, the members it found the mates
-by included; `clusters` reads only the links, for screens that just name a friend's machine after
-the viewer's own. Its writes: `take` writes the own copy of a friend's machine and its link;
-`friendStandIn` gives the own machine of a friend's machine's cluster, from a group read and the
-own links read again, else `take`s it; `link` writes one own link to a friend's machine;
-`deviceStandIn` and `ownCopy` serve another account on the device (see `SetRecorder` below);
-`unlink`, `repointFriends` and `moveLinks` serve the machine form and the chooser (see below).
-Every link write runs under one mutex and reads the own links again first, so two writes at the
-same time never write the same link. Server calls run before the mutex is taken. A write requests
-a sync when it wrote anything, also when it is stopped halfway; `unlink` always requests one, and
-`moveLinks` none, because the merge requests one after its last row. Once the server changed
-friends' links, `unlink` and `repointFriends` drop the account's last group read.
+`MachineCatalogue` in `app/ui/machine` is the one reader of all of this and the one place the
+screens write `machine_link` rows. Its `own` read gives an account's live machines, photos and
+links from the device; its `group` read gives the group mates' machines with their tags, links
+and photos from the network in one request, `FriendsRepository.groupGym`, which the server's
+`group_gym` (migration `0028`) answers under the invoker's row-level security, the members it
+found the mates by included; `clusters` reads only the links, for screens that just name a
+friend's machine after the viewer's own. Its writes: `take` writes the own copy of a friend's
+machine and its link; `friendStandIn` gives the own machine of a friend's machine's cluster, from a
+group read and the own links read again, else `take`s it; `link` writes one own link to a friend's
+machine; `deviceStandIn` and `ownCopy` serve another account on the device (see `SetRecorder`
+below); `unlink`, `repointFriends` and `moveLinks` serve the machine form and the chooser (see
+below).
+Every link write runs under one mutex and its upkeep reads the own links again first, so two
+writes at the same time never write the same link. Server calls run before the mutex is taken. A
+write requests a sync when it wrote anything, also when it is stopped halfway; `unlink` always
+requests one, and `moveLinks` none, because the merge requests one after its last row. Once the
+server changed friends' links, `unlink` and `repointFriends` drop the account's last group read.
 After a group read that succeeds, and after `take` and `link` with the group read the screen
 holds, the catalogue writes `missingDirectLinks` for the account the read was made for, a managed
 child included. A failed upkeep goes to `FailureLog` and fails nothing: the group read keeps the
@@ -726,10 +727,11 @@ Every write to a day's sets goes through `SetRecorder` in `app/ui/visit`: it fin
 day's visit, gives a new set its position and instant, starts the rest timer for today's set and
 requests a sync for another day's, and amends, removes and reorders sets under the same rule. A set
 goes on the active account's own machine, which the visit view model gets from
-`MachineCatalogue.ownCopy`. The other account is one on the device, such as a child, so `ownCopy`
-reads both accounts' links locally: the account's machine of the shown one's cluster stands in for
-it, else one of the same trimmed, case-blind name (`ownStandIn`). Else it writes a `linkedCopy` and
-the links from the copy to every machine of that cluster (`missingDirectLinks`); the group read's
+`MachineCatalogue.ownCopy`. The shown machine can be another account's on the device, such as a
+child's, so `ownCopy` reads both accounts' links locally: the account's machine of the shown one's
+cluster stands in for it, else one of the same trimmed, case-blind name (`ownStandIn`). Else it
+writes a `linkedCopy` and the links from the copy to every machine of that cluster
+(`missingDirectLinks`); the group read's
 upkeep adds the friends' machines those local links do not reach. `deviceStandIn` finds the same
 machine without a write, so after a switch the page shows the history the next save extends.
 "Повторить сегодня" on the calendar and the visit screen calls `planFrom` of a recorder for today:

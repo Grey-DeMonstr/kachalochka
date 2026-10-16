@@ -136,7 +136,7 @@ class ShownMachines(
 
 /**
  * The machines an account sees: its own, read from the device, and its group mates', read online
- * and joined to them by links (spec §4.5).
+ * and joined to them by links. The screens write machine links here, under one lock (spec §4.5).
  */
 class MachineCatalogue(
     private val machines: MachineRepository,
@@ -242,13 +242,14 @@ class MachineCatalogue(
         owner: UserId?,
         removed: MachineId,
         kept: MachineId,
-    ) = writingLinks(sync = false) {
+    ) = writingLinks(requestSync = false) {
         mergedLinks(kept, removed, links.all(owner), clock.now()).forEach { upsert(it) }
     }
 
     /**
      * Friends' links into [machine] can be broken only on the server, so they go first, and
-     * nothing is written and false is returned when it does not answer. A sync always follows.
+     * nothing is written and false is returned when it does not answer. Then the owner's links
+     * that touch [machine] are soft-deleted. A sync always follows.
      */
     suspend fun unlink(
         owner: UserId?,
@@ -323,9 +324,13 @@ class MachineCatalogue(
         shown: Machine,
     ): Machine? {
         if (shown.userId == owner) return shown
-        val known = links.all(owner) + links.all(shown.userId)
-        return ownStandIn(shown, machines.all(owner), MachineClusters(known))
+        return ownStandIn(shown, machines.all(owner), MachineClusters(knownLinks(owner, shown)))
     }
+
+    private suspend fun knownLinks(
+        owner: UserId?,
+        shown: Machine,
+    ): List<MachineLink> = links.all(owner) + links.all(shown.userId)
 
     /**
      * The owner's own machine standing for [shown], which may be another account's: its
@@ -335,12 +340,14 @@ class MachineCatalogue(
     suspend fun ownCopy(
         owner: UserId?,
         shown: Machine,
-    ): Machine =
-        writingLinks {
+    ): Machine {
+        if (shown.userId == owner) return shown
+        return writingLinks {
             deviceStandIn(owner, shown) ?: run {
-                val known = links.all(owner) + links.all(shown.userId)
+                val known = knownLinks(owner, shown)
                 val now = clock.now()
                 val (copy, link) = linkedCopy(shown, owner, now)
+                syncAfter = true
                 machines.upsert(copy)
                 upsert(link)
                 val cluster = MachineClusters(known).of(shown.id)
@@ -349,14 +356,15 @@ class MachineCatalogue(
                 copy
             }
         }
+    }
 
     /**
      * Runs [write] with every other link write waiting. Each write reads the own links again under
      * the lock, so two writes at once never write the same link. Not re-entrant. Asks for a sync
-     * when [write] wrote, unless [sync] is false.
+     * when [write] wrote, unless [requestSync] is false.
      */
     private suspend fun <T> writingLinks(
-        sync: Boolean = true,
+        requestSync: Boolean = true,
         write: suspend LinkWriter.() -> T,
     ): T =
         linkWrites.withLock {
@@ -364,7 +372,7 @@ class MachineCatalogue(
             try {
                 writer.write()
             } finally {
-                if (sync && writer.syncAfter) this@MachineCatalogue.sync.request()
+                if (requestSync && writer.syncAfter) sync.request()
             }
         }
 
@@ -384,6 +392,7 @@ class MachineCatalogue(
         group: GroupMachines,
     ): Machine {
         val (copy, link) = linkedCopy(friend, owner, clock.now())
+        syncAfter = true
         machines.upsert(copy)
         keepDirect(owner, group.friends, group.mateLinks(owner), group.links, listOf(link))
         return copy
