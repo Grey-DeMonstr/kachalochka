@@ -45,7 +45,7 @@ fun FriendVisitScreen(
     onOpenMachine: (MachineId) -> Unit,
 ) {
     val viewModel: FriendVisitViewModel = koinViewModel { parametersOf(member, name, day) }
-    LaunchedEffect(Unit) { viewModel.speak() }
+    LaunchedEffect(Unit) { viewModel.enter() }
     val state by viewModel.state.collectAsState()
     val offline by viewModel.offline.collectAsState()
     // The view model already loads once created: it follows accounts.activeId from init.

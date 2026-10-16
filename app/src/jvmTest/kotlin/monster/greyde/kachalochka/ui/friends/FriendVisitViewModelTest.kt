@@ -108,14 +108,43 @@ class FriendVisitViewModelTest {
         val vm = viewModel()
         val reads = gym.friends.reads
 
-        vm.speak()
+        vm.enter()
         assertEquals(reads, gym.friends.reads)
 
         inEnglish {
-            vm.speak()
+            vm.enter()
             assertEquals("Monday, 13 November", vm.state.value?.day)
         }
     }
+
+    @Test
+    fun coming_back_shows_a_link_made_on_another_screen() =
+        runTest {
+            val vm = viewModel()
+            vm.enter()
+            val myRow = Machine.new("Тяга верхнего блока", ME.userId, gym.clock.current)
+            gym.machines.upsert(myRow)
+            gym.machineLinks.upsert(
+                MachineLink(
+                    MachineLinkId.random(),
+                    ME.userId,
+                    myRow.id,
+                    fixture.olegRow.id,
+                    gym.clock.current,
+                    deleted = false,
+                ),
+            )
+
+            vm.enter()
+
+            assertEquals(
+                listOf(LinkedMachineUi(myRow.id, ME, myRow.name, own = true)),
+                vm.state.value
+                    ?.groups
+                    ?.last()
+                    ?.linkedWith,
+            )
+        }
 
     @Test
     fun a_friend_s_sets_read_in_the_viewer_s_unit() =

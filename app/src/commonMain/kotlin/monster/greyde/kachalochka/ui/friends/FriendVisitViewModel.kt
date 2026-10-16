@@ -30,7 +30,6 @@ import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.machine.LinkedMachineUi
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.ShownMachines
-import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
 /** [title] is the friend's name, [day] heads the list over [countLabel], its machine count. */
@@ -72,13 +71,15 @@ class FriendVisitViewModel(
 
     private var loading: Job? = null
 
-    private var spokenIn = AppStrings.current
+    private var entered = false
 
-    /** Reads again when the language changed while another screen was open. */
-    fun speak() {
-        if (AppStrings.current == spokenIn) return
-        spokenIn = AppStrings.current
-        refresh()
+    /**
+     * The screen calls this whenever it enters composition. Each return reads again, since a link
+     * made or a language chosen on another screen changes the rows.
+     */
+    fun enter() {
+        if (entered) refresh()
+        entered = true
     }
 
     init {
