@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -24,11 +25,15 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.patrykandpatrick.vico.multiplatform.cartesian.CartesianDrawingContext
+import com.patrykandpatrick.vico.multiplatform.cartesian.decoration.Decoration
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.measures.Cycle
 import monster.greyde.kachalochka.core.domain.measures.CyclePhase
+import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
 import monster.greyde.kachalochka.core.domain.measures.PhaseBand
 import monster.greyde.kachalochka.core.domain.measures.bands
+import monster.greyde.kachalochka.core.domain.measures.showsCycle
 import monster.greyde.kachalochka.ui.strings.strings
 
 /** The cycle's [bands] on a chart that runs from [first] to [last]. */
@@ -44,7 +49,18 @@ fun cyclePhases(
     last: CalendarDay,
 ): CyclePhasesUi = CyclePhasesUi(first, last, cycle.bands(first, last))
 
-internal class PhaseColors(
+/** The phases behind a line chart of [days], oldest first, when [period] is short enough. */
+internal fun chartPhases(
+    cycle: Cycle?,
+    period: MeasurePeriod,
+    days: List<CalendarDay>,
+): CyclePhasesUi? {
+    if (cycle == null || days.size < 2) return null
+    val (first, last) = days.first() to days.last()
+    return if (showsCycle(period, first, last)) cyclePhases(cycle, first, last) else null
+}
+
+internal data class PhaseColors(
     val menstruation: Color,
     val ovulation: Color,
 )
@@ -90,6 +106,33 @@ internal fun DrawScope.drawPhases(
         val left = xOf(band.first.epochDay - 0.5)
         val right = xOf(band.last.epochDay + 0.5)
         drawPhase(band.phase, Rect(left, area.top, right, area.bottom), colors)
+    }
+}
+
+/** [bands] behind a Vico chart's layers, at its epoch-day x. */
+internal class PhasesDecoration(
+    private val bands: List<PhaseBand>,
+    private val colors: PhaseColors,
+) : Decoration {
+    override fun drawUnderLayers(context: CartesianDrawingContext) =
+        with(context) {
+            val origin = layerBounds.left + layerDimensions.startPadding - scroll
+            val perX = layerDimensions.xSpacing / ranges.xStep
+            mutableDrawScope.drawPhases(
+                bands,
+                { x -> (origin + (x - ranges.minX) * perX).toFloat() },
+                layerBounds,
+                colors,
+            )
+        }
+}
+
+/** The decoration for [phases], kept while they and the theme stay. */
+@Composable
+internal fun rememberPhases(phases: CyclePhasesUi?): List<Decoration> {
+    val colors = phaseColors()
+    return remember(phases, colors) {
+        listOfNotNull(phases?.let { PhasesDecoration(it.bands, colors) })
     }
 }
 

@@ -407,6 +407,12 @@ interface Strings {
     val menstruation: String
     val ovulation: String
 
+    /** "День 12 из 28". */
+    fun cycleDayOf(
+        day: Int,
+        length: Int,
+    ): String
+
     // Settings
     val profile: String
     val nickname: String

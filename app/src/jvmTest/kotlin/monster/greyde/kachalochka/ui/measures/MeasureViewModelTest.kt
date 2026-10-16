@@ -174,6 +174,49 @@ class MeasureViewModelTest {
     }
 
     @Test
+    fun a_woman_s_measure_chart_shows_her_cycle_phases_up_to_three_months() {
+        woman()
+        record(cycleDay, CalendarDay(2023, 11, 1), 1.0)
+        val cycle = Cycle(cycleAnchors(mapOf(CalendarDay(2023, 11, 1) to 1.0)), 28)
+        val vm = viewModel()
+
+        val first = CalendarDay(2023, 10, 10)
+        assertEquals(CyclePhasesUi(first, today, cycle.bands(first, today)), vm.ui.phases)
+        assertFalse(vm.ui.phasesOnly)
+        vm.choose(MeasurePeriod.Month)
+        assertEquals(CalendarDay(2023, 11, 7), vm.ui.phases?.first)
+        vm.choose(MeasurePeriod.HalfYear)
+        assertNull(vm.ui.phases)
+        vm.choose(MeasurePeriod.All)
+        assertNull(vm.ui.phases)
+        val short = viewModel(forearm.id)
+        short.choose(MeasurePeriod.All)
+        val start = forearmed.first().day
+        assertEquals(CyclePhasesUi(start, today, cycle.bands(start, today)), short.ui.phases)
+    }
+
+    @Test
+    fun without_a_recorded_day_of_the_cycle_or_as_a_man_no_phases_show() {
+        woman()
+        assertNull(viewModel().ui.phases)
+        assertNull(viewModel().ui.cycleDay)
+
+        record(cycleDay, CalendarDay(2023, 11, 1), 1.0)
+        runBlocking { gym.profiles.upsert(Profile.new(null, t0 + 1.minutes).copy(sex = Sex.Male)) }
+
+        assertNull(viewModel().ui.phases)
+        assertNull(viewModel().ui.cycleDay)
+    }
+
+    @Test
+    fun the_measure_tells_today_s_day_of_the_cycle_of_its_length() {
+        woman(cycleLength = 30)
+        record(cycleDay, CalendarDay(2023, 11, 3), 1.0)
+
+        assertEquals("День 12 из 30", viewModel().ui.cycleDay)
+    }
+
+    @Test
     fun another_period_changes_the_points_and_the_change() {
         val vm = viewModel()
 

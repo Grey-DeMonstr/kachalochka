@@ -1,18 +1,24 @@
 package monster.greyde.kachalochka.ui.measures
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -21,6 +27,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
 import monster.greyde.kachalochka.ui.components.Choice
 import monster.greyde.kachalochka.ui.components.ChoiceRow
+import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.strings
 
@@ -35,7 +42,7 @@ private fun periodLabel(period: MeasurePeriod): String =
 
 /**
  * The latest value, its change over the period and the day it was measured. Without a value,
- * [missing] tells what keeps one from being there.
+ * [missing] tells what keeps one from being there. [cycleDay] goes beside the value.
  */
 @Composable
 internal fun MeasureSummary(
@@ -43,6 +50,7 @@ internal fun MeasureSummary(
     change: String?,
     lastMeasured: String?,
     missing: String? = null,
+    cycleDay: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     if (latest == null && missing != null) {
@@ -75,6 +83,10 @@ internal fun MeasureSummary(
                     color = colors.onBackground.copy(alpha = 0.55f),
                 )
             }
+            cycleDay?.let {
+                Spacer(Modifier.weight(1f))
+                CycleDayChip(it, Modifier.padding(bottom = 4.dp))
+            }
         }
         lastMeasured?.let {
             Text(
@@ -84,6 +96,30 @@ internal fun MeasureSummary(
                 color = colors.onBackground.copy(alpha = 0.55f),
             )
         }
+    }
+}
+
+@Composable
+private fun CycleDayChip(
+    text: String,
+    modifier: Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.primary.copy(alpha = 0.14f))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(PhosphorIcons.DropFill, null, Modifier.size(14.dp), tint = colors.primary)
+        Text(
+            text,
+            Modifier.testTag("cycle-chip"),
+            fontSize = 13.sp,
+            color = colors.onBackground,
+        )
     }
 }
 
@@ -125,7 +161,7 @@ internal fun PeriodChart(
                     fontSize = 22.sp,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
-            else -> MeasureChart(points, Modifier.fillMaxSize().testTag("measure-chart"))
+            else -> MeasureChart(points, phases, Modifier.fillMaxSize().testTag("measure-chart"))
         }
     }
     if (phases != null && (phasesOnly || points.size > 1)) PhasesLegend()

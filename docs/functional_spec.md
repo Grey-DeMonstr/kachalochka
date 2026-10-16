@@ -468,6 +468,12 @@ ovulation window, days length − 14 to length − 12, with a dashed line. A leg
 them: "Менструация" and "Овуляция". A recorded day starts a cycle that runs until the next one
 recorded, and the latest one runs on after it.
 
+Once a woman has recorded a day of the cycle, the same phases lie behind the line of every chart
+of her own data: each measure, each "Процент жира" formula and her own machines in the
+statistics, never a friend's machine. They show for 1 мес and 3 мес, and for "Всё" while its
+values span less than three months, with the legend under the chart. Beside the latest value, a
+measure's screen shows today's day of the cycle with a drop: "День 12 из 28".
+
 "Редактировать историю" opens the measure's history ("Талия · история"): a month calendar with a
 dot on every day that has a value; future days cannot be chosen. Tapping a day shows its value in
 the same field with "Сохранить" and, when the day has a value, a trash button deleting it; an
@@ -543,7 +549,8 @@ same without a choice. Chips under the field choose the period: "Месяц", "3
 "Месяц" starts on 1 September and "3 месяца" on 1 July. Neither choice is remembered.
 
 A machine shows a trophy with the period's best set, then a line chart of each day's best weight
-across the whole period. A gravitron's weights are drawn negative, with zero on top. A period
+across the whole period. A gravitron's weights are drawn negative, with zero on top. For
+"Месяц" and "3 месяца" the chart shows a woman's cycle phases, as a measure's chart does. A period
 without sets says "Нет подходов за период". "Все результаты" follows: every visit on the
 machine, newest first, its date and its results written as the visit screen writes them,
 whatever the period. Tapping a visit opens it on the visit screen with the machine's page, where

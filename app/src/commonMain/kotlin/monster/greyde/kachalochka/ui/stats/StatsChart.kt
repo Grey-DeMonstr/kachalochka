@@ -28,8 +28,10 @@ import com.patrykandpatrick.vico.multiplatform.common.component.rememberShapeCom
 import com.patrykandpatrick.vico.multiplatform.common.data.ExtraStore
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.ui.format.formatNumber
+import monster.greyde.kachalochka.ui.measures.CyclePhasesUi
 import monster.greyde.kachalochka.ui.measures.chartDayLabel
 import monster.greyde.kachalochka.ui.measures.chartLabelSpacing
+import monster.greyde.kachalochka.ui.measures.rememberPhases
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -72,13 +74,17 @@ private class PeriodRange(
     ): Double = if (zeroOnTop) 0.0 else ceil(maxY) + if (floor(minY) == ceil(maxY)) 1 else 0
 }
 
-/** [points] need at least one day, oldest first; x is the epoch day so gaps keep their width. */
+/**
+ * [points] need at least one day, oldest first; x is the epoch day so gaps keep their width.
+ * [phases] are drawn behind the line.
+ */
 @Composable
 fun StatsChart(
     points: List<Pair<CalendarDay, Double>>,
     start: CalendarDay,
     end: CalendarDay,
     zeroOnTop: Boolean,
+    phases: CyclePhasesUi?,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -140,6 +146,7 @@ fun StatsChart(
                             )
                         },
                 ),
+            decorations = rememberPhases(phases),
             getXStep = { _, _, _ -> 1.0 },
         )
     CartesianChartHost(

@@ -13,11 +13,13 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
 import monster.greyde.kachalochka.core.domain.measures.BodyInput
 import monster.greyde.kachalochka.core.domain.measures.BodyInputs
+import monster.greyde.kachalochka.core.domain.measures.Cycle
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.measures.bodyFatHistory
+import monster.greyde.kachalochka.core.domain.measures.cycleOf
 import monster.greyde.kachalochka.core.domain.measures.missingInputs
 import monster.greyde.kachalochka.core.domain.measures.periodStart
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
@@ -43,6 +45,7 @@ data class BodyFatUi(
     val results: List<HistoryRowUi>,
     val missing: String?,
     val profileIncomplete: Boolean,
+    val phases: CyclePhasesUi? = null,
 )
 
 private val profileInputs = setOf(BodyInput.Sex, BodyInput.Age, BodyInput.Height)
@@ -64,6 +67,7 @@ class BodyFatViewModel(
     /** Rounded to the tenth the screen shows, oldest first. */
     private var percents: List<Pair<CalendarDay, Double>> = emptyList()
     private var missing: List<BodyInput> = emptyList()
+    private var cycle: Cycle? = null
     private var period = MeasurePeriod.Quarter
     private var loading: Job? = null
 
@@ -78,11 +82,13 @@ class BodyFatViewModel(
             viewModelScope.launch {
                 val owner = currentUser.id()
                 val profile = profiles.forOwner(owner)
-                val values = measurements.all(owner).groupBy { it.measureId }
+                val all = measurements.all(owner)
+                val values = all.groupBy { it.measureId }
+                val owned = measures.all(owner)
+                cycle = cycleOf(profile, owned, all)
                 // Of two live measures of one kind, the first with values counts, as on the list.
                 val perKind =
-                    measures
-                        .all(owner)
+                    owned
                         .filter { it.kind != null && values[it.id] != null }
                         .groupBy { it.kind!! }
                         .mapValues { (_, same) ->
@@ -153,6 +159,7 @@ class BodyFatViewModel(
                         AppStrings.current.needs(it.map(::inputName))
                     },
                 profileIncomplete = missing.any { it in profileInputs },
+                phases = chartPhases(cycle, period, shown.map { it.first }),
             )
     }
 }

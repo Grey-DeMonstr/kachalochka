@@ -97,7 +97,12 @@ fun MeasureScreen(
                     Hint(measure)
                 }
                 Entry(measure, viewModel)
-                MeasureSummary(measure.latest, measure.change, measure.lastMeasured)
+                MeasureSummary(
+                    measure.latest,
+                    measure.change,
+                    measure.lastMeasured,
+                    cycleDay = measure.cycleDay,
+                )
                 PeriodChoice(measure.period, viewModel::choose)
                 PeriodChart(
                     measure.points,

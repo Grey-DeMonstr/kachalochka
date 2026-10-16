@@ -9,11 +9,14 @@ import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
 import monster.greyde.kachalochka.core.domain.measures.BodyInputs
+import monster.greyde.kachalochka.core.domain.measures.Cycle
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
+import monster.greyde.kachalochka.core.domain.measures.bands
 import monster.greyde.kachalochka.core.domain.measures.bodyFat
+import monster.greyde.kachalochka.core.domain.measures.cycleAnchors
 import monster.greyde.kachalochka.core.domain.measures.missingDefaults
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
@@ -28,6 +31,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class BodyFatViewModelTest {
@@ -112,6 +116,27 @@ class BodyFatViewModelTest {
 
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun a_woman_s_chart_shows_her_cycle_phases_up_to_three_months() {
+        val cycleDay =
+            missingDefaults(null, seeded.mapNotNull { it.kind }.toSet(), Sex.Female).single()
+        val start = CalendarDay(2023, 11, 1)
+        runBlocking {
+            gym.profiles.upsert(profile.copy(sex = Sex.Female, updatedAt = t0 + 1.minutes))
+            gym.measures.upsert(cycleDay)
+            gym.measurements.upsert(
+                Measurement(MeasurementId.random(), null, cycleDay.id, start, 1.0, t0, false),
+            )
+        }
+        val cycle = Cycle(cycleAnchors(mapOf(start to 1.0)), 28)
+        val vm = viewModel(BodyFatMethod.Ymca)
+
+        assertEquals(CyclePhasesUi(october, today, cycle.bands(october, today)), vm.ui.phases)
+        vm.choose(MeasurePeriod.Year)
+        assertNull(vm.ui.phases)
+        assertNull(viewModel(BodyFatMethod.Navy).ui.phases)
+    }
 
     @Test
     fun the_chart_starts_on_the_first_day_with_every_measure_and_fills_the_gaps() {

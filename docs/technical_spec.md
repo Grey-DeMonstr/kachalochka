@@ -750,6 +750,20 @@ Its screen sets `MeasureUi.phasesOnly`: `PeriodChart` then draws `CycleChart`, a
 of the period's `CyclePhasesUi` without Vico, and `PhasesLegend`; the change and a list row's
 delta stay empty.
 
+The phases behind the other charts come from `cycleOf(profile, measures, values)`: null unless the
+sex is `Female` and a live `CycleDay` measure has a value; a managed child has no measures, so
+none. `MeasureViewModel`, `BodyFatViewModel` and `StatisticsViewModel` read it from the
+account's own rows; `FriendMachineViewModel` passes none to `machineStatsUi`. `chartPhases` cuts
+the bands to the chart's first and last point and keeps them only while `showsCycle` allows the
+period; the machine chart runs over the whole period, so `machineStatsUi` cuts them there, for
+`StatsPeriod.months` up to `CYCLE_CHART_MONTHS`. `MeasureChart` and `StatsChart` draw them with
+`PhasesDecoration`, a Vico `Decoration` under the layers that maps an epoch day to x as the line
+layer does: the layer bounds' start, plus the start padding, plus `xSpacing` per `xStep` from
+`ranges.minX`. A band covers its days from half a day before the first to half a day after the
+last, clipped to the layer bounds. The colours are the theme's: `primary` at 18 % fills
+menstruation, `secondary` at 40 % outlines ovulation with a 2 dp / 3 dp dash. `MeasureUi.cycleDay`
+is `cycleDayOf(dayOn(today), length)` for the chip `MeasureSummary` draws beside the value.
+
 The body-fat formulas are pure functions in `domain/measures/BodyFat.kt` (`bodyFat`,
 `missingInputs`, `methodsReading`); a result outside 2–70 % is treated as none. "Замеры" finds the
 inputs by `MeasureKind`, never by name: the latest value of each kind, and sex, `birthDate` and

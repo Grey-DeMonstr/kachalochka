@@ -16,11 +16,20 @@ import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
+import monster.greyde.kachalochka.core.domain.measures.Cycle
+import monster.greyde.kachalochka.core.domain.measures.MeasureKind
+import monster.greyde.kachalochka.core.domain.measures.Measurement
+import monster.greyde.kachalochka.core.domain.measures.MeasurementId
+import monster.greyde.kachalochka.core.domain.measures.cycleAnchors
+import monster.greyde.kachalochka.core.domain.measures.missingDefaults
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.signedInGym
+import monster.greyde.kachalochka.ui.measures.cyclePhases
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -77,6 +86,8 @@ class StatisticsViewModelTest {
         on.catalogue,
         on.sets,
         on.profiles,
+        on.measures,
+        on.measurements,
         on.clock,
         on.utcOffset,
         Nickname(on.profiles, on.accounts),
@@ -97,6 +108,51 @@ class StatisticsViewModelTest {
 
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun a_woman_s_own_machine_chart_shows_her_cycle_phases_for_one_and_three_months() =
+        runTest {
+            val cycleDay =
+                missingDefaults(null, emptySet(), Sex.Female)
+                    .single { it.kind == MeasureKind.CycleDay }
+            val start = CalendarDay(2023, 11, 1)
+            gym.profiles.upsert(Profile.new(null, t0).copy(sex = Sex.Female))
+            gym.measures.upsert(cycleDay)
+            gym.measurements.upsert(
+                Measurement(MeasurementId.random(), null, cycleDay.id, start, 1.0, t0, false),
+            )
+            val cycle = Cycle(cycleAnchors(mapOf(start to 1.0)), 28)
+            val today = CalendarDay(2023, 11, 14)
+            val vm = viewModel(press.id)
+
+            val month = CalendarDay(2023, 10, 14)
+            assertEquals(
+                cyclePhases(cycle, month, today),
+                vm.state.value.machine
+                    ?.phases,
+            )
+            vm.choosePeriod(StatsPeriod.ThreeMonths)
+            assertEquals(
+                CalendarDay(2023, 8, 14),
+                vm.state.value.machine
+                    ?.phases
+                    ?.first,
+            )
+            vm.choosePeriod(StatsPeriod.SixMonths)
+            assertNull(
+                vm.state.value.machine
+                    ?.phases,
+            )
+        }
+
+    @Test
+    fun without_a_recorded_day_of_the_cycle_the_machine_chart_has_no_phases() {
+        assertNull(
+            viewModel(press.id)
+                .state.value.machine
+                ?.phases,
+        )
+    }
 
     @Test
     fun overall_lists_the_machines_used_in_the_period_last_used_first_with_their_progress() {

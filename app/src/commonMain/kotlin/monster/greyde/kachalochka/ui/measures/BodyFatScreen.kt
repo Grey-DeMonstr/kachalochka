@@ -44,7 +44,7 @@ fun BodyFatScreen(
                 if (fat.profileIncomplete) ProfileLink(onOpenSettings)
             }
             PeriodChoice(fat.period, viewModel::choose)
-            PeriodChart(fat.points, ::fatPercent)
+            PeriodChart(fat.points, ::fatPercent, fat.phases)
             if (fat.results.isNotEmpty()) {
                 Column { AllResults(fat.results, "fat-history") }
             }

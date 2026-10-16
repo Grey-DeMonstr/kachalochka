@@ -445,6 +445,11 @@ object EnStrings : Strings {
     override val menstruation = "Menstruation"
     override val ovulation = "Ovulation"
 
+    override fun cycleDayOf(
+        day: Int,
+        length: Int,
+    ) = "Day $day of $length"
+
     override val profile = "Profile"
     override val nickname = "Nickname"
     override val sex = "Sex"

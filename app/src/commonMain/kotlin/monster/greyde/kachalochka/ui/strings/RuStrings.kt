@@ -464,6 +464,11 @@ object RuStrings : Strings {
     override val menstruation = "Менструация"
     override val ovulation = "Овуляция"
 
+    override fun cycleDayOf(
+        day: Int,
+        length: Int,
+    ) = "День $day из $length"
+
     override val profile = "Профиль"
     override val nickname = "Ник"
     override val sex = "Пол"

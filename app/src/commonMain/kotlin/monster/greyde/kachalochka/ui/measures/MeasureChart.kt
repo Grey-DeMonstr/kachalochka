@@ -63,10 +63,14 @@ private object HuggingRange : CartesianLayerRangeProvider {
     ): Double = ceil(maxY) + if (floor(minY) == ceil(maxY)) 1 else 0
 }
 
-/** [points] need at least two days, oldest first; x is the epoch day so gaps keep their width. */
+/**
+ * [points] need at least two days, oldest first; x is the epoch day so gaps keep their width.
+ * [phases] are drawn behind the line.
+ */
 @Composable
 fun MeasureChart(
     points: List<Pair<CalendarDay, Double>>,
+    phases: CyclePhasesUi?,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -124,6 +128,7 @@ fun MeasureChart(
                             )
                         },
                 ),
+            decorations = rememberPhases(phases),
             getXStep = { _, _, _ -> 1.0 },
         )
     CartesianChartHost(

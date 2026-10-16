@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -20,8 +21,13 @@ import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.MeasureKind
+import monster.greyde.kachalochka.core.domain.measures.Measurement
+import monster.greyde.kachalochka.core.domain.measures.MeasurementId
+import monster.greyde.kachalochka.core.domain.measures.missingDefaults
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
@@ -36,6 +42,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
@@ -115,6 +122,26 @@ class FriendMachineViewModelTest {
         assertTrue(state.canTake)
         assertFalse(vm.offline.value)
     }
+
+    @Test
+    fun the_viewer_s_cycle_stays_off_a_friend_s_chart() =
+        runTest {
+            val cycleDay =
+                missingDefaults(ME.userId, emptySet(), Sex.Female)
+                    .single { it.kind == MeasureKind.CycleDay }
+            val today = CalendarDay.of(t0, Duration.ZERO)
+            on.profiles.upsert(Profile.new(ME.userId, t0).copy(sex = Sex.Female))
+            on.measures.upsert(cycleDay)
+            on.measurements.upsert(
+                Measurement(MeasurementId.random(), ME.userId, cycleDay.id, today, 1.0, t0, false),
+            )
+            olegTrained(3, 100.0 to 8)
+
+            val stats = assertNotNull(viewModel().state.value).stats
+
+            assertEquals(1, stats.points.size)
+            assertNull(stats.phases)
+        }
 
     @Test
     fun the_friend_s_tags_are_shown_in_their_order() {

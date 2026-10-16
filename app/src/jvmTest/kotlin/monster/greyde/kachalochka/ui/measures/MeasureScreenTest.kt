@@ -111,6 +111,41 @@ class MeasureScreenTest {
     }
 
     @Test
+    fun a_woman_s_measure_shows_her_cycle_phases_and_today_s_day() {
+        val cycleDay =
+            missingDefaults(null, seeded.mapNotNull { it.kind }.toSet(), Sex.Female).single()
+        runBlocking {
+            gym.profiles.upsert(Profile.new(null, gym.clock.current).copy(sex = Sex.Female))
+            gym.measures.upsert(cycleDay)
+            gym.measurements.upsert(
+                Measurement(
+                    MeasurementId.random(),
+                    null,
+                    cycleDay.id,
+                    CalendarDay(2023, 11, 3),
+                    1.0,
+                    gym.clock.current,
+                    false,
+                ),
+            )
+        }
+        runMeasure {
+            onNodeWithTag("measure-chart").assertIsDisplayed()
+            onNodeWithTag("cycle-legend", useUnmergedTree = true).assertIsDisplayed()
+            onNodeWithTag("cycle-chip", useUnmergedTree = true).assertTextEquals("День 12 из 28")
+        }
+    }
+
+    @Test
+    fun without_a_cycle_the_measure_has_no_legend() {
+        runMeasure {
+            onNodeWithTag("measure-chart").assertIsDisplayed()
+            onNodeWithTag("cycle-legend", useUnmergedTree = true).assertDoesNotExist()
+            onNodeWithTag("cycle-chip", useUnmergedTree = true).assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun a_measure_speaks_english() =
         runScreenTestInEnglish(gym, screen = { MeasureScreen(weight.id, {}, {}, {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Weight")

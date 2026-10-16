@@ -21,13 +21,14 @@ import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.measures.cycleFrom
+import monster.greyde.kachalochka.core.domain.measures.cycleOf
 import monster.greyde.kachalochka.core.domain.measures.dayOn
 import monster.greyde.kachalochka.core.domain.measures.inPeriod
 import monster.greyde.kachalochka.core.domain.measures.isLocked
 import monster.greyde.kachalochka.core.domain.measures.measureStep
 import monster.greyde.kachalochka.core.domain.measures.periodStart
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
-import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.calendar.DayUi
 import monster.greyde.kachalochka.ui.calendar.monthRank
@@ -46,6 +47,7 @@ import kotlin.time.Clock
 /**
  * [points] are the period's values, oldest first; [results] are all values, newest first;
  * [history] is open while shown. [phasesOnly] draws the [phases] instead of the values.
+ * [cycleDay] is today's day of the account's cycle, "День 12 из 28".
  */
 data class MeasureUi(
     val name: String,
@@ -66,6 +68,7 @@ data class MeasureUi(
     val canDelete: Boolean,
     val phases: CyclePhasesUi? = null,
     val phasesOnly: Boolean = false,
+    val cycleDay: String? = null,
 )
 
 /** The value typed for [day]; [canDelete] once the day has one stored. */
@@ -110,8 +113,11 @@ class MeasureViewModel(
     private val writes = WriteGuard(viewModelScope)
 
     private var measure: Measure? = null
-    private var sex: Sex? = null
-    private var cycleLength: Int? = null
+    private var profile: Profile? = null
+    private var accountMeasures: List<Measure> = emptyList()
+
+    /** The account's, from all its recorded days of the cycle. */
+    private var cycle: Cycle? = null
 
     /** Newest day first, as the repository reads them. */
     private var values: List<Measurement> = emptyList()
@@ -140,18 +146,20 @@ class MeasureViewModel(
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                measure = measures.all(owner).firstOrNull { it.id == measureId }
-                val profile = profiles.forOwner(owner)
-                sex = profile?.sex
-                cycleLength = profile?.cycleLength
-                values = readValues()
+                accountMeasures = measures.all(owner)
+                measure = accountMeasures.firstOrNull { it.id == measureId }
+                profile = profiles.forOwner(owner)
+                readValues()
                 if (measure == null) mutableGone.value = true
                 publish()
             }
     }
 
-    private suspend fun readValues(): List<Measurement> =
-        measurements.all(currentUser.id()).filter { it.measureId == measureId }
+    private suspend fun readValues() {
+        val all = measurements.all(currentUser.id())
+        values = all.filter { it.measureId == measureId }
+        cycle = cycleOf(profile, accountMeasures, all)
+    }
 
     fun choose(chosen: MeasurePeriod) {
         period = chosen
@@ -207,7 +215,7 @@ class MeasureViewModel(
     private suspend fun written(day: CalendarDay) {
         if (day != today()) sync.request()
         typed = null
-        values = readValues()
+        readValues()
         publish()
     }
 
@@ -310,7 +318,8 @@ class MeasureViewModel(
         }
     }
 
-    private fun deletable(shown: Measure): Boolean = shown.kind?.let { !isLocked(it, sex) } ?: true
+    private fun deletable(shown: Measure): Boolean =
+        shown.kind?.let { !isLocked(it, profile?.sex) } ?: true
 
     private fun publish() {
         val shown = measure
@@ -373,12 +382,24 @@ class MeasureViewModel(
                 deleting = deleting,
                 canEdit = shown.kind == null,
                 canDelete = deletable(shown),
-                phases = if (phasesOnly) ownPhases(today) else null,
+                phases =
+                    if (phasesOnly) {
+                        ownPhases(today)
+                    } else {
+                        chartPhases(cycle, period, shownPeriod.map { it.day })
+                    },
                 phasesOnly = phasesOnly,
+                cycleDay =
+                    cycle?.let {
+                        AppStrings.current.cycleDayOf(
+                            it.dayOn(today),
+                            it.length,
+                        )
+                    },
             )
     }
 
-    private fun ownCycle(): Cycle? = cycleFrom(values, cycleLength)
+    private fun ownCycle(): Cycle? = cycleFrom(values, profile?.cycleLength)
 
     /** Over the period up to today; "Всё" starts with the first value. */
     private fun ownPhases(today: CalendarDay): CyclePhasesUi? {

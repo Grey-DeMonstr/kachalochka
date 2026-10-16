@@ -27,6 +27,8 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.bestPerDay
 import monster.greyde.kachalochka.core.domain.gym.bestSet
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
+import monster.greyde.kachalochka.core.domain.measures.CYCLE_CHART_MONTHS
+import monster.greyde.kachalochka.core.domain.measures.Cycle
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.ui.components.AllResults
 import monster.greyde.kachalochka.ui.components.ChipRow
@@ -37,6 +39,9 @@ import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.shownWeight
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.measures.CyclePhasesUi
+import monster.greyde.kachalochka.ui.measures.PhasesLegend
+import monster.greyde.kachalochka.ui.measures.cyclePhases
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.strings
 
@@ -50,6 +55,7 @@ data class MachineStatsUi(
     val end: CalendarDay,
     val zeroOnTop: Boolean,
     val history: List<HistoryRowUi>,
+    val phases: CyclePhasesUi? = null,
 )
 
 /** "с 1 сентября", the period's first day as [today]'s year writes it. */
@@ -60,7 +66,8 @@ internal fun periodLabel(
 
 /**
  * One machine's statistics over [period]: the best set and each day's best weight since its
- * start, and every visit in [sets], newest first, in the viewer's unit.
+ * start, and every visit in [sets], newest first, in the viewer's unit. The viewer's own [cycle]
+ * goes behind a chart of up to three months.
  */
 internal fun machineStatsUi(
     machine: Machine,
@@ -69,6 +76,7 @@ internal fun machineStatsUi(
     today: CalendarDay,
     preferred: PreferredWeightUnit,
     utcOffset: UtcOffset,
+    cycle: Cycle? = null,
 ): MachineStatsUi {
     val start = period.start(today)
     val counterweight = machine.weightMode == WeightMode.Counterweight
@@ -100,6 +108,10 @@ internal fun machineStatsUi(
                         setsSummary(machine, visit.sortedWith(visitOrder), preferred),
                     )
                 },
+        phases =
+            cycle
+                ?.takeIf { period.months <= CYCLE_CHART_MONTHS }
+                ?.let { cyclePhases(it, start, today) },
     )
 }
 
@@ -160,8 +172,17 @@ internal fun MachineStats(
         if (machine.points.isEmpty()) {
             Muted(strings().noSetsInPeriod, Modifier.testTag("stats-empty"))
         } else {
-            StatsChart(machine.points, machine.start, machine.end, machine.zeroOnTop)
+            StatsChart(
+                machine.points,
+                machine.start,
+                machine.end,
+                machine.zeroOnTop,
+                machine.phases,
+            )
         }
+    }
+    if (machine.phases != null && machine.points.isNotEmpty()) {
+        PhasesLegend(Modifier.padding(top = 8.dp))
     }
     AllResults(machine.history, "stats-history", onOpenDay)
 }

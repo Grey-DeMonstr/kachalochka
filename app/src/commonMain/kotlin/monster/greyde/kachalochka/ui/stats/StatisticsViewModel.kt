@@ -26,6 +26,10 @@ import monster.greyde.kachalochka.core.domain.gym.statsOrder
 import monster.greyde.kachalochka.core.domain.gym.weightGain
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.Cycle
+import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
+import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
+import monster.greyde.kachalochka.core.domain.measures.cycleOf
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.Nickname
@@ -115,6 +119,8 @@ class StatisticsViewModel(
     private val catalogue: MachineCatalogue,
     private val sets: WorkoutSetRepository,
     private val profiles: ProfileRepository,
+    private val measures: MeasureRepository,
+    private val measurements: MeasurementRepository,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
     private val nickname: Nickname,
@@ -132,6 +138,7 @@ class StatisticsViewModel(
     private var setsByMachine: Map<MachineId, List<WorkoutSet>> = emptyMap()
     private var peaks: Map<MachineId, MachinePeaks> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
+    private var cycle: Cycle? = null
     private var improvementsOnly = true
     private var notice: String? = null
     private var query = ""
@@ -166,6 +173,8 @@ class StatisticsViewModel(
                 setsByMachine = all.groupBy { it.machineId }
                 peaks = machinePeaks(all).associateBy { it.machineId }
                 preferred = profiles.preferredUnit(owner)
+                cycle =
+                    cycleOf(profiles.forOwner(owner), measures.all(owner), measurements.all(owner))
                 grouping.read(owner)
                 sharer = reading { nickname.of(owner) }.getOrDefault("")
                 publish()
@@ -280,6 +289,7 @@ class StatisticsViewModel(
                             today,
                             preferred,
                             utcOffset,
+                            cycle,
                         )
                     },
                 query = query,
