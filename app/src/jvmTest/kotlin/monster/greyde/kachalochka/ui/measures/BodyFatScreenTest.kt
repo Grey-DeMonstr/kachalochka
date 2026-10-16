@@ -68,7 +68,7 @@ class BodyFatScreenTest {
     @Test
     fun the_formula_shows_its_chart_latest_value_and_all_results() {
         runScreenTest(gym, screen = { BodyFatScreen(BodyFatMethod.Deurenberg, {}, {}) }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Процент жира · Дойренберг")
+            onNodeWithTag("top-bar-title").assertTextEquals("Дойренберг")
             onNodeWithTag("period-Quarter").assertIsSelected()
             onNodeWithTag("measure-chart").assertIsDisplayed()
             onNodeWithTag("measure-latest", useUnmergedTree = true)
@@ -88,9 +88,10 @@ class BodyFatScreenTest {
     @Test
     fun a_formula_without_a_measure_names_it() {
         runScreenTest(gym, screen = { BodyFatScreen(BodyFatMethod.Ymca, {}, {}) }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Процент жира · YMCA")
+            onNodeWithTag("top-bar-title").assertTextEquals("YMCA")
+            onNodeWithTag("fat-required").assertTextEquals("Нужно: пол, вес, талия")
             onNodeWithTag("measure-latest", useUnmergedTree = true)
-                .assertTextEquals("Нужно: талия")
+                .assertTextEquals("Нет значений")
             onNodeWithTag("fat-profile-link").assertDoesNotExist()
             onNodeWithTag("measure-chart").assertDoesNotExist()
             onNodeWithTag("fat-history-0").assertDoesNotExist()
@@ -108,8 +109,7 @@ class BodyFatScreenTest {
             gym,
             screen = { BodyFatScreen(BodyFatMethod.Deurenberg, {}, { settings++ }) },
         ) {
-            onNodeWithTag("measure-latest", useUnmergedTree = true)
-                .assertTextEquals("Нужно: пол")
+            onNodeWithTag("fat-required").assertTextEquals("Нужно: пол, дата рождения, рост, вес")
             onNodeWithTag("fat-profile-link").performClick()
             waitForIdle()
         }

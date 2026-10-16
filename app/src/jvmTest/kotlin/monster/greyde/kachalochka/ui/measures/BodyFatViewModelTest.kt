@@ -145,7 +145,7 @@ class BodyFatViewModelTest {
         // The waist goes from 92 to 90 over 35 days; 28 of them have passed on 7 November.
         val before = navy(90.4)
         val latest = navy(90.0)
-        assertEquals("Процент жира · ВМС США", ui.title)
+        assertEquals("ВМС США", ui.title)
         assertEquals(MeasurePeriod.Quarter, ui.period)
         assertEquals(listOf(lastWeek to before, today to latest), ui.points)
         assertEquals("${oneDecimal(latest)} %", ui.latest)
@@ -195,25 +195,25 @@ class BodyFatViewModelTest {
 
         val ui = viewModel(BodyFatMethod.Ymca).ui
 
-        assertEquals("Процент жира · YMCA", ui.title)
+        assertEquals("YMCA", ui.title)
         assertTrue(ui.points.isEmpty())
         assertNull(ui.latest)
         assertNull(ui.lastMeasured)
         assertTrue(ui.results.isEmpty())
-        assertEquals("Нужно: пол", ui.missing)
+        assertEquals("Нужно: пол, вес, талия", ui.required)
         assertTrue(ui.profileIncomplete)
     }
 
     @Test
-    fun a_formula_with_its_inputs_lacks_nothing() {
+    fun a_formula_with_its_inputs_still_names_them() {
         val ui = viewModel(BodyFatMethod.Navy).ui
 
-        assertNull(ui.missing)
+        assertEquals("Нужно: пол, рост, талия, шея", ui.required)
         assertFalse(ui.profileIncomplete)
     }
 
     @Test
-    fun a_missing_measure_is_named_without_asking_for_the_profile() {
+    fun a_missing_measure_does_not_ask_for_the_profile() {
         val waist = seeded.first { it.kind == MeasureKind.Waist }
         runBlocking {
             gym.measurements.rows.values
@@ -223,7 +223,7 @@ class BodyFatViewModelTest {
 
         val ui = viewModel(BodyFatMethod.Ymca).ui
 
-        assertEquals("Нужно: талия", ui.missing)
+        assertNull(ui.latest)
         assertFalse(ui.profileIncomplete)
     }
 

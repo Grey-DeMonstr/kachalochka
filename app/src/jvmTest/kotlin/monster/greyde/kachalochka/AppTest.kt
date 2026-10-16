@@ -143,7 +143,7 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("fat-NAVY").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Процент жира · ВМС США")
+            onNodeWithTag("top-bar-title").assertTextEquals("ВМС США")
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
@@ -806,7 +806,7 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("fat-YMCA").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Процент жира · YMCA")
+            onNodeWithTag("top-bar-title").assertTextEquals("YMCA")
 
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-${SASHA.userId.value}").performClick()

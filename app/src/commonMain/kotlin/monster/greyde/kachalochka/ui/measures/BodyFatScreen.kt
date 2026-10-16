@@ -6,12 +6,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
 import monster.greyde.kachalochka.ui.components.AllResults
 import monster.greyde.kachalochka.ui.components.Screen
@@ -39,8 +43,16 @@ fun BodyFatScreen(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // Where a measure's screen shows how to take it.
+            Text(
+                fat.required,
+                Modifier.testTag("fat-required"),
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
+            )
             Column {
-                MeasureSummary(fat.latest, fat.change, fat.lastMeasured, fat.missing)
+                MeasureSummary(fat.latest, fat.change, fat.lastMeasured)
                 if (fat.profileIncomplete) ProfileLink(onOpenSettings)
             }
             PeriodChoice(fat.period, viewModel::choose)

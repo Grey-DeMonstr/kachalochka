@@ -22,7 +22,9 @@ import monster.greyde.kachalochka.core.domain.measures.bodyFatHistory
 import monster.greyde.kachalochka.core.domain.measures.cycleOf
 import monster.greyde.kachalochka.core.domain.measures.missingInputs
 import monster.greyde.kachalochka.core.domain.measures.periodStart
+import monster.greyde.kachalochka.core.domain.measures.requiredInputs
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.ui.components.HistoryRowUi
 import monster.greyde.kachalochka.ui.format.UtcOffset
@@ -33,7 +35,7 @@ import kotlin.time.Clock
 
 /**
  * [points] are the period's percents, oldest first; [results] are all of them, newest first.
- * [missing] names what the formula lacks; [profileIncomplete] when the profile holds some of it.
+ * [required] names what the formula reads; [profileIncomplete] when the profile lacks some of it.
  */
 data class BodyFatUi(
     val title: String,
@@ -43,7 +45,7 @@ data class BodyFatUi(
     val lastMeasured: String?,
     val change: String?,
     val results: List<HistoryRowUi>,
-    val missing: String?,
+    val required: String,
     val profileIncomplete: Boolean,
     val phases: CyclePhasesUi? = null,
 )
@@ -67,6 +69,7 @@ class BodyFatViewModel(
     /** Rounded to the tenth the screen shows, oldest first. */
     private var percents: List<Pair<CalendarDay, Double>> = emptyList()
     private var missing: List<BodyInput> = emptyList()
+    private var sex: Sex? = null
     private var cycle: Cycle? = null
     private var period = MeasurePeriod.Quarter
     private var loading: Job? = null
@@ -116,6 +119,7 @@ class BodyFatViewModel(
                         hipsCm = latest(MeasureKind.Hips),
                     )
                 missing = missingInputs(method, inputs)
+                sex = profile?.sex
                 publish()
             }
     }
@@ -139,7 +143,7 @@ class BodyFatViewModel(
         val latest = percents.lastOrNull()
         mutableState.value =
             BodyFatUi(
-                title = "${AppStrings.current.bodyFat} · ${methodName(method)}",
+                title = methodName(method),
                 period = period,
                 points = shown,
                 latest = latest?.let { fatPercent(it.second) },
@@ -154,10 +158,7 @@ class BodyFatViewModel(
                     percents.asReversed().map { (day, percent) ->
                         HistoryRowUi(day, dayMonthLabel(day, today.year), fatPercent(percent))
                     },
-                missing =
-                    missing.takeIf { it.isNotEmpty() }?.let {
-                        AppStrings.current.needs(it.map(::inputName))
-                    },
+                required = AppStrings.current.needs(requiredInputs(method, sex).map(::inputName)),
                 profileIncomplete = missing.any { it in profileInputs },
                 phases = chartPhases(cycle, period, shown.map { it.first }),
             )

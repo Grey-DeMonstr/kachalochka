@@ -37,27 +37,30 @@ fun bodyFat(
     return percent?.takeIf { it.isFinite() && it in plausible }
 }
 
+/** What [method] reads for [sex]. */
+fun requiredInputs(
+    method: BodyFatMethod,
+    sex: Sex?,
+): List<BodyInput> =
+    when (method) {
+        BodyFatMethod.Navy ->
+            listOfNotNull(
+                BodyInput.Sex,
+                BodyInput.Height,
+                BodyInput.Waist,
+                BodyInput.Neck,
+                BodyInput.Hips.takeIf { sex == Sex.Female },
+            )
+        BodyFatMethod.Ymca -> listOf(BodyInput.Sex, BodyInput.Weight, BodyInput.Waist)
+        BodyFatMethod.Deurenberg ->
+            listOf(BodyInput.Sex, BodyInput.Age, BodyInput.Height, BodyInput.Weight)
+    }
+
 /** What [method] needs that [inputs] lack. */
 fun missingInputs(
     method: BodyFatMethod,
     inputs: BodyInputs,
-): List<BodyInput> {
-    val needed =
-        when (method) {
-            BodyFatMethod.Navy ->
-                listOfNotNull(
-                    BodyInput.Sex,
-                    BodyInput.Height,
-                    BodyInput.Waist,
-                    BodyInput.Neck,
-                    BodyInput.Hips.takeIf { inputs.sex == Sex.Female },
-                )
-            BodyFatMethod.Ymca -> listOf(BodyInput.Sex, BodyInput.Weight, BodyInput.Waist)
-            BodyFatMethod.Deurenberg ->
-                listOf(BodyInput.Sex, BodyInput.Age, BodyInput.Height, BodyInput.Weight)
-        }
-    return needed.filter { inputs.valueOf(it) == null }
-}
+): List<BodyInput> = requiredInputs(method, inputs.sex).filter { inputs.valueOf(it) == null }
 
 /**
  * The methods that read [kind] for [sex]. Hips count for an unknown sex too, so they are kept until
