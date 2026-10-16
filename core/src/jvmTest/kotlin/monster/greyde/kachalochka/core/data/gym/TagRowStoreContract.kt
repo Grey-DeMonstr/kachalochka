@@ -33,9 +33,24 @@ abstract class TagRowStoreContract {
     private val row = Machine.new("Тяга", ivan, t0)
     private val written = mutableListOf<Pair<String, List<String>>>()
 
+    private val reads = mutableListOf<String>()
+
     private inner class Recorded(
         private val inner: TagRowStore,
     ) : TagRowStore by inner {
+        override suspend fun tags(ids: List<String>): List<Tag> {
+            reads += "tags"
+            return inner.tags(ids)
+        }
+
+        override suspend fun heldElsewhere(
+            machine: Machine,
+            tags: List<String>,
+        ): Set<String> {
+            reads += "heldElsewhere"
+            return inner.heldElsewhere(machine, tags)
+        }
+
         override suspend fun upsertTags(tags: List<Tag>) {
             written += TAG_TABLE to tags.map { it.id }
             inner.upsertTags(tags)
@@ -50,6 +65,7 @@ abstract class TagRowStoreContract {
     private suspend fun save(machine: Machine) {
         putMachine(machine)
         written.clear()
+        reads.clear()
         Recorded(store).writeTagsOf(machine)
     }
 
@@ -72,6 +88,29 @@ abstract class TagRowStoreContract {
                 assertEquals(Tag(t(k), ivan, k, t0, false), tag(t(k)))
                 assertEquals(MachineTag(l(k), ivan, press.id, t(k), t0, false), link(l(k)))
             }
+            assertEquals(
+                listOf(
+                    TAG_TABLE to listOf(t("ноги"), t("спина")),
+                    MACHINE_TAG_TABLE to listOf(l("ноги"), l("спина")),
+                ),
+                written,
+            )
+        }
+
+    @Test
+    fun a_machine_without_tags_or_links_reads_no_tag_rows_and_no_holders() =
+        runTest {
+            save(press)
+
+            assertTrue(reads.isEmpty())
+        }
+
+    @Test
+    fun a_machine_that_drops_no_link_reads_no_holders() =
+        runTest {
+            save(press.copy(tags = setOf("ноги")))
+
+            assertEquals(listOf("tags"), reads)
         }
 
     @Test
@@ -179,12 +218,12 @@ abstract class TagRowStoreContract {
             save(press.copy(tags = emptySet(), updatedAt = later))
             save(press.copy(tags = setOf("ноги"), updatedAt = later + 1.minutes))
 
-            val tag = assertNotNull(tag(t("ноги")))
-            val link = assertNotNull(link(l("ноги")))
-            assertFalse(tag.deleted)
-            assertFalse(link.deleted)
-            assertEquals(later + 1.minutes, tag.updatedAt)
-            assertEquals(later + 1.minutes, link.updatedAt)
+            val again = later + 1.minutes
+            assertEquals(Tag(t("ноги"), ivan, "ноги", again, false), tag(t("ноги")))
+            assertEquals(
+                MachineTag(l("ноги"), ivan, press.id, t("ноги"), again, false),
+                link(l("ноги")),
+            )
         }
 
     @Test
