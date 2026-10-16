@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.stats
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
@@ -9,6 +10,10 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -145,6 +150,49 @@ class StatisticsScreenTest {
             onNodeWithTag("stats-search").assertTextEquals("")
             onNodeWithTag("stats-choice-overall").assertExists()
         }
+
+    @Test
+    fun back_ends_the_search_instead_of_leaving() {
+        var left = 0
+        runScreenTest(gym, screen = { StatisticsScreen(press.id, { left++ }, {}) }) {
+            onNodeWithTag("stats-choice").performClick()
+            onNodeWithTag("stats-search").performTextInput("тяг")
+            waitForIdle()
+
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+
+            onNodeWithTag("stats-choice-list").assertDoesNotExist()
+            onNodeWithTag("stats-choice").assertTextContains("Жим ногами")
+        }
+        assertEquals(0, left)
+    }
+
+    @Test
+    fun system_back_ends_the_search_instead_of_leaving() {
+        var left = 0
+        val dispatcher = NavigationEventDispatcher()
+        val systemBack = DirectNavigationEventInput().also(dispatcher::addInput)
+        val owner =
+            object : NavigationEventDispatcherOwner {
+                override val navigationEventDispatcher = dispatcher
+            }
+        runScreenTest(gym, screen = {
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) {
+                StatisticsScreen(press.id, { left++ }, {})
+            }
+        }) {
+            onNodeWithTag("stats-choice").performClick()
+            waitForIdle()
+            onNodeWithTag("stats-choice-list").assertExists()
+
+            runOnIdle { systemBack.backCompleted() }
+            waitForIdle()
+
+            onNodeWithTag("stats-choice-list").assertDoesNotExist()
+        }
+        assertEquals(0, left)
+    }
 
     @Test
     fun the_machine_choice_and_the_period_chips_change_what_is_shown() =

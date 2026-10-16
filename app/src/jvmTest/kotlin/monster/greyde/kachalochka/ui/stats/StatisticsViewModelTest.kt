@@ -453,6 +453,27 @@ class StatisticsViewModelTest {
         }
 
     @Test
+    fun offline_the_own_statistics_show_and_the_search_finds_own_names() =
+        runTest {
+            val on = signedInGym()
+            on.friends.offline = true
+            val mine = Machine.new("Тяга", ME.userId, t0)
+            on.machines.upsert(mine)
+            val vm = viewModel(on = on)
+            assertEquals(
+                listOf(mine.id),
+                vm.state.value.choices
+                    .map { it.id },
+            )
+
+            vm.search("тяг")
+
+            val found = vm.state.value.choices
+            assertEquals(listOf(mine.id), found.map { it.id })
+            assertEquals(0..2, found.single().matched)
+        }
+
+    @Test
     fun choosing_a_machine_ends_the_search() {
         val vm = viewModel()
         vm.search("тяг")

@@ -52,7 +52,7 @@ data class StatsChoiceUi(
     val id: MachineId,
     val name: String,
     val photo: Photo?,
-    /** The part of [name] the search found; null when the search found the machine otherwise. */
+    /** The part of [name] the search found; null when no part of [name] was found. */
     val matched: IntRange? = null,
 )
 
@@ -154,7 +154,7 @@ class StatisticsViewModel(
         viewModelScope.launch { sync.completed.collect { load() } }
     }
 
-    /** The account's own data shows at once; the group's, for the search, follows if it answers. */
+    /** The own data shows at once; the group's, for the search, follows if it answers. */
     fun load() {
         loading?.cancel()
         loadingGroup?.cancel()
