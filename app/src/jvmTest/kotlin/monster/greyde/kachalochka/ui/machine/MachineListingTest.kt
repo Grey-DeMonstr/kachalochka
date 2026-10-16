@@ -128,6 +128,13 @@ class MachineListingTest {
 
         assertEquals(emptySet(), known.query.tags)
         assertEquals(listOf("Присед", "Тяга"), known.ownNames())
+
+        val theirs = theirs("Жим").copy(tags = setOf("плечи"))
+        val friends = read(mine, listOf(theirs)).listing(query)
+
+        assertEquals(setOf("плечи"), friends.query.tags)
+        assertEquals(emptyList(), friends.ownNames())
+        assertEquals(listOf(theirs.id), friends.friendIds())
     }
 
     @Test
@@ -166,6 +173,11 @@ class MachineListingTest {
         assertEquals(emptyList(), searched.ownNames())
         assertEquals(listOf(smith.id), searched.inVisit.map { it.id })
         assertFalse(searched.nothingFound)
+
+        val another = read.listing(MachineQuery(text = "жим", inVisit = inVisit))
+
+        assertEquals(listOf("Жим лёжа", "Жим ногами"), another.ownNames())
+        assertEquals(emptyList(), another.inVisit)
     }
 
     @Test

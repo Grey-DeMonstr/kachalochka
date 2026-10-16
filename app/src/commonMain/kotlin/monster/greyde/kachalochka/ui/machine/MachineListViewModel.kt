@@ -65,7 +65,7 @@ class MachineListViewModel(
         viewModelScope.launch { sync.completed.collect { load() } }
     }
 
-    /** Own machines show at once; friends' follow from the network, if it answers. */
+    /** Own machines and the last group read show at once; the fresh read follows. */
     fun load() {
         loading?.cancel()
         loading =

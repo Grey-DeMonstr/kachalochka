@@ -300,6 +300,7 @@ class MachineReadsTest {
 
             assertEquals(listOf(machine.id), only.ownPeaks.map { it.machineId })
             assertTrue(only.friendPeaks.isEmpty())
+            assertEquals(0, out.friends.reads)
         }
 
     @Test

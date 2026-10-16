@@ -371,6 +371,45 @@ class MachinePickerViewModelTest {
         }
 
     @Test
+    fun friends_records_and_colours_read_before_show_at_once() =
+        runTest {
+            val (on, olegPress) = olegsGym()
+            on.friends.sets += set(visit.id, olegPress, 40.0, 12, t0, OLEG.userId)
+            pickerOn(on).also { it.load() }
+            on.friends.gate = CompletableDeferred()
+
+            val vm = pickerOn(on).also { it.load() }
+
+            assertNotNull(
+                vm.state.value.friendSections
+                    .single()
+                    .color,
+            )
+            assertNotNull(
+                vm.state.value.friendRows
+                    .single()
+                    .record,
+            )
+        }
+
+    @Test
+    fun own_machines_show_while_the_friends_read_is_still_in_flight() =
+        runTest {
+            val (on, _) = olegsGym()
+            on.machines.upsert(Machine.new("Тяга", ME.userId, t0))
+            on.friends.gate = CompletableDeferred()
+
+            val vm = pickerOn(on).also { it.load() }
+
+            assertEquals(
+                listOf("Тяга"),
+                vm.state.value.rows
+                    .map { it.name },
+            )
+            assertEquals(emptyList(), vm.state.value.friendRows)
+        }
+
+    @Test
     fun friends_machines_are_offered_with_their_owner_and_settings() {
         val (on, olegPress) = olegsGym()
 
