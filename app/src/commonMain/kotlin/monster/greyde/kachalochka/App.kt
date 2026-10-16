@@ -369,6 +369,7 @@ fun App() {
                         onSaveAsPlan = {
                             navController.navigate(PlanRoute(fromVisit = route.day))
                         },
+                        onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
                     )
                 }
                 composable<MachinePickerRoute> { entry ->

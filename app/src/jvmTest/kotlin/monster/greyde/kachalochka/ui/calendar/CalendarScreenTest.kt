@@ -73,6 +73,33 @@ class CalendarScreenTest {
         assertEquals(CalendarDay(2023, 11, 12), saved)
     }
 
+    @Test
+    fun the_visit_menu_repeats_the_visit_today_and_opens_today() {
+        var opened: CalendarDay? = null
+        runScreenTest(gym, screen = { calendar(onOpenVisit = { opened = it }) }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("repeat-today-${sunday.id.value}")
+                .assertTextEquals("Повторить сегодня")
+                .performClick()
+            waitForIdle()
+        }
+        assertEquals(gym.today, opened)
+    }
+
+    @Test
+    fun the_menu_of_today_s_visit_has_no_repeat() {
+        val todayVisit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
+        runBlocking { gym.visits.upsert(todayVisit) }
+        runScreenTest(gym, screen = { calendar() }) {
+            waitForIdle()
+            onNodeWithTag("visit-menu-${todayVisit.id.value}").performScrollTo().performClick()
+            onNodeWithTag("save-as-plan-${todayVisit.id.value}").assertExists()
+            onNodeWithTag("repeat-today-${todayVisit.id.value}").assertDoesNotExist()
+        }
+    }
+
     /** Иван signed in, with [trained] in his group each having a visit on the 12th. */
     private fun friendsGym(vararg trained: Friend): FakeGym {
         val signed = signedInGym()

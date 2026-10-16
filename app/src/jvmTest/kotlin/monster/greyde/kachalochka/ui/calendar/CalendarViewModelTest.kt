@@ -33,6 +33,7 @@ import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import monster.greyde.kachalochka.ui.strings.inEnglish
+import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -55,6 +56,7 @@ class CalendarViewModelTest {
     private val row = Machine.new("Тяга верхнего блока", null, t0)
     private val twelfth = CalendarDay(2023, 11, 12)
     private val sunday = Visit(VisitId.random(), null, twelfth, t0 - 2.days, t0, false)
+    private val today = CalendarDay(2023, 11, 14)
     private val fifth = CalendarDay(2023, 11, 5)
     private val fifthVisit = Visit(VisitId.random(), null, fifth, t0 - 9.days, t0, false)
 
@@ -80,10 +82,12 @@ class CalendarViewModelTest {
             gym.visits,
             gym.sets,
             gym.machines,
+            gym.machineLinks,
             gym.currentUser,
             gym.accounts,
             gym.clock,
             gym.utcOffset,
+            RestTimer(gym.clock),
             gym.sync,
             gym.friends,
             FriendColorStore(gym.profiles, gym.clock, gym.friends),
@@ -528,6 +532,50 @@ class CalendarViewModelTest {
                     "Он и его подходы пропадут из истории и статистики.",
                 assertNotNull(vm.state.value?.replacement).text,
             )
+        }
+
+    @Test
+    fun repeating_a_visit_today_plans_its_machines_in_a_new_visit_of_today() =
+        runTest {
+            val vm = viewModel().also { it.refresh() }
+            vm.selectDay(twelfth)
+            var opened: CalendarDay? = null
+
+            vm.repeatToday { opened = it }
+
+            assertEquals(today, opened)
+            val created = gym.visits.all(null).single { it.id != sunday.id }
+            assertEquals(listOf(press.id, row.id), created.planned)
+            assertEquals(emptyList(), gym.sets.forVisit(created.id))
+            assertEquals(3, gym.sets.forVisit(sunday.id).size)
+        }
+
+    @Test
+    fun repeating_a_visit_today_keeps_the_machines_today_already_has() =
+        runTest {
+            val todayVisit = Visit(VisitId.random(), null, today, t0, t0, false)
+            gym.visits.upsert(todayVisit)
+            gym.sets.upsert(set(todayVisit, press, 0))
+            val vm = viewModel().also { it.refresh() }
+            vm.selectDay(twelfth)
+
+            vm.repeatToday {}
+
+            assertEquals(listOf(row.id), gym.visits.byId(todayVisit.id)?.planned)
+            assertEquals(1, gym.sets.forVisit(todayVisit.id).size)
+        }
+
+    @Test
+    fun a_visit_of_today_cannot_be_repeated_today() =
+        runTest {
+            val todayVisit = Visit(VisitId.random(), null, today, t0, t0, false)
+            gym.visits.upsert(todayVisit)
+            gym.sets.upsert(set(todayVisit, press, 0))
+            val vm = viewModel().also { it.refresh() }
+
+            assertFalse(assertNotNull(vm.state.value?.visit).canRepeatToday)
+            vm.selectDay(twelfth)
+            assertTrue(assertNotNull(vm.state.value?.visit).canRepeatToday)
         }
 
     @Test

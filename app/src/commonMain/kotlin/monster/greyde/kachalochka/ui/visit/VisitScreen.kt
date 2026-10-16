@@ -72,6 +72,7 @@ fun VisitScreen(
     onOpenMachineSettings: (MachineId) -> Unit,
     onOpenStatistics: (MachineId) -> Unit = {},
     onSaveAsPlan: () -> Unit = {},
+    onOpenVisit: (CalendarDay) -> Unit = {},
     /** A machine whose page opens without the set form, as a tap on its row opens it. */
     openedMachineId: MachineId? = null,
     onOpenedMachineConsumed: () -> Unit = {},
@@ -135,7 +136,15 @@ fun VisitScreen(
                 )
             }
             if (current != null && current.groups.isNotEmpty() && !current.ordering) {
-                VisitMenu(onSaveAsPlan)
+                VisitMenu(
+                    onSaveAsPlan,
+                    onRepeatToday =
+                        if (current.canRepeatToday) {
+                            { viewModel.repeatToday(onOpenVisit) }
+                        } else {
+                            null
+                        },
+                )
             }
         },
     ) {
@@ -453,7 +462,10 @@ internal fun SetRow(
 }
 
 @Composable
-private fun VisitMenu(onSaveAsPlan: () -> Unit) {
+private fun VisitMenu(
+    onSaveAsPlan: () -> Unit,
+    onRepeatToday: (() -> Unit)?,
+) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         SquareIconButton(
@@ -471,6 +483,16 @@ private fun VisitMenu(onSaveAsPlan: () -> Unit) {
                 },
                 modifier = Modifier.testTag("save-as-plan"),
             )
+            if (onRepeatToday != null) {
+                DropdownMenuItem(
+                    text = { Text(strings().repeatToday) },
+                    onClick = {
+                        expanded = false
+                        onRepeatToday()
+                    },
+                    modifier = Modifier.testTag("repeat-today"),
+                )
+            }
         }
     }
 }

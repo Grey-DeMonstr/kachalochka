@@ -292,10 +292,11 @@ Tapping it opens it on the visit screen, where its sets are added, edited, delet
 today's are. A day without a visit offers "Добавить визит". The card's "⋮" menu has "Перенести",
 which moves the visit, with its sets, to the day tapped next; if that day already has a visit, the
 app asks whether to replace it, naming that visit's machines and its set count, and replacing
-removes it with its sets. Its "Сохранить как план"
-opens the form of a new plan with the visit's machines, as the visit's own menu does. Its "Удалить"
-asks "Удалить визит?" under the visit's date, then removes the visit and its sets from the history
-and the statistics.
+removes it with its sets. Its "Сохранить как план" opens the form of a new plan with the visit's
+machines, as the visit's own menu does. Its "Повторить сегодня", not shown for today's visit, adds
+the visit's machines to today's visit as planned ones, as starting a plan does, and opens today's
+visit; back returns to the calendar. Its "Удалить" asks "Удалить визит?" under the visit's date,
+then removes the visit and its sets from the history and the statistics.
 
 With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
 group with it: each friend who trained on a day adds a dot in that friend's colour after the
@@ -464,7 +465,8 @@ Leaving without saving drops the edits. The menu of a saved plan has "Удали
 
 The menu in the top bar of a visit with machines has "Сохранить как план". It opens the form of a
 new plan holding the visit's machines in the visit's order, planned ones included; saving returns
-to the visit, which stays as it was.
+to the visit, which stays as it was. Except on today's visit, the menu also has "Повторить сегодня",
+which does what the calendar card's item of that name does.
 
 ## Custom exercsies
 

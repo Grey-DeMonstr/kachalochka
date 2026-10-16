@@ -98,6 +98,7 @@ data class VisitUiState(
     val groupByTag: Boolean = false,
     val canGroupByTag: Boolean = false,
     val canOrder: Boolean = false,
+    val canRepeatToday: Boolean = false,
 )
 
 data class VisitSectionUi(
@@ -175,7 +176,7 @@ class VisitViewModel(
     private val day: CalendarDay,
     private val visits: VisitRepository,
     private val machines: MachineRepository,
-    links: MachineLinkRepository,
+    private val links: MachineLinkRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
@@ -273,6 +274,17 @@ class VisitViewModel(
     fun refresh() {
         friendsStale = true
         reloadShown()
+    }
+
+    /** Plans this visit's machines in today's visit, then reports today. */
+    fun repeatToday(onDone: (CalendarDay) -> Unit) {
+        writes.launch {
+            val now = clock.now()
+            val today = CalendarDay.of(now, utcOffset.at(now))
+            SetRecorder(today, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
+                .planFrom(currentUser.id(), day)
+            onDone(today)
+        }
     }
 
     private fun reloadShown() {
@@ -666,6 +678,7 @@ class VisitViewModel(
                 ordering = ordering,
                 canShare = visitSets.isNotEmpty(),
                 canOrder = visitSets.isNotEmpty(),
+                canRepeatToday = groups.isNotEmpty() && !isToday,
                 notice = notice,
             )
     }

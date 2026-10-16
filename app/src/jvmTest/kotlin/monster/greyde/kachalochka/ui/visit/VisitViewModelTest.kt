@@ -1740,6 +1740,37 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun repeating_another_day_today_plans_its_machines_in_today_s_visit() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+            val base = -(7.days.inWholeMinutes.toInt())
+            gym.sets.upsert(set(lastWeek.id, row, 45.0, 12, base))
+            gym.sets.upsert(set(lastWeek.id, press, 70.0, 10, base + 1))
+            val vm = viewModel(day = seventh).also { it.refresh() }
+            var opened: CalendarDay? = null
+
+            vm.repeatToday { opened = it }
+
+            assertEquals(today, opened)
+            assertEquals(listOf(row.id, press.id), gym.visits.byId(visit.id)?.planned)
+            assertEquals(2, gym.sets.forVisit(lastWeek.id).size)
+        }
+
+    @Test
+    fun only_a_visit_of_another_day_with_machines_can_be_repeated_today() =
+        runTest {
+            gym.visits.upsert(lastWeek)
+            gym.sets.upsert(set(lastWeek.id, press, 70.0, 10, -(7.days.inWholeMinutes.toInt())))
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
+
+            val past = viewModel(day = seventh).also { it.refresh() }
+            val current = viewModel().also { it.refresh() }
+
+            assertTrue(assertNotNull(past.state.value).canRepeatToday)
+            assertFalse(assertNotNull(current.state.value).canRepeatToday)
+        }
+
+    @Test
     fun a_reorder_on_another_day_asks_for_a_sync_pass() =
         runTest {
             gym.visits.upsert(lastWeek)

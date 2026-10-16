@@ -60,6 +60,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalTestApi::class)
@@ -221,6 +222,37 @@ class VisitScreenTest {
             waitForIdle()
         }
         assertEquals(1, saves)
+    }
+
+    @Test
+    fun the_menu_of_another_day_repeats_it_today_and_opens_today() {
+        val past = CalendarDay(2023, 11, 7)
+        runBlocking {
+            val now = gym.clock.current
+            val pastVisit = Visit(VisitId.random(), null, past, now - 7.days, now, false)
+            gym.visits.upsert(pastVisit)
+            gym.sets.upsert(recorded.copy(id = WorkoutSetId.random(), visitId = pastVisit.id))
+        }
+        var opened: CalendarDay? = null
+        runScreenTest(gym, screen = { visitScreen(day = past, onOpenVisit = { opened = it }) }) {
+            waitForIdle()
+            onNodeWithTag("visit-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("repeat-today").assertTextEquals("Повторить сегодня").performClick()
+            waitForIdle()
+        }
+        assertEquals(gym.today, opened)
+    }
+
+    @Test
+    fun the_menu_of_today_has_no_repeat() {
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("visit-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("save-as-plan").assertExists()
+            onNodeWithTag("repeat-today").assertDoesNotExist()
+        }
     }
 
     @Test
@@ -968,6 +1000,7 @@ class VisitScreenTest {
         onOpenStatistics: (MachineId) -> Unit = {},
         onBack: () -> Unit = {},
         onSaveAsPlan: () -> Unit = {},
+        onOpenVisit: (CalendarDay) -> Unit = {},
     ) = VisitScreen(
         day = day,
         pickedMachineId = picked,
@@ -980,5 +1013,6 @@ class VisitScreenTest {
         onOpenMachineSettings = onOpenMachineSettings,
         onOpenStatistics = onOpenStatistics,
         onSaveAsPlan = onSaveAsPlan,
+        onOpenVisit = onOpenVisit,
     )
 }

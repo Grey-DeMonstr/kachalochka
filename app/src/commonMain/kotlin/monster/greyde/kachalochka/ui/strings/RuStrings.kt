@@ -138,6 +138,7 @@ object RuStrings : Strings {
     override val startPlanText =
         "Его упражнения добавятся в сегодняшний визит, а сам план исчезнет из списка."
     override val saveAsPlan = "Сохранить как план"
+    override val repeatToday = "Повторить сегодня"
     override val reps = "повторы"
     override val comment = "Комментарий"
     override val deleteSet = "Удалить подход"

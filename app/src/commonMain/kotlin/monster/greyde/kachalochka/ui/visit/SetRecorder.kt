@@ -22,6 +22,7 @@ import monster.greyde.kachalochka.core.domain.gym.ownStandIn
 import monster.greyde.kachalochka.core.domain.gym.recordingInstant
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.startedPlanned
+import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.timer.RestTimer
@@ -96,6 +97,15 @@ class SetRecorder(
         val visit = (shown ?: newVisit(owner)).visit
         visits.upsert(visit.copy(planned = planned, updatedAt = clock.now()))
         pushIfPast()
+    }
+
+    /** Plans the machines of [owner]'s visit on [from], in its order, as [plan] does. */
+    suspend fun planFrom(
+        owner: UserId?,
+        from: CalendarDay,
+    ) {
+        val source = visits.shownOn(owner, from, sets, utcOffset::at) ?: return
+        plan(owner, visitMachines(source.sets, source.visit.planned))
     }
 
     suspend fun unplan(

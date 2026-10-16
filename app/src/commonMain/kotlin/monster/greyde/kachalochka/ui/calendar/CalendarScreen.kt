@@ -102,6 +102,7 @@ fun CalendarScreen(
                     onOpen = { onOpenVisit(current.day) },
                     onMove = { viewModel.startMove(visit.id) },
                     onSaveAsPlan = { onSaveAsPlan(current.day) },
+                    onRepeatToday = { viewModel.repeatToday(onOpenVisit) },
                     onRemove = { viewModel.askToRemove(visit.id) },
                 )
             }
@@ -208,6 +209,7 @@ private fun VisitCard(
     onOpen: () -> Unit,
     onMove: () -> Unit,
     onSaveAsPlan: () -> Unit,
+    onRepeatToday: () -> Unit,
     onRemove: () -> Unit,
 ) {
     DayCard(
@@ -218,7 +220,7 @@ private fun VisitCard(
         onOpen = onOpen,
         menu =
             if (editable) {
-                { VisitMenu(visit, onMove, onSaveAsPlan, onRemove) }
+                { VisitMenu(visit, onMove, onSaveAsPlan, onRepeatToday, onRemove) }
             } else {
                 null
             },
@@ -276,6 +278,7 @@ private fun VisitMenu(
     visit: CalendarVisitUi,
     onMove: () -> Unit,
     onSaveAsPlan: () -> Unit,
+    onRepeatToday: () -> Unit,
     onRemove: () -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
@@ -314,6 +317,17 @@ private fun VisitMenu(
                 },
                 modifier = Modifier.testTag("save-as-plan-${visit.id.value}"),
             )
+            if (visit.canRepeatToday) {
+                DropdownMenuItem(
+                    text = { Text(strings().repeatToday) },
+                    leadingIcon = { Icon(PhosphorIcons.Barbell, null, Modifier.size(20.dp)) },
+                    onClick = {
+                        open = false
+                        onRepeatToday()
+                    },
+                    modifier = Modifier.testTag("repeat-today-${visit.id.value}"),
+                )
+            }
             DropdownMenuItem(
                 text = { Text(strings().delete) },
                 leadingIcon = { Icon(PhosphorIcons.Trash, null, Modifier.size(20.dp)) },

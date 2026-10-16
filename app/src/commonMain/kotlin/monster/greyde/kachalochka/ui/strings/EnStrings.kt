@@ -121,6 +121,7 @@ object EnStrings : Strings {
     override val startPlanText =
         "Its machines will be added to today's visit, and the plan will disappear from the list."
     override val saveAsPlan = "Save as plan"
+    override val repeatToday = "Repeat today"
     override val reps = "reps"
     override val comment = "Comment"
     override val deleteSet = "Delete set"

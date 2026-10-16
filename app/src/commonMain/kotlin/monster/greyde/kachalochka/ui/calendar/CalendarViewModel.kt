@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -46,6 +47,8 @@ import monster.greyde.kachalochka.ui.format.weekdayName
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppStrings
+import monster.greyde.kachalochka.ui.timer.RestTimer
+import monster.greyde.kachalochka.ui.visit.SetRecorder
 import kotlin.time.Clock
 
 data class CalendarUiState(
@@ -89,6 +92,7 @@ data class CalendarVisitUi(
     val id: VisitId,
     val machines: String,
     val tags: String?,
+    val canRepeatToday: Boolean,
 )
 
 /** A visit card's tag line: every tag of its machines, in one order everywhere. */
@@ -117,10 +121,12 @@ class CalendarViewModel(
     private val visits: VisitRepository,
     private val sets: WorkoutSetRepository,
     private val machines: MachineRepository,
+    private val links: MachineLinkRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
+    private val restTimer: RestTimer,
     private val sync: SyncTrigger,
     private val friends: FriendsRepository,
     private val colors: FriendColorStore,
@@ -239,6 +245,17 @@ class CalendarViewModel(
         }
     }
 
+    /** Plans the shown visit's machines in today's visit, then reports today. */
+    fun repeatToday(onDone: (CalendarDay) -> Unit) {
+        val from = selected
+        writes.launch {
+            val today = today()
+            SetRecorder(today, visits, machines, links, sets, clock, utcOffset, restTimer, sync)
+                .planFrom(currentUser.id(), from)
+            onDone(today)
+        }
+    }
+
     fun startMove(id: VisitId) {
         moving = all.firstOrNull { it.id == id } ?: return
         publish()
@@ -339,6 +356,7 @@ class CalendarViewModel(
                             AppStrings.current.noSetsYet
                         },
                     tags = dayTags(shown),
+                    canRepeatToday = selected != today(),
                 )
             }
         publish()

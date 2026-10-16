@@ -103,6 +103,7 @@ interface Strings {
     val startPlanTitle: String
     val startPlanText: String
     val saveAsPlan: String
+    val repeatToday: String
     val reps: String
     val comment: String
     val deleteSet: String
