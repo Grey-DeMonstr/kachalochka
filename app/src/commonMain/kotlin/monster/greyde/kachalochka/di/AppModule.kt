@@ -137,7 +137,18 @@ val appModule =
             )
         }
         viewModel { (plan: PlanId?, fromVisit: CalendarDay?) ->
-            PlanFormViewModel(plan, fromVisit, get(), get(), get(), get(), get(), get(), get())
+            PlanFormViewModel(
+                plan,
+                fromVisit,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
         }
         viewModel { (machine: MachineId?) ->
             StatisticsViewModel(

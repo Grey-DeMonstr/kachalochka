@@ -116,8 +116,6 @@ class PlanFormScreenTest {
             waitForIdle()
             onNodeWithTag("plan-name").performTextReplacement("Спина")
             onNodeWithTag("plan-name").assertIsFocused()
-            waitForIdle()
-            assertEquals("Ноги", stored().name)
             onNodeWithTag("plan-name").performKeyInput { pressKey(Key.Tab) }
             waitForIdle()
             onNodeWithTag("plan-name").assertIsNotFocused()
@@ -189,16 +187,15 @@ class PlanFormScreenTest {
         }
 
     @Test
-    fun switching_accounts_writes_the_name_and_closes_the_form() {
+    fun switching_accounts_closes_the_form() {
         runScreenTest(gym, screen = {
             PlanFormScreen(legs.id, null, {}, {}, {}, onDone = { done++ })
         }) {
             waitForIdle()
-            onNodeWithTag("plan-name").performTextReplacement("Спина")
             gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
             waitForIdle()
         }
         assertEquals(1, done)
-        assertEquals("Спина", stored().name)
+        assertEquals(legs, stored())
     }
 }

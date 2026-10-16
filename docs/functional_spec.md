@@ -459,11 +459,12 @@ reads "Без названия" while empty. Below it are the plan's machines in
 and a remove button. The order button in the top bar shows a drag handle at the left of every
 machine. "Добавить упражнение" opens the machine picker, which in a plan shows each machine's
 last result and offers no "Скопировать упражнение"; a machine already in the plan is not added
-twice. The form saves itself: the plan when a machine is added, removed or moved, the name when
-its field loses focus and when the form is left. A new plan comes into being with its first
-change. Back, the system back and switching accounts save and return to the list. A plan left
-with neither a name nor machines is deleted. The menu of a saved plan has "Удалить план", which
-asks "Удалить план?".
+twice. The form saves itself: the plan when a machine is added, removed or moved, the name a
+second after typing stops, when its field loses focus and when the form is left. A new plan comes
+into being with its first change. Back and the system back save and return to the list. A plan
+with neither a name nor machines is deleted, and its next change brings it back. The menu of a
+saved plan has "Удалить план", which asks "Удалить план?". Switching accounts returns to the list
+without saving.
 
 The menu in the top bar of a visit with machines has "Сохранить как план". It opens the form of a
 new plan holding the visit's machines in the visit's order, planned ones included, and saves the

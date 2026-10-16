@@ -456,14 +456,18 @@ visit screen shows `plannedWithoutSets` as planned rows. A plan made from a visi
 skip ids that name no live machine, so a machine merged away drops out of plans. Migration `0018`
 and `13.sqm` add both; `13.sqm` resets `lastPullAt`.
 
-`PlanFormViewModel` saves the plan itself. Each change of the machines, `commitName` (the name
-field lost focus) and `leave` (top-bar back, system back, a switch of account) put a write on one
-`Channel` that runs its tasks in order, after the open's own load; two writes of a new plan at
-the same time would create it twice. A write takes the form's state at the time it runs and
-skips a plan equal to the stored one, so the first write of a new plan is its first real change.
-`leave` sets `done` only after the queue gets to it, because the view model's scope, and with it
-any write still waiting, ends when the screen pops. A plan left with a blank name and no live
-machines is soft-deleted, if it was written.
+`PlanFormViewModel` saves the plan itself. Each change of the machines, a pause of `NAME_PAUSE`
+in typing, `commitName` (the name field lost focus) and `leave` (top-bar back, system back) put
+a write on one `Channel` that runs its tasks in order, after the open's own load. A write takes
+the form's state at the time it runs and skips a plan equal to the stored one, so the first
+write of a new plan is its first real change. A blank name with no live machines soft-deletes a
+written plan, and a later write undeletes it under the same id. A failed write goes to
+`FailureLog` and the queue goes on. `leave` sets `done` only after the queue gets to it, failed
+or not, because the view model's scope, and with it any write still waiting, ends when the
+screen pops. A switch of account closes the form without a write: on the web the new account's
+session is live by the time the form sees the switch, so the old account's plan would be
+refused by RLS or written across accounts (§4.3). The pause keeps the loss to the last second
+of typing.
 
 A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
 member's `linked_machine_id`. Neither column is a foreign key and no policy checks either against

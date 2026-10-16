@@ -127,8 +127,12 @@ class InMemoryPlanRepository : PlanRepository {
     /** While set, writes wait for it, keeping a write in flight for as long as a test needs. */
     var gate: CompletableDeferred<Unit>? = null
 
+    /** While set, writes throw it, as a write the server refuses. */
+    var failure: Exception? = null
+
     override suspend fun upsert(plan: Plan) {
         gate?.await()
+        failure?.let { throw it }
         rows[plan.id] = plan
     }
 

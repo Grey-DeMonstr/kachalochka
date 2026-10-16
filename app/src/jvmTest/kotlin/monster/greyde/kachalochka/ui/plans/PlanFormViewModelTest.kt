@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Plan
@@ -16,12 +17,14 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlanFormViewModelTest {
@@ -30,6 +33,8 @@ class PlanFormViewModelTest {
     private val press = Machine.new("Жим ногами", null, t0)
     private val row = Machine.new("Тяга", null, t0)
     private val legs = Plan(PlanId.random(), null, "Ноги", listOf(press.id, row.id), t0, t0, false)
+
+    private val main = UnconfinedTestDispatcher()
 
     private fun viewModel(
         id: PlanId?,
@@ -44,6 +49,7 @@ class PlanFormViewModelTest {
         gym.accounts,
         gym.clock,
         gym.catalogue,
+        FailureLog { gym.failures += it },
     )
 
     private fun newPlans() =
@@ -55,7 +61,7 @@ class PlanFormViewModelTest {
     @BeforeTest
     fun setUp() =
         runTest {
-            Dispatchers.setMain(UnconfinedTestDispatcher())
+            Dispatchers.setMain(main)
             gym.machines.upsert(press)
             gym.machines.upsert(row)
             gym.plans.upsert(legs)
@@ -102,17 +108,95 @@ class PlanFormViewModelTest {
         }
 
     @Test
-    fun a_new_plan_is_written_at_its_first_change_and_may_lose_every_machine() {
+    fun a_new_plan_is_written_at_its_first_change() {
         val vm = viewModel(null)
         assertEquals(emptyList(), newPlans())
 
         vm.add(press.id)
+
         val written = newPlans().single()
         assertEquals(listOf(press.id), written.machineIds)
         assertEquals("", written.name)
-        vm.remove(press.id)
+        assertTrue(vm.state.value.canDelete)
+    }
 
-        assertEquals(written.copy(machineIds = emptyList()), newPlans().single())
+    @Test
+    fun a_named_plan_may_lose_every_machine() {
+        val vm = viewModel(legs.id)
+
+        vm.remove(press.id)
+        vm.remove(row.id)
+
+        assertEquals(legs.copy(machineIds = emptyList()), stored())
+    }
+
+    @Test
+    fun a_plan_left_without_name_and_machines_is_deleted_at_once_and_a_change_brings_it_back() {
+        val vm = viewModel(legs.id)
+        vm.typeName("")
+        vm.remove(press.id)
+        assertFalse(stored().deleted)
+
+        vm.remove(row.id)
+        assertTrue(stored().deleted)
+        assertFalse(vm.state.value.canDelete)
+        vm.add(press.id)
+
+        assertEquals(legs.copy(name = "", machineIds = listOf(press.id)), stored())
+        assertTrue(vm.state.value.canDelete)
+    }
+
+    @Test
+    fun the_name_is_written_after_a_pause_in_typing() {
+        val vm = viewModel(legs.id)
+
+        vm.typeName("Сп")
+        main.scheduler.advanceTimeBy(NAME_PAUSE - 1.milliseconds)
+        vm.typeName("Спина")
+        main.scheduler.advanceTimeBy(NAME_PAUSE - 1.milliseconds)
+        assertEquals("Ноги", stored().name)
+        main.scheduler.advanceTimeBy(2.milliseconds)
+
+        assertEquals("Спина", stored().name)
+        assertFalse(vm.state.value.done)
+    }
+
+    @Test
+    fun switching_accounts_closes_the_form_without_writing() {
+        val vm = viewModel(legs.id)
+        vm.typeName("Спина")
+
+        gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+        main.scheduler.advanceTimeBy(NAME_PAUSE * 2)
+
+        assertTrue(vm.state.value.done)
+        assertEquals(legs, stored())
+    }
+
+    @Test
+    fun a_failed_write_is_recorded_and_the_next_write_still_runs() {
+        val vm = viewModel(legs.id)
+        val refused = IllegalStateException("refused")
+        gym.plans.failure = refused
+
+        vm.remove(press.id)
+        assertEquals(listOf<Throwable>(refused), gym.failures)
+        gym.plans.failure = null
+        vm.remove(row.id)
+
+        assertEquals(emptyList(), stored().machineIds)
+    }
+
+    @Test
+    fun a_failed_write_on_leaving_still_closes_the_form() {
+        val vm = viewModel(legs.id)
+        vm.typeName("Спина")
+        gym.plans.failure = IllegalStateException("refused")
+
+        vm.leave()
+
+        assertTrue(vm.state.value.done)
+        assertEquals(legs, stored())
     }
 
     @Test
@@ -186,11 +270,11 @@ class PlanFormViewModelTest {
     }
 
     @Test
-    fun leaving_a_written_plan_with_neither_name_nor_machines_deletes_it() {
+    fun leaving_a_plan_whose_name_was_cleared_deletes_it_when_it_has_no_machines() {
         val vm = viewModel(legs.id)
-        vm.typeName("")
         vm.remove(press.id)
         vm.remove(row.id)
+        vm.typeName(" ")
         assertFalse(stored().deleted)
 
         vm.leave()
@@ -200,7 +284,7 @@ class PlanFormViewModelTest {
     }
 
     @Test
-    fun writes_wait_for_each_other_so_a_new_plan_is_created_once() {
+    fun writes_run_in_order_and_leaving_waits_for_them() {
         val vm = viewModel(null)
         val write = CompletableDeferred<Unit>()
         gym.plans.gate = write
@@ -225,9 +309,9 @@ class PlanFormViewModelTest {
             gym.plans.upsert(deleted)
 
             val vm = viewModel(deleted.id)
+            assertTrue(vm.state.value.done)
             vm.leave()
 
-            assertTrue(vm.state.value.done)
             assertEquals(mapOf(deleted.id to deleted), gym.plans.rows)
         }
 }
