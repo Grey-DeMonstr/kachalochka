@@ -1,5 +1,16 @@
 Kachalochka - Changelog
 
+1.7.1
+
+- A friend's machine name and setup note can be copied.
+- A tag that no machine has any more is deleted.
+- Your machines link to the whole chain of friends' machines linked to them.
+- The body fat chart names the measures its formula needs.
+- The machine form shows friends' tags at once.
+- Fixed: a link made from a friend's visit shows only after the visit is opened again.
+- Fixed: switching accounts loses the plan being edited.
+
+
 1.7.0
 
 - Tags ignore letter case and are written in capitals.
