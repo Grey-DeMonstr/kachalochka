@@ -229,17 +229,21 @@ private fun FatSection(
         }
         Rule()
     }
-    if (profileIncomplete) {
-        Text(
-            strings().fillProfile,
-            Modifier
-                .clickable(onClick = onOpenSettings)
-                .padding(vertical = 12.dp)
-                .testTag("fat-profile-link"),
-            fontSize = 14.sp,
-            color = colors.tertiary,
-        )
-    }
+    if (profileIncomplete) ProfileLink(onOpenSettings)
+}
+
+/** Leads to Settings, where the profile's sex, birth date and height are filled. */
+@Composable
+internal fun ProfileLink(onOpenSettings: () -> Unit) {
+    Text(
+        strings().fillProfile,
+        Modifier
+            .clickable(onClick = onOpenSettings)
+            .padding(vertical = 12.dp)
+            .testTag("fat-profile-link"),
+        fontSize = 14.sp,
+        color = MaterialTheme.colorScheme.tertiary,
+    )
 }
 
 @Composable

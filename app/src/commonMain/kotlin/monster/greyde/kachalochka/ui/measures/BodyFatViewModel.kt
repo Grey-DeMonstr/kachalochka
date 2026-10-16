@@ -11,12 +11,17 @@ import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
+import monster.greyde.kachalochka.core.domain.measures.BodyInput
+import monster.greyde.kachalochka.core.domain.measures.BodyInputs
+import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.measures.bodyFatHistory
+import monster.greyde.kachalochka.core.domain.measures.missingInputs
 import monster.greyde.kachalochka.core.domain.measures.periodStart
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.ui.components.HistoryRowUi
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
@@ -24,7 +29,10 @@ import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.math.round
 import kotlin.time.Clock
 
-/** [points] are the period's percents, oldest first; [results] are all of them, newest first. */
+/**
+ * [points] are the period's percents, oldest first; [results] are all of them, newest first.
+ * [missing] names what the formula lacks; [profileIncomplete] when the profile holds some of it.
+ */
 data class BodyFatUi(
     val title: String,
     val period: MeasurePeriod,
@@ -33,7 +41,11 @@ data class BodyFatUi(
     val lastMeasured: String?,
     val change: String?,
     val results: List<HistoryRowUi>,
+    val missing: String?,
+    val profileIncomplete: Boolean,
 )
+
+private val profileInputs = setOf(BodyInput.Sex, BodyInput.Age, BodyInput.Height)
 
 class BodyFatViewModel(
     private val method: BodyFatMethod,
@@ -51,6 +63,7 @@ class BodyFatViewModel(
 
     /** Rounded to the tenth the screen shows, oldest first. */
     private var percents: List<Pair<CalendarDay, Double>> = emptyList()
+    private var missing: List<BodyInput> = emptyList()
     private var period = MeasurePeriod.Quarter
     private var loading: Job? = null
 
@@ -83,6 +96,20 @@ class BodyFatViewModel(
                         profile?.heightCm,
                         perKind,
                     ).map { (day, percent) -> day to round(percent * 10) / 10 }
+
+                fun latest(kind: MeasureKind): Double? =
+                    perKind[kind]?.maxByOrNull { (day, _) -> day }?.value
+                val inputs =
+                    BodyInputs(
+                        sex = profile?.sex,
+                        age = profile?.birthDate?.let { ageOn(it, today()) },
+                        heightCm = profile?.heightCm,
+                        weightKg = latest(MeasureKind.Weight),
+                        waistCm = latest(MeasureKind.Waist),
+                        neckCm = latest(MeasureKind.Neck),
+                        hipsCm = latest(MeasureKind.Hips),
+                    )
+                missing = missingInputs(method, inputs)
                 publish()
             }
     }
@@ -92,9 +119,13 @@ class BodyFatViewModel(
         publish()
     }
 
-    private fun publish() {
+    private fun today(): CalendarDay {
         val now = clock.now()
-        val today = CalendarDay.of(now, utcOffset.at(now))
+        return CalendarDay.of(now, utcOffset.at(now))
+    }
+
+    private fun publish() {
+        val today = today()
         val start = periodStart(period, today)
         val shown = percents.filter { (day, _) -> start == null || day >= start }
         val first = shown.firstOrNull()
@@ -117,6 +148,11 @@ class BodyFatViewModel(
                     percents.asReversed().map { (day, percent) ->
                         HistoryRowUi(day, dayMonthLabel(day, today.year), fatPercent(percent))
                     },
+                missing =
+                    missing.takeIf { it.isNotEmpty() }?.let {
+                        AppStrings.current.needs(it.map(::inputName))
+                    },
+                profileIncomplete = missing.any { it in profileInputs },
             )
     }
 }

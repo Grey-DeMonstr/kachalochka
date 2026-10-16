@@ -232,11 +232,17 @@ fun App() {
                     )
                 }
                 composable<BodyFatRoute> { entry ->
-                    BodyFatScreen(
-                        method = BodyFatMethod.valueOf(entry.toRoute<BodyFatRoute>().method),
-                        onBack = { navController.popBackStack() },
-                        onOpenSettings = { navController.navigate(SettingsRoute) },
-                    )
+                    val name = entry.toRoute<BodyFatRoute>().method
+                    val method = BodyFatMethod.entries.firstOrNull { it.name == name }
+                    if (method == null) {
+                        LaunchedEffect(Unit) { navController.popBackStack() }
+                    } else {
+                        BodyFatScreen(
+                            method = method,
+                            onBack = { navController.popBackStack() },
+                            onOpenSettings = { navController.navigate(SettingsRoute) },
+                        )
+                    }
                 }
                 composable<MeasureRoute> { entry ->
                     val route = entry.toRoute<MeasureRoute>()

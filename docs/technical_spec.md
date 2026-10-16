@@ -755,9 +755,10 @@ value of one of them, from the first day all have one; a missing value is interp
 epoch day between its neighbours and keeps the last value after them; the age is counted on each
 day. `BodyFatViewModel` takes per kind the values of the first measure of that kind with values,
 as "Замеры" does, rounds each percent to the tenth it shows and cuts the period with
-`periodStart`. `BodyFatRoute` carries the `BodyFatMethod` name and closes for a managed child as
-`MeasureRoute` does. Both screens draw `MeasureSummary`, `PeriodChoice` and `PeriodChart`, which
-holds the one `MeasureChart` call.
+`periodStart`. Its `missing` is `missingInputs` on the latest values, as on a "Замеры" row.
+`BodyFatRoute` carries the `BodyFatMethod` name, pops itself for an unknown name and closes for a
+managed child as `MeasureRoute` does. Both screens draw `MeasureSummary`, `PeriodChoice` and
+`PeriodChart`, which holds the one `MeasureChart` call.
 
 `Profile.birthDate` travels as an ISO date: a Postgres `date` in `profile.birth_date`, TEXT in
 SQLite. Migration `0011` and `8.sqm` replaced the birth year with 1 January of that year; `8.sqm`

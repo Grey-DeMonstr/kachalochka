@@ -39,7 +39,10 @@ fun BodyFatScreen(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            MeasureSummary(fat.latest, fat.change, fat.lastMeasured)
+            Column {
+                MeasureSummary(fat.latest, fat.change, fat.lastMeasured, fat.missing)
+                if (fat.profileIncomplete) ProfileLink(onOpenSettings)
+            }
             PeriodChoice(fat.period, viewModel::choose)
             PeriodChart(fat.points, ::fatPercent)
             if (fat.results.isNotEmpty()) {

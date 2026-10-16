@@ -19,11 +19,13 @@ import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.components.HistoryRowUi
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import kotlin.math.round
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -173,5 +175,55 @@ class BodyFatViewModelTest {
         assertNull(ui.latest)
         assertNull(ui.lastMeasured)
         assertTrue(ui.results.isEmpty())
+        assertEquals("Нужно: пол", ui.missing)
+        assertTrue(ui.profileIncomplete)
+    }
+
+    @Test
+    fun a_formula_with_its_inputs_lacks_nothing() {
+        val ui = viewModel(BodyFatMethod.Navy).ui
+
+        assertNull(ui.missing)
+        assertFalse(ui.profileIncomplete)
+    }
+
+    @Test
+    fun a_missing_measure_is_named_without_asking_for_the_profile() {
+        val waist = seeded.first { it.kind == MeasureKind.Waist }
+        runBlocking {
+            gym.measurements.rows.values
+                .filter { it.measureId == waist.id }
+                .forEach { gym.measurements.upsert(it.copy(deleted = true)) }
+        }
+
+        val ui = viewModel(BodyFatMethod.Ymca).ui
+
+        assertEquals("Нужно: талия", ui.missing)
+        assertFalse(ui.profileIncomplete)
+    }
+
+    @Test
+    fun an_account_switch_shows_the_new_account_s_results() {
+        val vm = viewModel(BodyFatMethod.Deurenberg)
+        val owner = IVAN_SESSION.account.userId
+        val ivanWeight =
+            missingDefaults(owner, emptySet()).first { it.kind == MeasureKind.Weight }
+        runBlocking {
+            gym.measures.upsert(ivanWeight)
+            gym.profiles.upsert(
+                Profile.new(owner, t0).copy(
+                    sex = Sex.Male,
+                    birthDate = CalendarDay(1987, 1, 1),
+                    heightCm = 180.0,
+                ),
+            )
+            gym.measurements.upsert(
+                Measurement(MeasurementId.random(), owner, ivanWeight.id, today, 70.0, t0, false),
+            )
+        }
+
+        gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
+
+        assertEquals(listOf(today to deurenberg(70.0)), vm.ui.points)
     }
 }

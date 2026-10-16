@@ -437,7 +437,9 @@ day of the latest result, the same periods and chart as a measure, and "Все �
 result, newest first. A point falls on every day with a value of one of the formula's measures,
 from the first day all of them have one. On a day without its own value, a measure takes the
 straight line between its values before and after that day, and keeps its last value after them.
-Age is counted on each day. A result outside 2–70 % gives no point.
+Age is counted on each day. A result outside 2–70 % gives no point. While the formula lacks an
+input, the chart says what it needs, as its row does ("Нужно: пол, талия"), and a missing sex,
+birth date or height adds the link to Settings.
 
 Each measure row ends with a chevron; tapping it opens the measure. The screen starts with today's
 value ("Сегодня, 29 сентября"); a predefined measure shows under it how to take it, as "Новый

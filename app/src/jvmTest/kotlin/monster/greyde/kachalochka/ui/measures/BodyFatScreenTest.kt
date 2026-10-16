@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
@@ -20,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 @OptIn(ExperimentalTestApi::class)
 class BodyFatScreenTest {
@@ -84,13 +86,33 @@ class BodyFatScreenTest {
     }
 
     @Test
-    fun a_formula_without_its_inputs_has_no_values() {
+    fun a_formula_without_a_measure_names_it() {
         runScreenTest(gym, screen = { BodyFatScreen(BodyFatMethod.Ymca, {}, {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Процент жира · YMCA")
             onNodeWithTag("measure-latest", useUnmergedTree = true)
-                .assertTextEquals("Нет значений")
+                .assertTextEquals("Нужно: талия")
+            onNodeWithTag("fat-profile-link").assertDoesNotExist()
             onNodeWithTag("measure-chart").assertDoesNotExist()
             onNodeWithTag("fat-history-0").assertDoesNotExist()
         }
+    }
+
+    @Test
+    fun a_formula_without_the_sex_names_it_and_leads_to_the_profile() {
+        runBlocking {
+            val profile = gym.profiles.forOwner(null)!!
+            gym.profiles.upsert(profile.copy(sex = null))
+        }
+        var settings = 0
+        runScreenTest(
+            gym,
+            screen = { BodyFatScreen(BodyFatMethod.Deurenberg, {}, { settings++ }) },
+        ) {
+            onNodeWithTag("measure-latest", useUnmergedTree = true)
+                .assertTextEquals("Нужно: пол")
+            onNodeWithTag("fat-profile-link").performClick()
+            waitForIdle()
+        }
+        assertEquals(1, settings)
     }
 }

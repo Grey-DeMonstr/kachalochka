@@ -33,14 +33,27 @@ private fun periodLabel(period: MeasurePeriod): String =
         MeasurePeriod.All -> AppStrings.current.periodAll
     }
 
-/** The latest value, its change over the period and the day it was measured. */
+/**
+ * The latest value, its change over the period and the day it was measured. Without a value,
+ * [missing] tells what keeps one from being there.
+ */
 @Composable
 internal fun MeasureSummary(
     latest: String?,
     change: String?,
     lastMeasured: String?,
+    missing: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
+    if (latest == null && missing != null) {
+        Text(
+            missing,
+            Modifier.testTag("measure-latest"),
+            fontSize = 17.sp,
+            color = colors.onBackground.copy(alpha = 0.55f),
+        )
+        return
+    }
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Row(
             Modifier.fillMaxWidth(),
