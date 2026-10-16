@@ -147,7 +147,6 @@ val appModule =
                 get(),
                 get(),
                 get(),
-                get(),
             )
         }
         viewModel { (plan: PlanId?, fromVisit: CalendarDay?, machine: MachineId?) ->

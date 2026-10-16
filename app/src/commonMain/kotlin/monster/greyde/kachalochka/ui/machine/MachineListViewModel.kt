@@ -8,26 +8,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
-import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
-import monster.greyde.kachalochka.core.domain.gym.anyNameMatches
-import monster.greyde.kachalochka.core.domain.gym.hasAllTags
-import monster.greyde.kachalochka.core.domain.gym.machineOrder
 import monster.greyde.kachalochka.core.domain.gym.tagKey
 import monster.greyde.kachalochka.core.domain.gym.toggledTag
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
-import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
-import monster.greyde.kachalochka.ui.friends.FriendColorStore
-import monster.greyde.kachalochka.ui.friends.reading
 import kotlin.time.Clock
 
 /** [own] is null until the account's machines are read. */
@@ -48,14 +38,11 @@ data class MachineListUiState(
 }
 
 class MachineListViewModel(
-    private val catalogue: MachineCatalogue,
+    private val reads: MachineReads,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
-    private val sets: WorkoutSetRepository,
-    private val friendsRepository: FriendsRepository,
-    private val friendColors: FriendColorStore,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
     unsaved: UnsavedChoices,
@@ -63,17 +50,12 @@ class MachineListViewModel(
     private val mutableState = MutableStateFlow(MachineListUiState())
     val state: StateFlow<MachineListUiState> = mutableState
 
-    private var own: OwnMachines? = null
-    private var group: GroupMachines? = null
-    private var ownPeaks: List<MachinePeaks> = emptyList()
-    private var friendPeaks: List<MachinePeaks> = emptyList()
-    private var colors: Map<UserId, Int> = emptyMap()
+    private var read: MachineRead? = null
     private var preferred = PreferredWeightUnit.Kg
     private var query = ""
     private var chosenTags: Set<String> = emptySet()
     private var onlySuggested = false
     private var loading: Job? = null
-    private var loadingFriends: Job? = null
     private val sorting =
         machineSortChoice(profiles, currentUser, clock, sync, unsaved, viewModelScope)
 
@@ -86,37 +68,16 @@ class MachineListViewModel(
     /** Own machines show at once; friends' follow from the network, if it answers. */
     fun load() {
         loading?.cancel()
-        loadingFriends?.cancel()
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                own = catalogue.own(owner)
-                ownPeaks = sets.peaks(owner)
                 preferred = profiles.preferredUnit(owner)
                 sorting.read(owner)
                 publish()
-                owner?.let(::loadFriends)
-            }
-    }
-
-    private fun loadFriends(owner: UserId) {
-        loadingFriends =
-            viewModelScope.launch {
-                catalogue.lastGroup(owner)?.let {
-                    group = it
+                reads.machines(owner, withCards = true).collect {
+                    read = it
                     publish()
                 }
-                val read = reading { catalogue.group(owner) }.getOrNull()
-                group = read ?: catalogue.lastGroup(owner)
-                publish()
-                friendPeaks =
-                    reading { friendsRepository.groupPeaks(owner) }.getOrDefault(friendPeaks)
-                val offered = group?.offered(own?.machines.orEmpty()).orEmpty()
-                colors =
-                    reading {
-                        friendColors.colorsFor(owner, offered.map { it.owner.userId }.distinct())
-                    }.getOrDefault(colors)
-                publish()
             }
     }
 
@@ -140,57 +101,34 @@ class MachineListViewModel(
         publish()
     }
 
-    private fun Machine.kept(alsoGoesBy: List<String> = emptyList()): Boolean =
-        anyNameMatches(listOf(name) + alsoGoesBy, query) && hasAllTags(tags, chosenTags)
-
     private fun publish() {
-        val shown = own?.let { ShownMachines(it, group) }
         val sort = sorting.current
-        val ownMachines = shown?.own?.machines.orEmpty()
-        val offered = shown?.offered.orEmpty()
-        val machines = ownMachines + offered.map { it.machine }
-        if (shown != null) chosenTags = heldTags(chosenTags, shown)
+        val read = read
+        if (read == null) {
+            mutableState.value = MachineListUiState(sort = sort, query = query)
+            return
+        }
         val now = clock.now()
         val offset = utcOffset.at(now)
-        val cards =
-            shown?.let {
-                MachineCards(
-                    it,
-                    ownPeaks,
-                    friendPeaks,
-                    preferred,
-                    CalendarDay.of(now, offset),
-                    offset,
-                )
-            }
-        val suggested = shown?.suggestions.orEmpty()
-        if (suggested.isEmpty()) onlySuggested = false
-        val ownOrder = machineOrder(sort, ownPeaks.associateBy { it.machineId })
-        val friendOrder = machineOrder(sort, friendPeaks.associateBy { it.machineId })
-        val ownCards =
-            cards?.let { c ->
-                ownMachines
-                    .filter { it.kept(shown?.linkedNames(it).orEmpty()) }
-                    .filter { !onlySuggested || it.id in suggested }
-                    .sortedWith(ownOrder)
-                    .map(c::own)
-            }
-        val sections =
-            cards
-                ?.friendSections(offered.filter { it.machine.kept() }, colors, friendOrder)
-                .orEmpty()
-                .takeUnless { onlySuggested }
-                .orEmpty()
-        val filtering = query.isNotBlank() || chosenTags.isNotEmpty() || onlySuggested
+        val listing =
+            read.listing(
+                MachineQuery(query, chosenTags, onlySuggested = onlySuggested),
+                sort,
+                preferred,
+                CalendarDay.of(now, offset),
+                offset,
+            )
+        chosenTags = listing.query.tags
+        onlySuggested = listing.query.onlySuggested
         mutableState.value =
             MachineListUiState(
-                own = ownCards,
-                friendSections = sections,
+                own = listing.own,
+                friendSections = listing.friendSections,
                 sort = sort,
                 query = query,
-                tags = tagChoices(machines, chosenTags),
-                nothingFound = filtering && ownCards.isNullOrEmpty() && sections.isEmpty(),
-                hasSuggestions = suggested.isNotEmpty(),
+                tags = listing.tags,
+                nothingFound = listing.nothingFound,
+                hasSuggestions = listing.hasSuggestions,
                 onlySuggested = onlySuggested,
             )
     }

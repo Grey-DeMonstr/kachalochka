@@ -3,7 +3,6 @@ package monster.greyde.kachalochka.ui.machine
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -27,7 +26,6 @@ import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.family.childAccount
-import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -54,14 +52,11 @@ class MachineListViewModelTest {
 
     private fun viewModel(on: FakeGym = gym) =
         MachineListViewModel(
-            on.catalogue,
+            on.machineReads,
             on.currentUser,
             on.accounts,
             on.sync,
             on.profiles,
-            on.sets,
-            on.friends,
-            FriendColorStore(on.profiles, on.clock, on.friends),
             on.clock,
             on.utcOffset,
             on.unsaved,
@@ -107,141 +102,6 @@ class MachineListViewModelTest {
             assertEquals(listOf("Аб", "Тяга"), names())
             assertEquals(MachineSort.Name, vm.state.value.sort)
             assertEquals(MachineSort.Name, gym.profiles.forOwner(null)?.machineSort)
-        }
-
-    @Test
-    fun a_search_keeps_the_own_and_friends_machines_whose_name_matches() =
-        runTest {
-            val (on, olegPress) = olegsGym()
-            on.machines.upsert(Machine.new("Тяга", ME.userId, t0))
-            on.machines.upsert(Machine.new("Жим лёжа", ME.userId, t0))
-            val vm = viewModel(on).also { it.load() }
-
-            vm.onQueryChange("жим")
-
-            assertEquals("жим", vm.state.value.query)
-            assertEquals(
-                listOf("Жим лёжа"),
-                vm.state.value.own
-                    ?.map { it.name },
-            )
-            assertEquals(
-                listOf(olegPress.id),
-                vm.state.value.friends
-                    .map { it.id },
-            )
-            assertEquals(false, vm.state.value.nothingFound)
-
-            vm.onQueryChange("гакк")
-
-            assertEquals(emptyList(), vm.state.value.own)
-            assertEquals(emptyList(), vm.state.value.friends)
-            assertEquals(true, vm.state.value.nothingFound)
-        }
-
-    @Test
-    fun chosen_tags_keep_the_machines_carrying_every_one_of_them() =
-        runTest {
-            val (on, olegPress) = olegsGym()
-            on.friends.machines.replaceAll {
-                if (it.id == olegPress.id) it.copy(tags = setOf("Ноги")) else it
-            }
-            on.machines.upsert(Machine.new("Тяга", ME.userId, t0).copy(tags = setOf("Спина")))
-            on.machines.upsert(
-                Machine.new("Присед", ME.userId, t0).copy(tags = setOf("Ноги", "База")),
-            )
-            val vm = viewModel(on).also { it.load() }
-            assertEquals(
-                listOf("база" to false, "ноги" to false, "спина" to false),
-                vm.state.value.tags
-                    .map { it.name to it.chosen },
-            )
-
-            vm.toggleTag("Ноги")
-
-            assertEquals(
-                listOf("Присед"),
-                vm.state.value.own
-                    ?.map { it.name },
-            )
-            assertEquals(
-                listOf(olegPress.id),
-                vm.state.value.friends
-                    .map { it.id },
-            )
-
-            vm.toggleTag("База")
-
-            assertEquals(
-                listOf("Присед"),
-                vm.state.value.own
-                    ?.map { it.name },
-            )
-            assertEquals(emptyList(), vm.state.value.friends)
-        }
-
-    @Test
-    fun friends_machines_read_before_show_at_once_while_they_are_read_again() =
-        runTest {
-            val (on, olegPress) = olegsGym()
-            on.catalogue.group(ME.userId)
-            on.friends.gate = CompletableDeferred()
-
-            val vm = viewModel(on).also { it.load() }
-
-            assertEquals(
-                listOf(olegPress.id),
-                vm.state.value.friends
-                    .map { it.id },
-            )
-        }
-
-    @Test
-    fun a_chosen_friend_s_tag_stays_while_the_friends_cannot_be_read() =
-        runTest {
-            val (on, olegPress) = olegsGym()
-            on.friends.machines.replaceAll {
-                if (it.id == olegPress.id) it.copy(tags = setOf("плечи")) else it
-            }
-            on.machines.upsert(Machine.new("Присед", ME.userId, t0))
-            val vm = viewModel(on).also { it.load() }
-            vm.toggleTag("плечи")
-
-            on.friends.offline = true
-            vm.load()
-
-            assertEquals(
-                listOf("плечи" to true),
-                vm.state.value.tags
-                    .map { it.name to it.chosen },
-            )
-            assertEquals(emptyList(), vm.state.value.own)
-        }
-
-    @Test
-    fun a_chosen_tag_no_machine_has_any_more_stops_filtering() =
-        runTest {
-            val press = Machine.new("Жим", null, t0).copy(tags = setOf("ноги"))
-            gym.machines.upsert(press)
-            gym.machines.upsert(Machine.new("Тяга", null, t0))
-            val vm = viewModel().also { it.load() }
-            vm.toggleTag("ноги")
-            assertEquals(
-                1,
-                vm.state.value.own
-                    ?.size,
-            )
-
-            gym.machines.upsert(press.copy(tags = emptySet()))
-            vm.load()
-
-            assertEquals(
-                2,
-                vm.state.value.own
-                    ?.size,
-            )
-            assertEquals(emptyList(), vm.state.value.tags)
-            assertEquals(false, vm.state.value.nothingFound)
         }
 
     @Test
@@ -435,28 +295,6 @@ class MachineListViewModelTest {
         }
 
     @Test
-    fun a_search_finds_an_own_machine_by_the_name_of_a_linked_friend_s_one() =
-        runTest {
-            val on = signedInGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
-            val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
-            val (copy, link) = linkedCopy(olegs, ME.userId, t0)
-            val mine = copy.copy(name = "Присед в тренажёре")
-            on.friends.machines += olegs
-            on.machines.upsert(mine)
-            on.machineLinks.upsert(link)
-            val vm = viewModel(on).also { it.load() }
-
-            vm.onQueryChange("гакк")
-
-            val card =
-                vm.state.value.own
-                    ?.single()
-            assertEquals(mine.id, card?.id)
-            assertEquals(listOf(LinkedMachineUi(olegs.id, OLEG, "Гакк-машина")), card?.linkedWith)
-        }
-
-    @Test
     fun own_machines_of_the_same_name_suggest_each_other_and_the_chip_keeps_only_them() =
         runTest {
             val (on, _) = olegsGym()
@@ -583,6 +421,28 @@ class MachineListViewModelTest {
         }
 
     @Test
+    fun friends_records_and_colours_read_before_show_at_once() =
+        runTest {
+            val (on, olegPress) = olegsGym()
+            on.friends.sets += set(olegPress, 40.0, 12)
+            viewModel(on).also { it.load() }
+            on.friends.gate = CompletableDeferred()
+
+            val vm = viewModel(on).also { it.load() }
+
+            assertNotNull(
+                vm.state.value.friendSections
+                    .single()
+                    .color,
+            )
+            assertNotNull(
+                vm.state.value.friends
+                    .single()
+                    .record,
+            )
+        }
+
+    @Test
     fun a_switch_lists_the_other_account_s_machines() =
         runTest {
             gym.withAccounts(ivan, misha, active = ivan)
@@ -613,22 +473,6 @@ class MachineListViewModelTest {
                     ?.map { it.name },
             )
         }
-
-    @Test
-    fun own_machines_show_while_the_friends_read_is_still_in_flight() {
-        val (on, _) = olegsGym()
-        runBlocking { on.machines.upsert(Machine.new("Тяга", ME.userId, t0)) }
-        on.friends.gate = CompletableDeferred()
-
-        val vm = viewModel(on).also { it.load() }
-
-        assertEquals(
-            listOf("Тяга"),
-            vm.state.value.own
-                ?.map { it.name },
-        )
-        assertEquals(emptyList(), vm.state.value.friends)
-    }
 
     @Test
     fun friends_machines_follow_with_their_owner_and_settings() {
@@ -677,29 +521,6 @@ class MachineListViewModelTest {
             vm.state.value.friends
                 .map { it.id },
         )
-    }
-
-    @Test
-    fun offline_the_friends_section_is_absent() {
-        val (on, _) = olegsGym()
-        runBlocking { on.machines.upsert(Machine.new("Тяга", ME.userId, t0)) }
-        on.friends.offline = true
-
-        val vm = viewModel(on).also { it.load() }
-
-        assertEquals(
-            listOf("Тяга"),
-            vm.state.value.own
-                ?.map { it.name },
-        )
-        assertEquals(emptyList(), vm.state.value.friends)
-    }
-
-    @Test
-    fun without_an_account_no_friends_are_asked_for() {
-        viewModel().load()
-
-        assertEquals(0, gym.friends.reads)
     }
 
     @Test

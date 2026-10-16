@@ -8,17 +8,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
-import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
-import monster.greyde.kachalochka.core.domain.gym.hasAllTags
-import monster.greyde.kachalochka.core.domain.gym.machineOrder
-import monster.greyde.kachalochka.core.domain.gym.nameMatches
-import monster.greyde.kachalochka.core.domain.gym.rankMachines
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.tagKey
@@ -31,8 +25,6 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.UtcOffset
-import monster.greyde.kachalochka.ui.friends.FriendColorStore
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
 
@@ -66,28 +58,22 @@ class MachinePickerViewModel(
     private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
     private val catalogue: MachineCatalogue,
-    private val friends: FriendsRepository,
-    private val friendColors: FriendColorStore,
+    private val reads: MachineReads,
     unsaved: UnsavedChoices,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PickerUiState())
     val state: StateFlow<PickerUiState> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
-    private var own: OwnMachines? = null
-    private var group: GroupMachines? = null
-    private var ownPeaks: List<MachinePeaks> = emptyList()
-    private var friendPeaks: List<MachinePeaks> = emptyList()
-    private var colors: Map<UserId, Int> = emptyMap()
+    private var read: MachineRead? = null
     private var preferred = PreferredWeightUnit.Kg
     private var chosenTags: Set<String> = emptySet()
     private var inVisit: Set<MachineId> = emptySet()
     private var loading: Job? = null
-    private var loadingFriends: Job? = null
     private val sorting =
         machineSortChoice(profiles, currentUser, clock, sync, unsaved, viewModelScope)
 
-    private val shown: ShownMachines? get() = own?.let { ShownMachines(it, group) }
+    private val shown: ShownMachines? get() = read?.shown
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -98,37 +84,17 @@ class MachinePickerViewModel(
     /** Own machines show at once; friends' follow from the network, if it answers. */
     fun load() {
         loading?.cancel()
-        loadingFriends?.cancel()
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                own = catalogue.own(owner)
-                ownPeaks = sets.peaks(owner)
                 inVisit = day?.let { machinesInVisit(owner, it) }.orEmpty()
                 preferred = profiles.preferredUnit(owner)
                 sorting.read(owner)
                 publish()
-                owner?.let(::loadFriends)
-            }
-    }
-
-    private fun loadFriends(owner: UserId) {
-        loadingFriends =
-            viewModelScope.launch {
-                catalogue.lastGroup(owner)?.let {
-                    group = it
+                reads.machines(owner, withCards = true).collect {
+                    read = it
                     publish()
                 }
-                val read = reading { catalogue.group(owner) }.getOrNull()
-                group = read ?: catalogue.lastGroup(owner)
-                publish()
-                friendPeaks = reading { friends.groupPeaks(owner) }.getOrDefault(friendPeaks)
-                val offered = group?.offered(own?.machines.orEmpty()).orEmpty()
-                colors =
-                    reading {
-                        friendColors.colorsFor(owner, offered.map { it.owner.userId }.distinct())
-                    }.getOrDefault(colors)
-                publish()
             }
     }
 
@@ -176,47 +142,28 @@ class MachinePickerViewModel(
 
     private fun publish() {
         val query = mutableState.value.query
-        val shown = shown
-        val ownMachines = shown?.own?.machines.orEmpty()
-        val offered = shown?.offered.orEmpty()
-        val machines = ownMachines + offered.map { it.machine }
-        if (shown != null) chosenTags = heldTags(chosenTags, shown)
         val sort = sorting.current
-        val ownOrder = machineOrder(sort, ownPeaks.associateBy { it.machineId })
-        val ranking =
-            rankMachines(query, ownMachines, ownOrder, chosenTags) {
-                shown?.linkedNames(it).orEmpty()
-            }
-        val needle = query.trim()
-        val matchingOffered =
-            offered.filter {
-                nameMatches(it.machine.name, needle) &&
-                    hasAllTags(it.machine.tags, chosenTags)
-            }
+        val strings = AppStrings.current
+        val read = read
+        if (read == null) {
+            mutableState.value = PickerUiState(query = query, sort = sort)
+            return
+        }
         val now = clock.now()
         val offset = utcOffset.at(now)
-        val cards =
-            shown?.let {
-                MachineCards(
-                    it,
-                    ownPeaks,
-                    friendPeaks,
-                    preferred,
-                    CalendarDay.of(now, offset),
-                    offset,
-                )
-            }
-        val (alreadyIn, notIn) = ranking.machines.partition { it.id in inVisit }
-        val rows = cards?.let { c -> notIn.map(c::own) }.orEmpty()
-        val inVisitRows =
-            cards?.let { c -> alreadyIn.map { c.own(it).copy(inVisit = true) } }.orEmpty()
-        val friendOrder = machineOrder(sort, friendPeaks.associateBy { it.machineId })
-        val sections = cards?.friendSections(matchingOffered, colors, friendOrder).orEmpty()
-        val strings = AppStrings.current
+        val listing =
+            read.listing(
+                MachineQuery(query, chosenTags, inVisit),
+                sort,
+                preferred,
+                CalendarDay.of(now, offset),
+                offset,
+            )
+        chosenTags = listing.query.tags
         mutableState.value =
             PickerUiState(
                 query = query,
-                createLabel = strings.createNamed(needle).takeIf { ranking.offerCreate },
+                createLabel = strings.createNamed(query.trim()).takeIf { listing.offerCreate },
                 createHint =
                     if (chosenTags.isEmpty()) {
                         strings.photoNoteAndSetup
@@ -224,15 +171,11 @@ class MachinePickerViewModel(
                         strings.withTags(createTags)
                     },
                 sectionLabel = if (query.isBlank()) strings.myMachines else strings.similar,
-                tags = tagChoices(machines, chosenTags),
-                rows = rows,
-                friendSections = sections,
-                inVisitRows = inVisitRows,
-                nothingFound =
-                    (needle.isNotEmpty() || chosenTags.isNotEmpty()) &&
-                        rows.isEmpty() &&
-                        sections.isEmpty() &&
-                        inVisitRows.isEmpty(),
+                tags = listing.tags,
+                rows = listing.own,
+                friendSections = listing.friendSections,
+                inVisitRows = listing.inVisit,
+                nothingFound = listing.nothingFound,
                 sort = sort,
             )
     }

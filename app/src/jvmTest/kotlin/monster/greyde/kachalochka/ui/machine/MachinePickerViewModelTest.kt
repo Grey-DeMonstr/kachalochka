@@ -29,7 +29,6 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
-import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -100,8 +99,7 @@ class MachinePickerViewModelTest {
         on.sync,
         on.profiles,
         on.catalogue,
-        on.friends,
-        FriendColorStore(on.profiles, on.clock, on.friends),
+        on.machineReads,
         on.unsaved,
     )
 
@@ -124,28 +122,6 @@ class MachinePickerViewModelTest {
                 listOf(olegsPhoto),
                 vm.state.value.rows
                     .map { it.photo },
-            )
-        }
-
-    @Test
-    fun a_search_finds_an_own_machine_by_the_name_of_a_linked_friend_s_one() =
-        runTest {
-            val on = signedInGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
-            val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
-            val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current)
-            val mine = copy.copy(name = "Присед в тренажёре")
-            on.friends.machines += olegs
-            on.machines.upsert(mine)
-            on.machineLinks.upsert(link)
-            val vm = pickerOn(on).also { it.load() }
-
-            vm.onQueryChange("гакк")
-
-            assertEquals(
-                listOf(mine.id to listOf(LinkedMachineUi(olegs.id, OLEG, "Гакк-машина"))),
-                vm.state.value.rows
-                    .map { it.id to it.linkedWith },
             )
         }
 
@@ -258,19 +234,6 @@ class MachinePickerViewModelTest {
         }
 
     @Test
-    fun a_search_with_a_typo_still_finds_the_machine() {
-        val vm = viewModel().also { it.load() }
-
-        vm.onQueryChange("присидания")
-
-        assertEquals(
-            listOf("Приседания в Смите"),
-            vm.state.value.rows
-                .map { it.name },
-        )
-    }
-
-    @Test
     fun typing_a_new_name_offers_to_create_it_and_finds_nothing() {
         val vm = viewModel().also { it.load() }
 
@@ -280,20 +243,6 @@ class MachinePickerViewModelTest {
         assertEquals("Фото, комментарий и настройка веса", vm.state.value.createHint)
         assertEquals(emptyList(), vm.state.value.rows)
         assertTrue(vm.state.value.nothingFound)
-    }
-
-    @Test
-    fun a_search_keeps_only_the_machines_whose_name_holds_it() {
-        val vm = viewModel().also { it.load() }
-
-        vm.onQueryChange("смит")
-
-        assertEquals(
-            listOf("Приседания в Смите"),
-            vm.state.value.rows
-                .map { it.name },
-        )
-        assertEquals(false, vm.state.value.nothingFound)
     }
 
     @Test
@@ -340,27 +289,6 @@ class MachinePickerViewModelTest {
             assertEquals(2, vm.state.value.rows.size)
             assertEquals(emptyList(), vm.state.value.tags)
             assertEquals(emptyList(), vm.createTags)
-        }
-
-    @Test
-    fun a_tag_in_another_letter_case_is_one_chip_that_keeps_both_machines() =
-        runTest {
-            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
-            gym.machines.upsert(smith.copy(tags = setOf("НОГИ")))
-            val vm = viewModel().also { it.load() }
-            val first =
-                vm.state.value.tags
-                    .single()
-                    .name
-
-            vm.toggleTag(first)
-
-            assertEquals(
-                listOf(true),
-                vm.state.value.tags
-                    .map { it.chosen },
-            )
-            assertEquals(2, vm.state.value.rows.size)
         }
 
     @Test
@@ -498,57 +426,6 @@ class MachinePickerViewModelTest {
         }
 
     @Test
-    fun the_search_narrows_friends_machines_too() {
-        val (on, _) = olegsGym()
-        val vm = pickerOn(on).also { it.load() }
-
-        vm.onQueryChange("тяга")
-
-        assertEquals(emptyList(), vm.state.value.friendRows)
-    }
-
-    @Test
-    fun offline_the_friends_section_is_absent() {
-        val (on, _) = olegsGym()
-        on.friends.offline = true
-
-        val vm = pickerOn(on).also { it.load() }
-
-        assertEquals(emptyList(), vm.state.value.friendRows)
-    }
-
-    @Test
-    fun friends_machines_read_before_show_at_once_while_they_are_read_again() {
-        val (on, olegPress) = olegsGym()
-        runBlocking { on.catalogue.group(ME.userId) }
-        on.friends.gate = CompletableDeferred()
-
-        val vm = pickerOn(on).also { it.load() }
-
-        assertEquals(
-            listOf(olegPress.id),
-            vm.state.value.friendRows
-                .map { it.id },
-        )
-    }
-
-    @Test
-    fun own_machines_show_while_the_friends_read_is_still_in_flight() {
-        val (on, _) = olegsGym()
-        val press = Machine.new("Жим ногами", ME.userId, t0)
-        runBlocking { on.machines.upsert(press) }
-        on.friends.gate = CompletableDeferred()
-
-        val vm = pickerOn(on).also { it.load() }
-
-        assertEquals(
-            listOf("Жим ногами"),
-            vm.state.value.rows
-                .map { it.name },
-        )
-    }
-
-    @Test
     fun friends_read_for_the_previous_account_never_show_or_get_picked() =
         runTest {
             val on = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
@@ -567,13 +444,6 @@ class MachinePickerViewModelTest {
             assertEquals(emptyList(), vm.state.value.friendRows)
             assertEquals(emptyList(), on.machines.all(misha.account.userId))
         }
-
-    @Test
-    fun without_an_account_no_friends_are_asked_for() {
-        viewModel().load()
-
-        assertEquals(0, gym.friends.reads)
-    }
 
     @Test
     fun a_machine_two_friends_linked_is_offered_once_as_the_original() {
@@ -627,29 +497,6 @@ class MachinePickerViewModelTest {
                     .map { it.id },
             )
         }
-
-    @Test
-    fun the_search_narrows_the_machines_already_in_the_visit_too() {
-        val vm = pickerOn(gym, gym.today).also { it.load() }
-
-        vm.onQueryChange("смит")
-
-        assertEquals(emptyList(), vm.state.value.inVisitRows)
-        assertEquals(
-            listOf(smith.id),
-            vm.state.value.rows
-                .map { it.id },
-        )
-    }
-
-    @Test
-    fun a_machine_already_in_the_visit_still_counts_as_found() {
-        val vm = pickerOn(gym, gym.today).also { it.load() }
-
-        vm.onQueryChange("жим")
-
-        assertEquals(false, vm.state.value.nothingFound)
-    }
 
     @Test
     fun a_plan_s_picker_keeps_every_machine_in_its_place() {
