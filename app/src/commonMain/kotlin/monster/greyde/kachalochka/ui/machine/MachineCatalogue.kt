@@ -35,6 +35,7 @@ import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.coverPhoto
 import monster.greyde.kachalochka.core.domain.gym.linkSuggestions
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
+import monster.greyde.kachalochka.core.domain.gym.mergedLinks
 import monster.greyde.kachalochka.core.domain.gym.missingDirectLinks
 import monster.greyde.kachalochka.core.domain.gym.ownStandIn
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -215,8 +216,35 @@ class MachineCatalogue(
         return GroupMachines(owner, gym.machines, links.all(owner) + gym.links, gym.photos)
     }
 
-    /** Drops [owner]'s last group read, once friends' rows changed on the server. */
-    fun forget(owner: UserId) = lastGyms.update { it - owner }
+    private fun forget(owner: UserId) = lastGyms.update { it - owner }
+
+    /**
+     * Friends' links into [removed] move to [kept] on the server; false when it does not answer.
+     * [owner]'s last group read is dropped, since friends' rows changed.
+     */
+    suspend fun repointFriends(
+        owner: UserId,
+        removed: MachineId,
+        kept: MachineId,
+    ): Boolean =
+        reading {
+            if (friends.groupLinks(owner).any { it.linkedMachineId == removed }) {
+                friends.repointLinks(removed, kept)
+                forget(owner)
+            }
+        }.isSuccess
+
+    /**
+     * [owner]'s links of [removed] move to [kept]. Requests no sync, since the merge requests one
+     * after its last row.
+     */
+    suspend fun moveLinks(
+        owner: UserId?,
+        removed: MachineId,
+        kept: MachineId,
+    ) = writingLinks(sync = false) {
+        mergedLinks(kept, removed, links.all(owner), clock.now()).forEach { upsert(it) }
+    }
 
     /**
      * Friends' links into [machine] can be broken only on the server, so they go first, and
@@ -325,15 +353,18 @@ class MachineCatalogue(
     /**
      * Runs [write] with every other link write waiting. Each write reads the own links again under
      * the lock, so two writes at once never write the same link. Not re-entrant. Asks for a sync
-     * when [write] wrote.
+     * when [write] wrote, unless [sync] is false.
      */
-    private suspend fun <T> writingLinks(write: suspend LinkWriter.() -> T): T =
+    private suspend fun <T> writingLinks(
+        sync: Boolean = true,
+        write: suspend LinkWriter.() -> T,
+    ): T =
         linkWrites.withLock {
             val writer = LinkWriter()
             try {
                 writer.write()
             } finally {
-                if (writer.syncAfter) sync.request()
+                if (sync && writer.syncAfter) this@MachineCatalogue.sync.request()
             }
         }
 

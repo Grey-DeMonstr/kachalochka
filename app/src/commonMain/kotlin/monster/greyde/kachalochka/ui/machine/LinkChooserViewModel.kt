@@ -11,11 +11,9 @@ import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
-import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
@@ -94,8 +92,6 @@ class LinkChooserViewModel(
     private val start: String?,
     private val machines: MachineRepository,
     private val sets: WorkoutSetRepository,
-    private val machineLinks: MachineLinkRepository,
-    private val friends: FriendsRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
@@ -263,20 +259,9 @@ class LinkChooserViewModel(
                 closeMerge(error = null)
                 return@launch
             }
-            if (owner != null) {
-                val repointed =
-                    reading {
-                        val intoRemoved =
-                            friends.groupLinks(owner).any { it.linkedMachineId == removed.id }
-                        if (intoRemoved) {
-                            friends.repointLinks(removed.id, kept.id)
-                            catalogue.forget(owner)
-                        }
-                    }
-                if (repointed.isFailure) {
-                    closeMerge(error = AppStrings.current.offline)
-                    return@launch
-                }
+            if (owner != null && !catalogue.repointFriends(owner, removed.id, kept.id)) {
+                closeMerge(error = AppStrings.current.offline)
+                return@launch
             }
             withContext(NonCancellable) {
                 val now = clock.now()
@@ -290,13 +275,12 @@ class LinkChooserViewModel(
                         } else {
                             moved
                         },
-                        machineLinks.all(owner),
                         now,
                         photos.forMachine(removed.id).filter { it.userId == owner },
                         if (merge.adjust) platformShift(removed, kept) else 0.0,
                     )
                 rows.sets.forEach { sets.upsert(it) }
-                rows.links.forEach { machineLinks.upsert(it) }
+                catalogue.moveLinks(owner, removed.id, kept.id)
                 rows.photos.forEach { photos.upsert(it) }
                 machines.upsert(rows.removed)
                 sync.request()

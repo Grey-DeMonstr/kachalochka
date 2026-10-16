@@ -18,45 +18,49 @@ fun suggestedToKeep(
 
 data class MergedRows(
     val sets: List<WorkoutSet>,
-    val links: List<MachineLink>,
     val removed: Machine,
     val photos: List<Photo> = emptyList(),
 )
 
 /**
  * Everything of [removed]'s that the owner holds moves to [kept]; [removed] is deleted. The moved
- * sets' weights change by [weightShift].
+ * sets' weights change by [weightShift]. The links move with [mergedLinks].
  */
 fun mergedMachines(
     kept: Machine,
     removed: Machine,
     removedSets: List<WorkoutSet>,
-    ownLinks: List<MachineLink>,
     now: Instant,
     removedPhotos: List<Photo> = emptyList(),
     weightShift: Double = 0.0,
-): MergedRows {
-    val linked =
-        ownLinks
-            .filter { it.machineId == kept.id && !it.deleted }
-            .map { it.linkedMachineId }
-            .toMutableSet()
-    // Moved, a link into [kept] would link it to itself, which the server refuses.
-    linked += kept.id
-    val links =
-        ownLinks
-            .filter { it.machineId == removed.id && !it.deleted }
-            .map { link ->
-                if (linked.add(link.linkedMachineId)) {
-                    link.copy(machineId = kept.id, updatedAt = now)
-                } else {
-                    link.copy(deleted = true, updatedAt = now)
-                }
-            }
-    return MergedRows(
+): MergedRows =
+    MergedRows(
         sets = shiftedSets(removedSets, weightShift, now).map { it.copy(machineId = kept.id) },
-        links = links,
         removed = removed.copy(deleted = true, updatedAt = now),
         photos = removedPhotos.map { it.copy(machineId = kept.id, updatedAt = now) },
     )
+
+/** The owner's links of [removed], moved to [kept] or deleted when [kept] has them already. */
+fun mergedLinks(
+    kept: MachineId,
+    removed: MachineId,
+    ownLinks: List<MachineLink>,
+    now: Instant,
+): List<MachineLink> {
+    val linked =
+        ownLinks
+            .filter { it.machineId == kept && !it.deleted }
+            .map { it.linkedMachineId }
+            .toMutableSet()
+    // Moved, a link into [kept] would link it to itself, which the server refuses.
+    linked += kept
+    return ownLinks
+        .filter { it.machineId == removed && !it.deleted }
+        .map { link ->
+            if (linked.add(link.linkedMachineId)) {
+                link.copy(machineId = kept, updatedAt = now)
+            } else {
+                link.copy(deleted = true, updatedAt = now)
+            }
+        }
 }

@@ -45,7 +45,7 @@ class MachineMergeTest {
     fun the_removed_machine_s_photos_move_to_the_kept_one() {
         val photo = Photo.new(other.id, ivan, T0)
 
-        val merged = mergedMachines(edited, other, emptyList(), emptyList(), now, listOf(photo))
+        val merged = mergedMachines(edited, other, emptyList(), now, listOf(photo))
 
         assertEquals(listOf(photo.copy(machineId = edited.id, updatedAt = now)), merged.photos)
     }
@@ -74,22 +74,29 @@ class MachineMergeTest {
     fun the_moved_sets_take_the_weight_shift() {
         val sets = listOf(set(other, 0))
 
-        val rows = mergedMachines(edited, other, sets, emptyList(), now, weightShift = -25.0)
+        val rows = mergedMachines(edited, other, sets, now, weightShift = -25.0)
 
         assertEquals(listOf(45.0), rows.sets.map { it.weight })
     }
 
     @Test
-    fun a_merge_moves_the_sets_and_links_and_deletes_the_removed_machine() {
+    fun a_merge_moves_the_sets_and_deletes_the_removed_machine() {
         val sets = listOf(set(other, 0), set(other, 1))
+
+        val rows = mergedMachines(edited, other, sets, now)
+
+        assertEquals(sets.map { it.copy(machineId = edited.id, updatedAt = now) }, rows.sets)
+        assertEquals(other.copy(deleted = true, updatedAt = now), rows.removed)
+    }
+
+    @Test
+    fun the_removed_machine_s_links_move_to_the_kept_one() {
         val moved = link(other, friendsMachine)
         val untouched = link(edited, anotherFriendsMachine)
 
-        val rows = mergedMachines(edited, other, sets, listOf(moved, untouched), now)
+        val links = mergedLinks(edited.id, other.id, listOf(moved, untouched), now)
 
-        assertEquals(sets.map { it.copy(machineId = edited.id, updatedAt = now) }, rows.sets)
-        assertEquals(listOf(moved.copy(machineId = edited.id, updatedAt = now)), rows.links)
-        assertEquals(other.copy(deleted = true, updatedAt = now), rows.removed)
+        assertEquals(listOf(moved.copy(machineId = edited.id, updatedAt = now)), links)
     }
 
     @Test
@@ -97,17 +104,17 @@ class MachineMergeTest {
         val kept = link(edited, friendsMachine)
         val duplicate = link(other, friendsMachine)
 
-        val rows = mergedMachines(edited, other, emptyList(), listOf(kept, duplicate), now)
+        val links = mergedLinks(edited.id, other.id, listOf(kept, duplicate), now)
 
-        assertEquals(listOf(duplicate.copy(deleted = true, updatedAt = now)), rows.links)
+        assertEquals(listOf(duplicate.copy(deleted = true, updatedAt = now)), links)
     }
 
     @Test
     fun a_link_from_the_removed_machine_into_the_kept_one_is_deleted() {
         val intoKept = link(other, edited.id)
 
-        val rows = mergedMachines(edited, other, emptyList(), listOf(intoKept), now)
+        val links = mergedLinks(edited.id, other.id, listOf(intoKept), now)
 
-        assertEquals(listOf(intoKept.copy(deleted = true, updatedAt = now)), rows.links)
+        assertEquals(listOf(intoKept.copy(deleted = true, updatedAt = now)), links)
     }
 }

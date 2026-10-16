@@ -86,15 +86,13 @@ class LinkChooserViewModelTest {
         start,
         machines,
         sets,
-        links,
-        gym.friends,
         gym.currentUser,
         gym.accounts,
         gym.clock,
         gym.sync,
         gym.profiles,
         gym.photos,
-        gym.catalogue,
+        if (links === gym.machineLinks) gym.catalogue else gym.catalogueOver(links),
         gym.utcOffset,
     ).also { vm ->
         vm.load()

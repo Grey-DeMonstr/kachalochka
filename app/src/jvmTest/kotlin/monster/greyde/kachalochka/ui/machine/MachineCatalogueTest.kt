@@ -8,7 +8,6 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
-import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -38,22 +37,7 @@ class MachineCatalogueTest {
     private val olegCopy = linkedCopy(myPress, OLEG.userId, t0)
     private val olegPress = olegCopy.first
     private val olegRow = Machine.new("Тяга", OLEG.userId, t0)
-    private val failures = mutableListOf<Throwable>()
-
-    private fun catalogueOver(links: MachineLinkRepository) =
-        MachineCatalogue(
-            gym.machines,
-            gym.photos,
-            links,
-            gym.friends,
-            gym.clock,
-            gym.sync,
-            gym.accounts,
-            gym.avatars,
-            FailureLog { failures += it },
-        )
-
-    private val catalogue = catalogueOver(gym.machineLinks)
+    private val catalogue = gym.catalogue
 
     /** Links whose writes after the first [kept] fail. */
     private fun failingLinks(kept: Int = 0) =
@@ -276,7 +260,7 @@ class MachineCatalogueTest {
                     override suspend fun all(owner: UserId?): List<MachineLink> =
                         gym.machineLinks.all(owner).also { yield() }
                 }
-            val slow = catalogueOver(slowLinks)
+            val slow = gym.catalogueOver(slowLinks)
 
             val reads = List(2) { launch { slow.group(ME.userId) } }
             testScheduler.advanceUntilIdle()
@@ -292,7 +276,7 @@ class MachineCatalogueTest {
             olegsGym()
             val pashas = pashaLinksTo(olegPress)
 
-            val group = catalogueOver(failingLinks()).group(ME.userId)
+            val group = gym.catalogueOver(failingLinks()).group(ME.userId)
 
             assertEquals(
                 setOf(olegPress, olegRow, pashas),
@@ -300,7 +284,7 @@ class MachineCatalogueTest {
             )
             assertTrue(group.clusters.sameMachine(myPress.id, pashas.id))
             assertEquals(emptyMap(), gym.machineLinks.rows)
-            assertEquals(listOf("disk full"), failures.map { it.message })
+            assertEquals(listOf("disk full"), gym.failures.map { it.message })
         }
 
     @Test
@@ -310,12 +294,12 @@ class MachineCatalogueTest {
             val pashas = pashaLinksTo(olegRow)
             val mine = Machine.new("Тяга", ME.userId, t0)
             gym.machines.upsert(mine)
-            val linking = catalogueOver(failingLinks(kept = 1))
+            val linking = gym.catalogueOver(failingLinks(kept = 1))
 
             linking.link(ME.userId, mine.id, olegRow.id, linking.group(ME.userId))
 
             assertEquals(setOf(mine.id to olegRow.id), linkedPairs())
-            assertEquals(1, failures.size)
+            assertEquals(1, gym.failures.size)
             assertEquals(1, gym.sync.requests)
             assertTrue(
                 gym.machineLinks.rows.values
@@ -328,13 +312,13 @@ class MachineCatalogueTest {
         runTest {
             olegsGym()
             pashaLinksTo(olegRow)
-            val taking = catalogueOver(failingLinks(kept = 1))
+            val taking = gym.catalogueOver(failingLinks(kept = 1))
 
             val copy = taking.take(ME.userId, olegRow, taking.group(ME.userId))
 
             assertEquals(copy, gym.machines.rows[copy.id])
             assertEquals(setOf(copy.id to olegRow.id), linkedPairs())
-            assertEquals(1, failures.size)
+            assertEquals(1, gym.failures.size)
             assertEquals(1, gym.sync.requests)
         }
 
@@ -351,14 +335,14 @@ class MachineCatalogueTest {
                     }
                 }
 
-            val read = launch { catalogueOver(stuck).group(ME.userId) }
+            val read = launch { gym.catalogueOver(stuck).group(ME.userId) }
             testScheduler.advanceUntilIdle()
             read.cancel()
             read.join()
 
             assertEquals(1, gym.machineLinks.rows.size)
             assertEquals(1, gym.sync.requests)
-            assertEquals(emptyList(), failures)
+            assertEquals(emptyList(), gym.failures)
         }
 
     @Test
@@ -449,7 +433,7 @@ class MachineCatalogueTest {
                     override suspend fun all(owner: UserId?): List<MachineLink> =
                         gym.machineLinks.all(owner).also { yield() }
                 }
-            val slow = catalogueOver(slowLinks)
+            val slow = gym.catalogueOver(slowLinks)
             val group = slow.group(ME.userId)
 
             val copies =
@@ -555,14 +539,73 @@ class MachineCatalogueTest {
         }
 
     @Test
-    fun a_forgotten_group_read_is_no_longer_shown() =
+    fun repointing_moves_friends_links_into_the_removed_machine_and_drops_the_last_group_read() =
         runTest {
             olegsGym()
+            val mine = Machine.new("Жим", ME.userId, t0)
+            gym.machines.upsert(mine)
             catalogue.group(ME.userId)
 
-            catalogue.forget(ME.userId)
+            assertTrue(catalogue.repointFriends(ME.userId, myPress.id, mine.id))
 
+            assertEquals(listOf(myPress.id to mine.id), gym.friends.repointed)
             assertNull(catalogue.lastGroup(ME.userId))
+        }
+
+    @Test
+    fun a_removed_machine_no_friend_links_to_is_not_repointed() =
+        runTest {
+            olegsGym()
+            val mine = Machine.new("Жим", ME.userId, t0)
+            gym.machines.upsert(mine)
+            catalogue.group(ME.userId)
+
+            assertTrue(catalogue.repointFriends(ME.userId, mine.id, myPress.id))
+
+            assertEquals(emptyList(), gym.friends.repointed)
+            assertNotNull(catalogue.lastGroup(ME.userId))
+        }
+
+    @Test
+    fun offline_repointing_fails_and_keeps_the_last_group_read() =
+        runTest {
+            olegsGym()
+            val mine = Machine.new("Жим", ME.userId, t0)
+            gym.machines.upsert(mine)
+            catalogue.group(ME.userId)
+            gym.friends.offline = true
+
+            assertFalse(catalogue.repointFriends(ME.userId, myPress.id, mine.id))
+
+            assertNotNull(catalogue.lastGroup(ME.userId))
+        }
+
+    @Test
+    fun moving_links_moves_the_own_links_to_the_kept_machine_without_a_sync() =
+        runTest {
+            val removed = Machine.new("Жим", ME.userId, t0)
+            val kept = Machine.new("Жим лёжа", ME.userId, t0)
+            gym.machines.upsert(removed)
+            gym.machines.upsert(kept)
+            val x = MachineId.random()
+            val y = MachineId.random()
+            val fromRemoved = ownLink(ME.userId, removed.id, x)
+            val keptHas = ownLink(ME.userId, kept.id, y)
+            val duplicate = ownLink(ME.userId, removed.id, y)
+            listOf(fromRemoved, keptHas, duplicate).forEach { gym.machineLinks.upsert(it) }
+            gym.clock.current += 1.minutes
+            val now = gym.clock.current
+
+            catalogue.moveLinks(ME.userId, removed.id, kept.id)
+
+            val rows = gym.machineLinks.rows
+            assertEquals(
+                fromRemoved.copy(machineId = kept.id, updatedAt = now),
+                rows[fromRemoved.id],
+            )
+            assertEquals(duplicate.copy(deleted = true, updatedAt = now), rows[duplicate.id])
+            assertEquals(keptHas, rows[keptHas.id])
+            assertEquals(0, gym.sync.requests)
         }
 
     @Test
@@ -705,7 +748,7 @@ class MachineCatalogueTest {
                     }
                 }
 
-            val copying = launch { catalogueOver(stuck).ownCopy(ME.userId, sashas) }
+            val copying = launch { gym.catalogueOver(stuck).ownCopy(ME.userId, sashas) }
             testScheduler.advanceUntilIdle()
             copying.cancel()
             copying.join()
@@ -736,7 +779,7 @@ class MachineCatalogueTest {
                         if (writes++ == 0) gate.await()
                     }
                 }
-            val racing = catalogueOver(paused)
+            val racing = gym.catalogueOver(paused)
 
             val copying = async { racing.ownCopy(ME.userId, pashas) }
             testScheduler.advanceUntilIdle()

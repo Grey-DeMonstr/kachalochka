@@ -443,11 +443,12 @@ class FakeGym(
     val sync = RecordingSyncTrigger()
     val avatars = AccountAvatars(accounts, profiles)
     val failures = mutableListOf<Throwable>()
-    val catalogue =
+
+    fun catalogueOver(links: MachineLinkRepository) =
         MachineCatalogue(
             machines,
             photos,
-            machineLinks,
+            links,
             friends,
             clock,
             sync,
@@ -455,6 +456,8 @@ class FakeGym(
             avatars,
             FailureLog { failures += it },
         )
+
+    val catalogue = catalogueOver(machineLinks)
     val unsaved = UnsavedChoices()
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()
