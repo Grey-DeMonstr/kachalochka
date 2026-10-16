@@ -212,7 +212,6 @@ interface Strings {
     val unlink: String
     val newTag: String
     val linkedTags: String
-    val friendsTags: String
     val choiceTotal: String
     val choicePerSide: String
     val choiceCounterweight: String

@@ -185,15 +185,16 @@ and the weight step. The empty name and comment fields show "Название" a
 them. The unit is kg, lb or an own unit such as "плитка", whose name is then written
 after every weight on that machine, with no conversion. The weight step is any positive number,
 typed in its field. Under the comment, every tag of the account's machines is a chip to tap on or
-off, the tags the machine had when the form opened first, in an order that a tap never changes,
-and a "Новый тег" chip after them adds what is typed in it; a machine has any number of tags.
+off, the tags the machine had when the form opened first, in an order that a tap never changes;
+a machine has any number of tags.
 When the machines it is linked with carry tags it has not got, a row above the chips starts with
 a link icon and offers those tags as dashed chips in the accent colour; tapping one gives it to
 the machine, in the account's spelling when the account has the tag, and such a tag is not
 repeated among the account's chips. Offline or signed out, only the account's own linked
 machines offer tags. Signed in and online, the tags of other friends' machines the account has
-not got wait behind a last "Теги друзей" chip, which shows them in its place as dashed chips with
-the friend's avatar; tapping one gives it to the machine, and saving makes it the account's own.
+not got follow the account's chips as dashed chips with the friend's avatar; tapping one gives it
+to the machine, and saving makes it the account's own. A last "Новый тег" chip adds what is typed
+in it.
 
 Tags have no letter case: "ноги" and "Ноги" are one tag, a machine never holds both, and a tag
 keeps the spelling it was first typed in. Every screen draws a tag in capitals, in a small font
@@ -322,7 +323,8 @@ then, once read, the day's tags and machines; tapping it opens that friend's vis
 friend's avatar and name in the top bar, the day and how many machines they did, then one row per
 machine as on the visit screen — photo, the friend's own name for it, tags, comment and results —
 without its sets, and under them the machines it is linked with (see Group sharing); a row opens
-"Упражнение друга" for that machine. Friends are read again on entering the calendar,
+"Упражнение друга" for that machine. The friend's visit is read again on every return to it, so
+a link made from "Упражнение друга" shows at once. Friends are read again on entering the calendar,
 on changing the month and after switching accounts; without a network the calendar shows only
 the account's own visits. Each friend gets a colour at
 random at first, and the account can change it on the group screen. The colours are personal to the
@@ -447,15 +449,15 @@ measure, and sex, birth date and height from the profile; age is counted in whol
 A row shows its result ("18.4 %") or what it lacks ("Нужно: шея, рост"). While sex, birth date or
 height is missing, a line under the rows leads to Settings.
 
-Each "Процент жира" row ends with a chevron; tapping it opens that formula's chart
-("Процент жира · ВМС США"). It shows the latest result, its change over the chosen period and the
-day of the latest result, the same periods and chart as a measure, and "Все результаты": every
+Each "Процент жира" row ends with a chevron; tapping it opens that formula's chart, titled with
+the formula's name ("ВМС США"). Under the title, where a measure's screen shows how to take it,
+the chart names every input the formula reads ("Нужно: пол, рост, талия, шея"). It shows the
+latest result, its change over the chosen period and the day of the latest result, the same periods and chart as a measure, and "Все результаты": every
 result, newest first. A point falls on every day with a value of one of the formula's measures,
 from the first day all of them have one. On a day without its own value, a measure takes the
 straight line between its values before and after that day, and keeps its last value after them.
-Age is counted on each day. A result outside 2–70 % gives no point. While the formula lacks an
-input, the chart says what it needs, as its row does ("Нужно: пол, талия"), and a missing sex,
-birth date or height adds the link to Settings.
+Age is counted on each day. A result outside 2–70 % gives no point. Without a result the chart
+shows "Нет значений", and a missing sex, birth date or height adds the link to Settings.
 
 Each measure row ends with a chevron; tapping it opens the measure. The screen starts with today's
 value ("Сегодня, 29 сентября"); a predefined measure shows under it how to take it, as "Новый
@@ -519,7 +521,7 @@ or moved and when the pin is tapped, the name a second after typing stops, when 
 focus and when the form is left. A new plan comes into being with its first change. Back and the
 system back save and return to the list. A plan with neither a name nor machines is deleted, and
 its next change brings it back. The menu of a saved plan has "Удалить план", which asks
-"Удалить план?". Switching accounts returns to the list without saving.
+"Удалить план?". Switching accounts saves the plan and returns to the list.
 
 The menu in the top bar of a visit with machines has "Сохранить как план". It opens the form of a
 new plan holding the visit's machines in the visit's order, planned ones included, and saves the
@@ -620,7 +622,8 @@ friend's machine beside the user's own, the machine's page shows each friend's l
 the machines it is linked with.
 The app keeps every link direct: when an own machine is the same machine as a friend's only
 through other friends' links, the app links the two itself, as the user's own link. This happens
-each time the friends' machines are read, and "Привязать к…", "Привязать к моему" and "Взять
+at every start of the app, on every switch of account and each time the friends' machines are
+read, and "Привязать к…", "Привязать к моему" and "Взять
 себе" link the machine at once to every friend's machine joined with the chosen one. The app sees
 only the links of the user's group mates, so a chain through a person outside the user's groups
 stops there.

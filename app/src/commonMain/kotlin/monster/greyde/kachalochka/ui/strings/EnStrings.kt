@@ -235,7 +235,6 @@ object EnStrings : Strings {
     override val unlink = "Unlink"
     override val newTag = "New tag"
     override val linkedTags = "Tags of linked machines"
-    override val friendsTags = "Friends' tags"
     override val choiceTotal = "Total"
     override val choicePerSide = "Per side"
     override val choiceCounterweight = "Gravitron"

@@ -37,7 +37,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -406,7 +405,6 @@ private fun TagsSection(
             suggested.forEach { tag -> SuggestedTagChip(tag) { viewModel.toggleTag(tag) } }
         }
     }
-    var friendsShown by rememberSaveable { mutableStateOf(false) }
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -414,13 +412,8 @@ private fun TagsSection(
         state.shownTags.forEach { tag ->
             TagChoiceChip(tag, state.chosen(tag), "tag-$tag") { viewModel.toggleTag(tag) }
         }
+        state.offeredFriendTags.forEach { FriendTagChip(it) { viewModel.toggleTag(it.tag) } }
         NewTagChip(state.newTag, viewModel::typeNewTag, viewModel::addNewTag)
-        val offered = state.offeredFriendTags
-        if (friendsShown) {
-            offered.forEach { FriendTagChip(it) { viewModel.toggleTag(it.tag) } }
-        } else if (offered.isNotEmpty()) {
-            FriendsTagsChip { friendsShown = true }
-        }
     }
 }
 
@@ -434,21 +427,6 @@ private fun SuggestedTagChip(
     DashedChip(accent, "suggested-tag-$tag", onAdd) {
         TagText(tag, fontSize = 13.sp, color = accent)
         Icon(PhosphorIcons.Plus, null, tint = accent, modifier = Modifier.size(14.dp))
-    }
-}
-
-/** The last chip, standing for the friends' tags until it is tapped. */
-@Composable
-private fun FriendsTagsChip(onShow: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    DashedChip(colors.onBackground.copy(alpha = 0.35f), "friends-tags", onShow) {
-        Text(strings().friendsTags, fontSize = 15.sp, color = colors.onBackground)
-        Icon(
-            PhosphorIcons.CaretDown,
-            null,
-            tint = colors.onBackground.copy(alpha = 0.6f),
-            modifier = Modifier.size(14.dp),
-        )
     }
 }
 

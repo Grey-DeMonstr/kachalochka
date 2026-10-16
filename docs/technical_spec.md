@@ -479,10 +479,11 @@ one, so the first write of a new plan is its first real change. A blank name wit
 machines soft-deletes a written plan, and a later write undeletes it under the same id. A failed
 write goes to `FailureLog` and the queue goes on. `leave` sets `done` only after the queue gets
 to it, failed or not, because the view model's scope, and with it any write still waiting, ends
-when the screen pops. A switch of account closes the form without a write: on the web the new
-account's session is live by the time the form sees the switch, so the old account's plan would
-be refused by RLS or written across accounts (§4.3). The pause keeps the loss to the last second
-of typing.
+when the screen pops. The form holds its write in `HeldWrites` while it is open, and the account
+menu's switch runs every held write before `Accounts.switchTo`, so the name typed last reaches
+the account the form was opened for. The form itself sees the switch only after it and closes
+without a write: on the web the new account's session is live by then, so the old account's plan
+would be refused by RLS or written across accounts (§4.3).
 
 A `machine_link` row says its owner's machine `machine_id` is the same physical machine as another
 member's `linked_machine_id`. Neither column is a foreign key and no policy checks either against
@@ -562,6 +563,9 @@ child included, and requests a sync when it wrote anything, also when it is stop
 mutex lets one upkeep run at a time, and each reads the own links again first, so two at once
 never write the same link. A failed upkeep goes to `FailureLog` and fails nothing: the group read
 keeps the links seen before it, and the link that `take` or `link` wrote first stays.
+`LinkUpkeep` makes a group read for every account that becomes active, at start and on each
+switch, so the links that friends made since reach the account's machines without a screen that
+reads the group. A read that fails, as offline, waits for the next start or switch.
 
 `ShownMachines` joins an own read with a group read into what a screen shows, the clusters, each
 machine's cover photo and the friends' machines offered, and drops a group read made for another
