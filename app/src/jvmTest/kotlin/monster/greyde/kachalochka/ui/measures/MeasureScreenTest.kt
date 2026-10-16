@@ -19,6 +19,8 @@ import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.missingDefaults
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.runScreenTestInEnglish
@@ -75,6 +77,36 @@ class MeasureScreenTest {
             onNodeWithTag("measure-chart").assertIsDisplayed()
             onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82 кг")
             onNodeWithTag("measure-change", useUnmergedTree = true).assertTextEquals("−1")
+        }
+    }
+
+    @Test
+    fun the_day_of_the_cycle_draws_its_phases_without_a_line() {
+        val cycleDay =
+            missingDefaults(null, seeded.mapNotNull { it.kind }.toSet(), Sex.Female).single()
+        runBlocking {
+            gym.profiles.upsert(Profile.new(null, gym.clock.current).copy(sex = Sex.Female))
+            gym.measures.upsert(cycleDay)
+            listOf(CalendarDay(2023, 10, 20) to 1.0, lastWeek to 19.0).forEach {
+                gym.measurements.upsert(
+                    Measurement(
+                        MeasurementId.random(),
+                        null,
+                        cycleDay.id,
+                        it.first,
+                        it.second,
+                        gym.clock.current,
+                        false,
+                    ),
+                )
+            }
+        }
+        runMeasure(cycleDay.id) {
+            onNodeWithTag("top-bar-title").assertTextEquals("День цикла")
+            onNodeWithTag("entry-value").assertTextEquals("26")
+            onNodeWithTag("cycle-chart").assertIsDisplayed()
+            onNodeWithTag("measure-chart").assertDoesNotExist()
+            onNodeWithTag("cycle-legend", useUnmergedTree = true).assertIsDisplayed()
         }
     }
 

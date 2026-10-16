@@ -458,6 +458,11 @@ object RuStrings : Strings {
         "Стоя, вес на обеих ногах, лента горизонтально сразу под ягодичной складкой."
     override val hintNeck =
         "Сразу под кадыком, лента чуть наклонена вперёд и вниз, шея расслаблена."
+    override val measureCycleDay = "День цикла"
+    override val dayUnit = "день"
+    override val hintCycleDay = "День 1 — первый день менструации."
+    override val menstruation = "Менструация"
+    override val ovulation = "Овуляция"
 
     override val profile = "Профиль"
     override val nickname = "Ник"

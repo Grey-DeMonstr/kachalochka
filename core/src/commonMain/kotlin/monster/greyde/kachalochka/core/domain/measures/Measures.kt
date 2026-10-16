@@ -35,7 +35,7 @@ value class MeasurementId(
 }
 
 /** A predefined measure, named and measured in the app's terms rather than its stored ones. */
-enum class MeasureKind { Weight, Waist, Chest, Hips, Biceps, Thigh, Neck, BodyFat }
+enum class MeasureKind { Weight, Waist, Chest, Hips, Biceps, Thigh, Neck, BodyFat, CycleDay }
 
 fun MeasureKind.wireName(): String =
     when (this) {
@@ -47,6 +47,7 @@ fun MeasureKind.wireName(): String =
         MeasureKind.Thigh -> "thigh"
         MeasureKind.Neck -> "neck"
         MeasureKind.BodyFat -> "body_fat"
+        MeasureKind.CycleDay -> "cycle_day"
     }
 
 // A kind a newer version added reads as the user's own measure rather than failing a pull.
@@ -127,10 +128,17 @@ private val defaultMeasures =
         Predefined(MeasureKind.Biceps, "Бицепс", "см"),
         Predefined(MeasureKind.Thigh, "Окружность бедра", "см"),
         Predefined(MeasureKind.Neck, "Шея", "см"),
+        Predefined(MeasureKind.CycleDay, "День цикла", "день"),
     )
 
 private fun predefinedOf(kind: MeasureKind): Predefined? =
     defaultMeasures.firstOrNull { it.kind == kind }
+
+/** The day of the cycle is a woman's measure only. */
+fun isShownFor(
+    measure: Measure,
+    sex: Sex?,
+): Boolean = measure.kind != MeasureKind.CycleDay || sex == Sex.Female
 
 /** The `updatedAt` of every seeded predefined measure, older than any real edit. */
 val MEASURE_SEEDED_AT: Instant = Instant.fromEpochSeconds(0)
@@ -138,7 +146,7 @@ val MEASURE_SEEDED_AT: Instant = Instant.fromEpochSeconds(0)
 /**
  * The writes that keep [owner]'s [predefined] measures, deleted ones included, as the formulas
  * need them for [sex]: kinds never had are seeded, a deleted kind a formula reads comes back, and
- * a typed body fat measure goes, since body fat is calculated.
+ * a typed body fat measure goes, since body fat is calculated. A woman also gets the cycle day.
  */
 fun measureUpkeep(
     owner: UserId?,
@@ -162,8 +170,8 @@ fun measureUpkeep(
         predefined
             .filter { it.id in duplicates }
             .map { it.copy(deleted = true, updatedAt = now) }
-    return missingDefaults(owner, predefined.mapNotNull { it.kind }.toSet()) + revived + typedFat +
-        extra
+    return missingDefaults(owner, predefined.mapNotNull { it.kind }.toSet(), sex) + revived +
+        typedFat + extra
 }
 
 /**
@@ -189,19 +197,25 @@ fun measureDuplicates(
 fun missingDefaults(
     owner: UserId?,
     existing: Set<MeasureKind>,
+    sex: Sex? = null,
 ): List<Measure> =
-    defaultMeasures.withIndex().filter { it.value.kind !in existing }.map { (position, default) ->
-        Measure(
-            id = MeasureId(owner?.let { derivedId(it, default.kind) } ?: newUuidV4()),
-            userId = owner,
-            name = default.name,
-            unit = default.unit,
-            kind = default.kind,
-            position = position,
-            updatedAt = MEASURE_SEEDED_AT,
-            deleted = false,
-        )
-    }
+    defaultMeasures
+        .withIndex()
+        .filter { (_, default) ->
+            default.kind !in existing &&
+                (default.kind != MeasureKind.CycleDay || sex == Sex.Female)
+        }.map { (position, default) ->
+            Measure(
+                id = MeasureId(owner?.let { derivedId(it, default.kind) } ?: newUuidV4()),
+                userId = owner,
+                name = default.name,
+                unit = default.unit,
+                kind = default.kind,
+                position = position,
+                updatedAt = MEASURE_SEEDED_AT,
+                deleted = false,
+            )
+        }
 
 private const val FNV_OFFSET_BASIS = 0xcbf29ce484222325uL
 private const val FNV_PRIME = 0x100000001b3uL

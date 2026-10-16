@@ -411,6 +411,11 @@ ready-made measures can be deleted and do not come back. Hips count as read only
 the profile is not "Мужской". Body fat is only ever calculated: an account's former typed body fat
 measure is removed with all its values.
 
+With the sex "Женский" in the profile, an eighth ready-made measure follows the others: День
+цикла (день), where day 1 is the first day of menstruation. No formula reads it, so it can be
+deleted and does not come back. With another sex it is hidden, values and all, until the sex is
+"Женский" again. Its row shows no change, since the days come round again.
+
 The "Замеры" row on the home screen lists the measures, each with its latest value and unit, the
 change since the value before it ("−0.4", omitted when there is only one) and how long ago it was
 taken ("вчера", "7 дней назад"), and the tags of the formulas that read it. "Порядок" shows drag
@@ -418,12 +423,14 @@ handles to reorder them. "Новый замер" opens
 the measurement form for today; "Добавить показатель" asks for a name and a unit.
 
 The measurement form ("Замер") is one day's values, one decimal field per measure with its unit,
-the previous value shown as a placeholder. Under each ready-made measure's name a line says how to
-take it, e.g. for Шея "Сразу под кадыком, лента чуть наклонена вперёд и вниз, шея расслаблена". The
-day at the top is today by default; tapping it opens a month calendar where days with values are
-marked and future days cannot be chosen. Choosing a day that has values loads them for editing.
-"Сохранить" writes the changed values, and an emptied field clears that value. "Удалить замер", on
-a day that has values, asks and then clears the whole day.
+the previous value shown as a placeholder; for День цикла the placeholder is the day it should be:
+the last value plus the days since, starting over after the profile's cycle length. Under each
+ready-made measure's name a line says how to take it, e.g. for Шея "Сразу под кадыком, лента чуть
+наклонена вперёд и вниз, шея расслаблена". The day at the top is today by default; tapping it
+opens a month calendar where days with values are marked and future days cannot be chosen.
+Choosing a day that has values loads them for editing. "Сохранить" writes the changed values, and
+an emptied field clears that value. "Удалить замер", on a day that has values, asks and then
+clears the whole day.
 
 Under the list, "Процент жира" estimates body fat by three standard formulas, each row headed by
 its tag: `NAVY` "ВМС США" (waist, neck and height, plus hips for a woman), `YMCA` (weight and
@@ -453,6 +460,13 @@ value ("Последний замер: 12 октября, 4 дня назад", 
 chart of its values over 1 мес, 3 мес (the default), 6 мес, Год or Всё. A period with a single
 value shows that value instead of a line. "Все результаты" follows "Редактировать историю": every
 value, newest first, its date and the value with its unit, as the statistics history shows them.
+
+День цикла starts a day without a value with the day it should be, as the form's placeholder does;
+before its first value it counts back. Its chart has no line and no change: over the chosen period
+up to today (from the first value for "Всё") it fills days 1 to 5 of every cycle and outlines the
+ovulation window, days length − 14 to length − 12, with a dashed line. A legend under it names
+them: "Менструация" and "Овуляция". A recorded day starts a cycle that runs until the next one
+recorded, and the latest one runs on after it.
 
 "Редактировать историю" opens the measure's history ("Талия · история"): a month calendar with a
 dot on every day that has a value; future days cannot be chosen. Tapping a day shows its value in

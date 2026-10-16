@@ -211,6 +211,44 @@ class MeasuresViewModelTest {
         }
 
     @Test
+    fun a_woman_also_gets_the_day_of_the_cycle_and_it_hides_with_another_sex() =
+        runTest {
+            val woman = Profile.new(null, t0).copy(sex = Sex.Female)
+            gym.profiles.upsert(woman)
+            val vm = viewModel().also { it.load() }
+
+            assertEquals(
+                defaults + "День цикла",
+                vm.state.value.rows
+                    .map { it.name },
+            )
+            val cycle = measureOf(MeasureKind.CycleDay)
+            record(cycle, gym.today.plusDays(-7), 5.0)
+            record(cycle, gym.today, 12.0)
+            vm.load()
+            val row =
+                vm.state.value.rows
+                    .last()
+            assertEquals("12 день" to null, row.value to row.delta)
+            assertEquals(emptyList(), row.tags)
+
+            gym.profiles.upsert(woman.copy(sex = Sex.Male, updatedAt = t0 + 1.minutes))
+            vm.load()
+
+            assertEquals(
+                defaults,
+                vm.state.value.rows
+                    .map { it.name },
+            )
+            inEnglish {
+                assertEquals(
+                    "Cycle day" to "day",
+                    cycle.shownName() to cycle.shownUnit(),
+                )
+            }
+        }
+
+    @Test
     fun predefined_measures_and_formulas_read_in_english() =
         runTest {
             val vm = viewModel().also { it.load() }

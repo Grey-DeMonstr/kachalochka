@@ -100,17 +100,25 @@ internal fun PeriodChoice(
     )
 }
 
-/** Weekly values give a quarter about a dozen points; fewer than two draw no line. */
+/**
+ * Weekly values give a quarter about a dozen points; fewer than two draw no line. [phasesOnly]
+ * draws the [phases] alone, without the values.
+ */
 @Composable
 internal fun PeriodChart(
     points: List<Pair<CalendarDay, Double>>,
     format: (Double) -> String,
+    phases: CyclePhasesUi? = null,
+    phasesOnly: Boolean = false,
 ) {
     val muted = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-        when (points.size) {
-            0 -> Text(strings().noValuesInPeriod, fontSize = 15.sp, color = muted)
-            1 ->
+        when {
+            phasesOnly && phases != null ->
+                CycleChart(phases, Modifier.fillMaxSize().testTag("cycle-chart"))
+            phasesOnly || points.isEmpty() ->
+                Text(strings().noValuesInPeriod, fontSize = 15.sp, color = muted)
+            points.size == 1 ->
                 Text(
                     format(points.single().second),
                     Modifier.testTag("measure-single-value"),
@@ -120,4 +128,5 @@ internal fun PeriodChart(
             else -> MeasureChart(points, Modifier.fillMaxSize().testTag("measure-chart"))
         }
     }
+    if (phases != null && (phasesOnly || points.size > 1)) PhasesLegend()
 }

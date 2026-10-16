@@ -1,6 +1,8 @@
 package monster.greyde.kachalochka.core.domain.measures
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import kotlin.math.roundToLong
 
 const val DEFAULT_CYCLE_LENGTH = 28
@@ -42,6 +44,26 @@ fun cycleAnchors(values: Map<CalendarDay, Double>): List<CycleAnchor> =
         .filterValues { it >= 1 }
         .map { (day, value) -> CycleAnchor(day, day.plusDays(1 - value.roundToLong())) }
         .sortedBy { it.recorded }
+
+/** A woman's cycle from her recorded days of the cycle; null without a sex Female or a value. */
+fun cycleOf(
+    profile: Profile?,
+    measures: List<Measure>,
+    values: List<Measurement>,
+): Cycle? {
+    if (profile?.sex != Sex.Female) return null
+    val ids = measures.filter { it.kind == MeasureKind.CycleDay }.map { it.id }.toSet()
+    return cycleFrom(values.filter { it.measureId in ids }, profile.cycleLength)
+}
+
+/** The cycle that [values] of the cycle day tell; a null [length] is the default. */
+fun cycleFrom(
+    values: List<Measurement>,
+    length: Int?,
+): Cycle? =
+    cycleAnchors(values.associate { it.day to it.value }).takeIf { it.isNotEmpty() }?.let {
+        Cycle(it, length ?: DEFAULT_CYCLE_LENGTH)
+    }
 
 /**
  * The day of the cycle on [day], 1 to [Cycle.length]. Of the cycles started by [day], the one

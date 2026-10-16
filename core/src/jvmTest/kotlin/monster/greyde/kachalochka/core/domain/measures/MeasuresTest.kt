@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.domain.profile.Sex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -119,7 +120,8 @@ class MeasuresTest {
         assertEquals(emptyList(), measureUpkeep(ivan, stored, Sex.Male, now))
         assertEquals(
             listOf(MeasureKind.Hips),
-            measureUpkeep(ivan, stored, Sex.Female, now).map { it.kind },
+            measureUpkeep(ivan, stored + predefined(MeasureKind.CycleDay), Sex.Female, now)
+                .map { it.kind },
         )
         assertEquals(
             listOf(MeasureKind.Hips),
@@ -160,6 +162,44 @@ class MeasuresTest {
         assertEquals(navy, methodsReading(MeasureKind.Hips, null))
         assertEquals(emptyList(), methodsReading(MeasureKind.Chest, Sex.Female))
         assertEquals(emptyList(), methodsReading(MeasureKind.BodyFat, Sex.Female))
+        assertEquals(emptyList(), methodsReading(MeasureKind.CycleDay, Sex.Female))
+    }
+
+    @Test
+    fun a_woman_also_gets_the_day_of_the_cycle_after_the_others() {
+        val defaults = missingDefaults(ivan, emptySet(), Sex.Female)
+        val cycle = defaults.single { it.kind == MeasureKind.CycleDay }
+
+        assertEquals("День цикла" to "день", cycle.name to cycle.unit)
+        assertEquals(7, cycle.position)
+        assertEquals(derivedId(ivan, MeasureKind.CycleDay), cycle.id.value)
+        listOf(Sex.Male, null).forEach { sex ->
+            val defaults = missingDefaults(ivan, emptySet(), sex)
+            assertTrue(defaults.none { it.kind == MeasureKind.CycleDay })
+        }
+    }
+
+    @Test
+    fun upkeep_seeds_the_day_of_the_cycle_for_a_woman_and_a_deleted_one_stays_deleted() {
+        val gone = predefined(MeasureKind.CycleDay).copy(deleted = true)
+
+        assertEquals(
+            listOf(MeasureKind.CycleDay),
+            measureUpkeep(ivan, everyPredefined(), Sex.Female, now).map { it.kind },
+        )
+        assertEquals(emptyList(), measureUpkeep(ivan, everyPredefined(), Sex.Male, now))
+        assertEquals(emptyList(), measureUpkeep(ivan, everyPredefined() + gone, Sex.Female, now))
+    }
+
+    @Test
+    fun the_day_of_the_cycle_is_shown_to_a_woman_only() {
+        val cycle = predefined(MeasureKind.CycleDay)
+
+        assertTrue(isShownFor(cycle, Sex.Female))
+        assertFalse(isShownFor(cycle, Sex.Male))
+        assertFalse(isShownFor(cycle, null))
+        assertTrue(isShownFor(predefined(MeasureKind.Weight), Sex.Male))
+        assertTrue(isShownFor(cycle.copy(kind = null), null))
     }
 
     private fun everyPredefined() = missingDefaults(ivan, emptySet())
@@ -207,7 +247,17 @@ class MeasuresTest {
     @Test
     fun a_kind_reads_back_from_its_wire_name_and_an_unknown_name_reads_as_none() {
         assertEquals(
-            listOf("weight", "waist", "chest", "hips", "biceps", "thigh", "neck", "body_fat"),
+            listOf(
+                "weight",
+                "waist",
+                "chest",
+                "hips",
+                "biceps",
+                "thigh",
+                "neck",
+                "body_fat",
+                "cycle_day",
+            ),
             MeasureKind.entries.map { it.wireName() },
         )
         MeasureKind.entries.forEach { assertEquals(it, measureKindOf(it.wireName())) }

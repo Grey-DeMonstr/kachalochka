@@ -741,6 +741,15 @@ is a multiple of, within 1e-6 for the double's rounding, else 0.1. "Все ре�
 `AllResults` composable in `ui/components`, which also draws a machine's history; it takes
 `HistoryRowUi` rows and an optional tap handler.
 
+`MeasureKind.CycleDay` (`cycle_day`) is seeded by `missingDefaults` only for the sex `Female`, at
+position 7; it is not locked, so a deleted one stays deleted, and `methodsReading` gives it no
+method. `isShownFor` hides it from "Замеры", the form and the list rows for any other sex; its
+rows stay. Its start value, on the measure screen and as the form's placeholder, is
+`cycleFrom(values, profile.cycleLength).dayOn(day)`: the measure's own values make the anchors.
+Its screen sets `MeasureUi.phasesOnly`: `PeriodChart` then draws `CycleChart`, a Compose `Canvas`
+of the period's `CyclePhasesUi` without Vico, and `PhasesLegend`; the change and a list row's
+delta stay empty.
+
 The body-fat formulas are pure functions in `domain/measures/BodyFat.kt` (`bodyFat`,
 `missingInputs`, `methodsReading`); a result outside 2–70 % is treated as none. "Замеры" finds the
 inputs by `MeasureKind`, never by name: the latest value of each kind, and sex, `birthDate` and

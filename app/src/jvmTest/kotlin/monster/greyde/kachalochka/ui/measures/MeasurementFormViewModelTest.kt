@@ -17,6 +17,8 @@ import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.missingDefaults
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.calendar.DayUi
 import kotlin.test.AfterTest
@@ -70,6 +72,7 @@ class MeasurementFormViewModelTest {
         day,
         on.measures,
         on.measurements,
+        on.profiles,
         on.currentUser,
         on.accounts,
         on.clock,
@@ -120,6 +123,33 @@ class MeasurementFormViewModelTest {
         assertFalse(form.canDelete)
         assertFalse(form.picking)
         assertFalse(form.deleting)
+    }
+
+    private val cycleDay =
+        missingDefaults(null, seeded.mapNotNull { it.kind }.toSet(), Sex.Female).single()
+
+    @Test
+    fun a_woman_s_day_of_the_cycle_hints_the_day_it_should_be_by_her_length() {
+        runBlocking {
+            gym.profiles.upsert(Profile.new(null, t0).copy(sex = Sex.Female, cycleLength = 30))
+            gym.measures.upsert(cycleDay)
+        }
+        record(cycleDay, saturday, 29.0)
+
+        val field = viewModel().field(cycleDay)
+
+        assertEquals("День цикла" to "день", field.name to field.unit)
+        assertEquals("2", field.hint)
+        assertEquals(howToMeasure(MeasureKind.CycleDay), field.howTo)
+    }
+
+    @Test
+    fun the_day_of_the_cycle_is_left_out_of_a_man_s_form() {
+        runBlocking { gym.measures.upsert(cycleDay) }
+
+        val fields = viewModel().state.value!!.fields
+
+        assertEquals(seeded.map { it.id }, fields.map { it.id })
     }
 
     @Test

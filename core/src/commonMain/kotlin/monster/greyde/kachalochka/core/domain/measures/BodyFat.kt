@@ -76,6 +76,7 @@ fun methodsReading(
         MeasureKind.Biceps,
         MeasureKind.Thigh,
         MeasureKind.BodyFat,
+        MeasureKind.CycleDay,
         -> emptyList()
     }
 

@@ -14,10 +14,15 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
+import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
+import monster.greyde.kachalochka.core.domain.measures.cycleFrom
+import monster.greyde.kachalochka.core.domain.measures.dayOn
+import monster.greyde.kachalochka.core.domain.measures.isShownFor
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.calendar.monthRank
 import monster.greyde.kachalochka.ui.calendar.monthWeeks
@@ -58,6 +63,7 @@ class MeasurementFormViewModel(
     initialDay: CalendarDay?,
     private val measures: MeasureRepository,
     private val measurements: MeasurementRepository,
+    private val profiles: ProfileRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
@@ -70,6 +76,7 @@ class MeasurementFormViewModel(
 
     private var day: CalendarDay = initialDay ?: today()
     private var shown: List<Measure> = emptyList()
+    private var cycleLength: Int? = null
 
     /** The shown measures' values, newest day first. */
     private var values: List<Measurement> = emptyList()
@@ -89,7 +96,9 @@ class MeasurementFormViewModel(
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                shown = measures.all(owner)
+                val profile = profiles.forOwner(owner)
+                cycleLength = profile?.cycleLength
+                shown = measures.all(owner).filter { isShownFor(it, profile?.sex) }
                 val ids = shown.map { it.id }.toSet()
                 values = measurements.all(owner).filter { it.measureId in ids }
                 showDay()
@@ -211,10 +220,7 @@ class MeasurementFormViewModel(
                     name = measure.shownName(),
                     unit = measure.shownUnit(),
                     text = texts[measure.id].orEmpty(),
-                    hint =
-                        values
-                            .firstOrNull { it.measureId == measure.id && it.day < day }
-                            ?.let { formatNumber(it.value) },
+                    hint = hint(measure),
                     valid = valid(measure.id),
                     howTo = measure.kind?.let(::howToMeasure),
                 )
@@ -245,6 +251,15 @@ class MeasurementFormViewModel(
                     },
                 deleting = deleting,
             )
+    }
+
+    /** The day of the cycle is due, not the same as last time. */
+    private fun hint(measure: Measure): String? {
+        val own = values.filter { it.measureId == measure.id }
+        if (measure.kind == MeasureKind.CycleDay) {
+            return cycleFrom(own, cycleLength)?.dayOn(day)?.toString()
+        }
+        return own.firstOrNull { it.day < day }?.let { formatNumber(it.value) }
     }
 
     private fun today(): CalendarDay {

@@ -99,7 +99,12 @@ fun MeasureScreen(
                 Entry(measure, viewModel)
                 MeasureSummary(measure.latest, measure.change, measure.lastMeasured)
                 PeriodChoice(measure.period, viewModel::choose)
-                PeriodChart(measure.points) { measureValue(it, measure.unit) }
+                PeriodChart(
+                    measure.points,
+                    { measureValue(it, measure.unit) },
+                    measure.phases,
+                    measure.phasesOnly,
+                )
                 OutlineButton(
                     strings().editHistory,
                     PhosphorIcons.CalendarBlank,

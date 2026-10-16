@@ -22,6 +22,7 @@ import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.measures.bodyFat
+import monster.greyde.kachalochka.core.domain.measures.isShownFor
 import monster.greyde.kachalochka.core.domain.measures.measureDuplicates
 import monster.greyde.kachalochka.core.domain.measures.measureUpkeep
 import monster.greyde.kachalochka.core.domain.measures.methodsReading
@@ -104,7 +105,7 @@ class MeasuresViewModel(
                 val owner = currentUser.id()
                 profile = profiles.forOwner(owner)
                 if (currentUser.writesPrivateRows()) upkeep(owner)
-                shown = measures.all(owner)
+                shown = measures.all(owner).filter { isShownFor(it, profile?.sex) }
                 values = measurements.all(owner).groupBy { it.measureId }
                 publish()
             }
@@ -272,8 +273,9 @@ class MeasuresViewModel(
             id = measure.id,
             name = measure.shownName(),
             value = latest?.let { measureValue(it.value, measure.shownUnit()) },
+            // Days of the cycle come round again, so their difference tells nothing.
             delta =
-                if (latest != null && previous != null) {
+                if (latest != null && previous != null && measure.kind != MeasureKind.CycleDay) {
                     measureDelta(latest.value, previous.value)
                 } else {
                     null

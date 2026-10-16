@@ -401,6 +401,11 @@ interface Strings {
     val hintBiceps: String
     val hintThigh: String
     val hintNeck: String
+    val measureCycleDay: String
+    val dayUnit: String
+    val hintCycleDay: String
+    val menstruation: String
+    val ovulation: String
 
     // Settings
     val profile: String

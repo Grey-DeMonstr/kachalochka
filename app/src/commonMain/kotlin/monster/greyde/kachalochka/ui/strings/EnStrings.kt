@@ -439,6 +439,11 @@ object EnStrings : Strings {
         "Standing, weight on both legs, tape level just below the buttock crease."
     override val hintNeck =
         "Just below the Adam's apple, tape tilted slightly forward and down, neck relaxed."
+    override val measureCycleDay = "Cycle day"
+    override val dayUnit = "day"
+    override val hintCycleDay = "Day 1 is the first day of the period."
+    override val menstruation = "Menstruation"
+    override val ovulation = "Ovulation"
 
     override val profile = "Profile"
     override val nickname = "Nickname"

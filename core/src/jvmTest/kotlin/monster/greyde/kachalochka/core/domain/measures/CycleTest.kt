@@ -1,10 +1,14 @@
 package monster.greyde.kachalochka.core.domain.measures
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.profile.Profile
+import monster.greyde.kachalochka.core.domain.profile.Sex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class CycleTest {
     private val oct1 = CalendarDay(2026, 10, 1)
@@ -126,5 +130,31 @@ class CycleTest {
         assertFalse(showsCycle(MeasurePeriod.Year, today, today))
         assertTrue(showsCycle(MeasurePeriod.All, CalendarDay(2026, 7, 17), today))
         assertFalse(showsCycle(MeasurePeriod.All, CalendarDay(2026, 7, 16), today))
+    }
+
+    @Test
+    fun a_woman_s_recorded_days_of_the_cycle_make_her_cycle_of_the_profile_s_length() {
+        val epoch = Instant.fromEpochSeconds(0)
+        val woman = Profile.new(null, epoch).copy(sex = Sex.Female)
+        val measures = missingDefaults(null, emptySet(), Sex.Female)
+        val cycleDay = measures.single { it.kind == MeasureKind.CycleDay }
+        val weight = measures.single { it.kind == MeasureKind.Weight }
+
+        fun value(
+            measure: Measure,
+            day: CalendarDay,
+            value: Double,
+        ) = Measurement(MeasurementId.random(), null, measure.id, day, value, epoch, false)
+        val values = listOf(value(cycleDay, day(4), 5.0), value(weight, day(4), 80.0))
+
+        assertEquals(
+            Cycle(listOf(CycleAnchor(day(4), oct1)), DEFAULT_CYCLE_LENGTH),
+            cycleOf(woman, measures, values),
+        )
+        assertEquals(31, cycleOf(woman.copy(cycleLength = 31), measures, values)?.length)
+        assertNull(cycleOf(woman.copy(sex = Sex.Male), measures, values))
+        assertNull(cycleOf(null, measures, values))
+        assertNull(cycleOf(woman, measures, values.drop(1)))
+        assertNull(cycleOf(woman, measures - cycleDay, values))
     }
 }

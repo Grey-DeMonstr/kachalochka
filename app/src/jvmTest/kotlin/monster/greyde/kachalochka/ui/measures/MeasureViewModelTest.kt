@@ -10,12 +10,15 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.measures.Cycle
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
+import monster.greyde.kachalochka.core.domain.measures.bands
+import monster.greyde.kachalochka.core.domain.measures.cycleAnchors
 import monster.greyde.kachalochka.core.domain.measures.missingDefaults
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
@@ -117,6 +120,57 @@ class MeasureViewModelTest {
         assertEquals("−1", ui.change)
         assertNull(ui.editing)
         assertFalse(ui.deleting)
+    }
+
+    private val cycleDay =
+        missingDefaults(null, seeded.mapNotNull { it.kind }.toSet(), Sex.Female).single()
+    private val today = CalendarDay(2023, 11, 14)
+
+    private fun woman(cycleLength: Int? = null) =
+        runBlocking {
+            gym.profiles.upsert(
+                Profile.new(null, t0).copy(sex = Sex.Female, cycleLength = cycleLength),
+            )
+            gym.measures.upsert(cycleDay)
+        }
+
+    @Test
+    fun a_new_day_of_the_cycle_is_the_last_one_plus_the_days_since() {
+        woman()
+        record(cycleDay, CalendarDay(2023, 11, 1), 27.0)
+        val vm = viewModel(cycleDay.id)
+
+        assertEquals("12", vm.ui.entry.text)
+        vm.openDay(CalendarDay(2023, 10, 30))
+        assertEquals("25", vm.ui.entry.text)
+        vm.openDay(CalendarDay(2023, 11, 1))
+        assertEquals("27", vm.ui.entry.text)
+    }
+
+    @Test
+    fun the_day_of_the_cycle_wraps_by_the_profile_s_length() {
+        woman(cycleLength = 35)
+        record(cycleDay, CalendarDay(2023, 11, 1), 27.0)
+
+        assertEquals("5", viewModel(cycleDay.id).ui.entry.text)
+    }
+
+    @Test
+    fun the_day_of_the_cycle_draws_its_phases_over_the_period_and_no_change() {
+        woman()
+        val start = CalendarDay(2023, 11, 1)
+        record(cycleDay, start, 1.0)
+        record(cycleDay, CalendarDay(2023, 11, 10), 10.0)
+        val cycle = Cycle(cycleAnchors(mapOf(start to 1.0)), 28)
+        val vm = viewModel(cycleDay.id)
+
+        assertTrue(vm.ui.phasesOnly)
+        assertNull(vm.ui.change)
+        val quarter = CalendarDay(2023, 8, 14)
+        assertEquals(CyclePhasesUi(quarter, today, cycle.bands(quarter, today)), vm.ui.phases)
+        vm.choose(MeasurePeriod.All)
+        assertEquals(CyclePhasesUi(start, today, cycle.bands(start, today)), vm.ui.phases)
+        assertFalse(viewModel().ui.phasesOnly)
     }
 
     @Test

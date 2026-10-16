@@ -11,16 +11,21 @@ import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.measures.Cycle
 import monster.greyde.kachalochka.core.domain.measures.Measure
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
+import monster.greyde.kachalochka.core.domain.measures.MeasureKind
 import monster.greyde.kachalochka.core.domain.measures.MeasurePeriod
 import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.measures.MeasurementId
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
+import monster.greyde.kachalochka.core.domain.measures.cycleFrom
+import monster.greyde.kachalochka.core.domain.measures.dayOn
 import monster.greyde.kachalochka.core.domain.measures.inPeriod
 import monster.greyde.kachalochka.core.domain.measures.isLocked
 import monster.greyde.kachalochka.core.domain.measures.measureStep
+import monster.greyde.kachalochka.core.domain.measures.periodStart
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.ui.WriteGuard
@@ -40,7 +45,7 @@ import kotlin.time.Clock
 
 /**
  * [points] are the period's values, oldest first; [results] are all values, newest first;
- * [history] is open while shown.
+ * [history] is open while shown. [phasesOnly] draws the [phases] instead of the values.
  */
 data class MeasureUi(
     val name: String,
@@ -59,6 +64,8 @@ data class MeasureUi(
     val deleting: Boolean,
     val canEdit: Boolean,
     val canDelete: Boolean,
+    val phases: CyclePhasesUi? = null,
+    val phasesOnly: Boolean = false,
 )
 
 /** The value typed for [day]; [canDelete] once the day has one stored. */
@@ -104,6 +111,7 @@ class MeasureViewModel(
 
     private var measure: Measure? = null
     private var sex: Sex? = null
+    private var cycleLength: Int? = null
 
     /** Newest day first, as the repository reads them. */
     private var values: List<Measurement> = emptyList()
@@ -133,7 +141,9 @@ class MeasureViewModel(
             viewModelScope.launch {
                 val owner = currentUser.id()
                 measure = measures.all(owner).firstOrNull { it.id == measureId }
-                sex = profiles.forOwner(owner)?.sex
+                val profile = profiles.forOwner(owner)
+                sex = profile?.sex
+                cycleLength = profile?.cycleLength
                 values = readValues()
                 if (measure == null) mutableGone.value = true
                 publish()
@@ -312,6 +322,7 @@ class MeasureViewModel(
         val shownPeriod = inPeriod(values, period, today)
         val first = shownPeriod.firstOrNull()
         val last = shownPeriod.lastOrNull()
+        val phasesOnly = shown.kind == MeasureKind.CycleDay
         val name = shown.shownName()
         val unit = shown.shownUnit()
         val shownMonth = month
@@ -331,7 +342,7 @@ class MeasureViewModel(
                 latest = values.firstOrNull()?.let { measureValue(it.value, unit) },
                 lastMeasured = values.firstOrNull()?.let { lastMeasured(it.day, today) },
                 change =
-                    if (first != null && last != null && first != last) {
+                    if (first != null && last != null && first != last && !phasesOnly) {
                         measureDelta(last.value, first.value)
                     } else {
                         null
@@ -362,15 +373,35 @@ class MeasureViewModel(
                 deleting = deleting,
                 canEdit = shown.kind == null,
                 canDelete = deletable(shown),
+                phases = if (phasesOnly) ownPhases(today) else null,
+                phasesOnly = phasesOnly,
             )
     }
 
-    /** A day without a value starts from the one before it, the likeliest new value. */
+    private fun ownCycle(): Cycle? = cycleFrom(values, cycleLength)
+
+    /** Over the period up to today; "Всё" starts with the first value. */
+    private fun ownPhases(today: CalendarDay): CyclePhasesUi? {
+        val cycle = ownCycle() ?: return null
+        val start = periodStart(period, today) ?: values.last().day
+        return cyclePhases(cycle, start, today)
+    }
+
+    /**
+     * A day without a value starts from the one before it, the likeliest new value; a day of the
+     * cycle starts from the day it should be.
+     */
     private fun entry(today: CalendarDay): MeasureEntryUi {
         val day = entryDay ?: today
         val stored = storedOn(day)
-        val start = stored ?: values.firstOrNull { it.day < day }
-        val text = typed ?: start?.let { formatNumber(it.value) }.orEmpty()
+        val start =
+            stored?.value
+                ?: if (measure?.kind == MeasureKind.CycleDay) {
+                    ownCycle()?.dayOn(day)?.toDouble()
+                } else {
+                    values.firstOrNull { it.day < day }?.value
+                }
+        val text = typed ?: start?.let(::formatNumber).orEmpty()
         val value = parseDecimal(text)
         return MeasureEntryUi(
             day = day,

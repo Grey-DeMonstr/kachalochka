@@ -96,7 +96,7 @@ val appModule =
         viewModelOf(::GuardiansViewModel)
         viewModelOf(::MachinePlacementViewModel)
         viewModel { (day: CalendarDay?) ->
-            MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get())
+            MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get(), get())
         }
         viewModel { (method: BodyFatMethod) ->
             BodyFatViewModel(method, get(), get(), get(), get(), get(), get(), get(), get())
