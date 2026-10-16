@@ -1,5 +1,30 @@
 Kachalochka - Changelog
 
+1.7.0
+
+- Tags ignore letter case and are written in capitals.
+- Your machines stay linked to every friend's copy of the same machine.
+- A machine copied from a friend or for a child keeps its tags and stays linked.
+- Linked machines with the same name are written once, with all their owners' avatars.
+- The machine form suggests the tags of linked machines.
+- Nicknames are shown instead of full names everywhere.
+- The set form shows people as avatars.
+- Moving a visit onto a busy day names the visit that would be replaced.
+- A past visit can be repeated today.
+- A machine can be added to a plan or to today's visit from its menu.
+- Plans save themselves while they are edited.
+- Plans can be pinned.
+- The machine form asks to save the changes before leaving.
+- Machine search in the statistics.
+- A measure starts from its latest value, shows how to take it and lists all its results.
+- The steps of a measure follow the precision of its values.
+- Body fat charts.
+- Menstrual cycle tracking, shown on the charts.
+- The rest timer can play a sound when it ends.
+- Fixed: with several children, only the first one can be chosen in the set form.
+- Fixed: a set recorded for a child creates an unlinked copy of the machine.
+
+
 1.6.7
 
 - An opened photo of a machine can be swiped to the next one.
