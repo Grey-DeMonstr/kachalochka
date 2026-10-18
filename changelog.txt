@@ -1,5 +1,10 @@
 Kachalochka - Changelog
 
+1.7.3
+
+- Fixed: a body fat formula name breaks into one letter per line on narrow phones.
+
+
 1.7.2
 
 - Friends' machines show at once on every machine screen.
