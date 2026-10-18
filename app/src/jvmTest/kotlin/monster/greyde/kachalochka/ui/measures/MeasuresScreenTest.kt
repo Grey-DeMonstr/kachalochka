@@ -1,6 +1,11 @@
 package monster.greyde.kachalochka.ui.measures
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
@@ -9,6 +14,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
@@ -111,6 +118,38 @@ class MeasuresScreenTest {
             waitForIdle()
         }
         assertEquals(listOf(BodyFatMethod.Ymca), opened)
+    }
+
+    @Test
+    fun a_body_fat_name_keeps_one_line_and_its_hint_wraps_on_a_narrow_phone() {
+        runScreenTest(
+            gym,
+            screen = {
+                Box(Modifier.width(320.dp)) { MeasuresScreen({}, {}, {}, {}, {}) }
+            },
+        ) {
+            listOf("NAVY", "YMCA", "BMI").forEach { tag ->
+                assertEquals(1, assertTextFits("fat-name-$tag"), "$tag name lines")
+                assertTextFits("fat-value-$tag")
+            }
+            assertTrue(assertTextFits("fat-value-NAVY") > 1, "NAVY hint wraps")
+        }
+    }
+
+    /** Fails when a line of the text is wider than its node; returns the line count. */
+    private fun ComposeUiTest.assertTextFits(tag: String): Int {
+        val node = onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode()
+        val layouts = mutableListOf<TextLayoutResult>()
+        node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+        val layout = layouts.single()
+        repeat(layout.lineCount) {
+            val line = layout.getLineRight(it) - layout.getLineLeft(it)
+            assertTrue(
+                node.size.width >= line,
+                "$tag is ${node.size.width}px for a ${line}px line",
+            )
+        }
+        return layout.lineCount
     }
 
     @Test

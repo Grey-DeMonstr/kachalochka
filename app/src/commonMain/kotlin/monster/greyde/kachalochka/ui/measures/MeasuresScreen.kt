@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
@@ -213,12 +214,19 @@ private fun FatSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             FormulaTag(row.tag)
-            Text(row.name, Modifier.weight(1f), fontSize = 16.sp, color = colors.onBackground)
+            Text(
+                row.name,
+                Modifier.testTag("fat-name-${row.tag}"),
+                fontSize = 16.sp,
+                color = colors.onBackground,
+                softWrap = false,
+            )
             Text(
                 row.percent ?: row.missing ?: strings().cannotCalculate,
-                Modifier.testTag("fat-value-${row.tag}"),
+                Modifier.weight(1f).testTag("fat-value-${row.tag}"),
                 fontSize = if (row.percent != null) 16.sp else 13.sp,
                 color = if (row.percent != null) colors.onBackground else muted,
+                textAlign = TextAlign.End,
             )
             Icon(
                 PhosphorIcons.CaretRight,
