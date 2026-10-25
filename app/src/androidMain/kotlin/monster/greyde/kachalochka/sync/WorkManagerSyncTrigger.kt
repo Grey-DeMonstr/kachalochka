@@ -9,10 +9,10 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import monster.greyde.kachalochka.FailureLog
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
@@ -61,7 +61,7 @@ class SyncWorker(
         if (!get<SupabaseCredentials>().isConfigured) return Result.success()
         val failures = get<FailureLog>()
         val clean =
-            try {
+            catching {
                 // The family first, so a child linked since the last pass syncs in this one and
                 // one whose link ended leaves before its rows could be pushed again; no other
                 // follow runs until the pass is over.
@@ -74,9 +74,7 @@ class SyncWorker(
                         accounts.filter { it.isManaged }.map { it.userId }.toSet(),
                     )
                 }
-            } catch (stopped: CancellationException) {
-                throw stopped
-            } catch (failed: Exception) {
+            }.getOrElse { failed ->
                 failures.record(failed)
                 false
             }

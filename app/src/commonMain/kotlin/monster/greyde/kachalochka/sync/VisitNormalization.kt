@@ -1,12 +1,12 @@
 package monster.greyde.kachalochka.sync
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.FailureLog
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -48,11 +48,7 @@ class VisitNormalization(
     }
 
     private suspend fun attempt(owner: UserId?): Boolean =
-        try {
-            normalizer.normalize(owner)
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (failed: Exception) {
+        catching { normalizer.normalize(owner) }.getOrElse { failed ->
             failures.record(failed)
             false
         }

@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.friends
 
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 
@@ -22,7 +23,7 @@ class PendingJoin(
 
     suspend fun consume(): JoinOutcome? {
         val code = store.code() ?: return null
-        val joined = reading { friends.join(code) }.getOrElse { return null }
+        val joined = catching { friends.join(code) }.getOrElse { return null }
         store.clear()
         return if (joined == null) JoinOutcome.NotFound else JoinOutcome.Joined(joined)
     }

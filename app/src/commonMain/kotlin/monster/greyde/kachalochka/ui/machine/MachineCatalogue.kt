@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.FailureLog
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
@@ -45,7 +46,6 @@ import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.accountAvatar
-import monster.greyde.kachalochka.ui.friends.reading
 import kotlin.time.Clock
 
 /** The account's live machines, with the photos and links that place them. */
@@ -316,7 +316,7 @@ class MachineCatalogue(
         removed: MachineId,
         kept: MachineId,
     ): Boolean =
-        reading {
+        catching {
             if (friends.groupLinks(owner).any { it.linkedMachineId == removed }) {
                 friends.repointLinks(removed, kept)
                 forget(owner)
@@ -333,7 +333,7 @@ class MachineCatalogue(
         machine: MachineId,
     ): Boolean {
         if (owner != null) {
-            if (reading { friends.breakLinks(machine) }.isFailure) return false
+            if (catching { friends.breakLinks(machine) }.isFailure) return false
             forget(owner)
         }
         writingLinks {
@@ -463,9 +463,9 @@ class MachineCatalogue(
     ): StandIn {
         val group =
             shown.group?.takeIf { it.owner == viewer }
-                ?: reading { group(viewer) }.getOrElse { return failedRead(viewer) }
+                ?: catching { group(viewer) }.getOrElse { return failedRead(viewer) }
         if (!active(viewer)) return StandIn.Switched
-        val own = reading { friendStandIn(viewer, shown.id, group) }
+        val own = catching { friendStandIn(viewer, shown.id, group) }
         if (own.isFailure) return failedRead(viewer)
         return own.getOrNull()?.let { StandIn.Found(it) } ?: StandIn.Gone
     }
@@ -544,7 +544,7 @@ class MachineCatalogue(
         written: List<MachineLink> = emptyList(),
     ): List<MachineLink> {
         written.forEach { upsert(it) }
-        return try {
+        return catching {
             val visible = links.all(owner) + theirs
             val missing =
                 missingDirectLinks(
@@ -556,9 +556,7 @@ class MachineCatalogue(
                 )
             missing.forEach { upsert(it) }
             visible + missing
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (failed: Exception) {
+        }.getOrElse { failed ->
             failures.record(failed)
             before + written
         }

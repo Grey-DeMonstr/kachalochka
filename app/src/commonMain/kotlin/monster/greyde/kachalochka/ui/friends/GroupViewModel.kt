@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
@@ -100,7 +101,7 @@ class GroupViewModel(
         val shown = group ?: return
         writes.launch {
             val owner = shown.ownerId == currentUser.id()
-            reading { if (owner) friends.delete(shown.id) else friends.leave(shown.id) }
+            catching { if (owner) friends.delete(shown.id) else friends.leave(shown.id) }
                 .onSuccess { mutableGone.value = true }
                 .onFailure {
                     confirming = false
@@ -127,7 +128,7 @@ class GroupViewModel(
         writes.launch {
             if (!currentUser.writesPrivateRows()) return@launch
             val owner = currentUser.id() ?: return@launch
-            reading { colorStore.set(owner, member, index) }
+            catching { colorStore.set(owner, member, index) }
                 .onSuccess {
                     colors = colors + (member to index)
                     sync.request()
@@ -142,13 +143,13 @@ class GroupViewModel(
             val link = invites.pageAddress?.let { inviteLink(it, shown.inviteCode) }
             val call = AppStrings.current.inviteMessage(shown.name)
             val invite = Invite(call, shown.inviteCode, link)
-            notice = reading { invites.share(invite) }.getOrNull()
+            notice = catching { invites.share(invite) }.getOrNull()
             publish()
         }
     }
 
     private suspend fun load() {
-        reading { friends.group(groupId)?.let { it to friends.members(it) } }
+        catching { friends.group(groupId)?.let { it to friends.members(it) } }
             .onSuccess { found ->
                 if (found == null) {
                     mutableGone.value = true
@@ -157,7 +158,7 @@ class GroupViewModel(
                     members = found.second
                     val owner = currentUser.id()
                     val kept = if (owner == colorsFor) colors else emptyMap()
-                    colors = reading { colorsOf(owner, found.second) }.getOrDefault(kept)
+                    colors = catching { colorsOf(owner, found.second) }.getOrDefault(kept)
                     colorsFor = owner
                     publish()
                 }

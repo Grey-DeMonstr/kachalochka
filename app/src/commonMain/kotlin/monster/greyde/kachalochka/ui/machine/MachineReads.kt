@@ -4,13 +4,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
-import monster.greyde.kachalochka.ui.friends.reading
 
 /** A group read for [owner]; [machines] is the last good one, null before any. */
 data class GroupRead(
@@ -108,20 +108,20 @@ class MachineReads(
         last: MachineRead,
     ) {
         if (!isActive(owner)) return
-        val peaks = reading { friends.groupPeaks(owner) }
+        val peaks = catching { friends.groupPeaks(owner) }
         if (!isActive(owner)) return
         peaks.onSuccess { found -> lastPeaks.update { it + (owner to found) } }
         val offered =
             last.shown.offered
                 .map { it.owner.userId }
                 .distinct()
-        val colors = reading { friendColors.colorsFor(owner, offered) }
+        val colors = catching { friendColors.colorsFor(owner, offered) }
         if (!isActive(owner)) return
         colors.onSuccess { found -> lastColors.update { it + (owner to found) } }
     }
 
     private suspend fun cachedRead(owner: UserId): GroupRead? =
-        reading { catalogue.lastGroup(owner) }
+        catching { catalogue.lastGroup(owner) }
             .getOrNull()
             ?.let { GroupRead(owner, it, fresh = false, offline = false) }
 
@@ -130,10 +130,10 @@ class MachineReads(
         owner: UserId,
         cached: GroupRead?,
     ): GroupRead =
-        reading { catalogue.group(owner) }.fold(
+        catching { catalogue.group(owner) }.fold(
             { GroupRead(owner, it, fresh = true, offline = false) },
             {
-                val last = reading { catalogue.lastGroup(owner) }.getOrNull() ?: cached?.machines
+                val last = catching { catalogue.lastGroup(owner) }.getOrNull() ?: cached?.machines
                 GroupRead(owner, last, fresh = false, offline = true)
             },
         )

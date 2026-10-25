@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
@@ -43,7 +44,6 @@ import monster.greyde.kachalochka.ui.format.headedTagSections
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.shownLabel
 import monster.greyde.kachalochka.ui.format.shownWeight
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.share.TextSharing
@@ -175,11 +175,11 @@ class StatisticsViewModel(
                 preferred = profile?.weightUnit ?: PreferredWeightUnit.Kg
                 if (owner != cycleOwner) cycle = null
                 grouping.read(owner)
-                sharer = reading { nickname.of(owner) }.getOrDefault("")
+                sharer = catching { nickname.of(owner) }.getOrDefault("")
                 launch {
                     // The phases only decorate the chart, so a failed read leaves them out.
                     cycle =
-                        reading {
+                        catching {
                             cycleOf(profile, measures.all(owner), measurements.all(owner))
                         }.getOrNull()
                     cycleOwner = owner
@@ -230,7 +230,7 @@ class StatisticsViewModel(
         if (shown.selected != null || shown.overall.isEmpty()) return
         val text = statsExportText(sharer, period, shown.overallSections)
         viewModelScope.launch {
-            notice = reading { sharing.share(text) }.getOrNull()
+            notice = catching { sharing.share(text) }.getOrNull()
             publish()
         }
     }

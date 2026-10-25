@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -43,7 +44,6 @@ import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightShift
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.time.Clock
@@ -285,7 +285,7 @@ class MachineFormViewModel(
     fun copySettings(friendMachine: MachineId) {
         viewModelScope.launch {
             val owner = currentUser.id() ?: return@launch
-            val group = reading { catalogue.group(owner) }.getOrNull() ?: return@launch
+            val group = catching { catalogue.group(owner) }.getOrNull() ?: return@launch
             if (accounts.activeId.value != owner) return@launch
             val source = group.friends.firstOrNull { it.machine.id == friendMachine }?.machine
             source ?: return@launch

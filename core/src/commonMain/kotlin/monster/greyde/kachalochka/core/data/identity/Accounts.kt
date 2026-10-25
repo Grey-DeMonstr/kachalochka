@@ -1,8 +1,8 @@
 package monster.greyde.kachalochka.core.data.identity
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
 /**
@@ -70,13 +70,8 @@ class Accounts(
      * recorded for the surface that offered the action instead.
      */
     private suspend fun reporting(work: suspend () -> Unit) {
-        try {
-            work()
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (_: SignInCancelledException) {
-        } catch (refused: Exception) {
-            failure.value = refused.toString()
+        catching { work() }.onFailure { refused ->
+            if (refused !is SignInCancelledException) failure.value = refused.toString()
         }
     }
 }

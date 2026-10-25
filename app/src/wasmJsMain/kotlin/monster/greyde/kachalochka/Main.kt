@@ -5,10 +5,10 @@ import androidx.compose.ui.window.ComposeViewport
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
@@ -80,13 +80,8 @@ private fun keepInviteCodes(
 // Each page load reads the family once; a sign-in's redirect is one.
 private fun followFamily(follower: FamilyFollower) {
     MainScope().launch {
-        try {
-            follower.follow()
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (failure: Exception) {
-            report("Could not read the family: $failure")
-        }
+        catching { follower.follow() }
+            .onFailure { report("Could not read the family: $it") }
     }
 }
 

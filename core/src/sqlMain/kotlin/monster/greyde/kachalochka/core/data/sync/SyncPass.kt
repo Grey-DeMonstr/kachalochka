@@ -1,8 +1,8 @@
 package monster.greyde.kachalochka.core.data.sync
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.gym.MACHINE_LINK_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TABLE
 import monster.greyde.kachalochka.core.data.gym.MACHINE_TAG_TABLE
@@ -269,15 +269,7 @@ class SyncPass(
     }
 
     // One refused row must not hold back the rest; its entry stays for the next pass.
-    private suspend fun attempt(work: suspend () -> Unit): Boolean =
-        try {
-            work()
-            true
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (refused: Exception) {
-            false
-        }
+    private suspend fun attempt(work: suspend () -> Unit): Boolean = catching { work() }.isSuccess
 
     private suspend fun <T> db(read: () -> T): T = withContext(dispatcher) { read() }
 

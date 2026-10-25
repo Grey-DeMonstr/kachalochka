@@ -18,10 +18,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.core.content.FileProvider
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import monster.greyde.kachalochka.core.data.catching
 import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.math.max
@@ -46,16 +46,10 @@ class SystemPhotoCapture(
         val shrink = { uri: Uri ->
             scope.launch {
                 // A cloud-only picture offline, or one revoked meanwhile, cannot be opened.
-                val jpeg =
-                    try {
-                        withContext(Dispatchers.IO) { shrunkJpeg(context.contentResolver, uri) }
-                    } catch (stopped: CancellationException) {
-                        throw stopped
-                    } catch (unreadable: Exception) {
-                        Log.w(LOG_TAG, "Could not read the photo", unreadable)
-                        null
-                    }
-                jpeg?.let(deliver)
+                catching {
+                    withContext(Dispatchers.IO) { shrunkJpeg(context.contentResolver, uri) }
+                }.onSuccess { jpeg -> jpeg?.let(deliver) }
+                    .onFailure { Log.w(LOG_TAG, "Could not read the photo", it) }
             }
             Unit
         }

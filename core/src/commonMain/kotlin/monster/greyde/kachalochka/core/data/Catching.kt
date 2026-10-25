@@ -1,11 +1,11 @@
-package monster.greyde.kachalochka.ui.friends
+package monster.greyde.kachalochka.core.data
 
 import kotlinx.coroutines.CancellationException
 
 /** Like runCatching, but a cancelled coroutine stays cancelled. */
-internal suspend fun <T> reading(read: suspend () -> T): Result<T> =
+suspend fun <T> catching(work: suspend () -> T): Result<T> =
     try {
-        Result.success(read())
+        Result.success(work())
     } catch (stopped: CancellationException) {
         throw stopped
     } catch (failed: Exception) {

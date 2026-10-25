@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
@@ -98,7 +99,7 @@ class FriendVisitViewModel(
     }
 
     private suspend fun load() {
-        reading {
+        catching {
             val visitSets = setsOn(day)
             val theirs = friends.machines(member)
             val me = currentUser.id()

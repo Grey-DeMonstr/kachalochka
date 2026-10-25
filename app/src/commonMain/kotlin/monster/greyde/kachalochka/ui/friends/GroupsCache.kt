@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
@@ -35,7 +36,9 @@ class GroupsCache(
     /** Reads ahead for every account that becomes active, ignoring failures. */
     fun warm() {
         scope.launch {
-            accounts.activeId.filterNotNull().collectLatest { owner -> reading { refresh(owner) } }
+            accounts.activeId.filterNotNull().collectLatest { owner ->
+                catching { refresh(owner) }
+            }
         }
     }
 }

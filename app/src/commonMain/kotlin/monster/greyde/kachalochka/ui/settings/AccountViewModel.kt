@@ -10,12 +10,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /** Typed to confirm deleting the account, in any case. */
@@ -75,7 +75,7 @@ class AccountViewModel(
         viewModelScope.launch {
             val owner = currentUser.id() ?: return@launch
             mutableDeletion.value = mutableDeletion.value.copy(running = true)
-            reading { withContext(NonCancellable) { accountDeletion.delete(owner) } }.onFailure {
+            catching { withContext(NonCancellable) { accountDeletion.delete(owner) } }.onFailure {
                 mutableDeletion.value = DeletionUi(error = AppStrings.current.offline)
             }
         }

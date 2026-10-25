@@ -1,7 +1,7 @@
 package monster.greyde.kachalochka.core.data.identity
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.concurrent.Volatile
 
@@ -78,16 +78,9 @@ class LiveSession(
     }
 
     suspend fun follow(changes: Flow<LiveSessionChange>) {
-        changes.collect { change ->
-            try {
-                absorb(change)
-            } catch (stopped: CancellationException) {
-                throw stopped
-            } catch (refused: Exception) {
-                // A follower that died on one refusal would stop writing tokens back for the rest
-                // of the process.
-            }
-        }
+        // A follower that died on one refusal would stop writing tokens back for the rest of the
+        // process.
+        changes.collect { change -> catching { absorb(change) } }
     }
 
     private suspend fun absorb(change: LiveSessionChange) {
@@ -110,11 +103,7 @@ class LiveSession(
 
     // The account stays listed, so a tap on it retries; until then nobody reads as signed in.
     private suspend fun activateOrDisown(next: AccountSession) {
-        try {
-            activate(next)
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (refused: Exception) {
+        catching { activate(next) }.onFailure {
             store.deactivate()
             clear()
         }

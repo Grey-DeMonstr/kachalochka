@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.family.FamilyRepository
 import monster.greyde.kachalochka.core.domain.identity.Avatar
@@ -19,7 +20,6 @@ import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.ui.format.DeviceClock
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppLanguage
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.theme.ThemeMode
@@ -139,7 +139,7 @@ class SettingsViewModel(
             HubUi(card, account?.let { shown ?: PeopleUi(null, null) }, account?.email)
         if (account == null) return
         val people =
-            reading { family.family() }
+            catching { family.family() }
                 .map { PeopleUi(it.children.size, it.guardians.size) }
                 .getOrDefault(PeopleUi(null, null))
         // Another account may have become active while the server answered.

@@ -8,6 +8,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
@@ -29,7 +30,6 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
 import monster.greyde.kachalochka.ui.stats.MachineStatsUi
 import monster.greyde.kachalochka.ui.stats.machineStatsUi
@@ -113,7 +113,7 @@ class FriendMachineViewModel(
         loading =
             viewModelScope.launch {
                 val viewer = currentUser.id() ?: return@launch
-                reading {
+                catching {
                     coroutineScope {
                         val sets = async { friends.setsOn(owner, machineId) }
                         val preferred = profiles.preferredUnit(viewer)

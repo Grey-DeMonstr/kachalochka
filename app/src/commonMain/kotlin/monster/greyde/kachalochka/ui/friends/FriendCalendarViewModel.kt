@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.namesForViewer
@@ -114,7 +115,7 @@ class FriendCalendarViewModel(
     }
 
     private suspend fun load() {
-        reading {
+        catching {
             if (stale) {
                 all = friends.visits(member).filter { it.day != null }
                 val theirs = friends.machines(member)

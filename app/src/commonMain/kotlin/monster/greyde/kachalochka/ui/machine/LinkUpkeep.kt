@@ -6,9 +6,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
-import monster.greyde.kachalochka.ui.friends.reading
 import org.koin.core.Koin
 
 /**
@@ -22,7 +22,7 @@ class LinkUpkeep(
 ) {
     suspend fun run() =
         accounts.activeId.filterNotNull().collectLatest { owner ->
-            reading { catalogue.group(owner) }
+            catching { catalogue.group(owner) }
         }
 }
 

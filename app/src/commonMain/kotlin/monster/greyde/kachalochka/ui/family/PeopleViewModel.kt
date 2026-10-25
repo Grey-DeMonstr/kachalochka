@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -19,7 +20,6 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.friends.Invite
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.guardianLink
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /** A new code for a child, with its [link] when the page address is known. */
@@ -78,7 +78,7 @@ internal class PeopleViewModel(
     }
 
     private suspend fun read() {
-        reading { family.family() }
+        catching { family.family() }
             .onSuccess { found ->
                 change {
                     copy(
@@ -94,12 +94,12 @@ internal class PeopleViewModel(
 
     // The device's children follow what the server has just said; a new one needs a pass.
     private suspend fun follow() {
-        reading { follower.follow() }.onSuccess { changed -> if (changed) sync.request() }
+        catching { follower.follow() }.onSuccess { changed -> if (changed) sync.request() }
     }
 
     fun addChild() =
         writes.launch {
-            reading { family.offer() }
+            catching { family.offer() }
                 .onSuccess { code ->
                     val link = invites.pageAddress?.let { guardianLink(it, code) }
                     change { copy(childInvite = ChildInvite(code, link), notice = null) }
@@ -111,7 +111,7 @@ internal class PeopleViewModel(
         writes.launch {
             val message =
                 Invite(AppStrings.current.guardianInviteMessage, invite.code, invite.link)
-            val notice = reading { invites.share(message) }.getOrNull()
+            val notice = catching { invites.share(message) }.getOrNull()
             change { copy(childInvite = childInvite?.copy(notice = notice)) }
         }
     }
@@ -133,7 +133,7 @@ internal class PeopleViewModel(
                 ?.takeIf { it.canAdd }
                 ?.code ?: return
         writes.launch {
-            reading { family.accept(code) }
+            catching { family.accept(code) }
                 .onSuccess { linked(it) }
                 .onFailure { entryError(AppStrings.current.offline) }
         }
@@ -167,8 +167,16 @@ internal class PeopleViewModel(
         change { copy(removing = null) }
         val me = accounts.activeId.value ?: return
         writes.launch {
-            reading { if (child) family.end(person.userId, me) else family.end(me, person.userId) }
-                .onSuccess { read() }
+            catching {
+                if (child) {
+                    family.end(
+                        person.userId,
+                        me,
+                    )
+                } else {
+                    family.end(me, person.userId)
+                }
+            }.onSuccess { read() }
                 .onFailure { change { copy(notice = AppStrings.current.offline) } }
         }
     }

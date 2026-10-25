@@ -1,10 +1,10 @@
 package monster.greyde.kachalochka.core.data.family
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountStore
@@ -87,15 +87,7 @@ class FamilyFollower(
         }
     }
 
-    private suspend fun purged(owner: UserId): Boolean =
-        try {
-            purge.purge(owner)
-            true
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (failed: Exception) {
-            false
-        }
+    private suspend fun purged(owner: UserId): Boolean = catching { purge.purge(owner) }.isSuccess
 
     // A child acts through its guardian's session; one that failed to go live is retried here.
     private suspend fun keepActingSessionLive() {
@@ -112,26 +104,13 @@ class FamilyFollower(
     private suspend fun putLive(id: UserId): Boolean {
         val session = store.actingSessionOf(id) ?: return false
         if (live.liveId == session.account.userId) return false
-        return try {
-            live.activate(session)
-            true
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (refused: Exception) {
-            // The next follow retries; a refusal here must not keep the sync pass from running.
-            false
-        }
+        // The next follow retries; a refusal here must not keep the sync pass from running.
+        return catching { live.activate(session) }.isSuccess
     }
 
     // Null, unlike an empty list, says nothing about the family.
     private suspend fun childrenOf(owner: UserId): List<FamilyMember>? =
-        try {
-            reads.familyOf(owner).children
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (failed: Exception) {
-            null
-        }
+        catching { reads.familyOf(owner).children }.getOrNull()
 
     private fun managed(
         child: FamilyMember,

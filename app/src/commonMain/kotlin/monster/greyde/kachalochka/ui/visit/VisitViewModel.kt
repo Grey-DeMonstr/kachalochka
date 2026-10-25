@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendResult
@@ -65,7 +66,6 @@ import monster.greyde.kachalochka.ui.format.setsSummaryParts
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.format.weekdayDate
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.machine.GroupMachines
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineReads
@@ -300,7 +300,7 @@ class VisitViewModel(
             }
         val text = visitShareText(name, day, shared, preferred, groupByTag)
         writes.launch {
-            notice = reading { sharing.share(text) }.getOrNull()
+            notice = catching { sharing.share(text) }.getOrNull()
             publish()
         }
     }
@@ -312,7 +312,7 @@ class VisitViewModel(
 
     private fun loadSharer(owner: UserId?) {
         viewModelScope.launch {
-            reading { nickname.of(owner) }.onSuccess { sharer = owner to it }
+            catching { nickname.of(owner) }.onSuccess { sharer = owner to it }
         }
     }
 
@@ -600,7 +600,7 @@ class VisitViewModel(
         loadingFriends =
             viewModelScope.launch {
                 val results =
-                    reading {
+                    catching {
                         if (theirs.isEmpty()) emptyList() else friends.latestOn(owner, theirs)
                     }
                 if (friendsFor != asked) return@launch

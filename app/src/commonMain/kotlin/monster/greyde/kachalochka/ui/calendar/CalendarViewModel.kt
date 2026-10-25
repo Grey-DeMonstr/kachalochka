@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
@@ -45,7 +46,6 @@ import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.format.weekdayName
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
@@ -371,7 +371,7 @@ class CalendarViewModel(
             viewModelScope.launch {
                 val lastDay = CalendarDay(shownMonth.year, shownMonth.month, shownMonth.length)
                 val found =
-                    reading {
+                    catching {
                         val placed =
                             friends.groupVisits(owner, shownMonth.first(), lastDay).map {
                                 it.copy(
@@ -406,7 +406,7 @@ class CalendarViewModel(
         val byFriend = friendVisits.filter { it.visit.day == day }.groupBy { it.friend.userId }
         for ((friend, theirs) in byFriend) {
             val details =
-                reading { detailsOf(friend, theirs.map { it.visit }) }.getOrNull() ?: continue
+                catching { detailsOf(friend, theirs.map { it.visit }) }.getOrNull() ?: continue
             if (friendsFor != key) return
             friendCounts = friendCounts + ((friend to day) to details)
             publish()

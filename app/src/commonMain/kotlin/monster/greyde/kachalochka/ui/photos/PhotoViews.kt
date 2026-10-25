@@ -39,8 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.Photo
@@ -262,13 +262,6 @@ private suspend fun PhotoSharing.share(
     photo: ShownPhoto,
     images: PhotoImages,
 ) {
-    val jpeg =
-        try {
-            photo.model as? ByteArray ?: images.bytes(photo.model as Photo)
-        } catch (stopped: CancellationException) {
-            throw stopped
-        } catch (offline: Exception) {
-            null
-        }
-    jpeg?.let { share(it) }
+    val jpeg = catching { photo.model as? ByteArray ?: images.bytes(photo.model as Photo) }
+    jpeg.getOrNull()?.let { share(it) }
 }

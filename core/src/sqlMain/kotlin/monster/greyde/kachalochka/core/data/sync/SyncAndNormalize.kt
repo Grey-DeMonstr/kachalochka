@@ -1,6 +1,6 @@
 package monster.greyde.kachalochka.core.data.sync
 
-import kotlinx.coroutines.CancellationException
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
@@ -22,11 +22,7 @@ suspend fun SyncPass.runAndNormalize(
     val wrote =
         clean
             .map { owner ->
-                try {
-                    normalizer.normalize(owner)
-                } catch (stopped: CancellationException) {
-                    throw stopped
-                } catch (failure: Exception) {
+                catching { normalizer.normalize(owner) }.getOrElse { failure ->
                     failed(failure)
                     false
                 }

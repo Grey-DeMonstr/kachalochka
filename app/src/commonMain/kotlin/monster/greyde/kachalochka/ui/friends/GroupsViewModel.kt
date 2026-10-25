@@ -6,6 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
@@ -105,11 +106,11 @@ class GroupsViewModel(
         writes.launch {
             when (current.kind) {
                 GroupsDialogKind.Create ->
-                    reading { friends.create(current.text) }
+                    catching { friends.create(current.text) }
                         .onSuccess { opened(it, onOpen) }
                         .onFailure { failed(current) }
                 GroupsDialogKind.Join ->
-                    reading { friends.join(current.text) }
+                    catching { friends.join(current.text) }
                         .onSuccess { joined(it, current, onOpen) }
                         .onFailure { failed(current) }
             }
@@ -158,7 +159,7 @@ class GroupsViewModel(
             return
         }
         cache.cached(owner)?.let(::show)
-        reading { cache.refresh(owner) }
+        catching { cache.refresh(owner) }
             .onSuccess(::show)
             .onFailure {
                 offline = true

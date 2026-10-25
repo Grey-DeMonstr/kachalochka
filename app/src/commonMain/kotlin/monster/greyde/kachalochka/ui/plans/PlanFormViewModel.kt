@@ -2,7 +2,6 @@ package monster.greyde.kachalochka.ui.plans
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -11,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.FailureLog
+import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.HeldWrites
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
@@ -102,15 +102,7 @@ class PlanFormViewModel(
 
     init {
         viewModelScope.launch {
-            for (task in queue) {
-                try {
-                    task()
-                } catch (stopped: CancellationException) {
-                    throw stopped
-                } catch (failed: Exception) {
-                    failures.record(failed)
-                }
-            }
+            for (task in queue) catching { task() }.onFailure { failures.record(it) }
         }
         viewModelScope.launch {
             accounts.activeId.collect { active ->
