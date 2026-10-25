@@ -911,7 +911,7 @@ class VisitScreenTest {
     }
 
     @Test
-    fun order_mode_drags_a_machine_by_its_handle_and_opens_no_set() {
+    fun order_mode_drags_a_machine_by_its_handle_and_shows_no_sets() {
         val row = Machine.new("Тяга", null, gym.clock.current)
         val curl = Machine.new("Сгибание рук", null, gym.clock.current)
         val pulled = recorded.copy(id = WorkoutSetId.random(), machineId = row.id)
@@ -931,7 +931,8 @@ class VisitScreenTest {
             listOf(press, row, curl).forEach {
                 onNodeWithTag("drag-machine-${it.id.value}").assertExists()
             }
-            onNodeWithTag("drag-set-${recorded.id.value}").assertExists()
+            onAllNodes(hasTestTagStartingWith("drag-set-")).assertCountEquals(0)
+            onNodeWithTag("set-row-${recorded.id.value}").assertDoesNotExist()
             onAllNodes(hasTestTagStartingWith("machine-up-")).assertCountEquals(0)
             onAllNodes(hasTestTagStartingWith("set-up-")).assertCountEquals(0)
 
@@ -945,10 +946,6 @@ class VisitScreenTest {
                 onNodeWithTag("group-${curl.id.value}").fetchSemanticsNode().positionInRoot.y <
                     onNodeWithTag("group-${press.id.value}").fetchSemanticsNode().positionInRoot.y,
             )
-            onNodeWithTag("set-row-${recorded.id.value}").performClick()
-            waitForIdle()
-            onNodeWithTag("delete-set").assertDoesNotExist()
-
             onNodeWithTag("finish-ordering").performScrollTo().performClick()
             waitForIdle()
             onNodeWithTag("reorder-toggle").assertIsOff()
@@ -959,46 +956,6 @@ class VisitScreenTest {
             mapOf(curl.id to 1, press.id to 2, row.id to 3),
             gym.sets.rows.values
                 .associate { it.machineId to it.position },
-        )
-    }
-
-    @Test
-    fun order_mode_drags_a_set_below_the_next_one_on_its_machine() {
-        val row = Machine.new("Тяга", null, gym.clock.current)
-        val second =
-            recorded.copy(id = WorkoutSetId.random(), recordedAt = gym.clock.current + 1.minutes)
-        val pulled =
-            recorded.copy(
-                id = WorkoutSetId.random(),
-                machineId = row.id,
-                recordedAt = gym.clock.current + 2.minutes,
-            )
-        runBlocking {
-            gym.machines.upsert(row)
-            gym.sets.upsert(second)
-            gym.sets.upsert(pulled)
-        }
-        runScreenTest(gym, screen = { visitScreen() }) {
-            onNodeWithTag("reorder-toggle").performClick()
-            waitForIdle()
-
-            onNodeWithTag("drag-set-${recorded.id.value}").performTouchInput {
-                down(center)
-                repeat(20) { moveBy(Offset(0f, 30f)) }
-                up()
-            }
-            waitForIdle()
-            assertTrue(
-                onNodeWithTag("set-row-${second.id.value}").fetchSemanticsNode().positionInRoot.y <
-                    onNodeWithTag("set-row-${recorded.id.value}")
-                        .fetchSemanticsNode()
-                        .positionInRoot.y,
-            )
-        }
-        assertEquals(
-            mapOf(second.id to 1, recorded.id to 2, pulled.id to 3),
-            gym.sets.rows.values
-                .associate { it.id to it.position },
         )
     }
 

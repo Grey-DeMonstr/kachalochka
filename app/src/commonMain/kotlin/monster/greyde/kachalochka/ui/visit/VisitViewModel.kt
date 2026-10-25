@@ -30,7 +30,6 @@ import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.plannedWithoutSets
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
 import monster.greyde.kachalochka.core.domain.gym.roundWeight
-import monster.greyde.kachalochka.core.domain.gym.setMovedTo
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.stepReps
@@ -448,11 +447,6 @@ class VisitViewModel(
         id: MachineId,
         index: Int,
     ) = reorder { machineMovedTo(visitSets, id, index, it) }
-
-    fun moveSet(
-        id: WorkoutSetId,
-        index: Int,
-    ) = reorder { setMovedTo(visitSets, id, index, it) }
 
     private fun reorder(moved: (Instant) -> List<WorkoutSet>) {
         writes.launch {

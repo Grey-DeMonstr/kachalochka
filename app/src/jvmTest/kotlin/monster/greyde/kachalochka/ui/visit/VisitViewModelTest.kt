@@ -1747,22 +1747,6 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun the_last_set_dragged_to_the_top_of_its_machine_goes_first() =
-        runTest {
-            val first = set(visit.id, press, 60.0, 10, 0)
-            val second = set(visit.id, press, 70.0, 10, 1)
-            val third = set(visit.id, press, 80.0, 8, 2)
-            listOf(first, second, third).forEach { gym.sets.upsert(it) }
-            val vm = viewModel().also { it.refresh() }
-            vm.toggleOrdering()
-
-            vm.moveSet(third.id, 0)
-
-            val rows = assertNotNull(vm.state.value).groups.single().sets
-            assertEquals(listOf(third.id, first.id, second.id), rows.map { it.id })
-        }
-
-    @Test
     fun repeating_another_day_today_plans_its_machines_in_today_s_visit() =
         runTest {
             gym.visits.upsert(lastWeek)

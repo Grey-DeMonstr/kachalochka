@@ -19,25 +19,6 @@ fun machineMovedTo(
     return changed(visitSets, renumbered(visitSets, order), now)
 }
 
-/** The sets whose position changes when [set] moves to [index] among its machine's sets. */
-fun setMovedTo(
-    visitSets: List<WorkoutSet>,
-    set: WorkoutSetId,
-    index: Int,
-    now: Instant,
-): List<WorkoutSet> {
-    val groups = groupByMachine(visitSets)
-    val group = groups.firstOrNull { g -> g.sets.any { it.id == set } } ?: return emptyList()
-    val from = group.sets.indexOfFirst { it.id == set }
-    if (index !in group.sets.indices || index == from) return emptyList()
-    val moved = group.sets.toMutableList().apply { add(index, removeAt(from)) }
-    val renumbered =
-        groups
-            .flatMap { if (it.machineId == group.machineId) moved else it.sets }
-            .mapIndexed { i, s -> s.copy(position = i + 1) }
-    return changed(visitSets, renumbered, now)
-}
-
 private fun renumbered(
     visitSets: List<WorkoutSet>,
     machineOrder: List<MachineId>,

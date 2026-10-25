@@ -748,9 +748,8 @@ the visit's last set, which keeps a late correction on the visit's day and in or
 text leaves it out. `11.sqm` adds it and resets `lastPullAt`, so comments and gravitron modes a
 device pulled before it updated are pulled again. Within a visit, sets sort by `(position,
 recorded_at, id)`; `position` defaults to 0, so rows written before it keep their recording order.
-A reorder (`machineMovedTo`, `setMovedTo`) renumbers the visit's sets 1..n in the new order and
-writes only those whose position changed, so sets sharing a position still land in the dropped
-order.
+A reorder (`machineMovedTo`) renumbers the visit's sets 1..n in the new order and writes only
+those whose position changed, so sets sharing a position still land in the dropped order.
 
 Every write to a day's sets goes through `SetRecorder` in `app/ui/visit`: it finds or creates the
 day's visit, gives a new set its position and instant, starts the rest timer for today's set and

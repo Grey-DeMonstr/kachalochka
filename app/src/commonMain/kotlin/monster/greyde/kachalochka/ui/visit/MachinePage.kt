@@ -208,7 +208,6 @@ internal fun MachinePage(
                     page.sets.forEach { row ->
                         SetRow(
                             row,
-                            ordering = false,
                             onEdit = viewModel::editSet,
                             Modifier
                                 .clip(ControlShape)

@@ -86,10 +86,9 @@ note) and its results follow in grey, each on a line of its own, and the results
 weights and the reps when they do not fit one line. Tapping the photo opens the machine form;
 tapping the row opens the machine's page. The list has no count row. A visit with sets has an
 order button in the top bar, left of "Поделиться", drawn like the drag handle and lit while on: it
-shows every machine's sets, numbered "#1", "#2" and so on, and a handle at the left of every
-machine and set; dragging a machine's handle moves the machine with its sets, dragging a set's
-handle moves it among its machine's sets. While it is on, "Готово" replaces "Добавить" at the end
-of the list, and it or the button again hides the handles. When a machine of the visit has tags,
+shows a handle at the left of every machine, and dragging it moves the machine with its sets.
+While it is on, "Готово" replaces "Добавить" at the end of the list, and it or the button again
+hides the handles. When a machine of the visit has tags,
 "Группировать по тегам" splits the list into sections, one per distinct set of tags in any letter
 case, headed by the tags and in the order of their first machine; untagged machines come last
 under "Остальное". A row under a heading does not repeat its tags. The choice is the account's,

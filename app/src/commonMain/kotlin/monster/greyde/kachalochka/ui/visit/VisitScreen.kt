@@ -35,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -162,7 +161,6 @@ fun VisitScreen(
             onToggleOrdering = viewModel::toggleOrdering,
             onToggleGroupByTag = viewModel::toggleGroupByTag,
             onMoveMachine = viewModel::moveMachine,
-            onMoveSet = viewModel::moveSet,
             onNewMachine = { onPickMachine(viewModel.selectedMachineId) },
             modifier = Modifier.weight(1f),
         )
@@ -178,7 +176,6 @@ private fun VisitList(
     onToggleOrdering: () -> Unit,
     onToggleGroupByTag: () -> Unit,
     onMoveMachine: (MachineId, Int) -> Unit,
-    onMoveSet: (WorkoutSetId, Int) -> Unit,
     onNewMachine: () -> Unit,
     modifier: Modifier,
 ) {
@@ -252,7 +249,6 @@ private fun VisitList(
                         ->
                         onMoveMachine(state.groups[from].machineId, to)
                     },
-                    onMoveSet = onMoveSet,
                 )
             }
         }
@@ -284,17 +280,8 @@ private fun MachineBlock(
     onOpen: (MachineId) -> Unit,
     onOpenSettings: (MachineId) -> Unit,
     onDropMachine: (from: Int, to: Int) -> Unit,
-    onMoveSet: (WorkoutSetId, Int) -> Unit,
 ) {
-    val setOrder = rememberReorderState()
-    SideEffect { setOrder.retain(group.sets.size) }
-    // A dragged set floats over the machine blocks below its own.
-    Column(
-        Modifier
-            .reorderItem(order, index)
-            .zIndex(if (setOrder.dragging != null) 1f else 0f)
-            .dragOutline(order.dragging == index),
-    ) {
+    Column(Modifier.reorderItem(order, index).dragOutline(order.dragging == index)) {
         val id = group.machineId.value
         Row(
             Modifier
@@ -321,22 +308,6 @@ private fun MachineBlock(
                 tag = id,
                 modifier = Modifier.weight(1f),
             )
-        }
-        if (ordering) {
-            group.sets.forEachIndexed { setIndex, row ->
-                SetRow(
-                    row,
-                    ordering = true,
-                    onEdit = {},
-                    Modifier.reorderItem(setOrder, setIndex),
-                    handle = {
-                        DragHandle(setOrder, setIndex, "drag-set-${row.id.value}") { from, to ->
-                            onMoveSet(group.sets[from].id, to)
-                        }
-                    },
-                    dragged = setOrder.dragging == setIndex,
-                )
-            }
         }
         Rule()
     }
@@ -419,11 +390,8 @@ internal fun TagChip(
 @Composable
 internal fun SetRow(
     row: SetRowUi,
-    ordering: Boolean,
     onEdit: (WorkoutSetId) -> Unit,
     modifier: Modifier,
-    handle: @Composable () -> Unit = {},
-    dragged: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     Row(
@@ -431,20 +399,18 @@ internal fun SetRow(
             .fillMaxWidth()
             .padding(vertical = 3.dp)
             .clip(ControlShape)
-            .dragOutline(dragged)
             .then(
                 if (row.selected) {
                     Modifier.border(1.dp, colors.primary, ControlShape)
                 } else {
                     Modifier
                 },
-            ).clickableUnless(ordering) { onEdit(row.id) }
-            .padding(horizontal = 12.dp, vertical = if (ordering) 0.dp else 10.dp)
+            ).clickable { onEdit(row.id) }
+            .padding(horizontal = 12.dp, vertical = 10.dp)
             .testTag("set-row-${row.id.value}"),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (ordering) handle()
         Text(row.title, fontSize = 15.sp, color = colors.onBackground.copy(alpha = 0.5f))
         Text(row.value, fontSize = 16.sp, color = colors.onBackground)
         if (row.comment.isNotEmpty()) {
