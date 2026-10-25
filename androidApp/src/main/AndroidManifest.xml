@@ -15,7 +15,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- The system camera writes a new photo here; SystemPhotoCapture names the authority. -->
+        <!-- The camera writes a new photo here, and a shared one waits here for the app it goes to.
+             SystemPhotoCapture and ShareSheetPhotoSharing name the authority. -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.photos"

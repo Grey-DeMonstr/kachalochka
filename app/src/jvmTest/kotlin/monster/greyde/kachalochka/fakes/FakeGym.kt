@@ -73,6 +73,7 @@ import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoLaunchers
+import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
@@ -368,6 +369,14 @@ class RecordingTextSharing : TextSharing {
     }
 }
 
+class RecordingPhotoSharing : PhotoSharing {
+    val shared = mutableListOf<ByteArray>()
+
+    override suspend fun share(jpeg: ByteArray) {
+        shared += jpeg
+    }
+}
+
 class RecordingTextCopying : TextCopying {
     val copied = mutableListOf<String>()
 
@@ -476,6 +485,7 @@ class FakeGym(
     val unsaved = UnsavedChoices()
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()
+    val photoShares = RecordingPhotoSharing()
     val clipboard = RecordingTextCopying()
     val footer = RecordingPageFooter()
     val themes = InMemoryThemePreference()

@@ -438,6 +438,30 @@ class MachineFormScreenTest {
     }
 
     @Test
+    fun an_opened_photo_can_be_shared() {
+        val on = signedInGym()
+        val machine = Machine.new("Жим ногами", ME.userId, on.clock.current)
+        runBlocking {
+            on.machines.upsert(machine)
+            on.photos.add(Photo.new(machine.id, ME.userId, on.clock.current), byteArrayOf(3))
+        }
+        runScreenTest(on, screen = {
+            MachineFormScreen(MachineFormArgs(machine.id, null, ""), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("photo-thumbnail").performClick()
+            waitForIdle()
+            onNodeWithTag("share-photo").performClick()
+            waitForIdle()
+        }
+        assertEquals(
+            listOf(3.toByte()),
+            on.photoShares.shared
+                .single()
+                .toList(),
+        )
+    }
+
+    @Test
     fun a_photo_taken_in_the_form_is_saved_with_the_machine() {
         val saved = mutableListOf<MachineId>()
         runScreenTest(gym, screen = {

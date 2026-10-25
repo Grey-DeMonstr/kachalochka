@@ -30,6 +30,8 @@ import monster.greyde.kachalochka.ui.friends.ShareSheetInviteSharing
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.SystemPhotoCapture
 import monster.greyde.kachalochka.ui.share.ClipboardTextCopying
+import monster.greyde.kachalochka.ui.share.PhotoSharing
+import monster.greyde.kachalochka.ui.share.ShareSheetPhotoSharing
 import monster.greyde.kachalochka.ui.share.ShareSheetTextSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
@@ -102,6 +104,7 @@ actual fun platformModule(): Module =
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
         single<TextSharing> { ShareSheetTextSharing(androidContext()) }
         single<TextCopying> { ClipboardTextCopying(androidContext()) }
+        single<PhotoSharing> { ShareSheetPhotoSharing(androidContext()) }
         single<InviteSharing> {
             ShareSheetInviteSharing(get(), webAppUrlFromBuild().ifBlank { null })
         }

@@ -128,6 +128,27 @@ class FriendMachineScreenTest {
     }
 
     @Test
+    fun an_opened_friend_s_photo_can_be_shared() {
+        val photo = Photo.new(olegPress.id, OLEG.userId, on.clock.current)
+        on.friends.photos += photo
+        on.photos.bytes[photo.id] = byteArrayOf(7)
+        runScreenTest(on, screen = {
+            FriendMachineScreen(olegPress.id, OLEG.userId, {}, {}, {})
+        }) {
+            onNodeWithTag("photo-thumbnail").performClick()
+            waitForIdle()
+            onNodeWithTag("share-photo").performClick()
+            waitForIdle()
+        }
+        assertEquals(
+            listOf(7.toByte()),
+            on.photoShares.shared
+                .single()
+                .toList(),
+        )
+    }
+
+    @Test
     fun the_tags_the_starred_cover_and_the_statistics_are_the_friend_s() {
         val first = Photo.new(olegPress.id, OLEG.userId, on.clock.current)
         val second = Photo.new(olegPress.id, OLEG.userId, on.clock.current + 1.minutes)

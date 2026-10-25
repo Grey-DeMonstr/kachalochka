@@ -234,7 +234,10 @@ linked with stand beside the tile. On Android they open the phone's camera and i
 the web the first opens a phone's camera and the second picks a file, and a computer picks a file
 for both. A star marks the photo standing for the machine in every list. Tapping a photo opens it
 over the whole screen, where a swipe shows the next or the previous photo of the row, with
-"Удалить" for an own photo and "Сделать основным" for any but the starred one. New and removed
+"Поделиться" for every photo, "Удалить" for an own photo and "Сделать основным" for any but the
+starred one. "Поделиться" opens the phone's share sheet; a browser opens its own where it can
+share files, else it downloads the photo. Photos of "Упражнение друга" open the same way, without
+"Удалить" and "Сделать основным". New and removed
 photos and the chosen one are part of the form's edits: "Сохранить" writes them, and leaving the
 form unsaved drops them. A photo is shrunk to at most 1600 pixels on its long edge before it is
 kept.

@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,12 +39,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import monster.greyde.kachalochka.core.data.gym.PhotoImages
 import monster.greyde.kachalochka.core.domain.friends.Friend
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.strings.strings
+import org.koin.compose.koinInject
 
 /**
  * A photo on screen; [model] is a saved `Photo` or the bytes of one not saved yet. A friend's
@@ -168,8 +175,9 @@ private fun AddPhotoTile(launchers: PhotoLaunchers) {
 }
 
 /**
- * [photos] over the whole screen, a swipe apart, starting at [opened]. [onDelete] adds the button
- * removing an own photo, [onMakeCover] the one making any but the cover the machine's cover.
+ * [photos] over the whole screen, a swipe apart, starting at [opened], each with a share button.
+ * [onDelete] adds the button removing an own photo, [onMakeCover] the one making any but the cover
+ * the machine's cover.
  */
 @Composable
 fun PhotoViewer(
@@ -184,6 +192,9 @@ fun PhotoViewer(
             photos.size
         }
     val photo = photos.getOrNull(pager.currentPage) ?: return
+    val sharing: PhotoSharing = koinInject()
+    val images: PhotoImages = koinInject()
+    val scope = rememberCoroutineScope()
     Dialog(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -205,6 +216,7 @@ fun PhotoViewer(
             }
             Row(
                 Modifier.fillMaxWidth().systemBarsPadding().padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SquareIconButton(
@@ -214,6 +226,12 @@ fun PhotoViewer(
                     Modifier.testTag("close-photo"),
                 )
                 Spacer(Modifier.weight(1f))
+                SquareIconButton(
+                    PhosphorIcons.ShareNetwork,
+                    strings().share,
+                    { scope.launch { sharing.share(photo, images) } },
+                    Modifier.testTag("share-photo"),
+                )
                 if (onDelete != null && photo.owner == null) {
                     SquareIconButton(
                         PhosphorIcons.Trash,
@@ -238,4 +256,19 @@ fun PhotoViewer(
             }
         }
     }
+}
+
+private suspend fun PhotoSharing.share(
+    photo: ShownPhoto,
+    images: PhotoImages,
+) {
+    val jpeg =
+        try {
+            photo.model as? ByteArray ?: images.bytes(photo.model as Photo)
+        } catch (stopped: CancellationException) {
+            throw stopped
+        } catch (offline: Exception) {
+            null
+        }
+    jpeg?.let { share(it) }
 }

@@ -412,6 +412,9 @@ The machine form holds photos taken and removed as edits and writes them on save
 gallery come from `PhotoCapture`, bound per platform: Android's registers the `TakePicture` and
 `PickVisualMedia` launchers in the composition, and the camera writes into the cache through the
 `FileProvider` `androidApp` declares; the web's opens a file input, with `capture` for the camera.
+The photo viewer shares the shown photo's bytes, read through `PhotoImages`, with `PhotoSharing`:
+Android's writes them to the cache, served by the same `FileProvider`, and opens the share sheet;
+the web's calls `navigator.share` with a file where the browser can, else downloads the photo.
 
 An avatar the owner chose is a photo too: a `photo` row whose `machine_id` is the owner's profile
 id, named by `profile.avatar_photo`, so its bytes are stored, synced and deleted exactly as a

@@ -22,8 +22,10 @@ import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.LocalStorageJoinCodeStore
 import monster.greyde.kachalochka.ui.photos.BrowserPhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
+import monster.greyde.kachalochka.ui.share.BrowserPhotoSharing
 import monster.greyde.kachalochka.ui.share.BrowserTextCopying
 import monster.greyde.kachalochka.ui.share.ClipboardTextSharing
+import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
@@ -58,6 +60,7 @@ actual fun platformModule(): Module =
         single<InviteSharing> { ClipboardInviteSharing() }
         single<TextSharing> { ClipboardTextSharing() }
         single<TextCopying> { BrowserTextCopying() }
+        single<PhotoSharing> { BrowserPhotoSharing() }
         single<JoinCodeStore> { LocalStorageJoinCodeStore() }
         single<JoinCodeStore>(named(PARENT_CODE)) {
             LocalStorageJoinCodeStore("kachalochka.parentCode")
