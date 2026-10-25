@@ -85,8 +85,7 @@ class LinkChooserViewModelTest {
     ): LinkChooserViewModel {
         val catalogue = if (links === gym.machineLinks) gym.catalogue else gym.catalogueOver(links)
         return LinkChooserViewModel(
-            machine,
-            start,
+            LinkChooserArgs(machine, start),
             machines,
             sets,
             gym.currentUser,

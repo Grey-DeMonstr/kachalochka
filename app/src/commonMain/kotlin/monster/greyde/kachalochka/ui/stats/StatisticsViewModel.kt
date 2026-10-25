@@ -108,8 +108,13 @@ data class StatisticsUiState(
     val overall: List<ProgressCardUi> get() = overallSections.flatMap { it.items }
 }
 
+/** A null [machine] opens the overview. */
+data class StatisticsArgs(
+    val machine: MachineId?,
+)
+
 class StatisticsViewModel(
-    initial: MachineId?,
+    args: StatisticsArgs,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val sync: SyncTrigger,
@@ -127,7 +132,7 @@ class StatisticsViewModel(
     private val mutableState = MutableStateFlow(StatisticsUiState())
     val state: StateFlow<StatisticsUiState> = mutableState
 
-    private var selected: MachineId? = initial
+    private var selected: MachineId? = args.machine
     private var period = StatsPeriod.Month
     private var sort = StatsSort.Recent
     private var shown: ShownMachines? = null

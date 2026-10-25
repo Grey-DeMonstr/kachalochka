@@ -59,8 +59,13 @@ data class MeasurementFormUi(
     val picking: Boolean get() = picker != null
 }
 
+/** A null [day] opens the form on today. */
+data class MeasurementFormArgs(
+    val day: CalendarDay?,
+)
+
 class MeasurementFormViewModel(
-    initialDay: CalendarDay?,
+    args: MeasurementFormArgs,
     private val measures: MeasureRepository,
     private val measurements: MeasurementRepository,
     private val profiles: ProfileRepository,
@@ -74,7 +79,7 @@ class MeasurementFormViewModel(
     val state: StateFlow<MeasurementFormUi?> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
-    private var day: CalendarDay = initialDay ?: today()
+    private var day: CalendarDay = args.day ?: today()
     private var shown: List<Measure> = emptyList()
     private var cycleLength: Int? = null
 

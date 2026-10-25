@@ -28,15 +28,20 @@ import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.OlegVisitFixture
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import monster.greyde.kachalochka.ui.machine.FriendMachineViewModel
+import monster.greyde.kachalochka.ui.machine.LinkChooserArgs
 import monster.greyde.kachalochka.ui.machine.LinkChooserViewModel
 import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
+import monster.greyde.kachalochka.ui.machine.MachinePickerArgs
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
 import monster.greyde.kachalochka.ui.machine.MineChooserViewModel
 import monster.greyde.kachalochka.ui.measures.BodyFatViewModel
 import monster.greyde.kachalochka.ui.measures.MeasureViewModel
+import monster.greyde.kachalochka.ui.measures.MeasurementFormArgs
 import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
+import monster.greyde.kachalochka.ui.plans.PlanFormArgs
 import monster.greyde.kachalochka.ui.plans.PlanFormViewModel
+import monster.greyde.kachalochka.ui.stats.StatisticsArgs
 import monster.greyde.kachalochka.ui.stats.StatisticsViewModel
 import monster.greyde.kachalochka.ui.visit.VisitViewModel
 import org.koin.core.Koin
@@ -95,8 +100,8 @@ class ViewModelParametersTest {
     fun the_measurement_form_opens_on_the_given_day_and_on_today_without_one() {
         val saturday = CalendarDay(2023, 11, 11)
 
-        val dated: MeasurementFormViewModel = koin.viewModel(saturday)
-        val undated: MeasurementFormViewModel = koin.viewModel(null)
+        val dated: MeasurementFormViewModel = koin.viewModel(MeasurementFormArgs(saturday))
+        val undated: MeasurementFormViewModel = koin.viewModel(MeasurementFormArgs(null))
 
         assertEquals(saturday, dated.state.value?.day)
         assertEquals(gym.today, undated.state.value?.day)
@@ -128,8 +133,8 @@ class ViewModelParametersTest {
             val today = Visit(VisitId.random(), null, gym.today, t0, t0, false, listOf(press.id))
             gym.visits.upsert(today)
 
-            val dated: MachinePickerViewModel = koin.viewModel(gym.today)
-            val undated: MachinePickerViewModel = koin.viewModel(null)
+            val dated: MachinePickerViewModel = koin.viewModel(MachinePickerArgs(gym.today))
+            val undated: MachinePickerViewModel = koin.viewModel(MachinePickerArgs(null))
             dated.load()
             undated.load()
 
@@ -155,10 +160,10 @@ class ViewModelParametersTest {
             val visit = Visit(VisitId.random(), null, seventh, t0, t0, false, listOf(press.id))
             gym.visits.upsert(visit)
 
-            val editing: PlanFormViewModel = koin.viewModel(legs.id, null, null)
-            val fromVisit: PlanFormViewModel = koin.viewModel(null, seventh, null)
-            val fromMachine: PlanFormViewModel = koin.viewModel(null, null, press.id)
-            val blank: PlanFormViewModel = koin.viewModel(null, null, null)
+            val editing: PlanFormViewModel = koin.viewModel(PlanFormArgs(legs.id, null, null))
+            val fromVisit: PlanFormViewModel = koin.viewModel(PlanFormArgs(null, seventh, null))
+            val fromMachine: PlanFormViewModel = koin.viewModel(PlanFormArgs(null, null, press.id))
+            val blank: PlanFormViewModel = koin.viewModel(PlanFormArgs(null, null, null))
 
             assertEquals("Ноги", editing.state.value.name)
             assertEquals(
@@ -193,8 +198,8 @@ class ViewModelParametersTest {
                 )
             gym.sets.upsert(set)
 
-            val chosen: StatisticsViewModel = koin.viewModel(press.id)
-            val overview: StatisticsViewModel = koin.viewModel(null)
+            val chosen: StatisticsViewModel = koin.viewModel(StatisticsArgs(press.id))
+            val overview: StatisticsViewModel = koin.viewModel(StatisticsArgs(null))
 
             assertEquals(
                 press.id,
@@ -219,8 +224,8 @@ class ViewModelParametersTest {
             signed.machines.upsert(mine)
             val koin = koinOver(signed)
 
-            val suggested: LinkChooserViewModel = koin.viewModel(mine.id, "Смит")
-            val plain: LinkChooserViewModel = koin.viewModel(mine.id, null)
+            val suggested: LinkChooserViewModel = koin.viewModel(LinkChooserArgs(mine.id, "Смит"))
+            val plain: LinkChooserViewModel = koin.viewModel(LinkChooserArgs(mine.id, null))
             suggested.load()
             plain.load()
 

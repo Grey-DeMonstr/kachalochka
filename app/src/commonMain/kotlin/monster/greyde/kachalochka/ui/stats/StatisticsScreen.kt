@@ -83,7 +83,7 @@ fun StatisticsScreen(
     onOpenSettings: () -> Unit,
     onOpenVisit: (CalendarDay, MachineId) -> Unit = { _, _ -> },
 ) {
-    val viewModel: StatisticsViewModel = koinViewModel { parametersOf(initial) }
+    val viewModel: StatisticsViewModel = koinViewModel { parametersOf(StatisticsArgs(initial)) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     var searching by remember { mutableStateOf(false) }

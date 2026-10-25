@@ -50,7 +50,8 @@ fun MeasurementFormScreen(
     onSaved: () -> Unit,
     onDeleted: () -> Unit,
 ) {
-    val viewModel: MeasurementFormViewModel = koinViewModel { parametersOf(initialDay) }
+    val viewModel: MeasurementFormViewModel =
+        koinViewModel { parametersOf(MeasurementFormArgs(initialDay)) }
     val state by viewModel.state.collectAsState()
     Screen(strings().measurement, onBack = onBack, onOpenSettings = onOpenSettings) {
         val form = state ?: return@Screen

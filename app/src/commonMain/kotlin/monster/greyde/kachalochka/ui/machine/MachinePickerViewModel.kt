@@ -47,8 +47,12 @@ data class PickerUiState(
 }
 
 /** A null [day] picks for a plan. */
+data class MachinePickerArgs(
+    val day: CalendarDay?,
+)
+
 class MachinePickerViewModel(
-    private val day: CalendarDay?,
+    args: MachinePickerArgs,
     private val visits: VisitRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
@@ -61,6 +65,7 @@ class MachinePickerViewModel(
     private val reads: MachineReads,
     unsaved: UnsavedChoices,
 ) : ViewModel() {
+    private val day = args.day
     private val mutableState = MutableStateFlow(PickerUiState())
     val state: StateFlow<PickerUiState> = mutableState
     private val writes = WriteGuard(viewModelScope)

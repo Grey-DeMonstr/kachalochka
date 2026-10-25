@@ -50,9 +50,7 @@ class PlanFormViewModelTest {
         gym: FakeGym = this.gym,
         held: HeldWrites = gym.held,
     ) = PlanFormViewModel(
-        id,
-        fromVisit,
-        machine,
+        PlanFormArgs(id, fromVisit, machine),
         gym.plans,
         gym.placement,
         gym.accounts,

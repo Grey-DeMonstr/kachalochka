@@ -6,9 +6,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.di.coreModule
-import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
@@ -55,7 +52,6 @@ import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
 import monster.greyde.kachalochka.ui.visit.VisitViewModel
 import org.koin.core.module.dsl.singleOf
-import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -110,73 +106,11 @@ val appModule =
         viewModelOf(::FriendVisitViewModel)
         viewModelOf(::FriendCalendarViewModel)
         viewModelOf(::GroupViewModel)
-        // Koin finds a runtime parameter by its type, which a null has none of, so a view model
-        // with a nullable parameter takes its parameters by position.
-        viewModel { (day: CalendarDay?) ->
-            MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get(), get())
-        }
-        viewModel { (day: CalendarDay?) ->
-            MachinePickerViewModel(
-                day,
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-            )
-        }
-        viewModel { (plan: PlanId?, fromVisit: CalendarDay?, machine: MachineId?) ->
-            PlanFormViewModel(
-                plan,
-                fromVisit,
-                machine,
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-            )
-        }
-        viewModel { (machine: MachineId?) ->
-            StatisticsViewModel(
-                machine,
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-            )
-        }
-        viewModel { (machine: MachineId, start: String?) ->
-            LinkChooserViewModel(
-                machine,
-                start,
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-            )
-        }
+        // Koin finds a runtime parameter by its type, which a null has none of, so a screen that
+        // can pass a null wraps its values in one args object.
+        viewModelOf(::MeasurementFormViewModel)
+        viewModelOf(::MachinePickerViewModel)
+        viewModelOf(::PlanFormViewModel)
+        viewModelOf(::StatisticsViewModel)
+        viewModelOf(::LinkChooserViewModel)
     }

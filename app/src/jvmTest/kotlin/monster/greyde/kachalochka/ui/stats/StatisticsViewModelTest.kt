@@ -84,7 +84,7 @@ class StatisticsViewModelTest {
         on: FakeGym = gym,
         measurements: MeasurementRepository = on.measurements,
     ) = StatisticsViewModel(
-        machine,
+        StatisticsArgs(machine),
         on.currentUser,
         on.accounts,
         on.sync,

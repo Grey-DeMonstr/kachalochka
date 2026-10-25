@@ -77,13 +77,17 @@ data class MergeUi(
     val convert: Boolean = true,
 )
 
+data class LinkChooserArgs(
+    val machineId: MachineId,
+    val start: String?,
+)
+
 /**
  * What [machineId], an own saved machine, can be merged with or linked to. The search starts with
  * [start], a suggested machine's name, else with the machine's own.
  */
 class LinkChooserViewModel(
-    private val machineId: MachineId,
-    private val start: String?,
+    args: LinkChooserArgs,
     private val machines: MachineRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
@@ -94,6 +98,8 @@ class LinkChooserViewModel(
     private val reads: MachineReads,
     private val utcOffset: UtcOffset,
 ) : ViewModel() {
+    private val machineId = args.machineId
+    private val start = args.start
     private val mutableState = MutableStateFlow(LinkChooserUiState())
     val state: StateFlow<LinkChooserUiState> = mutableState
     private val writes = WriteGuard(viewModelScope)

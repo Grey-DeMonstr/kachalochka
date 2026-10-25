@@ -44,7 +44,8 @@ fun LinkChooserScreen(
     /** A suggested machine's name, which the search starts with. */
     start: String? = null,
 ) {
-    val viewModel: LinkChooserViewModel = koinViewModel { parametersOf(machineId, start) }
+    val viewModel: LinkChooserViewModel =
+        koinViewModel { parametersOf(LinkChooserArgs(machineId, start)) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(strings().linkTo, onBack = onBack, onOpenSettings = onOpenSettings) {

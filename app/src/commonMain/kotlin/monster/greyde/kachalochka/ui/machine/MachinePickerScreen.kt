@@ -67,7 +67,7 @@ fun MachinePickerScreen(
     onCreate: (name: String, tags: List<String>) -> Unit,
     onCopy: (source: MachineId, name: String) -> Unit,
 ) {
-    val viewModel: MachinePickerViewModel = koinViewModel { parametersOf(day) }
+    val viewModel: MachinePickerViewModel = koinViewModel { parametersOf(MachinePickerArgs(day)) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Screen(strings().machine, onBack = onBack, onOpenSettings = onOpenSettings) {

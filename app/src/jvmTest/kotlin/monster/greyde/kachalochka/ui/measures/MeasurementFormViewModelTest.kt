@@ -69,7 +69,7 @@ class MeasurementFormViewModelTest {
         day: CalendarDay? = null,
         on: FakeGym = gym,
     ) = MeasurementFormViewModel(
-        day,
+        MeasurementFormArgs(day),
         on.measures,
         on.measurements,
         on.profiles,

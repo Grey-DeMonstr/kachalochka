@@ -89,7 +89,7 @@ class MachinePickerViewModelTest {
         on: FakeGym,
         day: CalendarDay? = null,
     ) = MachinePickerViewModel(
-        day,
+        MachinePickerArgs(day),
         on.visits,
         on.sets,
         on.currentUser,

@@ -49,14 +49,21 @@ data class PlanMachineUi(
 )
 
 /**
- * Writes the plan on every change of its machines or pin, and its name after a pause in typing, on
- * [commitName] and on [leave]. A new plan starts with [machine], or with the machines of the
+ * A null [planId] makes a new plan. A new plan starts with [machine], or with the machines of the
  * account's visit on [fromVisit], when given.
  */
+data class PlanFormArgs(
+    val planId: PlanId?,
+    val fromVisit: CalendarDay?,
+    val machine: MachineId?,
+)
+
+/**
+ * Writes the plan on every change of its machines or pin, and its name after a pause in typing, on
+ * [commitName] and on [leave].
+ */
 class PlanFormViewModel(
-    private val planId: PlanId?,
-    private val fromVisit: CalendarDay?,
-    private val machine: MachineId?,
+    args: PlanFormArgs,
     private val plans: PlanRepository,
     private val placement: Placement,
     private val accounts: Accounts,
@@ -66,6 +73,9 @@ class PlanFormViewModel(
     private val failures: FailureLog,
     held: HeldWrites,
 ) : ViewModel() {
+    private val planId = args.planId
+    private val fromVisit = args.fromVisit
+    private val machine = args.machine
     private val mutableState = MutableStateFlow(PlanFormUiState())
     val state: StateFlow<PlanFormUiState> = mutableState
 
