@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.ui.friends.reading
 
 /**
  * The photo each signed-in account chose, from its profile. One per process, so every top bar
@@ -25,7 +26,7 @@ class AccountAvatars(
             accounts.accounts.value
                 .mapNotNull { account ->
                     val id = account.userId
-                    val read = runCatching { profiles.forOwner(id) }
+                    val read = reading { profiles.forOwner(id) }
                     read.getOrNull()?.let { accounts.rememberNickname(id, it.displayName) }
                     val photo = read.map { it?.avatarPhoto }.getOrElse { before[id] }
                     photo?.let { id to it }
