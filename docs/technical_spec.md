@@ -540,11 +540,13 @@ one, so the first write of a new plan is its first real change. A blank name wit
 machines soft-deletes a written plan, and a later write undeletes it under the same id. A failed
 write goes to `FailureLog` and the queue goes on. `leave` sets `done` only after the queue gets
 to it, failed or not, because the view model's scope, and with it any write still waiting, ends
-when the screen pops. The form holds its write in `HeldWrites` while it is open, and the account
-menu's switch runs every held write before `Accounts.switchTo`, so the name typed last reaches
-the account the form was opened for. The form itself sees the switch only after it and closes
-without a write: on the web the new account's session is live by then, so the old account's plan
-would be refused by RLS or written across accounts (§4.3).
+when the screen pops. The form holds its write in `HeldWrites` (`core/data/identity`) while it is
+open, and `Accounts` runs every held write before it changes the active account, wherever the
+change comes from: a switch from the account menu or from the set form's people, a sign-out, and
+adding an account, before the sign-in itself, since on the web the sign-in leaves the page. So the
+name typed last reaches the account the form was opened for. The form itself sees the switch only
+after it and closes without a write: on the web the new account's session is live by then, so the
+old account's plan would be refused by RLS or written across accounts (§4.3).
 
 The form reads the own machines with `MachineCatalogue.own` for its writes, and the group with
 `MachineReads.group` for the rows only: `ShownMachines` gives each row its cover, a linked friend's

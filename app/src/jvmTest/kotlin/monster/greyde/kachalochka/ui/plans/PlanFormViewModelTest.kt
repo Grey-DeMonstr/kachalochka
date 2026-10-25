@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.FailureLog
+import monster.greyde.kachalochka.core.data.identity.HeldWrites
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -19,7 +20,6 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
-import monster.greyde.kachalochka.ui.account.HeldWrites
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -42,13 +42,13 @@ class PlanFormViewModelTest {
     private val legs = Plan(PlanId.random(), null, "Ноги", listOf(press.id, row.id), t0, t0, false)
 
     private val main = UnconfinedTestDispatcher()
-    private val held = HeldWrites()
 
     private fun viewModel(
         id: PlanId?,
         fromVisit: CalendarDay? = null,
         machine: MachineId? = null,
         gym: FakeGym = this.gym,
+        held: HeldWrites = gym.held,
     ) = PlanFormViewModel(
         id,
         fromVisit,
@@ -223,9 +223,10 @@ class PlanFormViewModelTest {
         assertFalse(vm.state.value.done)
     }
 
+    /** The server signing the account out changes the active account without a switch. */
     @Test
-    fun switching_accounts_closes_the_form_without_writing() {
-        val vm = viewModel(legs.id)
+    fun an_account_change_made_without_a_switch_closes_the_form_without_writing() {
+        val vm = viewModel(legs.id, held = HeldWrites())
         vm.typeName("Спина")
 
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
@@ -236,12 +237,11 @@ class PlanFormViewModelTest {
     }
 
     @Test
-    fun a_switch_from_the_account_menu_writes_the_typed_name_first() =
+    fun a_switch_writes_the_typed_name_first_wherever_it_comes_from() =
         runTest(main) {
             val vm = viewModel(legs.id)
             vm.typeName("Спина")
 
-            held.writeAll()
             gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
 
             assertTrue(vm.state.value.done)
@@ -249,10 +249,10 @@ class PlanFormViewModelTest {
         }
 
     @Test
-    fun switching_accounts_while_a_new_plan_is_read_writes_nothing() {
+    fun an_account_change_while_a_new_plan_is_read_writes_nothing() {
         val read = CompletableDeferred<Unit>()
         gym.machines.readGate = read
-        val vm = viewModel(null, machine = row.id)
+        val vm = viewModel(null, machine = row.id, held = HeldWrites())
 
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
         read.complete(Unit)

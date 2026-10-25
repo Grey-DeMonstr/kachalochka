@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.AccountTokens
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.ActiveAccountUser
+import monster.greyde.kachalochka.core.data.identity.HeldWrites
 import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
@@ -47,7 +48,8 @@ val coreModule =
         }
         single<SessionActivation> { get<LiveSession>() }
         single<CurrentUser> { ActiveAccountUser(get()) }
-        single { Accounts(get(), get(), get(), get(), get()) }
+        single { HeldWrites() }
+        single { Accounts(get(), get(), get(), get(), get(), get()) }
         single { AccountDeletion(get(), get(), get()) }
         single<SessionRefresh> { SupabaseSessions(inject()) }
         single { AccountTokens(get(), get<LiveSession>(), get(), Clock.System) }

@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.ActiveAccountUser
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
+import monster.greyde.kachalochka.core.data.identity.HeldWrites
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.NoWatermarkReset
@@ -426,6 +427,7 @@ class FakeGym(
     val photoCapture = InstantPhotoCapture(byteArrayOf(1, 2, 3))
     private val signIn = QueuedGoogleSignIn()
     val accountStore = PersistedAccountStore(InMemoryAccountStorage())
+    val held = HeldWrites()
     val accounts =
         Accounts(
             accountStore,
@@ -433,6 +435,7 @@ class FakeGym(
             NoOpSessionActivation(),
             NoOpOwnerlessRows(),
             NoWatermarkReset,
+            held,
         )
     val currentUser: CurrentUser = ActiveAccountUser(accountStore)
     val friends =

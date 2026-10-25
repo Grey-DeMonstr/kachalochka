@@ -50,6 +50,7 @@ class AccountDeletionTest {
                 override suspend fun claim(owner: UserId) = Unit
             },
             NoWatermarkReset,
+            HeldWrites(),
         )
     private val deletion = AccountDeletion(server, RecordingPurge(steps), accounts)
 

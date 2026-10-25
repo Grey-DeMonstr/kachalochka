@@ -1238,6 +1238,20 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun switching_from_the_set_form_writes_the_held_edits_while_the_old_account_is_active() =
+        runTest {
+            val two = twoAccountGym()
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+            val activeAtWrite = mutableListOf<UserId?>()
+            two.held.hold { activeAtWrite += two.accounts.activeId.value }
+
+            vm.switchTo(misha.account.userId)
+
+            assertEquals(listOf<UserId?>(ivan.account.userId), activeAtWrite)
+            assertEquals(misha.account.userId, two.accounts.activeId.value)
+        }
+
+    @Test
     fun switching_shows_the_other_account_s_visit_without_creating_one() =
         runTest {
             val two = twoAccountGym()

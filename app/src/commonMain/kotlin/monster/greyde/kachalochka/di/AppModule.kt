@@ -16,7 +16,6 @@ import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
-import monster.greyde.kachalochka.ui.account.HeldWrites
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
@@ -98,7 +97,6 @@ val appModule =
         }
         viewModelOf(::HomeViewModel)
         viewModelOf(::GroupsViewModel)
-        single { HeldWrites() }
         viewModelOf(::AccountsViewModel)
         viewModelOf(::CalendarViewModel)
         viewModelOf(::MachineListViewModel)

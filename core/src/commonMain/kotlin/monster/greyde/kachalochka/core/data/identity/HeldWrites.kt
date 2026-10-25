@@ -1,11 +1,11 @@
-package monster.greyde.kachalochka.ui.account
+package monster.greyde.kachalochka.core.data.identity
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Writes an open screen holds back, such as a plan name still being typed. An account switch
- * writes them first, so they reach the account they were made in.
+ * Writes an open screen holds back, such as a plan name still being typed. [Accounts] runs them
+ * before the active account changes, so they reach the account they were made in.
  */
 class HeldWrites {
     private val held = MutableStateFlow<Set<Held>>(emptySet())

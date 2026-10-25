@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
+import monster.greyde.kachalochka.core.data.identity.HeldWrites
 import monster.greyde.kachalochka.core.data.identity.InMemoryAccountStorage
 import monster.greyde.kachalochka.core.data.identity.NoWatermarkReset
 import monster.greyde.kachalochka.core.data.identity.OwnerlessRows
@@ -87,8 +88,9 @@ class AccountsViewModelTest {
                 NoOpSessionActivation(),
                 NoOpOwnerlessRows(),
                 NoWatermarkReset,
+                HeldWrites(),
             )
-        return AccountsViewModel(accounts, sync, AccountAvatars(accounts, reads), HeldWrites())
+        return AccountsViewModel(accounts, sync, AccountAvatars(accounts, reads))
     }
 
     @Test

@@ -64,6 +64,8 @@ class AccountsTest {
     private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan")
     private val misha = session("22222222-2222-4222-8222-222222222222", "Misha")
 
+    private val held = HeldWrites()
+
     private fun accounts(
         queue: MutableList<AccountSession>,
         activation: RecordingActivation = RecordingActivation(),
@@ -74,6 +76,7 @@ class AccountsTest {
         activation,
         ownerless,
         NoWatermarkReset,
+        held,
     )
 
     private fun refusing(error: Throwable) =
@@ -83,7 +86,81 @@ class AccountsTest {
             RecordingActivation(),
             RecordingOwnerless(),
             NoWatermarkReset,
+            held,
         )
+
+    /** Records the account active while each held write runs. */
+    private fun holdingWrites(service: Accounts): MutableList<UserId?> {
+        val activeAtWrite = mutableListOf<UserId?>()
+        held.hold { activeAtWrite += service.activeId.value }
+        return activeAtWrite
+    }
+
+    @Test
+    fun a_switch_runs_the_held_writes_while_the_old_account_is_still_active() =
+        runTest {
+            val service = accounts(mutableListOf(ivan, misha))
+            service.addAccount()
+            service.addAccount()
+            val activeAtWrite = holdingWrites(service)
+
+            service.switchTo(ivan.account.userId)
+
+            assertEquals(listOf<UserId?>(misha.account.userId), activeAtWrite)
+            assertEquals(ivan.account.userId, service.activeId.value)
+        }
+
+    @Test
+    fun a_switch_to_an_account_not_on_the_device_runs_no_held_write() =
+        runTest {
+            val service = accounts(mutableListOf(ivan))
+            service.addAccount()
+            val activeAtWrite = holdingWrites(service)
+
+            service.switchTo(misha.account.userId)
+
+            assertEquals(emptyList<UserId?>(), activeAtWrite)
+        }
+
+    @Test
+    fun a_sign_out_runs_the_held_writes_while_the_account_is_still_active() =
+        runTest {
+            val service = accounts(mutableListOf(ivan))
+            service.addAccount()
+            val activeAtWrite = holdingWrites(service)
+
+            service.signOut(ivan.account.userId)
+
+            assertEquals(listOf<UserId?>(ivan.account.userId), activeAtWrite)
+            assertNull(service.activeId.value)
+        }
+
+    @Test
+    fun adding_an_account_runs_the_held_writes_before_the_sign_in() =
+        runTest {
+            val steps = mutableListOf<String>()
+            val signIn =
+                object : GoogleSignIn {
+                    override suspend fun signIn(): AccountSession {
+                        steps += "sign in"
+                        return misha
+                    }
+                }
+            val service =
+                Accounts(
+                    PersistedAccountStore(InMemoryAccountStorage()),
+                    signIn,
+                    RecordingActivation(),
+                    RecordingOwnerless(),
+                    NoWatermarkReset,
+                    held,
+                )
+            held.hold { steps += "held write" }
+
+            service.addAccount()
+
+            assertEquals(listOf("held write", "sign in"), steps)
+        }
 
     @Test
     fun the_first_account_claims_the_ownerless_rows() =
@@ -266,6 +343,7 @@ class AccountsTest {
                     activation,
                     RecordingOwnerless(),
                     NoWatermarkReset,
+                    held,
                 )
             service.addAccount()
             service.addAccount()
@@ -289,6 +367,7 @@ class AccountsTest {
                     activation,
                     RecordingOwnerless(),
                     NoWatermarkReset,
+                    held,
                 )
             service.addAccount()
             service.addAccount()
@@ -314,6 +393,7 @@ class AccountsTest {
                     activation,
                     RecordingOwnerless(),
                     NoWatermarkReset,
+                    held,
                 )
             service.addAccount()
             service.addAccount()
@@ -340,6 +420,7 @@ class AccountsTest {
                     RecordingActivation(),
                     RecordingOwnerless(),
                     reset,
+                    held,
                 )
             service.addAccount()
             store.setManaged(listOf(managedChild(ivan)))
@@ -360,6 +441,7 @@ class AccountsTest {
                     RecordingActivation(),
                     RecordingOwnerless(),
                     reset,
+                    held,
                 )
 
             service.addAccount()
