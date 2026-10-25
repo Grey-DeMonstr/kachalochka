@@ -784,6 +784,11 @@ the notice. A pick reads the plan again and appends the machine when it is absen
 machine's page in the same visit does not show it. "Упражнение друга" reads again after a copy, so
 it stops offering "Взять себе".
 
+`VisitPlacementViewModel` in `app/ui/plans` serves "В план…" of the visit screen and the calendar
+card under the same account checks. A pick reads the shown visit again and appends its
+`visitMachines` that the plan lacks; "Новый план" hands on the day, and the plan form fills itself
+from that visit. Both view models share `planChoices` and `PlanChoiceDialog`.
+
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward
 instead of observing it.

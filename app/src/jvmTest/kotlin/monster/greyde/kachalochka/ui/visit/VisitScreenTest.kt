@@ -215,7 +215,7 @@ class VisitScreenTest {
     }
 
     @Test
-    fun the_menu_saves_the_visit_as_a_plan() {
+    fun the_menu_s_new_plan_saves_the_visit_as_a_plan() {
         var saves = 0
         runScreenTest(gym, screen = { visitScreen(onSaveAsPlan = { saves++ }) }) {
             waitForIdle()
@@ -223,8 +223,35 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("save-as-plan").assertTextEquals("В план…").performClick()
             waitForIdle()
+            onNodeWithTag("plan-choice-new").assertTextEquals("Новый план").performClick()
+            waitForIdle()
         }
         assertEquals(1, saves)
+    }
+
+    @Test
+    fun the_menu_adds_the_visit_s_machines_to_a_chosen_plan_and_says_so() {
+        val now = gym.clock.current
+        val back = Plan(PlanId.random(), null, "Спина", emptyList(), now, now, false)
+        runBlocking { gym.plans.upsert(back) }
+        var saves = 0
+        runScreenTest(gym, screen = { visitScreen(onSaveAsPlan = { saves++ }) }) {
+            waitForIdle()
+            onNodeWithTag("visit-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("save-as-plan").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-choice-${back.id.value}").assertTextEquals("Спина").performClick()
+            waitForIdle()
+            onNodeWithTag("placement-notice").assertTextEquals("Добавлено в «Спина»")
+        }
+        assertEquals(0, saves)
+        assertEquals(
+            listOf(press.id),
+            gym.plans.rows
+                .getValue(back.id)
+                .machineIds,
+        )
     }
 
     @Test

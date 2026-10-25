@@ -17,6 +17,8 @@ import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.Plan
+import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -32,6 +34,7 @@ import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 
@@ -80,7 +83,7 @@ class CalendarScreenTest {
     )
 
     @Test
-    fun the_visit_menu_saves_the_visit_as_a_plan() {
+    fun the_visit_menu_s_new_plan_saves_the_visit_as_a_plan() {
         var saved: CalendarDay? = null
         runScreenTest(gym, screen = { calendar(onSaveAsPlan = { saved = it }) }) {
             onNodeWithTag("day-2023-11-12").performClick()
@@ -90,8 +93,34 @@ class CalendarScreenTest {
                 .assertTextEquals("В план…")
                 .performClick()
             waitForIdle()
+            onNodeWithTag("plan-choice-new").performClick()
+            waitForIdle()
         }
         assertEquals(CalendarDay(2023, 11, 12), saved)
+    }
+
+    @Test
+    fun the_visit_menu_adds_the_visit_s_machines_to_a_chosen_plan_and_says_so() {
+        val back = Plan(PlanId.random(), null, "Спина", emptyList(), t0, t0, false)
+        runBlocking { gym.plans.upsert(back) }
+        var saved: CalendarDay? = null
+        runScreenTest(gym, screen = { calendar(onSaveAsPlan = { saved = it }) }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("save-as-plan-${sunday.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-choice-${back.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("placement-notice").assertTextEquals("Добавлено в «Спина»")
+        }
+        assertNull(saved)
+        assertEquals(
+            listOf(press.id),
+            gym.plans.rows
+                .getValue(back.id)
+                .machineIds,
+        )
     }
 
     @Test

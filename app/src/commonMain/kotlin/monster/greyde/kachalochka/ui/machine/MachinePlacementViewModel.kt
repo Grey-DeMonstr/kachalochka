@@ -18,8 +18,9 @@ import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.format.UtcOffset
-import monster.greyde.kachalochka.ui.format.planTitle
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.plans.PlanChoiceUi
+import monster.greyde.kachalochka.ui.plans.planChoices
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.visit.SetRecorder
@@ -33,11 +34,6 @@ data class PlacedMachine(
     val id: MachineId,
     val ofFriend: Boolean = false,
     val group: GroupMachines? = null,
-)
-
-data class PlanChoiceUi(
-    val id: PlanId,
-    val title: String,
 )
 
 /** [machine] is the one the screen showed, so another machine's screen shows nothing. */
@@ -90,12 +86,7 @@ class MachinePlacementViewModel(
     fun choosePlan(machine: PlacedMachine) {
         viewModelScope.launch {
             val owner = currentUser.id()
-            val names = machines.all(owner).associate { it.id to it.name }
-            val choices =
-                plans.all(owner).map { plan ->
-                    val live = plan.machineIds.mapNotNull(names::get)
-                    PlanChoiceUi(plan.id, planTitle(plan.name, live))
-                }
+            val choices = planChoices(plans, machines, owner)
             if (!stillActive(owner)) return@launch
             choosing = machine to owner
             mutableState.value = PlacementUi(choices = choices)

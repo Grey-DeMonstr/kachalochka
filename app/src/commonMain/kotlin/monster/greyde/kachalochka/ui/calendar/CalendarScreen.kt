@@ -44,6 +44,9 @@ import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.TagText
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.plans.VisitPlacementNotice
+import monster.greyde.kachalochka.ui.plans.VisitPlacementViewModel
+import monster.greyde.kachalochka.ui.plans.VisitPlanChooser
 import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.friendColor
 import org.koin.compose.viewmodel.koinViewModel
@@ -57,6 +60,7 @@ fun CalendarScreen(
     onSaveAsPlan: (CalendarDay) -> Unit,
 ) {
     val viewModel: CalendarViewModel = koinViewModel()
+    val placement: VisitPlacementViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.refresh() }
     val current = state
@@ -101,10 +105,11 @@ fun CalendarScreen(
                     editable = !current.moving,
                     onOpen = { onOpenVisit(current.day) },
                     onMove = { viewModel.startMove(visit.id) },
-                    onSaveAsPlan = { onSaveAsPlan(current.day) },
+                    onToPlan = { placement.choosePlan(current.day) },
                     onRepeatToday = { viewModel.repeatToday(onOpenVisit) },
                     onRemove = { viewModel.askToRemove(visit.id) },
                 )
+                VisitPlacementNotice(placement, current.day)
             }
             if (current.noVisit) {
                 Text(
@@ -149,6 +154,7 @@ fun CalendarScreen(
                 onCancel = viewModel::cancelReplacement,
             )
         }
+        VisitPlanChooser(placement, onSaveAsPlan)
     }
 }
 
@@ -208,7 +214,7 @@ private fun VisitCard(
     editable: Boolean,
     onOpen: () -> Unit,
     onMove: () -> Unit,
-    onSaveAsPlan: () -> Unit,
+    onToPlan: () -> Unit,
     onRepeatToday: () -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -220,7 +226,7 @@ private fun VisitCard(
         onOpen = onOpen,
         menu =
             if (editable) {
-                { VisitMenu(visit, onMove, onSaveAsPlan, onRepeatToday, onRemove) }
+                { VisitMenu(visit, onMove, onToPlan, onRepeatToday, onRemove) }
             } else {
                 null
             },
@@ -277,7 +283,7 @@ private fun DayCard(
 private fun VisitMenu(
     visit: CalendarVisitUi,
     onMove: () -> Unit,
-    onSaveAsPlan: () -> Unit,
+    onToPlan: () -> Unit,
     onRepeatToday: () -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -313,7 +319,7 @@ private fun VisitMenu(
                 leadingIcon = { Icon(PhosphorIcons.ListChecks, null, Modifier.size(20.dp)) },
                 onClick = {
                     open = false
-                    onSaveAsPlan()
+                    onToPlan()
                 },
                 modifier = Modifier.testTag("save-as-plan-${visit.id.value}"),
             )

@@ -20,6 +20,7 @@ import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.signedInGym
+import monster.greyde.kachalochka.ui.plans.PlanChoiceUi
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

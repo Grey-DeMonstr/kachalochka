@@ -57,6 +57,9 @@ import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
+import monster.greyde.kachalochka.ui.plans.VisitPlacementNotice
+import monster.greyde.kachalochka.ui.plans.VisitPlacementViewModel
+import monster.greyde.kachalochka.ui.plans.VisitPlanChooser
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -80,6 +83,7 @@ fun VisitScreen(
 ) {
     val viewModel: VisitViewModel = koinViewModel { parametersOf(day) }
     val accountsViewModel: AccountsViewModel = koinViewModel()
+    val placement: VisitPlacementViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.refresh() }
     LaunchedEffect(pickedMachineId) {
@@ -141,7 +145,7 @@ fun VisitScreen(
             }
             if (current != null && current.groups.isNotEmpty() && !current.ordering) {
                 VisitMenu(
-                    onSaveAsPlan,
+                    onToPlan = { placement.choosePlan(day) },
                     onRepeatToday =
                         if (current.canRepeatToday) {
                             { viewModel.repeatToday(onOpenVisit) }
@@ -153,6 +157,7 @@ fun VisitScreen(
         },
     ) {
         if (current == null) return@Screen
+        VisitPlacementNotice(placement, day, Modifier.padding(horizontal = 16.dp))
         VisitList(
             state = current,
             onDismissNotice = viewModel::dismissNotice,
@@ -165,6 +170,7 @@ fun VisitScreen(
             modifier = Modifier.weight(1f),
         )
     }
+    VisitPlanChooser(placement) { onSaveAsPlan() }
 }
 
 @Composable
@@ -428,7 +434,7 @@ internal fun SetRow(
 
 @Composable
 private fun VisitMenu(
-    onSaveAsPlan: () -> Unit,
+    onToPlan: () -> Unit,
     onRepeatToday: (() -> Unit)?,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -444,7 +450,7 @@ private fun VisitMenu(
                 text = { Text(strings().toPlan) },
                 onClick = {
                     expanded = false
-                    onSaveAsPlan()
+                    onToPlan()
                 },
                 modifier = Modifier.testTag("save-as-plan"),
             )
