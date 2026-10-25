@@ -1,19 +1,15 @@
 package monster.greyde.kachalochka.ui.machine
 
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
-import kotlinx.coroutines.completeWith
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.FailureLog
+import monster.greyde.kachalochka.core.data.SingleFlight
 import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -183,8 +179,7 @@ class MachineCatalogue(
     private val failures: FailureLog,
 ) {
     private val linkWrites = Mutex()
-    private val flights = Mutex()
-    private val inFlight = mutableMapOf<UserId, CompletableDeferred<GroupMachines>>()
+    private val groupReads = SingleFlight<UserId, GroupMachines>()
     private val lastGyms = MutableStateFlow<Map<UserId, GroupGym>>(emptyMap())
 
     suspend fun own(owner: UserId?): OwnMachines =
@@ -204,27 +199,8 @@ class MachineCatalogue(
      * for one owner at the same time share one; when the caller running it is cancelled, the
      * others read again.
      */
-    suspend fun group(owner: UserId): GroupMachines {
-        var leads = false
-        val shared =
-            flights.withLock {
-                inFlight.getOrPut(owner) {
-                    CompletableDeferred<GroupMachines>().also { leads = true }
-                }
-            }
-        if (!leads) {
-            return try {
-                shared.await()
-            } catch (stopped: CancellationException) {
-                currentCoroutineContext().ensureActive()
-                group(owner)
-            }
-        }
-        val result = runCatching { readGroup(owner) }
-        withContext(NonCancellable) { flights.withLock { inFlight.remove(owner) } }
-        shared.completeWith(result)
-        return result.getOrThrow()
-    }
+    suspend fun group(owner: UserId): GroupMachines =
+        groupReads.run(owner, { group(owner) }) { readGroup(owner) }
 
     private suspend fun readGroup(owner: UserId): GroupMachines =
         coroutineScope {

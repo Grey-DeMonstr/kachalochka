@@ -1,14 +1,6 @@
 package monster.greyde.kachalochka.core.data.identity
 
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.completeWith
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import monster.greyde.kachalochka.core.data.SingleFlight
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
@@ -30,8 +22,7 @@ class AccountTokens(
     private val refresh: SessionRefresh,
     private val clock: Clock,
 ) {
-    private val lock = Mutex()
-    private val inFlight = mutableMapOf<UserId, CompletableDeferred<String?>>()
+    private val refreshes = SingleFlight<UserId, String?>()
 
     suspend fun tokenFor(owner: UserId): String? {
         guardianOf(owner)?.let { return tokenFor(it) }
@@ -61,26 +52,7 @@ class AccountTokens(
     private suspend fun once(
         owner: UserId,
         renew: suspend () -> String?,
-    ): String? {
-        var leads = false
-        val shared =
-            lock.withLock {
-                inFlight.getOrPut(owner) { CompletableDeferred<String?>().also { leads = true } }
-            }
-        if (!leads) {
-            return try {
-                shared.await()
-            } catch (stopped: CancellationException) {
-                // The refresh was cancelled with the caller that ran it, not with this one.
-                currentCoroutineContext().ensureActive()
-                tokenFor(owner)
-            }
-        }
-        val result = runCatching { renew() }
-        withContext(NonCancellable) { lock.withLock { inFlight.remove(owner) } }
-        shared.completeWith(result)
-        return result.getOrThrow()
-    }
+    ): String? = refreshes.run(owner, { tokenFor(owner) }, renew)
 
     private fun usable(session: AccountSession): Boolean =
         clock.now() < session.expiresAt - 1.minutes
