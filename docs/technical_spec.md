@@ -763,8 +763,9 @@ writes a `linkedCopy` and the links from the copy to every machine of that clust
 (`missingDirectLinks`); the group read's
 upkeep adds the friends' machines those local links do not reach. `deviceStandIn` finds the same
 machine without a write, so after a switch the page shows the history the next save extends.
-"Повторить сегодня" on the calendar and the visit screen calls `planFrom` of a recorder for today:
-it plans the shown visit's `visitMachines` as starting a plan does. The visit view model keeps the
+"Повторить сегодня" on the calendar and the visit screen goes through `Placement` (see below),
+which calls `planFrom` of a recorder for today: it plans the shown visit's `visitMachines` as
+starting a plan does. The visit view model keeps the
 state of the machine's page and its set form, both drawn by the visit screen over its list, and
 hands the recorder what to write.
 
@@ -779,15 +780,23 @@ shows "Нет связи с сервером", and a machine the read no longer 
 "В план…" reads the plans in `planOrder` with `planTitle` names and keeps the account it read them
 for. Each action checks that the account is still active (§4.3) before the stand-in, after the
 group read, before each write and before it navigates; a switch also closes the choice and drops
-the notice. A pick reads the plan again and appends the machine when it is absent. "Повторить
-сегодня" calls `plan` of a recorder for today. A notice carries the machine it is for, so another
+the notice. A pick and "Повторить сегодня" go through `Placement` with the machine that stands in.
+A notice carries the machine it is for, so another
 machine's page in the same visit does not show it. "Упражнение друга" reads again after a copy, so
 it stops offering "Взять себе".
 
 `VisitPlacementViewModel` in `app/ui/plans` serves "В план…" of the visit screen and the calendar
-card under the same account checks. A pick reads the shown visit again and appends its
-`visitMachines` that the plan lacks; "Новый план" hands on the day, and the plan form fills itself
-from that visit. Both view models share `planChoices` and `PlanChoiceDialog`.
+card. A pick reads the shown visit again and appends its `visitMachines` that the plan lacks;
+"Новый план" hands on the day, and the plan form fills itself from that visit. Both view models
+share `PlanChoiceDialog`.
+
+`Placement` in `app/ui/plans` writes every "into a plan" and "into today" action: the plan choices,
+a pick of machines or of a day's visit, "Повторить сегодня" of a machine or a day, and the start of
+a plan from the list. Each call takes the account that the screen offered the action to. It checks
+that this account is still active (§4.3) before it writes and again before it returns today, so a
+switch writes nothing and opens nothing. A pick reads the plan again and appends only the machines
+it lacks; the start of a plan writes today's visit first, so a failed write keeps the plan. The
+view models keep only the choice and the notice.
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

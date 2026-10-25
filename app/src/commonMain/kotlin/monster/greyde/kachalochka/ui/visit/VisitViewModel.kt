@@ -71,6 +71,7 @@ import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.OwnMachines
 import monster.greyde.kachalochka.ui.machine.ShownMachines
+import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.timer.RestTimer
@@ -190,6 +191,7 @@ class VisitViewModel(
     private val reads: MachineReads,
     private val profiles: ProfileRepository,
     private val avatars: AccountAvatars,
+    private val placement: Placement,
     unsaved: UnsavedChoices,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
@@ -281,13 +283,8 @@ class VisitViewModel(
 
     /** Plans this visit's machines in today's visit, then reports today. */
     fun repeatToday(onDone: (CalendarDay) -> Unit) {
-        writes.launch {
-            val now = clock.now()
-            val today = CalendarDay.of(now, utcOffset.at(now))
-            SetRecorder(today, visits, machines, sets, clock, utcOffset, restTimer, sync)
-                .planFrom(currentUser.id(), day)
-            onDone(today)
-        }
+        val owner = accounts.activeId.value
+        writes.launch { placement.repeatToday(owner, day)?.let(onDone) }
     }
 
     private fun reloadShown() {

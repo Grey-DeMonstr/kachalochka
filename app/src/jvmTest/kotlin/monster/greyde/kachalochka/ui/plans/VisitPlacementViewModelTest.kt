@@ -64,17 +64,7 @@ class VisitPlacementViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel() =
-        VisitPlacementViewModel(
-            gym.plans,
-            gym.visits,
-            gym.machines,
-            gym.sets,
-            gym.currentUser,
-            gym.accounts,
-            gym.clock,
-            gym.utcOffset,
-        )
+    private fun viewModel() = VisitPlacementViewModel(gym.placement, gym.accounts)
 
     @Test
     fun the_choice_lists_every_plan_by_its_title() {

@@ -15,29 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.PlanId
-import monster.greyde.kachalochka.core.domain.gym.PlanRepository
-import monster.greyde.kachalochka.core.domain.identity.UserId
-import monster.greyde.kachalochka.ui.format.planTitle
 import monster.greyde.kachalochka.ui.strings.strings
 
 data class PlanChoiceUi(
     val id: PlanId,
     val title: String,
 )
-
-/** [owner]'s plans as "В план…" offers them, named and ordered as in the list. */
-internal suspend fun planChoices(
-    plans: PlanRepository,
-    machines: MachineRepository,
-    owner: UserId?,
-): List<PlanChoiceUi> {
-    val names = machines.all(owner).associate { it.id to it.name }
-    return plans.all(owner).map { plan ->
-        PlanChoiceUi(plan.id, planTitle(plan.name, plan.machineIds.mapNotNull(names::get)))
-    }
-}
 
 /** Asks "В какой план?" with [choices], then "Новый план". */
 @Composable

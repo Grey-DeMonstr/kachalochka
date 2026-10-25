@@ -16,7 +16,6 @@ import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
-import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -46,14 +45,10 @@ class PlansViewModelTest {
     private fun viewModel() =
         PlansViewModel(
             gym.plans,
-            gym.visits,
             gym.machines,
-            gym.sets,
+            gym.placement,
             gym.currentUser,
             gym.accounts,
-            gym.clock,
-            gym.utcOffset,
-            RestTimer(gym.clock),
             gym.sync,
         )
 
@@ -116,14 +111,10 @@ class PlansViewModelTest {
         val vm =
             PlansViewModel(
                 gym.plans,
-                gym.visits,
                 gym.machines,
-                gym.sets,
+                gym.placement,
                 gym.currentUser,
                 gym.accounts,
-                gym.clock,
-                gym.utcOffset,
-                RestTimer(gym.clock),
                 gym.sync,
             )
         assertEquals(1, vm.state.value.rows.size)
@@ -163,14 +154,10 @@ class PlansViewModelTest {
         val vm =
             PlansViewModel(
                 family.plans,
-                family.visits,
                 family.machines,
-                family.sets,
+                family.placement,
                 family.currentUser,
                 family.accounts,
-                family.clock,
-                family.utcOffset,
-                RestTimer(family.clock),
                 family.sync,
             )
         var opened: CalendarDay? = null

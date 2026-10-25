@@ -13,17 +13,11 @@ import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.PlanRepository
-import monster.greyde.kachalochka.core.domain.gym.VisitRepository
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
-import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.planTitle
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import monster.greyde.kachalochka.ui.timer.RestTimer
-import monster.greyde.kachalochka.ui.visit.SetRecorder
-import kotlin.time.Clock
 
 data class PlansUiState(
     val rows: List<PlanRowUi> = emptyList(),
@@ -40,14 +34,10 @@ data class PlanRowUi(
 
 class PlansViewModel(
     private val plans: PlanRepository,
-    private val visits: VisitRepository,
     private val machines: MachineRepository,
-    private val sets: WorkoutSetRepository,
+    private val placement: Placement,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
-    private val restTimer: RestTimer,
     private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PlansUiState())
@@ -116,21 +106,11 @@ class PlansViewModel(
         shown.firstOrNull { it.id == id }?.let { begin(it, onStarted) }
     }
 
-    /** The visit is written before the plan is deleted, so a failed write keeps the plan. */
     private fun begin(
         plan: Plan,
         onStarted: (CalendarDay) -> Unit,
     ) {
         val shownTo = shownFor
-        writes.launch {
-            val owner = currentUser.id()
-            if (owner != shownTo) return@launch
-            val now = clock.now()
-            val today = CalendarDay.of(now, utcOffset.at(now))
-            SetRecorder(today, visits, machines, sets, clock, utcOffset, restTimer, sync)
-                .plan(owner, plan.machineIds)
-            if (!plan.pinned) plans.upsert(plan.copy(deleted = true, updatedAt = clock.now()))
-            onStarted(today)
-        }
+        writes.launch { placement.startPlan(shownTo, plan)?.let(onStarted) }
     }
 }

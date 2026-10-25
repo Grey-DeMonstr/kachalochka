@@ -139,6 +139,7 @@ class VisitViewModelTest {
         gym.machineReads,
         gym.profiles,
         AccountAvatars(gym.accounts, gym.profiles),
+        gym.placement,
         gym.unsaved,
     )
 
@@ -1761,6 +1762,21 @@ class VisitViewModelTest {
             assertEquals(today, opened)
             assertEquals(listOf(row.id, press.id), gym.visits.byId(visit.id)?.planned)
             assertEquals(2, gym.sets.forVisit(lastWeek.id).size)
+        }
+
+    @Test
+    fun a_switch_while_a_day_repeats_today_opens_nothing() =
+        runTest {
+            val two = twoAccountGym()
+            val vm = viewModel(two, day = seventh).also { it.refresh() }
+            val gate = CompletableDeferred<Unit>().also { two.visits.gate = it }
+            var opened: CalendarDay? = null
+
+            vm.repeatToday { opened = it }
+            two.accounts.switchTo(misha.account.userId)
+            gate.complete(Unit)
+
+            assertNull(opened)
         }
 
     @Test

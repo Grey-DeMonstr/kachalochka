@@ -19,13 +19,8 @@ import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.PlanRepository
-import monster.greyde.kachalochka.core.domain.gym.VisitRepository
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
-import monster.greyde.kachalochka.core.domain.gym.shownOn
-import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.HeldWrites
-import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.machine.GroupMachines
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineReads
@@ -63,9 +58,7 @@ class PlanFormViewModel(
     private val fromVisit: CalendarDay?,
     private val machine: MachineId?,
     private val plans: PlanRepository,
-    private val visits: VisitRepository,
-    private val sets: WorkoutSetRepository,
-    private val utcOffset: UtcOffset,
+    private val placement: Placement,
     private val accounts: Accounts,
     private val clock: Clock,
     private val catalogue: MachineCatalogue,
@@ -160,9 +153,7 @@ class PlanFormViewModel(
 
     private suspend fun startMachines(): List<MachineId> {
         machine?.let { return listOf(it) }
-        val day = fromVisit ?: return emptyList()
-        val shown = visits.shownOn(owner, day, sets, utcOffset::at) ?: return emptyList()
-        return visitMachines(shown.sets, shown.visit.planned)
+        return fromVisit?.let { placement.machinesOn(owner, it) }.orEmpty()
     }
 
     fun typeName(text: String) {

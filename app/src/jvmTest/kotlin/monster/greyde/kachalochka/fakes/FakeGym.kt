@@ -73,12 +73,14 @@ import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoLaunchers
+import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.timer.InMemoryRestSoundPreference
+import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -482,6 +484,18 @@ class FakeGym(
         )
 
     val machineReads = machineReadsOver()
+    val placement =
+        Placement(
+            plans,
+            visits,
+            machines,
+            sets,
+            currentUser,
+            clock,
+            utcOffset,
+            RestTimer(clock),
+            sync,
+        )
     val unsaved = UnsavedChoices()
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()

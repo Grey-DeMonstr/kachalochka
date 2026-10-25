@@ -33,7 +33,6 @@ import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import monster.greyde.kachalochka.ui.strings.inEnglish
-import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -86,7 +85,7 @@ class CalendarViewModelTest {
             gym.accounts,
             gym.clock,
             gym.utcOffset,
-            RestTimer(gym.clock),
+            gym.placement,
             gym.sync,
             gym.friends,
             FriendColorStore(gym.profiles, gym.clock, gym.friends),
@@ -562,6 +561,24 @@ class CalendarViewModelTest {
 
             assertEquals(listOf(row.id), gym.visits.byId(todayVisit.id)?.planned)
             assertEquals(1, gym.sets.forVisit(todayVisit.id).size)
+        }
+
+    @Test
+    fun a_switch_while_a_visit_repeats_today_opens_nothing() =
+        runTest {
+            val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
+            val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+            val two = FakeGym().withAccounts(ivan, misha, active = ivan)
+            two.visits.upsert(sunday.copy(userId = ivan.account.userId))
+            val vm = viewModel(two).also { it.selectDay(twelfth) }
+            val gate = CompletableDeferred<Unit>().also { two.visits.gate = it }
+            var opened: CalendarDay? = null
+
+            vm.repeatToday { opened = it }
+            two.accounts.switchTo(misha.account.userId)
+            gate.complete(Unit)
+
+            assertNull(opened)
         }
 
     @Test

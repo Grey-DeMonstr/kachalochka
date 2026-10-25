@@ -50,6 +50,7 @@ import monster.greyde.kachalochka.ui.measures.MeasureViewModel
 import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
 import monster.greyde.kachalochka.ui.measures.MeasuresViewModel
 import monster.greyde.kachalochka.ui.photos.PhotoLoaders
+import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.plans.PlanFormViewModel
 import monster.greyde.kachalochka.ui.plans.PlansViewModel
 import monster.greyde.kachalochka.ui.plans.VisitPlacementViewModel
@@ -88,6 +89,7 @@ val appModule =
         single { MachineCatalogue(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
         single { MachineReads(get(), get(), get(), get(), get()) }
         single { LinkUpkeep(get(), get()) }
+        single { Placement(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
         single { UnsavedChoices() }
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
@@ -134,6 +136,7 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
             )
         }
         viewModel { (day: CalendarDay?) ->
@@ -157,8 +160,6 @@ val appModule =
                 plan,
                 fromVisit,
                 machine,
-                get(),
-                get(),
                 get(),
                 get(),
                 get(),

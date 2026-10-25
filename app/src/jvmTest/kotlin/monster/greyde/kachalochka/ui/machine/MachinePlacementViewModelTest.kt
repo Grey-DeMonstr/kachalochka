@@ -21,7 +21,6 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import monster.greyde.kachalochka.ui.plans.PlanChoiceUi
-import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -52,17 +51,11 @@ class MachinePlacementViewModelTest {
 
     private fun viewModel(on: FakeGym = gym) =
         MachinePlacementViewModel(
-            on.plans,
-            on.visits,
+            on.placement,
             on.machines,
-            on.sets,
             on.currentUser,
             on.accounts,
             on.catalogue,
-            on.clock,
-            on.utcOffset,
-            RestTimer(on.clock),
-            on.sync,
         )
 
     @Test

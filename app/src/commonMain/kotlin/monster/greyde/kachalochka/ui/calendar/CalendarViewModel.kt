@@ -46,9 +46,8 @@ import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.format.weekdayName
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import monster.greyde.kachalochka.ui.timer.RestTimer
-import monster.greyde.kachalochka.ui.visit.SetRecorder
 import kotlin.time.Clock
 
 data class CalendarUiState(
@@ -125,7 +124,7 @@ class CalendarViewModel(
     private val accounts: Accounts,
     private val clock: Clock,
     private val utcOffset: UtcOffset,
-    private val restTimer: RestTimer,
+    private val placement: Placement,
     private val sync: SyncTrigger,
     private val friends: FriendsRepository,
     private val colors: FriendColorStore,
@@ -247,12 +246,8 @@ class CalendarViewModel(
     /** Plans the shown visit's machines in today's visit, then reports today. */
     fun repeatToday(onDone: (CalendarDay) -> Unit) {
         val from = selected
-        writes.launch {
-            val today = today()
-            SetRecorder(today, visits, machines, sets, clock, utcOffset, restTimer, sync)
-                .planFrom(currentUser.id(), from)
-            onDone(today)
-        }
+        val owner = accounts.activeId.value
+        writes.launch { placement.repeatToday(owner, from)?.let(onDone) }
     }
 
     fun startMove(id: VisitId) {

@@ -6,25 +6,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
-import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.PlanId
-import monster.greyde.kachalochka.core.domain.gym.PlanRepository
-import monster.greyde.kachalochka.core.domain.gym.VisitRepository
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
-import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.reading
+import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.plans.PlanChoiceUi
-import monster.greyde.kachalochka.ui.plans.planChoices
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import monster.greyde.kachalochka.ui.timer.RestTimer
-import monster.greyde.kachalochka.ui.visit.SetRecorder
-import kotlin.time.Clock
 
 /**
  * A machine a screen shows: the account's own, or a group mate's when [ofFriend]. [group] is the
@@ -55,17 +47,11 @@ data class PlacementUi(
  * §4.3).
  */
 class MachinePlacementViewModel(
-    private val plans: PlanRepository,
-    private val visits: VisitRepository,
+    private val placement: Placement,
     private val machines: MachineRepository,
-    private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val catalogue: MachineCatalogue,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
-    private val restTimer: RestTimer,
-    private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PlacementUi())
     val state: StateFlow<PlacementUi> = mutableState
@@ -84,10 +70,9 @@ class MachinePlacementViewModel(
     }
 
     fun choosePlan(machine: PlacedMachine) {
+        val owner = accounts.activeId.value
         viewModelScope.launch {
-            val owner = currentUser.id()
-            val choices = planChoices(plans, machines, owner)
-            if (!stillActive(owner)) return@launch
+            val choices = placement.choices(owner) ?: return@launch
             choosing = machine to owner
             mutableState.value = PlacementUi(choices = choices)
         }
@@ -111,13 +96,7 @@ class MachinePlacementViewModel(
         cancelChoice()
         writes.launch {
             val own = standIn(owner, machine, onStoodIn) ?: return@launch
-            val stored = plans.byId(plan)?.takeIf { it.userId == owner && !it.deleted }
-            if (stored == null || !stillActive(owner)) return@launch
-            if (own !in stored.machineIds) {
-                plans.upsert(
-                    stored.copy(machineIds = stored.machineIds + own, updatedAt = clock.now()),
-                )
-            }
+            if (!placement.addToPlan(owner, plan, listOf(own))) return@launch
             notice(machine, AppStrings.current.addedTo(title))
         }
     }
@@ -140,13 +119,10 @@ class MachinePlacementViewModel(
         onStoodIn: () -> Unit = {},
         onOpen: (CalendarDay) -> Unit,
     ) {
+        val owner = accounts.activeId.value
         writes.launch {
-            val owner = currentUser.id()
             val own = standIn(owner, machine, onStoodIn) ?: return@launch
-            if (!stillActive(owner)) return@launch
-            val today = today()
-            recorder(today).plan(owner, listOf(own))
-            if (stillActive(owner)) onOpen(today)
+            placement.planToday(owner, listOf(own))?.let(onOpen)
         }
     }
 
@@ -199,14 +175,6 @@ class MachinePlacementViewModel(
         val own = found ?: catalogue.ownCopy(owner, shown)
         onStoodIn()
         return own.id
-    }
-
-    private fun recorder(day: CalendarDay) =
-        SetRecorder(day, visits, machines, sets, clock, utcOffset, restTimer, sync)
-
-    private fun today(): CalendarDay {
-        val now = clock.now()
-        return CalendarDay.of(now, utcOffset.at(now))
     }
 
     private suspend fun stillActive(owner: UserId?) = currentUser.id() == owner
