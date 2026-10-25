@@ -32,12 +32,16 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.convertedSets
 import monster.greyde.kachalochka.core.domain.gym.coverPhoto
 import monster.greyde.kachalochka.core.domain.gym.linkSuggestions
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.gym.mergedLinks
+import monster.greyde.kachalochka.core.domain.gym.mergedMachines
 import monster.greyde.kachalochka.core.domain.gym.missingDirectLinks
 import monster.greyde.kachalochka.core.domain.gym.ownStandIn
+import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.accountAvatar
@@ -134,6 +138,9 @@ class ShownMachines(
     }
 }
 
+/** How a merge of two own machines ended; see [MachineCatalogue.merge]. */
+enum class MergeOutcome { Done, Offline, Gone }
+
 /**
  * The machines an account sees: its own, read from the device, and its group mates', read online
  * and joined to them by links. The screens write machine links here, under one lock (spec §4.5).
@@ -142,6 +149,7 @@ class MachineCatalogue(
     private val machines: MachineRepository,
     private val photos: PhotoRepository,
     private val links: MachineLinkRepository,
+    private val sets: WorkoutSetRepository,
     private val friends: FriendsRepository,
     private val clock: Clock,
     private val sync: SyncTrigger,
@@ -219,10 +227,66 @@ class MachineCatalogue(
     private fun forget(owner: UserId) = lastGyms.update { it - owner }
 
     /**
-     * Friends' links into [removed] move to [kept] on the server; false when it does not answer.
-     * [owner]'s last group read is dropped, since friends' rows changed.
+     * Merges [owner]'s [removed] into [kept]; the moved sets are converted to the kept unit when
+     * [convert] and keep their totals under the kept platform when [adjust]. Friends' links into
+     * [removed] can move only on the server, so signed in it goes first and nothing is written
+     * when it does not answer. Once it has answered, the local rows follow even if the caller is
+     * cancelled: sets, own links, photos, the machine last, then one sync request. Gone when a
+     * machine is no longer [owner]'s live one or [owner] is no longer the active account.
      */
-    suspend fun repointFriends(
+    suspend fun merge(
+        owner: UserId?,
+        kept: MachineId,
+        removed: MachineId,
+        convert: Boolean,
+        adjust: Boolean,
+    ): MergeOutcome {
+        val keptRow = liveOwn(kept, owner)
+        val removedRow = liveOwn(removed, owner)
+        if (keptRow == null || removedRow == null || accounts.activeId.value != owner) {
+            return MergeOutcome.Gone
+        }
+        if (owner != null && !repointFriends(owner, removed, kept)) return MergeOutcome.Offline
+        withContext(NonCancellable) {
+            val now = clock.now()
+            val moved = sets.forMachine(removed).filter { it.userId == owner }
+            val rows =
+                mergedMachines(
+                    keptRow,
+                    removedRow,
+                    if (convert) {
+                        convertedSets(
+                            moved,
+                            removedRow.unit,
+                            keptRow.unit,
+                            keptRow.weightStep,
+                            now,
+                        )
+                    } else {
+                        moved
+                    },
+                    now,
+                    photos.forMachine(removed).filter { it.userId == owner },
+                    if (adjust) platformShift(removedRow, keptRow) else 0.0,
+                )
+            rows.sets.forEach { sets.upsert(it) }
+            writingLinks(requestSync = false) {
+                mergedLinks(kept, removed, links.all(owner), now).forEach { upsert(it) }
+            }
+            rows.photos.forEach { photos.upsert(it) }
+            machines.upsert(rows.removed)
+            sync.request()
+        }
+        return MergeOutcome.Done
+    }
+
+    private suspend fun liveOwn(
+        id: MachineId,
+        owner: UserId?,
+    ): Machine? = machines.byId(id)?.takeIf { !it.deleted && it.userId == owner }
+
+    /** False when the server does not answer; a repoint drops the last group read. */
+    private suspend fun repointFriends(
         owner: UserId,
         removed: MachineId,
         kept: MachineId,
@@ -233,18 +297,6 @@ class MachineCatalogue(
                 forget(owner)
             }
         }.isSuccess
-
-    /**
-     * [owner]'s links of [removed] move to [kept]. Requests no sync, since the merge requests one
-     * after its last row.
-     */
-    suspend fun moveLinks(
-        owner: UserId?,
-        removed: MachineId,
-        kept: MachineId,
-    ) = writingLinks(requestSync = false) {
-        mergedLinks(kept, removed, links.all(owner), clock.now()).forEach { upsert(it) }
-    }
 
     /**
      * Friends' links into [machine] can be broken only on the server, so they go first, and

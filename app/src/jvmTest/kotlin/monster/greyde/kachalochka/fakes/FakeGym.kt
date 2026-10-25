@@ -460,10 +460,12 @@ class FakeGym(
     fun catalogueOver(
         links: MachineLinkRepository,
         machines: MachineRepository = this.machines,
+        sets: WorkoutSetRepository = this.sets,
     ) = MachineCatalogue(
         machines,
         photos,
         links,
+        sets,
         friends,
         clock,
         sync,

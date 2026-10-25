@@ -626,13 +626,12 @@ friend's machine after the viewer's own. Its writes: `take` writes the own copy 
 machine and its link; `friendStandIn` gives the own machine of a friend's machine's cluster, from a
 group read and the own links read again, else `take`s it; `link` writes one own link to a friend's
 machine; `deviceStandIn` and `ownCopy` serve another account on the device (see `SetRecorder`
-below); `unlink`, `repointFriends` and `moveLinks` serve the machine form and the chooser (see
-below).
+below); `unlink` and `merge` serve the machine form and the chooser (see below).
 Every link write runs under one mutex and its upkeep reads the own links again first, so two
 writes at the same time never write the same link. Server calls run before the mutex is taken. A
 write requests a sync when it wrote anything, also when it is stopped halfway; `unlink` always
-requests one, and `moveLinks` none, because the merge requests one after its last row. Once the
-server changed friends' links, `unlink` and `repointFriends` drop the account's last group read.
+requests one, and `merge` one after its last row. Once the server changed friends' links, `unlink`
+and `merge` drop the account's last group read.
 After a group read that succeeds, and after `take` and `link` with the group read the screen
 holds, the catalogue writes `missingDirectLinks` for the account the read was made for, a managed
 child included. A failed upkeep goes to `FailureLog` and fails nothing: the group read keeps the
@@ -680,11 +679,14 @@ suggests the machine in use. `mergedMachines` returns the rows to write: the rem
 and photos moved to the kept one, and the removed machine soft-deleted. `mergedLinks` gives its own
 links moved to the kept one; a link the kept one already has, or one into it, is soft-deleted
 instead. With the dialog's recalculation on, the moved sets also take
-`platformShift(removed, kept)` (see below). Signed in, `MachineCatalogue.repointFriends` first
-moves friends' links into the removed machine through `FriendsRepository.repointLinks`, called only
-when `groupLinks` shows one; if the server does not answer nothing is written. The rows are then
-written sets first, the links through `MachineCatalogue.moveLinks`, and the machine last, and a
-sync is requested.
+`platformShift(removed, kept)` (see below). `MachineCatalogue.merge` writes the whole merge for
+the account the chooser was shown to and answers done, offline or gone; the chooser only maps the
+answer to its dialog. Signed in, it first moves friends' links into the removed machine through
+`FriendsRepository.repointLinks`, called only when `groupLinks` shows one; if the server does not
+answer nothing is written. The rows are then written sets first, the links, the photos and the
+machine last, under `NonCancellable` so a closed screen does not stop them halfway, and a sync is
+requested. A machine that is no longer the account's live one, or a switch before the server
+call, writes nothing.
 "Отвязать от друзей" (`MachineCatalogue.unlink`) breaks every direct link of the machine the same
 way round: `FriendsRepository.breakLinks` first, then the own links touching it soft-deleted
 locally. The form reads the links again whenever it is shown, and the machine's page reads friends'

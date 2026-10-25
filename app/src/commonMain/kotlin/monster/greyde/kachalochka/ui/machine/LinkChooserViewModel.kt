@@ -3,27 +3,21 @@ package monster.greyde.kachalochka.ui.machine
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.identity.Accounts
-import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
-import monster.greyde.kachalochka.core.domain.gym.PhotoRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.anyNameMatches
-import monster.greyde.kachalochka.core.domain.gym.convertedSets
 import monster.greyde.kachalochka.core.domain.gym.convertible
-import monster.greyde.kachalochka.core.domain.gym.mergedMachines
 import monster.greyde.kachalochka.core.domain.gym.nameMatches
 import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.gym.suggestedToKeep
@@ -95,9 +89,7 @@ class LinkChooserViewModel(
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: Clock,
-    private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
-    private val photos: PhotoRepository,
     private val catalogue: MachineCatalogue,
     private val reads: MachineReads,
     private val utcOffset: UtcOffset,
@@ -247,52 +239,21 @@ class LinkChooserViewModel(
         mutableState.value = mutableState.value.copy(merge = null, error = error)
     }
 
-    /**
-     * Friends' links into the removed machine can move only on the server, so a signed-in merge
-     * waits for it and writes nothing when it does not answer. Once it has answered, leaving the
-     * screen must not stop the local rows halfway.
-     */
+    /** The merge is for the account the machines were shown for; a switch drops the dialog. */
     fun confirmMerge(onDone: (kept: MachineId) -> Unit) {
         val merge = mutableState.value.merge ?: return
-        val keptId = merge.kept
-        val removedId = merge.choices.first { it.id != keptId }.id
+        val kept = merge.kept
+        val removed = merge.choices.first { it.id != kept }.id
         val mergedFor = shownFor
         writes.launch {
-            val owner = currentUser.id()
-            val kept = liveOwn(keptId, owner)
-            val removed = liveOwn(removedId, owner)
-            if (owner != mergedFor || kept == null || removed == null) {
-                closeMerge(error = null)
-                return@launch
+            when (catalogue.merge(mergedFor, kept, removed, merge.convert, merge.adjust)) {
+                MergeOutcome.Done -> {
+                    closeMerge(error = null)
+                    onDone(kept)
+                }
+                MergeOutcome.Offline -> closeMerge(error = AppStrings.current.offline)
+                MergeOutcome.Gone -> closeMerge(error = null)
             }
-            if (owner != null && !catalogue.repointFriends(owner, removed.id, kept.id)) {
-                closeMerge(error = AppStrings.current.offline)
-                return@launch
-            }
-            withContext(NonCancellable) {
-                val now = clock.now()
-                val moved = sets.forMachine(removed.id).filter { it.userId == owner }
-                val rows =
-                    mergedMachines(
-                        kept,
-                        removed,
-                        if (merge.convert) {
-                            convertedSets(moved, removed.unit, kept.unit, kept.weightStep, now)
-                        } else {
-                            moved
-                        },
-                        now,
-                        photos.forMachine(removed.id).filter { it.userId == owner },
-                        if (merge.adjust) platformShift(removed, kept) else 0.0,
-                    )
-                rows.sets.forEach { sets.upsert(it) }
-                catalogue.moveLinks(owner, removed.id, kept.id)
-                rows.photos.forEach { photos.upsert(it) }
-                machines.upsert(rows.removed)
-                sync.request()
-            }
-            closeMerge(error = null)
-            onDone(kept.id)
         }
     }
 

@@ -15,9 +15,17 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.VisitId
+import monster.greyde.kachalochka.core.domain.gym.WeightUnit
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.childAccount
+import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
@@ -539,50 +547,94 @@ class MachineCatalogueTest {
             assertNull(catalogue.lastGroup(PASHA.userId))
         }
 
-    @Test
-    fun repointing_moves_friends_links_into_the_removed_machine_and_drops_the_last_group_read() =
-        runTest {
-            olegsGym()
-            val mine = Machine.new("Жим", ME.userId, t0)
-            gym.machines.upsert(mine)
-            catalogue.group(ME.userId)
+    private fun set(
+        machine: Machine,
+        weight: Double = 70.0,
+    ) = WorkoutSet(
+        WorkoutSetId.random(),
+        machine.userId,
+        VisitId.random(),
+        machine.id,
+        weight,
+        10,
+        0,
+        t0,
+        t0,
+        false,
+    )
 
-            assertTrue(catalogue.repointFriends(ME.userId, myPress.id, mine.id))
+    private suspend fun merge(
+        owner: UserId?,
+        kept: Machine,
+        removed: Machine,
+        convert: Boolean = false,
+        adjust: Boolean = false,
+    ) = catalogue.merge(owner, kept.id, removed.id, convert = convert, adjust = adjust)
+
+    /** Иван's second machine, read with the group so the last group read is in memory. */
+    private suspend fun mineWithGroupRead(): Machine {
+        olegsGym()
+        val mine = Machine.new("Жим", ME.userId, t0)
+        gym.machines.upsert(mine)
+        catalogue.group(ME.userId)
+        return mine
+    }
+
+    @Test
+    fun a_merge_moves_friends_links_into_the_removed_machine_and_drops_the_last_group_read() =
+        runTest {
+            val mine = mineWithGroupRead()
+
+            assertEquals(MergeOutcome.Done, merge(ME.userId, kept = mine, removed = myPress))
 
             assertEquals(listOf(myPress.id to mine.id), gym.friends.repointed)
             assertNull(catalogue.lastGroup(ME.userId))
+            assertTrue(
+                gym.machines.rows
+                    .getValue(myPress.id)
+                    .deleted,
+            )
         }
 
     @Test
     fun a_removed_machine_no_friend_links_to_is_not_repointed() =
         runTest {
-            olegsGym()
-            val mine = Machine.new("Жим", ME.userId, t0)
-            gym.machines.upsert(mine)
-            catalogue.group(ME.userId)
+            val mine = mineWithGroupRead()
 
-            assertTrue(catalogue.repointFriends(ME.userId, mine.id, myPress.id))
+            assertEquals(MergeOutcome.Done, merge(ME.userId, kept = myPress, removed = mine))
 
             assertEquals(emptyList(), gym.friends.repointed)
             assertNotNull(catalogue.lastGroup(ME.userId))
+            assertTrue(
+                gym.machines.rows
+                    .getValue(mine.id)
+                    .deleted,
+            )
         }
 
     @Test
-    fun offline_repointing_fails_and_keeps_the_last_group_read() =
+    fun offline_a_merge_writes_nothing_and_keeps_the_last_group_read() =
         runTest {
-            olegsGym()
-            val mine = Machine.new("Жим", ME.userId, t0)
-            gym.machines.upsert(mine)
-            catalogue.group(ME.userId)
+            val mine = mineWithGroupRead()
+            val moved = set(myPress)
+            gym.sets.upsert(moved)
+            val requests = gym.sync.requests
             gym.friends.offline = true
 
-            assertFalse(catalogue.repointFriends(ME.userId, myPress.id, mine.id))
+            assertEquals(MergeOutcome.Offline, merge(ME.userId, kept = mine, removed = myPress))
 
+            assertEquals(moved, gym.sets.rows[moved.id])
+            assertFalse(
+                gym.machines.rows
+                    .getValue(myPress.id)
+                    .deleted,
+            )
             assertNotNull(catalogue.lastGroup(ME.userId))
+            assertEquals(requests, gym.sync.requests)
         }
 
     @Test
-    fun moving_links_moves_the_own_links_to_the_kept_machine_without_a_sync() =
+    fun a_merge_moves_the_own_links_to_the_kept_machine_and_asks_for_one_sync() =
         runTest {
             val removed = Machine.new("Жим", ME.userId, t0)
             val kept = Machine.new("Жим лёжа", ME.userId, t0)
@@ -597,7 +649,7 @@ class MachineCatalogueTest {
             gym.clock.current += 1.minutes
             val now = gym.clock.current
 
-            catalogue.moveLinks(ME.userId, removed.id, kept.id)
+            assertEquals(MergeOutcome.Done, merge(ME.userId, kept = kept, removed = removed))
 
             val rows = gym.machineLinks.rows
             assertEquals(
@@ -606,7 +658,175 @@ class MachineCatalogueTest {
             )
             assertEquals(duplicate.copy(deleted = true, updatedAt = now), rows[duplicate.id])
             assertEquals(keptHas, rows[keptHas.id])
+            assertEquals(
+                removed.copy(deleted = true, updatedAt = now),
+                gym.machines.rows[removed.id],
+            )
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_merge_moves_the_removed_machine_s_sets_and_photos_to_the_kept_one() =
+        runTest {
+            val removed = Machine.new("Жим", ME.userId, t0)
+            gym.machines.upsert(removed)
+            gym.machines.upsert(myPress)
+            val moved = set(removed)
+            val stays = set(myPress)
+            gym.sets.upsert(moved)
+            gym.sets.upsert(stays)
+            val photo = Photo.new(removed.id, ME.userId, t0)
+            gym.photos.upsert(photo)
+            gym.clock.current += 1.minutes
+            val now = gym.clock.current
+
+            assertEquals(MergeOutcome.Done, merge(ME.userId, kept = myPress, removed = removed))
+
+            assertEquals(
+                moved.copy(machineId = myPress.id, updatedAt = now),
+                gym.sets.rows[moved.id],
+            )
+            assertEquals(stays, gym.sets.rows[stays.id])
+            assertEquals(
+                listOf(photo.copy(machineId = myPress.id, updatedAt = now)),
+                gym.photos.forMachine(myPress.id),
+            )
+        }
+
+    @Test
+    fun a_merge_converts_the_moved_sets_to_the_kept_machine_s_unit_when_asked() =
+        runTest {
+            val removed = Machine.new("Жим", ME.userId, t0)
+            val kept = myPress.copy(unit = WeightUnit.Lb, weightStep = 5.0)
+            gym.machines.upsert(removed)
+            gym.machines.upsert(kept)
+            val imported = set(removed, weight = 22.7)
+            gym.sets.upsert(imported)
+
+            merge(ME.userId, kept = kept, removed = removed, convert = true)
+
+            assertEquals(
+                50.0,
+                gym.sets.rows
+                    .getValue(imported.id)
+                    .weight,
+            )
+        }
+
+    @Test
+    fun a_merge_keeps_the_moved_sets_totals_under_the_kept_platform_when_asked() =
+        runTest {
+            val removed = Machine.new("Жим", ME.userId, t0)
+            val kept = myPress.copy(platformWeight = 25.0)
+            gym.machines.upsert(removed)
+            gym.machines.upsert(kept)
+            val imported = set(removed)
+            gym.sets.upsert(imported)
+
+            merge(ME.userId, kept = kept, removed = removed, adjust = true)
+
+            assertEquals(
+                45.0,
+                gym.sets.rows
+                    .getValue(imported.id)
+                    .weight,
+            )
+        }
+
+    @Test
+    fun a_merge_writes_the_sets_then_the_links_and_the_machine_last() =
+        runTest {
+            val removed = Machine.new("Жим", ME.userId, t0)
+            gym.machines.upsert(removed)
+            gym.machines.upsert(myPress)
+            gym.sets.upsert(set(removed))
+            gym.machineLinks.upsert(ownLink(ME.userId, removed.id, MachineId.random()))
+            val order = mutableListOf<String>()
+            val machines =
+                object : MachineRepository by gym.machines {
+                    override suspend fun upsert(machine: Machine) {
+                        order += "machine"
+                        gym.machines.upsert(machine)
+                    }
+                }
+            val sets =
+                object : WorkoutSetRepository by gym.sets {
+                    override suspend fun upsert(set: WorkoutSet) {
+                        order += "set"
+                        gym.sets.upsert(set)
+                    }
+                }
+            val links =
+                object : MachineLinkRepository by gym.machineLinks {
+                    override suspend fun upsert(link: MachineLink) {
+                        order += "link"
+                        gym.machineLinks.upsert(link)
+                    }
+                }
+
+            gym
+                .catalogueOver(links, machines, sets)
+                .merge(ME.userId, myPress.id, removed.id, convert = false, adjust = false)
+
+            assertEquals(listOf("set", "link", "machine"), order)
+        }
+
+    @Test
+    fun a_merge_of_a_machine_that_is_gone_writes_nothing() =
+        runTest {
+            gym.machines.upsert(myPress)
+            val gone = Machine.new("Жим", ME.userId, t0).copy(deleted = true)
+            gym.machines.upsert(gone)
+
+            assertEquals(MergeOutcome.Gone, merge(ME.userId, kept = myPress, removed = gone))
+            assertEquals(MergeOutcome.Gone, merge(ME.userId, kept = gone, removed = myPress))
+
+            assertFalse(
+                gym.machines.rows
+                    .getValue(myPress.id)
+                    .deleted,
+            )
             assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun a_merge_for_an_account_no_longer_active_writes_nothing() =
+        runTest {
+            val removed = Machine.new("Жим", ME.userId, t0)
+            gym.machines.upsert(removed)
+            gym.machines.upsert(myPress)
+            gym.withChild(childAccount(SASHA, IVAN_SESSION))
+            gym.accounts.switchTo(SASHA.userId)
+
+            assertEquals(MergeOutcome.Gone, merge(ME.userId, kept = myPress, removed = removed))
+
+            assertFalse(
+                gym.machines.rows
+                    .getValue(removed.id)
+                    .deleted,
+            )
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun without_an_account_a_merge_stays_on_the_device() =
+        runTest {
+            val device = FakeGym()
+            val removed = Machine.new("Жим", null, t0)
+            val kept = Machine.new("Жим лёжа", null, t0)
+            device.machines.upsert(removed)
+            device.machines.upsert(kept)
+
+            val outcome = device.catalogue.merge(null, kept.id, removed.id, false, false)
+
+            assertEquals(MergeOutcome.Done, outcome)
+            assertTrue(
+                device.machines.rows
+                    .getValue(removed.id)
+                    .deleted,
+            )
+            assertEquals(0, device.friends.reads)
+            assertEquals(1, device.sync.requests)
         }
 
     @Test

@@ -92,9 +92,7 @@ class LinkChooserViewModelTest {
             gym.currentUser,
             gym.accounts,
             gym.clock,
-            gym.sync,
             gym.profiles,
-            gym.photos,
             catalogue,
             if (catalogue === gym.catalogue) gym.machineReads else gym.machineReadsOver(catalogue),
             gym.utcOffset,
@@ -645,102 +643,6 @@ class LinkChooserViewModelTest {
     }
 
     @Test
-    fun a_merge_moves_the_removed_machine_s_photos_to_the_kept_one() {
-        runBlocking { gym.sets.upsert(set(duplicate, 0)) }
-        val photo = Photo.new(press.id, me, t0)
-        runBlocking { gym.photos.add(photo, byteArrayOf(1)) }
-        gym.clock.current += 1.days
-        val vm = viewModel()
-
-        vm.chooseOwn(duplicate.id)
-        vm.confirmMerge {}
-
-        assertEquals(
-            listOf(photo.copy(machineId = duplicate.id, updatedAt = gym.clock.current)),
-            runBlocking { gym.photos.forMachine(duplicate.id) },
-        )
-    }
-
-    @Test
-    fun a_merge_moves_friends_links_to_the_kept_machine_first() {
-        val (copy, _) = olegsMachines()
-        runBlocking { gym.sets.upsert(set(duplicate, 0)) }
-        val vm = viewModel()
-
-        vm.chooseOwn(duplicate.id)
-        vm.confirmMerge {}
-
-        assertEquals(listOf(press.id to duplicate.id), gym.friends.repointed)
-        assertEquals(
-            duplicate.id,
-            gym.friends.links
-                .single { it.machineId == copy.id }
-                .linkedMachineId,
-        )
-        assertTrue(
-            gym.machines.rows
-                .getValue(press.id)
-                .deleted,
-        )
-    }
-
-    @Test
-    fun a_merge_writes_the_sets_then_the_links_and_the_machine_last() {
-        runBlocking {
-            gym.sets.upsert(set(duplicate, 10))
-            gym.sets.upsert(set(press, 0))
-            gym.machineLinks.upsert(
-                MachineLink(MachineLinkId.random(), me, press.id, MachineId.random(), t0, false),
-            )
-        }
-        val order = mutableListOf<String>()
-        val machines =
-            object : MachineRepository by gym.machines {
-                override suspend fun upsert(machine: Machine) {
-                    order += "machine"
-                    gym.machines.upsert(machine)
-                }
-            }
-        val sets =
-            object : WorkoutSetRepository by gym.sets {
-                override suspend fun upsert(set: WorkoutSet) {
-                    order += "set"
-                    gym.sets.upsert(set)
-                }
-            }
-        val links =
-            object : MachineLinkRepository by gym.machineLinks {
-                override suspend fun upsert(link: MachineLink) {
-                    order += "link"
-                    gym.machineLinks.upsert(link)
-                }
-            }
-        val vm = viewModel(machines = machines, sets = sets, links = links)
-
-        vm.chooseOwn(duplicate.id)
-        vm.confirmMerge {}
-
-        assertEquals(listOf("set", "link", "machine"), order)
-    }
-
-    @Test
-    fun a_mate_s_link_into_the_kept_machine_needs_no_repointing() {
-        olegsMachines()
-        runBlocking { gym.sets.upsert(set(press, 0)) }
-        val vm = viewModel()
-
-        vm.chooseOwn(duplicate.id)
-        vm.confirmMerge {}
-
-        assertEquals(emptyList(), gym.friends.repointed)
-        assertTrue(
-            gym.machines.rows
-                .getValue(duplicate.id)
-                .deleted,
-        )
-    }
-
-    @Test
     fun a_merge_whose_machine_went_meanwhile_closes_the_dialog() {
         val vm = viewModel()
         vm.chooseOwn(duplicate.id)
@@ -762,24 +664,22 @@ class LinkChooserViewModelTest {
     @Test
     fun offline_a_merge_says_so_and_writes_nothing() {
         olegsMachines()
-        val moved = set(press, 0)
-        runBlocking { gym.sets.upsert(moved) }
         val vm = viewModel()
         gym.friends.offline = true
+        var done = false
 
         vm.chooseOwn(duplicate.id)
-        vm.confirmMerge {}
+        vm.confirmMerge { done = true }
 
         assertEquals("Нет связи с сервером", vm.state.value.error)
         assertNull(vm.state.value.merge)
-        assertEquals(moved, gym.sets.rows[moved.id])
+        assertEquals(false, done)
         assertEquals(
             false,
             gym.machines.rows
                 .getValue(duplicate.id)
                 .deleted,
         )
-        assertEquals(0, gym.sync.requests)
     }
 
     @Test

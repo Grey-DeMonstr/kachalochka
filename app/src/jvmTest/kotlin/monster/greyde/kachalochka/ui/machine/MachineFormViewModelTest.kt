@@ -210,9 +210,8 @@ class MachineFormViewModelTest {
                     on.machineReadsOver(catalogue),
                     on.sets,
                 ).also { it.load() }
-            // A friend's link into the machine makes repointFriends drop the cached read.
-            on.friends.links += linkedCopy(olegs, OLEG.userId, t0).second
-            assertTrue(catalogue.repointFriends(ME.userId, olegs.id, MachineId.random()))
+            // Breaking the links of a machine on the server drops the cached read.
+            assertTrue(catalogue.unlink(ME.userId, MachineId.random()))
             assertNull(catalogue.lastGroup(ME.userId))
             val gate = CompletableDeferred<Unit>()
             on.friends.gate = gate

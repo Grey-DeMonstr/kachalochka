@@ -86,7 +86,9 @@ val appModule =
         single { FriendColorStore(get(), get(), get()) }
         single { PhotoLoaders(get()) }
         single { AccountAvatars(get(), get()) }
-        single { MachineCatalogue(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+        single {
+            MachineCatalogue(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+        }
         single { MachineReads(get(), get(), get(), get(), get()) }
         single { LinkUpkeep(get(), get()) }
         single { Placement(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -206,8 +208,6 @@ val appModule =
             LinkChooserViewModel(
                 machine,
                 start,
-                get(),
-                get(),
                 get(),
                 get(),
                 get(),
