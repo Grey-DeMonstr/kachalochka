@@ -75,8 +75,7 @@ class MeasurementFormViewModelTest {
         on.profiles,
         on.currentUser,
         on.accounts,
-        on.clock,
-        on.utcOffset,
+        on.deviceClock,
         on.sync,
     )
 

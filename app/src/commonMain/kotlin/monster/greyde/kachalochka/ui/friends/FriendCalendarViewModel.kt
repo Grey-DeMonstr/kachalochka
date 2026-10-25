@@ -22,7 +22,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.calendar.DayUi
 import monster.greyde.kachalochka.ui.calendar.monthRank
 import monster.greyde.kachalochka.ui.calendar.monthWeeks
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.monthTitle
@@ -30,7 +30,6 @@ import monster.greyde.kachalochka.ui.format.setCount
 import monster.greyde.kachalochka.ui.format.weekdayName
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import kotlin.time.Clock
 
 data class FriendCalendarUiState(
     val monthTitle: String,
@@ -53,8 +52,7 @@ class FriendCalendarViewModel(
     private val catalogue: MachineCatalogue,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val colors: FriendColorStore,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FriendCalendarUiState?>(null)
@@ -69,8 +67,8 @@ class FriendCalendarViewModel(
     private var color: Int? = null
     private var stale = true
     private var dayCard: FriendDayUi? = null
-    private var month: CalendarMonth = CalendarMonth.of(today())
-    private var selected: CalendarDay = today()
+    private var month: CalendarMonth = CalendarMonth.of(clock.today())
+    private var selected: CalendarDay = clock.today()
     private var reloading: Job? = null
 
     private var spokenIn = AppStrings.current
@@ -92,13 +90,13 @@ class FriendCalendarViewModel(
 
     fun showMonth(direction: Int) {
         val next = month.plusMonths(direction)
-        if (monthRank(next) > monthRank(CalendarMonth.of(today()))) return
+        if (monthRank(next) > monthRank(CalendarMonth.of(clock.today()))) return
         month = next
         publish()
     }
 
     fun selectDay(day: CalendarDay) {
-        if (day > today()) return
+        if (day > clock.today()) return
         selected = day
         dayCard = null
         publish()
@@ -148,7 +146,7 @@ class FriendCalendarViewModel(
     }
 
     private fun publish() {
-        val today = today()
+        val today = clock.today()
         val day = selected
         val marked = visitDays
         mutableState.value =
@@ -171,10 +169,5 @@ class FriendCalendarViewModel(
                 visit = dayCard,
                 noVisit = day !in marked,
             )
-    }
-
-    private fun today(): CalendarDay {
-        val now = clock.now()
-        return CalendarDay.of(now, utcOffset.at(now))
     }
 }

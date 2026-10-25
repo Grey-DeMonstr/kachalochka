@@ -24,9 +24,8 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.preferredUnit
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import kotlin.time.Clock
 
 data class PickerUiState(
     val query: String = "",
@@ -57,8 +56,7 @@ class MachinePickerViewModel(
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
     private val catalogue: MachineCatalogue,
@@ -107,7 +105,7 @@ class MachinePickerViewModel(
         owner: UserId?,
         day: CalendarDay,
     ): Set<MachineId> {
-        val shown = visits.shownOn(owner, day, sets, utcOffset::at) ?: return emptySet()
+        val shown = visits.shownOn(owner, day, sets, clock::offsetAt) ?: return emptySet()
         return shown.sets.map { it.machineId }.toSet() + shown.visit.planned
     }
 
@@ -155,7 +153,7 @@ class MachinePickerViewModel(
             return
         }
         val now = clock.now()
-        val offset = utcOffset.at(now)
+        val offset = clock.offsetAt(now)
         val listing =
             read.listing(
                 MachineQuery(query, chosenTags, inVisit),

@@ -27,11 +27,10 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.ui.components.HistoryRowUi
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.math.round
-import kotlin.time.Clock
 
 /**
  * [points] are the period's percents, oldest first; [results] are all of them, newest first.
@@ -59,8 +58,7 @@ class BodyFatViewModel(
     private val profiles: ProfileRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<BodyFatUi?>(null)
@@ -111,7 +109,7 @@ class BodyFatViewModel(
                 val inputs =
                     BodyInputs(
                         sex = profile?.sex,
-                        age = profile?.birthDate?.let { ageOn(it, today()) },
+                        age = profile?.birthDate?.let { ageOn(it, clock.today()) },
                         heightCm = profile?.heightCm,
                         weightKg = latest(MeasureKind.Weight),
                         waistCm = latest(MeasureKind.Waist),
@@ -129,13 +127,8 @@ class BodyFatViewModel(
         publish()
     }
 
-    private fun today(): CalendarDay {
-        val now = clock.now()
-        return CalendarDay.of(now, utcOffset.at(now))
-    }
-
     private fun publish() {
-        val today = today()
+        val today = clock.today()
         val start = periodStart(period, today)
         val shown = percents.filter { (day, _) -> start == null || day >= start }
         val first = shown.firstOrNull()

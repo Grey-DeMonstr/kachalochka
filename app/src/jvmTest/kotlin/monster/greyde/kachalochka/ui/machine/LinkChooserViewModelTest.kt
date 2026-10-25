@@ -90,11 +90,10 @@ class LinkChooserViewModelTest {
             sets,
             gym.currentUser,
             gym.accounts,
-            gym.clock,
+            gym.deviceClock,
             gym.profiles,
             catalogue,
             if (catalogue === gym.catalogue) gym.machineReads else gym.machineReadsOver(catalogue),
-            gym.utcOffset,
         ).also { vm ->
             vm.load()
             query?.let(vm::onQueryChange)

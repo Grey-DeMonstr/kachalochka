@@ -42,8 +42,7 @@ class FriendVisitViewModelTest {
             gym.catalogue,
             gym.currentUser,
             gym.accounts,
-            gym.clock,
-            gym.utcOffset,
+            gym.deviceClock,
             gym.profiles,
         )
 

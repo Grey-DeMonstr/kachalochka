@@ -19,10 +19,9 @@ import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.startedPlanned
 import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.identity.UserId
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.timer.RestTimer
-import kotlin.time.Clock
 
 /**
  * Writes one account's [day]: the sets, which visit they land in, the visit's planned machines,
@@ -34,8 +33,7 @@ class SetRecorder(
     private val visits: VisitRepository,
     private val machines: MachineRepository,
     private val sets: WorkoutSetRepository,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val restTimer: RestTimer,
     private val sync: SyncTrigger,
 ) {
@@ -49,7 +47,7 @@ class SetRecorder(
         comment: String,
     ) {
         val now = clock.now()
-        val today = CalendarDay.of(now, utcOffset.at(now))
+        val today = CalendarDay.of(now, clock.offsetAt(now))
         val (target, targetSets) = shownOrNew(owner)
         sets.upsert(
             WorkoutSet(
@@ -77,7 +75,7 @@ class SetRecorder(
         owner: UserId?,
         planMachines: List<MachineId>,
     ) {
-        val shown = visits.shownOn(owner, day, sets, utcOffset::at)
+        val shown = visits.shownOn(owner, day, sets, clock::offsetAt)
         val live =
             machines
                 .all(owner)
@@ -101,7 +99,7 @@ class SetRecorder(
         owner: UserId?,
         from: CalendarDay,
     ) {
-        val source = visits.shownOn(owner, from, sets, utcOffset::at) ?: return
+        val source = visits.shownOn(owner, from, sets, clock::offsetAt) ?: return
         plan(owner, visitMachines(source.sets, source.visit.planned))
     }
 
@@ -142,7 +140,7 @@ class SetRecorder(
     }
 
     private suspend fun shownOrNew(owner: UserId?): ShownVisit {
-        visits.shownOn(owner, day, sets, utcOffset::at)?.let { return it }
+        visits.shownOn(owner, day, sets, clock::offsetAt)?.let { return it }
         val created = newVisit(owner)
         visits.upsert(created.visit)
         return created
@@ -150,7 +148,7 @@ class SetRecorder(
 
     private fun newVisit(owner: UserId?): ShownVisit {
         val now = clock.now()
-        val offset = utcOffset.at(now)
+        val offset = clock.offsetAt(now)
         return ShownVisit(
             dayVisit(day, owner, CalendarDay.of(now, offset), offset, now),
             emptyList(),
@@ -158,7 +156,6 @@ class SetRecorder(
     }
 
     private fun pushIfPast() {
-        val now = clock.now()
-        if (day != CalendarDay.of(now, utcOffset.at(now))) sync.request()
+        if (day != clock.today()) sync.request()
     }
 }

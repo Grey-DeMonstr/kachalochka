@@ -13,11 +13,10 @@ import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.planTitle
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.visit.SetRecorder
-import kotlin.time.Clock
 
 /**
  * Puts machines into a plan or into today's visit for the account a screen offered the action
@@ -29,8 +28,7 @@ class Placement(
     private val machines: MachineRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val restTimer: RestTimer,
     private val sync: SyncTrigger,
 ) {
@@ -67,7 +65,7 @@ class Placement(
         plan: PlanId,
         day: CalendarDay,
     ): Boolean {
-        val shown = visits.shownOn(owner, day, sets, utcOffset::at) ?: return false
+        val shown = visits.shownOn(owner, day, sets, clock::offsetAt) ?: return false
         return addToPlan(owner, plan, visitMachines(shown.sets, shown.visit.planned))
     }
 
@@ -76,7 +74,7 @@ class Placement(
         owner: UserId?,
         day: CalendarDay,
     ): List<MachineId> {
-        val shown = visits.shownOn(owner, day, sets, utcOffset::at) ?: return emptyList()
+        val shown = visits.shownOn(owner, day, sets, clock::offsetAt) ?: return emptyList()
         return visitMachines(shown.sets, shown.visit.planned)
     }
 
@@ -112,9 +110,8 @@ class Placement(
         write: suspend (SetRecorder) -> Unit,
     ): CalendarDay? {
         if (!stillActive(owner)) return null
-        val now = clock.now()
-        val today = CalendarDay.of(now, utcOffset.at(now))
-        write(SetRecorder(today, visits, machines, sets, clock, utcOffset, restTimer, sync))
+        val today = clock.today()
+        write(SetRecorder(today, visits, machines, sets, clock, restTimer, sync))
         return today.takeIf { stillActive(owner) }
     }
 

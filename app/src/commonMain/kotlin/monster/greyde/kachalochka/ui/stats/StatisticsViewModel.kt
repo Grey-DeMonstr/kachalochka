@@ -35,6 +35,7 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.groupByTagChoice
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
@@ -47,7 +48,6 @@ import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import kotlin.time.Clock
 
 data class StatsChoiceUi(
     val id: MachineId,
@@ -123,8 +123,7 @@ class StatisticsViewModel(
     private val profiles: ProfileRepository,
     private val measures: MeasureRepository,
     private val measurements: MeasurementRepository,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val nickname: Nickname,
     private val sharing: TextSharing,
     unsaved: UnsavedChoices,
@@ -245,9 +244,9 @@ class StatisticsViewModel(
         val shown = this.shown ?: return
         val read = shown.own
         val now = clock.now()
-        val today = CalendarDay.of(now, utcOffset.at(now))
+        val today = CalendarDay.of(now, clock.offsetAt(now))
         val start = period.start(today)
-        val startAt = start.at(0L, utcOffset.at(now))
+        val startAt = start.at(0L, clock.offsetAt(now))
         val machine = read.machines.firstOrNull { it.id == selected }
         val periodLabel = periodLabel(start, today)
         val progress =
@@ -291,7 +290,7 @@ class StatisticsViewModel(
                             period,
                             today,
                             preferred,
-                            utcOffset,
+                            UtcOffset(clock::offsetAt),
                             cycle,
                         )
                     },

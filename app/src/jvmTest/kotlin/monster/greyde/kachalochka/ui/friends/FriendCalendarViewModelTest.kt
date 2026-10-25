@@ -33,8 +33,7 @@ class FriendCalendarViewModelTest {
             gym.catalogue,
             gym.currentUser,
             gym.accounts,
-            gym.clock,
-            gym.utcOffset,
+            gym.deviceClock,
             FriendColorStore(gym.profiles, gym.clock, gym.friends),
         )
 

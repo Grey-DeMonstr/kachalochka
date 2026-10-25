@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.family.FamilyRepository
-import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -19,7 +18,7 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.navigation.TransitionPreference
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.strings.AppLanguage
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
@@ -28,7 +27,6 @@ import monster.greyde.kachalochka.ui.theme.ThemePreference
 import monster.greyde.kachalochka.ui.timer.RestSound
 import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import kotlin.math.abs
-import kotlin.time.Clock
 
 /** The lengths a screen transition is offered in. */
 enum class TransitionPreset(
@@ -82,8 +80,7 @@ class SettingsViewModel(
     private val profiles: ProfileRepository,
     private val accounts: Accounts,
     private val currentUser: CurrentUser,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val family: FamilyRepository,
     private val themes: ThemePreference,
     private val transitions: TransitionPreference,
@@ -131,7 +128,7 @@ class SettingsViewModel(
                         ?: account?.shownName.orEmpty(),
                 avatar = Avatar(stored?.avatarPhoto, account?.pictureUrl),
                 sex = stored?.sex,
-                age = stored?.birthDate?.let { ageOn(it, today()) },
+                age = stored?.birthDate?.let { ageOn(it, clock.today()) },
                 heightCm = stored?.heightCm,
                 weightUnit = stored?.weightUnit ?: PreferredWeightUnit.Kg,
             )
@@ -177,10 +174,5 @@ class SettingsViewModel(
     /** Leaving the screen must not stop a write halfway, so it finishes on its own. */
     private fun keep(write: suspend () -> Unit) {
         viewModelScope.launch { withContext(NonCancellable) { write() } }
-    }
-
-    private fun today(): CalendarDay {
-        val now = clock.now()
-        return CalendarDay.of(now, utcOffset.at(now))
     }
 }

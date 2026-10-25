@@ -66,6 +66,7 @@ import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
 import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
@@ -458,6 +459,7 @@ class FakeGym(
             LiveSession(NoOpSessionActivation(), { null }, accountStore),
         ) { purged += it }
     val utcOffset = UtcOffset { Duration.ZERO }
+    val deviceClock = DeviceClock(clock, utcOffset)
     val sync = RecordingSyncTrigger()
     val avatars = AccountAvatars(accounts, profiles)
     val failures = mutableListOf<Throwable>()
@@ -498,8 +500,7 @@ class FakeGym(
             machines,
             sets,
             currentUser,
-            clock,
-            utcOffset,
+            deviceClock,
             RestTimer(clock),
             sync,
         )

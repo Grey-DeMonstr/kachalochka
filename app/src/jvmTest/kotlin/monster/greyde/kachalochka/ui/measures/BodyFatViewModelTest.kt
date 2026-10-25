@@ -84,8 +84,7 @@ class BodyFatViewModelTest {
             gym.profiles,
             gym.currentUser,
             gym.accounts,
-            gym.clock,
-            gym.utcOffset,
+            gym.deviceClock,
             gym.sync,
         )
 

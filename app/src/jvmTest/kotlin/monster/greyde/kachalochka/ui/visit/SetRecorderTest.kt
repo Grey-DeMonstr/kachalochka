@@ -47,8 +47,7 @@ class SetRecorderTest {
             gym.visits,
             gym.machines,
             gym.sets,
-            gym.clock,
-            gym.utcOffset,
+            gym.deviceClock,
             timer,
             gym.sync,
         )

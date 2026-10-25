@@ -26,14 +26,13 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.calendar.monthRank
 import monster.greyde.kachalochka.ui.calendar.monthWeeks
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.weekdayName
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import kotlin.time.Clock
 import kotlin.time.Instant
 
 /** [hint]: a cycle day hints the day it should be; other measures, the value before. */
@@ -71,15 +70,14 @@ class MeasurementFormViewModel(
     private val profiles: ProfileRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<MeasurementFormUi?>(null)
     val state: StateFlow<MeasurementFormUi?> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
-    private var day: CalendarDay = args.day ?: today()
+    private var day: CalendarDay = args.day ?: clock.today()
     private var shown: List<Measure> = emptyList()
     private var cycleLength: Int? = null
 
@@ -133,13 +131,13 @@ class MeasurementFormViewModel(
 
     fun showMonth(direction: Int) {
         val next = pickerMonth?.plusMonths(direction) ?: return
-        if (monthRank(next) > monthRank(CalendarMonth.of(today()))) return
+        if (monthRank(next) > monthRank(CalendarMonth.of(clock.today()))) return
         pickerMonth = next
         publish()
     }
 
     fun chooseDay(chosen: CalendarDay) {
-        if (chosen > today()) return
+        if (chosen > clock.today()) return
         day = chosen
         pickerMonth = null
         showDay()
@@ -196,7 +194,7 @@ class MeasurementFormViewModel(
 
     /** A past day's edit is a one-off, so it is pushed at once, as a past visit's is. */
     private fun requestSyncIfPast() {
-        if (day != today()) sync.request()
+        if (day != clock.today()) sync.request()
     }
 
     private fun newMeasurement(
@@ -217,7 +215,7 @@ class MeasurementFormViewModel(
     private fun changed(id: MeasureId): Boolean = !valid(id) || typedValue(id) != onDay[id]?.value
 
     private fun publish() {
-        val today = today()
+        val today = clock.today()
         val fields =
             shown.map { measure ->
                 MeasureFieldUi(
@@ -264,10 +262,5 @@ class MeasurementFormViewModel(
             return cycleFrom(own, cycleLength)?.dayOn(day)?.toString()
         }
         return own.firstOrNull { it.day < day }?.let { formatNumber(it.value) }
-    }
-
-    private fun today(): CalendarDay {
-        val now = clock.now()
-        return CalendarDay.of(now, utcOffset.at(now))
     }
 }

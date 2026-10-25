@@ -76,8 +76,7 @@ class FriendMachineViewModelTest {
             gym.currentUser,
             gym.accounts,
             gym.profiles,
-            gym.clock,
-            gym.utcOffset,
+            gym.deviceClock,
         )
 
     /** One of Oleg's visits on his press, [daysAgo], as sets of weight to reps. */

@@ -11,9 +11,8 @@ import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.weekdayDate
-import kotlin.time.Clock
 
 data class HomeUiState(
     val today: TodayUi,
@@ -30,8 +29,7 @@ class HomeViewModel(
     private val visits: VisitRepository,
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<HomeUiState?>(null)
@@ -43,9 +41,8 @@ class HomeViewModel(
 
     fun refresh() {
         viewModelScope.launch {
-            val now = clock.now()
-            val today = CalendarDay.of(now, utcOffset.at(now))
-            val shown = visits.shownOn(currentUser.id(), today, sets, utcOffset::at)
+            val today = clock.today()
+            val shown = visits.shownOn(currentUser.id(), today, sets, clock::offsetAt)
             val started = shown != null && (shown.sets.isNotEmpty() || shown.visit.planned.any())
             mutableState.value =
                 HomeUiState(TodayUi(today, weekdayDate(today, withYear = true), started))

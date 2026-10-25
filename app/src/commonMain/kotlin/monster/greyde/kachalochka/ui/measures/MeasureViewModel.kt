@@ -35,7 +35,7 @@ import monster.greyde.kachalochka.ui.calendar.DayUi
 import monster.greyde.kachalochka.ui.calendar.monthRank
 import monster.greyde.kachalochka.ui.calendar.monthWeeks
 import monster.greyde.kachalochka.ui.components.HistoryRowUi
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.monthTitle
@@ -43,7 +43,6 @@ import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import kotlin.math.abs
-import kotlin.time.Clock
 
 /**
  * [points] are the period's values, oldest first; [results] are all values, newest first;
@@ -101,8 +100,7 @@ class MeasureViewModel(
     private val profiles: ProfileRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<MeasureUi?>(null)
@@ -223,7 +221,7 @@ class MeasureViewModel(
 
     /** A past day's edit is a one-off, so it is pushed at once, as a past visit's is. */
     private suspend fun written(day: CalendarDay) {
-        if (day != today()) sync.request()
+        if (day != clock.today()) sync.request()
         typed = null
         readValues()
         publish()
@@ -232,7 +230,7 @@ class MeasureViewModel(
     private fun storedOn(day: CalendarDay): Measurement? = values.firstOrNull { it.day == day }
 
     fun openHistory() {
-        month = CalendarMonth.of(today())
+        month = CalendarMonth.of(clock.today())
         publish()
     }
 
@@ -248,13 +246,13 @@ class MeasureViewModel(
 
     fun showHistoryMonth(direction: Int) {
         val next = month?.plusMonths(direction) ?: return
-        if (monthRank(next) > monthRank(CalendarMonth.of(today()))) return
+        if (monthRank(next) > monthRank(CalendarMonth.of(clock.today()))) return
         month = next
         publish()
     }
 
     fun chooseDay(day: CalendarDay) {
-        if (month == null || day > today()) return
+        if (month == null || day > clock.today()) return
         entryDay = day
         typed = null
         publish()
@@ -262,7 +260,7 @@ class MeasureViewModel(
 
     /** Opens the history on [day]'s month with [day] in the entry. */
     fun openDay(day: CalendarDay) {
-        if (day > today()) return
+        if (day > clock.today()) return
         month = CalendarMonth.of(day)
         chooseDay(day)
     }
@@ -337,7 +335,7 @@ class MeasureViewModel(
             mutableState.value = null
             return
         }
-        val today = today()
+        val today = clock.today()
         val shownPeriod = inPeriod(values, period, today)
         val first = shownPeriod.firstOrNull()
         val last = shownPeriod.lastOrNull()
@@ -446,10 +444,5 @@ class MeasureViewModel(
             canSave = value != null && value != stored?.value,
             canDelete = stored != null,
         )
-    }
-
-    private fun today(): CalendarDay {
-        val now = clock.now()
-        return CalendarDay.of(now, utcOffset.at(now))
     }
 }

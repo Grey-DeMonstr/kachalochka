@@ -23,14 +23,13 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.preferredUnit
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.setsSummaryParts
 import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.machine.LinkedMachineUi
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.ShownMachines
-import kotlin.time.Clock
 
 /** [title] is the friend's name, [day] heads the list over [countLabel], its machine count. */
 data class FriendVisitUiState(
@@ -60,8 +59,7 @@ class FriendVisitViewModel(
     private val catalogue: MachineCatalogue,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val profiles: ProfileRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FriendVisitUiState?>(null)
@@ -95,7 +93,7 @@ class FriendVisitViewModel(
     }
 
     private suspend fun setsOn(day: CalendarDay): List<WorkoutSet> {
-        val sameDay = friends.visits(member).filter { it.dayAt(utcOffset::at) == day }
+        val sameDay = friends.visits(member).filter { it.dayAt(clock::offsetAt) == day }
         return shownVisit(sameDay, friends::sets)?.sets.orEmpty()
     }
 
@@ -133,8 +131,7 @@ class FriendVisitViewModel(
         avatar: Avatar,
         shown: ShownMachines,
     ): FriendVisitUiState {
-        val now = clock.now()
-        val today = CalendarDay.of(now, utcOffset.at(now))
+        val today = clock.today()
         val groups = groupByMachine(visitSets)
         return FriendVisitUiState(
             title = name,

@@ -27,10 +27,9 @@ import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.ui.account.AccountAvatars
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -81,8 +80,7 @@ class ProfileViewModel(
     private val profiles: ProfileRepository,
     private val accounts: Accounts,
     private val currentUser: CurrentUser,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val sync: SyncTrigger,
     private val photos: PhotoRepository,
     private val avatars: AccountAvatars,
@@ -289,18 +287,13 @@ class ProfileViewModel(
             } catch (_: IllegalArgumentException) {
                 return null
             }
-        return date.takeIf { it >= EARLIEST_BIRTH_DATE && it <= today() }
+        return date.takeIf { it >= EARLIEST_BIRTH_DATE && it <= clock.today() }
     }
 
     private fun heightOf(text: String): Double? = parseDecimal(text)?.takeIf { it in heightRange }
 
     private fun cycleLengthOf(text: String): Int? =
         text.trim().toIntOrNull()?.takeIf { it in CYCLE_LENGTHS }
-
-    private fun today(): CalendarDay {
-        val now = clock.now()
-        return CalendarDay.of(now, utcOffset.at(now))
-    }
 }
 
 private fun dateText(day: CalendarDay): String =

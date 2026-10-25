@@ -57,8 +57,7 @@ class MachineListViewModelTest {
             on.accounts,
             on.sync,
             on.profiles,
-            on.clock,
-            on.utcOffset,
+            on.deviceClock,
             on.unsaved,
         )
 

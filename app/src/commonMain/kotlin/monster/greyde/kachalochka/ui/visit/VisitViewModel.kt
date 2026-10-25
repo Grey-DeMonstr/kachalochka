@@ -47,8 +47,8 @@ import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.accountsUi
 import monster.greyde.kachalochka.ui.account.groupByTagChoice
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.SharedMachine
-import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.formatNumber
@@ -75,7 +75,6 @@ import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.timer.RestTimer
-import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
 
@@ -181,8 +180,7 @@ class VisitViewModel(
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val restTimer: RestTimer,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val sync: SyncTrigger,
     private val friends: FriendsRepository,
     private val sharing: TextSharing,
@@ -198,7 +196,7 @@ class VisitViewModel(
     val state: StateFlow<VisitUiState?> = mutableState
     private val writes = WriteGuard(viewModelScope)
     private val recorder =
-        SetRecorder(day, visits, machines, sets, clock, utcOffset, restTimer, sync)
+        SetRecorder(day, visits, machines, sets, clock, restTimer, sync)
 
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var visitSets: List<WorkoutSet> = emptyList()
@@ -251,7 +249,7 @@ class VisitViewModel(
         get() = repsText?.trim()?.toIntOrNull()?.takeIf { it in 1..MAX_REPS }
     private val repsValid: Boolean get() = repsText == null || typedReps != null
 
-    private val isToday: Boolean get() = day == today()
+    private val isToday: Boolean get() = day == clock.today()
 
     /** The screen follows whoever is active, wherever the switch came from. */
     init {
@@ -516,11 +514,6 @@ class VisitViewModel(
         }
     }
 
-    private fun today(): CalendarDay {
-        val now = clock.now()
-        return CalendarDay.of(now, utcOffset.at(now))
-    }
-
     /**
      * After a switch the page still shows the machine the previous account was on; the active
      * account's machine a save would use stands in for it, until a save copies it (spec §4.1).
@@ -549,7 +542,7 @@ class VisitViewModel(
 
     private suspend fun reload(reseed: Boolean) {
         val owner = currentUser.id()
-        val shown = visits.shownOn(owner, day, sets, utcOffset::at)
+        val shown = visits.shownOn(owner, day, sets, clock::offsetAt)
         preferred = profiles.forOwner(owner)?.weightUnit ?: PreferredWeightUnit.Kg
         grouping.read(owner)
         val ownRead = catalogue.own(owner)
@@ -570,7 +563,7 @@ class VisitViewModel(
             previousVisitSets(
                 machineSets,
                 shown?.visit?.id,
-                before = day.at(0L, utcOffset.at(clock.now())),
+                before = day.at(0L, clock.offsetAt(clock.now())),
             )
         if (reseed && editing == null && machine != null) {
             values =
@@ -640,7 +633,7 @@ class VisitViewModel(
 
     private fun friendLine(result: FriendResult): FriendLineUi {
         val now = clock.now()
-        val days = calendarDaysBetween(result.sets.last().recordedAt, now, utcOffset.at(now))
+        val days = calendarDaysBetween(result.sets.last().recordedAt, now, clock.offsetAt(now))
         val sets = setsSummary(result.machine, result.sets, preferred)
         return FriendLineUi(
             result.friend.userId,
@@ -652,7 +645,7 @@ class VisitViewModel(
 
     private fun publish() {
         val now = clock.now()
-        val offset = utcOffset.at(now)
+        val offset = clock.offsetAt(now)
         val recorded = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) }
         // A planned row among the dragged ones could be dropped where no machine can go.
         val planned =

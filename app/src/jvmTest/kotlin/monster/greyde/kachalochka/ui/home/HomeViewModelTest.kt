@@ -30,7 +30,7 @@ class HomeViewModelTest {
     @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private fun viewModel() =
-        HomeViewModel(gym.visits, gym.sets, gym.currentUser, gym.clock, gym.utcOffset, gym.sync)
+        HomeViewModel(gym.visits, gym.sets, gym.currentUser, gym.deviceClock, gym.sync)
 
     private suspend fun setOn(
         visit: Visit,

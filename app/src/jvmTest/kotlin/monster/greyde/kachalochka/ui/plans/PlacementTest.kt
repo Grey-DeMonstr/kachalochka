@@ -37,8 +37,7 @@ class PlacementTest {
             gym.machines,
             gym.sets,
             gym.currentUser,
-            gym.clock,
-            gym.utcOffset,
+            gym.deviceClock,
             RestTimer(gym.clock),
             gym.sync,
         )

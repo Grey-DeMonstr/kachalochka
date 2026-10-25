@@ -38,7 +38,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.accountAvatar
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.setCount
@@ -48,7 +48,6 @@ import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import kotlin.time.Clock
 
 data class CalendarUiState(
     val monthTitle: String,
@@ -122,8 +121,7 @@ class CalendarViewModel(
     private val machines: MachineRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val placement: Placement,
     private val sync: SyncTrigger,
     private val friends: FriendsRepository,
@@ -140,8 +138,8 @@ class CalendarViewModel(
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var stale = true
     private var dayCard: CalendarVisitUi? = null
-    private var month: CalendarMonth = CalendarMonth.of(today())
-    private var selected: CalendarDay = today()
+    private var month: CalendarMonth = CalendarMonth.of(clock.today())
+    private var selected: CalendarDay = clock.today()
     private var moving: Visit? = null
     private var removing: Visit? = null
     private var replacing: Visit? = null
@@ -179,14 +177,14 @@ class CalendarViewModel(
 
     fun showMonth(direction: Int) {
         val next = month.plusMonths(direction)
-        if (monthRank(next) > monthRank(CalendarMonth.of(today()))) return
+        if (monthRank(next) > monthRank(CalendarMonth.of(clock.today()))) return
         month = next
         publish()
         loadFriends()
     }
 
     fun selectDay(day: CalendarDay) {
-        if (day > today()) return
+        if (day > clock.today()) return
         val target = moving
         if (target == null || day == target.day) {
             moving = null
@@ -222,7 +220,7 @@ class CalendarViewModel(
             // The day marks may predate a sync that has since put a visit on the day.
             val arrived =
                 visits
-                    .shownOn(currentUser.id(), day, sets, utcOffset::at)
+                    .shownOn(currentUser.id(), day, sets, clock::offsetAt)
                     ?.takeIf { it.visit.id != visit.id }
             if (arrived != null) {
                 replacingSets = arrived.sets.size
@@ -232,7 +230,7 @@ class CalendarViewModel(
                 return@launch
             }
             val now = clock.now()
-            val offset = utcOffset.at(now)
+            val offset = clock.offsetAt(now)
             write(movedVisit(visit, sets.forVisit(visit.id), day, offset, now))
             moving = null
             replacing = null
@@ -301,10 +299,10 @@ class CalendarViewModel(
                 // Read at confirmation, so a visit pulled onto the day since the ask goes too.
                 // Every one goes: normalization could otherwise keep another over the moved one.
                 visits
-                    .allOn(currentUser.id(), day, utcOffset::at)
+                    .allOn(currentUser.id(), day, clock::offsetAt)
                     .filter { it.id != visit.id }
                     .forEach { write(removedVisit(it, sets.forVisit(it.id), now)) }
-                write(movedVisit(visit, sets.forVisit(visit.id), day, utcOffset.at(now), now))
+                write(movedVisit(visit, sets.forVisit(visit.id), day, clock.offsetAt(now), now))
                 selected = day
                 month = CalendarMonth.of(day)
                 sync.request()
@@ -333,7 +331,7 @@ class CalendarViewModel(
     private suspend fun load() {
         if (stale) {
             val owner = currentUser.id()
-            all = visits.all(owner).map { it.copy(day = it.dayAt(utcOffset::at)) }
+            all = visits.all(owner).map { it.copy(day = it.dayAt(clock::offsetAt)) }
             machinesById = machines.all(owner).associateBy { it.id }
             shownFor = owner
             stale = false
@@ -351,7 +349,7 @@ class CalendarViewModel(
                         },
                     tags = dayTags(shown),
                     canRepeatToday =
-                        selected != today() &&
+                        selected != clock.today() &&
                             visitMachines(
                                 visitSets,
                                 visit.planned,
@@ -376,7 +374,9 @@ class CalendarViewModel(
                     reading {
                         val placed =
                             friends.groupVisits(owner, shownMonth.first(), lastDay).map {
-                                it.copy(visit = it.visit.copy(day = it.visit.dayAt(utcOffset::at)))
+                                it.copy(
+                                    visit = it.visit.copy(day = it.visit.dayAt(clock::offsetAt)),
+                                )
                             }
                         placed to colors.colorsFor(owner, placed.map { it.friend.userId })
                     }.getOrDefault(emptyList<FriendVisit>() to emptyMap())
@@ -433,7 +433,7 @@ class CalendarViewModel(
             )
 
     private fun publish() {
-        val today = today()
+        val today = clock.today()
         val day = selected
         val marked = visitDays
         val dots =
@@ -511,9 +511,4 @@ class CalendarViewModel(
         visitMachines(visitSets, visit.planned)
             .mapNotNull { machinesById[it] }
             .joinToString(", ") { it.name }
-
-    private fun today(): CalendarDay {
-        val now = clock.now()
-        return CalendarDay.of(now, utcOffset.at(now))
-    }
 }

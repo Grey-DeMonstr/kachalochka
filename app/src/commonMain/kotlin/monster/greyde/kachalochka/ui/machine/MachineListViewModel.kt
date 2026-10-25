@@ -17,8 +17,7 @@ import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.preferredUnit
-import monster.greyde.kachalochka.ui.format.UtcOffset
-import kotlin.time.Clock
+import monster.greyde.kachalochka.ui.format.DeviceClock
 
 /** [own] is null until the account's machines are read. */
 data class MachineListUiState(
@@ -43,8 +42,7 @@ class MachineListViewModel(
     private val accounts: Accounts,
     private val sync: SyncTrigger,
     private val profiles: ProfileRepository,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     unsaved: UnsavedChoices,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MachineListUiState())
@@ -109,7 +107,7 @@ class MachineListViewModel(
             return
         }
         val now = clock.now()
-        val offset = utcOffset.at(now)
+        val offset = clock.offsetAt(now)
         val listing =
             read.listing(
                 MachineQuery(query, chosenTags, onlySuggested = onlySuggested),

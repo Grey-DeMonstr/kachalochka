@@ -11,7 +11,6 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
-import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
@@ -25,6 +24,7 @@ import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.preferredUnit
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.unitLabel
@@ -34,7 +34,6 @@ import monster.greyde.kachalochka.ui.photos.ShownPhoto
 import monster.greyde.kachalochka.ui.stats.MachineStatsUi
 import monster.greyde.kachalochka.ui.stats.machineStatsUi
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import kotlin.time.Clock
 
 /**
  * [stats] are the friend's own results on the machine over [period], in the viewer's unit, null
@@ -65,8 +64,7 @@ class FriendMachineViewModel(
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val profiles: ProfileRepository,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FriendMachineUi?>(null)
     val state: StateFlow<FriendMachineUi?> = mutableState
@@ -208,8 +206,7 @@ class FriendMachineViewModel(
 
     private fun uiOf(read: Read): FriendMachineUi {
         val machine = read.friend.machine
-        val now = clock.now()
-        val today = CalendarDay.of(now, utcOffset.at(now))
+        val today = clock.today()
         val cover =
             read.photos.firstOrNull { it.id == machine.coverPhoto } ?: read.photos.firstOrNull()
         return FriendMachineUi(
@@ -225,7 +222,14 @@ class FriendMachineViewModel(
             period = period,
             stats =
                 read.sets?.let {
-                    machineStatsUi(machine, it, period, today, read.preferred, utcOffset)
+                    machineStatsUi(
+                        machine,
+                        it,
+                        period,
+                        today,
+                        read.preferred,
+                        UtcOffset(clock::offsetAt),
+                    )
                 },
         )
     }

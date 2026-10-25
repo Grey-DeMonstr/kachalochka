@@ -32,10 +32,9 @@ import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.ui.WriteGuard
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import kotlin.time.Clock
 
 data class MeasureRowUi(
     val id: MeasureId,
@@ -75,8 +74,7 @@ class MeasuresViewModel(
     private val profiles: ProfileRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
-    private val utcOffset: UtcOffset,
+    private val clock: DeviceClock,
     private val sync: SyncTrigger,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MeasuresUiState(emptyList(), false, null))
@@ -211,8 +209,7 @@ class MeasuresViewModel(
     }
 
     private fun publish() {
-        val now = clock.now()
-        val today = CalendarDay.of(now, utcOffset.at(now))
+        val today = clock.today()
         val sex = profile?.sex
         val inputs = bodyInputs(today)
         mutableState.value =

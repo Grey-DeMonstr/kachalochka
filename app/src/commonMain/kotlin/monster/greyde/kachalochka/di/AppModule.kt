@@ -15,6 +15,7 @@ import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.family.PendingGuardian
 import monster.greyde.kachalochka.ui.family.PeopleViewModel
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendCalendarViewModel
@@ -65,6 +66,7 @@ val appModule =
         single<Clock> { Clock.System }
         single<Ticker> { Ticker { delay(1.seconds) } }
         single<UtcOffset> { UtcOffset(::platformUtcOffset) }
+        singleOf(::DeviceClock)
         single { RestTimer(get()) }
         singleOf(::RestSoundScheduler)
         single {

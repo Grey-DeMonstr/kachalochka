@@ -27,7 +27,7 @@ import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.preferredUnit
-import monster.greyde.kachalochka.ui.format.UtcOffset
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.friendMachineDetail
 import monster.greyde.kachalochka.ui.format.setCount
@@ -35,7 +35,6 @@ import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.weightCaption
 import monster.greyde.kachalochka.ui.format.weightShift
 import monster.greyde.kachalochka.ui.strings.AppStrings
-import kotlin.time.Clock
 
 data class ChooserRowUi(
     val id: MachineId,
@@ -92,11 +91,10 @@ class LinkChooserViewModel(
     private val sets: WorkoutSetRepository,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
-    private val clock: Clock,
+    private val clock: DeviceClock,
     private val profiles: ProfileRepository,
     private val catalogue: MachineCatalogue,
     private val reads: MachineReads,
-    private val utcOffset: UtcOffset,
 ) : ViewModel() {
     private val machineId = args.machineId
     private val start = args.start
@@ -169,12 +167,11 @@ class LinkChooserViewModel(
         val edited = own.firstOrNull { it.id == machineId } ?: return
         val other = own.firstOrNull { it.id == id && id != machineId } ?: return
         viewModelScope.launch {
-            val now = clock.now()
-            val year = CalendarDay.of(now, utcOffset.at(now)).year
+            val year = clock.today().year
 
             fun detail(rows: List<WorkoutSet>): String {
                 val last = rows.maxOfOrNull { it.recordedAt } ?: return setCount(0)
-                val day = dayMonthLabel(CalendarDay.of(last, utcOffset.at(last)), year)
+                val day = dayMonthLabel(CalendarDay.of(last, clock.offsetAt(last)), year)
                 return setCount(rows.size) + " · " + AppStrings.current.lastSetOn(day)
             }
             val used =
