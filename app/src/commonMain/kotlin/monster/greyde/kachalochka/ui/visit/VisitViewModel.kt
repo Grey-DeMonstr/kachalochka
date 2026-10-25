@@ -2,7 +2,6 @@ package monster.greyde.kachalochka.ui.visit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -12,12 +11,10 @@ import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.gym.DEFAULT_REPS
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
-import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
@@ -30,11 +27,8 @@ import monster.greyde.kachalochka.core.domain.gym.machineMovedTo
 import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.plannedWithoutSets
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
-import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
-import monster.greyde.kachalochka.core.domain.gym.stepReps
-import monster.greyde.kachalochka.core.domain.gym.stepWeight
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
@@ -52,10 +46,8 @@ import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
-import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.headedTagSections
 import monster.greyde.kachalochka.ui.format.machineTitle
-import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.platformSuffix
 import monster.greyde.kachalochka.ui.format.recordingConversion
 import monster.greyde.kachalochka.ui.format.saveLabel
@@ -66,7 +58,6 @@ import monster.greyde.kachalochka.ui.format.setsSummaryParts
 import monster.greyde.kachalochka.ui.format.unitLabel
 import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.format.weekdayDate
-import monster.greyde.kachalochka.ui.machine.GroupMachines
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.OwnMachines
@@ -77,11 +68,6 @@ import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Duration
 import kotlin.time.Instant
-
-const val COMMENT_LENGTH = 200
-
-/** More reps than anyone does in one set: a typo, not a record. */
-private const val MAX_REPS = 999
 
 data class VisitUiState(
     /** The day, heading the list. */
@@ -205,27 +191,11 @@ class VisitViewModel(
     private var machineSets: List<WorkoutSet> = emptyList()
     private var selected: MachineId? = null
     private var open: Machine? = null
-    private var formOpen = false
-    private var editing: WorkoutSet? = null
-    private var values = SetValues(0.0, DEFAULT_REPS)
+    private val form = SetForm()
     private var ordering = false
     private var saving = false
-    private var commentText = ""
-    private var friendResults: List<FriendResult> = emptyList()
-    private var friendsFor: Pair<UserId, MachineId>? = null
-    private var loadingFriends: Job? = null
+    private val groupReads = GroupReads(friends, reads, viewModelScope, ::publish)
     private var own: OwnMachines? = null
-
-    /**
-     * Group mates' machines, links and photos, read for [groupFor]; null before the read lands and
-     * after a dropped read that failed again.
-     */
-    private var group: GroupMachines? = null
-    private var groupFor: UserId? = null
-    private var loadingGroup: Job? = null
-
-    /** Links may have changed on another screen or in a sync, so the next reload reads again. */
-    private var friendsStale = false
     private var notice: String? = null
     private var preferred = PreferredWeightUnit.Kg
     private val grouping =
@@ -237,17 +207,6 @@ class VisitViewModel(
      * which a network read of the profile could outlast.
      */
     private var sharer: Pair<UserId?, String>? = null
-
-    /** The text as typed; null while the weight shows the stepped, formatted value. */
-    private var weightText: String? = null
-    private val typedWeight: Double? get() = weightText?.let(::parseDecimal)?.takeIf { it >= 0 }
-    private val weightValid: Boolean get() = weightText == null || typedWeight != null
-
-    /** The reps as typed; null while they show the stepped value. */
-    private var repsText: String? = null
-    private val typedReps: Int?
-        get() = repsText?.trim()?.toIntOrNull()?.takeIf { it in 1..MAX_REPS }
-    private val repsValid: Boolean get() = repsText == null || typedReps != null
 
     private val isToday: Boolean get() = day == clock.today()
 
@@ -263,7 +222,7 @@ class VisitViewModel(
         // The weight and reps the user is choosing stay as they are.
         viewModelScope.launch {
             sync.completed.collect {
-                friendsStale = true
+                groupReads.markStale()
                 reload(reseed = false)
             }
         }
@@ -275,7 +234,7 @@ class VisitViewModel(
     val selectedMachineId: MachineId? get() = selected ?: lastOpened
 
     fun refresh() {
-        friendsStale = true
+        groupReads.markStale()
         reloadShown()
     }
 
@@ -327,9 +286,7 @@ class VisitViewModel(
         withForm: Boolean,
     ) {
         selected = id
-        editing = null
-        formOpen = withForm
-        commentText = ""
+        if (withForm) form.openNew() else form.close()
         ordering = false
         viewModelScope.launch { reload(reseed = true) }
     }
@@ -337,39 +294,33 @@ class VisitViewModel(
     /** The form for the open machine's next set, from the last set's values. */
     fun openForm() {
         if (open == null) return
-        formOpen = true
-        editing = null
-        commentText = ""
+        form.openNew()
         viewModelScope.launch { reload(reseed = true) }
     }
 
     fun changeWeight(direction: Int) {
         val machine = open ?: return
-        weightText = null
-        values = values.copy(weight = stepWeight(values.weight, machine.weightStep, direction))
+        form.changeWeight(machine.weightStep, direction)
         publish()
     }
 
     fun typeWeight(text: String) {
-        weightText = text
-        typedWeight?.let { values = values.copy(weight = roundWeight(it)) }
+        form.typeWeight(text)
         publish()
     }
 
     fun changeReps(direction: Int) {
-        repsText = null
-        values = values.copy(reps = stepReps(values.reps, direction))
+        form.changeReps(direction)
         publish()
     }
 
     fun typeReps(text: String) {
-        repsText = text
-        typedReps?.let { values = values.copy(reps = it) }
+        form.typeReps(text)
         publish()
     }
 
     fun typeComment(text: String) {
-        commentText = text.take(COMMENT_LENGTH)
+        form.typeComment(text)
         publish()
     }
 
@@ -379,11 +330,11 @@ class VisitViewModel(
 
     fun save() {
         val machine = open ?: return
-        if (!weightValid || !repsValid || !formOpen) return
+        if (!form.valid || !form.isOpen) return
         // Taken now: while the write waits on the network the page may move to another machine.
-        val saved = values
-        val comment = commentText.trim()
-        val edited = editing
+        val saved = form.values
+        val comment = form.comment.trim()
+        val edited = form.editing
         writes.launch {
             saving = true
             publish()
@@ -395,10 +346,10 @@ class VisitViewModel(
                     recorder.amend(edited, saved, comment)
                 }
                 val stillOpen = open?.id == machine.id
-                if (stillOpen && editing?.id == edited?.id) {
-                    commentText = ""
+                if (stillOpen && form.editing?.id == edited?.id) {
+                    form.clearComment()
                     // A correction is done with; a new set is followed by the next one.
-                    if (edited != null) closeForm()
+                    if (edited != null) form.close()
                 }
                 reload(reseed = stillOpen)
             } finally {
@@ -459,13 +410,8 @@ class VisitViewModel(
     fun editSet(id: WorkoutSetId) {
         if (ordering) return
         val set = visitSets.firstOrNull { it.id == id } ?: return
-        editing = set
+        form.openOn(set)
         selected = set.machineId
-        formOpen = true
-        values = SetValues(set.weight, set.reps)
-        weightText = null
-        repsText = null
-        commentText = set.comment
         reloadShown()
     }
 
@@ -474,8 +420,8 @@ class VisitViewModel(
      * neither, so back can leave the screen.
      */
     fun closeSheet(): Boolean {
-        if (formOpen && open != null) {
-            closeForm()
+        if (form.isOpen && open != null) {
+            form.close()
             publish()
             return true
         }
@@ -487,29 +433,21 @@ class VisitViewModel(
 
     /** Leaves the form, dropping any edit in it. */
     fun cancelForm() {
-        closeForm()
+        form.close()
         publish()
     }
 
-    private fun closeForm() {
-        formOpen = false
-        editing = null
-        weightText = null
-        repsText = null
-        commentText = ""
-    }
-
     private fun closePage() {
-        closeForm()
+        form.close()
         selected = null
         open = null
     }
 
     fun deleteEditedSet() {
-        val edited = editing ?: return
+        val edited = form.editing ?: return
         writes.launch {
             recorder.remove(edited)
-            closeForm()
+            form.close()
             reload(reseed = true)
         }
     }
@@ -565,71 +503,23 @@ class VisitViewModel(
                 shown?.visit?.id,
                 before = day.at(0L, clock.offsetAt(clock.now())),
             )
-        if (reseed && editing == null && machine != null) {
-            values =
+        if (reseed && form.editing == null && machine != null) {
+            form.suggest(
                 suggestNextSet(
                     machine,
                     previousSets,
                     visitSets.filter { it.machineId == machine.id },
-                )
-            weightText = null
-            repsText = null
+                ),
+            )
         }
         // Only an own machine has links worth asking about; a switch drops the old answer.
-        val asked =
-            owner?.let { me -> machine?.takeIf { it.userId == me }?.let { me to it.id } }
-        val readGroup = owner != groupFor || friendsStale
-        if (asked != friendsFor) {
-            friendResults = emptyList()
-            loadingFriends?.cancel()
-            friendsFor = asked
-            if (!readGroup) loadFriends()
-        }
-        if (readGroup) loadGroup(owner)
-        friendsStale = false
+        val ownOpen = machine?.takeIf { owner != null && it.userId == owner }?.id
+        groupReads.follow(owner, ownOpen, machinesById.keys)
         publish()
     }
 
-    /** The friends' results on the open machine's cluster, asked once the group read is in. */
-    private fun loadFriends() {
-        val asked = friendsFor ?: return
-        val (owner, machine) = asked
-        val clusters = group?.takeIf { it.owner == owner }?.clusters ?: return
-        val theirs = clusters.of(machine) - machinesById.keys
-        loadingFriends?.cancel()
-        loadingFriends =
-            viewModelScope.launch {
-                val results =
-                    catching {
-                        if (theirs.isEmpty()) emptyList() else friends.latestOn(owner, theirs)
-                    }
-                if (friendsFor != asked) return@launch
-                // A failed re-read keeps what an earlier read of the same machine showed.
-                results.onSuccess { found ->
-                    friendResults = found
-                    publish()
-                }
-            }
-    }
-
-    private fun loadGroup(owner: UserId?) {
-        loadingGroup?.cancel()
-        if (owner != groupFor) group = null
-        groupFor = owner
-        if (owner == null) return
-        loadingGroup =
-            viewModelScope.launch {
-                reads.group(owner).collect { read ->
-                    if (groupFor != owner) return@collect
-                    group = read.machines
-                    publish()
-                    if (read.fresh) loadFriends()
-                }
-            }
-    }
-
     private fun coverOf(machineId: MachineId): Photo? =
-        own?.let { ShownMachines(it, group).cover(machineId) }
+        own?.let { ShownMachines(it, groupReads.group).cover(machineId) }
 
     private fun friendLine(result: FriendResult): FriendLineUi {
         val now = clock.now()
@@ -683,7 +573,7 @@ class VisitViewModel(
                 "#${setIndex + 1}",
                 machine?.let { setValue(set.weight, set.reps, it, preferred) }
                     ?: setValue(set.weight, set.reps, AppStrings.current.kg),
-                set.id == editing?.id,
+                set.id == form.editing?.id,
                 set.comment,
             )
         }
@@ -769,14 +659,21 @@ class VisitViewModel(
                 previousSets.takeIf { it.isNotEmpty() }?.let {
                     setsSummary(machine, it, preferred)
                 },
-            friends = if (editing == null) friendResults.map(::friendLine) else emptyList(),
+            friends =
+                if (form.editing ==
+                    null
+                ) {
+                    groupReads.results.map(::friendLine)
+                } else {
+                    emptyList()
+                },
             daySets =
                 onMachine.takeIf { it.isNotEmpty() }?.let {
                     "$dayName · ${setCount(it.size)}"
                 },
             sets = setRows(machine, onMachine),
             canUnplan = onMachine.isEmpty() && machine.id in planned,
-            form = if (formOpen) formUi(machine, onMachine) else null,
+            form = if (form.isOpen) formUi(machine, onMachine) else null,
         )
     }
 
@@ -784,7 +681,7 @@ class VisitViewModel(
         machine: Machine,
         onMachine: List<WorkoutSet>,
     ): SetFormUi {
-        val edited = editing
+        val edited = form.editing
         val people =
             if (isToday && edited == null) {
                 accountsUi(accounts.accounts.value, accounts.activeId.value, avatars.photos.value)
@@ -801,16 +698,16 @@ class VisitViewModel(
                         setValue(edited.weight, edited.reps, machine, preferred),
                     )
                 },
-            weight = weightText ?: formatNumber(values.weight),
+            weight = form.weightShown,
             weightSign = if (machine.weightMode == WeightMode.Counterweight) "−" else "",
             weightUnit = unitLabel(machine),
-            converted = recordingConversion(machine, values.weight, preferred),
-            reps = repsText ?: values.reps.toString(),
-            comment = commentText,
+            converted = recordingConversion(machine, form.values.weight, preferred),
+            reps = form.repsShown,
+            comment = form.comment,
             editing = edited != null,
             people = people,
             saveLabel = saveLabel(edited != null),
-            canSave = weightValid && repsValid && !saving,
+            canSave = form.valid && !saving,
             saving = saving,
         )
     }
