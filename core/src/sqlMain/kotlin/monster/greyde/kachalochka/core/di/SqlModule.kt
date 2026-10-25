@@ -49,8 +49,11 @@ import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.singleOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.time.Clock
+
+private val ACTIVE_ACCOUNT_CLIENT = named("activeAccountClient")
 
 /** Everything above the driver is the same on both SQLDelight targets; only the driver differs. */
 internal fun sqlModule(): Module =
@@ -80,23 +83,11 @@ internal fun sqlModule(): Module =
             SupabaseSyncGateway(lazy { syncSupabaseClient(credentials, tokens, session) })
         }
         single { SyncPass(get(), get(), get(), get(), get(), get(), Dispatchers.IO) }
+        single(ACTIVE_ACCOUNT_CLIENT) { activeAccountSupabaseClient(get(), get(), get()) }
         single<FriendsRepository> {
-            val credentials: SupabaseCredentials = get()
-            val tokens: AccountTokens = get()
-            val store: AccountStore = get()
-            SupabaseFriendsRepository(
-                lazy { activeAccountSupabaseClient(credentials, tokens, store) },
-                Clock.System,
-            )
+            SupabaseFriendsRepository(inject(ACTIVE_ACCOUNT_CLIENT), Clock.System)
         }
-        single<FamilyRepository> {
-            val credentials: SupabaseCredentials = get()
-            val tokens: AccountTokens = get()
-            val store: AccountStore = get()
-            SupabaseFamilyRepository(
-                lazy { activeAccountSupabaseClient(credentials, tokens, store) },
-            )
-        }
+        single<FamilyRepository> { SupabaseFamilyRepository(inject(ACTIVE_ACCOUNT_CLIENT)) }
         single<OwnedRowsPurge> { SqlOwnedRowsPurge(get(), get(), Dispatchers.IO) }
         single<AccountServer> {
             val credentials: SupabaseCredentials = get()
@@ -104,12 +95,10 @@ internal fun sqlModule(): Module =
             SupabaseAccountServer { owner -> ownerSupabaseClient(credentials, tokens, owner) }
         }
         single<PhotoImages> {
-            val credentials: SupabaseCredentials = get()
-            val tokens: AccountTokens = get()
             val store: AccountStore = get()
             // An own photo pulled from another device is kept like the ones taken here.
             StoragePhotoImages(
-                lazy { activeAccountSupabaseClient(credentials, tokens, store) },
+                inject(ACTIVE_ACCOUNT_CLIENT),
                 get(),
                 { photo -> store.accounts.value.any { it.userId == photo.userId } },
                 Dispatchers.IO,

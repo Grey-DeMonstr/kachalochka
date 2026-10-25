@@ -37,6 +37,18 @@ fun supabaseClient(credentials: SupabaseCredentials): SupabaseClient {
     }
 }
 
+private fun tokenClient(
+    credentials: SupabaseCredentials,
+    token: suspend () -> String?,
+): SupabaseClient {
+    requireConfigured(credentials)
+    return createSupabaseClient(credentials.url, credentials.anonKey) {
+        accessToken = token
+        install(Postgrest)
+        install(Storage)
+    }
+}
+
 // The sync pass moves between accounts within one run, so its client resolves the token of
 // whichever account the pass is currently on instead of holding one live session like the UI
 // client does.
@@ -44,14 +56,7 @@ fun syncSupabaseClient(
     credentials: SupabaseCredentials,
     tokens: AccountTokens,
     session: SyncSession,
-): SupabaseClient {
-    requireConfigured(credentials)
-    return createSupabaseClient(credentials.url, credentials.anonKey) {
-        accessToken = { session.owner?.let { tokens.tokenFor(it) } }
-        install(Postgrest)
-        install(Storage)
-    }
-}
+): SupabaseClient = tokenClient(credentials) { session.owner?.let { tokens.tokenFor(it) } }
 
 // Android's UI client holds a session only after a sign-in or a switch in the same process, so
 // friends' reads resolve the active account's token per request, as the sync client does.
@@ -59,28 +64,14 @@ fun activeAccountSupabaseClient(
     credentials: SupabaseCredentials,
     tokens: AccountTokens,
     store: AccountStore,
-): SupabaseClient {
-    requireConfigured(credentials)
-    return createSupabaseClient(credentials.url, credentials.anonKey) {
-        accessToken = { store.activeId.value?.let { tokens.tokenFor(it) } }
-        install(Postgrest)
-        install(Storage)
-    }
-}
+): SupabaseClient = tokenClient(credentials) { store.activeId.value?.let { tokens.tokenFor(it) } }
 
 // Deleting an account must act as that account to the end, whoever becomes active meanwhile.
 fun ownerSupabaseClient(
     credentials: SupabaseCredentials,
     tokens: AccountTokens,
     owner: UserId,
-): SupabaseClient {
-    requireConfigured(credentials)
-    return createSupabaseClient(credentials.url, credentials.anonKey) {
-        accessToken = { tokens.tokenFor(owner) }
-        install(Postgrest)
-        install(Storage)
-    }
-}
+): SupabaseClient = tokenClient(credentials) { tokens.tokenFor(owner) }
 
 // The family follower reads as each account in turn, one at a time, as the sync pass does. A read
 // without a token would go out as anon and find no children, so it fails instead.
@@ -88,13 +79,8 @@ fun actingSupabaseClient(
     credentials: SupabaseCredentials,
     tokens: AccountTokens,
     acting: () -> UserId?,
-): SupabaseClient {
-    requireConfigured(credentials)
-    return createSupabaseClient(credentials.url, credentials.anonKey) {
-        accessToken = {
-            val owner = checkNotNull(acting()) { "A family read names no account" }
-            checkNotNull(tokens.tokenFor(owner)) { "No token to read the family as" }
-        }
-        install(Postgrest)
+): SupabaseClient =
+    tokenClient(credentials) {
+        val owner = checkNotNull(acting()) { "A family read names no account" }
+        checkNotNull(tokens.tokenFor(owner)) { "No token to read the family as" }
     }
-}
