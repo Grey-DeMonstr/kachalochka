@@ -32,6 +32,7 @@ import monster.greyde.kachalochka.core.data.measures.MeasureRow
 import monster.greyde.kachalochka.core.data.measures.MeasurementRow
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.data.profile.ProfileRow
+import monster.greyde.kachalochka.core.data.supabase.MAX_ROWS
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.Photo
@@ -44,15 +45,13 @@ import monster.greyde.kachalochka.core.domain.measures.Measurement
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import kotlin.time.Instant
 
-private const val PAGE_SIZE = 1000L
-
 /**
  * Talks to PostgREST through the same wire rows the web repositories use, so both platforms write
  * these tables in one format.
  */
 class SupabaseSyncGateway(
     private val client: Lazy<SupabaseClient>,
-    internal val pageSize: Long = PAGE_SIZE,
+    internal val pageSize: Long = MAX_ROWS,
 ) : SyncGateway {
     override suspend fun pushMachine(machine: Machine) {
         client.value.postgrest

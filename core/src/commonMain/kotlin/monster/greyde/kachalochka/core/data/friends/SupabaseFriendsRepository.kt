@@ -23,6 +23,7 @@ import monster.greyde.kachalochka.core.data.gym.WorkoutSetRow
 import monster.greyde.kachalochka.core.data.gym.machinePeaks
 import monster.greyde.kachalochka.core.data.gym.tagRows
 import monster.greyde.kachalochka.core.data.gym.withTagRows
+import monster.greyde.kachalochka.core.data.supabase.pagedRows
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
@@ -41,6 +42,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.machineOrder
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.time.Clock
@@ -52,9 +54,6 @@ private const val UNKNOWN_INVITE_CODE = "PT404"
 private const val NOT_FOUND = 404
 
 private const val FRIEND_RESULTS = 3
-
-/** The project's `max_rows`: a page this long may be cut, a shorter one is the last. */
-private const val SETS_PAGE = 1000L
 
 /**
  * One implementation for both platforms (tech spec §3): friends are read online and nothing here
@@ -165,29 +164,16 @@ class SupabaseFriendsRepository(
     override suspend fun setsOn(
         member: UserId,
         machine: MachineId,
-    ): List<WorkoutSet> {
-        val rows = mutableListOf<WorkoutSetRow>()
-        do {
-            val page =
-                postgrest
-                    .from(WORKOUT_SET_TABLE)
-                    .select {
-                        filter {
-                            eq("user_id", member.value)
-                            eq("machine_id", machine.value)
-                            eq("deleted", false)
-                        }
-                        order("recorded_at", Order.ASCENDING)
-                        order("id", Order.ASCENDING)
-                        range(rows.size.toLong(), rows.size + SETS_PAGE - 1)
-                    }.decodeList<WorkoutSetRow>()
-            rows += page
-        } while (page.size.toLong() == SETS_PAGE)
-        return rows.map { it.toWorkoutSet() }
-    }
+    ): List<WorkoutSet> =
+        postgrest
+            .pagedRows<WorkoutSetRow>(WORKOUT_SET_TABLE, listOf("recorded_at", "id")) {
+                eq("user_id", member.value)
+                eq("machine_id", machine.value)
+                eq("deleted", false)
+            }.map { it.toWorkoutSet() }
 
     override suspend fun machines(member: UserId): List<Machine> =
-        taggedMachines { eq("user_id", member.value) }.sortedBy { it.name.lowercase() }
+        taggedMachines { eq("user_id", member.value) }.sortedWith(machineOrder)
 
     override suspend fun mates(viewer: UserId): List<Friend> = matesById(viewer).values.toList()
 
@@ -205,7 +191,7 @@ class SupabaseFriendsRepository(
                 .withTagRows(tags)
                 .mapNotNull { machine ->
                     machine.userId?.let(mates::get)?.let { FriendMachine(machine, it) }
-                }.sortedBy { it.machine.name.lowercase() }
+                }.sortedWith(compareBy(machineOrder) { it.machine })
         return GroupGym(
             machines,
             read.links.map { it.toMachineLink() },

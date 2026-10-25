@@ -2,8 +2,8 @@ package monster.greyde.kachalochka.core.data.gym
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder
+import monster.greyde.kachalochka.core.data.supabase.pagedRows
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -35,22 +35,6 @@ class RemoteWorkoutSetRepository(
         client.postgrest.machinePeaks(listOfNotNull(owner))
 
     private suspend fun live(match: PostgrestFilterBuilder.() -> Unit): List<WorkoutSet> =
-        readPage(match, null).map { it.toWorkoutSet() }
-
-    /** Reads past the row cap, a page of [PAGE_SIZE] at a time, the project's `max_rows`. */
-    private suspend fun paged(match: PostgrestFilterBuilder.() -> Unit): List<WorkoutSet> {
-        val rows = mutableListOf<WorkoutSetRow>()
-        do {
-            val page = readPage(match, rows.size.toLong())
-            rows += page
-        } while (page.size.toLong() == PAGE_SIZE)
-        return rows.map { it.toWorkoutSet() }
-    }
-
-    private suspend fun readPage(
-        match: PostgrestFilterBuilder.() -> Unit,
-        from: Long?,
-    ): List<WorkoutSetRow> =
         client.postgrest
             .from(WORKOUT_SET_TABLE)
             .select {
@@ -58,10 +42,13 @@ class RemoteWorkoutSetRepository(
                     eq("deleted", false)
                     match()
                 }
-                order("recorded_at", Order.ASCENDING)
-                order("id", Order.ASCENDING)
-                from?.let { range(it, it + PAGE_SIZE - 1) }
             }.decodeList<WorkoutSetRow>()
-}
+            .map { it.toWorkoutSet() }
 
-private const val PAGE_SIZE = 1000L
+    private suspend fun paged(match: PostgrestFilterBuilder.() -> Unit): List<WorkoutSet> =
+        client.postgrest
+            .pagedRows<WorkoutSetRow>(WORKOUT_SET_TABLE, listOf("recorded_at", "id")) {
+                eq("deleted", false)
+                match()
+            }.map { it.toWorkoutSet() }
+}

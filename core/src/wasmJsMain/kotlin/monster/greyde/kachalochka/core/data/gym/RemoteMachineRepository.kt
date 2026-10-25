@@ -4,9 +4,11 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import monster.greyde.kachalochka.core.data.supabase.pagedRows
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.machineOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
 /**
@@ -50,7 +52,7 @@ class RemoteMachineRepository(
                         .map { it.toMachine() }
                 }
             val tags = async { client.postgrest.tagRows({ owned(owner) }, { owned(owner) }) }
-            machines.await().withTagRows(tags.await()).sortedBy { it.name.lowercase() }
+            machines.await().withTagRows(tags.await()).sortedWith(machineOrder)
         }
 
     override suspend fun named(

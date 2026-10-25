@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.anyNameMatches
+import monster.greyde.kachalochka.core.domain.gym.machineOrder
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
@@ -92,7 +93,7 @@ class MineChooserViewModel(
                                 listOf(it.name) + current.linkedNames(it),
                                 needle,
                             )
-                        }.sortedBy { it.name.lowercase() }
+                        }.sortedWith(machineOrder)
                         .map {
                             ChooserRowUi(
                                 it.id,

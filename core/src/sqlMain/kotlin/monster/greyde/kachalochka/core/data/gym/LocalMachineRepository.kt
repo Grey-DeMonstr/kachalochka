@@ -8,6 +8,7 @@ import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
+import monster.greyde.kachalochka.core.domain.gym.machineOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.sync.OutboxEntry
 import kotlin.time.Instant
@@ -48,7 +49,7 @@ class LocalMachineRepository(
                     .live(owner?.value, ::machineOf)
                     .executeAsList()
                     .map { it.copy(tags = tags[it.id].orEmpty()) }
-                    .sortedBy { it.name.lowercase() }
+                    .sortedWith(machineOrder)
             }
         }
 

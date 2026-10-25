@@ -34,6 +34,7 @@ import monster.greyde.kachalochka.core.domain.gym.convertedSets
 import monster.greyde.kachalochka.core.domain.gym.coverPhoto
 import monster.greyde.kachalochka.core.domain.gym.linkSuggestions
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
+import monster.greyde.kachalochka.core.domain.gym.machineOrder
 import monster.greyde.kachalochka.core.domain.gym.mergedLinks
 import monster.greyde.kachalochka.core.domain.gym.mergedMachines
 import monster.greyde.kachalochka.core.domain.gym.missingDirectLinks
@@ -104,7 +105,7 @@ class ShownMachines(
                 ?.let { me ->
                     own.machines
                         .filter { it.id != machine && it.id in cluster }
-                        .sortedBy { it.name.lowercase() }
+                        .sortedWith(machineOrder)
                         .map { LinkedMachineUi(it.id, me, it.name, own = true) }
                 }.orEmpty()
         val theirs =

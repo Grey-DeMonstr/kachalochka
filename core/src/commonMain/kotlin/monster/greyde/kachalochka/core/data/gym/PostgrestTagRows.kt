@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.data.gym
 
 import io.github.jan.supabase.postgrest.Postgrest
+import monster.greyde.kachalochka.core.data.supabase.pagedRows
 import monster.greyde.kachalochka.core.domain.gym.Machine
 
 /** The tag rows in Supabase, over PostgREST. */

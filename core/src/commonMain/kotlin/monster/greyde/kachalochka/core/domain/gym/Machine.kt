@@ -80,3 +80,5 @@ fun linkedCopy(
         )
     return copy to MachineLink(MachineLinkId.random(), owner, copy.id, friend.id, now, false)
 }
+
+val machineOrder: Comparator<Machine> = compareBy { it.name.lowercase() }
