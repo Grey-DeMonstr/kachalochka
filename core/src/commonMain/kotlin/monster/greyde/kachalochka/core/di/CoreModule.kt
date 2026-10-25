@@ -29,6 +29,7 @@ import monster.greyde.kachalochka.core.data.supabase.actingSupabaseClient
 import monster.greyde.kachalochka.core.data.supabase.supabaseClient
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import org.koin.core.Koin
+import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import kotlin.time.Clock
 
@@ -48,9 +49,9 @@ val coreModule =
         }
         single<SessionActivation> { get<LiveSession>() }
         single<CurrentUser> { ActiveAccountUser(get()) }
-        single { HeldWrites() }
-        single { Accounts(get(), get(), get(), get(), get(), get()) }
-        single { AccountDeletion(get(), get(), get()) }
+        singleOf(::HeldWrites)
+        singleOf(::Accounts)
+        singleOf(::AccountDeletion)
         single<SessionRefresh> { SupabaseSessions(inject()) }
         single { AccountTokens(get(), get<LiveSession>(), get(), Clock.System) }
         single<FamilyReads> {
@@ -62,7 +63,7 @@ val coreModule =
                 )
             }
         }
-        single { FamilyFollower(get(), get(), get(), get()) }
+        singleOf(::FamilyFollower)
     }
 
 /** A build without credentials has no live session to follow, and must not build a client. */

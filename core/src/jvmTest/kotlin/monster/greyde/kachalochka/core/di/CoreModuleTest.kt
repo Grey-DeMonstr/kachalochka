@@ -1,10 +1,12 @@
 package monster.greyde.kachalochka.core.di
 
 import monster.greyde.kachalochka.core.data.family.FamilyFollower
+import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
+import monster.greyde.kachalochka.core.data.identity.HeldWrites
 import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
@@ -65,6 +67,8 @@ class CoreModuleTest {
         val koin = credentialLessKoin()
 
         assertNotNull(koin.get<Accounts>())
+        assertNotNull(koin.get<AccountDeletion>())
+        assertNotNull(koin.get<HeldWrites>())
         assertSame<SessionActivation>(koin.get<LiveSession>(), koin.get<SessionActivation>())
     }
 

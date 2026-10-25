@@ -51,6 +51,7 @@ import monster.greyde.kachalochka.ui.timer.SystemRestSoundChooser
 import okio.Path.Companion.toPath
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -96,7 +97,7 @@ actual fun platformModule(): Module =
         single<RestAlarm> { ServiceRestAlarm(androidContext()) }
         single<RestSoundChooser> { SystemRestSoundChooser(androidContext()) }
         single { SystemLanguage { Locale.getDefault().toLanguageTag() } }
-        single { ActivityHolder() }
+        singleOf(::ActivityHolder)
         single { WorkManagerSyncTrigger(androidContext()) } bind SyncTrigger::class
         single { VisitStore.Device }
         single<FailureLog> { FailureLog { Log.w(LOG_TAG, "Background work failed", it) } }

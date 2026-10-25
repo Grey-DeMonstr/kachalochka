@@ -48,6 +48,7 @@ import monster.greyde.kachalochka.core.domain.measures.MeasureRepository
 import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 import kotlin.time.Clock
 
@@ -55,7 +56,7 @@ import kotlin.time.Clock
 internal fun sqlModule(): Module =
     module {
         single { kachalochkaDatabase(get()) }
-        single { OutboxDao(get()) }
+        singleOf(::OutboxDao)
         single<ProfileRepository> { LocalProfileRepository(get(), get(), Dispatchers.IO) }
         single<MachineRepository> { LocalMachineRepository(get(), get(), Dispatchers.IO) }
         single<PlanRepository> { LocalPlanRepository(get(), get(), Dispatchers.IO) }
@@ -68,10 +69,10 @@ internal fun sqlModule(): Module =
             LocalMeasurementRepository(get(), get(), Dispatchers.IO)
         }
         single<OwnerlessRows> { SqlOwnerlessRows(get(), get(), Clock.System, Dispatchers.IO) }
-        single { SyncWatermarks(get()) }
+        singleOf(::SyncWatermarks)
         single<WatermarkReset> { SqlWatermarkReset(get(), Dispatchers.IO) }
-        single { LocalSyncRows(get()) }
-        single { SyncSession() }
+        singleOf(::LocalSyncRows)
+        singleOf(::SyncSession)
         single<SyncGateway> {
             val credentials: SupabaseCredentials = get()
             val tokens: AccountTokens = get()

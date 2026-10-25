@@ -59,6 +59,7 @@ import monster.greyde.kachalochka.ui.timer.RestSoundScheduler
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
 import monster.greyde.kachalochka.ui.visit.VisitViewModel
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
@@ -73,25 +74,23 @@ val appModule =
         single<Ticker> { Ticker { delay(1.seconds) } }
         single<UtcOffset> { UtcOffset(::platformUtcOffset) }
         single { RestTimer(get()) }
-        single { RestSoundScheduler(get(), get(), get(), get()) }
+        singleOf(::RestSoundScheduler)
         single {
             val offset: UtcOffset = get()
             VisitNormalizer(get(), get(), get(), offset::at)
         }
-        single { VisitNormalization(get(), get(), get(), get(), get()) }
-        single { PendingJoin(get(), get()) }
+        singleOf(::VisitNormalization)
+        singleOf(::PendingJoin)
         single { PendingGuardian(get(named(PARENT_CODE)), get()) }
-        single { Nickname(get(), get()) }
-        single { FriendColorStore(get(), get(), get()) }
-        single { PhotoLoaders(get()) }
-        single { AccountAvatars(get(), get()) }
-        single {
-            MachineCatalogue(get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
-        }
-        single { MachineReads(get(), get(), get(), get(), get()) }
-        single { LinkUpkeep(get(), get()) }
-        single { Placement(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-        single { UnsavedChoices() }
+        singleOf(::Nickname)
+        singleOf(::FriendColorStore)
+        singleOf(::PhotoLoaders)
+        singleOf(::AccountAvatars)
+        singleOf(::MachineCatalogue)
+        singleOf(::MachineReads)
+        singleOf(::LinkUpkeep)
+        singleOf(::Placement)
+        singleOf(::UnsavedChoices)
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }
