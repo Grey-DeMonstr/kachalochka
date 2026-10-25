@@ -17,6 +17,7 @@ import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.timer.RestSoundScheduler
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import org.koin.dsl.koinApplication
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 
@@ -26,6 +27,10 @@ class AppModuleTest {
             allowOverride(true)
             modules(appModule, platformModule(), fakeGymModule(FakeGym()))
         }.koin
+
+    /** A module keeps its singletons until its Koin closes; open, they leak into other tests. */
+    @AfterTest
+    fun tearDown() = koin.close()
 
     @Test
     fun the_graph_resolves_every_app_singleton() {

@@ -6,13 +6,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.di.coreModule
-import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.PlanId
-import monster.greyde.kachalochka.core.domain.identity.UserId
-import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
-import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
@@ -37,7 +33,6 @@ import monster.greyde.kachalochka.ui.machine.FriendMachineViewModel
 import monster.greyde.kachalochka.ui.machine.LinkChooserViewModel
 import monster.greyde.kachalochka.ui.machine.LinkUpkeep
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
-import monster.greyde.kachalochka.ui.machine.MachineFormArgs
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
 import monster.greyde.kachalochka.ui.machine.MachineListViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
@@ -106,37 +101,19 @@ val appModule =
         viewModelOf(::GuardiansViewModel)
         viewModelOf(::MachinePlacementViewModel)
         viewModelOf(::VisitPlacementViewModel)
+        viewModelOf(::BodyFatViewModel)
+        viewModelOf(::MeasureViewModel)
+        viewModelOf(::VisitViewModel)
+        viewModelOf(::MachineFormViewModel)
+        viewModelOf(::MineChooserViewModel)
+        viewModelOf(::FriendMachineViewModel)
+        viewModelOf(::FriendVisitViewModel)
+        viewModelOf(::FriendCalendarViewModel)
+        viewModelOf(::GroupViewModel)
+        // Koin finds a runtime parameter by its type, which a null has none of, so a view model
+        // with a nullable parameter takes its parameters by position.
         viewModel { (day: CalendarDay?) ->
             MeasurementFormViewModel(day, get(), get(), get(), get(), get(), get(), get(), get())
-        }
-        viewModel { (method: BodyFatMethod) ->
-            BodyFatViewModel(method, get(), get(), get(), get(), get(), get(), get(), get())
-        }
-        viewModel { (measure: MeasureId) ->
-            MeasureViewModel(measure, get(), get(), get(), get(), get(), get(), get(), get())
-        }
-        viewModel { (day: CalendarDay) ->
-            VisitViewModel(
-                day,
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-            )
         }
         viewModel { (day: CalendarDay?) ->
             MachinePickerViewModel(
@@ -187,20 +164,6 @@ val appModule =
                 get(),
             )
         }
-        viewModel { (args: MachineFormArgs) ->
-            MachineFormViewModel(
-                args,
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-            )
-        }
         viewModel { (machine: MachineId, start: String?) ->
             LinkChooserViewModel(
                 machine,
@@ -215,42 +178,5 @@ val appModule =
                 get(),
                 get(),
             )
-        }
-        viewModel { (machine: MachineId, name: String) ->
-            MineChooserViewModel(machine, name, get(), get(), get(), get(), get())
-        }
-        viewModel { (machine: MachineId, owner: UserId) ->
-            FriendMachineViewModel(
-                machine,
-                owner,
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-            )
-        }
-        viewModel { (member: UserId, name: String, day: CalendarDay) ->
-            FriendVisitViewModel(
-                member,
-                name,
-                day,
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-                get(),
-            )
-        }
-        viewModel { (member: UserId) ->
-            FriendCalendarViewModel(member, get(), get(), get(), get(), get(), get(), get())
-        }
-        viewModel { (group: GroupId) ->
-            GroupViewModel(group, get(), get(), get(), get(), get(), get())
         }
     }
