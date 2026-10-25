@@ -1133,18 +1133,6 @@ class MachineCatalogueTest {
         }
 
     @Test
-    fun a_deleted_machine_has_nothing_to_stand_in() =
-        runTest {
-            gym.machines.upsert(myPress.copy(deleted = true))
-
-            assertEquals(StandIn.Gone, catalogue.standIn(ME.userId, PlacedMachine(myPress.id)))
-            assertEquals(
-                StandIn.Gone,
-                catalogue.standIn(ME.userId, PlacedMachine(MachineId.random())),
-            )
-        }
-
-    @Test
     fun another_device_account_s_machine_stands_in_as_the_owner_s_linked_one_without_a_write() =
         runTest {
             val sashas = myPress.copy(userId = SASHA.userId)

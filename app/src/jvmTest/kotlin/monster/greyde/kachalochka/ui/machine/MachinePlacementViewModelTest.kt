@@ -360,20 +360,4 @@ class MachinePlacementViewModelTest {
             vm.state.value.notice,
         )
     }
-
-    @Test
-    fun a_machine_deleted_meanwhile_goes_nowhere_and_says_so() {
-        val vm = viewModel()
-        runBlocking { gym.machines.upsert(press.copy(deleted = true)) }
-        var opened: CalendarDay? = null
-
-        vm.planToday(PlacedMachine(press.id)) { opened = it }
-
-        assertNull(opened)
-        assertTrue(gym.visits.rows.isEmpty())
-        assertEquals(
-            PlacementNoticeUi(press.id, "Упражнение больше недоступно"),
-            vm.state.value.notice,
-        )
-    }
 }

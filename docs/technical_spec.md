@@ -778,14 +778,14 @@ hands the recorder what to write.
 visit's machine page and "Упражнение друга" share (`MachineMenu`, `PlanChooser`,
 `PlacementNotice`). Every action first asks `MachineCatalogue.standIn` for the account's machine
 for the shown one (`PlacedMachine`), with the account the screen offered the action to. An own
-machine stands for itself while it is live. Another account's machine on the device, such as a
+machine stands for itself. Another account's machine on the device, such as a
 parent's on the visit's page after a switch to a child, goes through the set form's rule:
 `deviceStandIn`, else the copy `ownCopy` writes. A friend's machine is replaced by `friendStandIn`
 over the group read "Упражнение друга" holds, when it was made for that account, else over a new
 one. The catalogue checks that the account is still active (§4.3) before each read and write and
 answers found, offline, gone or switched; the view model shows "Нет связи с сервером" for a failed
-read, "Упражнение больше недоступно" for a machine that is deleted or that the group read no longer
-has, and nothing for a switch. "В план…" reads the plans in `planOrder` with `planTitle` names and
+read, "Упражнение больше недоступно" for a machine that the group read no longer has, and nothing for a
+switch. "В план…" reads the plans in `planOrder` with `planTitle` names and
 keeps the account it read them for; a switch also closes the choice and drops the notice. A pick
 and "Повторить сегодня" go through `Placement` with the machine that stands in. A notice carries
 the machine it is for, so another machine's page in the same visit does not show it. "Упражнение

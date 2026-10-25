@@ -159,7 +159,7 @@ sealed interface StandIn {
 
     data object Offline : StandIn
 
-    /** No live machine to stand in for: deleted, or no longer shared by the friend. */
+    /** A friend's machine the friend no longer shares. */
     data object Gone : StandIn
 
     /** Another account became active; nothing was written. */
@@ -447,7 +447,7 @@ class MachineCatalogue(
         owner: UserId?,
         id: MachineId,
     ): StandIn {
-        val stored = machines.byId(id)?.takeIf { !it.deleted } ?: return StandIn.Gone
+        val stored = machines.byId(id) ?: return StandIn.Gone
         if (stored.userId == owner) return StandIn.Found(stored)
         val own =
             writingLinks {

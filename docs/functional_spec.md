@@ -551,10 +551,9 @@ takes the machine at its end, unless it holds it already, and the screen stays a
 once. "Повторить сегодня" adds the machine to today's visit as a planned one, as starting a plan
 does, and opens the visit. Back from either returns to the machine. A friend's machine goes in as
 the account's machine joined with it, else as a new copy linked to it, as "Взять себе" makes;
-offline it says "Нет связи с сервером", and for a machine the friend no longer shares, or one
-deleted meanwhile, "Упражнение больше недоступно", and nothing changes. The machine of another
-account on the device, such as a parent's on the visit's page after a switch to a child, goes in
-as a set recorded on it does.
+offline it says "Нет связи с сервером", and for a machine the friend no longer shares "Упражнение
+больше недоступно", and nothing changes. The machine of another account on the device, such as a
+parent's on the visit's page after a switch to a child, goes in as a set recorded on it does.
 Switching accounts closes the question and the notice.
 
 ## Custom exercsies
