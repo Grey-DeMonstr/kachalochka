@@ -316,8 +316,20 @@ interface Strings {
     val copyText: String
 
     // Family
+    val people: String
+    val noPeople: String
+    val childrenAndGuardians: String
+
+    fun childrenCount(n: Int): String
+
+    fun guardiansCount(n: Int): String
+
+    val whomToAdd: String
+    val addChildChoice: String
+    val addChildChoiceHint: String
+    val addGuardianChoice: String
+    val addGuardianChoiceHint: String
     val children: String
-    val noChildren: String
     val addChild: String
 
     fun childCode(code: String): String
@@ -328,7 +340,6 @@ interface Strings {
     val removeChildText: String
     val guardianInviteMessage: String
     val guardians: String
-    val noGuardians: String
     val addGuardian: String
     val guardianCode: String
     val guardianRights: String
@@ -412,7 +423,13 @@ interface Strings {
     ): String
 
     // Settings
+    val appSection: String
     val profile: String
+
+    /** "39 лет". */
+    fun years(n: Int): String
+
+    val savedAtOnce: String
     val nickname: String
     val sex: String
     val male: String
@@ -431,9 +448,14 @@ interface Strings {
     val themeDark: String
     val language: String
     val languageSystem: String
+    val animation: String
     val transitions: String
+    val transitionNone: String
+    val transitionFast: String
+    val transitionNormal: String
+    val transitionSmooth: String
 
-    fun transitionsHint(max: Int): String
+    fun millis(n: Int): String
 
     val restSound: String
     val restSoundOff: String
@@ -442,11 +464,12 @@ interface Strings {
     val restSoundHint: String
     val restNotificationChannel: String
     val restNotificationTitle: String
-    val apply: String
-    val applyTitle: String
-    val discard: String
-    val advanced: String
+    val account: String
+    val signedInWithGoogle: String
+    val signOut: String
+    val dangerZone: String
     val deleteAccount: String
+    val deleteAccountHint: String
     val deleteAccountTitle: String
 
     fun deleteAccountText(word: String): String

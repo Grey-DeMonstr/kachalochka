@@ -360,16 +360,28 @@ object RuStrings : Strings {
     override val copyFailed = "Не удалось скопировать"
     override val copyText = "Скопировать"
 
+    override val people = "Люди"
+    override val noPeople = "Детей и родителей пока нет"
+    override val childrenAndGuardians = "Дети и родители"
+
+    override fun childrenCount(n: Int) = "$n ${plural(n, "ребёнок", "ребёнка", "детей")}"
+
+    override fun guardiansCount(n: Int) = "$n ${plural(n, "родитель", "родителя", "родителей")}"
+
+    override val whomToAdd = "Кого добавить?"
+    override val addChildChoice = "Ребёнка"
+    override val addChildChoiceHint = "Детский аккаунт под вашим присмотром"
+    override val addGuardianChoice = "Родителя"
+    override val addGuardianChoiceHint = "Взрослый, который присматривает за вами"
     override val children = "Дети"
-    override val noChildren = "Детей пока нет"
     override val addChild = "Добавить ребёнка"
 
     override fun childCode(code: String) = "Код для ребёнка: $code"
 
     override val childCodeHint =
-        "Ребёнок вводит этот код на своём устройстве: Настройки → Родители. Код работает один " +
-            "раз в течение суток. Family Link может один раз попросить вас разрешить ребёнку " +
-            "вход в Качалочку."
+        "Ребёнок вводит этот код на своём устройстве: Настройки → Люди → Добавить → Родителя. " +
+            "Код работает один раз в течение суток. Family Link может один раз попросить вас " +
+            "разрешить ребёнку вход в Качалочку."
     override val removeLink = "Убрать"
     override val removeChildTitle = "Убрать ребёнка?"
     override val removeChildText =
@@ -377,7 +389,6 @@ object RuStrings : Strings {
             "этого устройства. Уже синхронизированное останется у ребёнка."
     override val guardianInviteMessage = "Добавь меня родителем в Качалочке"
     override val guardians = "Родители"
-    override val noGuardians = "Родителей пока нет"
     override val addGuardian = "Добавить родителя"
     override val guardianCode = "Код от родителя"
     override val guardianRights =
@@ -467,7 +478,12 @@ object RuStrings : Strings {
         length: Int,
     ) = "День $day из $length"
 
+    override val appSection = "Приложение"
     override val profile = "Профиль"
+
+    override fun years(n: Int) = "$n ${plural(n, "год", "года", "лет")}"
+
+    override val savedAtOnce = "Изменения сохраняются сразу"
     override val nickname = "Ник"
     override val sex = "Пол"
     override val male = "Мужской"
@@ -486,9 +502,14 @@ object RuStrings : Strings {
     override val themeDark = "Тёмная"
     override val language = "Язык"
     override val languageSystem = "Системный"
+    override val animation = "Анимация"
     override val transitions = "Анимация переходов"
+    override val transitionNone = "Без анимации"
+    override val transitionFast = "Быстрая"
+    override val transitionNormal = "Обычная"
+    override val transitionSmooth = "Плавная"
 
-    override fun transitionsHint(max: Int) = "Миллисекунды, до $max; 0 — без анимации"
+    override fun millis(n: Int) = "$n мс"
 
     override val restSound = "Звук таймера"
     override val restSoundOff = "Выключен"
@@ -497,11 +518,13 @@ object RuStrings : Strings {
     override val restSoundHint = "Звучит в конце отдыха."
     override val restNotificationChannel = "Таймер отдыха"
     override val restNotificationTitle = "Отдых"
-    override val apply = "Применить"
-    override val applyTitle = "Применить изменения?"
-    override val discard = "Не применять"
-    override val advanced = "Дополнительно"
+    override val account = "Аккаунт"
+    override val signedInWithGoogle = "Вход через Google"
+    override val signOut = "Выйти"
+    override val dangerZone = "Опасная зона"
     override val deleteAccount = "Удалить аккаунт"
+    override val deleteAccountHint =
+        "Удаляет все визиты, замеры и связи. Перед удалением нужно ввести слово-подтверждение."
     override val deleteAccountTitle = "Удалить аккаунт?"
 
     override fun deleteAccountText(word: String) =

@@ -347,9 +347,9 @@ switching to it again is a retry rather than adding it back.
 `Account.shownName`, the nickname when not blank, else the Google name, is the name every screen
 writes for an account; only the placeholder of Settings' "Ник" shows the Google name. The web can
 read only the active account's profile, so a Google account's entry in the store keeps its
-nickname. `AccountAvatars` gives the store the nickname of every profile it reads, and Settings
-the one it opens and saves; a profile that cannot be read keeps the stored nickname, and so do a
-token refresh and a new sign-in. A managed entry keeps none: its name from `my_family` already is
+nickname. `AccountAvatars` gives the store the nickname of every profile it reads, and the
+profile form the one it opens and saves; a profile that cannot be read keeps the stored nickname,
+and so do a token refresh and a new sign-in. A managed entry keeps none: its name from `my_family` already is
 `member_display_name` (§5.2).
 
 A managed account is a child linked to one of the device's Google accounts (§5.2). It has no
@@ -374,8 +374,8 @@ family is unread keeps that guardian. `AccountTokens` serves both platforms for 
 read with no token for its account fails rather than going out as anon and finding nobody.
 Android follows at the start of every sync pass, so a child linked since the last pass syncs in
 this one and a child whose link ended leaves before its rows could be pushed again, and on
-entering "Дети"; a sign-in reaches it through the pass it requests. The web follows once per page
-load, which a sign-in's redirect also is, and on entering "Дети".
+entering "Люди"; a sign-in reaches it through the pass it requests. The web follows once per page
+load, which a sign-in's redirect also is, and on entering "Люди".
 
 A follow holds a lock the pass shares (`followThen`): a follow during a pass could purge a child
 whose rows the pass then pulls back. An account signed in after the families were read counts as
@@ -905,10 +905,14 @@ is `cycleDayOf(dayOn(today), length)` for the chip `MeasureSummary` draws beside
 The body-fat formulas are pure functions in `domain/measures/BodyFat.kt` (`bodyFat`,
 `missingInputs`, `methodsReading`); a result outside 2–70 % is treated as none. "Замеры" finds the
 inputs by `MeasureKind`, never by name: the latest value of each kind, and sex, `birthDate` and
-height from the profile, with `ageOn` counting whole years to today. Settings edits those fields
-with the nickname; its save re-reads `forOwner` and updates that row, or creates one with
-`Profile.new` when there is none, as a picked friend colour does (§4.3), so the colours survive.
-Without an account the profile stays on the device, as every ownerless row does.
+height from the profile, with `ageOn` counting whole years to today. The profile form
+(`ProfileViewModel`) edits those fields with the nickname and the avatar. It has no apply step: a
+choice saves at once, typing saves after `SAVE_DELAY` (1 s) without a keystroke, and leaving the
+form or a switch of account saves what is pending for the account it was typed for. A field that
+does not parse keeps the stored value. Each save re-reads `forOwner` under one lock and updates
+that row, or creates one with `Profile.new` when there is none, as a picked friend colour does
+(§4.3), so the colours survive and an avatar save never overwrites a field save. Without an
+account the profile stays on the device, as every ownerless row does.
 
 The body-fat chart comes from `bodyFatHistory` in `domain/measures/BodyFatHistory.kt`. The
 measures a formula reads for the sex come from `methodsReading`. A point falls on each day with a
@@ -927,15 +931,14 @@ rebuilds the table, since Android 10's SQLite cannot drop a column, and resets `
 
 `Profile.weightUnit` travels as `kg` / `lb` / `mixed` in `profile.weight_unit`, added by migration
 `0012` (not null, default `kg`) and `9.sqm`, which also resets `lastPullAt`; a missing or unknown
-name reads as `Kg`. Settings saves it with the body fields, with or without an account.
+name reads as `Kg`. The profile form saves it at once, with or without an account.
 `Profile.groupByTag` is `profile.group_by_tag`, false by default, added by the same migrations as
 machine tags; the visit screen writes it as soon as it is switched.
 
 `Profile.cycleLength` is `profile.cycle_length`, an integer of 14 to 60 days (`CYCLE_LENGTHS`, a
 check in Postgres) or null for `DEFAULT_CYCLE_LENGTH`, 28. Migration `0026` and `18.sqm` add it;
-`18.sqm` resets `lastPullAt`. Settings shows the field only while the sex is `Female` and saves it
-with the body fields; with another sex the stored length stays as it is, and the hidden field
-cannot block "Применить".
+`18.sqm` resets `lastPullAt`. The profile form shows the field only while the sex is `Female` and
+saves it with the body fields; with another sex the stored length stays as it is.
 
 The cycle arithmetic is pure, in `domain/measures/Cycle.kt`. `cycleAnchors` turns each recorded
 day of the cycle into a `CycleAnchor`: the day it was recorded and the start it tells,
@@ -1027,7 +1030,8 @@ Row-level security enforces every visibility rule from the functional spec:
   them, so `SupabaseAccountServer` removes the caller's photos through the Storage API right
   after, on the same token; its client acts as that account whoever becomes active meanwhile. Only
   once the server has answered does `AccountDeletion` remove the owner's rows from the device
-  (`OwnedRowsPurge`) and sign the account out, and leaving Settings does not stop it halfway.
+  (`OwnedRowsPurge`) and sign the account out, and leaving the account screen does not stop it
+  halfway.
 - A group's current members are readable by its members. Membership changes only through the
   security-definer functions `create_group`, `join_group` and `leave_group`; the owner renames
   and soft-deletes the group directly, and a deleted group stays deleted.
@@ -1204,7 +1208,9 @@ behind them. Without an explicit style, Android draws a contrast scrim that foll
 window theme.
 
 The screen transition length is a device setting stored the same way, as `TransitionPreference`.
-`NavHost` fades by it, or switches instantly at 0, over a box painted with the scheme's
+Settings offers it as a `TransitionPreset` (0, 150, 300 or 500 ms); a length stored before the
+presets shows as the closest one and stays stored until another is chosen. `NavHost` fades by it,
+or switches instantly at 0, over a box painted with the scheme's
 `background`: the Android window theme is light, and a fade over a bare window shows it through
 both half-transparent screens.
 

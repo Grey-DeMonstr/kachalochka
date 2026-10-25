@@ -17,12 +17,12 @@ the device. Any other account the server stops accepting stays listed but stops 
 to it fails to activate and reports the failure, and the account stays listed.
 
 Both apps must support a dark and a light theme. By default the theme follows the system setting;
-the user can override it in Settings, choosing Системная, Светлая or Тёмная the way the weight unit
-is chosen. The choice is remembered between launches.
+the user can override it in Settings, choosing Системная, Светлая or Тёмная. The choice is
+remembered between launches.
 
 The app speaks Russian and English. At first it follows the device: Russian on a device set to
 Russian, English on any other. Settings has "Язык" — Системный, English or Русский — remembered
-on the device like the theme and applied with the rest of the settings. The shared text is written
+on the device like the theme. The shared text is written
 in the app's language; names, own units, tags and comments stay as they were typed. In English a
 machine is called a machine.
 
@@ -30,16 +30,25 @@ Numbers are written with a decimal point everywhere, the shared text included ("
 number takes a point or a comma.
 
 Moving between screens is a short fade that never flashes a colour outside the theme. Settings
-has an "Анимация переходов" field for its length in milliseconds, 0 to 1000, 150 by default;
-0 switches screens instantly. Like the theme, it is remembered on the device and not synced.
+has "Анимация" for its length: Без анимации (screens switch instantly), Быстрая (150 мс, the
+default), Обычная (300 мс) or Плавная (500 мс). Like the theme, it is remembered on the device and
+not synced.
 
-Settings has "Звук таймера" — Выключен or Включён, Выключен by default — remembered on the device
-and applied with the rest of the settings. With it on, the rest timer sounds at the end of each
-rest. On Android the row "Звук" under the choice opens the system's notification sounds, the
-default one at first. The sound comes through the headphones when they are on, also with the
-screen locked and in silent mode, while a notification counts the rest down. Switching the sound
-on asks for the right to show notifications on Android 13 and later; without it the sound still
-plays. The web plays a short beep while its tab is open.
+Settings has "Звук таймера" — Выключен or Включён, Выключен by default — remembered on the device.
+With it on, the rest timer sounds at the end of each rest. On Android the row "Звук" under the
+choice opens the system's notification sounds, the default one at first. The sound comes through
+the headphones when they are on, also with the screen locked and in silent mode, while a
+notification counts the rest down. Switching the sound on asks for the right to show notifications
+on Android 13 and later; without it the sound still plays. The web plays a short beep while its
+tab is open.
+
+Settings is a short hub that fits one screen. It starts with the profile card: the avatar, the
+nickname (else the Google name, or "Профиль" without an account) and a line such as "Мужской · 39
+лет · 174 см · кг". Under the small heading "Приложение" come "Тема", "Язык", "Анимация" and "Звук
+таймера", each with its current value; a tap opens the choices in a bottom panel, and a choice
+applies at once and closes the panel. A signed-in account also has "Люди" (see Sign-in and
+accounts), with how many children and parents are linked, and "Аккаунт" with its e-mail. Every
+change is saved at once; Settings has no "Применить".
 
 # Use cases
 
@@ -352,25 +361,27 @@ Signing out of an account removes it from the device but keeps what it recorded,
 in finds it again. On Android, signing out of the last account returns the app to working without
 one. Friends stay locked until an account is signed in.
 
-Settings has "Дети" while an account is signed in. It lists the children linked to the account,
-each with their avatar, name and "Убрать", which asks "Убрать ребёнка?" before it ends the link.
-"Добавить ребёнка" shows a new code, "Код для ребёнка: …", and on the web its link too, with
-"Поделиться", which hands it over as a group invite is handed over. The child enters it on their
-own device within a day, and a code works once; a new code replaces the last one. Family Link may
-ask the parent once to let the child sign in to the app. Without a network the screen says "Нет
-связи с сервером" and changes nothing.
+Settings has "Люди" while an account is signed in: one screen for every person the account is
+linked to, grouped under "Дети" and "Родители"; an empty group is left out, and with nobody linked
+the screen says "Детей и родителей пока нет". Each person shows their avatar and name, and their ⋮
+menu has "Убрать", which asks "Убрать ребёнка?" or "Убрать родителя?" before it ends the link.
+Without a network the screen says "Нет связи с сервером" and changes nothing.
 
-A signed-in account's Settings also have "Родители": the account's parents, each with "Убрать",
-which asks "Убрать родителя?" first, and under "Добавить родителя" a field for the code from a
-parent and "Добавить". The screen says what a parent can do: record and see the account's
-visits, machines, photos and plans, never its profile, measures or groups. An unknown or expired
-code says "Код не найден или устарел", and the account's own code "Это ваш собственный код".
-Linking and removing need the network, as on "Дети".
+"Добавить" in the screen's bar asks "Кого добавить?" in a bottom panel: "Ребёнка" (a child's
+account in the user's care) or "Родителя" (an adult who looks after the user). "Ребёнка" shows a
+new code, "Код для ребёнка: …", and on the web its link too, with "Поделиться", which hands it
+over as a group invite is handed over. The child enters it on their own device within a day, and
+a code works once; a new code replaces the last one. Family Link may ask the parent once to let
+the child sign in to the app. "Родителя" says what a parent can do: record and see the account's
+visits, machines, photos and plans, never its profile, measures or groups; under it are a field
+for the code from a parent and "Добавить". An unknown or expired code says "Код не найден или
+устарел", and the account's own code "Это ваш собственный код". Linking and removing need the
+network.
 
 A parent's code shared from the web, or from an Android build that knows the web app's address,
 carries a link to the web app. Opening it asks "Добавить родителя по приглашению?" before
 linking, and a link opened while signed out is offered to whichever account signs in next in
-that browser.
+that browser; once linked, "Люди" opens.
 
 A linked child appears in each of their parents' account menus, with their avatar, their nickname
 (else their Google name) and "Ребёнок" under it, and among the set form's avatar chips, on Android
@@ -379,25 +390,28 @@ child records for them exactly as for any account: the home card, the visit and 
 machines with their photos and links, the calendar, the statistics and the plans are the child's,
 and they sync between the parent's devices and the child's own. The child's profile, measures and
 groups stay the child's: while the child is chosen, "Замеры" and "Друзья" leave the home screen, a
-screen of them that was open closes, Settings keeps only the settings of the device, and sorting or
-grouping choices are not saved: they hold for the child on every screen until the app closes. The
+screen of them that was open closes, Settings keeps only "Приложение" and closes its profile,
+"Люди" and "Аккаунт", and sorting or grouping choices are not saved: they hold for the child on
+every screen until the app closes. The
 friends' visits, machines, results and photos shown beside the child's are those of the people the
 parent and the child share a group with, the parent included. A child has no sign-out of its own:
-removing it in "Дети" takes it, with what was recorded for it, off the parent's device, and the
+removing it in "Люди" takes it, with what was recorded for it, off the parent's device, and the
 child keeps what has already synced. Signing a parent out takes their children off that device's
 menu until the parent signs back in. A child signs in on their own phone or browser with their own
 Google account, as anyone does.
 
-Settings ends with "Дополнительно", a heading that opens, for the active account, a red "Удалить
-аккаунт". Its question, "Удалить аккаунт?", asks to type DELETE, in any case, before "Удалить"
-works; then it deletes the account and everything it recorded — visits, machines with their photos,
-measures, profile and the groups it owns — from the server and, on Android, from the device, then
-signs it out as signing out does. Without a network it says "Нет связи с сервером" and changes
-nothing.
+"Аккаунт" in Settings shows the active account's e-mail with "Вход через Google", then "Выйти",
+which signs it out as the account menu does. Under "Опасная зона" a red "Удалить аккаунт" follows.
+Its question, "Удалить аккаунт?", asks to type DELETE, in any case, before "Удалить" works; then it
+deletes the account and everything it recorded — visits, machines with their photos, measures,
+profile and the groups it owns — from the server and, on Android, from the device, then signs it
+out as signing out does. Without a network it says "Нет связи с сервером" and changes nothing.
+Once the account is signed out or deleted, the screen closes.
 
-Settings has a "Профиль" section. One "Применить", under the theme and the transition length,
-applies every change on the screen at once, the theme included; leaving with changes not applied
-asks "Применить изменения?", with "Применить" and "Не применять". Signed in, the avatar sits left
+The profile card in Settings opens "Профиль", a form with no "Применить": a choice, such as the
+sex, the weight unit or the avatar, is saved at once, and a typed field about a second after
+typing stops and when the form closes; "Изменения сохраняются сразу" says so at its foot. A field with
+an invalid value is marked red and keeps the value saved before. Signed in, the avatar sits left
 of "Ник"; tapping it offers "Снять фото" and "Из галереи", as a machine's photo does, and, once a
 photo is chosen, "Удалить", which brings the Google picture back. Its "Ник" field, for the
 signed-in account, takes up to 40 characters; the Google account name is shown as a placeholder and
@@ -408,7 +422,7 @@ to 250) feed the body fat formulas; they are there without an account too, and a
 clears its value. Nobody else sees them. With "Женский", "Длина цикла, дней" follows: 14 to 60,
 and an empty field means 28.
 
-"Единицы веса" in the same section, also there without an account, chooses how gym weights are
+"Единицы веса" in the same form, also there without an account, chooses how gym weights are
 shown: "кг" (the default), "lb" or "Смешанные", where each machine shows its own unit. With "кг"
 or "lb" every set, platform, step and last result on every screen, a friend's included, is shown
 in that unit, converted as in a shared visit; a step converts to one decimal. An own unit is never

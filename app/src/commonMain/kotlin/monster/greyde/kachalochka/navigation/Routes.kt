@@ -121,7 +121,10 @@ data class PlanRoute(
 )
 
 @Serializable
-object ChildrenRoute
+object ProfileRoute
 
 @Serializable
-object GuardiansRoute
+object PeopleRoute
+
+@Serializable
+object AccountRoute

@@ -13,7 +13,9 @@ object PhosphorIcons {
     val ArrowClockwise: ImageVector by lazy { phosphor("ArrowClockwise", ARROW_CLOCKWISE) }
     val ArrowLeft: ImageVector by lazy { phosphor("ArrowLeft", ARROW_LEFT) }
     val ArrowRight: ImageVector by lazy { phosphor("ArrowRight", ARROW_RIGHT) }
+    val Baby: ImageVector by lazy { phosphor("Baby", BABY) }
     val Barbell: ImageVector by lazy { phosphor("Barbell", BARBELL) }
+    val Bell: ImageVector by lazy { phosphor("Bell", BELL) }
     val CalendarBlank: ImageVector by lazy { phosphor("CalendarBlank", CALENDAR_BLANK) }
     val Camera: ImageVector by lazy { phosphor("Camera", CAMERA) }
     val CameraPlus: ImageVector by lazy { phosphor("CameraPlus", CAMERA_PLUS) }
@@ -22,6 +24,7 @@ object PhosphorIcons {
     val ChartLineUp: ImageVector by lazy { phosphor("ChartLineUp", CHART_LINE_UP) }
     val ChatTeardropText: ImageVector by lazy { phosphor("ChatTeardropText", CHAT_TEARDROP_TEXT) }
     val Check: ImageVector by lazy { phosphor("Check", CHECK) }
+    val CheckCircle: ImageVector by lazy { phosphor("CheckCircle", CHECK_CIRCLE) }
     val Copy: ImageVector by lazy { phosphor("Copy", COPY) }
     val DotsThreeVertical: ImageVector by lazy {
         phosphor("DotsThreeVertical", DOTS_THREE_VERTICAL)
@@ -29,26 +32,34 @@ object PhosphorIcons {
     val DropFill: ImageVector by lazy { phosphor("DropFill", DROP_FILL) }
     val Equals: ImageVector by lazy { phosphor("Equals", EQUALS) }
     val Gear: ImageVector by lazy { phosphor("Gear", GEAR) }
+    val GoogleLogo: ImageVector by lazy { phosphor("GoogleLogo", GOOGLE_LOGO) }
     val Image: ImageVector by lazy { phosphor("Image", IMAGE) }
     val Info: ImageVector by lazy { phosphor("Info", INFO) }
     val LinkSimple: ImageVector by lazy { phosphor("LinkSimple", LINK_SIMPLE) }
     val ListChecks: ImageVector by lazy { phosphor("ListChecks", LIST_CHECKS) }
     val LockSimple: ImageVector by lazy { phosphor("LockSimple", LOCK_SIMPLE) }
     val MagnifyingGlass: ImageVector by lazy { phosphor("MagnifyingGlass", MAGNIFYING_GLASS) }
+    val Moon: ImageVector by lazy { phosphor("Moon", MOON) }
     val Plus: ImageVector by lazy { phosphor("Plus", PLUS) }
     val PushPin: ImageVector by lazy { phosphor("PushPin", PUSH_PIN) }
     val Ruler: ImageVector by lazy { phosphor("Ruler", RULER) }
     val ShareNetwork: ImageVector by lazy { phosphor("ShareNetwork", SHARE_NETWORK) }
+    val SignOut: ImageVector by lazy { phosphor("SignOut", SIGN_OUT) }
     val SlidersHorizontal: ImageVector by lazy {
         phosphor(
             "SlidersHorizontal",
             SLIDERS_HORIZONTAL,
         )
     }
+    val Sparkle: ImageVector by lazy { phosphor("Sparkle", SPARKLE) }
     val Star: ImageVector by lazy { phosphor("Star", STAR) }
     val Timer: ImageVector by lazy { phosphor("Timer", TIMER) }
+    val Translate: ImageVector by lazy { phosphor("Translate", TRANSLATE) }
     val Trash: ImageVector by lazy { phosphor("Trash", TRASH) }
     val Trophy: ImageVector by lazy { phosphor("Trophy", TROPHY) }
+    val UserCircle: ImageVector by lazy { phosphor("UserCircle", USER_CIRCLE) }
+    val UserMinus: ImageVector by lazy { phosphor("UserMinus", USER_MINUS) }
+    val Users: ImageVector by lazy { phosphor("Users", USERS) }
     val UsersThree: ImageVector by lazy { phosphor("UsersThree", USERS_THREE) }
     val X: ImageVector by lazy { phosphor("X", X_MARK) }
 
@@ -58,7 +69,9 @@ object PhosphorIcons {
                 ArrowClockwise,
                 ArrowLeft,
                 ArrowRight,
+                Baby,
                 Barbell,
+                Bell,
                 CalendarBlank,
                 Camera,
                 CameraPlus,
@@ -67,26 +80,35 @@ object PhosphorIcons {
                 ChartLineUp,
                 ChatTeardropText,
                 Check,
+                CheckCircle,
                 Copy,
                 DotsThreeVertical,
                 DropFill,
                 Equals,
                 Gear,
+                GoogleLogo,
                 Image,
                 Info,
                 LinkSimple,
                 ListChecks,
                 LockSimple,
                 MagnifyingGlass,
+                Moon,
                 Plus,
                 PushPin,
                 Ruler,
                 ShareNetwork,
+                SignOut,
                 SlidersHorizontal,
+                Sparkle,
                 Star,
                 Timer,
+                Translate,
                 Trash,
                 Trophy,
+                UserCircle,
+                UserMinus,
+                Users,
                 UsersThree,
                 X,
             )
@@ -136,3 +158,14 @@ private const val CAMERA_PLUS = "M168,136a8,8,0,0,1-8,8H136v24a8,8,0,0,1-16,0V14
 private const val STAR = "M239.18,97.26A16.38,16.38,0,0,0,224.92,86l-59-4.76L143.14,26.15a16.36,16.36,0,0,0-30.27,0L90.11,81.23,31.08,86a16.46,16.46,0,0,0-9.37,28.86l45,38.83L53,211.75a16.38,16.38,0,0,0,24.5,17.82L128,198.49l50.53,31.08A16.4,16.4,0,0,0,203,211.75l-13.76-58.07,45-38.83A16.43,16.43,0,0,0,239.18,97.26Zm-15.34,5.47-48.7,42a8,8,0,0,0-2.56,7.91l14.88,62.8a.37.37,0,0,1-.17.48c-.18.14-.23.11-.38,0l-54.72-33.65a8,8,0,0,0-8.38,0L69.09,215.94c-.15.09-.19.12-.38,0a.37.37,0,0,1-.17-.48l14.88-62.8a8,8,0,0,0-2.56-7.91l-48.7-42c-.12-.1-.23-.19-.13-.5s.18-.27.33-.29l63.92-5.16A8,8,0,0,0,103,91.86l24.62-59.61c.08-.17.11-.25.35-.25s.27.08.35.25L153,91.86a8,8,0,0,0,6.75,4.92l63.92,5.16c.15,0,.24,0,.33.29S224,102.63,223.84,102.73Z"
 private const val TROPHY = "M232,64H208V48a8,8,0,0,0-8-8H56a8,8,0,0,0-8,8V64H24A16,16,0,0,0,8,80V96a40,40,0,0,0,40,40h3.65A80.13,80.13,0,0,0,120,191.61V216H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16H136V191.58c31.94-3.23,58.44-25.64,68.08-55.58H208a40,40,0,0,0,40-40V80A16,16,0,0,0,232,64ZM48,120A24,24,0,0,1,24,96V80H48v32q0,4,.39,8Zm144-8.9c0,35.52-29,64.64-64,64.9a64,64,0,0,1-64-64V56H192ZM232,96a24,24,0,0,1-24,24h-.5a81.81,81.81,0,0,0,.5-8.9V80h24Z"
 private const val X_MARK = "M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"
+private const val BABY = "M92,140a12,12,0,1,1,12-12A12,12,0,0,1,92,140Zm72-24a12,12,0,1,0,12,12A12,12,0,0,0,164,116Zm-12.27,45.23a45,45,0,0,1-47.46,0,8,8,0,0,0-8.54,13.54,61,61,0,0,0,64.54,0,8,8,0,0,0-8.54-13.54ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88.11,88.11,0,0,0-84.09-87.91C120.32,56.38,120,71.88,120,72a8,8,0,0,0,16,0,8,8,0,0,1,16,0,24,24,0,0,1-48,0c0-.73.13-14.3,8.46-30.63A88,88,0,1,0,216,128Z"
+private const val BELL = "M221.8,175.94C216.25,166.38,208,139.33,208,104a80,80,0,1,0-160,0c0,35.34-8.26,62.38-13.81,71.94A16,16,0,0,0,48,200H88.81a40,40,0,0,0,78.38,0H208a16,16,0,0,0,13.8-24.06ZM128,216a24,24,0,0,1-22.62-16h45.24A24,24,0,0,1,128,216ZM48,184c7.7-13.24,16-43.92,16-80a64,64,0,1,1,128,0c0,36.05,8.28,66.73,16,80Z"
+private const val CHECK_CIRCLE = "M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+private const val GOOGLE_LOGO = "M224,128a96,96,0,1,1-21.95-61.09,8,8,0,1,1-12.33,10.18A80,80,0,1,0,207.6,136H128a8,8,0,0,1,0-16h88A8,8,0,0,1,224,128Z"
+private const val MOON = "M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,0,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56,104.11,104.11,0,0,0,200,160a106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z"
+private const val SIGN_OUT = "M120,216a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V40a8,8,0,0,1,8-8h64a8,8,0,0,1,0,16H56V208h56A8,8,0,0,1,120,216Zm109.66-93.66-40-40a8,8,0,0,0-11.32,11.32L204.69,120H112a8,8,0,0,0,0,16h92.69l-26.35,26.34a8,8,0,0,0,11.32,11.32l40-40A8,8,0,0,0,229.66,122.34Z"
+private const val SPARKLE = "M197.58,129.06,146,110l-19-51.62a15.92,15.92,0,0,0-29.88,0L78,110l-51.62,19a15.92,15.92,0,0,0,0,29.88L78,178l19,51.62a15.92,15.92,0,0,0,29.88,0L146,178l51.62-19a15.92,15.92,0,0,0,0-29.88ZM137,164.22a8,8,0,0,0-4.74,4.74L112,223.85,91.78,169A8,8,0,0,0,87,164.22L32.15,144,87,123.78A8,8,0,0,0,91.78,119L112,64.15,132.22,119a8,8,0,0,0,4.74,4.74L191.85,144ZM144,40a8,8,0,0,1,8-8h16V16a8,8,0,0,1,16,0V32h16a8,8,0,0,1,0,16H184V64a8,8,0,0,1-16,0V48H152A8,8,0,0,1,144,40ZM248,88a8,8,0,0,1-8,8h-8v8a8,8,0,0,1-16,0V96h-8a8,8,0,0,1,0-16h8V72a8,8,0,0,1,16,0v8h8A8,8,0,0,1,248,88Z"
+private const val TRANSLATE = "M247.15,212.42l-56-112a8,8,0,0,0-14.31,0l-21.71,43.43A88,88,0,0,1,108,126.93,103.65,103.65,0,0,0,135.69,64H160a8,8,0,0,0,0-16H104V32a8,8,0,0,0-16,0V48H32a8,8,0,0,0,0,16h87.63A87.76,87.76,0,0,1,96,116.35a87.74,87.74,0,0,1-19-31,8,8,0,1,0-15.08,5.34A103.63,103.63,0,0,0,84,127a87.55,87.55,0,0,1-52,17,8,8,0,0,0,0,16,103.46,103.46,0,0,0,64-22.08,104.18,104.18,0,0,0,51.44,21.31l-26.6,53.19a8,8,0,0,0,14.31,7.16L148.94,192h70.11l13.79,27.58A8,8,0,0,0,240,224a8,8,0,0,0,7.15-11.58ZM156.94,176,184,121.89,211.05,176Z"
+private const val USER_CIRCLE = "M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24ZM74.08,197.5a64,64,0,0,1,107.84,0,87.83,87.83,0,0,1-107.84,0ZM96,120a32,32,0,1,1,32,32A32,32,0,0,1,96,120Zm97.76,66.41a79.66,79.66,0,0,0-36.06-28.75,48,48,0,1,0-59.4,0,79.66,79.66,0,0,0-36.06,28.75,88,88,0,1,1,131.52,0Z"
+private const val USER_MINUS = "M256,136a8,8,0,0,1-8,8H200a8,8,0,0,1,0-16h48A8,8,0,0,1,256,136Zm-57.87,58.85a8,8,0,0,1-12.26,10.3C165.75,181.19,138.09,168,108,168s-57.75,13.19-77.87,37.15a8,8,0,0,1-12.25-10.3c14.94-17.78,33.52-30.41,54.17-37.17a68,68,0,1,1,71.9,0C164.6,164.44,183.18,177.07,198.13,194.85ZM108,152a52,52,0,1,0-52-52A52.06,52.06,0,0,0,108,152Z"
+private const val USERS = "M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"

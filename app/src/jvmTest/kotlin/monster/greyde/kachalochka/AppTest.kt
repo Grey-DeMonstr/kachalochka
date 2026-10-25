@@ -170,8 +170,9 @@ class AppTest {
                 onNodeWithTag("account-avatar").performClick()
                 onNodeWithTag("account-settings").performClick()
                 waitForIdle()
-                onNodeWithTag("language-english").performScrollTo().performClick()
-                onNodeWithTag("apply-settings").performScrollTo().performClick()
+                onNodeWithTag("settings-language").performClick()
+                waitForIdle()
+                onNodeWithTag("language-english").performClick()
                 waitForIdle()
                 onNodeWithTag("top-bar-title").assertTextEquals("Settings")
 
@@ -563,7 +564,7 @@ class AppTest {
     }
 
     @Test
-    fun a_kept_parent_code_asks_first_then_opens_the_parents() {
+    fun a_kept_parent_code_asks_first_then_opens_the_people() {
         val signed = signedInGym()
         signed.family.offered("PAPA2345", PAPA)
         signed.parentCodes.save("PAPA2345")
@@ -572,7 +573,8 @@ class AppTest {
             onNodeWithTag("guardian-invite-confirm").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Родители")
+            onNodeWithTag("top-bar-title").assertTextEquals("Люди")
+            onNodeWithTag("people-guardians").assertExists()
         }
         assertEquals(listOf(IVAN_MEMBER.userId to PAPA.userId), signed.family.links)
     }
@@ -932,16 +934,16 @@ class AppTest {
     }
 
     @Test
-    fun switching_to_a_managed_child_closes_the_children_and_lands_on_settings() {
+    fun switching_to_a_managed_child_closes_the_people_and_lands_on_settings() {
         val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
         signed.family.link(SASHA, IVAN_MEMBER)
         runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-settings").performClick()
             waitForIdle()
-            onNodeWithTag("settings-children").performScrollTo().performClick()
+            onNodeWithTag("settings-people").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Дети")
+            onNodeWithTag("top-bar-title").assertTextEquals("Люди")
 
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-${SASHA.userId.value}").performClick()

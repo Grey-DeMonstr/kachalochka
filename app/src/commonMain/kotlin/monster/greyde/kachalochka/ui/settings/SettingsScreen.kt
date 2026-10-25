@@ -1,29 +1,20 @@
 package monster.greyde.kachalochka.ui.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,192 +24,186 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.compose.NavigationBackHandler
-import androidx.navigationevent.compose.rememberNavigationEventState
-import coil3.compose.AsyncImage
-import monster.greyde.kachalochka.core.domain.measures.DEFAULT_CYCLE_LENGTH
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Sex
-import monster.greyde.kachalochka.navigation.MAX_TRANSITION_MILLIS
 import monster.greyde.kachalochka.ui.account.PersonAvatar
-import monster.greyde.kachalochka.ui.components.AccentButton
-import monster.greyde.kachalochka.ui.components.Choice
-import monster.greyde.kachalochka.ui.components.ChoiceRow
-import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.Screen
-import monster.greyde.kachalochka.ui.components.TextInput
+import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
-import monster.greyde.kachalochka.ui.photos.PhotoCapture
-import monster.greyde.kachalochka.ui.photos.photoLoader
 import monster.greyde.kachalochka.ui.strings.AppLanguage
+import monster.greyde.kachalochka.ui.strings.Strings
 import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.timer.RestSound
 import monster.greyde.kachalochka.ui.timer.RestSoundChooser
+import monster.greyde.kachalochka.ui.timer.RestSoundLaunchers
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
+private enum class Sheet { Theme, Language, Animation, RestSound }
+
+/** A short list: rare settings show their value and open a choice in a bottom sheet. */
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    onOpenChildren: () -> Unit = {},
-    onOpenGuardians: () -> Unit = {},
+    onOpenProfile: () -> Unit = {},
+    onOpenPeople: () -> Unit = {},
+    onOpenAccount: () -> Unit = {},
 ) {
     val viewModel: SettingsViewModel = koinViewModel()
-    val profile by viewModel.profile.collectAsState()
+    val hub by viewModel.hub.collectAsState()
     val device by viewModel.device.collectAsState()
-    val canApply by viewModel.canApply.collectAsState()
-    val confirmingLeave by viewModel.confirmingLeave.collectAsState()
-    val deletion by viewModel.deletion.collectAsState()
-    val familyAvailable by viewModel.familyAvailable.collectAsState()
-    val leave = { if (viewModel.requestLeave()) onBack() }
-    NavigationBackHandler(
-        state = rememberNavigationEventState(NavigationEventInfo.None),
-        isBackEnabled = true,
-        onBackCompleted = leave,
-    )
-    Screen(strings().settings, onBack = leave, onOpenSettings = null) {
+    var sheet by remember { mutableStateOf<Sheet?>(null) }
+    // Outside the sheet, so a result that comes back after it closes still lands.
+    val chooser: RestSoundChooser = koinInject()
+    val launchers = chooser.rememberLaunchers(viewModel::pickRestSound)
+    // Back from a screen opened here, what it changed shows.
+    LaunchedEffect(Unit) { viewModel.refresh() }
+    Screen(strings().settings, onBack = onBack, onOpenSettings = null) {
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 17.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(22.dp),
         ) {
-            profile?.let { ProfileSection(it, viewModel) }
-            SectionTitle(strings().theme, Modifier.testTag("settings-title"))
+            hub.card?.let { ProfileCard(it, onOpenProfile) }
+            SettingsGroup(strings().appSection, labelTag = "settings-title") {
+                SettingsCard {
+                    SettingsRow(
+                        PhosphorIcons.Moon,
+                        strings().theme,
+                        "settings-theme",
+                        { sheet = Sheet.Theme },
+                        value = themeName(device.theme),
+                    )
+                    RowDivider()
+                    SettingsRow(
+                        PhosphorIcons.Translate,
+                        strings().language,
+                        "settings-language",
+                        { sheet = Sheet.Language },
+                        value = languageName(device.language),
+                    )
+                    RowDivider()
+                    SettingsRow(
+                        PhosphorIcons.Sparkle,
+                        strings().animation,
+                        "settings-animation",
+                        { sheet = Sheet.Animation },
+                        value = presetName(device.transition),
+                    )
+                    RowDivider()
+                    SettingsRow(
+                        PhosphorIcons.Bell,
+                        strings().restSound,
+                        "settings-rest-sound",
+                        { sheet = Sheet.RestSound },
+                        value =
+                            if (device.restSound.enabled) {
+                                strings().restSoundOn
+                            } else {
+                                strings().restSoundOff
+                            },
+                    )
+                }
+            }
+            hub.people?.let { people ->
+                SettingsGroup(strings().people) {
+                    SettingsCard {
+                        SettingsRow(
+                            PhosphorIcons.UsersThree,
+                            strings().childrenAndGuardians,
+                            "settings-people",
+                            onOpenPeople,
+                            subtitle = peopleCounts(people).takeIf { it.isNotEmpty() },
+                        )
+                    }
+                }
+            }
+            hub.email?.let { email ->
+                SettingsGroup(strings().account) {
+                    SettingsCard {
+                        SettingsRow(
+                            PhosphorIcons.UserCircle,
+                            strings().account,
+                            "settings-account",
+                            onOpenAccount,
+                            value = email,
+                        )
+                    }
+                }
+            }
+        }
+    }
+    when (sheet) {
+        Sheet.Theme -> {
             val modes = listOf(ThemeMode.System, ThemeMode.Light, ThemeMode.Dark)
-            ChoiceRow(
+            ChoiceSheet(
+                strings().theme,
                 listOf(
-                    Choice(strings().themeSystem, "theme-system"),
-                    Choice(strings().themeLight, "theme-light"),
-                    Choice(strings().themeDark, "theme-dark"),
+                    SheetOption(strings().themeSystem, "theme-system"),
+                    SheetOption(strings().themeLight, "theme-light"),
+                    SheetOption(strings().themeDark, "theme-dark"),
                 ),
                 selected = modes.indexOf(device.theme),
                 onSelect = { viewModel.chooseTheme(modes[it]) },
+                onDismiss = { sheet = null },
             )
-            SectionTitle(strings().language)
+        }
+        Sheet.Language -> {
             val languages = listOf(AppLanguage.System, AppLanguage.English, AppLanguage.Russian)
-            ChoiceRow(
+            ChoiceSheet(
+                strings().language,
                 listOf(
-                    Choice(strings().languageSystem, "language-system"),
-                    Choice("English", "language-english"),
-                    Choice("Русский", "language-russian"),
+                    SheetOption(strings().languageSystem, "language-system"),
+                    SheetOption("English", "language-english"),
+                    SheetOption("Русский", "language-russian"),
                 ),
                 selected = languages.indexOf(device.language),
                 onSelect = { viewModel.chooseLanguage(languages[it]) },
+                onDismiss = { sheet = null },
             )
-            SectionTitle(strings().transitions)
-            TextInput(
-                device.transition,
-                "0",
-                viewModel::typeTransition,
-                Modifier.testTag("transition-millis"),
-                KeyboardOptions(keyboardType = KeyboardType.Number),
-            )
-            Hint(strings().transitionsHint(MAX_TRANSITION_MILLIS))
-            SectionTitle(strings().restSound)
-            RestSoundSection(device.restSound, viewModel)
-            AccentButton(
-                strings().apply,
-                PhosphorIcons.Check,
-                viewModel::apply,
-                Modifier.testTag("apply-settings"),
-                enabled = canApply,
-            )
-            if (familyAvailable) {
-                NavRow(strings().children, "settings-children", onOpenChildren)
-                NavRow(strings().guardians, "settings-guardians", onOpenGuardians)
-            }
-            if (deletion.available) AdvancedSection(deletion, viewModel)
         }
-    }
-    if (confirmingLeave) {
-        AlertDialog(
-            onDismissRequest = viewModel::stay,
-            title = { Text(strings().applyTitle) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.apply()
-                        viewModel.stay()
-                        onBack()
-                    },
-                    enabled = canApply,
-                    modifier = Modifier.testTag("leave-apply"),
-                ) { Text(strings().apply) }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.discard()
-                        onBack()
-                    },
-                    modifier = Modifier.testTag("leave-discard"),
-                ) { Text(strings().discard) }
-            },
-        )
-    }
-    if (deletion.confirming) DeleteDialog(deletion, viewModel)
-}
-
-@Composable
-private fun SectionTitle(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(text = text, style = MaterialTheme.typography.headlineSmall, modifier = modifier)
-}
-
-@Composable
-private fun NavRow(
-    text: String,
-    tag: String,
-    onClick: () -> Unit,
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp)
-            .testTag(tag),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text, style = MaterialTheme.typography.headlineSmall)
-        Icon(
-            PhosphorIcons.CaretRight,
-            null,
-            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
-            modifier = Modifier.size(20.dp),
-        )
+        Sheet.Animation -> {
+            val presets = TransitionPreset.entries
+            ChoiceSheet(
+                strings().transitions,
+                presets.map {
+                    SheetOption(
+                        presetName(it),
+                        "transition-${it.name.lowercase()}",
+                        note = it.millis.takeIf { ms -> ms > 0 }?.let(strings()::millis),
+                    )
+                },
+                selected = presets.indexOf(device.transition),
+                onSelect = { viewModel.chooseTransition(presets[it]) },
+                onDismiss = { sheet = null },
+            )
+        }
+        Sheet.RestSound ->
+            RestSoundSheet(device.restSound, launchers, viewModel, onDismiss = { sheet = null })
+        null -> Unit
     }
 }
 
 @Composable
-private fun Hint(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.64f),
-    )
-}
-
-@Composable
-private fun RestSoundSection(
+private fun RestSoundSheet(
     sound: RestSound,
+    launchers: RestSoundLaunchers?,
     viewModel: SettingsViewModel,
+    onDismiss: () -> Unit,
 ) {
-    val chooser: RestSoundChooser = koinInject()
-    val launchers = chooser.rememberLaunchers(viewModel::pickRestSound)
-    ChoiceRow(
+    ChoiceSheet(
+        strings().restSound,
         listOf(
-            Choice(strings().restSoundOff, "rest-sound-off"),
-            Choice(strings().restSoundOn, "rest-sound-on"),
+            SheetOption(strings().restSoundOff, "rest-sound-off"),
+            SheetOption(strings().restSoundOn, "rest-sound-on"),
         ),
         selected = if (sound.enabled) 1 else 0,
         onSelect = {
@@ -226,285 +211,136 @@ private fun RestSoundSection(
             if (on && !sound.enabled) launchers?.allowNotifications?.invoke()
             viewModel.chooseRestSound(on)
         },
-    )
-    if (sound.enabled && launchers != null) {
-        val name by produceState("", sound.uri, launchers) { value = launchers.nameOf(sound.uri) }
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clickable { launchers.pick(sound.uri) }
-                .padding(vertical = 8.dp)
-                .testTag("rest-sound-pick"),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                FieldLabel(strings().restSoundChoice)
-                Text(
-                    name,
-                    Modifier.testTag("rest-sound-name"),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.64f),
+        onDismiss = onDismiss,
+    ) {
+        val colors = MaterialTheme.colorScheme
+        val muted = colors.onSurface.copy(alpha = 0.55f)
+        if (sound.enabled && launchers != null) {
+            val name by produceState("", sound.uri, launchers) {
+                value = launchers.nameOf(sound.uri)
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.small)
+                    .clickable { launchers.pick(sound.uri) }
+                    .padding(12.dp)
+                    .testTag("rest-sound-pick"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(strings().restSoundChoice, fontSize = 16.sp, color = colors.onSurface)
+                    Text(
+                        name,
+                        Modifier.testTag("rest-sound-name"),
+                        fontSize = 14.sp,
+                        color = muted,
+                    )
+                }
+                Icon(
+                    PhosphorIcons.CaretRight,
+                    null,
+                    tint = muted,
+                    modifier = Modifier.size(16.dp),
                 )
             }
-            Icon(
-                PhosphorIcons.CaretRight,
-                null,
-                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
-                modifier = Modifier.size(20.dp),
-            )
         }
+        Text(
+            strings().restSoundHint,
+            Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
+            fontSize = 13.5.sp,
+            color = muted,
+        )
     }
-    Hint(strings().restSoundHint)
 }
 
 @Composable
-private fun AdvancedSection(
-    deletion: DeletionUi,
-    viewModel: SettingsViewModel,
+private fun ProfileCard(
+    card: ProfileCardUi,
+    onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val name = card.name.ifEmpty { strings().profile }
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp)
-            .clickable(onClick = viewModel::toggleAdvanced)
-            .padding(vertical = 8.dp)
-            .testTag("settings-advanced"),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .clip(GroupShape)
+            .background(colors.surfaceVariant)
+            .clickable(onClick = onClick)
+            .padding(14.dp)
+            .testTag("settings-profile"),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(strings().advanced, style = MaterialTheme.typography.headlineSmall)
+        PersonAvatar(card.owner, name, card.avatar, size = 56.dp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                name,
+                Modifier.testTag("settings-profile-name"),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = colors.onBackground,
+            )
+            Text(
+                profileLine(card, strings()),
+                Modifier.testTag("settings-profile-line"),
+                fontSize = 14.sp,
+                color = colors.onBackground.copy(alpha = 0.55f),
+            )
+        }
         Icon(
             PhosphorIcons.CaretRight,
             null,
-            tint = colors.onBackground.copy(alpha = 0.55f),
-            modifier = Modifier.size(20.dp).rotate(if (deletion.advancedOpen) 90f else 0f),
-        )
-    }
-    if (!deletion.advancedOpen) return
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(ControlShape)
-            .border(1.dp, colors.error, ControlShape)
-            .clickable(enabled = !deletion.running, onClick = viewModel::askToDelete)
-            .testTag("delete-account"),
-        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(PhosphorIcons.Trash, null, tint = colors.error, modifier = Modifier.size(20.dp))
-        Text(strings().deleteAccount, fontSize = 16.sp, color = colors.error)
-    }
-    deletion.error?.let {
-        Text(
-            it,
-            modifier = Modifier.testTag("delete-account-error"),
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.error,
+            tint = colors.onBackground.copy(alpha = 0.45f),
+            modifier = Modifier.size(18.dp),
         )
     }
 }
 
-@Composable
-private fun DeleteDialog(
-    deletion: DeletionUi,
-    viewModel: SettingsViewModel,
-) {
-    AlertDialog(
-        onDismissRequest = viewModel::cancelDelete,
-        title = { Text(strings().deleteAccountTitle) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(strings().deleteAccountText(DELETE_WORD))
-
-                TextInput(
-                    deletion.word,
-                    DELETE_WORD,
-                    viewModel::typeDeleteWord,
-                    Modifier.testTag("delete-word"),
-                )
-            }
+/** "Мужской · 39 лет · 174 см · кг", leaving out what is not set. */
+private fun profileLine(
+    card: ProfileCardUi,
+    strings: Strings,
+): String =
+    listOfNotNull(
+        card.sex?.let { if (it == Sex.Male) strings.male else strings.female },
+        card.age?.let(strings::years),
+        card.heightCm?.let { "${formatNumber(it)} ${strings.cm}" },
+        when (card.weightUnit) {
+            PreferredWeightUnit.Kg -> strings.kg
+            PreferredWeightUnit.Lb -> "lb"
+            PreferredWeightUnit.Mixed -> strings.mixedUnits
         },
-        confirmButton = {
-            TextButton(
-                onClick = viewModel::confirmDelete,
-                enabled = deletion.canConfirm,
-                modifier = Modifier.testTag("confirm-delete-account"),
-            ) { Text(strings().delete, color = MaterialTheme.colorScheme.error) }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = viewModel::cancelDelete,
-                modifier = Modifier.testTag("cancel-delete-account"),
-            ) { Text(strings().cancel) }
-        },
-    )
-}
+    ).joinToString(" · ")
 
 @Composable
-private fun ProfileSection(
-    profile: ProfileUi,
-    viewModel: SettingsViewModel,
-) {
-    SectionTitle(strings().profile, Modifier.testTag("profile-title"))
-    val avatar by viewModel.avatar.collectAsState()
-    profile.nickname?.let {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            avatar?.let { shown -> AvatarChooser(shown, viewModel) }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                FieldLabel(strings().nickname)
-                TextInput(it, profile.placeholder, viewModel::type, Modifier.testTag("nickname"))
-            }
-        }
-    }
-    FieldLabel(strings().sex)
-    val sexes = listOf(Sex.Male, Sex.Female)
-    ChoiceRow(
-        listOf(Choice(strings().male, "sex-male"), Choice(strings().female, "sex-female")),
-        selected = sexes.indexOf(profile.sex),
-        onSelect = { viewModel.chooseSex(sexes[it]) },
-    )
-    FieldLabel(strings().birthDate)
-    TextInput(
-        profile.birthDate,
-        strings().datePlaceholder,
-        viewModel::typeBirthDate,
-        Modifier.testTag("birth-date"),
-        KeyboardOptions(keyboardType = KeyboardType.Number),
-        valid = profile.birthDateValid,
-    )
-    FieldLabel(strings().heightCm)
-    TextInput(
-        profile.height,
-        "",
-        viewModel::typeHeight,
-        Modifier.testTag("height"),
-        KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        valid = profile.heightValid,
-    )
-    Hint(strings().bodyFieldsHint)
-    if (profile.showsCycleLength) {
-        FieldLabel(strings().cycleLength)
-        TextInput(
-            profile.cycleLength,
-            DEFAULT_CYCLE_LENGTH.toString(),
-            viewModel::typeCycleLength,
-            Modifier.testTag("cycle-length"),
-            KeyboardOptions(keyboardType = KeyboardType.Number),
-            valid = profile.cycleLengthValid,
-        )
-    }
-    FieldLabel(strings().weightUnits)
-    val units = listOf(PreferredWeightUnit.Kg, PreferredWeightUnit.Lb, PreferredWeightUnit.Mixed)
-    ChoiceRow(
-        listOf(
-            Choice(strings().kg, "weight-unit-kg"),
-            Choice("lb", "weight-unit-lb"),
-            Choice(strings().mixedUnits, "weight-unit-mixed", weight = 1.6f),
-        ),
-        selected = units.indexOf(profile.weightUnit),
-        onSelect = { viewModel.chooseWeightUnit(units[it]) },
-    )
-    Hint(strings().mixedUnitsHint)
-}
-
-/** The avatar with a camera mark; tapping it offers what adding a machine's photo does, and more. */
-@Composable
-private fun AvatarChooser(
-    avatar: AvatarUi,
-    viewModel: SettingsViewModel,
-) {
-    val colors = MaterialTheme.colorScheme
-    val capture: PhotoCapture = koinInject()
-    val launchers = capture.rememberLaunchers(viewModel::chooseAvatar)
-    var choosing by remember { mutableStateOf(false) }
-    Box {
-        Box(
-            Modifier
-                .size(72.dp)
-                .clip(CircleShape)
-                .clickable(enabled = launchers != null || avatar.canRemove) { choosing = true }
-                .testTag("profile-avatar"),
-        ) {
-            val chosen = avatar.chosen
-            if (chosen == null) {
-                PersonAvatar(avatar.owner, avatar.name, avatar.shown, size = 72.dp)
-            } else {
-                AsyncImage(
-                    model = chosen,
-                    contentDescription = null,
-                    imageLoader = photoLoader(),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-        }
-        Box(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(colors.surface)
-                .border(1.dp, colors.primary, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                PhosphorIcons.Camera,
-                null,
-                tint = colors.tertiary,
-                modifier = Modifier.size(14.dp),
-            )
-        }
-        DropdownMenu(expanded = choosing, onDismissRequest = { choosing = false }) {
-            launchers?.let {
-                DropdownMenuItem(
-                    text = { Text(strings().takePhoto) },
-                    leadingIcon = { Icon(PhosphorIcons.Camera, null, Modifier.size(20.dp)) },
-                    onClick = {
-                        choosing = false
-                        it.takePhoto()
-                    },
-                    modifier = Modifier.testTag("take-photo"),
-                )
-                DropdownMenuItem(
-                    text = { Text(strings().fromGallery) },
-                    leadingIcon = { Icon(PhosphorIcons.Image, null, Modifier.size(20.dp)) },
-                    onClick = {
-                        choosing = false
-                        it.pickPhoto()
-                    },
-                    modifier = Modifier.testTag("pick-photo"),
-                )
-            }
-            if (avatar.canRemove) {
-                DropdownMenuItem(
-                    text = {
-                        Column {
-                            Text(strings().delete)
-                            Text(
-                                strings().googlePictureReturns,
-                                fontSize = 12.sp,
-                                color = colors.onSurface.copy(alpha = 0.6f),
-                            )
-                        }
-                    },
-                    leadingIcon = { Icon(PhosphorIcons.Trash, null, Modifier.size(20.dp)) },
-                    onClick = {
-                        choosing = false
-                        viewModel.removeAvatar()
-                    },
-                    modifier = Modifier.testTag("avatar-remove"),
-                )
-            }
-        }
-    }
-}
+private fun peopleCounts(people: PeopleUi): String =
+    listOfNotNull(
+        people.children?.takeIf { it > 0 }?.let(strings()::childrenCount),
+        people.guardians?.takeIf { it > 0 }?.let(strings()::guardiansCount),
+    ).joinToString(" · ")
 
 @Composable
-private fun FieldLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.labelLarge)
-}
+private fun themeName(mode: ThemeMode): String =
+    when (mode) {
+        ThemeMode.System -> strings().themeSystem
+        ThemeMode.Light -> strings().themeLight
+        ThemeMode.Dark -> strings().themeDark
+    }
+
+@Composable
+private fun languageName(language: AppLanguage): String =
+    when (language) {
+        AppLanguage.System -> strings().languageSystem
+        AppLanguage.English -> "English"
+        AppLanguage.Russian -> "Русский"
+    }
+
+@Composable
+private fun presetName(preset: TransitionPreset): String =
+    when (preset) {
+        TransitionPreset.None -> strings().transitionNone
+        TransitionPreset.Fast -> strings().transitionFast
+        TransitionPreset.Normal -> strings().transitionNormal
+        TransitionPreset.Smooth -> strings().transitionSmooth
+    }

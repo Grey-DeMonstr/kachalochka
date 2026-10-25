@@ -342,16 +342,28 @@ object EnStrings : Strings {
     override val copyFailed = "Couldn't copy"
     override val copyText = "Copy"
 
+    override val people = "People"
+    override val noPeople = "No children or parents yet"
+    override val childrenAndGuardians = "Children and parents"
+
+    override fun childrenCount(n: Int) = "$n ${if (n == 1) "child" else "children"}"
+
+    override fun guardiansCount(n: Int) = "$n ${if (n == 1) "parent" else "parents"}"
+
+    override val whomToAdd = "Whom to add?"
+    override val addChildChoice = "A child"
+    override val addChildChoiceHint = "A child's account in your care"
+    override val addGuardianChoice = "A parent"
+    override val addGuardianChoiceHint = "An adult who looks after you"
     override val children = "Children"
-    override val noChildren = "No children yet"
     override val addChild = "Add a child"
 
     override fun childCode(code: String) = "Code for your child: $code"
 
     override val childCodeHint =
-        "Your child enters this code on their own device: Settings → Parents. It works once, " +
-            "within a day. Family Link may ask you once to let your child sign in to " +
-            "Kachalochka."
+        "Your child enters this code on their own device: Settings → People → Add → A parent. " +
+            "It works once, within a day. Family Link may ask you once to let your child sign " +
+            "in to Kachalochka."
     override val removeLink = "Remove"
     override val removeChildTitle = "Remove the child?"
     override val removeChildText =
@@ -359,7 +371,6 @@ object EnStrings : Strings {
             "leaves this device. Your child keeps what has already synced."
     override val guardianInviteMessage = "Add me as your parent in Kachalochka"
     override val guardians = "Parents"
-    override val noGuardians = "No parents yet"
     override val addGuardian = "Add a parent"
     override val guardianCode = "Code from your parent"
     override val guardianRights =
@@ -448,7 +459,12 @@ object EnStrings : Strings {
         length: Int,
     ) = "Day $day of $length"
 
+    override val appSection = "App"
     override val profile = "Profile"
+
+    override fun years(n: Int) = "$n ${if (n == 1) "year" else "years"}"
+
+    override val savedAtOnce = "Changes are saved at once"
     override val nickname = "Nickname"
     override val sex = "Sex"
     override val male = "Male"
@@ -467,9 +483,14 @@ object EnStrings : Strings {
     override val themeDark = "Dark"
     override val language = "Language"
     override val languageSystem = "System"
+    override val animation = "Animation"
     override val transitions = "Screen transitions"
+    override val transitionNone = "No animation"
+    override val transitionFast = "Fast"
+    override val transitionNormal = "Normal"
+    override val transitionSmooth = "Smooth"
 
-    override fun transitionsHint(max: Int) = "Milliseconds, up to $max; 0 switches instantly"
+    override fun millis(n: Int) = "$n ms"
 
     override val restSound = "Timer sound"
     override val restSoundOff = "Off"
@@ -478,11 +499,13 @@ object EnStrings : Strings {
     override val restSoundHint = "Plays when the rest ends."
     override val restNotificationChannel = "Rest timer"
     override val restNotificationTitle = "Rest"
-    override val apply = "Apply"
-    override val applyTitle = "Apply the changes?"
-    override val discard = "Don't apply"
-    override val advanced = "Advanced"
+    override val account = "Account"
+    override val signedInWithGoogle = "Signed in with Google"
+    override val signOut = "Sign out"
+    override val dangerZone = "Danger zone"
     override val deleteAccount = "Delete account"
+    override val deleteAccountHint =
+        "Deletes all visits, measurements and links. You type a confirmation word first."
     override val deleteAccountTitle = "Delete the account?"
 
     override fun deleteAccountText(word: String) =

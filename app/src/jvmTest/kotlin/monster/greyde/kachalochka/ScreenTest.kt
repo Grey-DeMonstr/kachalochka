@@ -31,6 +31,7 @@ import monster.greyde.kachalochka.di.appModule
 import monster.greyde.kachalochka.di.platformModule
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.navigation.PageFooter
+import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
@@ -43,6 +44,7 @@ import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.EnStrings
+import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.strings.RuStrings
 import monster.greyde.kachalochka.ui.theme.KachalochkaTheme
 import monster.greyde.kachalochka.ui.theme.SystemBars
@@ -92,6 +94,8 @@ fun fakeGymModule(gym: FakeGym) =
         single<JoinCodeStore>(named(PARENT_CODE)) { gym.parentCodes }
         single<PageFooter> { gym.footer }
         single<ThemePreference> { gym.themes }
+        single<TransitionPreference> { gym.transitions }
+        single<LanguagePreference> { gym.languages }
         single<RestSoundPreference> { gym.restSounds }
         single<RestSoundChooser> { gym.restSoundChooser }
         single<SystemBars> { gym.systemBars }

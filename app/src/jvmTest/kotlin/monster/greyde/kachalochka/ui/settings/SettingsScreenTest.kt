@@ -1,325 +1,197 @@
 package monster.greyde.kachalochka.ui.settings
 
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTextReplacement
 import kotlinx.coroutines.runBlocking
-import monster.greyde.kachalochka.core.data.identity.Account
-import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.identity.UserId
-import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
+import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
 import monster.greyde.kachalochka.runScreenTestInEnglish
+import monster.greyde.kachalochka.ui.family.IVAN_MEMBER
+import monster.greyde.kachalochka.ui.family.PAPA
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.strings.AppLanguage
+import monster.greyde.kachalochka.ui.strings.RuStrings
+import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.timer.RestSound
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
 
-private fun session(
-    id: String,
-    name: String,
-) = AccountSession(
-    Account(UserId(id), "$name@example.test", name),
-    "access",
-    "refresh",
-    Instant.fromEpochSeconds(1_700_000_000),
-)
-
-@Composable
-private fun settings(onBack: () -> Unit = {}) = SettingsScreen(onBack = onBack)
-
 @OptIn(ExperimentalTestApi::class)
 class SettingsScreenTest {
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
+    private val ivan =
+        session("11111111-1111-4111-8111-111111111111", "Иван", Instant.fromEpochSeconds(0))
 
     @Test
-    fun a_signed_in_account_opens_its_children_from_settings() {
+    fun the_hub_opens_the_profile_the_people_and_the_account() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
-        var opened = 0
+        val opened = mutableListOf<String>()
         runScreenTest(
             gym,
-            screen = { SettingsScreen(onBack = {}, onOpenChildren = { opened++ }) },
+            screen = {
+                SettingsScreen(
+                    onBack = {},
+                    onOpenProfile = { opened += "profile" },
+                    onOpenPeople = { opened += "people" },
+                    onOpenAccount = { opened += "account" },
+                )
+            },
         ) {
-            onNodeWithTag("settings-children").performScrollTo().performClick()
+            onNodeWithTag("settings-profile").performClick()
+            onNodeWithTag("settings-people").performClick()
+            onNodeWithTag("settings-account").performClick()
         }
-        assertEquals(1, opened)
+        assertEquals(listOf("profile", "people", "account"), opened)
     }
 
     @Test
-    fun a_signed_in_account_opens_its_parents_from_settings() {
+    fun the_card_and_the_rows_show_the_current_values() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
-        var opened = 0
-        runScreenTest(
-            gym,
-            screen = { SettingsScreen(onBack = {}, onOpenGuardians = { opened++ }) },
-        ) {
-            onNodeWithTag("settings-guardians").performScrollTo().performClick()
+        runBlocking {
+            gym.profiles.upsert(
+                Profile.new(ivan.account.userId, gym.clock.current).copy(
+                    displayName = "ГДМ",
+                    sex = Sex.Male,
+                    birthDate = CalendarDay(1900, 1, 1),
+                    heightCm = 174.0,
+                ),
+            )
         }
-        assertEquals(1, opened)
+        gym.family.link(SASHA, IVAN_MEMBER)
+        gym.family.link(IVAN_MEMBER, PAPA)
+        val age = RuStrings.years(ageOn(CalendarDay(1900, 1, 1), gym.today))
+        runScreenTest(gym, screen = { SettingsScreen(onBack = {}) }) {
+            onNodeWithTag("settings-profile-name", useUnmergedTree = true).assertTextEquals("ГДМ")
+            onNodeWithTag("settings-profile-line", useUnmergedTree = true)
+                .assertTextEquals("Мужской · $age · 174 см · кг")
+            onNodeWithTag("settings-theme-value", useUnmergedTree = true)
+                .assertTextEquals("Системная")
+            onNodeWithTag("settings-animation-value", useUnmergedTree = true)
+                .assertTextEquals("Быстрая")
+            onNodeWithTag("settings-rest-sound-value", useUnmergedTree = true)
+                .assertTextEquals("Выключен")
+            onNodeWithTag("settings-people-counts", useUnmergedTree = true)
+                .assertTextEquals("1 ребёнок · 1 родитель")
+            onNodeWithTag("settings-account-value", useUnmergedTree = true)
+                .assertTextEquals("Иван@example.test")
+        }
     }
 
     @Test
-    fun without_an_account_there_are_no_children_to_open() {
-        runScreenTest(FakeGym(), screen = { settings() }) {
-            onNodeWithTag("settings-children").assertDoesNotExist()
+    fun without_an_account_there_are_no_people_and_no_account() {
+        runScreenTest(FakeGym(), screen = { SettingsScreen(onBack = {}) }) {
+            onNodeWithTag("settings-profile-name", useUnmergedTree = true)
+                .assertTextEquals("Профиль")
+            onNodeWithTag("settings-people").assertDoesNotExist()
+            onNodeWithTag("settings-account").assertDoesNotExist()
         }
     }
 
     @Test
-    fun the_cycle_length_is_asked_once_the_sex_is_female() {
+    fun a_theme_chosen_in_the_sheet_applies_and_closes_it() {
         val gym = FakeGym()
-        runScreenTest(gym, screen = { settings() }) {
-            onNodeWithTag("cycle-length").assertDoesNotExist()
-            onNodeWithTag("sex-female").performScrollTo().performClick()
-            onNodeWithTag("cycle-length").performScrollTo().performTextInput("30")
-            onNodeWithTag("apply-settings").performScrollTo().performClick()
+        runScreenTest(gym, screen = { SettingsScreen(onBack = {}) }) {
+            onNodeWithTag("settings-theme").performClick()
+            waitForIdle()
+            onNodeWithTag("theme-system").assertIsSelected()
+
+            onNodeWithTag("theme-dark").performClick()
+            waitForIdle()
+
+            onNodeWithTag("theme-dark").assertDoesNotExist()
+            onNodeWithTag("settings-theme-value", useUnmergedTree = true)
+                .assertTextEquals("Тёмная")
+        }
+        assertEquals(ThemeMode.Dark, gym.themes.mode.value)
+    }
+
+    @Test
+    fun the_language_is_chosen_in_a_sheet() {
+        val gym = FakeGym()
+        runScreenTest(gym, screen = { SettingsScreen(onBack = {}) }) {
+            onNodeWithTag("settings-language").performClick()
+            waitForIdle()
+            onNodeWithTag("language-russian").performClick()
             waitForIdle()
         }
-        assertEquals(30, runBlocking { gym.profiles.forOwner(null)?.cycleLength })
+        assertEquals(AppLanguage.Russian, gym.languages.language.value)
     }
 
     @Test
-    fun the_transition_field_shows_the_stored_length() {
-        runScreenTest(FakeGym(), screen = { settings() }) {
-            onNodeWithTag("transition-millis").assertTextEquals("150")
-        }
-    }
-
-    @Test
-    fun switching_the_timer_sound_on_asks_for_notifications_and_waits_for_apply() {
+    fun the_animation_offers_four_lengths() {
         val gym = FakeGym()
-        runScreenTest(gym, screen = { settings() }) {
-            onNodeWithTag("rest-sound-off").performScrollTo().assertIsSelected()
+        runScreenTest(gym, screen = { SettingsScreen(onBack = {}) }) {
+            onNodeWithTag("settings-animation").performClick()
+            waitForIdle()
+            onNodeWithTag("transition-fast").assertIsSelected()
+            onNodeWithTag("transition-none").assertExists()
+            onNodeWithTag("transition-normal").assertExists()
+
+            onNodeWithTag("transition-smooth").performClick()
+            waitForIdle()
+
+            onNodeWithTag("settings-animation-value", useUnmergedTree = true)
+                .assertTextEquals("Плавная")
+        }
+        assertEquals(500, gym.transitions.millis.value)
+    }
+
+    @Test
+    fun switching_the_timer_sound_on_asks_for_notifications() {
+        val gym = FakeGym()
+        runScreenTest(gym, screen = { SettingsScreen(onBack = {}) }) {
+            onNodeWithTag("settings-rest-sound").performClick()
+            waitForIdle()
+            onNodeWithTag("rest-sound-off").assertIsSelected()
             onNodeWithTag("rest-sound-pick").assertDoesNotExist()
 
-            onNodeWithTag("rest-sound-on").performScrollTo().performClick()
-
-            onNodeWithTag("rest-sound-pick").assertExists()
-            assertEquals(false, gym.restSounds.sound.value.enabled)
-            onNodeWithTag("apply-settings").performScrollTo().performClick()
+            onNodeWithTag("rest-sound-on").performClick()
             waitForIdle()
+
+            onNodeWithTag("settings-rest-sound-value", useUnmergedTree = true)
+                .assertTextEquals("Включён")
         }
         assertEquals(1, gym.restSoundChooser.notificationAsks)
         assertEquals(true, gym.restSounds.sound.value.enabled)
     }
 
     @Test
-    fun a_picked_timer_sound_shows_its_name_and_waits_for_apply() {
+    fun a_picked_timer_sound_shows_its_name() {
         val gym = FakeGym()
         runBlocking { gym.restSounds.set(RestSound(enabled = true)) }
-        runScreenTest(gym, screen = { settings() }) {
-            onNodeWithTag(
-                "rest-sound-name",
-                useUnmergedTree = true,
-            ).assertTextEquals("По умолчанию")
+        runScreenTest(gym, screen = { SettingsScreen(onBack = {}) }) {
+            onNodeWithTag("settings-rest-sound").performClick()
+            waitForIdle()
+            onNodeWithTag("rest-sound-name", useUnmergedTree = true)
+                .assertTextEquals("По умолчанию")
 
-            onNodeWithTag("rest-sound-pick").performScrollTo().performClick()
+            onNodeWithTag("rest-sound-pick").performClick()
+            waitForIdle()
 
             onNodeWithTag("rest-sound-name", useUnmergedTree = true)
                 .assertTextEquals("content://sound/7")
-            onNodeWithTag("apply-settings").performScrollTo().performClick()
-            waitForIdle()
         }
         assertEquals(RestSound(true, "content://sound/7"), gym.restSounds.sound.value)
         assertEquals(0, gym.restSoundChooser.notificationAsks)
     }
 
     @Test
-    fun the_avatar_takes_a_photo_that_waits_for_apply() {
-        val gym = FakeGym().withAccounts(ivan, active = ivan)
-        runScreenTest(gym, screen = { settings() }) {
-            waitForIdle()
-            onNodeWithTag("profile-avatar").performClick()
-            onNodeWithTag("avatar-remove").assertDoesNotExist()
-            onNodeWithTag("pick-photo").performClick()
-            waitForIdle()
-
-            onNodeWithTag("apply-settings").performScrollTo().assertIsEnabled()
-            onNodeWithTag("profile-avatar").performScrollTo().performClick()
-            onNodeWithTag("avatar-remove").assertExists()
-        }
-    }
-
-    @Test
-    fun without_an_account_there_is_no_avatar() {
-        runScreenTest(FakeGym(), screen = { settings() }) {
-            onNodeWithTag("profile-avatar").assertDoesNotExist()
-        }
-    }
-
-    @Test
-    fun a_typed_length_waits_for_apply() {
-        runScreenTest(FakeGym(), screen = { settings() }) {
-            onNodeWithTag("apply-settings").performScrollTo().assertIsNotEnabled()
-            onNodeWithTag("transition-millis").performTextReplacement("0")
-
-            onNodeWithTag("transition-millis").assertTextEquals("0")
-            onNodeWithTag("apply-settings").performScrollTo().assertIsEnabled().performClick()
-            onNodeWithTag("apply-settings").assertIsNotEnabled()
-        }
-    }
-
-    @Test
     fun the_settings_speak_english() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
-        runScreenTestInEnglish(gym, screen = { settings() }) {
+        runScreenTestInEnglish(gym, screen = { SettingsScreen(onBack = {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Settings")
-            onNodeWithTag("theme-dark").assertTextEquals("Dark")
-            onNodeWithTag("language-system").assertTextEquals("System")
-            onNodeWithTag("apply-settings").performScrollTo().assertTextEquals("Apply")
-            onNodeWithTag("settings-advanced").performScrollTo().assertTextEquals("Advanced")
-        }
-    }
-
-    @Test
-    fun a_length_out_of_range_or_not_a_number_is_refused() {
-        runScreenTest(FakeGym(), screen = { settings() }) {
-            onNodeWithTag("transition-millis").performTextReplacement("1001")
-            onNodeWithTag("transition-millis").performTextReplacement("abc")
-
-            onNodeWithTag("transition-millis").assertTextEquals("150")
-        }
-    }
-
-    @Test
-    fun the_theme_is_chosen_like_the_weight_unit_and_waits_for_apply() {
-        runScreenTest(FakeGym(), screen = { settings() }) {
-            onNodeWithTag("theme-dark").performScrollTo().performClick()
-
-            onNodeWithTag("theme-dark").assertIsSelected()
-            onNodeWithTag("apply-settings").performScrollTo().assertIsEnabled()
-        }
-    }
-
-    @Test
-    fun leaving_with_changes_asks_and_can_drop_them() {
-        var backs = 0
-        runScreenTest(FakeGym(), screen = { settings(onBack = { backs++ }) }) {
-            onNodeWithTag("theme-light").performScrollTo().performClick()
-            onNodeWithTag("top-bar-back").performClick()
-            waitForIdle()
-            assertEquals(0, backs)
-
-            onNodeWithTag("leave-discard").performClick()
-            waitForIdle()
-            assertEquals(1, backs)
-        }
-    }
-
-    @Test
-    fun signed_out_shows_the_body_fields_but_no_nickname() {
-        runScreenTest(
-            FakeGym(),
-            screen = { settings() },
-        ) {
-            onNodeWithTag("nickname").assertDoesNotExist()
-            onNodeWithTag("birth-date").assertExists()
-            onNodeWithTag("height").assertExists()
-            onNodeWithTag("apply-settings").assertIsNotEnabled()
-        }
-    }
-
-    @Test
-    fun choosing_the_body_fields_saves_them_to_the_profile() {
-        val gym = FakeGym()
-        runScreenTest(gym, screen = { settings() }) {
-            onNodeWithTag("sex-female").performClick()
-            onNodeWithTag("birth-date").performTextInput("15.06.1990")
-            onNodeWithTag("height").performTextInput("165")
-            onNodeWithTag("apply-settings").performScrollTo().performClick()
-            waitForIdle()
-        }
-        val profile = runBlocking { gym.profiles.forOwner(null) }
-        assertEquals(Sex.Female, profile?.sex)
-        assertEquals(CalendarDay(1990, 6, 15), profile?.birthDate)
-        assertEquals(165.0, profile?.heightCm)
-    }
-
-    @Test
-    fun choosing_a_weight_unit_saves_it_to_the_profile() {
-        val gym = FakeGym()
-        runScreenTest(gym, screen = { settings() }) {
-            onNodeWithTag("weight-unit-kg").assertExists()
-            onNodeWithTag("weight-unit-mixed").assertExists()
-            onNodeWithTag("weight-unit-lb").performScrollTo().performClick()
-            onNodeWithTag("apply-settings").performScrollTo().performClick()
-            waitForIdle()
-        }
-        val profile = runBlocking { gym.profiles.forOwner(null) }
-        assertEquals(PreferredWeightUnit.Lb, profile?.weightUnit)
-    }
-
-    @Test
-    fun signed_in_shows_the_field_and_a_disabled_save_button_until_it_changes() {
-        val gym = FakeGym().withAccounts(ivan, active = ivan)
-        runScreenTest(
-            gym,
-            screen = { settings() },
-        ) {
-            onNodeWithTag("nickname").assertExists()
-            onNodeWithTag("apply-settings").assertIsNotEnabled()
-
-            onNodeWithTag("nickname").performTextInput("Ванёк")
-
-            onNodeWithTag("apply-settings").assertIsEnabled()
-        }
-    }
-
-    @Test
-    fun saving_writes_the_typed_nickname() {
-        val gym = FakeGym().withAccounts(ivan, active = ivan)
-        runScreenTest(
-            gym,
-            screen = { settings() },
-        ) {
-            onNodeWithTag("nickname").performTextInput("Ванёк")
-            onNodeWithTag("apply-settings").performScrollTo().performClick()
-
-            onNodeWithTag("apply-settings").assertIsNotEnabled()
-        }
-    }
-
-    @Test
-    fun a_signed_in_account_is_deleted_after_a_confirmation() {
-        val gym = FakeGym().withAccounts(ivan, active = ivan)
-        runScreenTest(gym, screen = { settings() }) {
-            onNodeWithTag("delete-account").assertDoesNotExist()
-            onNodeWithTag("settings-advanced").performScrollTo().performClick()
-            waitForIdle()
-            onNodeWithTag("delete-account").performScrollTo().performClick()
-            waitForIdle()
-            onNodeWithTag("cancel-delete-account").performClick()
-            waitForIdle()
-            assertEquals(emptyList(), gym.accountServer.deleted)
-
-            onNodeWithTag("delete-account").performScrollTo().performClick()
-            waitForIdle()
-            onNodeWithTag("confirm-delete-account").assertIsNotEnabled()
-            onNodeWithTag("delete-word").performTextInput("delete")
-            onNodeWithTag("confirm-delete-account").performClick()
-            waitForIdle()
-
-            onNodeWithTag("delete-account").assertDoesNotExist()
-        }
-        assertEquals(listOf(ivan.account.userId), gym.accountServer.deleted)
-    }
-
-    @Test
-    fun without_an_account_nothing_can_be_deleted() {
-        runScreenTest(FakeGym(), screen = { settings() }) {
-            onNodeWithTag("settings-advanced").assertDoesNotExist()
-            onNodeWithTag("delete-account").assertDoesNotExist()
+            onNodeWithTag("settings-title").assertTextEquals("APP")
+            onNodeWithTag("settings-theme-value", useUnmergedTree = true)
+                .assertTextEquals("System")
+            onNodeWithTag("settings-animation-value", useUnmergedTree = true)
+                .assertTextEquals("Fast")
         }
     }
 }

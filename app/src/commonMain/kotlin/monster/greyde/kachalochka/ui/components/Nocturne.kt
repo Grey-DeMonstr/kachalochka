@@ -268,6 +268,56 @@ fun ChoiceRow(
     }
 }
 
+/** [ChoiceRow] drawn as segments of one control, as a profile field is chosen. */
+@Composable
+fun SegmentRow(
+    choices: List<Choice>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val outer = RoundedCornerShape(10.dp)
+    val inner = RoundedCornerShape(7.dp)
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(outer)
+            .background(colors.surfaceVariant.copy(alpha = 0.7f))
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        choices.forEachIndexed { index, choice ->
+            val on = index == selected
+            Box(
+                modifier =
+                    Modifier
+                        .weight(choice.weight)
+                        .height(40.dp)
+                        .clip(inner)
+                        .then(
+                            if (on) {
+                                Modifier
+                                    .background(colors.primary.copy(alpha = 0.18f))
+                                    .border(1.dp, colors.primary, inner)
+                            } else {
+                                Modifier
+                            },
+                        ).selectable(selected = on) { onSelect(index) }
+                        .testTag(choice.tag),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    choice.label,
+                    fontSize = 15.sp,
+                    color =
+                        if (on) colors.onBackground else colors.onBackground.copy(alpha = 0.7f),
+                )
+            }
+        }
+    }
+}
+
 /** A dashed outline of rounded [radius], marking something offered rather than chosen. */
 fun Modifier.dashedBorder(
     color: Color,

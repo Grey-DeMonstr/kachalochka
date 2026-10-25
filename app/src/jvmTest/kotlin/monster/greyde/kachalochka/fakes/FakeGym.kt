@@ -62,6 +62,7 @@ import monster.greyde.kachalochka.core.domain.measures.newestPerDay
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
 import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
@@ -78,6 +79,7 @@ import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.strings.InMemoryLanguagePreference
 import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
 import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.timer.InMemoryRestSoundPreference
@@ -508,6 +510,8 @@ class FakeGym(
     val clipboard = RecordingTextCopying()
     val footer = RecordingPageFooter()
     val themes = InMemoryThemePreference()
+    val transitions = InMemoryTransitionPreference()
+    val languages = InMemoryLanguagePreference()
     val restSounds = InMemoryRestSoundPreference()
     val restSoundChooser = InstantRestSoundChooser("content://sound/7")
     val systemBars = RecordingSystemBars()

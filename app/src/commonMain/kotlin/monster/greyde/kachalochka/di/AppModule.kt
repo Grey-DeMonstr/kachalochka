@@ -12,10 +12,9 @@ import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
-import monster.greyde.kachalochka.ui.family.ChildrenViewModel
-import monster.greyde.kachalochka.ui.family.GuardiansViewModel
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.family.PendingGuardian
+import monster.greyde.kachalochka.ui.family.PeopleViewModel
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendCalendarViewModel
@@ -45,6 +44,8 @@ import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.plans.PlanFormViewModel
 import monster.greyde.kachalochka.ui.plans.PlansViewModel
 import monster.greyde.kachalochka.ui.plans.VisitPlacementViewModel
+import monster.greyde.kachalochka.ui.settings.AccountViewModel
+import monster.greyde.kachalochka.ui.settings.ProfileViewModel
 import monster.greyde.kachalochka.ui.settings.SettingsViewModel
 import monster.greyde.kachalochka.ui.stats.StatisticsViewModel
 import monster.greyde.kachalochka.ui.timer.RestSoundScheduler
@@ -91,10 +92,11 @@ val appModule =
         viewModelOf(::CalendarViewModel)
         viewModelOf(::MachineListViewModel)
         viewModelOf(::SettingsViewModel)
+        viewModelOf(::ProfileViewModel)
+        viewModelOf(::AccountViewModel)
         viewModelOf(::MeasuresViewModel)
         viewModelOf(::PlansViewModel)
-        viewModelOf(::ChildrenViewModel)
-        viewModelOf(::GuardiansViewModel)
+        viewModelOf(::PeopleViewModel)
         viewModelOf(::MachinePlacementViewModel)
         viewModelOf(::VisitPlacementViewModel)
         viewModelOf(::BodyFatViewModel)

@@ -28,15 +28,14 @@ import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.BodyFatMethod
 import monster.greyde.kachalochka.core.domain.measures.MeasureId
+import monster.greyde.kachalochka.navigation.AccountRoute
 import monster.greyde.kachalochka.navigation.BodyFatRoute
 import monster.greyde.kachalochka.navigation.CalendarRoute
-import monster.greyde.kachalochka.navigation.ChildrenRoute
 import monster.greyde.kachalochka.navigation.FriendCalendarRoute
 import monster.greyde.kachalochka.navigation.FriendMachineRoute
 import monster.greyde.kachalochka.navigation.FriendVisitRoute
 import monster.greyde.kachalochka.navigation.FriendsRoute
 import monster.greyde.kachalochka.navigation.GroupRoute
-import monster.greyde.kachalochka.navigation.GuardiansRoute
 import monster.greyde.kachalochka.navigation.HomeRoute
 import monster.greyde.kachalochka.navigation.LinkChooserRoute
 import monster.greyde.kachalochka.navigation.MachineFormRoute
@@ -47,8 +46,10 @@ import monster.greyde.kachalochka.navigation.MeasurementFormRoute
 import monster.greyde.kachalochka.navigation.MeasuresRoute
 import monster.greyde.kachalochka.navigation.MineChooserRoute
 import monster.greyde.kachalochka.navigation.PageFooter
+import monster.greyde.kachalochka.navigation.PeopleRoute
 import monster.greyde.kachalochka.navigation.PlanRoute
 import monster.greyde.kachalochka.navigation.PlansRoute
+import monster.greyde.kachalochka.navigation.ProfileRoute
 import monster.greyde.kachalochka.navigation.SettingsRoute
 import monster.greyde.kachalochka.navigation.StatisticsRoute
 import monster.greyde.kachalochka.navigation.TransitionPreference
@@ -59,11 +60,10 @@ import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.SignInScreen
 import monster.greyde.kachalochka.ui.calendar.CalendarScreen
-import monster.greyde.kachalochka.ui.family.ChildrenScreen
 import monster.greyde.kachalochka.ui.family.GuardianInviteDialog
 import monster.greyde.kachalochka.ui.family.GuardianProblemDialog
-import monster.greyde.kachalochka.ui.family.GuardiansScreen
 import monster.greyde.kachalochka.ui.family.PendingGuardian
+import monster.greyde.kachalochka.ui.family.PeopleScreen
 import monster.greyde.kachalochka.ui.friends.FriendCalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
 import monster.greyde.kachalochka.ui.friends.GroupScreen
@@ -86,6 +86,8 @@ import monster.greyde.kachalochka.ui.measures.MeasurementFormScreen
 import monster.greyde.kachalochka.ui.measures.MeasuresScreen
 import monster.greyde.kachalochka.ui.plans.PlanFormScreen
 import monster.greyde.kachalochka.ui.plans.PlansScreen
+import monster.greyde.kachalochka.ui.settings.AccountScreen
+import monster.greyde.kachalochka.ui.settings.ProfileScreen
 import monster.greyde.kachalochka.ui.settings.SettingsScreen
 import monster.greyde.kachalochka.ui.stats.StatisticsScreen
 import monster.greyde.kachalochka.ui.strings.AppStrings
@@ -349,15 +351,22 @@ fun App() {
                 composable<SettingsRoute> {
                     SettingsScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenChildren = { navController.navigate(ChildrenRoute) },
-                        onOpenGuardians = { navController.navigate(GuardiansRoute) },
+                        onOpenProfile = { navController.navigate(ProfileRoute) },
+                        onOpenPeople = { navController.navigate(PeopleRoute) },
+                        onOpenAccount = { navController.navigate(AccountRoute) },
                     )
                 }
-                composable<ChildrenRoute> {
-                    ChildrenScreen(onBack = { navController.popBackStack() })
+                composable<ProfileRoute> {
+                    ProfileScreen(onBack = { navController.popBackStack() })
                 }
-                composable<GuardiansRoute> {
-                    GuardiansScreen(onBack = { navController.popBackStack() })
+                composable<PeopleRoute> {
+                    PeopleScreen(onBack = { navController.popBackStack() })
+                }
+                composable<AccountRoute> {
+                    // The screen also closes itself once its account is gone, maybe already closed.
+                    AccountScreen(
+                        onBack = { navController.popBackStack<AccountRoute>(inclusive = true) },
+                    )
                 }
                 composable<VisitRoute> { entry ->
                     val route = entry.toRoute<VisitRoute>()
@@ -592,7 +601,7 @@ fun App() {
                         guardianOffered = false
                         scope.launch {
                             when (pendingGuardian.consume()) {
-                                is Acceptance.Linked -> navController.navigate(GuardiansRoute)
+                                is Acceptance.Linked -> navController.navigate(PeopleRoute)
                                 Acceptance.UnknownCode ->
                                     guardianProblem = AppStrings.current.guardianCodeUnknown
                                 Acceptance.OwnCode ->
@@ -625,6 +634,7 @@ private fun NavController.leaveChildHidden() {
     popBackStack<FriendCalendarRoute>(inclusive = true)
     popBackStack<FriendVisitRoute>(inclusive = true)
     popBackStack<FriendMachineRoute>(inclusive = true)
-    popBackStack<ChildrenRoute>(inclusive = true)
-    popBackStack<GuardiansRoute>(inclusive = true)
+    popBackStack<ProfileRoute>(inclusive = true)
+    popBackStack<PeopleRoute>(inclusive = true)
+    popBackStack<AccountRoute>(inclusive = true)
 }
