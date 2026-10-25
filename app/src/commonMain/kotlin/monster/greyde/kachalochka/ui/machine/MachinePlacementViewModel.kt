@@ -8,25 +8,12 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
-import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.PlanId
-import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
-import monster.greyde.kachalochka.ui.friends.reading
 import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.plans.PlanChoiceUi
 import monster.greyde.kachalochka.ui.strings.AppStrings
-
-/**
- * A machine a screen shows: the account's own, or a group mate's when [ofFriend]. [group] is the
- * group read the screen holds, used instead of a new one when it was made for the active account.
- */
-data class PlacedMachine(
-    val id: MachineId,
-    val ofFriend: Boolean = false,
-    val group: GroupMachines? = null,
-)
 
 /** [machine] is the one the screen showed, so another machine's screen shows nothing. */
 data class PlacementNoticeUi(
@@ -41,15 +28,12 @@ data class PlacementUi(
 )
 
 /**
- * Puts the machine of a machine screen into a plan or into today's visit. A friend's machine, or
- * another account's on the device, goes in as the account's machine of its cluster, else as a new
- * linked copy. Every write checks first that the account it is for is still the active one (spec
- * §4.3).
+ * Puts the machine of a machine screen into a plan or into today's visit, as the account's own
+ * machine that [MachineCatalogue.standIn] gives for it. Every write is for the account the screen
+ * offered the action to (spec §4.3).
  */
 class MachinePlacementViewModel(
     private val placement: Placement,
-    private val machines: MachineRepository,
-    private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val catalogue: MachineCatalogue,
 ) : ViewModel() {
@@ -107,10 +91,7 @@ class MachinePlacementViewModel(
     ) {
         val (machine, owner) = choosing ?: return
         cancelChoice()
-        writes.launch {
-            val own = standIn(owner, machine, onStoodIn) ?: return@launch
-            if (stillActive(owner)) onOpen(own)
-        }
+        writes.launch { standIn(owner, machine, onStoodIn)?.let(onOpen) }
     }
 
     /** Plans the machine in today's visit, then hands on today. */
@@ -130,54 +111,18 @@ class MachinePlacementViewModel(
         mutableState.value = mutableState.value.copy(notice = null)
     }
 
-    /**
-     * [owner]'s machine for [machine], or null when there is none to use, the read failed or
-     * another account became active meanwhile.
-     */
+    /** [owner]'s machine for [machine]; null, with a notice when there is something to say. */
     private suspend fun standIn(
         owner: UserId?,
         machine: PlacedMachine,
         onStoodIn: () -> Unit,
-    ): MachineId? {
-        if (!stillActive(owner)) return null
-        if (!machine.ofFriend) return ownMachine(owner, machine, onStoodIn)
-        val viewer = owner ?: return null
-        val group =
-            machine.group?.takeIf { it.owner == viewer }
-                ?: reading { catalogue.group(viewer) }.getOrElse {
-                    if (stillActive(viewer)) notice(machine, AppStrings.current.offline)
-                    return null
-                }
-        if (!stillActive(viewer)) return null
-        val own =
-            reading { catalogue.friendStandIn(viewer, machine.id, group) }.getOrElse {
-                notice(machine, AppStrings.current.offline)
-                return null
-            }
-        if (own == null) {
-            notice(machine, AppStrings.current.machineGone)
-            return null
+    ): MachineId? =
+        when (val found = catalogue.standIn(owner, machine)) {
+            is StandIn.Found -> found.machine.id.also { if (it != machine.id) onStoodIn() }
+            StandIn.Offline -> null.also { notice(machine, AppStrings.current.offline) }
+            StandIn.Gone -> null.also { notice(machine, AppStrings.current.machineGone) }
+            StandIn.Switched -> null
         }
-        onStoodIn()
-        return own.id
-    }
-
-    /** Another account's stored machine stands in as in [MachineCatalogue.ownCopy]. */
-    private suspend fun ownMachine(
-        owner: UserId?,
-        machine: PlacedMachine,
-        onStoodIn: () -> Unit,
-    ): MachineId? {
-        val shown = machines.byId(machine.id)?.takeIf { !it.deleted } ?: return null
-        if (shown.userId == owner) return shown.id
-        val found = catalogue.deviceStandIn(owner, shown)
-        if (!stillActive(owner)) return null
-        val own = found ?: catalogue.ownCopy(owner, shown)
-        onStoodIn()
-        return own.id
-    }
-
-    private suspend fun stillActive(owner: UserId?) = currentUser.id() == owner
 
     private fun notice(
         machine: PlacedMachine,

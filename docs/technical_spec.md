@@ -626,6 +626,7 @@ friend's machine after the viewer's own. Its writes: `take` writes the own copy 
 machine and its link; `friendStandIn` gives the own machine of a friend's machine's cluster, from a
 group read and the own links read again, else `take`s it; `link` writes one own link to a friend's
 machine; `deviceStandIn` and `ownCopy` serve another account on the device (see `SetRecorder`
+below); `standIn` gives the account's machine for any shown one (see `MachinePlacementViewModel`
 below); `unlink` and `merge` serve the machine form and the chooser (see below).
 Every link write runs under one mutex and its upkeep reads the own links again first, so two
 writes at the same time never write the same link. Server calls run before the mutex is taken. A
@@ -773,19 +774,20 @@ hands the recorder what to write.
 
 `MachinePlacementViewModel` in `app/ui/machine` serves the "⋮" menu that the machine form, the
 visit's machine page and "Упражнение друга" share (`MachineMenu`, `PlanChooser`,
-`PlacementNotice`). An own machine is used only while it is the active account's live machine.
-Another account's machine on the device, such as a parent's on the visit's page after a switch to a
-child, goes through the set form's rule: `MachineCatalogue.deviceStandIn`, else `ownCopy`. A
-friend's machine is replaced by `MachineCatalogue.friendStandIn` over the group read "Упражнение
-друга" holds, when it was made for the active account, else over a new one. A failed read only
-shows "Нет связи с сервером", and a machine the read no longer has "Упражнение больше недоступно".
-"В план…" reads the plans in `planOrder` with `planTitle` names and keeps the account it read them
-for. Each action checks that the account is still active (§4.3) before the stand-in, after the
-group read, before each write and before it navigates; a switch also closes the choice and drops
-the notice. A pick and "Повторить сегодня" go through `Placement` with the machine that stands in.
-A notice carries the machine it is for, so another
-machine's page in the same visit does not show it. "Упражнение друга" reads again after a copy, so
-it stops offering "Взять себе".
+`PlacementNotice`). Every action first asks `MachineCatalogue.standIn` for the account's machine
+for the shown one (`PlacedMachine`), with the account the screen offered the action to. An own
+machine stands for itself while it is live. Another account's machine on the device, such as a
+parent's on the visit's page after a switch to a child, goes through the set form's rule:
+`deviceStandIn`, else the copy `ownCopy` writes. A friend's machine is replaced by `friendStandIn`
+over the group read "Упражнение друга" holds, when it was made for that account, else over a new
+one. The catalogue checks that the account is still active (§4.3) before each read and write and
+answers found, offline, gone or switched; the view model shows "Нет связи с сервером" for a failed
+read, "Упражнение больше недоступно" for a machine that is deleted or that the group read no longer
+has, and nothing for a switch. "В план…" reads the plans in `planOrder` with `planTitle` names and
+keeps the account it read them for; a switch also closes the choice and drops the notice. A pick
+and "Повторить сегодня" go through `Placement` with the machine that stands in. A notice carries
+the machine it is for, so another machine's page in the same visit does not show it. "Упражнение
+друга" reads again after a copy, so it stops offering "Взять себе".
 
 `VisitPlacementViewModel` in `app/ui/plans` serves "В план…" of the visit screen and the calendar
 card. A pick reads the shown visit again and appends its `visitMachines` that the plan lacks;

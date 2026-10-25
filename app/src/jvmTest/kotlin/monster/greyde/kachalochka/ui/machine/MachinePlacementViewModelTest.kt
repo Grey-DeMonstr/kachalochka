@@ -50,13 +50,7 @@ class MachinePlacementViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun viewModel(on: FakeGym = gym) =
-        MachinePlacementViewModel(
-            on.placement,
-            on.machines,
-            on.currentUser,
-            on.accounts,
-            on.catalogue,
-        )
+        MachinePlacementViewModel(on.placement, on.accounts, on.catalogue)
 
     @Test
     fun the_choice_lists_every_plan_pinned_first_by_its_title() {
@@ -205,25 +199,6 @@ class MachinePlacementViewModelTest {
         assertEquals(listOf(copy), runBlocking { on.machines.all(SASHA.userId) })
     }
 
-    @Test
-    fun a_switch_during_the_stand_in_read_writes_and_opens_nothing() {
-        val sashas = SashasGym()
-        val on = sashas.gym
-        val vm = viewModel(on)
-        val gate = CompletableDeferred<Unit>()
-        on.machines.readGate = gate
-        var opened: CalendarDay? = null
-
-        vm.planToday(PlacedMachine(sashas.ivansPress.id)) { opened = it }
-        runBlocking { on.accounts.switchTo(ME.userId) }
-        gate.complete(Unit)
-
-        assertNull(opened)
-        assertTrue(runBlocking { on.machines.all(SASHA.userId) }.isEmpty())
-        assertTrue(on.machineLinks.rows.isEmpty())
-        assertTrue(on.visits.rows.isEmpty())
-    }
-
     /** Иван's press, with Олег's linked copy of it, and Олег's row, linked to nothing. */
     private class OlegsGym {
         val gym = signedInGym()
@@ -327,26 +302,7 @@ class MachinePlacementViewModelTest {
     }
 
     @Test
-    fun a_switch_during_a_friend_s_read_writes_and_opens_nothing() {
-        val olegs = olegsGymWithSasha()
-        val on = olegs.gym
-        val vm = viewModel(on)
-        val gate = CompletableDeferred<Unit>()
-        on.friends.gate = gate
-        var opened: CalendarDay? = null
-
-        vm.planToday(PlacedMachine(olegs.olegRow.id, ofFriend = true)) { opened = it }
-        runBlocking { on.accounts.switchTo(SASHA.userId) }
-        gate.complete(Unit)
-
-        assertNull(opened)
-        assertEquals(listOf(olegs.myPress), runBlocking { on.machines.all(ME.userId) })
-        assertTrue(on.visits.rows.isEmpty())
-        assertNull(vm.state.value.notice)
-    }
-
-    @Test
-    fun a_switch_during_a_friend_s_read_leaves_the_plan_as_it_was() {
+    fun a_switch_during_a_friend_s_read_leaves_the_plan_as_it_was_and_says_nothing() {
         val olegs = olegsGymWithSasha()
         val on = olegs.gym
         val mine = Plan(PlanId.random(), ME.userId, "Ноги", emptyList(), t0, t0, false)
@@ -362,6 +318,7 @@ class MachinePlacementViewModelTest {
 
         assertEquals(mine, on.plans.rows.getValue(mine.id))
         assertEquals(listOf(olegs.myPress), runBlocking { on.machines.all(ME.userId) })
+        assertNull(vm.state.value.notice)
     }
 
     @Test
@@ -405,18 +362,18 @@ class MachinePlacementViewModelTest {
     }
 
     @Test
-    fun a_group_read_the_screen_holds_is_used_and_a_copy_made_from_it_counts() {
-        val olegs = OlegsGym()
-        val on = olegs.gym
-        val held = runBlocking { on.catalogue.group(ME.userId) }
-        val reads = on.friends.reads
-        val vm = viewModel(on)
-        val placed = PlacedMachine(olegs.olegRow.id, ofFriend = true, group = held)
+    fun a_machine_deleted_meanwhile_goes_nowhere_and_says_so() {
+        val vm = viewModel()
+        runBlocking { gym.machines.upsert(press.copy(deleted = true)) }
+        var opened: CalendarDay? = null
 
-        vm.planToday(placed) {}
-        vm.planToday(placed) {}
+        vm.planToday(PlacedMachine(press.id)) { opened = it }
 
-        assertEquals(reads, on.friends.reads)
-        assertEquals(1, runBlocking { on.machines.all(ME.userId) }.count { it.name == "Тяга" })
+        assertNull(opened)
+        assertTrue(gym.visits.rows.isEmpty())
+        assertEquals(
+            PlacementNoticeUi(press.id, "Упражнение больше недоступно"),
+            vm.state.value.notice,
+        )
     }
 }

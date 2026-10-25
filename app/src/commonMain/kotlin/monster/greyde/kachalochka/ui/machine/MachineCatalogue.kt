@@ -142,6 +142,31 @@ class ShownMachines(
 enum class MergeOutcome { Done, Offline, Gone }
 
 /**
+ * A machine a screen shows: the account's own, or a group mate's when [ofFriend]. [group] is the
+ * group read the screen holds, used instead of a new one when it was made for the active account.
+ */
+data class PlacedMachine(
+    val id: MachineId,
+    val ofFriend: Boolean = false,
+    val group: GroupMachines? = null,
+)
+
+/** The account's machine for a shown one; see [MachineCatalogue.standIn]. */
+sealed interface StandIn {
+    data class Found(
+        val machine: Machine,
+    ) : StandIn
+
+    data object Offline : StandIn
+
+    /** No live machine to stand in for: deleted, or no longer shared by the friend. */
+    data object Gone : StandIn
+
+    /** Another account became active; nothing was written. */
+    data object Switched : StandIn
+}
+
+/**
  * The machines an account sees: its own, read from the device, and its group mates', read online
  * and joined to them by links. The screens write machine links here, under one lock (spec §4.5).
  */
@@ -394,20 +419,76 @@ class MachineCatalogue(
         shown: Machine,
     ): Machine {
         if (shown.userId == owner) return shown
-        return writingLinks {
-            deviceStandIn(owner, shown) ?: run {
-                val known = knownLinks(owner, shown)
-                val now = clock.now()
-                val (copy, link) = linkedCopy(shown, owner, now)
-                syncAfter = true
-                machines.upsert(copy)
-                upsert(link)
-                val cluster = MachineClusters(known).of(shown.id)
-                missingDirectLinks(owner, listOf(copy.id), cluster, known + link, now)
-                    .forEach { upsert(it) }
-                copy
+        return writingLinks { deviceStandIn(owner, shown) ?: deviceCopy(owner, shown) }
+    }
+
+    /**
+     * [owner]'s machine for [shown], which a screen offered to [owner]: the machine itself when
+     * it is [owner]'s; another device account's as [ownCopy] gives it; a friend's as
+     * [friendStandIn] gives it over the group read the screen holds when that was made for
+     * [owner], else over a new one. The active account is checked before each read and write, so
+     * a switch meanwhile writes nothing.
+     */
+    suspend fun standIn(
+        owner: UserId?,
+        shown: PlacedMachine,
+    ): StandIn {
+        if (!active(owner)) return StandIn.Switched
+        val found =
+            if (shown.ofFriend) {
+                standInForFriend(owner ?: return StandIn.Gone, shown)
+            } else {
+                standInOnDevice(owner, shown.id)
             }
-        }
+        return if (found is StandIn.Found && !active(owner)) StandIn.Switched else found
+    }
+
+    private suspend fun standInOnDevice(
+        owner: UserId?,
+        id: MachineId,
+    ): StandIn {
+        val stored = machines.byId(id)?.takeIf { !it.deleted } ?: return StandIn.Gone
+        if (stored.userId == owner) return StandIn.Found(stored)
+        val own =
+            writingLinks {
+                val found = deviceStandIn(owner, stored)
+                if (active(owner)) found ?: deviceCopy(owner, stored) else null
+            }
+        return own?.let { StandIn.Found(it) } ?: StandIn.Switched
+    }
+
+    private suspend fun standInForFriend(
+        viewer: UserId,
+        shown: PlacedMachine,
+    ): StandIn {
+        val group =
+            shown.group?.takeIf { it.owner == viewer }
+                ?: reading { group(viewer) }.getOrElse { return failedRead(viewer) }
+        if (!active(viewer)) return StandIn.Switched
+        val own = reading { friendStandIn(viewer, shown.id, group) }
+        if (own.isFailure) return failedRead(viewer)
+        return own.getOrNull()?.let { StandIn.Found(it) } ?: StandIn.Gone
+    }
+
+    private fun failedRead(owner: UserId?) =
+        if (active(owner)) StandIn.Offline else StandIn.Switched
+
+    private fun active(owner: UserId?) = accounts.activeId.value == owner
+
+    private suspend fun LinkWriter.deviceCopy(
+        owner: UserId?,
+        shown: Machine,
+    ): Machine {
+        val known = knownLinks(owner, shown)
+        val now = clock.now()
+        val (copy, link) = linkedCopy(shown, owner, now)
+        syncAfter = true
+        machines.upsert(copy)
+        upsert(link)
+        val cluster = MachineClusters(known).of(shown.id)
+        missingDirectLinks(owner, listOf(copy.id), cluster, known + link, now)
+            .forEach { upsert(it) }
+        return copy
     }
 
     /**

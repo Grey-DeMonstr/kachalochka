@@ -6,6 +6,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -34,6 +35,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -1114,6 +1116,203 @@ class MachineCatalogueTest {
             assertEquals(emptyList(), gym.friends.broken)
             assertEquals(0, gym.friends.reads)
             assertEquals(requests + 1, gym.sync.requests)
+        }
+
+    @Test
+    fun an_own_live_machine_stands_in_for_itself_without_a_write() =
+        runTest {
+            gym.machines.upsert(myPress)
+
+            assertEquals(
+                StandIn.Found(myPress),
+                catalogue.standIn(ME.userId, PlacedMachine(myPress.id)),
+            )
+
+            assertEquals(1, gym.machines.rows.size)
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun a_deleted_machine_has_nothing_to_stand_in() =
+        runTest {
+            gym.machines.upsert(myPress.copy(deleted = true))
+
+            assertEquals(StandIn.Gone, catalogue.standIn(ME.userId, PlacedMachine(myPress.id)))
+            assertEquals(
+                StandIn.Gone,
+                catalogue.standIn(ME.userId, PlacedMachine(MachineId.random())),
+            )
+        }
+
+    @Test
+    fun another_device_account_s_machine_stands_in_as_the_owner_s_linked_one_without_a_write() =
+        runTest {
+            val sashas = myPress.copy(userId = SASHA.userId)
+            val platform = Machine.new("Платформа", ME.userId, t0)
+            gym.machines.upsert(sashas)
+            gym.machines.upsert(platform)
+            gym.machineLinks.upsert(ownLink(SASHA.userId, sashas.id, platform.id))
+
+            assertEquals(
+                StandIn.Found(platform),
+                catalogue.standIn(ME.userId, PlacedMachine(sashas.id)),
+            )
+
+            assertEquals(2, gym.machines.rows.size)
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun another_device_account_s_machine_without_an_own_one_stands_in_as_a_linked_copy() =
+        runTest {
+            val sashas = myPress.copy(userId = SASHA.userId, tags = setOf("ноги"))
+            gym.machines.upsert(sashas)
+
+            val found =
+                assertIs<StandIn.Found>(catalogue.standIn(ME.userId, PlacedMachine(sashas.id)))
+
+            assertEquals(found.machine, gym.machines.all(ME.userId).single())
+            assertEquals(setOf("ноги"), found.machine.tags)
+            assertTrue(found.machine.id to sashas.id in linkedPairs())
+            assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_friend_s_machine_stands_in_over_the_group_read_the_screen_holds() =
+        runTest {
+            olegsGym()
+            val held = catalogue.group(ME.userId)
+            val reads = gym.friends.reads
+
+            val found =
+                catalogue.standIn(
+                    ME.userId,
+                    PlacedMachine(olegPress.id, ofFriend = true, held),
+                )
+
+            assertEquals(StandIn.Found(myPress), found)
+            assertEquals(reads, gym.friends.reads)
+        }
+
+    @Test
+    fun a_friend_s_machine_without_a_held_group_read_reads_the_group_and_copies_it() =
+        runTest {
+            olegsGym()
+            // A read for another account does not count as held.
+            val pashas = GroupMachines(PASHA.userId, emptyList(), emptyList(), emptyList())
+
+            val found =
+                assertIs<StandIn.Found>(
+                    catalogue.standIn(
+                        ME.userId,
+                        PlacedMachine(olegRow.id, ofFriend = true, pashas),
+                    ),
+                )
+
+            assertEquals(1, gym.friends.reads)
+            assertEquals("Тяга", found.machine.name)
+            assertTrue(found.machine.id to olegRow.id in linkedPairs())
+        }
+
+    @Test
+    fun offline_a_friend_s_machine_has_no_stand_in() =
+        runTest {
+            olegsGym()
+            gym.friends.offline = true
+
+            val found = catalogue.standIn(ME.userId, PlacedMachine(olegRow.id, ofFriend = true))
+
+            assertEquals(StandIn.Offline, found)
+            assertEquals(listOf(myPress), gym.machines.all(ME.userId))
+        }
+
+    @Test
+    fun a_friend_s_machine_the_group_lacks_is_gone() =
+        runTest {
+            olegsGym()
+
+            val found =
+                catalogue.standIn(
+                    ME.userId,
+                    PlacedMachine(MachineId.random(), ofFriend = true),
+                )
+
+            assertEquals(StandIn.Gone, found)
+        }
+
+    @Test
+    fun without_an_account_a_friend_s_machine_is_gone() =
+        runTest {
+            val device = FakeGym()
+
+            val found = device.catalogue.standIn(null, PlacedMachine(olegRow.id, ofFriend = true))
+
+            assertEquals(StandIn.Gone, found)
+            assertEquals(0, device.friends.reads)
+        }
+
+    /** Иван's stand-in waits on [gate] while Саша, his child, becomes active, then goes on. */
+    private suspend fun TestScope.switchedDuring(
+        gate: CompletableDeferred<Unit>,
+        placed: PlacedMachine,
+    ): StandIn {
+        gym.withChild(childAccount(SASHA, IVAN_SESSION))
+        val result = async { catalogue.standIn(ME.userId, placed) }
+        testScheduler.advanceUntilIdle()
+        gym.accounts.switchTo(SASHA.userId)
+        gate.complete(Unit)
+        return result.await()
+    }
+
+    @Test
+    fun a_switch_before_the_stand_in_finds_nothing() =
+        runTest {
+            gym.machines.upsert(myPress)
+            gym.withChild(childAccount(SASHA, IVAN_SESSION))
+            gym.accounts.switchTo(SASHA.userId)
+
+            assertEquals(StandIn.Switched, catalogue.standIn(ME.userId, PlacedMachine(myPress.id)))
+        }
+
+    @Test
+    fun a_switch_during_a_device_machine_s_read_writes_nothing() =
+        runTest {
+            val sashas = myPress.copy(userId = SASHA.userId)
+            gym.machines.upsert(sashas)
+            val gate = CompletableDeferred<Unit>()
+            gym.machines.readGate = gate
+
+            assertEquals(StandIn.Switched, switchedDuring(gate, PlacedMachine(sashas.id)))
+
+            assertEquals(1, gym.machines.rows.size)
+            assertTrue(gym.machineLinks.rows.isEmpty())
+            assertEquals(0, gym.sync.requests)
+        }
+
+    @Test
+    fun a_switch_during_a_friend_s_group_read_writes_nothing() =
+        runTest {
+            olegsGym()
+            val gate = CompletableDeferred<Unit>()
+            gym.friends.gate = gate
+
+            val found = switchedDuring(gate, PlacedMachine(olegRow.id, ofFriend = true))
+
+            assertEquals(StandIn.Switched, found)
+            assertEquals(listOf(myPress), gym.machines.all(ME.userId))
+        }
+
+    @Test
+    fun a_switch_during_an_offline_friend_s_read_is_a_switch_not_an_outage() =
+        runTest {
+            olegsGym()
+            gym.friends.offline = true
+            val gate = CompletableDeferred<Unit>()
+            gym.friends.gate = gate
+
+            val found = switchedDuring(gate, PlacedMachine(olegRow.id, ofFriend = true))
+
+            assertEquals(StandIn.Switched, found)
         }
 
     @Test
