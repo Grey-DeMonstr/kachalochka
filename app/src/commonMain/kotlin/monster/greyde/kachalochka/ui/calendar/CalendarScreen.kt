@@ -309,7 +309,7 @@ private fun VisitMenu(
                 modifier = Modifier.testTag("move-visit-${visit.id.value}"),
             )
             DropdownMenuItem(
-                text = { Text(strings().saveAsPlan) },
+                text = { Text(strings().toPlan) },
                 leadingIcon = { Icon(PhosphorIcons.ListChecks, null, Modifier.size(20.dp)) },
                 onClick = {
                     open = false

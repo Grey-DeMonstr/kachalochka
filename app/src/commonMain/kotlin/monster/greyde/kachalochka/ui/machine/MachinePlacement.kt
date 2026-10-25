@@ -54,7 +54,7 @@ internal fun MachineMenu(
             }
             onToday?.let {
                 MenuItem(
-                    strings().toToday,
+                    strings().repeatToday,
                     "machine-to-today",
                     it,
                 ) { expanded = false }

@@ -776,10 +776,10 @@ shows "Нет связи с сервером", and a machine the read no longer 
 "В план…" reads the plans in `planOrder` with `planTitle` names and keeps the account it read them
 for. Each action checks that the account is still active (§4.3) before the stand-in, after the
 group read, before each write and before it navigates; a switch also closes the choice and drops
-the notice. A pick reads the plan again and appends the machine when it is absent. "Сегодня" calls
-`plan` of a recorder for today. A notice carries the machine it is for, so another machine's page
-in the same visit does not show it. "Упражнение друга" reads again after a copy, so it stops
-offering "Взять себе".
+the notice. A pick reads the plan again and appends the machine when it is absent. "Повторить
+сегодня" calls `plan` of a recorder for today. A notice carries the machine it is for, so another
+machine's page in the same visit does not show it. "Упражнение друга" reads again after a copy, so
+it stops offering "Взять себе".
 
 Repositories stay suspend-only, because `domain/` may not depend on kotlinx.coroutines (§2) and
 so has no `Flow` to expose. A view model that writes through a repository reloads afterward

@@ -138,10 +138,8 @@ object RuStrings : Strings {
     override val startPlanTitle = "Начать план?"
     override val startPlanText =
         "Его упражнения добавятся в сегодняшний визит, а сам план исчезнет из списка."
-    override val saveAsPlan = "Сохранить как план"
     override val repeatToday = "Повторить сегодня"
     override val toPlan = "В план…"
-    override val toToday = "Сегодня"
     override val choosePlan = "В какой план?"
     override val machineGone = "Упражнение больше недоступно"
 

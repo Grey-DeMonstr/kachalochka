@@ -121,10 +121,8 @@ object EnStrings : Strings {
     override val startPlanTitle = "Start the plan?"
     override val startPlanText =
         "Its machines will be added to today's visit, and the plan will disappear from the list."
-    override val saveAsPlan = "Save as plan"
     override val repeatToday = "Repeat today"
     override val toPlan = "Add to plan…"
-    override val toToday = "Today"
     override val choosePlan = "Which plan?"
     override val machineGone = "The machine is no longer available"
 

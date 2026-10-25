@@ -475,7 +475,7 @@ private fun VisitMenu(
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
-                text = { Text(strings().saveAsPlan) },
+                text = { Text(strings().toPlan) },
                 onClick = {
                     expanded = false
                     onSaveAsPlan()

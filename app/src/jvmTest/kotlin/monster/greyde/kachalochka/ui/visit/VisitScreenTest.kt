@@ -220,7 +220,7 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("visit-menu").performClick()
             waitForIdle()
-            onNodeWithTag("save-as-plan").assertTextEquals("Сохранить как план").performClick()
+            onNodeWithTag("save-as-plan").assertTextEquals("В план…").performClick()
             waitForIdle()
         }
         assertEquals(1, saves)

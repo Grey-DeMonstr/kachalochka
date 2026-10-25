@@ -707,7 +707,7 @@ class MachineFormScreenTest {
             onNodeWithTag("plan-choice-new").performClick()
             waitForIdle()
             onNodeWithTag("machine-menu").performClick()
-            onNodeWithTag("machine-to-today").assertTextEquals("Сегодня").performClick()
+            onNodeWithTag("machine-to-today").assertTextEquals("Повторить сегодня").performClick()
             waitForIdle()
         }
         assertEquals(listOf(press.id), newPlans)

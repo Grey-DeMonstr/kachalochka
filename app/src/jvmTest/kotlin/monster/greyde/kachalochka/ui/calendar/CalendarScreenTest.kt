@@ -86,7 +86,9 @@ class CalendarScreenTest {
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
             onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
-            onNodeWithTag("save-as-plan-${sunday.id.value}").performClick()
+            onNodeWithTag("save-as-plan-${sunday.id.value}")
+                .assertTextEquals("В план…")
+                .performClick()
             waitForIdle()
         }
         assertEquals(CalendarDay(2023, 11, 12), saved)

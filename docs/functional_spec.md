@@ -315,10 +315,10 @@ Tapping it opens it on the visit screen, where its sets are added, edited, delet
 today's are. A day without a visit offers "Добавить визит". The card's "⋮" menu has "Перенести",
 which moves the visit, with its sets, to the day tapped next; if that day already has a visit, the
 app asks whether to replace it, naming that visit's machines and its set count, and replacing
-removes it with its sets. Its "Сохранить как план" opens the form of a new plan with the visit's
-machines, as the visit's own menu does. Its "Повторить сегодня", not shown for today's visit, adds
-the visit's machines to today's visit as planned ones, as starting a plan does, and opens today's
-visit; back returns to the calendar. Its "Удалить" asks "Удалить визит?" under the visit's date,
+removes it with its sets. Its "В план…" opens the form of a new plan with the visit's machines, as
+the visit's own menu does. Its "Повторить сегодня", not shown for today's visit, adds the visit's
+machines to today's visit as planned ones, as starting a plan does, and opens today's visit; back
+returns to the calendar. Its "Удалить" asks "Удалить визит?" under the visit's date,
 then removes the visit and its sets from the history and the statistics.
 
 With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
@@ -533,18 +533,18 @@ return to the list. A plan with neither a name nor machines is deleted, and its 
 it back. The menu of a saved plan has "Удалить план", which asks "Удалить план?". Switching
 accounts saves the plan and returns to the list.
 
-The menu in the top bar of a visit with machines has "Сохранить как план". It opens the form of a
-new plan holding the visit's machines in the visit's order, planned ones included, and saves the
-plan at once; back returns to the visit, which stays as it was. Except on today's visit, the menu
-also has "Повторить сегодня", which does what the calendar card's item of that name does.
+The menu in the top bar of a visit with machines has "В план…". It opens the form of a new plan
+holding the visit's machines in the visit's order, planned ones included, and saves the plan at
+once; back returns to the visit, which stays as it was. Except on today's visit, the menu also has
+"Повторить сегодня", which does what the calendar card's item of that name does.
 
 The "⋮" menu of a saved machine's form, of a machine's page in a visit and of "Упражнение друга"
-has "В план…" and, except on the page of today's visit, "Сегодня". "В план…" asks "В какой
-план?" with every plan, named and ordered as in the list, and "Новый план". A chosen plan takes
-the machine at its end, unless it holds it already, and the screen stays and says "Добавлено в
-«Ноги»" until tapped. "Новый план" opens the form of a new plan holding the machine, saved at once.
-"Сегодня" adds the machine to today's visit as a planned one, as starting a plan does, and opens
-the visit. Back from either returns to the machine. A friend's machine goes in as the account's
+has "В план…" and, except on the page of today's visit, "Повторить сегодня". "В план…" asks "В
+какой план?" with every plan, named and ordered as in the list, and "Новый план". A chosen plan
+takes the machine at its end, unless it holds it already, and the screen stays and says "Добавлено
+в «Ноги»" until tapped. "Новый план" opens the form of a new plan holding the machine, saved at
+once. "Повторить сегодня" adds the machine to today's visit as a planned one, as starting a plan
+does, and opens the visit. Back from either returns to the machine. A friend's machine goes in as the account's
 machine joined with it, else as a new copy linked to it, as "Взять себе" makes; offline it says
 "Нет связи с сервером", and for a machine the friend no longer shares "Упражнение больше
 недоступно", and nothing changes. The machine of another account on the device, such as a
