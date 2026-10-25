@@ -80,32 +80,32 @@ version, "Версия 1.1.0".
 
 The visit screen is headed by its day, as "Вторник, 29 сентября" (with the year when it is not
 this one), and lists the day's machines in the order of their first set, ending with "Добавить",
-which opens the machine picker. A machine's row shows its photo, as the machine list does, or a
-barbell without one, then its name with its tags, each in a small frame; its comment (the setup
-note) and its results follow in grey, each on a line of its own, and the results wrap between the
-weights and the reps when they do not fit one line. Tapping the photo opens the machine form;
-tapping the row opens the machine's page. The list has no count row. A visit with sets has an
-order button in the top bar, left of "Поделиться", drawn like the drag handle and lit while on: it
-shows a handle at the left of every machine, and dragging it moves the machine with its sets.
-While it is on, "Готово" replaces "Добавить" at the end of the list, and it or the button again
-hides the handles. When a machine of the visit has tags,
-"Группировать по тегам" splits the list into sections, one per distinct set of tags in any letter
-case, headed by the tags and in the order of their first machine; untagged machines come last
-under "Остальное". A row under a heading does not repeat its tags. The choice is the account's,
-saved in its profile and synced, and ordering shows the plain list.
+which opens the machine picker. A machine's row shows its photo, then its name with its tags, each
+in a small frame; its comment (the setup note) and its results follow in grey, each on a line of
+its own, and the results wrap between the weights and the reps when they do not fit one line.
+Tapping the photo opens the machine form, so a small gear sits in the photo's corner, and a gear
+stands in for a missing photo. Tapping the row opens the machine's page. The list has no count
+row. A visit with sets has an order button in the top bar, left of "Поделиться", drawn like the
+drag handle and lit while on: it shows a handle at the left of every machine, and dragging it
+moves the machine with its sets. While it is on, a photo opens nothing, a barbell stands in for a
+missing one, and "Готово" replaces "Добавить" at the end of the list; it or the button again hides
+the handles. When a machine of the visit has tags, "Группировать по тегам" splits the list into
+sections, one per distinct set of tags in any letter case, headed by the tags and in the order of
+their first machine; untagged machines come last under "Остальное". A row under a heading does not
+repeat its tags. The choice is the account's, saved in its profile and synced, and ordering shows
+the plain list.
 
-A machine's page covers the list. Its top bar has a chart button opening the machine's statistics,
-a gear opening the machine form, whose photo opens it too, and the rest timer. It shows the photo,
-the name with the platform, the tags and the comment, then two cards: "Рекорд", the best set ever
-on the machine
-— the heaviest weight with the most reps at it, the lightest on a gravitron — and the previous
-visit's results, headed by how long ago it was ("12 дней назад"). Friends' latest visits on the
-machine follow, each with the friend's avatar and name ("Олег  вчера · 80-85кг 8-6"). Under
-"Сегодня · 3 подхода" (another day's date instead of "Сегодня") are the day's sets on the machine,
-"#1  (-)29.5 кг × 10" with the set's comment; tapping one opens it for editing. "Добавить" opens
-the form for the next set, and a planned machine without sets also offers "Убрать", which takes it
-out of the visit and returns to the list. Back, in the top bar or on the phone, closes an open
-form, then the page.
+A machine's page covers the list. Its top bar has a chart button opening the machine's statistics
+and the rest timer. It shows the photo, which opens the machine form and carries the gear as in
+the list, the name with the platform, the tags and the comment, then two cards: "Рекорд", the
+best set ever on the machine — the heaviest weight with the most reps at it, the lightest on a
+gravitron — and the previous visit's results, headed by how long ago it was ("12 дней назад").
+Friends' latest visits on the machine follow, each with the friend's avatar and name
+("Олег  вчера · 80-85кг 8-6"). Under "Сегодня · 3 подхода" (another day's date instead of
+"Сегодня") are the day's sets on the machine, "#1  (-)29.5 кг × 10" with the set's comment;
+tapping one opens it for editing. "Добавить" opens the form for the next set, and a planned
+machine without sets also offers "Убрать", which takes it out of the visit and returns to the list.
+Back, in the top bar or on the phone, closes an open form, then the page.
 
 A visit with sets has a "Поделиться" button in the top bar that hands the visit over as text:
 Android opens its share sheet, the web copies the text and says "Скопировано" (or "Не удалось
@@ -546,10 +546,10 @@ has "В план…" and, except on the page of today's visit, "Повторит
 takes the machine at its end, unless it holds it already, and the screen stays and says "Добавлено
 в «Ноги»" until tapped. "Новый план" opens the form of a new plan holding the machine, saved at
 once. "Повторить сегодня" adds the machine to today's visit as a planned one, as starting a plan
-does, and opens the visit. Back from either returns to the machine. A friend's machine goes in as the account's
-machine joined with it, else as a new copy linked to it, as "Взять себе" makes; offline it says
-"Нет связи с сервером", and for a machine the friend no longer shares "Упражнение больше
-недоступно", and nothing changes. The machine of another account on the device, such as a
+does, and opens the visit. Back from either returns to the machine. A friend's machine goes in as
+the account's machine joined with it, else as a new copy linked to it, as "Взять себе" makes;
+offline it says "Нет связи с сервером", and for a machine the friend no longer shares "Упражнение
+больше недоступно", and nothing changes. The machine of another account on the device, such as a
 parent's on the visit's page after a switch to a child, goes in as a set recorded on it does.
 Switching accounts closes the question and the notice.
 

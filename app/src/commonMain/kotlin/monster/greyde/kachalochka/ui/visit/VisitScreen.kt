@@ -298,7 +298,7 @@ private fun MachineBlock(
                 PhosphorIcons.Barbell,
                 Modifier.padding(end = 12.dp).testTag("thumb-$id"),
                 size = 44.dp,
-                onClick = { onOpenSettings(group.machineId) }.takeUnless { ordering },
+                onOpenSettings = { onOpenSettings(group.machineId) }.takeUnless { ordering },
             )
             MachineLines(
                 title = group.title,

@@ -401,7 +401,7 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("machine-row-${press.id.value}").performClick()
             waitForIdle()
-            onNodeWithTag("machine-settings").performClick()
+            onNodeWithTag("page-thumb").performClick()
             waitForIdle()
             onNodeWithTag("link-machine").performScrollTo().performClick()
             waitForIdle()

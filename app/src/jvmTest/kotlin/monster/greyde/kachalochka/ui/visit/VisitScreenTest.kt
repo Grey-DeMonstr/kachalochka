@@ -44,6 +44,7 @@ import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -776,7 +777,7 @@ class VisitScreenTest {
         ) {
             onNodeWithTag("person-${misha.account.userId.value}").performClick()
             waitForIdle()
-            onNodeWithTag("machine-settings").performClick()
+            onNodeWithTag("page-thumb").performClick()
             waitForIdle()
         }
         val mishaPress = shared.machines.rows.getValue(assertNotNull(opened))
@@ -789,10 +790,27 @@ class VisitScreenTest {
         val opened = mutableListOf<MachineId>()
         runScreenTest(gym, screen = { visitScreen(onOpenMachineSettings = { opened += it }) }) {
             waitForIdle()
+            val thumb = hasAnyAncestor(hasTestTag("thumb-${press.id.value}"))
+            onNode(hasTestTag("settings-gear") and thumb, useUnmergedTree = true).assertExists()
             onNodeWithTag("thumb-${press.id.value}").performClick()
             waitForIdle()
         }
         assertEquals(listOf(press.id), opened)
+    }
+
+    @Test
+    fun a_gear_over_a_machine_s_photo_marks_that_it_opens_the_settings() {
+        val photo = Photo.new(press.id, null, gym.clock.current)
+        runBlocking {
+            gym.photos.add(photo, byteArrayOf(1))
+            gym.machines.upsert(press.copy(coverPhoto = photo.id))
+        }
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            val thumb = hasAnyAncestor(hasTestTag("thumb-${press.id.value}"))
+            onNode(hasTestTag("machine-cover") and thumb, useUnmergedTree = true).assertExists()
+            onNode(hasTestTag("settings-gear") and thumb, useUnmergedTree = true).assertExists()
+        }
     }
 
     @Test
@@ -904,6 +922,9 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("cancel-set").performClick()
             waitForIdle()
+            onNodeWithTag("machine-settings").assertDoesNotExist()
+            val thumb = hasAnyAncestor(hasTestTag("page-thumb"))
+            onNode(hasTestTag("settings-gear") and thumb, useUnmergedTree = true).assertExists()
             onNodeWithTag("page-thumb").performClick()
             waitForIdle()
         }

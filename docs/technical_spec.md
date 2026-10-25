@@ -406,7 +406,8 @@ Displayed photos go through Coil with a `Photo` fetcher that asks `PhotoImages`:
 when there is one, else a download from Storage as the active account. On Android a downloaded
 photo of an account signed in on the device is kept as its file. One `ImageLoader`, held by
 `PhotoLoaders`, serves every screen, keyed by photo id. A photo not saved yet is shown from its
-bytes.
+bytes. A `MachineThumbnail` given `onOpenSettings` draws a gear: a badge over the cover, else
+in place of the placeholder icon.
 
 The machine form holds photos taken and removed as edits and writes them on save. The camera and
 gallery come from `PhotoCapture`, bound per platform: Android's registers the `TakePicture` and

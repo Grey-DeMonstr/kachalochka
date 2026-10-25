@@ -105,12 +105,6 @@ internal fun MachinePage(
                 onOpenStatistics,
                 Modifier.testTag("machine-statistics"),
             )
-            SquareIconButton(
-                PhosphorIcons.Gear,
-                strings().settings,
-                onOpenMachineSettings,
-                Modifier.testTag("machine-settings"),
-            )
             MachineMenu(
                 onToPlan = { placement.choosePlan(placed) },
                 onToday =
@@ -139,7 +133,7 @@ internal fun MachinePage(
                         PhosphorIcons.Barbell,
                         Modifier.testTag("page-thumb"),
                         size = 64.dp,
-                        onClick = onOpenMachineSettings,
+                        onOpenSettings = onOpenMachineSettings,
                     )
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
