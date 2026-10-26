@@ -259,17 +259,87 @@ class CalendarScreenTest {
         runScreenTest(gym, screen = { calendar() }) {
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
-            onNodeWithTag("calendar-visit-${sunday.id.value}-tags", useUnmergedTree = true)
-                .assertTextEquals("ЖИМ · НОГИ")
+            val card = "calendar-visit-${sunday.id.value}"
+            onNodeWithTag("$card-tag-жим", useUnmergedTree = true).assertTextEquals("ЖИМ")
+            onNodeWithTag("$card-tag-ноги", useUnmergedTree = true).assertTextEquals("НОГИ")
         }
+    }
+
+    @Test
+    fun a_card_shows_three_machines_and_the_rest_on_request() {
+        val names = listOf("Гиперэкстензия", "Тяга", "Бабочка", "Приседания")
+        runBlocking {
+            names.forEachIndexed { i, name ->
+                val machine = Machine.new(name, null, t0)
+                gym.machines.upsert(machine)
+                gym.sets.upsert(
+                    WorkoutSet(
+                        WorkoutSetId.random(),
+                        null,
+                        sunday.id,
+                        machine.id,
+                        20.0,
+                        10,
+                        i + 1,
+                        t0,
+                        t0,
+                        false,
+                    ),
+                )
+            }
+        }
+        runScreenTest(gym, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            val card = "calendar-visit-${sunday.id.value}"
+            onNodeWithTag("$card-machine-2", useUnmergedTree = true).assertExists()
+            onNodeWithTag("$card-machine-3", useUnmergedTree = true).assertDoesNotExist()
+            onNodeWithTag("$card-more")
+                .performScrollTo()
+                .assertTextEquals("Ещё 2 упражнения")
+                .performClick()
+            waitForIdle()
+            onNodeWithTag("$card-machine-4", useUnmergedTree = true).assertExists()
+            onNodeWithTag("$card-more").assertTextEquals("Свернуть")
+        }
+    }
+
+    @Test
+    fun the_feed_lists_the_visits_and_the_switch_is_kept() {
+        var opened: CalendarDay? = null
+        runScreenTest(gym, screen = { calendar(onOpenVisit = { opened = it }) }) {
+            onNodeWithTag("mode-feed").performClick()
+            waitForIdle()
+            onNodeWithTag("feed-day-2023-11-12").assertTextEquals("Воскресенье, 12 ноября")
+            onNodeWithTag("feed-month-2023-11-12", useUnmergedTree = true)
+                .assertTextEquals("НОЯБРЬ 2023")
+            onNodeWithTag("feed-end", useUnmergedTree = true).assertTextEquals("Это первый визит")
+            onNodeWithTag("feed-visit-${sunday.id.value}").performClick()
+            waitForIdle()
+        }
+        assertEquals(CalendarDay(2023, 11, 12), opened)
+        assertEquals(VisitsMode.Feed, gym.visitsModes.mode.value)
+    }
+
+    @Test
+    fun moving_from_the_feed_opens_the_calendar_on_the_visit_s_day() {
+        runBlocking { gym.visitsModes.set(VisitsMode.Feed) }
+        runScreenTest(gym, screen = { calendar() }) {
+            onNodeWithTag("visit-menu-${sunday.id.value}").performClick()
+            onNodeWithTag("move-visit-${sunday.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("move-banner").assertIsDisplayed()
+            onNodeWithTag("calendar-day-title").assertTextEquals("Воскресенье, 12 ноября")
+        }
+        assertEquals(VisitsMode.Calendar, gym.visitsModes.mode.value)
     }
 
     @Test
     fun days_are_round_and_a_visit_mark_keeps_the_number_in_place() {
         runScreenTest(gym, screen = { calendar() }) {
             onNodeWithTag("day-2023-11-12")
-                .assertWidthIsEqualTo(40.dp)
-                .assertHeightIsEqualTo(40.dp)
+                .assertWidthIsEqualTo(42.dp)
+                .assertHeightIsEqualTo(42.dp)
             val plain = onNodeWithText("11", useUnmergedTree = true).getBoundsInRoot()
             val marked = onNodeWithText("12", useUnmergedTree = true).getBoundsInRoot()
             assertEquals(plain.top, marked.top)

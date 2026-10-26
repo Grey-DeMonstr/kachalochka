@@ -11,6 +11,8 @@ import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.UnavailableGoogleSignIn
+import monster.greyde.kachalochka.ui.calendar.InMemoryVisitsModePreference
+import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
@@ -45,6 +47,7 @@ actual fun platformModule(): Module =
     module {
         single<ThemePreference> { InMemoryThemePreference() }
         single<TransitionPreference> { InMemoryTransitionPreference() }
+        single<VisitsModePreference> { InMemoryVisitsModePreference() }
         single<LanguagePreference> { InMemoryLanguagePreference() }
         single<RestSoundPreference> { InMemoryRestSoundPreference() }
         single<RestAlarm> { NoRestAlarm }

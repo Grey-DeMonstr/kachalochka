@@ -232,6 +232,23 @@ class SupabaseFriendsRepository(
             .mapNotNull { visit -> visit.userId?.let(mates::get)?.let { FriendVisit(it, visit) } }
     }
 
+    override suspend fun oldestGroupVisit(viewer: UserId): Visit? {
+        val mates = matesById(viewer)
+        if (mates.isEmpty()) return null
+        return postgrest
+            .from(VISIT_TABLE)
+            .select {
+                filter {
+                    isIn("user_id", mates.keys.map { it.value })
+                    eq("deleted", false)
+                }
+                order("recorded_at", Order.ASCENDING)
+                limit(1)
+            }.decodeList<VisitRow>()
+            .firstOrNull()
+            ?.toVisit()
+    }
+
     override suspend fun groupLinks(viewer: UserId): List<MachineLink> {
         val mates = matesById(viewer)
         if (mates.isEmpty()) return emptyList()

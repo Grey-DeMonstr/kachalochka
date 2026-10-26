@@ -159,6 +159,18 @@ object RuStrings : Strings {
     override val addVisit = "Добавить визит"
     override val replace = "Заменить"
     override val chooseNewDay = "Выберите новый день"
+    override val calendarMode = "Календарь"
+    override val feedMode = "Лента"
+    override val me = "Я"
+    override val yesterday = "Вчера"
+    override val firstVisit = "Это первый визит"
+    override val noVisitsYet = "Визитов пока нет"
+    override val showLess = "Свернуть"
+
+    override fun moreMachines(n: Int) = "Ещё ${machines(n)}"
+
+    override fun weekdayInline(dayOfWeek: Int) = weekday(dayOfWeek).lowercase()
+
     override val move = "Перенести"
     override val deleteVisitTitle = "Удалить визит?"
     override val replaceVisitTitle = "Заменить визит?"

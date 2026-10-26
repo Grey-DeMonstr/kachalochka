@@ -24,7 +24,6 @@ import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.machineProgress
 import monster.greyde.kachalochka.core.domain.gym.matchedPart
 import monster.greyde.kachalochka.core.domain.gym.statsOrder
-import monster.greyde.kachalochka.core.domain.gym.weightGain
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.measures.Cycle
@@ -39,11 +38,9 @@ import monster.greyde.kachalochka.ui.account.groupByTagChoice
 import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
-import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.headedTagSections
+import monster.greyde.kachalochka.ui.format.setChange
 import monster.greyde.kachalochka.ui.format.setValue
-import monster.greyde.kachalochka.ui.format.shownLabel
-import monster.greyde.kachalochka.ui.format.shownWeight
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.share.TextSharing
@@ -321,7 +318,7 @@ class StatisticsViewModel(
     ): ProgressCardUi {
         val strings = AppStrings.current
         val (from, to) = progress.from to progress.to
-        val (change, improved) = change(machine, from, to)
+        val (change, improved) = setChange(machine, from, to, preferred)
         val newMachine = !progress.sinceBefore && change == strings.noChange
         return ProgressCardUi(
             id = machine.id,
@@ -345,29 +342,5 @@ class StatisticsViewModel(
             improved = improved || newMachine,
             newMachine = newMachine,
         )
-    }
-
-    /** Weight first; at the same shown weight, the reps. */
-    private fun change(
-        machine: Machine,
-        from: WorkoutSet,
-        to: WorkoutSet,
-    ): Pair<String, Boolean> {
-        val gain =
-            weightGain(
-                shownWeight(from.weight, machine, preferred),
-                shownWeight(to.weight, machine, preferred),
-                machine.weightMode,
-            )
-        val reps = to.reps - from.reps
-        val strings = AppStrings.current
-        val unit = shownLabel(machine, preferred)
-        return when {
-            gain > 0 -> "+${formatNumber(gain)} $unit" to true
-            gain < 0 -> "−${formatNumber(-gain)} $unit" to false
-            reps > 0 -> strings.moreReps(reps) to true
-            reps < 0 -> strings.fewerReps(-reps) to false
-            else -> strings.noChange to false
-        }
     }
 }

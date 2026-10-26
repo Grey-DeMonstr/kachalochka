@@ -25,11 +25,11 @@ import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.Rule
+import monster.greyde.kachalochka.ui.components.TagChip
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
 import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.friendColor
-import monster.greyde.kachalochka.ui.visit.TagChip
 
 /** Frame 7w: a machine's photo, name, tags, comment, last use and record, in any list. */
 @Composable

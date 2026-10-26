@@ -125,6 +125,21 @@ interface Strings {
     val addVisit: String
     val replace: String
     val chooseNewDay: String
+    val calendarMode: String
+    val feedMode: String
+
+    /** Whoever a visit card shows on a device nobody has signed in on. */
+    val me: String
+    val yesterday: String
+    val firstVisit: String
+    val noVisitsYet: String
+    val showLess: String
+
+    fun moreMachines(n: Int): String
+
+    /** A weekday inside a phrase, such as after a heading's date. */
+    fun weekdayInline(dayOfWeek: Int): String
+
     val move: String
     val deleteVisitTitle: String
     val replaceVisitTitle: String

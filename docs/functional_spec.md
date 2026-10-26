@@ -211,8 +211,9 @@ list or picker filtered by it drops the filter, though a filter by a friend's ta
 friends' machines cannot be read. An app older than 1.7.1 shows each machine's tags as they were
 when the account's tags moved to 1.7.1, and tags edited in it later reach only other older apps.
 Every screen draws a tag in capitals, in a small font with wide letter spacing: the chips, the
-machine rows and pages, the section headings of the visit and of the statistics, the calendar's
-cards ("СПИНА · ГРУДЬ") and a friend's machine.
+machine rows and pages, the section headings of the visit and of the statistics, the visit cards
+and a friend's machine. On the machine rows and pages, the visit cards and the visit's section
+headings each tag is a small chip filled with the accent colour.
 
 A set's total weight is its weight plus the platform when the platform is not added to the record.
 When "Сохранить" changes that for a machine with recorded sets (for example, a platform typed in
@@ -318,34 +319,50 @@ the view, which then shows the new link. A machine already linked to one of the 
 directly or through friends' links, is shown without both buttons. Offline that view says "Нет
 связи с сервером" and offers a retry.
 
-The "Визиты" row opens a calendar of the active account's visits, a month at a time. Days with a
-visit are marked, today and the chosen day are highlighted, and future days cannot be chosen. Below
-the month is the chosen day's visit as a card: the account's avatar, every tag its machines carry
-("Спина · Грудь · Руки"), then the names of its machines in visit order in a small light font.
-Tapping it opens it on the visit screen, where its sets are added, edited, deleted and ordered as
-today's are. A day without a visit offers "Добавить визит". The card's "⋮" menu has "Перенести",
-which moves the visit, with its sets, to the day tapped next; if that day already has a visit, the
-app asks whether to replace it, naming that visit's machines and its set count, and replacing
-removes it with its sets. Its "В план…" does what the visit's own menu item does, and its notice
-shows under the card. Its "Повторить сегодня", not shown for today's visit, adds the visit's
-machines to today's visit as planned ones, as starting a plan does, and opens today's visit; back
-returns to the calendar. Its "Удалить" asks "Удалить визит?" under the visit's date,
-then removes the visit and its sets from the history and the statistics.
+The "Визиты" row opens the active account's visits in one of two modes, "Календарь" and "Лента",
+which a switch under the top bar chooses. The device keeps the chosen mode for the next time.
+
+"Календарь" shows a month at a time. Days with a visit are marked, today and the chosen day are
+highlighted, and future days cannot be chosen. Below the month is the chosen day's visit as a card:
+the account's avatar and name, every tag its machines carry as chips, then one row per machine in
+visit order with its name, the day's best set on it in the viewer's unit and, in green, how much
+that set beats the best set on the machine from all earlier days: "+5 кг", or at the same weight
+"+1 повт.". The first day on a machine shows no gain. A card shows three machines; "Ещё 2
+упражнения" shows the others in the card, and "Свернуть" hides them again. A visit without sets
+says "Подходов пока нет". Tapping it opens it on the visit screen, where its sets are added,
+edited, deleted and ordered as today's are. A day without a visit offers "Добавить визит". The
+card's "⋮" menu has "Перенести", which moves the visit, with its sets, to the day tapped next; if
+that day already has a visit, the app asks whether to replace it, naming that visit's machines and
+its set count, and replacing removes it with its sets. Its "В план…" does what the visit's own menu
+item does, and its notice shows under the card. Its "Повторить сегодня", not shown for today's
+visit, adds the visit's machines to today's visit as planned ones, as starting a plan does, and
+opens today's visit; back returns to the calendar. Its "Удалить" asks "Удалить визит?" under the
+visit's date, then removes the visit and its sets from the history and the statistics.
 
 With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
 group with it: each friend who trained on a day adds a dot in that friend's colour after the
 account's own dot, at most four dots a day. Below the chosen day's own visit is one card per friend
-who trained that day, drawn as the own one — the friend's avatar, or their initial in their colour,
-then, once read, the day's tags and machines; tapping it opens that friend's visit, read-only: the
-friend's avatar and name in the top bar, the day and how many machines they did, then one row per
-machine as on the visit screen — photo, the friend's own name for it, tags, comment and results —
-without its sets, and under them the machines it is linked with (see Group sharing); a row opens
-"Упражнение друга" for that machine. The friend's visit is read again on every return to it, so
-a link made from "Упражнение друга" shows at once. Friends are read again on entering the calendar,
-on changing the month and after switching accounts; without a network the calendar shows only
-the account's own visits. Each friend gets a colour at
-random at first, and the account can change it on the group screen. The colours are personal to the
-account: friends never see them, and they follow the account to its other devices.
+who trained that day, by name, drawn as the own one without the menu and the gains — the friend's
+avatar, or their initial in their colour, and name, then, once read, the day's tags and machines
+with their best sets; tapping it opens that friend's visit, read-only: the friend's avatar and name
+in the top bar, the day and how many machines they did, then one row per machine as on the visit
+screen — photo, the friend's own name for it, tags, comment and results — without its sets, and
+under them the machines it is linked with (see Group sharing); a row opens "Упражнение друга" for
+that machine. The friend's visit is read again on every return to it, so a link made from
+"Упражнение друга" shows at once. Friends are read again on entering the calendar, on changing the
+month and after switching accounts; without a network the calendar shows only the account's own
+visits. Each friend gets a colour at random at first, and the account can change it on the group
+screen. The colours are personal to the account: friends never see them, and they follow the
+account to its other devices.
+
+"Лента" lists the visits of the account and, signed in and online, of its friends, newest day
+first, as the calendar's cards. Each day has a heading with its weekday and date ("Пятница, 24
+октября"), or "Сегодня" or "Вчера" with the date at the right; the heading stays at the top while
+its cards scroll under it. The first day of another month follows that month's name and year. The
+feed shows three weeks at first and reads three more weeks each time it is scrolled to its end;
+after the oldest visit of the account and its friends it says "Это первый визит", and with no visit
+at all, "Визитов пока нет". The own card's menu is the calendar's; its "Перенести" opens the
+calendar on the visit's day, ready for the day tapped next.
 
 ## Sign-in and accounts
 

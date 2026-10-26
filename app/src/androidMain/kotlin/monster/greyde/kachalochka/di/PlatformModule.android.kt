@@ -22,6 +22,8 @@ import monster.greyde.kachalochka.ui.account.ActivityHolder
 import monster.greyde.kachalochka.ui.account.CredentialManagerGoogleSignIn
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
+import monster.greyde.kachalochka.ui.calendar.DataStoreVisitsModePreference
+import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
@@ -78,6 +80,12 @@ actual fun platformModule(): Module =
         }
         single<TransitionPreference>(createdAtStart = true) {
             DataStoreTransitionPreference(
+                get(),
+                CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            )
+        }
+        single<VisitsModePreference> {
+            DataStoreVisitsModePreference(
                 get(),
                 CoroutineScope(SupervisorJob() + Dispatchers.Default),
             )

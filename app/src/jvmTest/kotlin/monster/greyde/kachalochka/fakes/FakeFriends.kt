@@ -221,6 +221,12 @@ class FakeFriends(
         }
     }
 
+    override suspend fun oldestGroupVisit(viewer: UserId) =
+        online {
+            val mates = matesById(viewer).filterKeys(::visibleMember)
+            visits.filter { !it.deleted && it.userId in mates.keys }.minByOrNull { it.recordedAt }
+        }
+
     override suspend fun groupLinks(viewer: UserId) =
         online {
             val mates = matesById(viewer)

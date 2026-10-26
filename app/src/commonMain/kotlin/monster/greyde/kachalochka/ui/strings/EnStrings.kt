@@ -142,6 +142,18 @@ object EnStrings : Strings {
     override val addVisit = "Add visit"
     override val replace = "Replace"
     override val chooseNewDay = "Choose the new day"
+    override val calendarMode = "Calendar"
+    override val feedMode = "Feed"
+    override val me = "Me"
+    override val yesterday = "Yesterday"
+    override val firstVisit = "This is the first visit"
+    override val noVisitsYet = "No visits yet"
+    override val showLess = "Show less"
+
+    override fun moreMachines(n: Int) = "$n more ${if (n == 1) "machine" else "machines"}"
+
+    override fun weekdayInline(dayOfWeek: Int) = weekday(dayOfWeek)
+
     override val move = "Move"
     override val deleteVisitTitle = "Delete the visit?"
     override val replaceVisitTitle = "Replace the visit?"

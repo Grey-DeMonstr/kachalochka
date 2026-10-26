@@ -25,20 +25,21 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.allOn
 import monster.greyde.kachalochka.core.domain.gym.dayAt
-import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.movedVisit
 import monster.greyde.kachalochka.core.domain.gym.removedVisit
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.shownVisit
-import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.gym.visitRecency
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.accountAvatar
+import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.monthTitle
@@ -55,54 +56,21 @@ data class CalendarUiState(
     val weeks: List<List<DayUi?>>,
     val day: CalendarDay,
     val dayTitle: String,
-    val visit: CalendarVisitUi?,
+    val visit: VisitCardUi?,
     val noVisit: Boolean,
     val moving: Boolean,
     val removal: RemovalUi?,
     val replacement: ReplacementUi?,
-    val friendVisits: List<FriendDayVisitUi>,
+    val friendVisits: List<VisitCardUi>,
     /** Whoever the own visit belongs to; null with nobody signed in. */
     val me: PersonUi? = null,
 )
 
+/** [userId] is null on a device nobody has signed in on. */
 data class PersonUi(
-    val userId: UserId,
+    val userId: UserId?,
     val name: String,
     val avatar: Avatar,
-)
-
-/**
- * A friend's visit on the chosen day, drawn as the own one is; [tags] and [machines] stay null
- * until their sets are read.
- */
-data class FriendDayVisitUi(
-    val userId: UserId,
-    val name: String,
-    val avatar: Avatar,
-    val color: Int,
-    val day: CalendarDay,
-    val tags: String?,
-    val machines: String?,
-)
-
-/** [tags] joins every tag of the visit's machines, null when none has any. */
-data class CalendarVisitUi(
-    val id: VisitId,
-    val machines: String,
-    val tags: String?,
-    val canRepeatToday: Boolean,
-)
-
-/** A visit card's tag line: every tag of its machines, in one order everywhere. */
-private fun dayTags(machines: List<Machine>): String? =
-    sortedTags(machines.flatMap { it.tags })
-        .takeIf { it.isNotEmpty() }
-        ?.joinToString(" · ")
-
-/** The day's details of a friend's visit, once read. */
-private data class FriendDayDetails(
-    val tags: String?,
-    val machines: String,
 )
 
 data class RemovalUi(
@@ -114,6 +82,17 @@ data class ReplacementUi(
     val title: String,
     val text: String,
 )
+
+internal fun removalUi(
+    visit: Visit,
+    today: CalendarDay,
+): RemovalUi {
+    val day = checkNotNull(visit.day)
+    return RemovalUi(
+        AppStrings.current.deleteVisitTitle,
+        weekdayDate(day, withYear = day.year != today.year),
+    )
+}
 
 class CalendarViewModel(
     private val visits: VisitRepository,
@@ -127,6 +106,7 @@ class CalendarViewModel(
     private val friends: FriendsRepository,
     private val colors: FriendColorStore,
     private val avatars: AccountAvatars,
+    private val profiles: ProfileRepository,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<CalendarUiState?>(null)
     val state: StateFlow<CalendarUiState?> = mutableState
@@ -136,8 +116,10 @@ class CalendarViewModel(
     private var all: List<Visit> = emptyList()
     private val visitDays: Set<CalendarDay> get() = all.mapNotNull { it.day }.toSet()
     private var machinesById: Map<MachineId, Machine> = emptyMap()
+    private var history = OwnHistory(emptyList(), emptyMap())
+    private var preferred = PreferredWeightUnit.Kg
     private var stale = true
-    private var dayCard: CalendarVisitUi? = null
+    private var dayCard: VisitCardUi? = null
     private var month: CalendarMonth = CalendarMonth.of(clock.today())
     private var selected: CalendarDay = clock.today()
     private var moving: Visit? = null
@@ -180,6 +162,14 @@ class CalendarViewModel(
         if (monthRank(next) > monthRank(CalendarMonth.of(clock.today()))) return
         month = next
         publish()
+        loadFriends()
+    }
+
+    /** Shows [day] chosen in its month, as a move started in the feed does. */
+    fun openDay(day: CalendarDay) {
+        moving = null
+        month = CalendarMonth.of(day)
+        selectDay(day)
         loadFriends()
     }
 
@@ -333,27 +323,26 @@ class CalendarViewModel(
             val owner = currentUser.id()
             all = visits.all(owner).map { it.copy(day = it.dayAt(clock::offsetAt)) }
             machinesById = machines.all(owner).associateBy { it.id }
+            history = OwnHistory(sets.all(owner), all.associate { it.id to checkNotNull(it.day) })
+            preferred = profiles.preferredUnit(owner)
             shownFor = owner
             stale = false
             loadFriends()
         }
-        val sameDay = all.filter { it.day == selected }
+        val day = selected
+        val sameDay = all.filter { it.day == day }
         dayCard =
             shownVisit(sameDay) { sets.forVisit(it.id) }?.let { (visit, visitSets) ->
-                val shown = groupByMachine(visitSets).mapNotNull { machinesById[it.machineId] }
-                CalendarVisitUi(
-                    id = visit.id,
-                    machines =
-                        shown.joinToString(", ") { it.name }.ifEmpty {
-                            AppStrings.current.noSetsYet
-                        },
-                    tags = dayTags(shown),
-                    canRepeatToday =
-                        selected != clock.today() &&
-                            visitMachines(
-                                visitSets,
-                                visit.planned,
-                            ).isNotEmpty(),
+                val today = clock.today()
+                ownCard(
+                    visit,
+                    visitSets,
+                    day,
+                    today,
+                    ownPerson(),
+                    machinesById,
+                    history,
+                    preferred,
                 )
             }
         publish()
@@ -406,21 +395,14 @@ class CalendarViewModel(
         val byFriend = friendVisits.filter { it.visit.day == day }.groupBy { it.friend.userId }
         for ((friend, theirs) in byFriend) {
             val details =
-                catching { detailsOf(friend, theirs.map { it.visit }) }.getOrNull() ?: continue
+                catching {
+                    val machines = friends.machines(friend).associateBy { it.id }
+                    friends.dayDetails(theirs.map { it.visit }, machines, preferred)
+                }.getOrNull() ?: continue
             if (friendsFor != key) return
             friendCounts = friendCounts + ((friend to day) to details)
             publish()
         }
-    }
-
-    private suspend fun detailsOf(
-        friend: UserId,
-        sameDay: List<Visit>,
-    ): FriendDayDetails {
-        val daySets = shownVisit(sameDay, friends::sets)?.sets.orEmpty()
-        val theirs = friends.machines(friend).associateBy { it.id }
-        val shown = groupByMachine(daySets).mapNotNull { theirs[it.machineId] }
-        return FriendDayDetails(dayTags(shown), shown.joinToString(", ") { it.name })
     }
 
     private fun friendsOn(day: CalendarDay): List<Friend> =
@@ -447,7 +429,7 @@ class CalendarViewModel(
                 weeks = monthWeeks(month, marked, today, day, dots),
                 day = day,
                 dayTitle = "${weekdayName(day.dayOfWeek)}, ${dayMonthLabel(day, today.year)}",
-                visit = dayCard,
+                visit = dayCard?.copy(person = ownPerson()),
                 // Read from the day marks, which are known while the day's card still loads.
                 noVisit = day !in marked,
                 moving = moving != null,
@@ -457,36 +439,25 @@ class CalendarViewModel(
                     friendsOn(day).mapNotNull { friend ->
                         val color = friendColors[friend.userId] ?: return@mapNotNull null
                         val details = friendCounts[friend.userId to day]
-                        FriendDayVisitUi(
-                            friend.userId,
-                            friend.displayName,
-                            friend.avatar,
+                        friendCard(
+                            "friend-visit-${friend.userId.value}",
+                            friend,
                             color,
                             day,
-                            details?.tags,
-                            details?.machines,
+                            details,
                         )
                     },
                 me = me(),
             )
     }
 
+    private fun ownPerson(): PersonUi = me() ?: PersonUi(null, AppStrings.current.me, Avatar())
+
     private fun me(): PersonUi? {
         val account =
             accounts.accounts.value.firstOrNull { it.userId == shownFor } ?: return null
         val avatar = accountAvatar(account, avatars.photos.value)
         return PersonUi(account.userId, account.shownName, avatar)
-    }
-
-    private fun removalUi(
-        visit: Visit,
-        today: CalendarDay,
-    ): RemovalUi {
-        val day = checkNotNull(visit.day)
-        return RemovalUi(
-            AppStrings.current.deleteVisitTitle,
-            weekdayDate(day, withYear = day.year != today.year),
-        )
     }
 
     private fun replacementUi(

@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,8 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.CalendarMonth
+import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
-import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.format.isoDate
 import monster.greyde.kachalochka.ui.format.weekdayLabels
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
@@ -81,9 +82,13 @@ internal fun MonthHeader(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        SquareIconButton(
-            PhosphorIcons.ArrowLeft,
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        CaretButton(
+            PhosphorIcons.CaretLeft,
             strings().previousMonth,
             onPrevious,
             Modifier.testTag("month-previous"),
@@ -91,21 +96,44 @@ internal fun MonthHeader(
         Text(
             title,
             modifier = Modifier.weight(1f).testTag("calendar-month"),
-            fontSize = 19.sp,
+            fontSize = 17.sp,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground,
         )
-        if (canShowNext) {
-            SquareIconButton(
-                PhosphorIcons.ArrowRight,
-                strings().nextMonth,
-                onNext,
-                Modifier.testTag("month-next"),
-            )
-        } else {
-            // Balances the previous-month button, which keeps the title centred.
-            Spacer(Modifier.size(50.dp))
-        }
+        CaretButton(
+            PhosphorIcons.CaretRight,
+            strings().nextMonth,
+            onNext,
+            Modifier.testTag("month-next"),
+            enabled = canShowNext,
+        )
+    }
+}
+
+@Composable
+private fun CaretButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier
+            .size(44.dp)
+            .alpha(if (enabled) 1f else DISABLED_ALPHA)
+            .clip(ControlShape)
+            .border(1.dp, colors.onBackground.copy(alpha = 0.16f), ControlShape)
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            icon,
+            contentDescription,
+            tint = colors.onBackground.copy(alpha = 0.7f),
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 
@@ -116,12 +144,12 @@ internal fun MonthGrid(
 ) {
     val colors = MaterialTheme.colorScheme
     Column {
-        Row(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+        Row(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
             weekdayLabels().forEach {
                 Text(
                     it,
                     modifier = Modifier.weight(1f),
-                    fontSize = 12.sp,
+                    fontSize = 12.5.sp,
                     textAlign = TextAlign.Center,
                     color = colors.onBackground.copy(alpha = 0.45f),
                 )
@@ -148,14 +176,16 @@ private fun RowScope.DayCell(
 ) {
     val colors = MaterialTheme.colorScheme
     // A fixed height keeps the grid short on wide web windows.
-    Box(Modifier.weight(1f).height(44.dp), contentAlignment = Alignment.Center) {
+    Box(Modifier.weight(1f).height(50.dp), contentAlignment = Alignment.Center) {
         Column(
             Modifier
-                .size(40.dp)
+                .size(42.dp)
                 .clip(CircleShape)
                 .then(
                     if (day.selected) {
-                        Modifier.border(1.dp, colors.primary, CircleShape)
+                        Modifier
+                            .background(colors.primary.copy(alpha = 0.14f))
+                            .border(1.5.dp, colors.primary, CircleShape)
                     } else {
                         Modifier
                     },
@@ -167,14 +197,19 @@ private fun RowScope.DayCell(
         ) {
             Text(
                 day.day.day.toString(),
-                fontSize = 15.sp,
+                fontSize = 16.sp,
                 fontWeight = if (day.today) FontWeight.Medium else FontWeight.Normal,
-                color = if (day.today) colors.secondary else colors.onBackground,
+                color =
+                    when {
+                        day.selected -> colors.onPrimaryContainer
+                        day.today -> colors.secondary
+                        else -> colors.onBackground
+                    },
             )
             // Drawn on every day, so a visit mark never shifts the number.
             Row(
-                Modifier.padding(top = 2.dp).height(5.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                Modifier.padding(top = 4.dp).height(5.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 if (day.hasVisit) Dot(colors.primary)
                 val iso = isoDate(day.day)

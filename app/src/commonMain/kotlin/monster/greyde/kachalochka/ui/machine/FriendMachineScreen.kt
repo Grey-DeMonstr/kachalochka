@@ -37,6 +37,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Screen
+import monster.greyde.kachalochka.ui.components.TagChip
 import monster.greyde.kachalochka.ui.friends.OfflineNotice
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.PhotoStrip
@@ -46,7 +47,6 @@ import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.stats.MachineStats
 import monster.greyde.kachalochka.ui.stats.PeriodChips
 import monster.greyde.kachalochka.ui.strings.strings
-import monster.greyde.kachalochka.ui.visit.TagChip
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf

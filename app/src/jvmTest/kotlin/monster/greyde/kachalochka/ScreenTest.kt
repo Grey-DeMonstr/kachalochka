@@ -34,6 +34,7 @@ import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
+import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InviteSharing
@@ -95,6 +96,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<PageFooter> { gym.footer }
         single<ThemePreference> { gym.themes }
         single<TransitionPreference> { gym.transitions }
+        single<VisitsModePreference> { gym.visitsModes }
         single<LanguagePreference> { gym.languages }
         single<RestSoundPreference> { gym.restSounds }
         single<RestSoundChooser> { gym.restSoundChooser }

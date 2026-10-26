@@ -128,6 +128,18 @@ a sync, after an account switch and on a month change, and never stores them. A 
 is cancelled by the next one, and a result that lands for another account or month than the one
 shown is dropped. A failed read leaves friends out; the own calendar never waits for it.
 
+The feed (`VisitFeedViewModel`) reads the own rows locally and the mates' visits with one
+`groupVisits` request per 21-day window, reading windows back until one holds a visit. It ends at
+the oldest of the account's visits and of `oldestGroupVisit`, one request ordered by
+`recorded_at`. Each friend's day then reads its sets, and each friend's machines are read once
+per feed. A sync completion or a return to the screen reads the own rows again and keeps the
+windows read; an account switch starts the feed over.
+
+A visit card's gain compares the day's best set on a machine (`bestSet`) with the best of the
+same account's sets on that machine from earlier days, each set placed on its visit's day
+(`OwnHistory`). It needs the account's whole history, which is local, so friends' cards show no
+gain: their history would cost one request per friend and machine.
+
 Text leaves the app through `TextSharing`, bound per platform in `platformModule()`: Android's
 `ShareSheetTextSharing` opens the system share sheet and returns no notice; the web's
 `ClipboardTextSharing` writes the clipboard and returns the notice the screen shows. Invites use
@@ -253,14 +265,14 @@ failing a pull.
   The one exception is a `measure` older than the server's copy (§4.6).
 - **Triggers.** A pass runs whenever the app comes to the foreground (a `ProcessLifecycleOwner`
   `ON_START` observer, which also fires at launch), when the app goes to the background, after an
-  account is added, after a visit is moved, replaced or removed on the calendar, and after any
-  write to a visit or measurement of a day other than today, and after visit normalization wrote
-  something. It is a WorkManager job — unique work `"sync"` — with a network constraint, so a
-  pass already queued waits for connectivity rather than failing outright. A pass reports whether
-  every push and pull succeeded, and one that did not is retried with exponential backoff. A new
-  request replaces (`REPLACE`) whatever is queued or running, so it never waits behind a pass
-  sitting out its backoff; cancelling a running pass is safe, because its outbox entries stay and
-  every push is an upsert.
+  account is added, after a visit is moved, replaced or removed on the calendar or in its feed,
+  and after any write to a visit or measurement of a day other than today, and after visit
+  normalization wrote something. It is a WorkManager job — unique work `"sync"` — with a network
+  constraint, so a pass already queued waits for connectivity rather than failing outright. A
+  pass reports whether every push and pull succeeded, and one that did not is retried with
+  exponential backoff. A new request replaces (`REPLACE`) whatever is queued or running, so it
+  never waits behind a pass sitting out its backoff; cancelling a running pass is safe, because
+  its outbox entries stay and every push is an upsert.
 - **Tokens.** The account live on the UI client lends its own access token to the pass while it
   has more than a minute left; nearer its expiry the pass has the UI client refresh its own
   session with `refreshCurrentSession`, because the rotated refresh token that client holds would
@@ -285,10 +297,10 @@ for the token of the account the pass is currently on. The UI's client and its a
 never touched. Importing each account's session in turn on the one client would race every write
 the UI makes meanwhile.
 
-Sync is a `data/` concern. Nothing in `domain/` or `app` knows whether a row has been pushed.
-The screens that read their rows once — home, the visit, the calendar, the machine picker and the
-machine list — reload when `SyncTrigger.completed` emits, which the worker does after every pass,
-so rows a pass pulled show up on the screen already open. On the web, where every write has
+Sync is a `data/` concern. Nothing in `domain/` or `app` knows whether a row has been pushed. The
+screens that read their rows once — home, the visit, the calendar and its feed, the machine picker
+and the machine list — reload when `SyncTrigger.completed` emits, which the worker does after every
+pass, so rows a pass pulled show up on the screen already open. On the web, where every write has
 already reached the server, `ServerSyncTrigger` emits on every request instead.
 
 ### 4.3 Anonymous use and several accounts
@@ -1206,6 +1218,9 @@ failing the launch.
 navigation bars transparent, with icons that match the scheme, so the screen's `background` shows
 behind them. Without an explicit style, Android draws a contrast scrim that follows the light
 window theme.
+
+The visits screen's mode, calendar or feed, is a device setting stored the same way, as
+`VisitsModePreference`.
 
 The screen transition length is a device setting stored the same way, as `TransitionPreference`.
 Settings offers it as a `TransitionPreset` (0, 150, 300 or 500 ms); a length stored before the

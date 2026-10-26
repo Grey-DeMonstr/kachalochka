@@ -212,6 +212,26 @@ fun TagText(
     )
 }
 
+/** A tag on a machine row or page, a visit card or a section heading. */
+@Composable
+fun TagChip(
+    tag: String,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(6.dp)
+    TagText(
+        tag,
+        modifier =
+            modifier
+                .clip(shape)
+                .background(colors.primary.copy(alpha = 0.14f))
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+        fontSize = 11.sp,
+        color = colors.tertiary,
+    )
+}
+
 @Composable
 fun Rule() {
     HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.10f))
@@ -222,6 +242,8 @@ data class Choice(
     val tag: String,
     val enabled: Boolean = true,
     val weight: Float = 1f,
+    /** Drawn before the label in a [SegmentRow]. */
+    val icon: ImageVector? = null,
 )
 
 @Composable
@@ -307,12 +329,21 @@ fun SegmentRow(
                         .testTag(choice.tag),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    choice.label,
-                    fontSize = 15.sp,
-                    color =
-                        if (on) colors.onBackground else colors.onBackground.copy(alpha = 0.7f),
-                )
+                val color = if (on) colors.onBackground else colors.onBackground.copy(alpha = 0.7f)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    choice.icon?.let {
+                        Icon(
+                            it,
+                            null,
+                            tint = color,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    Text(choice.label, fontSize = 15.sp, color = color)
+                }
             }
         }
     }

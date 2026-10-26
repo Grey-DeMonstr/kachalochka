@@ -303,6 +303,33 @@ class SupabaseFriendsRepositoryTest {
         }
 
     @Test
+    fun the_oldest_group_visit_is_the_mates_first_recorded_live_one() =
+        runTest {
+            val oldest = Visit(VisitId.random(), OLEG, CalendarDay(2022, 3, 1), NOW, NOW, false)
+            val engine = MockEngine.Queue()
+            engine.answer(MEMBERSHIPS)
+            engine.answer(Json.encodeToString(listOf(VisitRow.of(oldest))))
+
+            assertEquals(oldest, repositoryOn(engine).oldestGroupVisit(IVAN))
+
+            val params = engine.requestHistory[1].url.parameters
+            assertEquals("in.(${OLEG.value})", params["user_id"])
+            assertEquals("eq.false", params["deleted"])
+            assertEquals("recorded_at.asc.nullslast", params["order"])
+            assertEquals("1", params["limit"])
+        }
+
+    @Test
+    fun without_mates_there_is_no_oldest_group_visit() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer(MEMBERSHIPS.substringBefore(",{") + "]")
+
+            assertNull(repositoryOn(engine).oldestGroupVisit(IVAN))
+            assertEquals(1, engine.requestHistory.size)
+        }
+
+    @Test
     fun without_mates_group_visits_ask_for_nothing_more() =
         runTest {
             val engine = MockEngine.Queue()

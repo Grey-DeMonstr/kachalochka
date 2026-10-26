@@ -121,6 +121,9 @@ interface FriendsRepository {
         to: CalendarDay,
     ): List<FriendVisit>
 
+    /** The first recorded live visit of everyone sharing a group with [viewer]. */
+    suspend fun oldestGroupVisit(viewer: UserId): Visit?
+
     /** The live links of everyone sharing a group with [viewer]. */
     suspend fun groupLinks(viewer: UserId): List<MachineLink>
 

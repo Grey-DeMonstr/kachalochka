@@ -89,6 +89,7 @@ class CalendarViewModelTest {
             gym.friends,
             FriendColorStore(gym.profiles, gym.clock, gym.friends),
             AccountAvatars(gym.accounts, gym.profiles),
+            gym.profiles,
         )
 
     private fun FakeGym.friendVisit(
@@ -173,8 +174,8 @@ class CalendarViewModelTest {
 
             val state = assertNotNull(vm.state.value)
             assertTrue(state.day(11).hasVisit)
-            assertEquals(undated.id, state.visit?.id)
-            assertEquals("Жим ногами", state.visit?.machines)
+            assertEquals(undated.id, state.visit?.own?.id)
+            assertEquals(listOf("Жим ногами"), state.visit?.exercises?.map { it.name })
         }
 
     @Test
@@ -189,9 +190,12 @@ class CalendarViewModelTest {
             val state = assertNotNull(vm.state.value)
             assertEquals("Воскресенье, 12 ноября", state.dayTitle)
             val listed = assertNotNull(state.visit)
-            assertEquals(sunday.id, listed.id)
-            assertEquals("Жим ногами, Тяга верхнего блока", listed.machines)
-            assertEquals("жим · ноги · спина", listed.tags)
+            assertEquals(sunday.id, listed.own?.id)
+            assertEquals(
+                listOf("Жим ногами", "Тяга верхнего блока"),
+                listed.exercises?.map { it.name },
+            )
+            assertEquals(listOf("жим", "ноги", "спина"), listed.tags)
         }
 
     @Test
@@ -200,7 +204,8 @@ class CalendarViewModelTest {
 
         vm.selectDay(twelfth)
 
-        assertNull(
+        assertEquals(
+            emptyList(),
             vm.state.value
                 ?.visit
                 ?.tags,
@@ -230,6 +235,7 @@ class CalendarViewModelTest {
                 sunday.id,
                 vm.state.value
                     ?.visit
+                    ?.own
                     ?.id,
             )
             visitsRead.complete(Unit)
@@ -344,6 +350,23 @@ class CalendarViewModelTest {
         }
 
     @Test
+    fun opening_a_day_shows_its_month_with_the_day_chosen_ready_for_a_move() =
+        runTest {
+            val october = Visit(VisitId.random(), null, CalendarDay(2023, 10, 20), t0, t0, false)
+            gym.visits.upsert(october)
+            val vm = viewModel().also { it.refresh() }
+
+            vm.openDay(CalendarDay(2023, 10, 20))
+            vm.startMove(october.id)
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals("Октябрь 2023", state.monthTitle)
+            assertTrue(state.day(20).selected)
+            assertEquals(october.id, state.visit?.own?.id)
+            assertTrue(state.moving)
+        }
+
+    @Test
     fun the_next_month_is_out_of_reach_and_the_previous_one_is_not() {
         val vm = viewModel().also { it.refresh() }
 
@@ -368,6 +391,7 @@ class CalendarViewModelTest {
                 sunday.id,
                 vm.state.value
                     ?.visit
+                    ?.own
                     ?.id,
             )
 
@@ -442,6 +466,7 @@ class CalendarViewModelTest {
                 sunday.id,
                 vm.state.value
                     ?.visit
+                    ?.own
                     ?.id,
             )
         }
@@ -457,6 +482,7 @@ class CalendarViewModelTest {
                 later.id,
                 vm.state.value
                     ?.visit
+                    ?.own
                     ?.id,
             )
 
@@ -469,6 +495,7 @@ class CalendarViewModelTest {
                 latest.id,
                 vm.state.value
                     ?.visit
+                    ?.own
                     ?.id,
             )
         }
@@ -603,7 +630,13 @@ class CalendarViewModelTest {
             val vm = viewModel().also { it.refresh() }
             vm.selectDay(fifth)
 
-            assertFalse(assertNotNull(vm.state.value?.visit).canRepeatToday)
+            assertFalse(
+                assertNotNull(
+                    vm.state.value
+                        ?.visit
+                        ?.own,
+                ).canRepeatToday,
+            )
         }
 
     @Test
@@ -614,9 +647,21 @@ class CalendarViewModelTest {
             gym.sets.upsert(set(todayVisit, press, 0))
             val vm = viewModel().also { it.refresh() }
 
-            assertFalse(assertNotNull(vm.state.value?.visit).canRepeatToday)
+            assertFalse(
+                assertNotNull(
+                    vm.state.value
+                        ?.visit
+                        ?.own,
+                ).canRepeatToday,
+            )
             vm.selectDay(twelfth)
-            assertTrue(assertNotNull(vm.state.value?.visit).canRepeatToday)
+            assertTrue(
+                assertNotNull(
+                    vm.state.value
+                        ?.visit
+                        ?.own,
+                ).canRepeatToday,
+            )
         }
 
     @Test
@@ -638,7 +683,7 @@ class CalendarViewModelTest {
             assertFalse(state.moving)
             assertNull(state.replacement)
             assertTrue(state.day(5).selected)
-            assertEquals(sunday.id, state.visit?.id)
+            assertEquals(sunday.id, state.visit?.own?.id)
             assertEquals(1, gym.sync.requests)
         }
 
@@ -745,18 +790,79 @@ class CalendarViewModelTest {
             assertEquals(listOf(5), state.day(12).friendDots)
             assertEquals(
                 listOf(
-                    FriendDayVisitUi(
-                        OLEG.userId,
-                        "Олег",
-                        Avatar(),
+                    VisitCardUi(
+                        "friend-visit-${OLEG.userId.value}",
+                        PersonUi(OLEG.userId, "Олег", Avatar()),
                         5,
                         twelfth,
-                        null,
-                        "${press.name}, ${row.name}",
+                        emptyList(),
+                        listOf(
+                            ExerciseUi(press.name, "70 кг × 10", null),
+                            ExerciseUi(row.name, "70 кг × 10", null),
+                        ),
                     ),
                 ),
                 state.friendVisits,
             )
+        }
+
+    @Test
+    fun the_own_card_shows_each_machine_s_best_set_and_its_gain_over_earlier_days() =
+        runTest {
+            gym.visits.upsert(fifthVisit)
+            gym.sets.upsert(set(fifthVisit, press, 0).copy(weight = 60.0))
+            gym.sets.upsert(set(fifthVisit, row, 1).copy(reps = 12))
+            val vm = viewModel().also { it.selectDay(twelfth) }
+
+            assertEquals(
+                listOf(
+                    ExerciseUi(press.name, "70 кг × 10", "+10 кг"),
+                    ExerciseUi(row.name, "70 кг × 10", null),
+                ),
+                vm.state.value
+                    ?.visit
+                    ?.exercises,
+            )
+        }
+
+    @Test
+    fun the_own_card_names_the_account_and_has_the_menu() =
+        runTest {
+            val signed = signedInGym()
+            signed.visits.upsert(sunday.copy(userId = ME.userId))
+
+            val card =
+                assertNotNull(
+                    viewModel(signed)
+                        .also { it.selectDay(twelfth) }
+                        .state.value
+                        ?.visit,
+                )
+
+            assertEquals("Иван", card.person.name)
+            assertNull(card.color)
+            assertEquals(OwnVisitUi(sunday.id, canRepeatToday = false), card.own)
+        }
+
+    @Test
+    fun a_friend_s_card_shows_no_gains() =
+        runTest {
+            val signed = signedInGym()
+            signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+            signed.friendVisit(OLEG, fifth, t0 - 9.days, press)
+            signed.friends.sets.replaceAll { it.copy(weight = 50.0) }
+            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press)
+
+            val vm = viewModel(signed).also { it.selectDay(twelfth) }
+
+            val card =
+                assertNotNull(
+                    vm.state.value
+                        ?.friendVisits
+                        ?.single(),
+                )
+            assertEquals(listOf(ExerciseUi(press.name, "70 кг × 10", null)), card.exercises)
+            assertNull(card.own)
         }
 
     @Test
@@ -772,17 +878,22 @@ class CalendarViewModelTest {
 
             vm.selectDay(twelfth)
 
-            assertEquals(
-                listOf(FriendDayVisitUi(OLEG.userId, "Олег", Avatar(), 5, twelfth, null, null)),
-                vm.state.value?.friendVisits,
-            )
+            val waiting =
+                assertNotNull(
+                    vm.state.value
+                        ?.friendVisits
+                        ?.single(),
+                )
+            assertEquals("Олег", waiting.person.name)
+            assertNull(waiting.exercises)
             setsRead.complete(Unit)
             assertEquals(
-                press.name,
+                listOf(press.name),
                 vm.state.value
                     ?.friendVisits
                     ?.single()
-                    ?.machines,
+                    ?.exercises
+                    ?.map { it.name },
             )
         }
 
@@ -806,7 +917,7 @@ class CalendarViewModelTest {
                 listOf(colors.getValue(OLEG.userId), colors.getValue(PASHA.userId)),
                 state.day(12).friendDots,
             )
-            assertEquals(listOf("Олег", "Паша"), state.friendVisits.map { it.name })
+            assertEquals(listOf("Олег", "Паша"), state.friendVisits.map { it.person.name })
         }
 
     @Test
@@ -846,7 +957,7 @@ class CalendarViewModelTest {
             val vm = viewModel(signed).also { it.selectDay(twelfth) }
 
             val state = assertNotNull(vm.state.value)
-            assertEquals(sunday.id, state.visit?.id)
+            assertEquals(sunday.id, state.visit?.own?.id)
             assertEquals(emptyList(), state.day(12).friendDots)
             assertEquals(emptyList(), state.friendVisits)
         }
@@ -952,7 +1063,7 @@ class CalendarViewModelTest {
 
             assertEquals(
                 listOf("Олег"),
-                assertNotNull(vm.state.value).friendVisits.map { it.name },
+                assertNotNull(vm.state.value).friendVisits.map { it.person.name },
             )
         }
 

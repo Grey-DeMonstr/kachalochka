@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -50,6 +49,7 @@ import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.SquareToggleButton
+import monster.greyde.kachalochka.ui.components.TagChip
 import monster.greyde.kachalochka.ui.components.TagText
 import monster.greyde.kachalochka.ui.components.clickableUnless
 import monster.greyde.kachalochka.ui.components.dragOutline
@@ -373,24 +373,6 @@ internal fun MachineLines(
             }
         }
     }
-}
-
-@Composable
-internal fun TagChip(
-    tag: String,
-    modifier: Modifier = Modifier,
-) {
-    val colors = MaterialTheme.colorScheme
-    TagText(
-        tag,
-        modifier =
-            modifier
-                .clip(RoundedCornerShape(11.dp))
-                .border(1.dp, colors.primary.copy(alpha = 0.55f), RoundedCornerShape(11.dp))
-                .padding(horizontal = 8.dp, vertical = 2.dp),
-        fontSize = 11.sp,
-        color = colors.onPrimaryContainer,
-    )
 }
 
 @Composable
