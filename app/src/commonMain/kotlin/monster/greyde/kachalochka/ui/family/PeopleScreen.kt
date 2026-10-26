@@ -75,15 +75,17 @@ fun PeopleScreen(onBack: () -> Unit) {
         ) {
             val children = state.children
             val guardians = state.guardians
+            val trainers = state.trainers
+            val trainees = state.trainees
             when {
-                children == null || guardians == null ->
+                children == null || guardians == null || trainers == null || trainees == null ->
                     Text(
                         strings().loading,
                         Modifier.testTag("people-loading"),
                         fontSize = 15.sp,
                         color = faded,
                     )
-                children.isEmpty() && guardians.isEmpty() ->
+                listOf(children, guardians, trainers, trainees).all { it.isEmpty() } ->
                     Text(
                         strings().noPeople,
                         Modifier.testTag("people-empty"),
@@ -91,8 +93,29 @@ fun PeopleScreen(onBack: () -> Unit) {
                         color = faded,
                     )
                 else -> {
-                    PeopleGroup(strings().children, children, "people-children", viewModel)
-                    PeopleGroup(strings().guardians, guardians, "people-guardians", viewModel)
+                    val s = strings()
+                    PeopleGroup(
+                        s.trainers,
+                        trainers,
+                        Relation.Trainer,
+                        "people-trainers",
+                        viewModel,
+                    )
+                    PeopleGroup(
+                        s.trainees,
+                        trainees,
+                        Relation.Trainee,
+                        "people-trainees",
+                        viewModel,
+                    )
+                    PeopleGroup(s.children, children, Relation.Child, "people-children", viewModel)
+                    PeopleGroup(
+                        s.guardians,
+                        guardians,
+                        Relation.Guardian,
+                        "people-guardians",
+                        viewModel,
+                    )
                 }
             }
             state.notice?.let {
@@ -102,24 +125,27 @@ fun PeopleScreen(onBack: () -> Unit) {
     }
     if (adding) {
         AddSheet(
-            onChild = {
+            onChosen = { add ->
                 adding = false
-                viewModel.addChild()
-            },
-            onGuardian = {
-                adding = false
-                viewModel.addGuardian()
+                add(viewModel)
             },
             onDismiss = { adding = false },
         )
     }
-    state.childInvite?.let { ChildInviteDialog(it, viewModel) }
-    state.guardianEntry?.let { GuardianEntryDialog(it, viewModel) }
-    state.removing?.let { person ->
-        val child = state.children.orEmpty().any { it.userId == person.userId }
+    state.offer?.let { OfferDialog(it, viewModel) }
+    state.entry?.let { EntryDialog(it, viewModel) }
+    state.removing?.let { removal ->
+        val s = strings()
+        val (title, text) =
+            when (removal.relation) {
+                Relation.Child -> s.removeChildTitle to s.removeChildText
+                Relation.Guardian -> s.removeGuardianTitle to s.removeGuardianText
+                Relation.Trainee -> s.removeTraineeTitle to s.removeTraineeText
+                Relation.Trainer -> s.removeTrainerTitle to s.removeTrainerText
+            }
         ConfirmDialog(
-            if (child) strings().removeChildTitle else strings().removeGuardianTitle,
-            if (child) strings().removeChildText else strings().removeGuardianText,
+            title,
+            text,
             strings().removeLink,
             "person-remove-confirm",
             "person-remove-cancel",
@@ -158,6 +184,7 @@ private fun AddButton(onClick: () -> Unit) {
 private fun PeopleGroup(
     label: String,
     people: List<FamilyMember>,
+    relation: Relation,
     tag: String,
     viewModel: PeopleViewModel,
 ) {
@@ -177,7 +204,7 @@ private fun PeopleGroup(
                                 ),
                         )
                     }
-                    PersonRow(person, onRemove = { viewModel.askToRemove(person) })
+                    PersonRow(person, onRemove = { viewModel.askToRemove(person, relation) })
                 }
             }
         }
@@ -245,33 +272,29 @@ private fun PersonRow(
     }
 }
 
+/** The roles in the design's order; [onChosen] gets what the chosen one starts. */
 @Composable
 private fun AddSheet(
-    onChild: () -> Unit,
-    onGuardian: () -> Unit,
+    onChosen: (PeopleViewModel.() -> Unit) -> Unit,
     onDismiss: () -> Unit,
 ) = BottomSheet(strings().whomToAdd, onDismiss) {
-    AddOption(
-        PhosphorIcons.Baby,
-        strings().addChildChoice,
-        strings().addChildChoiceHint,
-        "add-child",
-        onChild,
-    )
-    AddOption(
-        PhosphorIcons.Users,
-        strings().addGuardianChoice,
-        strings().addGuardianChoiceHint,
-        "add-guardian",
-        onGuardian,
-    )
+    val s = strings()
+    AddOption(PhosphorIcons.ChalkboardTeacher, s.addTrainerChoice, "add-trainer") {
+        onChosen { addTrainer() }
+    }
+    AddOption(PhosphorIcons.Student, s.addTraineeChoice, "add-trainee") {
+        onChosen { addTrainee() }
+    }
+    AddOption(PhosphorIcons.Baby, s.addChildChoice, "add-child") { onChosen { addChild() } }
+    AddOption(PhosphorIcons.Users, s.addGuardianChoice, "add-guardian") {
+        onChosen { addGuardian() }
+    }
 }
 
 @Composable
 private fun AddOption(
     icon: ImageVector,
     title: String,
-    hint: String,
     tag: String,
     onClick: () -> Unit,
 ) {
@@ -300,103 +323,101 @@ private fun AddOption(
                 modifier = Modifier.size(20.dp),
             )
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(title, fontSize = 16.sp, color = colors.onSurface)
-            Text(
-                hint,
-                fontSize = 13.5.sp,
-                lineHeight = 19.sp,
-                color = colors.onSurface.copy(alpha = 0.55f),
-            )
-        }
+        Text(title, Modifier.weight(1f), fontSize = 16.sp, color = colors.onSurface)
     }
 }
 
+/** The account's new code for a child or a trainee, with how to use it and "Поделиться". */
 @Composable
-private fun ChildInviteDialog(
-    invite: ChildInvite,
+private fun OfferDialog(
+    offer: CodeOffer,
     viewModel: PeopleViewModel,
 ) {
     val colors = MaterialTheme.colorScheme
+    val s = strings()
+    val family = offer.kind == LinkKind.Family
     AlertDialog(
-        onDismissRequest = viewModel::closeChildInvite,
-        title = { Text(strings().addChild) },
+        onDismissRequest = viewModel::closeOffer,
+        title = { Text(if (family) s.addChild else s.addTrainee) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    strings().childCode(invite.code),
-                    Modifier.testTag("child-code"),
+                    if (family) s.childCode(offer.code) else s.traineeCode(offer.code),
+                    Modifier.testTag("offer-code"),
                     fontSize = 17.sp,
                 )
-                invite.link?.let {
-                    Text(it, Modifier.testTag("child-code-link"), fontSize = 14.sp)
+                offer.link?.let {
+                    Text(it, Modifier.testTag("offer-code-link"), fontSize = 14.sp)
                 }
                 Text(
-                    strings().childCodeHint,
-                    Modifier.testTag("child-code-hint"),
+                    if (family) s.childCodeHint else s.traineeCodeHint,
+                    Modifier.testTag("offer-code-hint"),
                     fontSize = 14.sp,
                     color = colors.onSurface.copy(alpha = 0.6f),
                 )
-                invite.notice?.let {
-                    Text(it, Modifier.testTag("child-code-notice"), fontSize = 14.sp)
+                offer.notice?.let {
+                    Text(it, Modifier.testTag("offer-code-notice"), fontSize = 14.sp)
                 }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = viewModel::share,
-                modifier = Modifier.testTag("child-code-share"),
-            ) { Text(strings().share) }
+                modifier = Modifier.testTag("offer-code-share"),
+            ) { Text(s.share) }
         },
         dismissButton = {
             TextButton(
-                onClick = viewModel::closeChildInvite,
-                modifier = Modifier.testTag("child-code-close"),
-            ) { Text(strings().done) }
+                onClick = viewModel::closeOffer,
+                modifier = Modifier.testTag("offer-code-close"),
+            ) { Text(s.done) }
         },
     )
 }
 
+/** A field for a parent's or a trainer's code, under what they can do once linked. */
 @Composable
-private fun GuardianEntryDialog(
-    entry: GuardianEntry,
+private fun EntryDialog(
+    entry: CodeEntry,
     viewModel: PeopleViewModel,
 ) {
     val colors = MaterialTheme.colorScheme
+    val s = strings()
+    val family = entry.kind == LinkKind.Family
     AlertDialog(
-        onDismissRequest = viewModel::closeGuardianEntry,
-        title = { Text(strings().addGuardian) },
+        onDismissRequest = viewModel::closeEntry,
+        title = { Text(if (family) s.addGuardian else s.addTrainer) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    strings().guardianRights,
-                    Modifier.testTag("guardian-rights"),
+                    if (family) s.guardianRights else s.trainerRights,
+                    Modifier.testTag("entry-rights"),
                     fontSize = 15.sp,
                     color = colors.onSurface.copy(alpha = 0.6f),
                 )
                 TextInput(
                     entry.code,
-                    strings().guardianCode,
+                    if (family) s.guardianCode else s.trainerCode,
                     viewModel::type,
-                    Modifier.fillMaxWidth().testTag("guardian-code-field"),
+                    Modifier.fillMaxWidth().testTag("entry-code-field"),
                 )
                 entry.error?.let {
-                    Text(it, Modifier.testTag("guardian-code-error"), color = colors.error)
+                    Text(it, Modifier.testTag("entry-code-error"), color = colors.error)
                 }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = viewModel::linkGuardian,
+                onClick = viewModel::link,
                 enabled = entry.canAdd,
-                modifier = Modifier.testTag("link-guardian"),
-            ) { Text(strings().add) }
+                modifier = Modifier.testTag("entry-link"),
+            ) { Text(s.add) }
         },
         dismissButton = {
             TextButton(
-                onClick = viewModel::closeGuardianEntry,
-                modifier = Modifier.testTag("guardian-code-cancel"),
-            ) { Text(strings().cancel) }
+                onClick = viewModel::closeEntry,
+                modifier = Modifier.testTag("entry-cancel"),
+            ) { Text(s.cancel) }
         },
     )
 }

@@ -72,6 +72,7 @@ class SyncWorker(
                         get(),
                         failures::record,
                         accounts.filter { it.isManaged }.map { it.userId }.toSet(),
+                        accounts.filter { it.isTrainee }.map { it.userId }.toSet(),
                     )
                 }
             }.getOrElse { failed ->

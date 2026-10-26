@@ -84,6 +84,17 @@ private class TokenFirstFamily(
     ) {
         error("unused")
     }
+
+    override suspend fun offerCoaching(): String = error("unused")
+
+    override suspend fun acceptTrainer(code: String): Acceptance = error("unused")
+
+    override suspend fun endCoaching(
+        trainee: UserId,
+        trainer: UserId,
+    ) {
+        error("unused")
+    }
 }
 
 class FamilyFollowerTest {
@@ -126,7 +137,88 @@ class FamilyFollowerTest {
         families[guardian] = Family(children.toList(), emptyList())
     }
 
+    private fun ScriptedReads.trainees(
+        trainer: UserId,
+        vararg trainees: FamilyMember,
+    ) {
+        val known = families[trainer] ?: Family(emptyList(), emptyList())
+        families[trainer] = known.copy(trainees = trainees.toList())
+    }
+
     private fun managedAccounts() = store.accounts.value.filter { it.isManaged }
+
+    @Test
+    fun a_trainee_of_a_signed_in_account_joins_the_device_as_a_trainee() =
+        runTest {
+            store.add(ivan)
+            reads.trainees(ivan.account.userId, sasha)
+
+            assertTrue(follower.follow())
+
+            val trainee = managedAccounts().single()
+            assertEquals(
+                AccountKind.Managed(ivan.account.userId, photo, trainee = true),
+                trainee.kind,
+            )
+            assertTrue(trainee.isTrainee)
+        }
+
+    @Test
+    fun a_trainee_whose_link_ended_leaves_the_device_with_its_rows() =
+        runTest {
+            store.add(ivan)
+            reads.trainees(ivan.account.userId, sasha)
+            follower.follow()
+            reads.families.remove(ivan.account.userId)
+
+            assertTrue(follower.follow())
+
+            assertEquals(listOf(ivan.account), store.accounts.value)
+            assertEquals(listOf(sasha.userId), purged)
+        }
+
+    @Test
+    fun a_child_who_is_also_a_trainee_here_is_a_child() =
+        runTest {
+            store.add(ivan)
+            store.add(misha)
+            reads.trainees(ivan.account.userId, sasha)
+            reads.children(misha.account.userId, sasha)
+
+            follower.follow()
+
+            val child = managedAccounts().single()
+            assertEquals(misha.account.userId, child.guardianId)
+            assertFalse(child.isTrainee)
+        }
+
+    @Test
+    fun a_trainee_who_becomes_a_child_leaves_with_its_rows_to_pull_them_again() =
+        runTest {
+            store.add(ivan)
+            reads.trainees(ivan.account.userId, sasha)
+            follower.follow()
+            reads.families[ivan.account.userId] = Family(listOf(sasha), emptyList())
+
+            assertTrue(follower.follow())
+
+            assertFalse(managedAccounts().single().isTrainee)
+            assertEquals(listOf(sasha.userId), purged)
+        }
+
+    @Test
+    fun one_whose_kind_cannot_be_changed_yet_keeps_the_old_kind() =
+        runTest {
+            store.add(ivan)
+            reads.trainees(ivan.account.userId, sasha)
+            follower.follow()
+            reads.families[ivan.account.userId] = Family(listOf(sasha), emptyList())
+            purgeFailure = IllegalStateException("disk full")
+
+            follower.follow()
+
+            assertTrue(managedAccounts().single().isTrainee)
+        }
 
     @Test
     fun a_child_of_a_signed_in_account_joins_the_device_acting_through_it() =

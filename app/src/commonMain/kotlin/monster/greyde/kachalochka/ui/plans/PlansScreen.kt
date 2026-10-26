@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.PlanId
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
@@ -43,6 +44,8 @@ fun PlansScreen(
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     val colors = MaterialTheme.colorScheme
+    // Starting a plan records a visit, which a trainer does not do for a trainee.
+    val readOnly = traineeActive()
     Screen(strings().plans, onBack = onBack, onOpenSettings = onOpenSettings) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             if (state.loaded && state.rows.isEmpty()) {
@@ -57,7 +60,7 @@ fun PlansScreen(
                 PlanRow(
                     row,
                     onOpen = { onOpenPlan(row.id) },
-                    onStart = { viewModel.start(row.id, onStarted) },
+                    onStart = { viewModel.start(row.id, onStarted) }.takeUnless { readOnly },
                 )
             }
             OutlineButton(
@@ -85,7 +88,7 @@ fun PlansScreen(
 private fun PlanRow(
     row: PlanRowUi,
     onOpen: () -> Unit,
-    onStart: () -> Unit,
+    onStart: (() -> Unit)?,
 ) {
     val colors = MaterialTheme.colorScheme
     val id = row.id.value
@@ -126,12 +129,14 @@ private fun PlanRow(
                     color = colors.onBackground.copy(alpha = 0.52f),
                 )
             }
-            OutlineButton(
-                strings().startPlan,
-                PhosphorIcons.ArrowRight,
-                onStart,
-                Modifier.width(128.dp).testTag("start-plan-$id"),
-            )
+            onStart?.let {
+                OutlineButton(
+                    strings().startPlan,
+                    PhosphorIcons.ArrowRight,
+                    it,
+                    Modifier.width(128.dp).testTag("start-plan-$id"),
+                )
+            }
         }
         Rule()
     }

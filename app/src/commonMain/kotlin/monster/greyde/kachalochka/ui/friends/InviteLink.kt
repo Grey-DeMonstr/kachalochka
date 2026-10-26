@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.ui.strings.AppStrings
 
 private const val JOIN = "join"
 private const val PARENT = "parent"
+private const val TRAINER = "trainer"
 
 /** The page itself with the code: GitHub Pages serves the app under a path. */
 fun inviteLink(
@@ -18,7 +19,14 @@ fun guardianLink(
     code: String,
 ): String = signInReturnAddress(pageAddress) + "?$PARENT=" + code
 
+fun trainerLink(
+    pageAddress: String,
+    code: String,
+): String = signInReturnAddress(pageAddress) + "?$TRAINER=" + code
+
 fun joinCodeOf(pageAddress: String): String? = codeOf(pageAddress, JOIN)
+
+fun trainerCodeOf(pageAddress: String): String? = codeOf(pageAddress, TRAINER)
 
 fun parentCodeOf(pageAddress: String): String? = codeOf(pageAddress, PARENT)
 
@@ -26,7 +34,8 @@ fun parentCodeOf(pageAddress: String): String? = codeOf(pageAddress, PARENT)
 fun withoutInviteCodes(pageAddress: String): String {
     val fragment = pageAddress.substringAfter('#', "").let { if (it.isEmpty()) "" else "#$it" }
     val base = pageAddress.substringBefore('#').substringBefore('?')
-    val kept = queryOf(pageAddress).filterNot { it.substringBefore('=') in setOf(JOIN, PARENT) }
+    val kept =
+        queryOf(pageAddress).filterNot { it.substringBefore('=') in setOf(JOIN, PARENT, TRAINER) }
     val query = if (kept.isEmpty()) "" else kept.joinToString("&", prefix = "?")
     return base + query + fragment
 }

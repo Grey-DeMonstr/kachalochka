@@ -18,6 +18,7 @@ import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.calendar.LocalStorageVisitsModePreference
 import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
+import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.friends.ClipboardInviteSharing
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
@@ -67,6 +68,9 @@ actual fun platformModule(): Module =
         single<JoinCodeStore> { LocalStorageJoinCodeStore() }
         single<JoinCodeStore>(named(PARENT_CODE)) {
             LocalStorageJoinCodeStore("kachalochka.parentCode")
+        }
+        single<JoinCodeStore>(named(TRAINER_CODE)) {
+            LocalStorageJoinCodeStore("kachalochka.trainerCode")
         }
         single { VisitStore.Server }
         single<PhotoCapture> { BrowserPhotoCapture() }

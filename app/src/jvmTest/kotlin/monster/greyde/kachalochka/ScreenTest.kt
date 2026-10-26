@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
 import monster.greyde.kachalochka.core.data.family.FamilyFollower
+import monster.greyde.kachalochka.core.data.friends.TraineeFriends
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
 import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.AccountStorage
@@ -36,6 +37,7 @@ import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
+import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
@@ -82,7 +84,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<CurrentUser> { gym.currentUser }
         single<Accounts> { gym.accounts }
         single<AccountDeletion> { gym.deletion }
-        single<FriendsRepository> { gym.friends }
+        single<FriendsRepository> { TraineeFriends(gym.friends) { gym.accounts.accounts.value } }
         single<FamilyRepository> { gym.family }
         single<FamilyFollower> { gym.follower }
         single<SupabaseCredentials> { gym.credentials }
@@ -93,6 +95,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<TextCopying> { gym.clipboard }
         single<JoinCodeStore> { gym.joinCodes }
         single<JoinCodeStore>(named(PARENT_CODE)) { gym.parentCodes }
+        single<JoinCodeStore>(named(TRAINER_CODE)) { gym.trainerCodes }
         single<PageFooter> { gym.footer }
         single<ThemePreference> { gym.themes }
         single<TransitionPreference> { gym.transitions }

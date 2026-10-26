@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.identity.Account
+import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -68,6 +69,30 @@ class VisitNormalizationTest {
 
             assertEquals(true, gym.visits.byId(older.id)?.deleted)
             assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_trainee_s_visits_are_left_as_they_are_whoever_is_active() =
+        runTest(UnconfinedTestDispatcher()) {
+            val signed = FakeGym().withAccounts(ivan, active = ivan)
+            val sasha = UserId("66666666-6666-4666-8666-666666666666")
+            signed.withChild(
+                Account(
+                    sasha,
+                    "",
+                    "Саша",
+                    kind = AccountKind.Managed(ivan.account.userId, trainee = true),
+                ),
+            )
+            val older = twoVisitsToday(signed, sasha)
+
+            backgroundScope.launch { normalization(signed).run(listOf(sasha)) }
+            runCurrent()
+            signed.accounts.switchTo(sasha)
+            runCurrent()
+
+            assertEquals(false, signed.visits.byId(older.id)?.deleted)
+            assertEquals(0, signed.sync.requests)
         }
 
     @Test

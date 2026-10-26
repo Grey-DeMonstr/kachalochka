@@ -8,8 +8,11 @@ import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
 internal const val CHILD_RELATION = "child"
+internal const val GUARDIAN_RELATION = "guardian"
+internal const val TRAINEE_RELATION = "trainee"
+internal const val TRAINER_RELATION = "trainer"
 
-/** One row of `my_family`, migration 0023. */
+/** One row of `my_family` (migration 0023) or `my_coaching` (0029). */
 @Serializable
 internal data class FamilyRow(
     @SerialName("user_id") val userId: String,

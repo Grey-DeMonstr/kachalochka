@@ -47,8 +47,9 @@ nickname (else the Google name, or "Профиль" without an account) and a li
 лет · 174 см · кг". Under the small heading "Приложение" come "Тема", "Язык", "Анимация" and "Звук
 таймера", each with its current value; a tap opens the choices in a bottom panel, and a choice
 applies at once and closes the panel. A signed-in account also has "Люди" (see Sign-in and
-accounts), with how many children and parents are linked, and "Аккаунт" with its e-mail. Every
-change is saved at once; Settings has no "Применить".
+accounts), titled "Тренер, ученики, семья" with how many trainers, trainees, children and parents
+are linked, and "Аккаунт" with its e-mail. Every change is saved at once; Settings has no
+"Применить".
 
 # Use cases
 
@@ -379,13 +380,14 @@ in finds it again. On Android, signing out of the last account returns the app t
 one. Friends stay locked until an account is signed in.
 
 Settings has "Люди" while an account is signed in: one screen for every person the account is
-linked to, grouped under "Дети" and "Родители"; an empty group is left out, and with nobody linked
-the screen says "Детей и родителей пока нет". Each person shows their avatar and name, and their ⋮
-menu has "Убрать", which asks "Убрать ребёнка?" or "Убрать родителя?" before it ends the link.
-Without a network the screen says "Нет связи с сервером" and changes nothing.
+linked to, grouped under "Тренер", "Ученики", "Дети" and "Родители"; an empty group is left out,
+and with nobody linked the screen says "Пока никого нет". Each person shows their avatar and name,
+and their ⋮ menu has "Убрать", which asks "Убрать тренера?", "Убрать ученика?", "Убрать ребёнка?"
+or "Убрать родителя?" before it ends that one link. Without a network the screen says "Нет связи с
+сервером" and changes nothing.
 
-"Добавить" in the screen's bar asks "Кого добавить?" in a bottom panel: "Ребёнка" (a child's
-account in the user's care) or "Родителя" (an adult who looks after the user). "Ребёнка" shows a
+"Добавить" in the screen's bar asks "Кого добавить?" in a bottom panel: "Тренера" and "Ученика"
+(see Trainer below), "Ребёнка" or "Родителя". "Ребёнка" shows a
 new code, "Код для ребёнка: …", and on the web its link too, with "Поделиться", which hands it
 over as a group invite is handed over. The child enters it on their own device within a day, and
 a code works once; a new code replaces the last one. Family Link may ask the parent once to let
@@ -416,6 +418,28 @@ removing it in "Люди" takes it, with what was recorded for it, off the paren
 child keeps what has already synced. Signing a parent out takes their children off that device's
 menu until the parent signs back in. A child signs in on their own phone or browser with their own
 Google account, as anyone does.
+
+### Trainer
+
+A trainer writes plans for a trainee. "Ученика" in "Добавить" shows the trainer's new code, "Код
+для ученика: …", and on the web its link too, with "Поделиться", as a child's code is shown; a
+code works once, within a day, and a new code replaces the last one. The trainee enters it under
+"Тренера", which first says what a trainer can do: see the trainee's machines, visits and plans,
+make and change their plans and add machines, never see their profile, measures or groups. A
+trainer's link, opened on the web, asks "Добавить тренера по приглашению?" first, as a parent's
+does. The trainee's typing of the code, or their "Добавить" in that question, is their consent;
+nothing links without it.
+
+A linked trainee appears in the trainer's account menu, with "Ученик" under their name, but never
+among the set form's chips. Choosing the trainee shows their app as a child's is shown — their
+profile, measures and groups stay hidden, and so do their friends — but the trainer only looks:
+the home card starts no visit, a visit opens without "Добавить", its sets do not open, and the
+calendar keeps only "В план…" in a visit's menu; "Повторить сегодня" and "Начать" on a plan are
+not there. The trainer makes, changes and deletes the trainee's plans, every plan included, and
+may add a machine for them, from the machine list or from a plan's machine picker, without photos.
+The picker lists only the trainee's own machines. An existing machine of the trainee opens
+read-only: its photos, settings and tags show, with no "Сохранить" and only "В план…" in its
+menu. A person both a child and a trainee of accounts on one device acts as a child.
 
 "Аккаунт" in Settings shows the active account's e-mail with "Вход через Google", then "Выйти",
 which signs it out as the account menu does. Under "Опасная зона" a red "Удалить аккаунт" follows.

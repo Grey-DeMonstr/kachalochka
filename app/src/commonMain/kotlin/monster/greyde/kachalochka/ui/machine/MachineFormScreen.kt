@@ -62,6 +62,7 @@ import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.PersonAvatar
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Choice
 import monster.greyde.kachalochka.ui.components.ChoiceRow
@@ -71,6 +72,7 @@ import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SquareIconButton
+import monster.greyde.kachalochka.ui.components.TagChip
 import monster.greyde.kachalochka.ui.components.TagChoiceChip
 import monster.greyde.kachalochka.ui.components.TagText
 import monster.greyde.kachalochka.ui.components.dashedBorder
@@ -116,7 +118,11 @@ fun MachineFormScreen(
         onBackCompleted = leave,
     )
     val capture: PhotoCapture = koinInject()
-    val launchers = capture.rememberLaunchers(viewModel::addPhoto)
+    // A trainer adds a machine for a trainee without photos, which only the trainee writes, and
+    // only looks at the trainee's own machines.
+    val traineeActive = traineeActive()
+    val readOnly = traineeActive && args.machineId != null
+    val launchers = capture.rememberLaunchers(viewModel::addPhoto).takeUnless { traineeActive }
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
     LaunchedEffect(Unit) { viewModel.load() }
     LaunchedEffect(copySettingsFrom) {
@@ -140,8 +146,11 @@ fun MachineFormScreen(
             }
             MachineMenu(
                 onToPlan = placed?.let { { placement.choosePlan(it) } },
-                onToday = placed?.let { { placement.planToday(it, onOpen = onOpenVisit) } },
-                onUnlink = if (linking.canUnlink) viewModel::askToUnlink else null,
+                onToday =
+                    placed
+                        ?.let { { placement.planToday(it, onOpen = onOpenVisit) } }
+                        .takeUnless { traineeActive },
+                onUnlink = if (linking.canUnlink && !readOnly) viewModel::askToUnlink else null,
             )
         },
     ) {
@@ -163,6 +172,7 @@ fun MachineFormScreen(
                 minHeight = 50.dp,
                 fontSize = 18.sp,
                 singleLine = true,
+                readOnly = readOnly,
             )
             if (photos.isEmpty()) {
                 Row(
@@ -188,18 +198,21 @@ fun MachineFormScreen(
                 minHeight = 62.dp,
                 fontSize = 15.sp,
                 singleLine = false,
+                readOnly = readOnly,
             )
-            TagsSection(state, viewModel)
+            TagsSection(state, viewModel, readOnly)
             FieldLabel(strings().howWeightCounts)
             WeightModeRow(state, onSelect = { mode ->
                 viewModel.update { it.copy(weightMode = mode) }
             })
-            PlatformWeightRow(state, onChange = { w ->
+            PlatformWeightRow(state, readOnly, onChange = { w ->
                 viewModel.update { it.copy(platformWeight = w) }
             })
             PlatformIncludedCard(
                 state.platformIncluded,
-                onChange = { v -> viewModel.update { it.copy(platformIncluded = v) } },
+                onChange =
+                    { v: Boolean -> viewModel.update { it.copy(platformIncluded = v) } }
+                        .takeUnless { readOnly },
             )
             UnitRow(state.unit, onSelect = viewModel::chooseUnit)
             if (state.unit == WeightUnit.Custom) {
@@ -216,12 +229,13 @@ fun MachineFormScreen(
                     minHeight = 50.dp,
                     fontSize = 17.sp,
                     singleLine = true,
+                    readOnly = readOnly,
                 )
             }
-            WeightStepRow(state, onChange = { step ->
+            WeightStepRow(state, readOnly, onChange = { step ->
                 viewModel.update { it.copy(weightStep = step) }
             })
-            if (linking.canLink) {
+            if (linking.canLink && !readOnly) {
                 OutlineButton(
                     strings().linkTo,
                     PhosphorIcons.LinkSimple,
@@ -242,14 +256,16 @@ fun MachineFormScreen(
             Modifier.padding(top = 12.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Rule()
-            AccentButton(
-                strings().save,
-                PhosphorIcons.Check,
-                { viewModel.save(onSaved) },
-                Modifier.testTag("save-machine"),
-                enabled = state.canSave,
-            )
+            if (!readOnly) {
+                Rule()
+                AccentButton(
+                    strings().save,
+                    PhosphorIcons.Check,
+                    { viewModel.save(onSaved) },
+                    Modifier.testTag("save-machine"),
+                    enabled = state.canSave,
+                )
+            }
         }
     }
     opened?.let {
@@ -257,14 +273,16 @@ fun MachineFormScreen(
             photos,
             it,
             onClose = { opened = null },
-            onDelete = { photo ->
-                viewModel.removePhoto(photo.key)
-                opened = null
-            },
-            onMakeCover = { photo ->
-                viewModel.makeCover(photo.key)
-                opened = null
-            },
+            onDelete =
+                { photo: ShownPhoto ->
+                    viewModel.removePhoto(photo.key)
+                    opened = null
+                }.takeUnless { readOnly },
+            onMakeCover =
+                { photo: ShownPhoto ->
+                    viewModel.makeCover(photo.key)
+                    opened = null
+                }.takeUnless { readOnly },
         )
     }
     recalculation?.let {
@@ -352,6 +370,7 @@ private fun FormField(
     minHeight: Dp,
     fontSize: TextUnit,
     singleLine: Boolean,
+    readOnly: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(8.dp)
@@ -375,6 +394,7 @@ private fun FormField(
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
+            readOnly = readOnly,
             singleLine = singleLine,
             textStyle = TextStyle(fontSize = fontSize, color = colors.onBackground),
             cursorBrush = SolidColor(colors.secondary),
@@ -387,7 +407,20 @@ private fun FormField(
 private fun TagsSection(
     state: MachineFormState,
     viewModel: MachineFormViewModel,
+    readOnly: Boolean,
 ) {
+    if (readOnly) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            state.shownTags
+                .filter(
+                    state::chosen,
+                ).forEach { TagChip(it, Modifier.testTag("tag-$it")) }
+        }
+        return
+    }
     val suggested = state.suggestedTags
     if (suggested.isNotEmpty()) {
         FlowRow(
@@ -570,6 +603,7 @@ private fun WeightModeRow(
 @Composable
 private fun PlatformWeightRow(
     state: MachineFormState,
+    readOnly: Boolean,
     onChange: (String) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -585,6 +619,7 @@ private fun PlatformWeightRow(
             unitLabel(state.unit, state.unitLabel),
             "platform-weight",
             "platform-weight-unit",
+            readOnly,
         )
     }
 }
@@ -596,6 +631,7 @@ private fun NumberField(
     unit: String,
     tag: String,
     unitTag: String? = null,
+    readOnly: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     Row(
@@ -612,6 +648,7 @@ private fun NumberField(
         BasicTextField(
             value = value,
             onValueChange = onChange,
+            readOnly = readOnly,
             singleLine = true,
             textStyle =
                 TextStyle(
@@ -635,7 +672,7 @@ private fun NumberField(
 @Composable
 private fun PlatformIncludedCard(
     included: Boolean,
-    onChange: (Boolean) -> Unit,
+    onChange: ((Boolean) -> Unit)?,
 ) {
     val colors = MaterialTheme.colorScheme
     Column(
@@ -690,6 +727,7 @@ private fun UnitRow(
 @Composable
 private fun WeightStepRow(
     state: MachineFormState,
+    readOnly: Boolean,
     onChange: (String) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -706,6 +744,7 @@ private fun WeightStepRow(
             onChange,
             unitLabel(state.unit, state.unitLabel),
             "weight-step",
+            readOnly = readOnly,
         )
     }
 }

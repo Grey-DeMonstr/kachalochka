@@ -57,7 +57,7 @@ class PeopleViewModelTest {
 
         vm.addChild()
 
-        val invite = assertNotNull(vm.state.value.childInvite)
+        val invite = assertNotNull(vm.state.value.offer)
         assertEquals("PAPA2345", invite.code)
         assertEquals("https://example.test/kachalochka/?parent=PAPA2345", invite.link)
         assertEquals(IVAN_MEMBER.userId, gym.family.codes["PAPA2345"])
@@ -72,11 +72,11 @@ class PeopleViewModelTest {
 
         assertEquals(
             "PAPA2345",
-            vm.state.value.childInvite
+            vm.state.value.offer
                 ?.code,
         )
         assertNull(
-            vm.state.value.childInvite
+            vm.state.value.offer
                 ?.link,
         )
     }
@@ -88,7 +88,7 @@ class PeopleViewModelTest {
 
         vm.addChild()
 
-        assertNull(vm.state.value.childInvite)
+        assertNull(vm.state.value.offer)
         assertEquals("Нет связи с сервером", vm.state.value.notice)
     }
 
@@ -110,7 +110,7 @@ class PeopleViewModelTest {
         )
         assertEquals(
             "Ссылка скопирована",
-            vm.state.value.childInvite
+            vm.state.value.offer
                 ?.notice,
         )
     }
@@ -120,9 +120,9 @@ class PeopleViewModelTest {
         gym.family.link(SASHA, IVAN_MEMBER)
         val vm = viewModel().also { it.addChild() }
 
-        vm.closeChildInvite()
+        vm.closeOffer()
 
-        assertNull(vm.state.value.childInvite)
+        assertNull(vm.state.value.offer)
         assertEquals(listOf(SASHA), vm.state.value.children)
     }
 
@@ -134,17 +134,17 @@ class PeopleViewModelTest {
         vm.type("papa 2345")
         assertEquals(
             "PAPA2345",
-            vm.state.value.guardianEntry
+            vm.state.value.entry
                 ?.code,
         )
         assertTrue(
-            vm.state.value.guardianEntry
+            vm.state.value.entry
                 ?.canAdd == true,
         )
 
         vm.type("pap")
         assertFalse(
-            vm.state.value.guardianEntry
+            vm.state.value.entry
                 ?.canAdd == true,
         )
     }
@@ -156,10 +156,10 @@ class PeopleViewModelTest {
 
         vm.addGuardian()
         vm.type("PAPA2345")
-        vm.linkGuardian()
+        vm.link()
 
         assertEquals(listOf(PAPA), vm.state.value.guardians)
-        assertNull(vm.state.value.guardianEntry)
+        assertNull(vm.state.value.entry)
         assertEquals(listOf(IVAN_MEMBER.userId to PAPA.userId), gym.family.links)
     }
 
@@ -169,11 +169,11 @@ class PeopleViewModelTest {
 
         vm.addGuardian()
         vm.type("ZZZZ2345")
-        vm.linkGuardian()
+        vm.link()
 
         assertEquals(
             "Код не найден или устарел",
-            vm.state.value.guardianEntry
+            vm.state.value.entry
                 ?.error,
         )
     }
@@ -185,11 +185,11 @@ class PeopleViewModelTest {
 
         vm.addGuardian()
         vm.type("PAPA2345")
-        vm.linkGuardian()
+        vm.link()
 
         assertEquals(
             "Это ваш собственный код",
-            vm.state.value.guardianEntry
+            vm.state.value.entry
                 ?.error,
         )
         assertTrue(gym.family.links.isEmpty())
@@ -203,11 +203,11 @@ class PeopleViewModelTest {
 
         vm.addGuardian()
         vm.type("PAPA2345")
-        vm.linkGuardian()
+        vm.link()
 
         assertEquals(
             "Нет связи с сервером",
-            vm.state.value.guardianEntry
+            vm.state.value.entry
                 ?.error,
         )
         assertTrue(gym.family.links.isEmpty())
@@ -219,9 +219,9 @@ class PeopleViewModelTest {
 
         vm.addGuardian()
         vm.type("PAPA2345")
-        vm.closeGuardianEntry()
+        vm.closeEntry()
 
-        assertNull(vm.state.value.guardianEntry)
+        assertNull(vm.state.value.entry)
         assertTrue(gym.family.links.isEmpty())
     }
 
@@ -230,8 +230,8 @@ class PeopleViewModelTest {
         gym.family.link(SASHA, IVAN_MEMBER)
         val vm = viewModel()
 
-        vm.askToRemove(SASHA)
-        assertEquals(SASHA, vm.state.value.removing)
+        vm.askToRemove(SASHA, Relation.Child)
+        assertEquals(Removal(SASHA, Relation.Child), vm.state.value.removing)
         assertEquals(1, gym.family.links.size)
 
         vm.confirmRemove()
@@ -246,7 +246,7 @@ class PeopleViewModelTest {
         gym.family.link(IVAN_MEMBER, PAPA)
         val vm = viewModel()
 
-        vm.askToRemove(PAPA)
+        vm.askToRemove(PAPA, Relation.Guardian)
         vm.confirmRemove()
 
         assertTrue(gym.family.links.isEmpty())
@@ -259,7 +259,7 @@ class PeopleViewModelTest {
         val vm = viewModel()
         gym.family.offline = true
 
-        vm.askToRemove(SASHA)
+        vm.askToRemove(SASHA, Relation.Child)
         vm.confirmRemove()
 
         assertEquals(1, gym.family.links.size)
@@ -271,7 +271,7 @@ class PeopleViewModelTest {
         gym.family.link(SASHA, IVAN_MEMBER)
         val vm = viewModel()
 
-        vm.askToRemove(SASHA)
+        vm.askToRemove(SASHA, Relation.Child)
         vm.cancelRemove()
 
         assertNull(vm.state.value.removing)
@@ -292,8 +292,108 @@ class PeopleViewModelTest {
 
         assertEquals(emptyList(), vm.state.value.children)
         assertEquals(emptyList(), vm.state.value.guardians)
-        assertNull(vm.state.value.childInvite)
-        assertNull(vm.state.value.guardianEntry)
+        assertNull(vm.state.value.offer)
+        assertNull(vm.state.value.entry)
+    }
+
+    @Test
+    fun the_screen_lists_the_account_s_trainers_and_trainees() {
+        gym.family.coach(SASHA, IVAN_MEMBER)
+        gym.family.coach(IVAN_MEMBER, PAPA)
+
+        val state = viewModel().state.value
+
+        assertEquals(listOf(SASHA), state.trainees)
+        assertEquals(listOf(PAPA), state.trainers)
+        assertEquals(emptyList(), state.children)
+    }
+
+    @Test
+    fun adding_a_trainee_shows_a_trainer_code_with_its_link() {
+        val vm = viewModel()
+
+        vm.addTrainee()
+
+        val offer = assertNotNull(vm.state.value.offer)
+        assertEquals(
+            CodeOffer(
+                LinkKind.Coaching,
+                "TREN2345",
+                "https://example.test/kachalochka/?trainer=TREN2345",
+            ),
+            offer,
+        )
+        assertEquals(IVAN_MEMBER.userId, gym.family.trainerCodes["TREN2345"])
+    }
+
+    @Test
+    fun sharing_a_trainer_code_asks_to_be_added_as_trainer() {
+        val vm = viewModel().also { it.addTrainee() }
+
+        vm.share()
+
+        assertEquals(
+            "Добавь меня тренером в Качалочке",
+            gym.invites.shared
+                .single()
+                .call,
+        )
+    }
+
+    @Test
+    fun a_trainer_s_code_links_the_account_as_a_trainee() {
+        gym.family.offeredCoaching("TREN2345", PAPA)
+        val vm = viewModel()
+
+        vm.addTrainer()
+        vm.type("tren 2345")
+        vm.link()
+
+        assertEquals(listOf(PAPA), vm.state.value.trainers)
+        assertEquals(listOf(IVAN_MEMBER.userId to PAPA.userId), gym.family.coaching)
+        assertTrue(gym.family.links.isEmpty())
+        assertNull(vm.state.value.entry)
+    }
+
+    @Test
+    fun a_parent_s_code_is_no_trainer_s_code() {
+        gym.family.offered("PAPA2345", PAPA)
+        val vm = viewModel()
+
+        vm.addTrainer()
+        vm.type("PAPA2345")
+        vm.link()
+
+        assertEquals(
+            "Код не найден или устарел",
+            vm.state.value.entry
+                ?.error,
+        )
+    }
+
+    @Test
+    fun removing_a_trainee_ends_only_the_coaching() {
+        gym.family.coach(SASHA, IVAN_MEMBER)
+        gym.family.link(SASHA, IVAN_MEMBER)
+        val vm = viewModel()
+
+        vm.askToRemove(SASHA, Relation.Trainee)
+        vm.confirmRemove()
+
+        assertTrue(gym.family.coaching.isEmpty())
+        assertEquals(1, gym.family.links.size)
+    }
+
+    @Test
+    fun removing_a_trainer_ends_the_coaching() {
+        gym.family.coach(IVAN_MEMBER, PAPA)
+        val vm = viewModel()
+
+        vm.askToRemove(PAPA, Relation.Trainer)
+        vm.confirmRemove()
+
+        assertTrue(gym.family.coaching.isEmpty())
+        assertEquals(emptyList(), vm.state.value.trainers)
     }
 
     @Test
@@ -316,7 +416,7 @@ class PeopleViewModelTest {
         gym.family.link(SASHA, IVAN_MEMBER)
         val vm = viewModel()
 
-        vm.askToRemove(SASHA)
+        vm.askToRemove(SASHA, Relation.Child)
         vm.confirmRemove()
 
         assertTrue(
@@ -334,14 +434,14 @@ class PeopleViewModelTest {
         CoroutineScope(Dispatchers.Unconfined).launch {
             gym.follower.followThen { passing.await() }
         }
-        vm.askToRemove(SASHA)
+        vm.askToRemove(SASHA, Relation.Child)
         vm.confirmRemove()
 
         vm.addChild()
 
         assertEquals(
             "PAPA2345",
-            vm.state.value.childInvite
+            vm.state.value.offer
                 ?.code,
         )
         passing.complete(Unit)

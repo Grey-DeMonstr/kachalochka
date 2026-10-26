@@ -4,6 +4,7 @@ import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.family.SupabaseFamilyRepository
 import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
+import monster.greyde.kachalochka.core.data.friends.TraineeFriends
 import monster.greyde.kachalochka.core.data.gym.NoPhotoFiles
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
 import monster.greyde.kachalochka.core.data.gym.RemoteMachineLinkRepository
@@ -15,6 +16,7 @@ import monster.greyde.kachalochka.core.data.gym.RemoteWorkoutSetRepository
 import monster.greyde.kachalochka.core.data.gym.StoragePhotoImages
 import monster.greyde.kachalochka.core.data.identity.AccountServer
 import monster.greyde.kachalochka.core.data.identity.AccountStorage
+import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.LocalStorageAccountStorage
 import monster.greyde.kachalochka.core.data.identity.NoOwnedRowsPurge
 import monster.greyde.kachalochka.core.data.identity.NoOwnerlessRows
@@ -55,7 +57,12 @@ actual fun corePlatformModule(): Module =
             StoragePhotoImages(inject(), NoPhotoFiles, { false }, Dispatchers.Default)
         }
         single<MeasurementRepository> { RemoteMeasurementRepository(get()) }
-        single<FriendsRepository> { SupabaseFriendsRepository(inject(), Clock.System) }
+        single<FriendsRepository> {
+            val store: AccountStore = get()
+            TraineeFriends(
+                SupabaseFriendsRepository(inject(), Clock.System),
+            ) { store.accounts.value }
+        }
         single<FamilyRepository> { SupabaseFamilyRepository(inject()) }
         single<AccountStorage> { LocalStorageAccountStorage() }
         single<OwnerlessRows> { NoOwnerlessRows }

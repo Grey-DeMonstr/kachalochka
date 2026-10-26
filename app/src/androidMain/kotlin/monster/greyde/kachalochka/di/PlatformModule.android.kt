@@ -25,6 +25,7 @@ import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.calendar.DataStoreVisitsModePreference
 import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
+import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
@@ -119,6 +120,7 @@ actual fun platformModule(): Module =
         }
         single<JoinCodeStore> { InMemoryJoinCodeStore() }
         single<JoinCodeStore>(named(PARENT_CODE)) { InMemoryJoinCodeStore() }
+        single<JoinCodeStore>(named(TRAINER_CODE)) { InMemoryJoinCodeStore() }
         single<PhotoCapture> { SystemPhotoCapture(androidContext()) }
         single<PageFooter> { PageFooter {} }
         single<SystemBars> {

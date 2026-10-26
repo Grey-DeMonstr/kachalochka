@@ -32,6 +32,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInFailure
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.Rule
@@ -59,12 +60,17 @@ fun HomeScreen(
     val signInAvailable: SignInAvailable = koinInject()
     val signedIn = accounts.activeId != null
     val managed = accounts.managedActive
+    val traineeActive = traineeActive()
     LaunchedEffect(Unit) { viewModel.refresh() }
     val s = strings()
     Screen(s.appName, onBack = null, onOpenSettings = onOpenSettings) {
         val current = state ?: return@Screen
         Box(Modifier.padding(16.dp)) {
-            TodayCard(current.today, onOpen = { onOpenVisit(current.today.day) })
+            // A trainer opens a trainee's visits from the calendar, where nothing starts one.
+            TodayCard(
+                current.today,
+                onOpen = { onOpenVisit(current.today.day) }.takeUnless { traineeActive },
+            )
         }
         SectionRow(
             PhosphorIcons.CalendarBlank,
@@ -132,7 +138,7 @@ fun HomeScreen(
 @Composable
 private fun TodayCard(
     today: TodayUi,
-    onOpen: () -> Unit,
+    onOpen: (() -> Unit)?,
 ) {
     val colors = MaterialTheme.colorScheme
     val s = strings()
@@ -152,12 +158,14 @@ private fun TodayCard(
             fontSize = 16.sp,
             color = colors.onBackground,
         )
-        AccentButton(
-            if (today.started) s.continueVisit else s.startVisit,
-            if (today.started) PhosphorIcons.ArrowRight else PhosphorIcons.Plus,
-            onOpen,
-            Modifier.testTag("open-today"),
-        )
+        onOpen?.let {
+            AccentButton(
+                if (today.started) s.continueVisit else s.startVisit,
+                if (today.started) PhosphorIcons.ArrowRight else PhosphorIcons.Plus,
+                it,
+                Modifier.testTag("open-today"),
+            )
+        }
     }
 }
 

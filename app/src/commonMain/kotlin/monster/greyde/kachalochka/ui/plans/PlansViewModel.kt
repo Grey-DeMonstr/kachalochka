@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.PlanRepository
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.format.planTitle
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
@@ -88,6 +89,8 @@ class PlansViewModel(
         id: PlanId,
         onStarted: (CalendarDay) -> Unit,
     ) {
+        // A started plan is a visit, which a trainer does not record for a trainee.
+        if (accounts.traineeActive()) return
         val plan = shown.firstOrNull { it.id == id } ?: return
         if (plan.pinned) {
             begin(plan, onStarted)
@@ -103,6 +106,7 @@ class PlansViewModel(
     fun confirmStart(onStarted: (CalendarDay) -> Unit) {
         val id = mutableState.value.confirmingStart ?: return
         cancelStart()
+        if (accounts.traineeActive()) return
         shown.firstOrNull { it.id == id }?.let { begin(it, onStarted) }
     }
 

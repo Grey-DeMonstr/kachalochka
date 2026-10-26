@@ -9,9 +9,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class PendingGuardianTest {
+class PendingLinkTest {
     private val gym = signedInGym()
-    private val pending = PendingGuardian(gym.parentCodes, gym.family)
+    private val pending = PendingLink(gym.parentCodes, gym.family::accept)
 
     @Test
     fun nothing_kept_asks_nothing() =
@@ -48,6 +48,18 @@ class PendingGuardianTest {
 
             assertEquals(Acceptance.UnknownCode, pending.consume())
             assertFalse(pending.waiting)
+        }
+
+    @Test
+    fun a_kept_trainer_code_links_the_account_to_the_trainer() =
+        runTest {
+            val trainers = PendingLink(gym.trainerCodes, gym.family::acceptTrainer)
+            gym.family.offeredCoaching("TREN2345", PAPA)
+            gym.trainerCodes.save("TREN2345")
+
+            assertEquals(Acceptance.Linked(PAPA.userId), trainers.consume())
+            assertEquals(listOf(IVAN_MEMBER.userId to PAPA.userId), gym.family.coaching)
+            assertTrue(gym.family.links.isEmpty())
         }
 
     @Test

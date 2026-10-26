@@ -129,7 +129,11 @@ private fun AccountRow(
             Column {
                 Text(account.displayName, color = colors.onSurface)
                 Text(
-                    if (account.managed) strings().childAccount else account.email,
+                    when {
+                        account.trainee -> strings().traineeAccount
+                        account.managed -> strings().childAccount
+                        else -> account.email
+                    },
                     fontSize = 13.sp,
                     color = colors.onSurface.copy(alpha = 0.6f),
                 )

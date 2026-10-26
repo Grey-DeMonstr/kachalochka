@@ -355,18 +355,46 @@ object EnStrings : Strings {
     override val copyText = "Copy"
 
     override val people = "People"
-    override val noPeople = "No children or parents yet"
-    override val childrenAndGuardians = "Children and parents"
+    override val noPeople = "Nobody here yet"
+    override val peopleRow = "Trainer, trainees, family"
 
     override fun childrenCount(n: Int) = "$n ${if (n == 1) "child" else "children"}"
 
     override fun guardiansCount(n: Int) = "$n ${if (n == 1) "parent" else "parents"}"
 
+    override fun trainersCount(n: Int) = "$n ${if (n == 1) "trainer" else "trainers"}"
+
+    override fun traineesCount(n: Int) = "$n ${if (n == 1) "trainee" else "trainees"}"
+
     override val whomToAdd = "Whom to add?"
     override val addChildChoice = "A child"
-    override val addChildChoiceHint = "A child's account in your care"
     override val addGuardianChoice = "A parent"
-    override val addGuardianChoiceHint = "An adult who looks after you"
+    override val addTrainerChoice = "A trainer"
+    override val addTraineeChoice = "A trainee"
+    override val trainers = "Trainer"
+    override val trainees = "Trainees"
+    override val addTrainee = "Add a trainee"
+
+    override fun traineeCode(code: String) = "Code for your trainee: $code"
+
+    override val traineeCodeHint =
+        "Your trainee enters this code on their own device: Settings → People → Add → A " +
+            "trainer. It works once, within a day."
+    override val trainerInviteMessage = "Add me as your trainer in Kachalochka"
+    override val addTrainer = "Add a trainer"
+    override val trainerCode = "Code from your trainer"
+    override val trainerRights =
+        "A trainer sees your machines with their photos, visits and plans, makes plans for you " +
+            "and adds machines, but never sees your profile, measurements or groups."
+    override val removeTrainerTitle = "Remove the trainer?"
+    override val removeTrainerText =
+        "The trainer will no longer see your workouts or make plans for you."
+    override val removeTraineeTitle = "Remove the trainee?"
+    override val removeTraineeText =
+        "You will no longer see the trainee's workouts or make plans for them, and their " +
+            "records leave this device."
+    override val trainerInviteTitle = "Add a trainer from the invitation?"
+    override val traineeAccount = "Trainee"
     override val children = "Children"
     override val addChild = "Add a child"
 

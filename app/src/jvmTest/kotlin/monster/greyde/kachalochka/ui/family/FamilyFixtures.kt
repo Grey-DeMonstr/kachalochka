@@ -31,3 +31,14 @@ internal fun childAccount(
     child.displayName,
     kind = AccountKind.Managed(guardian.account.userId),
 )
+
+/** [trainee] as a managed account [trainer] coaches. */
+internal fun traineeAccount(
+    trainee: FamilyMember,
+    trainer: AccountSession,
+) = Account(
+    trainee.userId,
+    "",
+    trainee.displayName,
+    kind = AccountKind.Managed(trainer.account.userId, trainee = true),
+)

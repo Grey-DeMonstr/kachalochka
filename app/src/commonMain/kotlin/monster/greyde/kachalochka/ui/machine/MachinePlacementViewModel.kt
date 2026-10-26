@@ -11,6 +11,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.plans.PlanChoiceUi
 import monster.greyde.kachalochka.ui.strings.AppStrings
@@ -100,6 +101,8 @@ class MachinePlacementViewModel(
         onStoodIn: () -> Unit = {},
         onOpen: (CalendarDay) -> Unit,
     ) {
+        // Today's visit is the trainee's to record, not their trainer's.
+        if (accounts.traineeActive()) return
         val owner = accounts.activeId.value
         writes.launch {
             val own = standIn(owner, machine, onStoodIn) ?: return@launch

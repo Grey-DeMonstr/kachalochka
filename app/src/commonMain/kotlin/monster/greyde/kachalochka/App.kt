@@ -20,7 +20,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.coroutines.launch
-import monster.greyde.kachalochka.core.domain.family.Acceptance
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -60,10 +59,10 @@ import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.SignInRequired
 import monster.greyde.kachalochka.ui.account.SignInScreen
 import monster.greyde.kachalochka.ui.calendar.CalendarScreen
-import monster.greyde.kachalochka.ui.family.GuardianInviteDialog
-import monster.greyde.kachalochka.ui.family.GuardianProblemDialog
-import monster.greyde.kachalochka.ui.family.PendingGuardian
+import monster.greyde.kachalochka.ui.family.PARENT_CODE
+import monster.greyde.kachalochka.ui.family.PendingLinkPrompt
 import monster.greyde.kachalochka.ui.family.PeopleScreen
+import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.friends.FriendCalendarScreen
 import monster.greyde.kachalochka.ui.friends.FriendVisitScreen
 import monster.greyde.kachalochka.ui.friends.GroupScreen
@@ -101,6 +100,7 @@ import monster.greyde.kachalochka.ui.theme.resolvesToDark
 import monster.greyde.kachalochka.ui.visit.VisitScreen
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.qualifier.named
 
 /** The saved-state key a visit or a plan reads a picked machine from. */
 const val PICKED_MACHINE = "pickedMachine"
@@ -552,6 +552,9 @@ fun App() {
                 }
             }
             // Close the screens a managed child may not use.
+            LaunchedEffect(accounts.traineeActive) {
+                if (accounts.traineeActive) navController.leaveTraineeHidden()
+            }
             LaunchedEffect(accounts.managedActive) {
                 if (accounts.managedActive) navController.leaveChildHidden()
             }
@@ -585,42 +588,35 @@ fun App() {
                 )
             }
             if (inviteMissing) InviteMissingDialog(onDismiss = { inviteMissing = false })
-            val pendingGuardian: PendingGuardian = koinInject()
-            var guardianOffered by remember { mutableStateOf(false) }
-            var guardianProblem by remember { mutableStateOf<String?>(null) }
-            // A parent's code kept while signed out goes to whichever account signs in next.
-            LaunchedEffect(accounts.activeId, accounts.managedActive) {
-                guardianOffered =
-                    accounts.activeId != null &&
-                    !accounts.managedActive &&
-                    pendingGuardian.waiting
-            }
-            if (guardianOffered) {
-                GuardianInviteDialog(
-                    onAccept = {
-                        guardianOffered = false
-                        scope.launch {
-                            when (pendingGuardian.consume()) {
-                                is Acceptance.Linked -> navController.navigate(PeopleRoute)
-                                Acceptance.UnknownCode ->
-                                    guardianProblem = AppStrings.current.guardianCodeUnknown
-                                Acceptance.OwnCode ->
-                                    guardianProblem = AppStrings.current.ownGuardianCode
-                                null -> Unit
-                            }
-                        }
-                    },
-                    onCancel = {
-                        guardianOffered = false
-                        pendingGuardian.decline()
-                    },
-                )
-            }
-            guardianProblem?.let {
-                GuardianProblemDialog(it, onDismiss = { guardianProblem = null })
-            }
+            // A code kept while signed out goes to whichever account signs in next.
+            val ready = accounts.activeId != null && !accounts.managedActive
+            PendingLinkPrompt(
+                koinInject(named(PARENT_CODE)),
+                accounts.activeId,
+                ready,
+                strings().guardianInviteTitle,
+                strings().guardianRights,
+                "guardian-invite",
+                onLinked = { navController.navigate(PeopleRoute) },
+            )
+            PendingLinkPrompt(
+                koinInject(named(TRAINER_CODE)),
+                accounts.activeId,
+                ready,
+                strings().trainerInviteTitle,
+                strings().trainerRights,
+                "trainer-invite",
+                onLinked = { navController.navigate(PeopleRoute) },
+            )
         }
     }
+}
+
+/** Closes the screens that change a machine, which a trainer may not do to a trainee's. */
+private fun NavController.leaveTraineeHidden() {
+    popBackStack<MachineFormRoute>(inclusive = true)
+    popBackStack<LinkChooserRoute>(inclusive = true)
+    popBackStack<MineChooserRoute>(inclusive = true)
 }
 
 /** Closes every screen a managed child has no business on, with whatever was opened from it. */

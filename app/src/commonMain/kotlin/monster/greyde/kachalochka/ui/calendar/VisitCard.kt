@@ -44,12 +44,12 @@ import monster.greyde.kachalochka.ui.theme.gainColor
 
 private const val SHOWN_MACHINES = 3
 
-/** What the own card's menu does with its visit. */
+/** What the own card's menu does with its visit; an action left out has no item. */
 internal class VisitMenuActions(
-    val onMove: () -> Unit,
+    val onMove: (() -> Unit)?,
     val onToPlan: () -> Unit,
-    val onRepeatToday: () -> Unit,
-    val onRemove: () -> Unit,
+    val onRepeatToday: (() -> Unit)?,
+    val onRemove: (() -> Unit)?,
 )
 
 /** A visit as the calendar and the feed draw it; [menu] is given on an own card that is editable. */
@@ -236,23 +236,27 @@ private fun VisitMenu(
             )
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            MenuItem(strings().move, PhosphorIcons.CalendarBlank, "move-visit-$id") {
-                open = false
-                actions.onMove()
+            actions.onMove?.let { move ->
+                MenuItem(strings().move, PhosphorIcons.CalendarBlank, "move-visit-$id") {
+                    open = false
+                    move()
+                }
             }
             MenuItem(strings().toPlan, PhosphorIcons.ListChecks, "save-as-plan-$id") {
                 open = false
                 actions.onToPlan()
             }
-            if (visit.canRepeatToday) {
+            actions.onRepeatToday?.takeIf { visit.canRepeatToday }?.let { repeat ->
                 MenuItem(strings().repeatToday, PhosphorIcons.ArrowClockwise, "repeat-today-$id") {
                     open = false
-                    actions.onRepeatToday()
+                    repeat()
                 }
             }
-            MenuItem(strings().delete, PhosphorIcons.Trash, "remove-visit-$id") {
-                open = false
-                actions.onRemove()
+            actions.onRemove?.let { remove ->
+                MenuItem(strings().delete, PhosphorIcons.Trash, "remove-visit-$id") {
+                    open = false
+                    remove()
+                }
             }
         }
     }

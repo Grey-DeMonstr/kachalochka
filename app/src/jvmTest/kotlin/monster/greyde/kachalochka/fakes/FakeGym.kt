@@ -520,6 +520,7 @@ class FakeGym(
     val systemBars = RecordingSystemBars()
     val joinCodes = InMemoryJoinCodeStore()
     val parentCodes = InMemoryJoinCodeStore()
+    val trainerCodes = InMemoryJoinCodeStore()
     val accountServer = RecordingAccountServer()
     val deletion = AccountDeletion(accountServer, {}, accounts)
     val today: CalendarDay get() = CalendarDay.of(clock.current, utcOffset.at(clock.current))

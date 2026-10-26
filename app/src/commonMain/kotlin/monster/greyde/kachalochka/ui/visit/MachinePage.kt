@@ -109,7 +109,7 @@ internal fun MachinePage(
             MachineMenu(
                 onToPlan = { placement.choosePlan(placed) },
                 onToday =
-                    if (canPlanToday) {
+                    if (canPlanToday && !page.readOnly) {
                         { placement.planToday(placed, onOpen = onOpenVisit) }
                     } else {
                         null
@@ -134,7 +134,7 @@ internal fun MachinePage(
                         PhosphorIcons.Barbell,
                         Modifier.testTag("page-thumb"),
                         size = 64.dp,
-                        onOpenSettings = onOpenMachineSettings,
+                        onOpenSettings = onOpenMachineSettings.takeUnless { page.readOnly },
                     )
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
@@ -203,7 +203,7 @@ internal fun MachinePage(
                     page.sets.forEach { row ->
                         SetRow(
                             row,
-                            onEdit = viewModel::editSet,
+                            onEdit = (viewModel::editSet).takeUnless { page.readOnly },
                             Modifier
                                 .clip(ControlShape)
                                 .background(colors.onBackground.copy(alpha = 0.04f)),
@@ -211,12 +211,14 @@ internal fun MachinePage(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlineButton(
-                        strings().add,
-                        PhosphorIcons.Plus,
-                        viewModel::openForm,
-                        Modifier.weight(1f).testTag("add-set"),
-                    )
+                    if (!page.readOnly) {
+                        OutlineButton(
+                            strings().add,
+                            PhosphorIcons.Plus,
+                            viewModel::openForm,
+                            Modifier.weight(1f).testTag("add-set"),
+                        )
+                    }
                     if (page.canUnplan) {
                         OutlineButton(
                             strings().unplan,

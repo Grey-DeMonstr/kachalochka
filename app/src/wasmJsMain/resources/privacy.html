@@ -49,14 +49,15 @@
     <p class="meta">
         App: Kachalochka (<code>monster.greyde.kachalochka</code>) for Android and the web<br>
         Provided by Sergei Ivanov, an individual developer (“we”, “us”)<br>
-        Effective date: <time datetime="2026-10-05">5 October 2026</time>
+        Effective date: <time datetime="2026-10-26">26 October 2026</time>
     </p>
 
     <h2>Summary</h2>
     <p>
         Kachalochka keeps a log of your gym workouts and body measures. When you sign in, we
         store them so they sync between your devices, and show your workouts, never your
-        measures, to the members of groups you join and to a parent you link as your guardian.
+        measures, to the members of groups you join, to a parent you link as your guardian and
+        to a trainer you link.
         We use your data only to provide that service.
     </p>
     <p>
@@ -95,9 +96,9 @@
             Google name if you set none.
         </li>
         <li>
-            <strong>Guardian links:</strong> whom you link as a guardian, or who links you, and
-            when, and the one-time codes that make a link until they are used or expire a day
-            later.
+            <strong>Guardian and trainer links:</strong> whom you link as a guardian or a
+            trainer, or who links you, and when, and the one-time codes that make a link until
+            they are used or expire a day later.
         </li>
         <li>
             <strong>Technical data:</strong> the sign-in tokens that keep you signed in, and
@@ -127,19 +128,30 @@
         You see your own data. When you join a group, its members see your nickname, your
         visits, your machines with their photos and how your machines are linked to theirs,
         read-only; they never see your body measures or your profile details, and nobody but
-        you, or a guardian you link, can change your data. Leaving a group, or its owner
-        deleting it, stops the sharing. There is no public profile, and nothing is shared
-        outside the groups you join and a guardian you link.
+        you, a guardian you link, or a trainer you link, as described below, can change your
+        data. Leaving a group, or its owner deleting it, stops the sharing. There is no public
+        profile, and nothing is shared outside the groups you join and the guardians and
+        trainers you link.
     </p>
     <p>
-        If you enter a parent’s code in “Родители” (Parents), that person becomes your guardian
+        If you enter a parent’s code in “Люди” (People), that person becomes your guardian
         in the app: they can see and record your visits, sets, machines with their photos and
         links, and plans, as your own account does. They see your nickname and picture, as
         group members do, but never your body measures, the rest of your profile or your
         groups. A code works once, within a day, and links only the account that enters it.
-        You or the guardian can end the link at any time, in “Родители” or “Дети” (Children).
+        You or the guardian can end the link at any time, in “Люди” (People).
         What the guardian recorded stays in your account, and your account’s rows are removed
         from the guardian’s devices.
+    </p>
+    <p>
+        If you enter a trainer’s code in “Люди” (People), or agree to a trainer’s invitation
+        link, that person becomes your trainer in the app: they can see your visits, sets,
+        machines with their photos, and plans; they can make and change your plans and add
+        machines for you, but never record visits or sets. They see your nickname and picture,
+        as group members do, but never your body measures, the rest of your profile, your groups
+        or how your machines are linked to friends’. A code works once, within a day. You or the
+        trainer can end the link at any time, in “Люди” (People); your account’s rows are then
+        removed from the trainer’s devices.
     </p>
     <p>
         When you share a visit as text, the app hands it, headed by your nickname, to the app or
@@ -187,8 +199,9 @@
             To delete your account and all the data tied to it, choose “Удалить аккаунт” (Delete
             account) in the app’s settings, on Android or on the web. Your photos, your account
             and everything recorded under it are deleted from our servers at once, and on
-            Android from that device too. Deleting an account also ends its guardian links, and its
-            rows leave the guardian’s devices on their next sync. If you can no longer sign in,
+            Android from that device too. Deleting an account also ends its guardian and trainer
+            links, and its rows leave the guardian’s and the trainer’s devices on their next sync.
+            If you can no longer sign in,
             <a href="https://github.com/Grey-DeMonstr/kachalochka/issues/new">open an issue</a>
             asking for deletion. Do not put your e-mail address or any other personal data in
             the issue: we reply there and confirm the account with you privately before
@@ -205,7 +218,7 @@
     <p>
         Every request between the app and our backend is encrypted with HTTPS. Row-level
         security in the database lets an account read only its own data, that of the groups it
-        belongs to and that of the accounts it is the guardian of.
+        belongs to and that of the accounts it is the guardian or the trainer of.
     </p>
 
     <h2>Permissions</h2>

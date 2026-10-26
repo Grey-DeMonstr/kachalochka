@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.db.kachalochkaDatabase
 import monster.greyde.kachalochka.core.data.family.SupabaseFamilyRepository
 import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
+import monster.greyde.kachalochka.core.data.friends.TraineeFriends
 import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
 import monster.greyde.kachalochka.core.data.gym.LocalMachineRepository
 import monster.greyde.kachalochka.core.data.gym.LocalPhotoRepository
@@ -85,7 +86,12 @@ internal fun sqlModule(): Module =
         single { SyncPass(get(), get(), get(), get(), get(), get(), Dispatchers.IO) }
         single(ACTIVE_ACCOUNT_CLIENT) { activeAccountSupabaseClient(get(), get(), get()) }
         single<FriendsRepository> {
-            SupabaseFriendsRepository(inject(ACTIVE_ACCOUNT_CLIENT), Clock.System)
+            val store: AccountStore = get()
+            TraineeFriends(
+                SupabaseFriendsRepository(inject(ACTIVE_ACCOUNT_CLIENT), Clock.System),
+            ) {
+                store.accounts.value
+            }
         }
         single<FamilyRepository> { SupabaseFamilyRepository(inject(ACTIVE_ACCOUNT_CLIENT)) }
         single<OwnedRowsPurge> { SqlOwnedRowsPurge(get(), get(), Dispatchers.IO) }

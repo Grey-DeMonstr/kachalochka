@@ -55,10 +55,12 @@ data class ProfileCardUi(
     val weightUnit: PreferredWeightUnit = PreferredWeightUnit.Kg,
 )
 
-/** How many children and parents the account has, null until read or while offline. */
+/** How many people the account is linked to, each null until read or while offline. */
 data class PeopleUi(
     val children: Int?,
     val guardians: Int?,
+    val trainers: Int? = null,
+    val trainees: Int? = null,
 )
 
 /** What the hub leads to; each part is null where the active account has no such screen. */
@@ -140,8 +142,14 @@ class SettingsViewModel(
         if (account == null) return
         val people =
             catching { family.family() }
-                .map { PeopleUi(it.children.size, it.guardians.size) }
-                .getOrDefault(PeopleUi(null, null))
+                .map {
+                    PeopleUi(
+                        it.children.size,
+                        it.guardians.size,
+                        it.trainers.size,
+                        it.trainees.size,
+                    )
+                }.getOrDefault(PeopleUi(null, null))
         // Another account may have become active while the server answered.
         if (currentUser.id() == owner) mutableHub.update { it.copy(people = people) }
     }

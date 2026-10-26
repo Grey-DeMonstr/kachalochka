@@ -111,11 +111,13 @@ class LegalPagesTest {
     fun privacyPolicySetsTheAgeAndExplainsGuardianLinks() {
         val html = page("privacy.html")
         assertTrue("for people aged 13 and over" in html)
-        assertTrue("<strong>Guardian links:</strong>" in html)
+        assertTrue("<strong>Guardian and trainer links:</strong>" in html)
         assertTrue("They see your nickname and picture, as group members do" in html)
         assertTrue("never your body measures, the rest of your profile or your groups" in html)
         assertTrue("You or the guardian can end the link at any time" in html)
-        assertTrue("nobody but you, or a guardian you link, can change your data" in html)
+        assertTrue("you, a guardian you link, or a trainer you link, as described below" in html)
+        assertTrue("but never record visits or sets" in html)
+        assertTrue("You or the trainer can end the link at any time" in html)
         assertTrue("your account’s rows are removed from the guardian’s devices" in html)
         assertTrue("and your workout plans" in html)
         assertFalse("not directed at children under 13" in html)
@@ -126,6 +128,7 @@ class LegalPagesTest {
         val html = page("terms.html")
         assertTrue("for people aged 13 and over" in html)
         assertTrue("A guardian you link by entering their code" in html)
+        assertTrue("A trainer you link by entering their code" in html)
         assertTrue("members of the groups you join and to a guardian you link" in html)
         assertTrue("what your groups and your guardian links show you" in html)
     }

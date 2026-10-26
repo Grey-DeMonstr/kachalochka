@@ -36,6 +36,7 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.accountAvatar
 import monster.greyde.kachalochka.ui.account.preferredUnit
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.weekdayDate
@@ -143,7 +144,9 @@ class VisitFeedViewModel(
         paging = viewModelScope.launch { page(key) }
     }
 
+    // A trainer deletes and repeats none of a trainee's visits.
     fun askToRemove(id: VisitId) {
+        if (accounts.traineeActive()) return
         removing = own.firstOrNull { it.id == id } ?: return
         publish()
     }
@@ -171,6 +174,7 @@ class VisitFeedViewModel(
         day: CalendarDay,
         onDone: (CalendarDay) -> Unit,
     ) {
+        if (accounts.traineeActive()) return
         val active = accounts.activeId.value
         writes.launch { placement.repeatToday(active, day)?.let(onDone) }
     }

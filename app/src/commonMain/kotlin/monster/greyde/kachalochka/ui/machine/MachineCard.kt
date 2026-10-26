@@ -38,7 +38,7 @@ fun MachineCard(
     tag: String,
     /** Given, a link button at the title's end hands on the card's suggestion. */
     onSuggestion: ((String) -> Unit)? = null,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
 ) {
     val colors = MaterialTheme.colorScheme
     val id = card.id.value
@@ -46,7 +46,7 @@ fun MachineCard(
         Row(
             Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
+                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
                 .alpha(if (card.inVisit) DISABLED_ALPHA else 1f)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
                 .testTag(tag),

@@ -30,6 +30,7 @@ private data class StoredManaged(
     val guardianId: String,
     val pictureUrl: String? = null,
     val avatarPhoto: String? = null,
+    val trainee: Boolean = false,
 )
 
 @Serializable
@@ -227,7 +228,11 @@ class PersistedAccountStore(
             "",
             stored.displayName,
             stored.pictureUrl,
-            AccountKind.Managed(UserId(stored.guardianId), stored.avatarPhoto?.let(::PhotoId)),
+            AccountKind.Managed(
+                UserId(stored.guardianId),
+                stored.avatarPhoto?.let(::PhotoId),
+                stored.trainee,
+            ),
         )
 
     private fun toStoredManaged(account: Account) =
@@ -237,5 +242,6 @@ class PersistedAccountStore(
             checkNotNull(account.guardianId).value,
             account.pictureUrl,
             (account.kind as? AccountKind.Managed)?.avatarPhoto?.value,
+            account.isTrainee,
         )
 }

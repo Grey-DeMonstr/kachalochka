@@ -61,6 +61,7 @@ class SupabaseFamilyRepositoryTest {
                     """{"user_id":"${IVAN.value}","relation":"guardian",""" +
                     """"display_name":"Иван","avatar_photo":null,"picture_url":null}]""",
             )
+            engine.answer("[]")
 
             val family = repositoryOn(engine).family()
 
@@ -75,7 +76,88 @@ class SupabaseFamilyRepositoryTest {
                 ),
                 family,
             )
-            assertEquals("my_family", engine.requestHistory.single().function())
+            assertEquals(
+                listOf("my_family", "my_coaching"),
+                engine.requestHistory.map { it.function() },
+            )
+        }
+
+    @Test
+    fun the_family_lists_trainees_and_trainers_apart() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer(
+                """[{"user_id":"${MASHA.value}","relation":"child",""" +
+                    """"display_name":"Маша","avatar_photo":null,"picture_url":null}]""",
+            )
+            engine.answer(
+                """[{"user_id":"${SASHA.value}","relation":"trainee","display_name":"Саша",""" +
+                    """"avatar_photo":null,"picture_url":null},""" +
+                    """{"user_id":"${IVAN.value}","relation":"trainer",""" +
+                    """"display_name":"Иван","avatar_photo":null,"picture_url":null}]""",
+            )
+
+            val family = repositoryOn(engine).family()
+
+            assertEquals(
+                Family(
+                    children = listOf(FamilyMember(MASHA, "Маша")),
+                    guardians = emptyList(),
+                    trainees = listOf(FamilyMember(SASHA, "Саша")),
+                    trainers = listOf(FamilyMember(IVAN, "Иван")),
+                ),
+                family,
+            )
+        }
+
+    @Test
+    fun offering_coaching_answers_the_new_code() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer("\"TREN2345\"")
+
+            assertEquals("TREN2345", repositoryOn(engine).offerCoaching())
+            assertEquals("offer_coaching", engine.requestHistory.single().function())
+        }
+
+    @Test
+    fun a_trainer_s_code_links_and_answers_the_trainer() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer("\"${IVAN.value}\"")
+
+            assertEquals(Acceptance.Linked(IVAN), repositoryOn(engine).acceptTrainer("TREN2345"))
+
+            val request = engine.requestHistory.single()
+            assertEquals("accept_trainer", request.function())
+            assertTrue("\"code\":\"TREN2345\"" in request.bodyText())
+        }
+
+    @Test
+    fun a_trainer_s_unknown_or_own_code_says_so() =
+        runTest {
+            val unknown = MockEngine.Queue()
+            unknown.answer("""{"code":"PT404","message":"unknown"}""", HttpStatusCode.NotFound)
+            val own = MockEngine.Queue()
+            own.answer("""{"code":"P0001","message":"own"}""", HttpStatusCode.BadRequest)
+
+            assertEquals(Acceptance.UnknownCode, repositoryOn(unknown).acceptTrainer("ZZZZ2345"))
+            assertEquals(Acceptance.OwnCode, repositoryOn(own).acceptTrainer("TREN2345"))
+        }
+
+    @Test
+    fun ending_coaching_names_both_sides() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.answer("")
+
+            repositoryOn(engine).endCoaching(SASHA, IVAN)
+
+            val request = engine.requestHistory.single()
+            assertEquals("end_coaching", request.function())
+            val body = request.bodyText()
+            assertTrue("\"trainee\":\"${SASHA.value}\"" in body, body)
+            assertTrue("\"trainer\":\"${IVAN.value}\"" in body, body)
         }
 
     @Test

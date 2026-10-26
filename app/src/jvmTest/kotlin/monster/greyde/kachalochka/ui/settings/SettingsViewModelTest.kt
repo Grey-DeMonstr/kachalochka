@@ -118,7 +118,10 @@ class SettingsViewModelTest {
             val hub = viewModel().hub.value
 
             assertEquals("Иван@example.test", hub.email)
-            assertEquals(PeopleUi(children = 1, guardians = 1), hub.people)
+            assertEquals(
+                PeopleUi(children = 1, guardians = 1, trainers = 0, trainees = 0),
+                hub.people,
+            )
         }
 
     @Test

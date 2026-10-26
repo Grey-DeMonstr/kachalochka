@@ -373,18 +373,46 @@ object RuStrings : Strings {
     override val copyText = "Скопировать"
 
     override val people = "Люди"
-    override val noPeople = "Детей и родителей пока нет"
-    override val childrenAndGuardians = "Дети и родители"
+    override val noPeople = "Пока никого нет"
+    override val peopleRow = "Тренер, ученики, семья"
 
     override fun childrenCount(n: Int) = "$n ${plural(n, "ребёнок", "ребёнка", "детей")}"
 
     override fun guardiansCount(n: Int) = "$n ${plural(n, "родитель", "родителя", "родителей")}"
 
+    override fun trainersCount(n: Int) = "$n ${plural(n, "тренер", "тренера", "тренеров")}"
+
+    override fun traineesCount(n: Int) = "$n ${plural(n, "ученик", "ученика", "учеников")}"
+
     override val whomToAdd = "Кого добавить?"
     override val addChildChoice = "Ребёнка"
-    override val addChildChoiceHint = "Детский аккаунт под вашим присмотром"
     override val addGuardianChoice = "Родителя"
-    override val addGuardianChoiceHint = "Взрослый, который присматривает за вами"
+    override val addTrainerChoice = "Тренера"
+    override val addTraineeChoice = "Ученика"
+    override val trainers = "Тренер"
+    override val trainees = "Ученики"
+    override val addTrainee = "Добавить ученика"
+
+    override fun traineeCode(code: String) = "Код для ученика: $code"
+
+    override val traineeCodeHint =
+        "Ученик вводит этот код на своём устройстве: Настройки → Люди → Добавить → Тренера. " +
+            "Код работает один раз в течение суток."
+    override val trainerInviteMessage = "Добавь меня тренером в Качалочке"
+    override val addTrainer = "Добавить тренера"
+    override val trainerCode = "Код от тренера"
+    override val trainerRights =
+        "Тренер видит ваши упражнения с фото, визиты и планы, составляет вам планы и " +
+            "добавляет упражнения. Ваш профиль, замеры и группы он не видит."
+    override val removeTrainerTitle = "Убрать тренера?"
+    override val removeTrainerText =
+        "Тренер больше не сможет видеть ваши тренировки и составлять вам планы."
+    override val removeTraineeTitle = "Убрать ученика?"
+    override val removeTraineeText =
+        "Вы больше не сможете видеть тренировки ученика и составлять ему планы, и его записи " +
+            "пропадут с этого устройства."
+    override val trainerInviteTitle = "Добавить тренера по приглашению?"
+    override val traineeAccount = "Ученик"
     override val children = "Дети"
     override val addChild = "Добавить ребёнка"
 

@@ -13,6 +13,35 @@ import kotlin.test.assertNull
 private val IVAN = UserId("11111111-1111-4111-8111-111111111111")
 private val MISHA = UserId("22222222-2222-4222-8222-222222222222")
 
+/** Answers [read] to a family read; nothing else is asked of it. */
+private class FamilyOnly(
+    private val read: suspend () -> Family,
+) : FamilyRepository {
+    override suspend fun family(): Family = read()
+
+    override suspend fun offer(): String = error("unused")
+
+    override suspend fun accept(code: String): Acceptance = error("unused")
+
+    override suspend fun end(
+        child: UserId,
+        guardian: UserId,
+    ) {
+        error("unused")
+    }
+
+    override suspend fun offerCoaching(): String = error("unused")
+
+    override suspend fun acceptTrainer(code: String): Acceptance = error("unused")
+
+    override suspend fun endCoaching(
+        trainee: UserId,
+        trainer: UserId,
+    ) {
+        error("unused")
+    }
+}
+
 class AccountFamilyReadsTest {
     @Test
     fun each_family_is_read_as_its_own_account_and_nobody_after() =
@@ -22,22 +51,9 @@ class AccountFamilyReadsTest {
             val reads =
                 AccountFamilyReads { holder ->
                     acting = holder
-                    object : FamilyRepository {
-                        override suspend fun family(): Family {
-                            askedAs += holder.owner
-                            return Family(emptyList(), emptyList())
-                        }
-
-                        override suspend fun offer(): String = error("unused")
-
-                        override suspend fun accept(code: String): Acceptance = error("unused")
-
-                        override suspend fun end(
-                            child: UserId,
-                            guardian: UserId,
-                        ) {
-                            error("unused")
-                        }
+                    FamilyOnly {
+                        askedAs += holder.owner
+                        Family(emptyList(), emptyList())
                     }
                 }
 
@@ -55,20 +71,7 @@ class AccountFamilyReadsTest {
             val reads =
                 AccountFamilyReads { holder ->
                     acting = holder
-                    object : FamilyRepository {
-                        override suspend fun family(): Family = error("no connection")
-
-                        override suspend fun offer(): String = error("unused")
-
-                        override suspend fun accept(code: String): Acceptance = error("unused")
-
-                        override suspend fun end(
-                            child: UserId,
-                            guardian: UserId,
-                        ) {
-                            error("unused")
-                        }
-                    }
+                    FamilyOnly { error("no connection") }
                 }
 
             assertFailsWith<IllegalStateException> { reads.familyOf(IVAN) }

@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.LiveSession
 import monster.greyde.kachalochka.core.data.identity.OwnedRowsPurge
+import monster.greyde.kachalochka.core.domain.family.Family
 import monster.greyde.kachalochka.core.domain.family.FamilyMember
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
@@ -27,7 +28,7 @@ class FamilyFollower(
 ) {
     private val lock = Mutex()
 
-    /** True when a child joined, left or changed guardian. */
+    /** True when a child or a trainee joined, left, or changed guardian or kind. */
     suspend fun follow(): Boolean = lock.withLock { followLocked() }
 
     /**
@@ -45,28 +46,37 @@ class FamilyFollower(
         val signedIn = listed.filterNot { it.isManaged }
         val signedInIds = signedIn.map { it.userId }.toSet()
         val before = listed.filter { it.isManaged }
-        val children = signedIn.associate { it.userId to childrenOf(it.userId) }
+        val families = signedIn.associate { it.userId to familyOf(it.userId) }
         val after = linkedMapOf<UserId, Account>()
         before
-            .filter { it.guardianId?.let(children::get) == null }
+            .filter { it.guardianId?.let(families::get) == null }
             .forEach { after[it.userId] = it }
-        for (guardian in signedIn) {
-            children[guardian.userId]?.forEach { child ->
-                if (child.userId !in signedInIds && child.userId !in after) {
-                    after[child.userId] = managed(child, guardian.userId)
+        // A child before a trainee: the same person as both acts with a child's rights.
+        for (trainee in listOf(false, true)) {
+            for (guardian in signedIn) {
+                val family = families[guardian.userId] ?: continue
+                for (member in if (trainee) family.trainees else family.children) {
+                    if (member.userId !in signedInIds && member.userId !in after) {
+                        after[member.userId] = managed(member, guardian.userId, trainee)
+                    }
                 }
             }
         }
-        if (children.values.any { it == null }) {
+        if (families.values.any { it == null }) {
             before.filter { it.userId !in after }.forEach { after[it.userId] = it }
         }
+        // A child and a trainee sync different tables, so one who changes kind starts afresh.
+        val rekinded =
+            before.filter { old ->
+                after[old.userId]?.let { it.isTrainee != old.isTrainee } == true
+            }
         // A cancellation between a purge and the store would leave rows no account lists.
         return withContext(NonCancellable) {
             leave(before.filter { it.userId !in after }, signedInIds, after)
+            rekinded.forEach { if (!purged(it.userId)) after[it.userId] = it }
             store.setManaged(after.values.toList())
             keepActingSessionLive()
-            before.map { it.userId to it.guardianId }.toSet() !=
-                after.values.map { it.userId to it.guardianId }.toSet()
+            before.map(::linkOf).toSet() != after.values.map(::linkOf).toSet()
         }
     }
 
@@ -108,18 +118,22 @@ class FamilyFollower(
         return catching { live.activate(session) }.isSuccess
     }
 
-    // Null, unlike an empty list, says nothing about the family.
-    private suspend fun childrenOf(owner: UserId): List<FamilyMember>? =
-        catching { reads.familyOf(owner).children }.getOrNull()
+    private fun linkOf(account: Account) =
+        Triple(account.userId, account.guardianId, account.isTrainee)
+
+    // Null, unlike an empty family, says nothing about the family.
+    private suspend fun familyOf(owner: UserId): Family? =
+        catching { reads.familyOf(owner) }.getOrNull()
 
     private fun managed(
-        child: FamilyMember,
+        member: FamilyMember,
         guardian: UserId,
+        trainee: Boolean,
     ) = Account(
-        child.userId,
+        member.userId,
         "",
-        child.displayName,
-        child.avatar.picture,
-        AccountKind.Managed(guardian, child.avatar.photo),
+        member.displayName,
+        member.avatar.picture,
+        AccountKind.Managed(guardian, member.avatar.photo, trainee),
     )
 }

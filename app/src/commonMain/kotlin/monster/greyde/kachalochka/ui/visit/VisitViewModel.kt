@@ -42,6 +42,7 @@ import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.accountsUi
 import monster.greyde.kachalochka.ui.account.groupByTagChoice
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
@@ -85,6 +86,8 @@ data class VisitUiState(
     val canOrder: Boolean = false,
     val canRepeatToday: Boolean = false,
     val isToday: Boolean = false,
+    /** A trainee's visit, which their trainer only looks at. */
+    val readOnly: Boolean = false,
 )
 
 data class VisitSectionUi(
@@ -137,6 +140,7 @@ data class MachinePageUi(
     val sets: List<SetRowUi>,
     val canUnplan: Boolean,
     val form: SetFormUi?,
+    val readOnly: Boolean = false,
 )
 
 /** The set being added or corrected; [weight] and [reps] are as typed. */
@@ -240,6 +244,7 @@ class VisitViewModel(
 
     /** Plans this visit's machines in today's visit, then reports today. */
     fun repeatToday(onDone: (CalendarDay) -> Unit) {
+        if (readOnly) return
         val owner = accounts.activeId.value
         writes.launch { placement.repeatToday(owner, day)?.let(onDone) }
     }
@@ -276,7 +281,10 @@ class VisitViewModel(
     }
 
     /** Opens [id]'s page with the form for its next set, as a picked machine opens. */
-    fun selectMachine(id: MachineId) = showMachine(id, withForm = true)
+    fun selectMachine(id: MachineId) = showMachine(id, withForm = !readOnly)
+
+    // A trainer looks at a trainee's visit and records nothing in it.
+    private val readOnly: Boolean get() = accounts.traineeActive()
 
     /** Opens [id]'s page, as a tap on its row does. */
     fun openMachine(id: MachineId) = showMachine(id, withForm = false)
@@ -293,7 +301,7 @@ class VisitViewModel(
 
     /** The form for the open machine's next set, from the last set's values. */
     fun openForm() {
-        if (open == null) return
+        if (open == null || readOnly) return
         form.openNew()
         viewModelScope.launch { reload(reseed = true) }
     }
@@ -330,7 +338,7 @@ class VisitViewModel(
 
     fun save() {
         val machine = open ?: return
-        if (!form.valid || !form.isOpen) return
+        if (!form.valid || !form.isOpen || readOnly) return
         // Taken now: while the write waits on the network the page may move to another machine.
         val saved = form.values
         val comment = form.comment.trim()
@@ -364,6 +372,7 @@ class VisitViewModel(
         id: MachineId,
         onOpen: (MachineId) -> Unit,
     ) {
+        if (readOnly) return
         val machine = machinesById[id] ?: open?.takeIf { it.id == id } ?: return
         writes.launch {
             // Merged away on another screen since the list was read.
@@ -384,6 +393,7 @@ class VisitViewModel(
     }
 
     fun toggleOrdering() {
+        if (readOnly && !ordering) return
         ordering = !ordering
         if (ordering) closePage()
         publish()
@@ -395,6 +405,7 @@ class VisitViewModel(
     ) = reorder { machineMovedTo(visitSets, id, index, it) }
 
     private fun reorder(moved: (Instant) -> List<WorkoutSet>) {
+        if (readOnly) return
         writes.launch {
             val changed = moved(clock.now())
             // Shown before the write, so the dropped item stays where the finger left it.
@@ -408,7 +419,7 @@ class VisitViewModel(
 
     /** Opens [id] in the form, on its machine's page. */
     fun editSet(id: WorkoutSetId) {
-        if (ordering) return
+        if (ordering || readOnly) return
         val set = visitSets.firstOrNull { it.id == id } ?: return
         form.openOn(set)
         selected = set.machineId
@@ -556,10 +567,11 @@ class VisitViewModel(
                 page = pageUi(offset),
                 ordering = ordering,
                 canShare = visitSets.isNotEmpty(),
-                canOrder = visitSets.isNotEmpty(),
-                canRepeatToday = groups.isNotEmpty() && !isToday,
+                canOrder = visitSets.isNotEmpty() && !readOnly,
+                canRepeatToday = groups.isNotEmpty() && !isToday && !readOnly,
                 isToday = isToday,
                 notice = notice,
+                readOnly = readOnly,
             )
     }
 
@@ -610,6 +622,7 @@ class VisitViewModel(
 
     /** Takes [id] out of the visit's plan, and its page with it. */
     fun unplan(id: MachineId) {
+        if (readOnly) return
         val visit = shownVisit ?: return
         if (open?.id == id) closePage()
         writes.launch {
@@ -672,8 +685,9 @@ class VisitViewModel(
                     "$dayName · ${setCount(it.size)}"
                 },
             sets = setRows(machine, onMachine),
-            canUnplan = onMachine.isEmpty() && machine.id in planned,
-            form = if (form.isOpen) formUi(machine, onMachine) else null,
+            canUnplan = onMachine.isEmpty() && machine.id in planned && !readOnly,
+            form = if (form.isOpen && !readOnly) formUi(machine, onMachine) else null,
+            readOnly = readOnly,
         )
     }
 
@@ -684,7 +698,9 @@ class VisitViewModel(
         val edited = form.editing
         val people =
             if (isToday && edited == null) {
+                // Nobody records for a trainee here.
                 accountsUi(accounts.accounts.value, accounts.activeId.value, avatars.photos.value)
+                    .filterNot { it.trainee }
             } else {
                 emptyList()
             }

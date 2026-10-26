@@ -39,6 +39,7 @@ import monster.greyde.kachalochka.core.domain.gym.toggledTag
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.format.parseDecimal
 import monster.greyde.kachalochka.ui.format.setCount
@@ -283,6 +284,7 @@ class MachineFormViewModel(
      * edits: saving then asks about recorded sets as any other edit does.
      */
     fun copySettings(friendMachine: MachineId) {
+        if (readOnly) return
         viewModelScope.launch {
             val owner = currentUser.id() ?: return@launch
             val group = catching { catalogue.group(owner) }.getOrNull() ?: return@launch
@@ -320,7 +322,7 @@ class MachineFormViewModel(
         val ownLinks = machineLinks.all(owner)
         if (shown == null) {
             mutableLinking.value = LinkingUi(error = mutableLinking.value.error)
-            update { it.copy(linkedTags = emptyList()) }
+            refresh { it.copy(linkedTags = emptyList()) }
         } else {
             val ownTouch = ownLinks.any { it.touches(shown.id) }
             mutableLinking.value =
@@ -343,14 +345,16 @@ class MachineFormViewModel(
     ) {
         if (accounts.activeId.value != owner || existing?.id != shown?.id) return
         val group = read.group?.machines
-        group?.let { update { form -> form.copy(friendTags = friendTagsOf(it)) } }
+        group?.let { refresh { form -> form.copy(friendTags = friendTagsOf(it)) } }
         if (shown == null) return
         if (group != null) {
             friendPhotos = friendPhotosOf(shown.id, group)
             showPhotos()
         }
         val visible = read.shown
-        update { form -> form.copy(linkedTags = visible.linkedRows(shown.id).flatMap { it.tags }) }
+        refresh { form ->
+            form.copy(linkedTags = visible.linkedRows(shown.id).flatMap { it.tags })
+        }
         mutableLinking.value =
             mutableLinking.value.copy(
                 linkedWith = group?.let { visible.linkedWith(shown.id) }.orEmpty(),
@@ -384,7 +388,7 @@ class MachineFormViewModel(
         machineId == machine || linkedMachineId == machine
 
     fun askToUnlink() {
-        if (mutableLinking.value.canUnlink) {
+        if (mutableLinking.value.canUnlink && !readOnly) {
             mutableLinking.value = mutableLinking.value.copy(confirmingUnlink = true, error = null)
         }
     }
@@ -412,18 +416,24 @@ class MachineFormViewModel(
         }
     }
 
+    /** A trainer looks at a trainee's machine and changes nothing; a new one they may add. */
+    val readOnly: Boolean get() = args.machineId != null && accounts.traineeActive()
+
     fun addPhoto(jpeg: ByteArray) {
+        if (readOnly) return
         takenPhotos = takenPhotos + TakenPhoto(PhotoId.random(), jpeg, clock.now())
         showPhotos()
     }
 
     /** The photo standing for the machine in every list, written on save. */
     fun makeCover(key: String) {
+        if (readOnly) return
         coverChoice = PhotoId(key)
         showPhotos()
     }
 
     fun removePhoto(key: String) {
+        if (readOnly) return
         if (coverChoice?.value == key) coverChoice = null
         val saved = savedPhotos.firstOrNull { it.id.value == key }
         if (saved != null) {
@@ -464,6 +474,11 @@ class MachineFormViewModel(
     }
 
     fun update(change: (MachineFormState) -> MachineFormState) {
+        if (!readOnly) refresh(change)
+    }
+
+    // What the form reads about the machine, which a read-only form shows too.
+    private fun refresh(change: (MachineFormState) -> MachineFormState) {
         mutableState.value = change(mutableState.value)
     }
 
@@ -521,6 +536,7 @@ class MachineFormViewModel(
      * [keepRecorded], since only the user knows how the recorded weights were read.
      */
     fun save(onSaved: (MachineId) -> Unit) {
+        if (readOnly) return
         val form = mutableState.value
         if (form.platformWeightValue == null || form.weightStepValue == null) return
         if (!form.canSave) return

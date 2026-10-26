@@ -37,6 +37,7 @@ import monster.greyde.kachalochka.ui.theme.ThemeMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 
@@ -577,6 +578,35 @@ class AppTest {
             onNodeWithTag("people-guardians").assertExists()
         }
         assertEquals(listOf(IVAN_MEMBER.userId to PAPA.userId), signed.family.links)
+    }
+
+    @Test
+    fun a_kept_trainer_code_asks_first_then_opens_the_people() {
+        val signed = signedInGym()
+        signed.family.offeredCoaching("TREN2345", PAPA)
+        signed.trainerCodes.save("TREN2345")
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            waitForIdle()
+            onNodeWithTag("trainer-invite-confirm").performClick()
+            waitForIdle()
+
+            onNodeWithTag("people-trainers").assertExists()
+        }
+        assertEquals(listOf(IVAN_MEMBER.userId to PAPA.userId), signed.family.coaching)
+    }
+
+    @Test
+    fun a_declined_trainer_code_links_nobody() {
+        val signed = signedInGym()
+        signed.family.offeredCoaching("TREN2345", PAPA)
+        signed.trainerCodes.save("TREN2345")
+        runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
+            waitForIdle()
+            onNodeWithTag("trainer-invite-cancel").performClick()
+            waitForIdle()
+        }
+        assertTrue(signed.family.coaching.isEmpty())
+        assertNull(signed.trainerCodes.code())
     }
 
     @Test

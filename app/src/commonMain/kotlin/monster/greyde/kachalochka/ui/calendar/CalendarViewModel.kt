@@ -40,6 +40,7 @@ import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.accountAvatar
 import monster.greyde.kachalochka.ui.account.preferredUnit
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.monthTitle
@@ -233,12 +234,15 @@ class CalendarViewModel(
 
     /** Plans the shown visit's machines in today's visit, then reports today. */
     fun repeatToday(onDone: (CalendarDay) -> Unit) {
+        if (accounts.traineeActive()) return
         val from = selected
         val owner = accounts.activeId.value
         writes.launch { placement.repeatToday(owner, from)?.let(onDone) }
     }
 
+    // A trainer moves and deletes none of a trainee's visits.
     fun startMove(id: VisitId) {
+        if (accounts.traineeActive()) return
         moving = all.firstOrNull { it.id == id } ?: return
         publish()
     }
@@ -252,6 +256,7 @@ class CalendarViewModel(
     }
 
     fun askToRemove(id: VisitId) {
+        if (accounts.traineeActive()) return
         removing = all.firstOrNull { it.id == id } ?: return
         publish()
     }

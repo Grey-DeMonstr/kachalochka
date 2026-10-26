@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
@@ -38,6 +39,8 @@ fun MachineListScreen(
     val viewModel: MachineListViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
+    // A trainer adds machines for a trainee and links none of theirs.
+    val readOnly = traineeActive()
     Screen(strings().machines, onBack = onBack, onOpenSettings = onOpenSettings) {
         val filtering = state.query.isNotEmpty() || state.tags.any { it.chosen }
         if (!state.own.isNullOrEmpty() || state.friendSections.isNotEmpty() || filtering) {
@@ -82,8 +85,11 @@ fun MachineListScreen(
                         MachineCard(
                             card,
                             "machine-list-row-${card.id.value}",
-                            onSuggestion = { onSuggestion(card.id, it) },
-                        ) { onOpenMachine(card.id) }
+                            onSuggestion =
+                                { name: String -> onSuggestion(card.id, name) }
+                                    .takeUnless { readOnly },
+                            onClick = { onOpenMachine(card.id) },
+                        )
                     }
             }
             state.friendSections.forEach { section ->

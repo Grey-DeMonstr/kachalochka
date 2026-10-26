@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.Choice
 import monster.greyde.kachalochka.ui.components.ConfirmDialog
@@ -123,6 +124,8 @@ private fun ColumnScope.CalendarMode(
 ) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.refresh() }
+    // A trainer looks at a trainee's visits and plans from them, nothing more.
+    val readOnly = traineeActive()
     val current = state ?: return
     Column(
         Modifier
@@ -154,10 +157,11 @@ private fun ColumnScope.CalendarMode(
                 onOpen = { onOpenVisit(current.day) },
                 menu =
                     VisitMenuActions(
-                        onMove = { viewModel.startMove(visit) },
+                        onMove = { viewModel.startMove(visit) }.takeUnless { readOnly },
                         onToPlan = { placement.choosePlan(current.day) },
-                        onRepeatToday = { viewModel.repeatToday(onOpenVisit) },
-                        onRemove = { viewModel.askToRemove(visit) },
+                        onRepeatToday =
+                            { viewModel.repeatToday(onOpenVisit) }.takeUnless { readOnly },
+                        onRemove = { viewModel.askToRemove(visit) }.takeUnless { readOnly },
                     ).takeIf { !current.moving },
             )
             VisitPlacementNotice(placement, current.day)
@@ -169,12 +173,14 @@ private fun ColumnScope.CalendarMode(
                 fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
             )
-            AccentButton(
-                strings().addVisit,
-                PhosphorIcons.Plus,
-                { onOpenVisit(current.day) },
-                Modifier.testTag("add-visit"),
-            )
+            if (!readOnly) {
+                AccentButton(
+                    strings().addVisit,
+                    PhosphorIcons.Plus,
+                    { onOpenVisit(current.day) },
+                    Modifier.testTag("add-visit"),
+                )
+            }
         }
         current.friendVisits.forEach { card ->
             VisitCard(card, onOpen = { card.openAsFriend(onOpenFriendVisit) })
@@ -215,6 +221,7 @@ private fun ColumnScope.FeedMode(
     val feed: VisitFeedViewModel = koinViewModel()
     val state by feed.state.collectAsState()
     LaunchedEffect(Unit) { feed.refresh() }
+    val readOnly = traineeActive()
     val list = rememberLazyListState()
     LaunchedEffect(list) {
         snapshotFlow {
@@ -247,10 +254,17 @@ private fun ColumnScope.FeedMode(
                             onOpen = { onOpenVisit(card.day) },
                             menu =
                                 VisitMenuActions(
-                                    onMove = { onMove(card.day, own.id) },
+                                    onMove = { onMove(card.day, own.id) }.takeUnless { readOnly },
                                     onToPlan = { placement.choosePlan(card.day) },
-                                    onRepeatToday = { feed.repeatToday(card.day, onOpenVisit) },
-                                    onRemove = { feed.askToRemove(own.id) },
+                                    onRepeatToday =
+                                        { feed.repeatToday(card.day, onOpenVisit) }
+                                            .takeUnless { readOnly },
+                                    onRemove =
+                                        {
+                                            feed.askToRemove(
+                                                own.id,
+                                            )
+                                        }.takeUnless { readOnly },
                                 ),
                         )
                         VisitPlacementNotice(placement, card.day)

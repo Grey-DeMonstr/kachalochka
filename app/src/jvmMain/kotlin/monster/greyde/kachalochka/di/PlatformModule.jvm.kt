@@ -14,6 +14,7 @@ import monster.greyde.kachalochka.ui.account.UnavailableGoogleSignIn
 import monster.greyde.kachalochka.ui.calendar.InMemoryVisitsModePreference
 import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
+import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
@@ -64,6 +65,7 @@ actual fun platformModule(): Module =
         single<PhotoSharing> { UnavailablePhotoSharing }
         single<JoinCodeStore> { InMemoryJoinCodeStore() }
         single<JoinCodeStore>(named(PARENT_CODE)) { InMemoryJoinCodeStore() }
+        single<JoinCodeStore>(named(TRAINER_CODE)) { InMemoryJoinCodeStore() }
         single { VisitStore.Device }
         single<PhotoCapture> { NoPhotoCapture }
         single<FailureLog> { FailureLog {} }

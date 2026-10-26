@@ -24,6 +24,9 @@ data class AccountsUi(
 ) {
     /** A managed child is active, so its private sections stay hidden. */
     val managedActive: Boolean get() = accounts.any { it.active && it.managed }
+
+    /** A trainee is active: their trainer only looks, and writes plans and new machines. */
+    val traineeActive: Boolean get() = accounts.any { it.active && it.trainee }
 }
 
 data class AccountUi(
@@ -34,6 +37,7 @@ data class AccountUi(
     val active: Boolean,
     val avatar: Avatar = Avatar(),
     val managed: Boolean = false,
+    val trainee: Boolean = false,
 )
 
 fun accountsUi(
@@ -50,6 +54,7 @@ fun accountsUi(
             it.userId == activeId,
             accountAvatar(it, chosen),
             managed = it.isManaged,
+            trainee = it.isTrainee,
         )
     }
 

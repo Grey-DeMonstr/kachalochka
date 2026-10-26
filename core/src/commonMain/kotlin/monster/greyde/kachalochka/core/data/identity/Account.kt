@@ -22,15 +22,22 @@ data class Account(
     val guardianId: UserId? get() = (kind as? AccountKind.Managed)?.guardianId
 
     val isManaged: Boolean get() = kind is AccountKind.Managed
+
+    /** A trainee only shows its gym rows; their trainer writes nothing but plans and machines. */
+    val isTrainee: Boolean get() = (kind as? AccountKind.Managed)?.trainee == true
 }
 
 sealed interface AccountKind {
     data object Google : AccountKind
 
-    /** A child linked to [guardianId] (technical spec §4.3); [avatarPhoto] is its own choice. */
+    /**
+     * A child linked to [guardianId] (technical spec §4.3), or a [trainee] coached by it;
+     * [avatarPhoto] is its own choice.
+     */
     data class Managed(
         val guardianId: UserId,
         val avatarPhoto: PhotoId? = null,
+        val trainee: Boolean = false,
     ) : AccountKind
 }
 

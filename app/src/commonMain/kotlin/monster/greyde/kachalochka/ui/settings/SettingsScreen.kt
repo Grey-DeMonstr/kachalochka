@@ -118,7 +118,7 @@ fun SettingsScreen(
                     SettingsCard {
                         SettingsRow(
                             PhosphorIcons.UsersThree,
-                            strings().childrenAndGuardians,
+                            strings().peopleRow,
                             "settings-people",
                             onOpenPeople,
                             subtitle = peopleCounts(people).takeIf { it.isNotEmpty() },
@@ -316,6 +316,8 @@ private fun profileLine(
 @Composable
 private fun peopleCounts(people: PeopleUi): String =
     listOfNotNull(
+        people.trainers?.takeIf { it > 0 }?.let(strings()::trainersCount),
+        people.trainees?.takeIf { it > 0 }?.let(strings()::traineesCount),
         people.children?.takeIf { it > 0 }?.let(strings()::childrenCount),
         people.guardians?.takeIf { it > 0 }?.let(strings()::guardiansCount),
     ).joinToString(" · ")

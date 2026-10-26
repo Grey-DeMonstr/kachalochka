@@ -333,17 +333,38 @@ interface Strings {
     // Family
     val people: String
     val noPeople: String
-    val childrenAndGuardians: String
+    val peopleRow: String
 
     fun childrenCount(n: Int): String
 
     fun guardiansCount(n: Int): String
 
+    fun trainersCount(n: Int): String
+
+    fun traineesCount(n: Int): String
+
     val whomToAdd: String
     val addChildChoice: String
-    val addChildChoiceHint: String
     val addGuardianChoice: String
-    val addGuardianChoiceHint: String
+    val addTrainerChoice: String
+    val addTraineeChoice: String
+    val trainers: String
+    val trainees: String
+    val addTrainee: String
+
+    fun traineeCode(code: String): String
+
+    val traineeCodeHint: String
+    val trainerInviteMessage: String
+    val addTrainer: String
+    val trainerCode: String
+    val trainerRights: String
+    val removeTrainerTitle: String
+    val removeTrainerText: String
+    val removeTraineeTitle: String
+    val removeTraineeText: String
+    val trainerInviteTitle: String
+    val traineeAccount: String
     val children: String
     val addChild: String
 

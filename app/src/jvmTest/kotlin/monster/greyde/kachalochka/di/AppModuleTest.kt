@@ -6,7 +6,9 @@ import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
-import monster.greyde.kachalochka.ui.family.PendingGuardian
+import monster.greyde.kachalochka.ui.family.PARENT_CODE
+import monster.greyde.kachalochka.ui.family.PendingLink
+import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.PendingJoin
 import monster.greyde.kachalochka.ui.machine.LinkUpkeep
@@ -16,6 +18,7 @@ import monster.greyde.kachalochka.ui.photos.PhotoLoaders
 import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.timer.RestSoundScheduler
 import monster.greyde.kachalochka.ui.timer.RestTimer
+import org.koin.core.qualifier.named
 import org.koin.dsl.koinApplication
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -38,7 +41,8 @@ class AppModuleTest {
         assertNotNull(koin.get<RestSoundScheduler>())
         assertNotNull(koin.get<VisitNormalization>())
         assertNotNull(koin.get<PendingJoin>())
-        assertNotNull(koin.get<PendingGuardian>())
+        assertNotNull(koin.get<PendingLink>(named(PARENT_CODE)))
+        assertNotNull(koin.get<PendingLink>(named(TRAINER_CODE)))
         assertNotNull(koin.get<Nickname>())
         assertNotNull(koin.get<FriendColorStore>())
         assertNotNull(koin.get<PhotoLoaders>())

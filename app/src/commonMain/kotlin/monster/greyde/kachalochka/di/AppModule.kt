@@ -6,6 +6,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.di.coreModule
+import monster.greyde.kachalochka.core.domain.family.FamilyRepository
 import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
@@ -14,8 +15,9 @@ import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.calendar.VisitFeedViewModel
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
-import monster.greyde.kachalochka.ui.family.PendingGuardian
+import monster.greyde.kachalochka.ui.family.PendingLink
 import monster.greyde.kachalochka.ui.family.PeopleViewModel
+import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.platformUtcOffset
@@ -76,7 +78,14 @@ val appModule =
         }
         singleOf(::VisitNormalization)
         singleOf(::PendingJoin)
-        single { PendingGuardian(get(named(PARENT_CODE)), get()) }
+        single(named(PARENT_CODE)) {
+            val family: FamilyRepository = get()
+            PendingLink(get(named(PARENT_CODE)), family::accept)
+        }
+        single(named(TRAINER_CODE)) {
+            val family: FamilyRepository = get()
+            PendingLink(get(named(TRAINER_CODE)), family::acceptTrainer)
+        }
         singleOf(::Nickname)
         singleOf(::FriendColorStore)
         singleOf(::PhotoLoaders)

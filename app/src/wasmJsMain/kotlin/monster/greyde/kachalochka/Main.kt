@@ -21,9 +21,11 @@ import monster.greyde.kachalochka.ui.account.disownActiveAccount
 import monster.greyde.kachalochka.ui.account.restoreSession
 import monster.greyde.kachalochka.ui.account.sessionFromRedirect
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
+import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.joinCodeOf
 import monster.greyde.kachalochka.ui.friends.parentCodeOf
+import monster.greyde.kachalochka.ui.friends.trainerCodeOf
 import monster.greyde.kachalochka.ui.friends.warmGroups
 import monster.greyde.kachalochka.ui.friends.withoutInviteCodes
 import monster.greyde.kachalochka.ui.machine.startLinkUpkeep
@@ -42,7 +44,7 @@ private val SESSION_RESTORE_LIMIT = 10.seconds
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     val koin = startKoin { modules(appModule, corePlatformModule(), platformModule()) }.koin
-    keepInviteCodes(koin.get(), koin.get(named(PARENT_CODE)))
+    keepInviteCodes(koin.get(), koin.get(named(PARENT_CODE)), koin.get(named(TRAINER_CODE)))
     MainScope().launch {
         // The net under the reporting in restoreSession, not a substitute for it: a start-up
         // that goes wrong in a way nobody foresaw still owes the user a page to look at.
@@ -69,10 +71,12 @@ fun main() {
 private fun keepInviteCodes(
     join: JoinCodeStore,
     parent: JoinCodeStore,
+    trainer: JoinCodeStore,
 ) {
     val href = window.location.href
     joinCodeOf(href)?.let(join::save)
     parentCodeOf(href)?.let(parent::save)
+    trainerCodeOf(href)?.let(trainer::save)
     val cleaned = withoutInviteCodes(href)
     if (cleaned != href) window.history.replaceState(null, "", cleaned)
 }

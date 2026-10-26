@@ -47,8 +47,12 @@ class VisitNormalization(
         if (wrote) sync.request()
     }
 
+    // Its trainer may not write a trainee's visits, so they stay as the trainee left them.
+    private fun coached(owner: UserId?): Boolean =
+        accounts.accounts.value.any { it.userId == owner && it.isTrainee }
+
     private suspend fun attempt(owner: UserId?): Boolean =
-        catching { normalizer.normalize(owner) }.getOrElse { failed ->
+        catching { !coached(owner) && normalizer.normalize(owner) }.getOrElse { failed ->
             failures.record(failed)
             false
         }

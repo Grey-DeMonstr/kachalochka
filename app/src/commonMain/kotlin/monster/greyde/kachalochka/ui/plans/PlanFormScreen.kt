@@ -125,6 +125,7 @@ fun PlanFormScreen(
             )
             val order = rememberReorderState()
             SideEffect { order.retain(state.rows.size) }
+
             Column {
                 state.rows.forEachIndexed { index, row ->
                     PlanMachineRow(

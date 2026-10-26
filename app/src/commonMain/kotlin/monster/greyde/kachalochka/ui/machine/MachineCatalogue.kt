@@ -43,6 +43,7 @@ import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.accountAvatar
+import monster.greyde.kachalochka.ui.account.traineeActive
 import kotlin.time.Clock
 
 /** The account's live machines, with the photos and links that place them. */
@@ -411,6 +412,8 @@ class MachineCatalogue(
         shown: PlacedMachine,
     ): StandIn {
         if (!active(owner)) return StandIn.Switched
+        // A copy would bring links to friends, which a trainer may not write for a trainee.
+        if (shown.ofFriend && accounts.traineeActive()) return StandIn.Gone
         val found =
             if (shown.ofFriend) {
                 standInForFriend(owner ?: return StandIn.Gone, shown)
@@ -426,6 +429,7 @@ class MachineCatalogue(
     ): StandIn {
         val stored = machines.byId(id) ?: return StandIn.Gone
         if (stored.userId == owner) return StandIn.Found(stored)
+        if (accounts.traineeActive()) return StandIn.Gone
         val own =
             writingLinks {
                 val found = deviceStandIn(owner, stored)

@@ -162,11 +162,14 @@ fun VisitScreen(
             state = current,
             onDismissNotice = viewModel::dismissNotice,
             onOpen = viewModel::openMachine,
-            onOpenSettings = { viewModel.openMachineSettings(it, onOpenMachineSettings) },
+            onOpenSettings =
+                { id: MachineId -> viewModel.openMachineSettings(id, onOpenMachineSettings) }
+                    .takeUnless { current.readOnly },
             onToggleOrdering = viewModel::toggleOrdering,
             onToggleGroupByTag = viewModel::toggleGroupByTag,
             onMoveMachine = viewModel::moveMachine,
-            onNewMachine = { onPickMachine(viewModel.selectedMachineId) },
+            onNewMachine =
+                { onPickMachine(viewModel.selectedMachineId) }.takeUnless { current.readOnly },
             modifier = Modifier.weight(1f),
         )
     }
@@ -178,11 +181,11 @@ private fun VisitList(
     state: VisitUiState,
     onDismissNotice: () -> Unit,
     onOpen: (MachineId) -> Unit,
-    onOpenSettings: (MachineId) -> Unit,
+    onOpenSettings: ((MachineId) -> Unit)?,
     onToggleOrdering: () -> Unit,
     onToggleGroupByTag: () -> Unit,
     onMoveMachine: (MachineId, Int) -> Unit,
-    onNewMachine: () -> Unit,
+    onNewMachine: (() -> Unit)?,
     modifier: Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -265,7 +268,7 @@ private fun VisitList(
                 onToggleOrdering,
                 Modifier.fillMaxWidth().padding(top = 14.dp).testTag("finish-ordering"),
             )
-        } else {
+        } else if (onNewMachine != null) {
             OutlineButton(
                 strings().add,
                 PhosphorIcons.Plus,
@@ -284,7 +287,7 @@ private fun MachineBlock(
     ordering: Boolean,
     showTags: Boolean,
     onOpen: (MachineId) -> Unit,
-    onOpenSettings: (MachineId) -> Unit,
+    onOpenSettings: ((MachineId) -> Unit)?,
     onDropMachine: (from: Int, to: Int) -> Unit,
 ) {
     Column(Modifier.reorderItem(order, index).dragOutline(order.dragging == index)) {
@@ -304,7 +307,11 @@ private fun MachineBlock(
                 PhosphorIcons.Barbell,
                 Modifier.padding(end = 12.dp).testTag("thumb-$id"),
                 size = 44.dp,
-                onOpenSettings = { onOpenSettings(group.machineId) }.takeUnless { ordering },
+                onOpenSettings =
+                    onOpenSettings
+                        ?.let { open ->
+                            { open(group.machineId) }
+                        }.takeUnless { ordering },
             )
             MachineLines(
                 title = group.title,
@@ -378,7 +385,7 @@ internal fun MachineLines(
 @Composable
 internal fun SetRow(
     row: SetRowUi,
-    onEdit: (WorkoutSetId) -> Unit,
+    onEdit: ((WorkoutSetId) -> Unit)?,
     modifier: Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -393,7 +400,7 @@ internal fun SetRow(
                 } else {
                     Modifier
                 },
-            ).clickable { onEdit(row.id) }
+            ).then(if (onEdit != null) Modifier.clickable { onEdit(row.id) } else Modifier)
             .padding(horizontal = 12.dp, vertical = 10.dp)
             .testTag("set-row-${row.id.value}"),
         horizontalArrangement = Arrangement.spacedBy(12.dp),

@@ -290,7 +290,10 @@ failing a pull.
   `workout_plan`, the tables its guardian may write. An entry of its `profile`, `measure` or
   `measurement`, which only the account itself can have written before it became managed, stays
   in the outbox unpushed, since the server would refuse it; it goes out once the account signs in
-  on the device itself.
+  on the device itself. A trainee (§4.3) is managed too, but its pass pushes only `machine`,
+  `tag`, `machine_tag` and `workout_plan` and pulls no `machine_link`, the rows its trainer may
+  write and read; its visits are not normalized on the trainer's device, since their writes
+  could never go out.
 
 Sync runs on a second `SupabaseClient` that installs no `Auth`; its `accessToken` resolver asks
 for the token of the account the pass is currently on. The UI's client and its active session are
@@ -376,6 +379,21 @@ in on the device, and leaves the device's list with its guardian, keeping its ro
 pull watermark, so the child signing in here later pulls everything; when two guardians of one
 child are signed in on the device, the first one acts.
 
+A trainee is a managed account too (`AccountKind.Managed.trainee`), acting through its trainer's
+session; a person who is both a child and a trainee of accounts on the device is listed once, as
+a child, and one who changes between the two is purged and listed afresh, since the two sync
+different tables and the purge also forgets the pull watermark. While a trainee is active, `AccountsUi.traineeActive` (and `traineeActive()` in a
+composable) hides what the trainer may not change, and the view models that write a visit, such
+as `VisitViewModel`, `CalendarViewModel`, `PlansViewModel` and `MachinePlacementViewModel`,
+refuse to, as `MachineCatalogue.standIn` refuses to copy another account's machine for a trainee,
+`MachineFormViewModel.readOnly` keeps a trainee's existing machine as it is,
+and `VisitNormalization` skips a trainee's visits; `NavController.leaveTraineeHidden` closes the
+machine form and
+the link choosers. `TraineeFriends` wraps the `FriendsRepository`: under the trainer's session a
+trainee's group reads would answer with the trainer's group mates, so a trainee viewer has none.
+A trainer's code from the web carries `?trainer=CODE`, kept as a parent's `?parent=` is
+(`PendingLink` under `TRAINER_CODE`), and the account confirms before it links.
+
 `FamilyFollower` keeps the managed entries in step with the server. It reads `my_family` as each
 Google account on the device, one at a time on one client, as the sync pass moves between
 accounts (§4.2); lists every child a family names, once, under the first guardian signed in here;
@@ -384,6 +402,7 @@ refreshes their names and avatars; and removes a child no family names any more,
 not an empty one: while any is unread no child leaves the device, and a child whose guardian's
 family is unread keeps that guardian. `AccountTokens` serves both platforms for these reads; a
 read with no token for its account fails rather than going out as anon and finding nobody.
+Trainees follow the same way, from each family's `trainees`.
 Android follows at the start of every sync pass, so a child linked since the last pass syncs in
 this one and a child whose link ended leaves before its rows could be pushed again, and on
 entering "Люди"; a sign-in reaches it through the pass it requests. The web follows once per page
@@ -1056,6 +1075,19 @@ Row-level security enforces every visibility rule from the functional spec:
   caller's children and guardians with `member_display_name`, `member_avatar_photo` and
   `google_picture`, since profiles stay private. `guards(other)` tells whether the caller guards
   `other`. Deleting either account cascades through both tables.
+- A coaching link is a `coaching` row (`trainee_id`, `trainer_id`), kept as a guardian link is,
+  with `coaching_invite`, `offer_coaching`, `accept_trainer(code)`, `end_coaching(trainee,
+  trainer)` and `coaches(other)` (migration `0029`); `my_coaching` lists the caller's trainees and
+  trainers as `my_family` lists children and guardians, which it leaves alone: released builds
+  read every row of `my_family` that is not a child as a guardian. A trainer reads a trainee's
+  `machine`, `visit`,
+  `workout_set`, `photo`, `tag`, `machine_tag` and `workout_plan` rows, deleted ones included,
+  and the trainee's folder of the `photos` bucket; writes their `workout_plan` rows, every one;
+  and inserts their `machine`, `tag` and `machine_tag` rows. A trainer's update of such a row may
+  only repeat it, as a sync pass retrying an upsert does, or bring a deleted tag back: the trigger
+  `trainer_keeps_row` refuses anything else, since the update policies cannot tell a machine the
+  trainer added from the trainee's own. A trainer reads no `machine_link`, `profile`, `measure` or
+  `measurement` of a trainee and writes no visit, set or photo.
 - A member's `group_member.display_name` follows one rule, `member_display_name`: the nickname
   of their newest live profile when not blank, else the Google name (`google_display_name`).
   `my_display_name` applies it when a group is created or joined, and a security-definer trigger

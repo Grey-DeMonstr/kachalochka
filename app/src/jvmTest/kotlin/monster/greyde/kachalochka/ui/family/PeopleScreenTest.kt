@@ -31,7 +31,7 @@ class PeopleScreenTest {
     @Test
     fun with_nobody_linked_the_screen_says_so() =
         runScreenTest(gym, screen = { PeopleScreen(onBack = {}) }) {
-            onNodeWithTag("people-empty").assertTextEquals("Детей и родителей пока нет")
+            onNodeWithTag("people-empty").assertTextEquals("Пока никого нет")
         }
 
     @Test
@@ -42,15 +42,15 @@ class PeopleScreenTest {
             onNodeWithTag("add-child").performClick()
             waitForIdle()
 
-            onNodeWithTag("child-code").assertTextEquals("Код для ребёнка: PAPA2345")
-            onNodeWithTag("child-code-link")
+            onNodeWithTag("offer-code").assertTextEquals("Код для ребёнка: PAPA2345")
+            onNodeWithTag("offer-code-link")
                 .assertTextEquals("https://example.test/kachalochka/?parent=PAPA2345")
-            onNodeWithTag("child-code-hint").assertExists()
-            onNodeWithTag("child-code-share").assertExists()
+            onNodeWithTag("offer-code-hint").assertExists()
+            onNodeWithTag("offer-code-share").assertExists()
 
-            onNodeWithTag("child-code-close").performClick()
+            onNodeWithTag("offer-code-close").performClick()
             waitForIdle()
-            onNodeWithTag("child-code").assertDoesNotExist()
+            onNodeWithTag("offer-code").assertDoesNotExist()
         }
 
     @Test
@@ -62,8 +62,8 @@ class PeopleScreenTest {
             onNodeWithTag("add-child").performClick()
             waitForIdle()
 
-            onNodeWithTag("child-code").assertExists()
-            onNodeWithTag("child-code-link").assertDoesNotExist()
+            onNodeWithTag("offer-code").assertExists()
+            onNodeWithTag("offer-code-link").assertDoesNotExist()
         }
     }
 
@@ -75,14 +75,14 @@ class PeopleScreenTest {
             waitForIdle()
             onNodeWithTag("add-guardian").performClick()
             waitForIdle()
-            onNodeWithTag("guardian-rights").assertExists()
-            onNodeWithTag("link-guardian").assertIsNotEnabled()
+            onNodeWithTag("entry-rights").assertExists()
+            onNodeWithTag("entry-link").assertIsNotEnabled()
 
-            onNodeWithTag("guardian-code-field").performTextInput("PAPA2345")
-            onNodeWithTag("link-guardian").performClick()
+            onNodeWithTag("entry-code-field").performTextInput("PAPA2345")
+            onNodeWithTag("entry-link").performClick()
             waitForIdle()
 
-            onNodeWithTag("guardian-code-field").assertDoesNotExist()
+            onNodeWithTag("entry-code-field").assertDoesNotExist()
             onNodeWithText("Папа").assertExists()
         }
     }
@@ -94,11 +94,11 @@ class PeopleScreenTest {
             waitForIdle()
             onNodeWithTag("add-guardian").performClick()
             waitForIdle()
-            onNodeWithTag("guardian-code-field").performTextInput("ZZZZ2345")
-            onNodeWithTag("link-guardian").performClick()
+            onNodeWithTag("entry-code-field").performTextInput("ZZZZ2345")
+            onNodeWithTag("entry-link").performClick()
             waitForIdle()
 
-            onNodeWithTag("guardian-code-error").assertTextEquals("Код не найден или устарел")
+            onNodeWithTag("entry-code-error").assertTextEquals("Код не найден или устарел")
         }
 
     @Test
@@ -118,9 +118,52 @@ class PeopleScreenTest {
     }
 
     @Test
+    fun trainers_and_trainees_come_first_in_their_own_groups() {
+        gym.family.coach(SASHA, IVAN_MEMBER)
+        gym.family.coach(IVAN_MEMBER, PAPA)
+        runScreenTest(gym, screen = { PeopleScreen(onBack = {}) }) {
+            onNodeWithTag("people-trainers").assertExists()
+            onNodeWithTag("people-trainees").assertExists()
+            onNodeWithTag("people-children").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun adding_a_trainee_shows_a_trainer_code() =
+        runScreenTest(gym, screen = { PeopleScreen(onBack = {}) }) {
+            onNodeWithTag("people-add").performClick()
+            waitForIdle()
+            onNodeWithTag("add-trainee").performClick()
+            waitForIdle()
+
+            onNodeWithTag("offer-code").assertTextEquals("Код для ученика: TREN2345")
+            onNodeWithTag("offer-code-link")
+                .assertTextEquals("https://example.test/kachalochka/?trainer=TREN2345")
+        }
+
+    @Test
+    fun a_trainer_is_added_by_code_after_reading_what_they_can_do() {
+        gym.family.offeredCoaching("TREN2345", PAPA)
+        runScreenTest(gym, screen = { PeopleScreen(onBack = {}) }) {
+            onNodeWithTag("people-add").performClick()
+            waitForIdle()
+            onNodeWithTag("add-trainer").performClick()
+            waitForIdle()
+            onNodeWithTag("entry-rights").assertExists()
+
+            onNodeWithTag("entry-code-field").performTextInput("TREN2345")
+            onNodeWithTag("entry-link").performClick()
+            waitForIdle()
+
+            onNodeWithTag("people-trainers").assertExists()
+        }
+        assertTrue(gym.family.coaching.isNotEmpty())
+    }
+
+    @Test
     fun the_screen_speaks_english() =
         runScreenTestInEnglish(gym, screen = { PeopleScreen(onBack = {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("People")
-            onNodeWithTag("people-empty").assertTextEquals("No children or parents yet")
+            onNodeWithTag("people-empty").assertTextEquals("Nobody here yet")
         }
 }

@@ -23,6 +23,9 @@ object PhosphorIcons {
     val CaretLeft: ImageVector by lazy { phosphor("CaretLeft", CARET_LEFT) }
     val CaretRight: ImageVector by lazy { phosphor("CaretRight", CARET_RIGHT) }
     val CaretUp: ImageVector by lazy { phosphor("CaretUp", CARET_UP) }
+    val ChalkboardTeacher: ImageVector by lazy {
+        phosphor("ChalkboardTeacher", CHALKBOARD_TEACHER)
+    }
     val ChartLineUp: ImageVector by lazy { phosphor("ChartLineUp", CHART_LINE_UP) }
     val ChatTeardropText: ImageVector by lazy { phosphor("ChatTeardropText", CHAT_TEARDROP_TEXT) }
     val Check: ImageVector by lazy { phosphor("Check", CHECK) }
@@ -56,6 +59,7 @@ object PhosphorIcons {
     }
     val Sparkle: ImageVector by lazy { phosphor("Sparkle", SPARKLE) }
     val Star: ImageVector by lazy { phosphor("Star", STAR) }
+    val Student: ImageVector by lazy { phosphor("Student", STUDENT) }
     val Timer: ImageVector by lazy { phosphor("Timer", TIMER) }
     val Translate: ImageVector by lazy { phosphor("Translate", TRANSLATE) }
     val Trash: ImageVector by lazy { phosphor("Trash", TRASH) }
@@ -82,6 +86,7 @@ object PhosphorIcons {
                 CaretLeft,
                 CaretRight,
                 CaretUp,
+                ChalkboardTeacher,
                 ChartLineUp,
                 ChatTeardropText,
                 Check,
@@ -108,6 +113,7 @@ object PhosphorIcons {
                 SlidersHorizontal,
                 Sparkle,
                 Star,
+                Student,
                 Timer,
                 Translate,
                 Trash,
@@ -178,3 +184,6 @@ private const val TRANSLATE = "M247.15,212.42l-56-112a8,8,0,0,0-14.31,0l-21.71,4
 private const val USER_CIRCLE = "M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24ZM74.08,197.5a64,64,0,0,1,107.84,0,87.83,87.83,0,0,1-107.84,0ZM96,120a32,32,0,1,1,32,32A32,32,0,0,1,96,120Zm97.76,66.41a79.66,79.66,0,0,0-36.06-28.75,48,48,0,1,0-59.4,0,79.66,79.66,0,0,0-36.06,28.75,88,88,0,1,1,131.52,0Z"
 private const val USER_MINUS = "M256,136a8,8,0,0,1-8,8H200a8,8,0,0,1,0-16h48A8,8,0,0,1,256,136Zm-57.87,58.85a8,8,0,0,1-12.26,10.3C165.75,181.19,138.09,168,108,168s-57.75,13.19-77.87,37.15a8,8,0,0,1-12.25-10.3c14.94-17.78,33.52-30.41,54.17-37.17a68,68,0,1,1,71.9,0C164.6,164.44,183.18,177.07,198.13,194.85ZM108,152a52,52,0,1,0-52-52A52.06,52.06,0,0,0,108,152Z"
 private const val USERS = "M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"
+
+private const val CHALKBOARD_TEACHER = "M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H53.39a8,8,0,0,0,7.23-4.57,48,48,0,0,1,86.76,0,8,8,0,0,0,7.23,4.57H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM80,144a24,24,0,1,1,24,24A24,24,0,0,1,80,144Zm136,56H159.43a64.39,64.39,0,0,0-28.83-26.16,40,40,0,1,0-53.2,0A64.39,64.39,0,0,0,48.57,200H40V56H216ZM56,96V80a8,8,0,0,1,8-8H192a8,8,0,0,1,8,8v96a8,8,0,0,1-8,8H176a8,8,0,0,1,0-16h8V88H72v8a8,8,0,0,1-16,0Z"
+private const val STUDENT = "M226.53,56.41l-96-32a8,8,0,0,0-5.06,0l-96,32A8,8,0,0,0,24,64v80a8,8,0,0,0,16,0V75.1L73.59,86.29a64,64,0,0,0,20.65,88.05c-18,7.06-33.56,19.83-44.94,37.29a8,8,0,1,0,13.4,8.74C77.77,197.25,101.57,184,128,184s50.23,13.25,65.3,36.37a8,8,0,0,0,13.4-8.74c-11.38-17.46-27-30.23-44.94-37.29a64,64,0,0,0,20.65-88l44.12-14.7a8,8,0,0,0,0-15.18ZM176,120A48,48,0,1,1,89.35,91.55l36.12,12a8,8,0,0,0,5.06,0l36.12-12A47.89,47.89,0,0,1,176,120ZM128,87.57,57.3,64,128,40.43,198.7,64Z"

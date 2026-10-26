@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 private class FakeStorage(
@@ -396,6 +397,25 @@ class PersistedAccountStoreTest {
 
             assertEquals(listOf(ivan.account, sasha), reopened.accounts.value)
             assertEquals(SASHA_ID, reopened.activeId.value)
+        }
+
+    @Test
+    fun a_trainee_stays_a_trainee_over_the_same_storage() =
+        runTest {
+            val storage = FakeStorage()
+            val sasha =
+                managedChild(
+                    ivan,
+                ).copy(kind = AccountKind.Managed(ivan.account.userId, trainee = true))
+            PersistedAccountStore(storage).apply {
+                add(ivan)
+                setManaged(listOf(sasha))
+            }
+
+            val reopened = PersistedAccountStore(storage).accounts.value.single { it.isManaged }
+
+            assertEquals(sasha, reopened)
+            assertTrue(reopened.isTrainee)
         }
 
     @Test
