@@ -1,5 +1,15 @@
 Kachalochka - Changelog
 
+1.8.1
+
+- Visit cards show a gain in sets and mark a machine's first day with "Новое".
+- Friends' visit cards show their gains.
+- The feed can be filtered by person.
+- A machine without recorded sets can be deleted from its form.
+- Fixed: a friend's weights on the machine page were not converted to your platform.
+- Fixed: the visits mode selector sat too close to the top bar.
+
+
 1.8.0
 
 - Trainers added: a trainer sees a trainee's gym and writes their plans.
