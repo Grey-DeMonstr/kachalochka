@@ -496,6 +496,7 @@ class FakeGym(
         accounts,
         avatars,
         FailureLog { failures += it },
+        priorBests,
     )
 
     val catalogue = catalogueOver(machineLinks)

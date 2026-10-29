@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
+import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
@@ -108,6 +109,7 @@ class CalendarViewModel(
     private val colors: FriendColorStore,
     private val avatars: AccountAvatars,
     private val profiles: ProfileRepository,
+    private val priorBests: PriorBestsKeeper,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<CalendarUiState?>(null)
     val state: StateFlow<CalendarUiState?> = mutableState
@@ -311,6 +313,7 @@ class CalendarViewModel(
     private suspend fun write(rows: VisitRows) {
         rows.sets.forEach { sets.upsert(it) }
         visits.upsert(rows.visit)
+        priorBests.refresh(rows.visit.userId, rows.sets.map { it.machineId }.toSet())
     }
 
     /**

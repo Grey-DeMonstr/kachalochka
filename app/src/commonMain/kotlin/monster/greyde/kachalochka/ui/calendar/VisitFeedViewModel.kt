@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
+import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
@@ -94,6 +95,7 @@ class VisitFeedViewModel(
     private val avatars: AccountAvatars,
     private val profiles: ProfileRepository,
     private val people: FeedPeoplePreference,
+    private val priorBests: PriorBestsKeeper,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FeedUiState?>(null)
     val state: StateFlow<FeedUiState?> = mutableState
@@ -202,6 +204,7 @@ class VisitFeedViewModel(
             val removed = removedVisit(visit, sets.forVisit(visit.id), clock.now())
             removed.sets.forEach { sets.upsert(it) }
             visits.upsert(removed.visit)
+            priorBests.refresh(visit.userId, removed.sets.map { it.machineId }.toSet())
             removing = null
             sync.request()
             readOwn(owner)

@@ -12,6 +12,7 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -108,6 +109,7 @@ class VisitFeedViewModelTest {
             AccountAvatars(gym.accounts, gym.profiles),
             gym.profiles,
             people,
+            gym.priorBests,
         )
 
     private fun FeedUiState.cardsOn(day: CalendarDay): List<VisitCardUi> =
@@ -176,6 +178,33 @@ class VisitFeedViewModelTest {
             val card = assertNotNull(viewModel().state.value).cardsOn(today).single()
 
             assertEquals("+5 кг", card.exercises?.single()?.growth)
+        }
+
+    @Test
+    fun removing_a_visit_in_the_feed_clears_the_later_day_s_prior_best() =
+        runTest {
+            val first = gym.ownVisit(CalendarDay(2023, 11, 1), weight = 60.0)
+            val latest = gym.ownVisit(today, weight = 65.0)
+            gym.priorBests.refreshAll(ME.userId)
+            assertEquals(
+                DayBest(60.0, 10, 1),
+                gym.sets
+                    .forVisit(latest.id)
+                    .single()
+                    .priorBest,
+            )
+            val vm = viewModel()
+
+            vm.askToRemove(first.id)
+            vm.confirmRemoval()
+
+            assertEquals(
+                DayBest.NONE,
+                gym.sets
+                    .forVisit(latest.id)
+                    .single()
+                    .priorBest,
+            )
         }
 
     @Test

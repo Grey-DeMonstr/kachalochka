@@ -10,11 +10,14 @@ import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.friends.Friend
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
@@ -35,6 +38,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -63,6 +67,7 @@ class MachineFormViewModelTest {
             gym.catalogue,
             gym.machineReads,
             gym.sets,
+            gym.priorBests,
         )
 
     @BeforeTest
@@ -114,6 +119,7 @@ class MachineFormViewModelTest {
         on.catalogue,
         on.machineReads,
         on.sets,
+        on.priorBests,
     )
 
     @Test
@@ -209,6 +215,7 @@ class MachineFormViewModelTest {
                     catalogue,
                     on.machineReadsOver(catalogue),
                     on.sets,
+                    on.priorBests,
                 ).also { it.load() }
             // Breaking the links of a machine on the server drops the cached read.
             assertTrue(catalogue.unlink(ME.userId, MachineId.random()))
@@ -1019,6 +1026,63 @@ class MachineFormViewModelTest {
                         .getValue(it.id)
                         .weight
                 },
+            )
+        }
+
+    @Test
+    fun saving_a_machine_as_a_gravitron_turns_its_prior_bests_around() =
+        runTest {
+            val press = Machine.new("Гравитрон", null, t0)
+            gym.machines.upsert(press)
+            val days =
+                listOf(
+                    CalendarDay(2023, 11, 1),
+                    CalendarDay(2023, 11, 2),
+                    CalendarDay(2023, 11, 3),
+                )
+            val recorded =
+                days.zip(listOf(30.0, 25.0, 27.0)).map { (day, weight) ->
+                    val visit =
+                        Visit(VisitId.random(), null, day, day.at(0L, Duration.ZERO), t0, false)
+                    gym.visits.upsert(visit)
+                    WorkoutSet(
+                        WorkoutSetId.random(),
+                        null,
+                        visit.id,
+                        press.id,
+                        weight,
+                        8,
+                        0,
+                        t0,
+                        t0,
+                        false,
+                    ).also { gym.sets.upsert(it) }
+                }
+            gym.priorBests.refreshAll(null)
+            assertEquals(
+                DayBest(30.0, 8, 1),
+                gym.sets.rows
+                    .getValue(recorded[2].id)
+                    .priorBest,
+            )
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            vm.update { it.copy(weightMode = WeightMode.Counterweight) }
+
+            vm.save {}
+            if (vm.recalculation.value != null) vm.keepRecorded()
+
+            assertEquals(WeightMode.Counterweight, gym.machines.byId(press.id)?.weightMode)
+            assertEquals(
+                DayBest(30.0, 8, 1),
+                gym.sets.rows
+                    .getValue(recorded[1].id)
+                    .priorBest,
+            )
+            assertEquals(
+                DayBest(25.0, 8, 1),
+                gym.sets.rows
+                    .getValue(recorded[2].id)
+                    .priorBest,
             )
         }
 

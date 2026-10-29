@@ -13,6 +13,7 @@ import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -90,6 +91,7 @@ class CalendarViewModelTest {
             FriendColorStore(gym.profiles, gym.clock, gym.friends),
             AccountAvatars(gym.accounts, gym.profiles),
             gym.profiles,
+            gym.priorBests,
         )
 
     private fun FakeGym.friendVisit(
@@ -265,6 +267,44 @@ class CalendarViewModelTest {
             assertTrue(state.day(5).selected && state.day(5).hasVisit)
             assertFalse(state.day(12).hasVisit)
             assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun moving_the_earliest_visit_after_today_s_rewrites_the_prior_bests() =
+        runTest {
+            gym.visits.upsert(fifthVisit)
+            val earliest = set(fifthVisit, press, 0).copy(weight = 60.0)
+            gym.sets.upsert(earliest)
+            gym.priorBests.refreshAll(null)
+            val sundayPress =
+                gym.sets.rows.values.single {
+                    it.visitId == sunday.id &&
+                        it.machineId == press.id
+                }
+            assertEquals(
+                DayBest(60.0, 10, 1),
+                gym.sets.rows
+                    .getValue(sundayPress.id)
+                    .priorBest,
+            )
+            val vm = viewModel().also { it.refresh() }
+            vm.selectDay(fifth)
+
+            vm.startMove(fifthVisit.id)
+            vm.selectDay(CalendarDay(2023, 11, 13))
+
+            assertEquals(
+                DayBest.NONE,
+                gym.sets.rows
+                    .getValue(sundayPress.id)
+                    .priorBest,
+            )
+            assertEquals(
+                DayBest(70.0, 10, 1),
+                gym.sets.rows
+                    .getValue(earliest.id)
+                    .priorBest,
+            )
         }
 
     @Test

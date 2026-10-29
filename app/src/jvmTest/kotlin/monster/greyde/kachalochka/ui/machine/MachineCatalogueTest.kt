@@ -9,6 +9,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -16,6 +18,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -39,6 +42,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
 class MachineCatalogueTest {
@@ -665,6 +669,47 @@ class MachineCatalogueTest {
                 gym.machines.rows[removed.id],
             )
             assertEquals(1, gym.sync.requests)
+        }
+
+    @Test
+    fun merging_recomputes_the_kept_machine_s_prior_bests() =
+        runTest {
+            val removed = Machine.new("Жим", ME.userId, t0)
+            gym.machines.upsert(removed)
+            gym.machines.upsert(myPress)
+            val first =
+                Visit(
+                    VisitId.random(),
+                    ME.userId,
+                    CalendarDay(2023, 11, 1),
+                    t0 - 2.days,
+                    t0,
+                    false,
+                )
+            val latest =
+                Visit(VisitId.random(), ME.userId, CalendarDay(2023, 11, 3), t0, t0, false)
+            gym.visits.upsert(first)
+            gym.visits.upsert(latest)
+            val moved = set(removed, 80.0).copy(visitId = first.id)
+            val stays = set(myPress, 70.0).copy(visitId = latest.id)
+            gym.sets.upsert(moved)
+            gym.sets.upsert(stays)
+            gym.priorBests.refreshAll(ME.userId)
+            assertEquals(
+                DayBest.NONE,
+                gym.sets.rows
+                    .getValue(stays.id)
+                    .priorBest,
+            )
+
+            assertEquals(MergeOutcome.Done, merge(ME.userId, kept = myPress, removed = removed))
+
+            assertEquals(
+                DayBest(80.0, 10, 1),
+                gym.sets.rows
+                    .getValue(stays.id)
+                    .priorBest,
+            )
         }
 
     @Test

@@ -11,9 +11,13 @@ import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountSession
+import monster.greyde.kachalochka.core.domain.gym.DayBest
+import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import kotlin.test.Test
@@ -40,10 +44,59 @@ class VisitNormalizationTest {
         store: VisitStore = VisitStore.Server,
     ) = VisitNormalization(
         VisitNormalizer(visits, on.sets, on.clock) { Duration.ZERO },
+        on.priorBests,
         on.accounts,
         on.sync,
         store,
         FailureLog { failures += it },
+    )
+
+    @Test
+    fun the_anonymous_owner_s_prior_bests_are_refreshed_at_start() =
+        runTest(UnconfinedTestDispatcher()) {
+            val press = Machine.new("Жим ногами", null, t0)
+            val first =
+                Visit(VisitId.random(), null, gym.today.plusDays(-2), t0 - 48.hours, t0, false)
+            val latest = Visit(VisitId.random(), null, gym.today, t0, t0, false)
+            gym.machines.upsert(press)
+            listOf(first, latest).forEach { gym.visits.upsert(it) }
+            val earlier = set(first, press, 60.0)
+            val todays = set(latest, press, 65.0)
+            listOf(earlier, todays).forEach { gym.sets.upsert(it) }
+
+            backgroundScope.launch { normalization().run(listOf(null)) }
+            runCurrent()
+
+            assertEquals(
+                DayBest.NONE,
+                gym.sets.rows
+                    .getValue(earlier.id)
+                    .priorBest,
+            )
+            assertEquals(
+                DayBest(60.0, 10, 1),
+                gym.sets.rows
+                    .getValue(todays.id)
+                    .priorBest,
+            )
+            assertEquals(1, gym.sync.requests)
+        }
+
+    private fun set(
+        visit: Visit,
+        machine: Machine,
+        weight: Double,
+    ) = WorkoutSet(
+        WorkoutSetId.random(),
+        null,
+        visit.id,
+        machine.id,
+        weight,
+        10,
+        0,
+        visit.recordedAt,
+        t0,
+        false,
     )
 
     /** Two visits on today; returns the one normalization removes. */
