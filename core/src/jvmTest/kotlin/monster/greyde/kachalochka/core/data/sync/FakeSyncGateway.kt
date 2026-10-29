@@ -66,7 +66,13 @@ class FakeSyncGateway(
 
     override suspend fun pushVisit(visit: Visit) = record(VISIT_TABLE, visit.id.value)
 
-    override suspend fun pushSet(set: WorkoutSet) = record(WORKOUT_SET_TABLE, set.id.value)
+    /** The rows each set push carried, in order. */
+    val pushedSets = mutableListOf<WorkoutSet>()
+
+    override suspend fun pushSet(set: WorkoutSet) {
+        record(WORKOUT_SET_TABLE, set.id.value)
+        pushedSets += set
+    }
 
     override suspend fun pushProfile(profile: Profile) = record(PROFILE_TABLE, profile.id.value)
 

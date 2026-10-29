@@ -4,6 +4,7 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.gym.VISIT_TABLE
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.gym.WORKOUT_SET_TABLE
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.T0
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
@@ -25,11 +26,14 @@ class SyncAndNormalizeTest {
             val current = ownedVisit(IVAN)
             val press = ownedPress(IVAN)
             val oldSet = ownedSet(IVAN, old, press)
+            val currentSet = ownedSet(IVAN, current, press).copy(priorBest = DayBest.NONE)
             h.gateway.visitsToPull = listOf(old, current)
             h.gateway.machinesToPull = listOf(press)
-            h.gateway.setsToPull = listOf(oldSet, ownedSet(IVAN, current, press))
+            h.gateway.setsToPull = listOf(oldSet, currentSet)
 
-            assertTrue(h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.failures::add))
+            assertTrue(
+                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.keeper, h.failures::add),
+            )
 
             assertEquals(
                 listOf("$VISIT_TABLE:${old.id.value}", "$WORKOUT_SET_TABLE:${oldSet.id.value}"),
@@ -37,6 +41,48 @@ class SyncAndNormalizeTest {
             )
             assertEquals(22, h.gateway.pulledSince.size)
             assertEquals(emptyList(), h.failures)
+        }
+
+    @Test
+    fun sets_pulled_without_a_prior_best_get_one_and_go_out_in_the_second_pass() =
+        runTest {
+            val visit = ownedVisit(IVAN)
+            val press = ownedPress(IVAN)
+            val set = ownedSet(IVAN, visit, press)
+            h.gateway.visitsToPull = listOf(visit)
+            h.gateway.machinesToPull = listOf(press)
+            h.gateway.setsToPull = listOf(set)
+
+            assertTrue(
+                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.keeper, h.failures::add),
+            )
+
+            assertEquals(listOf("$WORKOUT_SET_TABLE:${set.id.value}"), h.gateway.pushed)
+            assertEquals(
+                DayBest.NONE,
+                h.gateway.pushedSets
+                    .single()
+                    .priorBest,
+            )
+            assertEquals(22, h.gateway.pulledSince.size)
+        }
+
+    @Test
+    fun a_set_pulled_with_its_prior_best_is_not_pushed_back() =
+        runTest {
+            val visit = ownedVisit(IVAN)
+            val press = ownedPress(IVAN)
+            h.gateway.visitsToPull = listOf(visit)
+            h.gateway.machinesToPull = listOf(press)
+            h.gateway.setsToPull =
+                listOf(ownedSet(IVAN, visit, press).copy(priorBest = DayBest.NONE))
+
+            assertTrue(
+                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.keeper, h.failures::add),
+            )
+
+            assertEquals(emptyList(), h.gateway.pushed)
+            assertEquals(11, h.gateway.pulledSince.size)
         }
 
     @Test
@@ -48,7 +94,9 @@ class SyncAndNormalizeTest {
             rows.writeVisit(ownedVisit(IVAN))
             h.gateway.pullFails = true
 
-            assertFalse(h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.failures::add))
+            assertFalse(
+                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.keeper, h.failures::add),
+            )
 
             assertEquals(older, h.visits.byId(older.id))
             assertEquals(emptyList(), h.outbox.pending())
@@ -59,7 +107,9 @@ class SyncAndNormalizeTest {
         runTest {
             h.gateway.visitsToPull = listOf(ownedVisit(IVAN))
 
-            assertTrue(h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.failures::add))
+            assertTrue(
+                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.keeper, h.failures::add),
+            )
 
             assertEquals(emptyList(), h.gateway.pushed)
             assertEquals(11, h.gateway.pulledSince.size)
@@ -83,7 +133,9 @@ class SyncAndNormalizeTest {
                 }
             val normalizer = VisitNormalizer(brokenForIvan, h.sets, h.clock) { Duration.ZERO }
 
-            assertTrue(h.pass.runAndNormalize(listOf(IVAN, MISHA), normalizer, h.failures::add))
+            assertTrue(
+                h.pass.runAndNormalize(listOf(IVAN, MISHA), normalizer, h.keeper, h.failures::add),
+            )
 
             assertEquals(listOf("unreadable row"), h.failures.map { it.message })
             assertEquals(listOf("$VISIT_TABLE:${mishas.id.value}"), h.gateway.pushed)

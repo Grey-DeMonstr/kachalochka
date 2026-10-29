@@ -121,6 +121,7 @@ class SyncPassManagedTest {
                 h.pass.runAndNormalize(
                     listOf(MISHA),
                     h.normalizer,
+                    h.keeper,
                     h.failures::add,
                     managed = setOf(MISHA),
                 ),

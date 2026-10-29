@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.core.data.gym.LocalPhotoRepository
 import monster.greyde.kachalochka.core.data.gym.LocalPlanRepository
 import monster.greyde.kachalochka.core.data.gym.LocalVisitRepository
 import monster.greyde.kachalochka.core.data.gym.LocalWorkoutSetRepository
+import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.measures.LocalMeasureRepository
 import monster.greyde.kachalochka.core.data.measures.LocalMeasurementRepository
@@ -144,4 +145,5 @@ internal class SyncHarness(
         }
     val normalizer = VisitNormalizer(visits, sets, clock) { Duration.ZERO }
     val failures = mutableListOf<Throwable>()
+    val keeper = PriorBestsKeeper(visits, sets, machines, clock, { Duration.ZERO }, failures::add)
 }

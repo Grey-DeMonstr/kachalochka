@@ -70,6 +70,7 @@ class SyncWorker(
                     get<SyncPass>().runAndNormalize(
                         accounts.map { it.userId },
                         get(),
+                        get(),
                         failures::record,
                         accounts.filter { it.isManaged }.map { it.userId }.toSet(),
                         accounts.filter { it.isTrainee }.map { it.userId }.toSet(),
