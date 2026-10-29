@@ -111,6 +111,8 @@ fun MachineFormScreen(
     val photos by viewModel.photos.collectAsState()
     val recalculation by viewModel.recalculation.collectAsState()
     val confirmingLeave by viewModel.confirmingLeave.collectAsState()
+    val canDelete by viewModel.canDelete.collectAsState()
+    val confirmingDelete by viewModel.confirmingDelete.collectAsState()
     val leave = { if (viewModel.requestLeave()) onBack() }
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
@@ -151,6 +153,7 @@ fun MachineFormScreen(
                         ?.let { { placement.planToday(it, onOpen = onOpenVisit) } }
                         .takeUnless { traineeActive },
                 onUnlink = if (linking.canUnlink && !readOnly) viewModel::askToUnlink else null,
+                onDelete = if (canDelete) viewModel::askToDelete else null,
             )
         },
     ) {
@@ -339,6 +342,17 @@ fun MachineFormScreen(
             cancelTag = "cancel-unlink",
             onConfirm = viewModel::confirmUnlink,
             onCancel = viewModel::cancelUnlink,
+        )
+    }
+    if (confirmingDelete) {
+        ConfirmDialog(
+            title = strings().deleteMachineTitle,
+            text = strings().deleteMachineText(state.name.trim()),
+            confirmLabel = strings().delete,
+            confirmTag = "confirm-delete-machine",
+            cancelTag = "cancel-delete-machine",
+            onConfirm = { viewModel.confirmDelete(onBack) },
+            onCancel = viewModel::cancelDelete,
         )
     }
 }

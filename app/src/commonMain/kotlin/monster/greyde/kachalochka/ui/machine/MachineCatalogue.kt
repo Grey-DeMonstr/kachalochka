@@ -283,6 +283,32 @@ class MachineCatalogue(
         return MergeOutcome.Done
     }
 
+    /**
+     * Deletes [owner]'s [machine] with its photos and own links, and asks for a sync; false, and
+     * nothing written, when the machine has live sets or is no longer [owner]'s live one.
+     */
+    suspend fun delete(
+        owner: UserId?,
+        machine: MachineId,
+    ): Boolean {
+        val row = liveOwn(machine, owner) ?: return false
+        if (sets.forMachine(machine).any { it.userId == owner }) return false
+        val now = clock.now()
+        photos
+            .forMachine(machine)
+            .filter { it.userId == owner }
+            .forEach { photos.upsert(it.copy(deleted = true, updatedAt = now)) }
+        writingLinks(requestSync = false) {
+            links
+                .all(owner)
+                .filter { it.machineId == machine || it.linkedMachineId == machine }
+                .forEach { upsert(it.copy(deleted = true, updatedAt = now)) }
+        }
+        machines.upsert(row.copy(deleted = true, updatedAt = now))
+        sync.request()
+        return true
+    }
+
     private suspend fun liveOwn(
         id: MachineId,
         owner: UserId?,

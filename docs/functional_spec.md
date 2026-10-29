@@ -216,6 +216,11 @@ machine rows and pages, the section headings of the visit and of the statistics,
 and a friend's machine. On the machine rows and pages, the visit cards and the visit's section
 headings each tag is a small chip filled with the accent colour.
 
+The form's "⋮" menu of a saved machine without recorded sets has "Удалить упражнение". It asks
+"Удалить упражнение?" ("«Жим ногами» исчезнет из списка."), and "Удалить" deletes the machine
+with its photos and the user's own links to friends' machines, also offline, and closes the form.
+A trainer looking at a trainee's machine is not offered it.
+
 A set's total weight is its weight plus the platform when the platform is not added to the record.
 When "Сохранить" changes that for a machine with recorded sets (for example, a platform typed in
 after imported totals), "Пересчитать историю?" asks first and names the change, such as "−25 кг"

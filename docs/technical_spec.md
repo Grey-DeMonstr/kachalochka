@@ -727,6 +727,11 @@ locally. The form reads the links again whenever it is shown, and the machine's 
 results again on `refresh()` and after a sync pass, because the chooser changes links on another
 screen. A merge started from a visit hands the kept machine to the visit's page, and the page
 closes on an own machine that has been deleted rather than record a set on it.
+"Удалить упражнение" (`MachineCatalogue.delete`) soft-deletes the machine's own photos, the own
+links touching it and the machine last, then requests a sync; the machine's `machine_tag` rows
+follow from its upsert. It writes nothing for a machine with live own sets, so a set recorded
+after the form offered the deletion keeps the machine. Friends' links into a deleted machine stay,
+since the group read leaves deleted machines out; so a deletion needs no network.
 
 A set's total is its weight plus the platform when the platform is not added to the record.
 `platformShift(from, to)` is what every weight recorded under `from`'s platform changes by to keep

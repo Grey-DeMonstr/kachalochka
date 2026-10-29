@@ -274,6 +274,11 @@ object RuStrings : Strings {
     override val customUnit = "Своя единица"
     override val weightStep = "Шаг веса"
     override val unlinkFromFriends = "Отвязать от друзей"
+    override val deleteMachine = "Удалить упражнение"
+    override val deleteMachineTitle = "Удалить упражнение?"
+
+    override fun deleteMachineText(name: String) = "«$name» исчезнет из списка."
+
     override val basedOnExisting = "На основе существующего"
     override val photoNoteAndSetup = "Фото, комментарий и настройка веса"
     override val copyMachine = "Скопировать упражнение"

@@ -154,6 +154,19 @@ class TraineeModeTest {
         }
 
     @Test
+    fun a_trainee_s_machine_without_sets_is_not_offered_for_deletion() {
+        val unused = Machine.new("Гакк", SASHA.userId, t0)
+        runBlocking { gym.machines.upsert(unused) }
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(unused.id, null, ""), {}, {}, {})
+        }) {
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("delete-machine").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun a_new_machine_is_added_for_the_trainee_without_photos() {
         var saved = 0
         runScreenTest(gym, screen = {

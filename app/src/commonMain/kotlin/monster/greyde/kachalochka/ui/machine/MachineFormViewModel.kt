@@ -225,12 +225,20 @@ class MachineFormViewModel(
     private val mutableConfirmingLeave = MutableStateFlow(false)
     val confirmingLeave: StateFlow<Boolean> = mutableConfirmingLeave
 
+    /** A saved machine without live sets may be deleted. */
+    private val mutableCanDelete = MutableStateFlow(false)
+    val canDelete: StateFlow<Boolean> = mutableCanDelete
+    private val mutableConfirmingDelete = MutableStateFlow(false)
+    val confirmingDelete: StateFlow<Boolean> = mutableConfirmingDelete
+
     /** A switch keeps the typed edits and drops the row under them, which it no longer owns. */
     init {
         viewModelScope.launch {
             accounts.activeId.collect { active ->
                 existing = existing?.takeIf { it.userId == active }
                 if (existing == null) {
+                    mutableCanDelete.value = false
+                    mutableConfirmingDelete.value = false
                     savedPhotos = emptyList()
                     removedPhotos = emptyList()
                     friendPhotos = emptyList()
@@ -271,6 +279,10 @@ class MachineFormViewModel(
             val known = machines.all(owner).filter { it.id != current?.id }.flatMap { it.tags }
             mutableState.value = shown.copy(knownTags = known.toSet(), openedTags = shown.tags)
             startEdits = shown.edits
+            mutableCanDelete.value =
+                current != null &&
+                !readOnly &&
+                recordedSets(current, owner).isEmpty()
             savedPhotos = current?.let { photoRows.forMachine(it.id) }.orEmpty()
             coverChoice = current?.coverPhoto
             startCover = coverChoice
@@ -413,6 +425,27 @@ class MachineFormViewModel(
             mutableLinking.value =
                 mutableLinking.value.copy(confirmingUnlink = false, error = null)
             refreshLinks()
+        }
+    }
+
+    fun askToDelete() {
+        if (mutableCanDelete.value) mutableConfirmingDelete.value = true
+    }
+
+    fun cancelDelete() {
+        mutableConfirmingDelete.value = false
+    }
+
+    /** A set recorded since the form opened keeps the machine and ends the offer. */
+    fun confirmDelete(onDeleted: () -> Unit) {
+        val shown = existing ?: return
+        writes.launch {
+            mutableConfirmingDelete.value = false
+            if (catalogue.delete(currentUser.id(), shown.id)) {
+                onDeleted()
+            } else {
+                mutableCanDelete.value = false
+            }
         }
     }
 

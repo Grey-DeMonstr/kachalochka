@@ -667,6 +667,69 @@ class MachineFormScreenTest {
     }
 
     @Test
+    fun the_menu_deletes_a_machine_without_sets_only_after_a_confirmation() {
+        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        runBlocking { gym.machines.upsert(press) }
+        var closed = 0
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(press.id, null, ""), { closed++ }, {}, onSaved = {})
+        }) {
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("delete-machine").assertTextEquals("Удалить упражнение").performClick()
+            waitForIdle()
+            onNodeWithText("«Жим ногами» исчезнет из списка.").assertExists()
+            onNodeWithTag("cancel-delete-machine").performClick()
+            waitForIdle()
+            assertFalse(
+                gym.machines.rows
+                    .getValue(press.id)
+                    .deleted,
+            )
+
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("delete-machine").performClick()
+            waitForIdle()
+            onNodeWithTag("confirm-delete-machine").performClick()
+            waitForIdle()
+        }
+        assertTrue(
+            gym.machines.rows
+                .getValue(press.id)
+                .deleted,
+        )
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun a_machine_with_sets_is_not_offered_for_deletion() {
+        val now = gym.clock.current
+        val press = Machine.new("Жим ногами", null, now)
+        val set =
+            WorkoutSet(
+                WorkoutSetId.random(),
+                null,
+                VisitId.random(),
+                press.id,
+                70.0,
+                10,
+                0,
+                now,
+                now,
+                false,
+            )
+        runBlocking {
+            gym.machines.upsert(press)
+            gym.sets.upsert(set)
+        }
+        runScreenTest(gym, screen = {
+            MachineFormScreen(MachineFormArgs(press.id, null, ""), {}, {}, onSaved = {})
+        }) {
+            onNodeWithTag("machine-menu").performClick()
+            onNodeWithTag("delete-machine").assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun a_new_machine_has_no_menu() =
         runScreenTest(gym, screen = {
             MachineFormScreen(MachineFormArgs(null, null, "Гакк"), {}, {}, onSaved = {})

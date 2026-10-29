@@ -257,6 +257,11 @@ object EnStrings : Strings {
     override val customUnit = "Own unit"
     override val weightStep = "Weight step"
     override val unlinkFromFriends = "Unlink from friends"
+    override val deleteMachine = "Delete machine"
+    override val deleteMachineTitle = "Delete the machine?"
+
+    override fun deleteMachineText(name: String) = "\"$name\" will disappear from the list."
+
     override val basedOnExisting = "Based on an existing one"
     override val photoNoteAndSetup = "Photos, comment and weight setup"
     override val copyMachine = "Copy machine"

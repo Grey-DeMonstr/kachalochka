@@ -25,8 +25,9 @@ internal fun MachineMenu(
     onToPlan: (() -> Unit)? = null,
     onToday: (() -> Unit)? = null,
     onUnlink: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
 ) {
-    if (onToPlan == null && onToday == null && onUnlink == null) return
+    if (listOfNotNull(onToPlan, onToday, onUnlink, onDelete).isEmpty()) return
     var expanded by remember { mutableStateOf(false) }
     Box {
         SquareIconButton(
@@ -52,6 +53,9 @@ internal fun MachineMenu(
             }
             onUnlink?.let {
                 MenuItem(strings().unlinkFromFriends, "unlink-machine", it) { expanded = false }
+            }
+            onDelete?.let {
+                MenuItem(strings().deleteMachine, "delete-machine", it) { expanded = false }
             }
         }
     }

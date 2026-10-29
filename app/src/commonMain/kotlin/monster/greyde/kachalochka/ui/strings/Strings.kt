@@ -235,6 +235,11 @@ interface Strings {
     val customUnit: String
     val weightStep: String
     val unlinkFromFriends: String
+    val deleteMachine: String
+    val deleteMachineTitle: String
+
+    fun deleteMachineText(name: String): String
+
     val basedOnExisting: String
     val photoNoteAndSetup: String
     val copyMachine: String

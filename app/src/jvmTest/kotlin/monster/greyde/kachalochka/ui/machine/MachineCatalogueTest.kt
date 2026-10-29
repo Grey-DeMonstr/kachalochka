@@ -1119,6 +1119,67 @@ class MachineCatalogueTest {
         }
 
     @Test
+    fun deleting_a_machine_without_sets_deletes_its_photos_and_own_links_then_the_machine() =
+        runTest {
+            val (mine, link) = linkedMine()
+            val photo = Photo.new(mine.id, ME.userId, t0)
+            gym.photos.upsert(photo)
+            gym.sets.upsert(setOn(mine).copy(deleted = true))
+            val requests = gym.sync.requests
+            gym.clock.current += 1.minutes
+            val now = gym.clock.current
+
+            assertTrue(catalogue.delete(ME.userId, mine.id))
+
+            assertEquals(mine.copy(deleted = true, updatedAt = now), gym.machines.rows[mine.id])
+            assertEquals(photo.copy(deleted = true, updatedAt = now), gym.photos.rows[photo.id])
+            assertEquals(
+                link.copy(deleted = true, updatedAt = now),
+                gym.machineLinks.rows[link.id],
+            )
+            assertEquals(emptyList(), gym.friends.broken)
+            assertEquals(requests + 1, gym.sync.requests)
+        }
+
+    private fun setOn(machine: Machine) =
+        WorkoutSet(
+            WorkoutSetId.random(),
+            machine.userId,
+            VisitId.random(),
+            machine.id,
+            50.0,
+            10,
+            0,
+            t0,
+            t0,
+            false,
+        )
+
+    @Test
+    fun a_machine_with_a_live_set_another_owner_s_or_a_deleted_one_is_not_deleted() =
+        runTest {
+            val gone = Machine.new("Ушла", ME.userId, t0).copy(deleted = true)
+            gym.machines.upsert(myPress)
+            gym.machines.upsert(gone)
+            val recorded = Machine.new("Гакк", ME.userId, t0)
+            gym.machines.upsert(recorded)
+            gym.sets.upsert(setOn(recorded))
+            val requests = gym.sync.requests
+            gym.clock.current += 1.minutes
+
+            assertFalse(catalogue.delete(ME.userId, recorded.id))
+            assertFalse(catalogue.delete(ME.userId, gone.id))
+            assertFalse(catalogue.delete(null, myPress.id))
+
+            assertEquals(
+                listOf(myPress, gone, recorded),
+                gym.machines.rows.values
+                    .toList(),
+            )
+            assertEquals(requests, gym.sync.requests)
+        }
+
+    @Test
     fun an_own_live_machine_stands_in_for_itself_without_a_write() =
         runTest {
             gym.machines.upsert(myPress)

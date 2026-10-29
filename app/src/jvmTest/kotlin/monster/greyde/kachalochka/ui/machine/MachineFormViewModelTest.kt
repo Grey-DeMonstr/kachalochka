@@ -1296,6 +1296,102 @@ class MachineFormViewModelTest {
             assertFalse(vm.linking.value.confirmingUnlink)
         }
 
+    private fun setOn(machine: Machine) =
+        WorkoutSet(
+            WorkoutSetId.random(),
+            machine.userId,
+            VisitId.random(),
+            machine.id,
+            50.0,
+            10,
+            0,
+            t0,
+            t0,
+            false,
+        )
+
+    @Test
+    fun a_machine_without_live_sets_is_deleted_after_a_confirmation() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.machines.upsert(press)
+            gym.sets.upsert(setOn(press).copy(deleted = true))
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            assertTrue(vm.canDelete.value)
+            var deleted = 0
+
+            vm.askToDelete()
+            assertTrue(vm.confirmingDelete.value)
+            vm.cancelDelete()
+            assertFalse(vm.confirmingDelete.value)
+            assertFalse(
+                gym.machines.rows
+                    .getValue(press.id)
+                    .deleted,
+            )
+
+            vm.askToDelete()
+            vm.confirmDelete { deleted++ }
+
+            assertTrue(
+                gym.machines.rows
+                    .getValue(press.id)
+                    .deleted,
+            )
+            assertFalse(vm.confirmingDelete.value)
+            assertEquals(1, deleted)
+        }
+
+    @Test
+    fun a_machine_with_a_live_set_or_a_new_one_offers_no_deletion() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.machines.upsert(press)
+            gym.sets.upsert(setOn(press))
+
+            val recorded = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            val fresh = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+
+            assertFalse(recorded.canDelete.value)
+            assertFalse(fresh.canDelete.value)
+        }
+
+    @Test
+    fun a_set_recorded_while_the_form_is_open_keeps_the_machine() =
+        runTest {
+            val press = Machine.new("Жим ногами", null, t0)
+            gym.machines.upsert(press)
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            var deleted = 0
+
+            vm.askToDelete()
+            gym.sets.upsert(setOn(press))
+            vm.confirmDelete { deleted++ }
+
+            assertFalse(
+                gym.machines.rows
+                    .getValue(press.id)
+                    .deleted,
+            )
+            assertFalse(vm.confirmingDelete.value)
+            assertFalse(vm.canDelete.value)
+            assertEquals(0, deleted)
+        }
+
+    @Test
+    fun a_switch_to_another_account_ends_the_deletion_offer() =
+        runTest {
+            gym.withAccounts(ivan, misha, active = ivan)
+            val press = Machine.new("Жим ногами", ivan.account.userId, t0)
+            gym.machines.upsert(press)
+            val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
+            assertTrue(vm.canDelete.value)
+
+            gym.accounts.switchTo(misha.account.userId)
+
+            assertFalse(vm.canDelete.value)
+        }
+
     @Test
     fun a_new_machine_or_one_without_an_account_offers_no_unlinking() =
         runTest {
