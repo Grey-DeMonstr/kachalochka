@@ -139,10 +139,9 @@ The feed's people are the account and its `mates`, read once per feed with their
 the first window, so a slow read holds back no day. Paging reads back until a window holds a visit
 of a shown person, and reads nothing while nobody is shown.
 
-A visit card's gain compares the day's best set on a machine (`bestSet`) with the best of the
-same account's sets on that machine from earlier days, each set placed on its visit's day
-(`OwnHistory`). It needs the account's whole history, which is local, so friends' cards show no
-gain: their history would cost one request per friend and machine.
+A visit card's gain compares the day's result on a machine (`dayBest`) with the prior best the
+day's sets carry (§4.5, `exerciseRows`), so the own and the friends' cards need only the day's
+rows.
 
 Text leaves the app through `TextSharing`, bound per platform in `platformModule()`: Android's
 `ShareSheetTextSharing` opens the system share sheet and returns no notice; the web's
@@ -813,6 +812,40 @@ which calls `planFrom` of a recorder for today: it plans the shown visit's `visi
 starting a plan does. The visit view model keeps the
 state of the machine's page and its set form, both drawn by the visit screen over its list, and
 hands the recorder what to write.
+
+A machine's result on one day is a `DayBest` (`domain/gym`): the day's best set as `bestSet`
+picks it, and how many of the day's live sets equal it in weight and reps. Results compare by
+weight (inverted on a gravitron), then reps, then sets (`dayBestOrder`). Every `workout_set` row
+stores the greatest `DayBest` of its machine over the days before its own day, in
+`prior_best_weight`, `prior_best_reps` and `prior_best_sets` (`WorkoutSet.priorBest`), so a card
+reads a day's gain off the day's rows alone, for a friend as for the account. `0, 0, 0`
+(`DayBest.NONE`) is a machine's first day and shows the "Новое" chip; all three null means no
+client has computed the row yet, and the card shows neither a gain nor the chip. A set's day is
+its visit's `dayAt`; every live set of one machine on one day carries the same values.
+
+`withPriorBests` in `domain/gym` is the one rule: given a machine's sets and their days, it walks
+the days in order, carries the greatest result so far, and returns the live rows whose stored
+value is wrong, so a second run returns nothing. `PriorBestsKeeper` in `core/data/gym` applies it
+through the repositories: `refresh(owner, machines)` reads the owner's visits once and each
+machine's sets and weight mode; `refreshAll(owner)` covers every machine the owner has a live set
+on. It writes through `WorkoutSetRepository.storePriorBest`, which updates only the three columns
+and `updated_at` (an UPDATE and an outbox entry on Android, a PATCH by id on the web), so a set
+the screen amends while the sync worker recomputes keeps its amendment. A failure is reported to
+the keeper's `failed` and answers false; on the web, where a recompute follows a set write as its
+own requests, the write stands and the next write on the machine recomputes.
+
+The writers that call it, for the machines they touched: `SetRecorder` after a record, amend or
+remove; a visit move, replacement or removal on the calendar or in the feed; the machine form's
+save when the weight mode changed or "Пересчитать" rewrote the sets; a merge, for the kept
+machine; `VisitNormalization` after a normalization that wrote, and for the anonymous owner at
+every start, since that owner never pulls; and the sync pass, which runs `refreshAll` for every
+clean owner after normalization and sends what it wrote in its second run (`runAndNormalize`).
+Two devices offline each compute from a partial view; the recompute after the pull is what makes
+them agree. A trainee's rows are never recomputed on the trainer's device. Migration `0030` adds
+the columns and fills them for every existing row in SQL, without touching `updated_at`;
+`20.sqm` adds them locally and resets `lastPullAt`, so a device pulls every set again with the
+server's values. supabase-kt leaves a null field out of a pushed row and PostgREST leaves an
+absent column as it is, so a row no client has computed keeps the server's backfilled value.
 
 `MachinePlacementViewModel` in `app/ui/machine` serves the "⋮" menu that the machine form, the
 visit's machine page and "Упражнение друга" share (`MachineMenu`, `PlanChooser`,

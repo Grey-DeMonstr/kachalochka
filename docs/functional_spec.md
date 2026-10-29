@@ -334,8 +334,9 @@ which a switch under the top bar chooses. The device keeps the chosen mode for t
 highlighted, and future days cannot be chosen. Below the month is the chosen day's visit as a card:
 the account's avatar and name, every tag its machines carry as chips, then one row per machine in
 visit order with its name, the day's best set on it in the viewer's unit and, in green, how much
-that set beats the best set on the machine from all earlier days: "+5 кг", or at the same weight
-"+1 повт.". The first day on a machine shows no gain. A card shows three machines; "Ещё 2
+the day beats the best day on the machine before it: "+5 кг", at the same weight "+1 повт.", and
+at the same best set "+1 подход" when the day repeated it more often. The first day on a machine
+shows a green "Новое" chip instead. A card shows three machines; "Ещё 2
 упражнения" shows the others in the card, and "Свернуть" hides them again. A visit without sets
 says "Подходов пока нет". Tapping it opens it on the visit screen, where its sets are added,
 edited, deleted and ordered as today's are. A day without a visit offers "Добавить визит". The
@@ -350,9 +351,10 @@ visit's date, then removes the visit and its sets from the history and the stati
 With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
 group with it: each friend who trained on a day adds a dot in that friend's colour after the
 account's own dot, at most four dots a day. Below the chosen day's own visit is one card per friend
-who trained that day, by name, drawn as the own one without the menu and the gains — the friend's
-avatar, or their initial in their colour, and name, then, once read, the day's tags and machines
-with their best sets; tapping it opens that friend's visit, read-only: the friend's avatar and name
+who trained that day, by name, drawn as the own one without the menu — the friend's avatar, or
+their initial in their colour, and name, then, once read, the day's tags and machines with their
+best sets, gains and "Новое" chips; tapping it opens that friend's visit, read-only: the friend's
+avatar and name
 in the top bar, the day and how many machines they did, then one row per machine as on the visit
 screen — photo, the friend's own name for it, tags, comment and results — without its sets, and
 under them the machines it is linked with (see Group sharing); a row opens "Упражнение друга" for
