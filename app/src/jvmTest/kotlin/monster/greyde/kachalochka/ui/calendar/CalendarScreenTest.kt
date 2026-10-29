@@ -347,6 +347,16 @@ class CalendarScreenTest {
     }
 
     @Test
+    fun the_mode_selector_keeps_clear_of_the_top_bar() {
+        runScreenTest(gym, screen = { calendar() }) {
+            val bar = onNodeWithTag("account-avatar").getBoundsInRoot()
+            val selector = onNodeWithTag("mode-calendar").getBoundsInRoot()
+            // The bar's 14 dp bottom padding, then 12 dp above the selector.
+            assert(selector.top - bar.bottom >= 26.dp) { "${selector.top - bar.bottom}" }
+        }
+    }
+
+    @Test
     fun removing_asks_for_confirmation_first() {
         runScreenTest(gym, screen = { calendar() }) {
             onNodeWithTag("day-2023-11-12").performClick()

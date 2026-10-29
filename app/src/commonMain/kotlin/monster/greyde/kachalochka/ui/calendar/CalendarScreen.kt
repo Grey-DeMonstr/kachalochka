@@ -98,7 +98,7 @@ fun CalendarScreen(
             ),
             selected = mode.ordinal,
             onSelect = { show(VisitsMode.entries[it]) },
-            modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 4.dp),
+            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 4.dp),
         )
         when (mode) {
             VisitsMode.Calendar ->
