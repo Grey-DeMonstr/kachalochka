@@ -25,6 +25,7 @@ import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -201,6 +202,14 @@ class InMemoryWorkoutSetRepository : WorkoutSetRepository {
     override suspend fun upsert(set: WorkoutSet) {
         gate?.await()
         rows[set.id] = set
+    }
+
+    override suspend fun storePriorBest(
+        id: WorkoutSetId,
+        best: DayBest,
+        updatedAt: Instant,
+    ) {
+        rows[id] = rows.getValue(id).copy(priorBest = best, updatedAt = updatedAt)
     }
 
     private fun live() = rows.values.filterNot { it.deleted }.sortedBy { it.recordedAt }

@@ -702,6 +702,27 @@ class SchemaMigrationTest {
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
+    @Test
+    fun version_20_sets_carry_no_prior_best_and_every_row_is_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        version11SetTable()
+        exec("ALTER TABLE workout_set ADD COLUMN comment TEXT NOT NULL DEFAULT ''")
+        exec(
+            "INSERT INTO workout_set VALUES ('${SET.value}', NULL, '${VISIT.value}', " +
+                "'${PRESS.value}', 80.0, 8, 1, 1, 0, 0, '')",
+        )
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 20, 21)
+
+        assertEquals(
+            null,
+            number("SELECT prior_best_sets FROM workout_set WHERE id = '${SET.value}'"),
+        )
+        assertEquals(8L, number("SELECT reps FROM workout_set WHERE id = '${SET.value}'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
     private fun dropTagTables() {
         exec("DROP TABLE tag")
         exec("DROP TABLE machine_tag")

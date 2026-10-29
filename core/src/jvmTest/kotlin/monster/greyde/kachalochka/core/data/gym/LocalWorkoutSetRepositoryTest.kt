@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.SetPeak
@@ -65,6 +66,49 @@ class LocalWorkoutSetRepositoryTest {
             repository.upsert(set)
 
             assertEquals(listOf(set), repository.forVisit(visitA))
+        }
+
+    @Test
+    fun a_set_keeps_its_prior_best() =
+        runTest {
+            val set = set(visitA, press, 0).copy(priorBest = DayBest(60.0, 10, 2))
+
+            repository.upsert(set)
+
+            assertEquals(listOf(set), repository.forVisit(visitA))
+        }
+
+    @Test
+    fun storing_a_prior_best_changes_nothing_else_and_enqueues_the_owned_row() =
+        runTest {
+            val ivan = UserId("11111111-1111-4111-8111-111111111111")
+            val set = set(visitA, press, 0, userId = ivan)
+            repository.upsert(set)
+            val outbox = OutboxDao(database)
+            outbox.removePushed(outbox.pending().single())
+
+            repository.storePriorBest(set.id, DayBest.NONE, t0 + 1.minutes)
+
+            assertEquals(
+                set.copy(priorBest = DayBest.NONE, updatedAt = t0 + 1.minutes),
+                repository.forVisit(visitA).single(),
+            )
+            assertEquals(
+                listOf(WORKOUT_SET_TABLE to set.id.value),
+                outbox.pending().map { it.tableName to it.rowId },
+            )
+        }
+
+    @Test
+    fun storing_a_prior_best_on_an_unowned_row_enqueues_nothing() =
+        runTest {
+            val set = set(visitA, press, 0)
+            repository.upsert(set)
+
+            repository.storePriorBest(set.id, DayBest(70.0, 10, 1), t0 + 1.minutes)
+
+            assertEquals(DayBest(70.0, 10, 1), repository.forVisit(visitA).single().priorBest)
+            assertEquals(emptyList(), OutboxDao(database).pending())
         }
 
     @Test

@@ -87,6 +87,9 @@ class LocalSyncRows(
             set.deleted,
             set.position.toLong(),
             set.comment,
+            set.priorBest?.weight,
+            set.priorBest?.reps?.toLong(),
+            set.priorBest?.sets?.toLong(),
         )
 
     fun writePlan(plan: Plan) = database.planQueries.write(plan)

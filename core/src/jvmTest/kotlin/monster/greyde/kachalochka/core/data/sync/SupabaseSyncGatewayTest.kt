@@ -13,6 +13,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.data.gym.VisitRow
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
@@ -306,6 +307,78 @@ class SupabaseSyncGatewayTest {
             assertTrue("\"day\":\"2023-11-14\"" in visitBody, visitBody)
             assertTrue("\"ended_at\":\"2023-11-14T22:13:20Z\"" in visitBody, visitBody)
             assertTrue("\"position\":0" in setBody, setBody)
+        }
+
+    // An absent column is left as it is on the server, so a row no client has computed yet keeps
+    // the value the server's backfill gave it.
+    @Test
+    fun a_pushed_set_without_a_computed_prior_best_leaves_the_columns_out() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
+            val visit = ownedVisit(OWNER)
+
+            gatewayOn(engine, pageSize = 10).pushSet(ownedSet(OWNER, visit, ownedPress(OWNER)))
+
+            val body =
+                engine.requestHistory
+                    .single()
+                    .body
+                    .toByteArray()
+                    .decodeToString()
+            assertFalse("prior_best" in body, body)
+        }
+
+    @Test
+    fun a_pushed_set_carries_its_prior_best() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
+            val visit = ownedVisit(OWNER)
+            val set =
+                ownedSet(
+                    OWNER,
+                    visit,
+                    ownedPress(OWNER),
+                ).copy(priorBest = DayBest(70.0, 10, 1))
+
+            gatewayOn(engine, pageSize = 10).pushSet(set)
+
+            val body =
+                engine.requestHistory
+                    .single()
+                    .body
+                    .toByteArray()
+                    .decodeToString()
+            assertTrue(
+                "\"prior_best_weight\":70.0,\"prior_best_reps\":10,\"prior_best_sets\":1" in body,
+                body,
+            )
+        }
+
+    @Test
+    fun a_pulled_set_carries_its_prior_best_and_none_when_the_server_has_none() =
+        runTest {
+            val head =
+                """{"id":"44444444-4444-4444-8444-444444444444",""" +
+                    """"user_id":"${OWNER.value}",""" +
+                    """"visit_id":"11111111-0000-4000-8000-000000000001",""" +
+                    """"machine_id":"33333333-3333-4333-8333-333333333333",""" +
+                    """"weight":70.0,"reps":10,"position":3,""" +
+                    """"recorded_at":"2024-01-01T00:00:00+00:00",""" +
+                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false,""" +
+                    """"comment":"""""
+            val withBest =
+                """$head,"prior_best_weight":60.0,"prior_best_reps":8,"prior_best_sets":2}"""
+            val withNulls =
+                """$head,"prior_best_weight":null,"prior_best_reps":null,"prior_best_sets":null}"""
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond("[$withBest,$withNulls]", HttpStatusCode.OK, jsonHeaders()) }
+            engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }
+
+            val pulled = gatewayOn(engine, pageSize = 10).pullSets(OWNER, since = null)
+
+            assertEquals(listOf(DayBest(60.0, 8, 2), null), pulled.map { it.priorBest })
         }
 
     @Test

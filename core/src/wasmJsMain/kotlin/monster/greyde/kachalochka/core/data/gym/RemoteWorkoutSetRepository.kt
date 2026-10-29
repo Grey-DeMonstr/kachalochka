@@ -4,19 +4,34 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder
 import monster.greyde.kachalochka.core.data.supabase.pagedRows
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import kotlin.time.Instant
 
 class RemoteWorkoutSetRepository(
     private val client: SupabaseClient,
 ) : WorkoutSetRepository {
     override suspend fun upsert(set: WorkoutSet) {
         client.postgrest.from(WORKOUT_SET_TABLE).upsert(WorkoutSetRow.of(set))
+    }
+
+    override suspend fun storePriorBest(
+        id: WorkoutSetId,
+        best: DayBest,
+        updatedAt: Instant,
+    ) {
+        client.postgrest
+            .from(WORKOUT_SET_TABLE)
+            .update(PriorBestPatch(best.weight, best.reps, best.sets, updatedAt.toString())) {
+                filter { eq("id", id.value) }
+            }
     }
 
     override suspend fun forVisit(visitId: VisitId): List<WorkoutSet> =

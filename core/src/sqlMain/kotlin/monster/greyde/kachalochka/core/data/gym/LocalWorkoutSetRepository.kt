@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.core.data.db.KachalochkaDatabase
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -37,12 +38,33 @@ class LocalWorkoutSetRepository(
                     set.deleted,
                     set.position.toLong(),
                     set.comment,
+                    set.priorBest?.weight,
+                    set.priorBest?.reps?.toLong(),
+                    set.priorBest?.sets?.toLong(),
                 )
                 if (set.userId != null) {
                     outbox.enqueue(OutboxEntry(WORKOUT_SET_TABLE, set.id.value, set.updatedAt))
                 }
             }
         }
+
+    override suspend fun storePriorBest(
+        id: WorkoutSetId,
+        best: DayBest,
+        updatedAt: Instant,
+    ) = withContext(dispatcher) {
+        queries.transaction {
+            queries.storePriorBest(
+                best.weight,
+                best.reps.toLong(),
+                best.sets.toLong(),
+                updatedAt,
+                id.value,
+            )
+            val owned = queries.byId(id.value, ::workoutSetOf).executeAsOneOrNull()?.userId
+            if (owned != null) outbox.enqueue(OutboxEntry(WORKOUT_SET_TABLE, id.value, updatedAt))
+        }
+    }
 
     override suspend fun forVisit(visitId: VisitId): List<WorkoutSet> =
         withContext(dispatcher) { queries.forVisit(visitId.value, ::workoutSetOf).executeAsList() }
@@ -78,6 +100,9 @@ internal fun workoutSetOf(
     deleted: Boolean,
     position: Long,
     comment: String,
+    priorBestWeight: Double?,
+    priorBestReps: Long?,
+    priorBestSets: Long?,
 ) = WorkoutSet(
     id = WorkoutSetId(id),
     userId = userId?.let(::UserId),
@@ -90,4 +115,8 @@ internal fun workoutSetOf(
     updatedAt = updatedAt,
     deleted = deleted,
     comment = comment,
+    priorBest =
+        priorBestWeight?.let {
+            DayBest(it, checkNotNull(priorBestReps).toInt(), checkNotNull(priorBestSets).toInt())
+        },
 )

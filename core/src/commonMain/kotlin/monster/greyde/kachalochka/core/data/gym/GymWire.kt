@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
@@ -177,6 +178,9 @@ internal data class WorkoutSetRow(
     @SerialName("updated_at") val updatedAt: String,
     val deleted: Boolean,
     val comment: String,
+    @SerialName("prior_best_weight") val priorBestWeight: Double? = null,
+    @SerialName("prior_best_reps") val priorBestReps: Int? = null,
+    @SerialName("prior_best_sets") val priorBestSets: Int? = null,
 ) {
     fun toWorkoutSet(): WorkoutSet =
         WorkoutSet(
@@ -191,6 +195,10 @@ internal data class WorkoutSetRow(
             updatedAt = Instant.parse(updatedAt),
             deleted = deleted,
             comment = comment,
+            priorBest =
+                priorBestWeight?.let {
+                    DayBest(it, checkNotNull(priorBestReps), checkNotNull(priorBestSets))
+                },
         )
 
     companion object {
@@ -207,6 +215,18 @@ internal data class WorkoutSetRow(
                 updatedAt = set.updatedAt.toString(),
                 deleted = set.deleted,
                 comment = set.comment,
+                priorBestWeight = set.priorBest?.weight,
+                priorBestReps = set.priorBest?.reps,
+                priorBestSets = set.priorBest?.sets,
             )
     }
 }
+
+/** The columns [WorkoutSetRepository.storePriorBest] writes. */
+@Serializable
+internal data class PriorBestPatch(
+    @SerialName("prior_best_weight") val weight: Double,
+    @SerialName("prior_best_reps") val reps: Int,
+    @SerialName("prior_best_sets") val sets: Int,
+    @SerialName("updated_at") val updatedAt: String,
+)

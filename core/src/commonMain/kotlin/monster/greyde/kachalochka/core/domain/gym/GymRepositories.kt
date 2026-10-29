@@ -64,6 +64,13 @@ suspend fun VisitRepository.shownOn(
 interface WorkoutSetRepository {
     suspend fun upsert(set: WorkoutSet)
 
+    /** Writes only the prior best and [updatedAt] of the set [id], so a parallel amend is kept. */
+    suspend fun storePriorBest(
+        id: WorkoutSetId,
+        best: DayBest,
+        updatedAt: Instant,
+    )
+
     suspend fun forVisit(visitId: VisitId): List<WorkoutSet>
 
     suspend fun forMachine(machineId: MachineId): List<WorkoutSet>

@@ -1,0 +1,6 @@
+ALTER TABLE workout_set ADD COLUMN prior_best_weight REAL;
+ALTER TABLE workout_set ADD COLUMN prior_best_reps INTEGER;
+ALTER TABLE workout_set ADD COLUMN prior_best_sets INTEGER;
+
+-- The server filled the prior bests of the sets pulled before this version.
+UPDATE syncState SET lastPullAt = NULL;
