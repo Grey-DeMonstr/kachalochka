@@ -22,7 +22,9 @@ import monster.greyde.kachalochka.ui.account.ActivityHolder
 import monster.greyde.kachalochka.ui.account.CredentialManagerGoogleSignIn
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
+import monster.greyde.kachalochka.ui.calendar.DataStoreFeedPeoplePreference
 import monster.greyde.kachalochka.ui.calendar.DataStoreVisitsModePreference
+import monster.greyde.kachalochka.ui.calendar.FeedPeoplePreference
 import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.family.TRAINER_CODE
@@ -87,6 +89,12 @@ actual fun platformModule(): Module =
         }
         single<VisitsModePreference> {
             DataStoreVisitsModePreference(
+                get(),
+                CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            )
+        }
+        single<FeedPeoplePreference> {
+            DataStoreFeedPeoplePreference(
                 get(),
                 CoroutineScope(SupervisorJob() + Dispatchers.Default),
             )

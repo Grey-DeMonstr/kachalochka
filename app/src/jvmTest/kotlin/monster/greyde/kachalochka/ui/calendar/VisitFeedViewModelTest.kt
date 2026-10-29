@@ -91,6 +91,8 @@ class VisitFeedViewModelTest {
         return visit
     }
 
+    private val people = InMemoryFeedPeoplePreference()
+
     private fun viewModel(gym: FakeGym = this.gym) =
         VisitFeedViewModel(
             gym.visits,
@@ -105,6 +107,7 @@ class VisitFeedViewModelTest {
             FriendColorStore(gym.profiles, gym.clock, gym.friends),
             AccountAvatars(gym.accounts, gym.profiles),
             gym.profiles,
+            people,
         )
 
     private fun FeedUiState.cardsOn(day: CalendarDay): List<VisitCardUi> =
@@ -353,6 +356,114 @@ class VisitFeedViewModelTest {
             two.accounts.switchTo(misha.account.userId)
 
             assertEquals(emptyList(), vm.state.value?.days)
+        }
+
+    @Test
+    fun the_people_are_the_account_then_its_friends_by_name_all_shown_at_first() =
+        runTest {
+            gym.friends.group("Зал на Лесной", owner = PASHA, OLEG, ME)
+
+            val shown = assertNotNull(viewModel().state.value).people
+
+            assertEquals(listOf("Иван", "Олег", "Паша"), shown.map { it.person.name })
+            assertEquals(listOf(true, true, true), shown.map { it.shown })
+            assertNull(shown.first().color)
+            assertNotNull(shown.last().color)
+        }
+
+    @Test
+    fun a_signed_out_feed_has_no_people() {
+        val gym = FakeGym()
+        runBlocking { gym.machines.upsert(press) }
+
+        assertEquals(emptyList(), assertNotNull(viewModel(gym).state.value).people)
+    }
+
+    @Test
+    fun a_tapped_friend_leaves_the_feed_and_the_device_keeps_it_for_the_account() =
+        runTest {
+            gym.ownVisit(today)
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friendVisit(OLEG, today)
+            val vm = viewModel()
+
+            vm.toggle(OLEG.userId)
+
+            val state = assertNotNull(vm.state.value)
+            assertEquals(listOf("Иван"), state.cardsOn(today).map { it.person.name })
+            assertEquals(listOf(true, false), state.people.map { it.shown })
+            assertEquals(setOf(HiddenPerson(ME.userId, OLEG.userId)), people.hidden.value)
+            assertEquals(
+                listOf("Иван"),
+                assertNotNull(viewModel().state.value).cardsOn(today).map { it.person.name },
+            )
+
+            vm.toggle(OLEG.userId)
+
+            assertEquals(2, assertNotNull(vm.state.value).cardsOn(today).size)
+            assertEquals(emptySet(), people.hidden.value)
+        }
+
+    @Test
+    fun another_account_s_choice_hides_nobody() =
+        runTest {
+            gym.ownVisit(today)
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friendVisit(OLEG, today)
+            people.set(setOf(HiddenPerson(PASHA.userId, OLEG.userId)))
+
+            assertEquals(2, assertNotNull(viewModel().state.value).cardsOn(today).size)
+        }
+
+    @Test
+    fun paging_reads_on_to_a_visit_of_a_shown_person() =
+        runTest {
+            gym.ownVisit(today)
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friendVisit(OLEG, CalendarDay(2023, 10, 1))
+            people.set(setOf(HiddenPerson(ME.userId, ME.userId)))
+
+            val state = assertNotNull(viewModel().state.value)
+
+            assertEquals(listOf(CalendarDay(2023, 10, 1)), state.days.map { it.day })
+            assertFalse(state.loading)
+        }
+
+    @Test
+    fun with_nobody_shown_the_feed_says_so_and_reads_no_more() =
+        runTest {
+            gym.ownVisit(today)
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friendVisit(OLEG, CalendarDay(2023, 10, 1))
+            val vm = viewModel()
+            val requests = gym.friends.visitWindows.size
+
+            vm.toggle(OLEG.userId)
+            vm.toggle(ME.userId)
+            vm.loadMore()
+
+            val state = assertNotNull(vm.state.value)
+            assertTrue(state.nobodyShown)
+            assertEquals(emptyList(), state.days)
+            assertEquals(requests, gym.friends.visitWindows.size)
+        }
+
+    @Test
+    fun a_person_shown_again_on_an_empty_feed_reads_on_to_their_visit() =
+        runTest {
+            gym.ownVisit(today)
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friendVisit(OLEG, CalendarDay(2023, 10, 1))
+            people.set(
+                setOf(HiddenPerson(ME.userId, ME.userId), HiddenPerson(ME.userId, OLEG.userId)),
+            )
+            val vm = viewModel()
+
+            vm.toggle(OLEG.userId)
+
+            val state = assertNotNull(vm.state.value)
+            assertFalse(state.nobodyShown)
+            assertEquals(listOf(CalendarDay(2023, 10, 1)), state.days.map { it.day })
         }
 
     @Test

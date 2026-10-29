@@ -5,6 +5,8 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getBoundsInRoot
@@ -319,6 +321,34 @@ class CalendarScreenTest {
         }
         assertEquals(CalendarDay(2023, 11, 12), opened)
         assertEquals(VisitsMode.Feed, gym.visitsModes.mode.value)
+    }
+
+    @Test
+    fun the_feed_s_people_hide_and_show_their_cards() {
+        val anna = Friend(UserId("55555555-5555-4555-8555-555555555555"), "Анна Карпелевич")
+        val signed = friendsGym(OLEG, anna)
+        runBlocking { signed.visitsModes.set(VisitsMode.Feed) }
+        val oleg = "feed-person-${OLEG.userId.value}"
+        val olegCard = "feed-friend-${OLEG.userId.value}-2023-11-12"
+        runScreenTest(signed, screen = { calendar() }) {
+            waitForIdle()
+            onNodeWithTag("feed-person-${anna.userId.value}-name", useUnmergedTree = true)
+                .assertTextEquals("Анна")
+            onNodeWithTag(oleg).assertIsOn()
+            onNodeWithTag(olegCard).assertExists()
+
+            onNodeWithTag(oleg).performClick()
+            waitForIdle()
+            onNodeWithTag(oleg).assertIsOff()
+            onNodeWithTag(olegCard).assertDoesNotExist()
+
+            onNodeWithTag("feed-person-${anna.userId.value}").performClick()
+            onNodeWithTag("feed-person-${ME.userId.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("feed-nobody", useUnmergedTree = true)
+                .assertTextEquals("Выберите хотя бы одного человека")
+        }
+        assertEquals(3, signed.feedPeople.hidden.value.size)
     }
 
     @Test

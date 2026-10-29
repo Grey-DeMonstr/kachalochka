@@ -66,6 +66,7 @@ import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
 import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
+import monster.greyde.kachalochka.ui.calendar.InMemoryFeedPeoplePreference
 import monster.greyde.kachalochka.ui.calendar.InMemoryVisitsModePreference
 import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.UtcOffset
@@ -514,6 +515,7 @@ class FakeGym(
     val themes = InMemoryThemePreference()
     val transitions = InMemoryTransitionPreference()
     val visitsModes = InMemoryVisitsModePreference()
+    val feedPeople = InMemoryFeedPeoplePreference()
     val languages = InMemoryLanguagePreference()
     val restSounds = InMemoryRestSoundPreference()
     val restSoundChooser = InstantRestSoundChooser("content://sound/7")

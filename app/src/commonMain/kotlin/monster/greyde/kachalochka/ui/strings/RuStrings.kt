@@ -165,6 +165,7 @@ object RuStrings : Strings {
     override val yesterday = "Вчера"
     override val firstVisit = "Это первый визит"
     override val noVisitsYet = "Визитов пока нет"
+    override val chooseSomeone = "Выберите хотя бы одного человека"
     override val showLess = "Свернуть"
 
     override fun moreMachines(n: Int) = "Ещё ${machines(n)}"

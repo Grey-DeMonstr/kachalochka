@@ -135,6 +135,10 @@ the oldest of the account's visits and of `oldestGroupVisit`, one request ordere
 per feed. A sync completion or a return to the screen reads the own rows again and keeps the
 windows read; an account switch starts the feed over.
 
+The feed's people are the account and its `mates`, read once per feed with their colours after
+the first window, so a slow read holds back no day. Paging reads back until a window holds a visit
+of a shown person, and reads nothing while nobody is shown.
+
 A visit card's gain compares the day's best set on a machine (`bestSet`) with the best of the
 same account's sets on that machine from earlier days, each set placed on its visit's day
 (`OwnHistory`). It needs the account's whole history, which is local, so friends' cards show no
@@ -1257,7 +1261,8 @@ behind them. Without an explicit style, Android draws a contrast scrim that foll
 window theme.
 
 The visits screen's mode, calendar or feed, is a device setting stored the same way, as
-`VisitsModePreference`.
+`VisitsModePreference`. The people the feed hides are one too, `FeedPeoplePreference`: a set of
+viewer and person pairs, so each account keeps its own choice and a new friend shows at first.
 
 The screen transition length is a device setting stored the same way, as `TransitionPreference`.
 Settings offers it as a `TransitionPreset` (0, 150, 300 or 500 ms); a length stored before the
