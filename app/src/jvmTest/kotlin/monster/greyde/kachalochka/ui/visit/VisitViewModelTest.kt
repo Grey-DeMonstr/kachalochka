@@ -1985,6 +1985,25 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun friends_results_count_on_the_viewer_s_platform() =
+        runTest {
+            val two = twoAccountGym()
+            two.machines.upsert(ivanPress.copy(platformWeight = 20.0))
+            two.olegTrainedOn(ivanPress, ivanFriend)
+            two.friends.machines[0] = two.friends.machines[0].copy(platformWeight = 10.0)
+
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+            assertEquals(
+                listOf("Олег · вчера · 70-75кг 8-6"),
+                vm.state.value
+                    ?.page
+                    ?.friends
+                    ?.map { "${it.name} · ${it.text}" },
+            )
+        }
+
+    @Test
     fun a_friend_s_result_reads_like_their_machine_s_line_in_a_shared_visit() {
         val two = twoAccountGym()
         two.olegTrainedOn(ivanPress, ivanFriend)

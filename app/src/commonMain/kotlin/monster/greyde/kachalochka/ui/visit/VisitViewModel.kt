@@ -26,7 +26,9 @@ import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.machineMovedTo
 import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.plannedWithoutSets
+import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
+import monster.greyde.kachalochka.core.domain.gym.shiftedSets
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
@@ -532,10 +534,15 @@ class VisitViewModel(
     private fun coverOf(machineId: MachineId): Photo? =
         own?.let { ShownMachines(it, groupReads.group).cover(machineId) }
 
-    private fun friendLine(result: FriendResult): FriendLineUi {
+    /** [result]'s weights count on [mine]'s platform, so they compare with the viewer's own. */
+    private fun friendLine(
+        result: FriendResult,
+        mine: Machine,
+    ): FriendLineUi {
         val now = clock.now()
         val days = calendarDaysBetween(result.sets.last().recordedAt, now, clock.offsetAt(now))
-        val sets = setsSummary(result.machine, result.sets, preferred)
+        val shifted = shiftedSets(result.sets, -platformShift(mine, result.machine), now)
+        val sets = setsSummary(result.machine, shifted, preferred)
         return FriendLineUi(
             result.friend.userId,
             result.friend.displayName,
@@ -676,7 +683,7 @@ class VisitViewModel(
                 if (form.editing ==
                     null
                 ) {
-                    groupReads.results.map(::friendLine)
+                    groupReads.results.map { friendLine(it, machine) }
                 } else {
                     emptyList()
                 },

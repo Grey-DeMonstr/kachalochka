@@ -595,7 +595,7 @@ reader asks it: the picker and the machine list offer one friend's machine per c
 own machine (`friendMachineRows`, the machine with the fewest outgoing links, then by owner name
 and id), the machine's page asks `FriendsRepository.latestOn` for the friends' machines of the open
 machine's cluster (each `FriendResult` carries the friend's machine, whose unit its sets are
-written in), a friend's calendar names each machine after the viewer's own in its cluster
+written in; `platformShift` moves its sets onto the open machine's platform), a friend's calendar names each machine after the viewer's own in its cluster
 (`namesForViewer`), and every list of linked machines comes from `ShownMachines.linkedWith`: the
 cluster's other own machines, then its friends' machines by owner name and machine name
 (`linkedFriendMachines`), each a `LinkedMachineUi` with its owner as a `Friend`. The account itself

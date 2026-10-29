@@ -111,7 +111,9 @@ the list, the name with the platform, the tags and the comment, then two cards: 
 best set ever on the machine — the heaviest weight with the most reps at it, the lightest on a
 gravitron — and the previous visit's results, headed by how long ago it was ("12 дней назад").
 Friends' latest visits on the machine follow, each with the friend's avatar and name
-("Олег  вчера · 80-85кг 8-6"). Under "Сегодня · 3 подхода" (another day's date instead of
+("Олег  вчера · 80-85кг 8-6"). Their weights count on the account's own platform, so they compare
+with its own sets: with a 20 kg platform here, a friend's +25 kg on a 10 kg platform shows as
+15 kg. Under "Сегодня · 3 подхода" (another day's date instead of
 "Сегодня") are the day's sets on the machine, "#1  (-)29.5 кг × 10" with the set's comment;
 tapping one opens it for editing. "Добавить" opens the form for the next set, and a planned
 machine without sets also offers "Убрать", which takes it out of the visit and returns to the list.
