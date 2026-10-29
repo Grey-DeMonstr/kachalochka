@@ -15,6 +15,8 @@ data class WorkoutSet(
     val updatedAt: Instant,
     val deleted: Boolean,
     val comment: String = "",
+    /** The machine's best result over the days before this set's day; null until computed. */
+    val priorBest: DayBest? = null,
 )
 
 /** A visit's sets run by position; sets at the same position keep their recording order. */
