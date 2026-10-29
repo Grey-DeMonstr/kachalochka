@@ -119,7 +119,6 @@ class CalendarViewModel(
     private var all: List<Visit> = emptyList()
     private val visitDays: Set<CalendarDay> get() = all.mapNotNull { it.day }.toSet()
     private var machinesById: Map<MachineId, Machine> = emptyMap()
-    private var history = OwnHistory(emptyList(), emptyMap())
     private var preferred = PreferredWeightUnit.Kg
     private var stale = true
     private var dayCard: VisitCardUi? = null
@@ -331,7 +330,6 @@ class CalendarViewModel(
             val owner = currentUser.id()
             all = visits.all(owner).map { it.copy(day = it.dayAt(clock::offsetAt)) }
             machinesById = machines.all(owner).associateBy { it.id }
-            history = OwnHistory(sets.all(owner), all.associate { it.id to checkNotNull(it.day) })
             preferred = profiles.preferredUnit(owner)
             shownFor = owner
             stale = false
@@ -349,7 +347,6 @@ class CalendarViewModel(
                     today,
                     ownPerson(),
                     machinesById,
-                    history,
                     preferred,
                 )
             }

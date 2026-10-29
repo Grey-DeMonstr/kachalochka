@@ -285,6 +285,12 @@ interface Strings {
 
     fun fewerReps(n: Int): String
 
+    /** "+1 подход": the best set repeated more often than on the best earlier day. */
+    fun moreSets(n: Int): String
+
+    /** The chip on a machine's first day. */
+    val newBadge: String
+
     val makeCover: String
     val coverPhoto: String
     val sortName: String

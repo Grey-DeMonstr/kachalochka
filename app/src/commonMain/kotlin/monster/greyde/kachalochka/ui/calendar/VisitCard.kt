@@ -132,7 +132,7 @@ internal fun VisitCard(
             ) {
                 val shown = if (expanded) exercises else exercises.take(SHOWN_MACHINES)
                 shown.forEachIndexed { i, exercise ->
-                    ExerciseRow(exercise, Modifier.testTag("${card.tag}-machine-$i"))
+                    ExerciseRow(exercise, "${card.tag}-machine-$i")
                 }
             }
         }
@@ -149,10 +149,10 @@ internal fun VisitCard(
 @Composable
 private fun ExerciseRow(
     exercise: ExerciseUi,
-    modifier: Modifier,
+    tag: String,
 ) {
     val colors = MaterialTheme.colorScheme
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(Modifier.testTag(tag), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             exercise.name,
             modifier = Modifier.weight(1f).alignByBaseline(),
@@ -175,6 +175,20 @@ private fun ExerciseRow(
                 Text(
                     it,
                     modifier = Modifier.alignByBaseline(),
+                    fontSize = 12.5.sp,
+                    maxLines = 1,
+                    color = gainColor(),
+                )
+            }
+            if (exercise.isNew) {
+                Text(
+                    strings().newBadge,
+                    modifier =
+                        Modifier
+                            .alignByBaseline()
+                            .border(1.dp, gainColor(), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 6.dp, vertical = 1.dp)
+                            .testTag("$tag-new"),
                     fontSize = 12.5.sp,
                     maxLines = 1,
                     color = gainColor(),

@@ -17,11 +17,12 @@ fun withPriorBests(
             .filterNot { it.deleted }
             .mapNotNull { set -> dayOf(set.visitId)?.let { it to set } }
             .groupBy({ it.first }, { it.second })
-            .toSortedMap()
+            .entries
+            .sortedBy { it.key }
     val order = dayBestOrder(mode)
     var running: DayBest? = null
     return buildList {
-        byDay.values.forEach { daySets ->
+        byDay.forEach { (_, daySets) ->
             val prior = running ?: DayBest.NONE
             daySets
                 .filter { it.priorBest != prior }

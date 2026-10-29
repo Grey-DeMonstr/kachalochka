@@ -3,25 +3,30 @@ package monster.greyde.kachalochka.ui.calendar
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
-import monster.greyde.kachalochka.core.domain.gym.bestSet
+import monster.greyde.kachalochka.core.domain.gym.dayBest
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.shownVisit
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
-import monster.greyde.kachalochka.ui.format.setChange
+import monster.greyde.kachalochka.ui.format.dayBestGain
 import monster.greyde.kachalochka.ui.format.setValue
 
-/** A machine on a visit card: the day's best set, and how it beats every earlier day's best. */
+/**
+ * A machine on a visit card: the day's best set, how it beats every earlier day's best, and
+ * whether this is the machine's first day.
+ */
 data class ExerciseUi(
     val name: String,
     val best: String,
     val growth: String?,
+    val isNew: Boolean = false,
 )
 
 /** The own visit a card's menu acts on. */
@@ -46,7 +51,7 @@ data class VisitCardUi(
 internal fun cardTags(machines: List<Machine>): List<String> =
     sortedTags(machines.flatMap { it.tags })
 
-/** The own visit [visitSets] belong to, with gains over the days before [day]. */
+/** The own visit [visitSets] belong to. */
 internal fun ownCard(
     visit: Visit,
     visitSets: List<WorkoutSet>,
@@ -54,7 +59,6 @@ internal fun ownCard(
     today: CalendarDay,
     person: PersonUi,
     machines: Map<MachineId, Machine>,
-    history: OwnHistory,
     preferred: PreferredWeightUnit,
 ): VisitCardUi {
     val shown = groupByMachine(visitSets).mapNotNull { machines[it.machineId] }
@@ -64,7 +68,7 @@ internal fun ownCard(
         color = null,
         day = day,
         tags = cardTags(shown),
-        exercises = exerciseRows(visitSets, machines, preferred) { history.before(it, day) },
+        exercises = exerciseRows(visitSets, machines, preferred),
         own =
             OwnVisitUi(
                 visit.id,
@@ -106,36 +110,30 @@ internal fun friendCard(
     exercises = details?.exercises,
 )
 
-/** [visitSets]' machines in visit order; [earlier] gives a machine's sets of the earlier days. */
+/**
+ * [visitSets]' machines in visit order, each against the prior best its sets carry: a set no
+ * client has computed yet shows neither a gain nor the chip.
+ */
 internal fun exerciseRows(
     visitSets: List<WorkoutSet>,
     machines: Map<MachineId, Machine>,
     preferred: PreferredWeightUnit,
-    earlier: (MachineId) -> List<WorkoutSet> = { emptyList() },
 ): List<ExerciseUi> =
     groupByMachine(visitSets).mapNotNull { (id, sets) ->
         val machine = machines[id] ?: return@mapNotNull null
-        val best = bestSet(sets, machine.weightMode) ?: return@mapNotNull null
-        val before = bestSet(earlier(id), machine.weightMode)
+        val today = dayBest(sets, machine.weightMode) ?: return@mapNotNull null
+        val prior = sets.firstNotNullOfOrNull { it.priorBest }
         ExerciseUi(
             machine.name,
-            setValue(best.weight, best.reps, machine, preferred),
-            before?.let { setChange(machine, it, best, preferred) }?.takeIf { it.gain }?.text,
+            setValue(today.weight, today.reps, machine, preferred),
+            prior?.takeIf { it != DayBest.NONE }?.let {
+                dayBestGain(
+                    machine,
+                    it,
+                    today,
+                    preferred,
+                )
+            },
+            isNew = prior == DayBest.NONE,
         )
     }
-
-/** The own sets of each machine, placed on their visits' days. */
-internal class OwnHistory(
-    sets: List<WorkoutSet>,
-    private val visitDays: Map<VisitId, CalendarDay>,
-) {
-    private val byMachine = sets.groupBy { it.machineId }
-
-    fun before(
-        machine: MachineId,
-        day: CalendarDay,
-    ): List<WorkoutSet> =
-        byMachine[machine].orEmpty().filter { set ->
-            visitDays[set.visitId]?.let { it < day } == true
-        }
-}

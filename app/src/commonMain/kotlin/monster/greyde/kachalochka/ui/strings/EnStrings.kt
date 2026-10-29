@@ -311,6 +311,10 @@ object EnStrings : Strings {
 
     override fun fewerReps(n: Int) = "−$n reps"
 
+    override fun moreSets(n: Int) = "+${sets(n)}"
+
+    override val newBadge = "New"
+
     override val makeCover = "Make it the cover"
     override val coverPhoto = "Cover photo"
     override val sortName = "A–Z"

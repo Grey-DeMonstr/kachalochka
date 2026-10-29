@@ -847,11 +847,13 @@ class CalendarViewModelTest {
         }
 
     @Test
-    fun the_own_card_shows_each_machine_s_best_set_and_its_gain_over_earlier_days() =
+    fun the_own_card_shows_each_machine_s_best_set_and_the_gain_its_sets_carry() =
         runTest {
-            gym.visits.upsert(fifthVisit)
-            gym.sets.upsert(set(fifthVisit, press, 0).copy(weight = 60.0))
-            gym.sets.upsert(set(fifthVisit, row, 1).copy(reps = 12))
+            gym.sets.rows.values.filter { it.visitId == sunday.id }.forEach { set ->
+                val prior =
+                    if (set.machineId == press.id) DayBest(60.0, 10, 1) else DayBest(70.0, 12, 1)
+                gym.sets.upsert(set.copy(priorBest = prior))
+            }
             val vm = viewModel().also { it.selectDay(twelfth) }
 
             assertEquals(
@@ -885,13 +887,15 @@ class CalendarViewModelTest {
         }
 
     @Test
-    fun a_friend_s_card_shows_no_gains() =
+    fun a_friend_s_card_shows_the_gain_its_sets_carry() =
         runTest {
             val signed = signedInGym()
             signed.friends.group("Зал на Лесной", owner = OLEG, ME)
-            signed.friendVisit(OLEG, fifth, t0 - 9.days, press)
-            signed.friends.sets.replaceAll { it.copy(weight = 50.0) }
-            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press)
+            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press, row)
+            signed.friends.sets.replaceAll {
+                val prior = if (it.machineId == press.id) DayBest(50.0, 10, 1) else DayBest.NONE
+                it.copy(priorBest = prior)
+            }
 
             val vm = viewModel(signed).also { it.selectDay(twelfth) }
 
@@ -901,7 +905,13 @@ class CalendarViewModelTest {
                         ?.friendVisits
                         ?.single(),
                 )
-            assertEquals(listOf(ExerciseUi(press.name, "70 кг × 10", null)), card.exercises)
+            assertEquals(
+                listOf(
+                    ExerciseUi(press.name, "70 кг × 10", "+20 кг"),
+                    ExerciseUi(row.name, "70 кг × 10", null, isNew = true),
+                ),
+                card.exercises,
+            )
             assertNull(card.own)
         }
 

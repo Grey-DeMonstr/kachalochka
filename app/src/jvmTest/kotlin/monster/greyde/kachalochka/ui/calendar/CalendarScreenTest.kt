@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
@@ -264,6 +265,20 @@ class CalendarScreenTest {
             val card = "calendar-visit-${sunday.id.value}"
             onNodeWithTag("$card-tag-жим", useUnmergedTree = true).assertTextEquals("ЖИМ")
             onNodeWithTag("$card-tag-ноги", useUnmergedTree = true).assertTextEquals("НОГИ")
+        }
+    }
+
+    @Test
+    fun a_machine_s_first_day_wears_the_new_chip() {
+        runBlocking {
+            gym.sets.rows.values
+                .forEach { gym.sets.upsert(it.copy(priorBest = DayBest.NONE)) }
+        }
+        runScreenTest(gym, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            val card = "calendar-visit-${sunday.id.value}"
+            onNodeWithTag("$card-machine-0-new", useUnmergedTree = true).assertTextEquals("Новое")
         }
     }
 

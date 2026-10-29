@@ -329,6 +329,10 @@ object RuStrings : Strings {
 
     override fun fewerReps(n: Int) = "−$n повт."
 
+    override fun moreSets(n: Int) = "+${sets(n)}"
+
+    override val newBadge = "Новое"
+
     override val makeCover = "Сделать основным"
     override val coverPhoto = "Основное фото"
     override val sortName = "А–Я"

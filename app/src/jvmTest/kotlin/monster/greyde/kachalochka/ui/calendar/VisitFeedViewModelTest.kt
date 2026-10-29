@@ -170,10 +170,12 @@ class VisitFeedViewModelTest {
         }
 
     @Test
-    fun the_own_card_shows_the_gain_over_earlier_days() =
+    fun the_own_card_shows_the_gain_its_sets_carry() =
         runTest {
-            gym.ownVisit(CalendarDay(2023, 11, 1), weight = 60.0)
-            gym.ownVisit(today, weight = 65.0)
+            val latest = gym.ownVisit(today, weight = 65.0)
+            gym.sets.forVisit(latest.id).forEach {
+                gym.sets.upsert(it.copy(priorBest = DayBest(60.0, 10, 1)))
+            }
 
             val card = assertNotNull(viewModel().state.value).cardsOn(today).single()
 

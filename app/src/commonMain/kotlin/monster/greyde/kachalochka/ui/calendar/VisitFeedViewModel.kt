@@ -105,7 +105,6 @@ class VisitFeedViewModel(
     private var own: List<Visit> = emptyList()
     private var setsByVisit: Map<VisitId, List<WorkoutSet>> = emptyMap()
     private var machinesById: Map<MachineId, Machine> = emptyMap()
-    private var history = OwnHistory(emptyList(), emptyMap())
     private var preferred = PreferredWeightUnit.Kg
 
     /** The oldest day read so far; the day after today before the first read. */
@@ -249,7 +248,6 @@ class VisitFeedViewModel(
         own = read
         setsByVisit = ownSets.groupBy { it.visitId }.mapValues { it.value.sortedWith(visitOrder) }
         machinesById = machines.all(reader).associateBy { it.id }
-        history = OwnHistory(ownSets, read.associate { it.id to checkNotNull(it.day) })
         preferred = profiles.preferredUnit(reader)
     }
 
@@ -411,7 +409,6 @@ class VisitFeedViewModel(
             today,
             ownPerson(),
             machinesById,
-            history,
             preferred,
         ).copy(tag = "feed-visit-${visit.id.value}")
     }
