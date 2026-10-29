@@ -841,7 +841,10 @@ machine; `VisitNormalization` after a normalization that wrote, and for the anon
 every start, since that owner never pulls; and the sync pass, which runs `refreshAll` for every
 clean owner after normalization and sends what it wrote in its second run (`runAndNormalize`).
 Two devices offline each compute from a partial view; the recompute after the pull is what makes
-them agree. A trainee's rows are never recomputed on the trainer's device. Migration `0030` adds
+them agree. A row the keeper wrote goes out whole, under the same rule as an edit (§4.2): a copy
+waiting in the outbox wins over the server's, so an edit of the same set made on another device
+in the meantime is lost, as it would be for two edits. A trainee's rows are never recomputed on
+the trainer's device. Migration `0030` adds
 the columns and fills them for every existing row in SQL, without touching `updated_at`;
 `20.sqm` adds them locally and resets `lastPullAt`, so a device pulls every set again with the
 server's values. supabase-kt leaves a null field out of a pushed row and PostgREST leaves an

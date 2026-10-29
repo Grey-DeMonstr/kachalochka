@@ -13,7 +13,7 @@ with placed as (
     from public.workout_set s
     join public.visit v on v.id = s.visit_id
     join public.machine m on m.id = s.machine_id
-    where not s.deleted
+    where not s.deleted and not v.deleted
 ),
 day_best as (
     select distinct on (machine_id, day)

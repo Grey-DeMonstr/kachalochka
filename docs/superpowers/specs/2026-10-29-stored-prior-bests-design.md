@@ -77,7 +77,7 @@ states:
 
 | Stored | Meaning | Card |
 |---|---|---|
-| all three null | not computed yet: written by a 1.8.0 client, or waiting for a recompute | nothing |
+| all three null | not computed yet: a 1.8.0 client wrote it, or a recompute is due | nothing |
 | `0, 0, 0` (`DayBest.NONE`) | the machine had no live set on an earlier day | "Новое" chip |
 
 supabase-kt leaves a null field out of the JSON it sends, and PostgREST leaves an absent column as
