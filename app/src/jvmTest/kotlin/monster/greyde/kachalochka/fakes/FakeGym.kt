@@ -8,6 +8,7 @@ import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
+import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountDeletion
 import monster.greyde.kachalochka.core.data.identity.AccountServer
@@ -474,6 +475,11 @@ class FakeGym(
     val sync = RecordingSyncTrigger()
     val avatars = AccountAvatars(accounts, profiles)
     val failures = mutableListOf<Throwable>()
+    val priorBests =
+        PriorBestsKeeper(visits, sets, machines, clock, utcOffset::at) {
+            failures +=
+                it
+        }
 
     fun catalogueOver(
         links: MachineLinkRepository,
@@ -514,6 +520,7 @@ class FakeGym(
             deviceClock,
             RestTimer(clock),
             sync,
+            priorBests,
         )
     val unsaved = UnsavedChoices()
     val invites = RecordingInviteSharing()

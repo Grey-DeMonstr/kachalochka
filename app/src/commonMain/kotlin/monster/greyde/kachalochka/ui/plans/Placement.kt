@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.plans
 
+import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -31,6 +32,7 @@ class Placement(
     private val clock: DeviceClock,
     private val restTimer: RestTimer,
     private val sync: SyncTrigger,
+    private val priorBests: PriorBestsKeeper,
 ) {
     /** [owner]'s plans as "В план…" offers them, named and ordered as in the list. */
     suspend fun choices(owner: UserId?): List<PlanChoiceUi>? {
@@ -111,7 +113,7 @@ class Placement(
     ): CalendarDay? {
         if (!stillActive(owner)) return null
         val today = clock.today()
-        write(SetRecorder(today, visits, machines, sets, clock, restTimer, sync))
+        write(SetRecorder(today, visits, machines, sets, clock, restTimer, sync, priorBests))
         return today.takeIf { stillActive(owner) }
     }
 

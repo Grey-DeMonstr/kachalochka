@@ -40,6 +40,7 @@ class PlacementTest {
             gym.deviceClock,
             RestTimer(gym.clock),
             gym.sync,
+            gym.priorBests,
         )
 
     private suspend fun seed() {

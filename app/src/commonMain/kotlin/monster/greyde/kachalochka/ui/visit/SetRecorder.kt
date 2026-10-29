@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.visit
 
+import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -36,6 +37,7 @@ class SetRecorder(
     private val clock: DeviceClock,
     private val restTimer: RestTimer,
     private val sync: SyncTrigger,
+    private val priorBests: PriorBestsKeeper,
 ) {
     /**
      * Records a set for [owner] on [machine], the owner's own (see [MachineCatalogue.ownCopy]).
@@ -64,6 +66,7 @@ class SetRecorder(
                 comment,
             ),
         )
+        priorBests.refresh(owner, setOf(machine.id))
         if (day == today) restTimer.start() else sync.request()
     }
 
@@ -125,11 +128,13 @@ class SetRecorder(
                 updatedAt = clock.now(),
             ),
         )
+        priorBests.refresh(set.userId, setOf(set.machineId))
         pushIfPast()
     }
 
     suspend fun remove(set: WorkoutSet) {
         sets.upsert(set.copy(deleted = true, updatedAt = clock.now()))
+        priorBests.refresh(set.userId, setOf(set.machineId))
         pushIfPast()
     }
 

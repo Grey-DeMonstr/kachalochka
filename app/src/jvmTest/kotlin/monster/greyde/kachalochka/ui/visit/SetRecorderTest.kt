@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.visit
 
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -50,7 +51,61 @@ class SetRecorderTest {
             gym.deviceClock,
             timer,
             gym.sync,
+            gym.priorBests,
         )
+
+    private fun priorOf(id: WorkoutSetId) =
+        gym.sets.rows
+            .getValue(id)
+            .priorBest
+
+    @Test
+    fun a_recorded_set_carries_the_best_of_the_earlier_days() =
+        runTest {
+            gym.machines.upsert(press)
+            gym.visits.upsert(lastWeek)
+            gym.sets.upsert(lastWeekSet)
+
+            recorder().record(null, press, SetValues(70.0, 8), "")
+
+            val added =
+                gym.sets.rows.values
+                    .single { it.id != lastWeekSet.id }
+            assertEquals(DayBest(60.0, 10, 1), added.priorBest)
+            assertEquals(DayBest.NONE, priorOf(lastWeekSet.id))
+        }
+
+    @Test
+    fun amending_a_past_set_rewrites_the_later_days() =
+        runTest {
+            gym.machines.upsert(press)
+            gym.visits.upsert(lastWeek)
+            gym.sets.upsert(lastWeekSet)
+            recorder().record(null, press, SetValues(70.0, 8), "")
+            val todays =
+                gym.sets.rows.values
+                    .single { it.id != lastWeekSet.id }
+
+            recorder(seventh).amend(lastWeekSet, SetValues(65.0, 10), "")
+
+            assertEquals(DayBest(65.0, 10, 1), priorOf(todays.id))
+        }
+
+    @Test
+    fun removing_the_only_earlier_set_clears_today_s_prior_best_to_none() =
+        runTest {
+            gym.machines.upsert(press)
+            gym.visits.upsert(lastWeek)
+            gym.sets.upsert(lastWeekSet)
+            recorder().record(null, press, SetValues(70.0, 8), "")
+            val todays =
+                gym.sets.rows.values
+                    .single { it.id != lastWeekSet.id }
+
+            recorder(seventh).remove(lastWeekSet)
+
+            assertEquals(DayBest.NONE, priorOf(todays.id))
+        }
 
     @Test
     fun the_day_s_first_set_creates_its_visit_and_starts_the_rest_timer() =
