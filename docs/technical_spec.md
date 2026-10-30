@@ -451,6 +451,12 @@ The photo viewer shares the shown photo's bytes, read through `PhotoImages`, wit
 Android's writes them to the cache, served by the same `FileProvider`, and opens the share sheet;
 the web's calls `navigator.share` with a file where the browser can, else downloads the photo.
 
+An own visit card shares itself as a picture through `CardSharing`, which only Android makes
+`available`. `VisitCard` composes `SharedVisitCard` off screen in a zero-size box, under a fixed
+width and `LocalDensity`, so the picture is 1080 px wide on every phone, and records it into a
+`GraphicsLayer` without drawing it. Once the avatar settles, `toImageBitmap()` gives the picture;
+Android encodes it as PNG and shares it through the same cache and `FileProvider` as a photo.
+
 An avatar the owner chose is a photo too: a `photo` row whose `machine_id` is the owner's profile
 id, named by `profile.avatar_photo`, so its bytes are stored, synced and deleted exactly as a
 machine's are. Migration `0020` lets a photo row name the writer's own profile as well as their

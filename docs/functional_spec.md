@@ -346,7 +346,10 @@ replacing removes it with its sets. Its "В план…" does what the visit's o
 its notice shows under the card. Its "Повторить сегодня", not shown for today's visit, adds the
 visit's machines to today's visit as planned ones, as starting a plan does, and opens today's
 visit; back returns to the calendar. Its "Удалить" asks "Удалить визит?" under the visit's date,
-then removes the visit and its sets from the history and the statistics.
+then removes the visit and its sets from the history and the statistics. On Android its
+"Поделиться" opens the share sheet with a picture of the card in the current theme: every machine,
+the date ("четверг, 29 октября", with the year for an earlier year) in place of the menu, and
+without "Ещё" or "Свернуть". The picture has the same size on every phone.
 
 With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
 group with it: each friend who trained on a day adds a dot in that friend's colour after the

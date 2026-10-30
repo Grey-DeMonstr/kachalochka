@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +28,7 @@ import monster.greyde.kachalochka.ui.photos.photoLoader
 /**
  * [owner]'s [avatar] in a circle, over the initial of [name], which stays while the picture loads
  * or when there is none. [tint], a friend's calendar colour, draws the initial's circle.
+ * [onSettled] comes once the circle has its final look: the picture loaded or failed, or none.
  */
 @Composable
 fun PersonAvatar(
@@ -37,6 +39,7 @@ fun PersonAvatar(
     size: Dp = 32.dp,
     accent: Boolean = true,
     tint: Color? = null,
+    onSettled: () -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
     val filled = accent || tint != null
@@ -63,7 +66,11 @@ fun PersonAvatar(
                 imageLoader = photoLoader(),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.matchParentSize().testTag("avatar-image"),
+                onSuccess = { onSettled() },
+                onError = { onSettled() },
             )
+        } else {
+            LaunchedEffect(Unit) { onSettled() }
         }
     }
 }

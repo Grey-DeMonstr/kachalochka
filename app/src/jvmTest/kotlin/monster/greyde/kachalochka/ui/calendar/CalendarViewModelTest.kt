@@ -883,7 +883,10 @@ class CalendarViewModelTest {
 
             assertEquals("Иван", card.person.name)
             assertNull(card.color)
-            assertEquals(OwnVisitUi(sunday.id, canRepeatToday = false), card.own)
+            assertEquals(
+                OwnVisitUi(sunday.id, canRepeatToday = false, date = "воскресенье, 12 ноября"),
+                card.own,
+            )
         }
 
     @Test

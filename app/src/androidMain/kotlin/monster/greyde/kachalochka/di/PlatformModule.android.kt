@@ -34,8 +34,10 @@ import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.ShareSheetInviteSharing
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.SystemPhotoCapture
+import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.ClipboardTextCopying
 import monster.greyde.kachalochka.ui.share.PhotoSharing
+import monster.greyde.kachalochka.ui.share.ShareSheetCardSharing
 import monster.greyde.kachalochka.ui.share.ShareSheetPhotoSharing
 import monster.greyde.kachalochka.ui.share.ShareSheetTextSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
@@ -123,6 +125,7 @@ actual fun platformModule(): Module =
         single<TextSharing> { ShareSheetTextSharing(androidContext()) }
         single<TextCopying> { ClipboardTextCopying(androidContext()) }
         single<PhotoSharing> { ShareSheetPhotoSharing(androidContext()) }
+        single<CardSharing> { ShareSheetCardSharing(androidContext()) }
         single<InviteSharing> {
             ShareSheetInviteSharing(get(), webAppUrlFromBuild().ifBlank { null })
         }

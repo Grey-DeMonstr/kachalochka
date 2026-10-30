@@ -154,6 +154,37 @@ class CalendarScreenTest {
         }
     }
 
+    @Test
+    fun the_visit_menu_shares_the_card_as_a_picture() {
+        runScreenTest(gym, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("share-visit-${sunday.id.value}")
+                .assertTextEquals("Поделиться")
+                .performClick()
+            waitUntil { gym.cardShares.shared.isNotEmpty() }
+        }
+        assertEquals(
+            1080,
+            gym.cardShares.shared
+                .single()
+                .width,
+        )
+    }
+
+    @Test
+    fun the_visit_menu_has_no_share_where_a_card_cannot_be_shared() {
+        gym.cardShares.available = false
+        runScreenTest(gym, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("save-as-plan-${sunday.id.value}").assertExists()
+            onNodeWithTag("share-visit-${sunday.id.value}").assertDoesNotExist()
+        }
+    }
+
     /** Иван signed in, with [trained] in his group each having a visit on the 12th. */
     private fun friendsGym(vararg trained: Friend): FakeGym {
         val signed = signedInGym()

@@ -143,6 +143,16 @@ fun weekdayDate(
     return if (withYear) "$label ${day.year}" else label
 }
 
+/** [weekdayDate] for the middle of a line, where a language may write the weekday in lowercase. */
+fun inlineWeekdayDate(
+    day: CalendarDay,
+    withYear: Boolean,
+): String {
+    val strings = AppStrings.current
+    val label = "${strings.weekdayInline(day.dayOfWeek)}, ${strings.dayMonth(day.day, day.month)}"
+    return if (withYear) "$label ${day.year}" else label
+}
+
 fun monthTitle(month: CalendarMonth): String =
     "${AppStrings.current.monthTitle(month.month)} ${month.year}"
 

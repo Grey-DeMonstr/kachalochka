@@ -43,6 +43,7 @@ import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
+import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
@@ -93,6 +94,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<InviteSharing> { gym.invites }
         single<TextSharing> { gym.texts }
         single<PhotoSharing> { gym.photoShares }
+        single<CardSharing> { gym.cardShares }
         single<TextCopying> { gym.clipboard }
         single<JoinCodeStore> { gym.joinCodes }
         single<JoinCodeStore>(named(PARENT_CODE)) { gym.parentCodes }

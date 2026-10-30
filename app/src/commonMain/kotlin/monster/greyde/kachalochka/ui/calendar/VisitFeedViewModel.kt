@@ -40,6 +40,7 @@ import monster.greyde.kachalochka.ui.account.accountAvatar
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.format.DeviceClock
+import monster.greyde.kachalochka.ui.format.inlineWeekdayDate
 import monster.greyde.kachalochka.ui.format.monthTitle
 import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
@@ -448,6 +449,5 @@ private fun dayAside(
     today: CalendarDay,
 ): String? {
     if (day != today && day != today.plusDays(-1)) return null
-    val strings = AppStrings.current
-    return "${strings.weekdayInline(day.dayOfWeek)}, ${strings.dayMonth(day.day, day.month)}"
+    return inlineWeekdayDate(day, withYear = false)
 }

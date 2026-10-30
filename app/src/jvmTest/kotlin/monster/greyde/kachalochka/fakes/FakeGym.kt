@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.fakes
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -81,6 +82,7 @@ import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoLaunchers
 import monster.greyde.kachalochka.ui.plans.Placement
+import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
@@ -395,6 +397,15 @@ class RecordingPhotoSharing : PhotoSharing {
     }
 }
 
+class RecordingCardSharing : CardSharing {
+    override var available = true
+    val shared = mutableListOf<ImageBitmap>()
+
+    override suspend fun share(card: ImageBitmap) {
+        shared += card
+    }
+}
+
 class RecordingTextCopying : TextCopying {
     val copied = mutableListOf<String>()
 
@@ -527,6 +538,7 @@ class FakeGym(
     val invites = RecordingInviteSharing()
     val texts = RecordingTextSharing()
     val photoShares = RecordingPhotoSharing()
+    val cardShares = RecordingCardSharing()
     val clipboard = RecordingTextCopying()
     val footer = RecordingPageFooter()
     val themes = InMemoryThemePreference()

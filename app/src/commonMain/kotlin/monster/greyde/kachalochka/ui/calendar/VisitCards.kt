@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.visitMachines
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.ui.format.dayBestGain
+import monster.greyde.kachalochka.ui.format.inlineWeekdayDate
 import monster.greyde.kachalochka.ui.format.setValue
 
 /**
@@ -29,10 +30,11 @@ data class ExerciseUi(
     val isNew: Boolean = false,
 )
 
-/** The own visit a card's menu acts on. */
+/** The own visit a card's menu acts on; a shared card shows [date]. */
 data class OwnVisitUi(
     val id: VisitId,
     val canRepeatToday: Boolean,
+    val date: String,
 )
 
 /** One person's visit on one day, on the calendar and in the feed. */
@@ -74,6 +76,7 @@ internal fun ownCard(
                 visit.id,
                 canRepeatToday =
                     day != today && visitMachines(visitSets, visit.planned).isNotEmpty(),
+                date = inlineWeekdayDate(day, withYear = day.year != today.year),
             ),
     )
 }
