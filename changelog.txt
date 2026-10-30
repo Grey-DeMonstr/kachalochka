@@ -1,5 +1,10 @@
 Kachalochka - Changelog
 
+1.8.2
+
+- The feed's person filter shows one person or everyone.
+
+
 1.8.1
 
 - Visit cards show a gain in sets and mark a machine's first day with "Новое".
