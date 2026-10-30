@@ -4,36 +4,36 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
-/** [person] whose cards [viewer]'s feed leaves out. */
-data class HiddenPerson(
+/** The only [person] whose cards [viewer]'s feed shows. */
+data class SelectedPerson(
     val viewer: UserId,
     val person: UserId,
 )
 
-fun HiddenPerson.stored(): String = "${viewer.value}/${person.value}"
+fun SelectedPerson.stored(): String = "${viewer.value}/${person.value}"
 
-fun hiddenPeople(stored: Iterable<String>): Set<HiddenPerson> =
+fun selectedPeople(stored: Iterable<String>): Set<SelectedPerson> =
     stored
         .mapNotNull { pair ->
             runCatching {
                 val (viewer, person) = pair.split('/')
-                HiddenPerson(UserId(viewer), UserId(person))
+                SelectedPerson(UserId(viewer), UserId(person))
             }.getOrNull()
         }.toSet()
 
-/** Whom the feed hides, a device setting. */
+/** Whom the feed shows alone, at most one person for each viewer, a device setting. */
 interface FeedPeoplePreference {
-    val hidden: StateFlow<Set<HiddenPerson>>
+    val selected: StateFlow<Set<SelectedPerson>>
 
-    suspend fun set(hidden: Set<HiddenPerson>)
+    suspend fun set(selected: Set<SelectedPerson>)
 }
 
 class InMemoryFeedPeoplePreference : FeedPeoplePreference {
-    private val state = MutableStateFlow(emptySet<HiddenPerson>())
+    private val state = MutableStateFlow(emptySet<SelectedPerson>())
 
-    override val hidden: StateFlow<Set<HiddenPerson>> = state
+    override val selected: StateFlow<Set<SelectedPerson>> = state
 
-    override suspend fun set(hidden: Set<HiddenPerson>) {
-        state.value = hidden
+    override suspend fun set(selected: Set<SelectedPerson>) {
+        state.value = selected
     }
 }

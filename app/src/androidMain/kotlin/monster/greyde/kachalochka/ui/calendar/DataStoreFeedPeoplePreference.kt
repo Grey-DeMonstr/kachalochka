@@ -20,17 +20,17 @@ class DataStoreFeedPeoplePreference(
     private val dataStore: DataStore<Preferences>,
     scope: CoroutineScope,
 ) : FeedPeoplePreference {
-    private val key = stringSetPreferencesKey("feed_hidden_people")
+    private val key = stringSetPreferencesKey("feed_selected_person")
 
-    private val stored: Flow<Set<HiddenPerson>> =
+    private val stored: Flow<Set<SelectedPerson>> =
         dataStore.data
             .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
-            .map { hiddenPeople(it[key].orEmpty()) }
+            .map { selectedPeople(it[key].orEmpty()) }
 
-    override val hidden: StateFlow<Set<HiddenPerson>> =
+    override val selected: StateFlow<Set<SelectedPerson>> =
         stored.stateIn(scope, SharingStarted.Eagerly, runBlocking { stored.first() })
 
-    override suspend fun set(hidden: Set<HiddenPerson>) {
-        dataStore.edit { it[key] = hidden.map { person -> person.stored() }.toSet() }
+    override suspend fun set(selected: Set<SelectedPerson>) {
+        dataStore.edit { it[key] = selected.map { person -> person.stored() }.toSet() }
     }
 }

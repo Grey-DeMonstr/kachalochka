@@ -6,8 +6,8 @@ import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsOff
-import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getBoundsInRoot
@@ -340,33 +340,34 @@ class CalendarScreenTest {
     }
 
     @Test
-    fun the_feed_s_people_hide_and_show_their_cards() {
+    fun a_selected_person_shows_alone_in_the_feed() {
         val anna = Friend(UserId("55555555-5555-4555-8555-555555555555"), "Анна Карпелевич")
         val signed = friendsGym(OLEG, anna)
         runBlocking { signed.visitsModes.set(VisitsMode.Feed) }
         val oleg = "feed-person-${OLEG.userId.value}"
         val olegCard = "feed-friend-${OLEG.userId.value}-2023-11-12"
+        val annaCard = "feed-friend-${anna.userId.value}-2023-11-12"
         runScreenTest(signed, screen = { calendar() }) {
             waitForIdle()
             onNodeWithTag("feed-person-${anna.userId.value}")
                 .assertContentDescriptionEquals("Анна Карпелевич")
+                .assertWidthIsEqualTo(48.dp)
             val top = { tag: String -> onNodeWithTag(tag).getBoundsInRoot().top }
             assertEquals(top(oleg), top("feed-person-${anna.userId.value}"))
-            onNodeWithTag(oleg).assertIsOn()
-            onNodeWithTag(olegCard).assertExists()
+            onNodeWithTag(oleg).assertIsNotSelected()
 
             onNodeWithTag(oleg).performClick()
             waitForIdle()
-            onNodeWithTag(oleg).assertIsOff()
-            onNodeWithTag(olegCard).assertDoesNotExist()
+            onNodeWithTag(oleg).assertIsSelected()
+            onNodeWithTag(olegCard).assertExists()
+            onNodeWithTag(annaCard).assertDoesNotExist()
 
-            onNodeWithTag("feed-person-${anna.userId.value}").performClick()
-            onNodeWithTag("feed-person-${ME.userId.value}").performClick()
+            onNodeWithTag(oleg).performClick()
             waitForIdle()
-            onNodeWithTag("feed-nobody", useUnmergedTree = true)
-                .assertTextEquals("Выберите хотя бы одного человека")
+            onNodeWithTag(oleg).assertIsNotSelected()
+            onNodeWithTag(annaCard).assertExists()
         }
-        assertEquals(3, signed.feedPeople.hidden.value.size)
+        assertEquals(emptySet(), signed.feedPeople.selected.value)
     }
 
     @Test

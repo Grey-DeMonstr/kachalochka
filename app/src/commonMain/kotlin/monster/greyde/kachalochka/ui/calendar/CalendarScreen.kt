@@ -230,7 +230,7 @@ private fun ColumnScope.FeedMode(
         }.collect { (last, total) -> if (last >= total - 3) feed.loadMore() }
     }
     val current = state ?: return
-    if (current.people.isNotEmpty()) FeedPeopleRow(current.people, feed::toggle)
+    if (current.people.isNotEmpty()) FeedPeopleRow(current.people, feed::select)
     LazyColumn(
         Modifier.weight(1f).fillMaxWidth().testTag("visit-feed"),
         state = list,
@@ -274,18 +274,6 @@ private fun ColumnScope.FeedMode(
             }
         }
         when {
-            current.nobodyShown ->
-                item(key = "nobody") {
-                    val nobody = Modifier.fillMaxWidth().testTag("feed-nobody")
-                    Text(
-                        strings().chooseSomeone,
-                        modifier = nobody.padding(vertical = 48.dp),
-                        fontSize = 14.5.sp,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
-                    )
-                }
-
             current.loading -> item(key = "loading") { LoadingDay() }
             current.ended ->
                 item(key = "end") {

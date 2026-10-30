@@ -8,8 +8,11 @@ import kotlin.test.assertEquals
 class FeedPeopleTest {
     @Test
     fun a_stored_pair_reads_back_and_anything_else_is_left_out() {
-        val hidden = HiddenPerson(ME.userId, OLEG.userId)
+        val selected = SelectedPerson(ME.userId, OLEG.userId)
 
-        assertEquals(setOf(hidden), hiddenPeople(listOf(hidden.stored(), "oleg", "a/b", "")))
+        assertEquals(
+            setOf(selected),
+            selectedPeople(listOf(selected.stored(), "oleg", "a/b", "")),
+        )
     }
 }

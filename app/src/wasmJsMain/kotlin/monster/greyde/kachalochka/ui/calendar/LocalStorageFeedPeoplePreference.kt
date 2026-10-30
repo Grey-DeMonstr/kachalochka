@@ -5,17 +5,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class LocalStorageFeedPeoplePreference : FeedPeoplePreference {
-    private val key = "feed_hidden_people"
+    private val key = "feed_selected_person"
     private val state = MutableStateFlow(read())
 
-    override val hidden: StateFlow<Set<HiddenPerson>> = state
+    override val selected: StateFlow<Set<SelectedPerson>> = state
 
-    override suspend fun set(hidden: Set<HiddenPerson>) {
-        runCatching { localStorage.setItem(key, hidden.joinToString(" ") { it.stored() }) }
-        state.value = hidden
+    override suspend fun set(selected: Set<SelectedPerson>) {
+        runCatching { localStorage.setItem(key, selected.joinToString(" ") { it.stored() }) }
+        state.value = selected
     }
 
-    private fun read(): Set<HiddenPerson> =
-        runCatching { hiddenPeople(localStorage.getItem(key).orEmpty().split(' ')) }
+    private fun read(): Set<SelectedPerson> =
+        runCatching { selectedPeople(localStorage.getItem(key).orEmpty().split(' ')) }
             .getOrDefault(emptySet())
 }

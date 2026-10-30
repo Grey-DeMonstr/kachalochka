@@ -133,7 +133,6 @@ interface Strings {
     val yesterday: String
     val firstVisit: String
     val noVisitsYet: String
-    val chooseSomeone: String
     val showLess: String
 
     fun moreMachines(n: Int): String

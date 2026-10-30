@@ -57,14 +57,14 @@ data class FeedUiState(
     val removal: RemovalUi? = null,
     /** The account first, then its friends; empty on a device nobody has signed in on. */
     val people: List<FeedPersonUi> = emptyList(),
-    val nobodyShown: Boolean = false,
 )
 
 data class FeedPersonUi(
     val person: PersonUi,
     /** A friend's calendar colour; null for the account. */
     val color: Int?,
-    val shown: Boolean,
+    /** The feed shows this person alone. */
+    val selected: Boolean,
 )
 
 data class FeedDayUi(
@@ -121,23 +121,20 @@ class VisitFeedViewModel(
     private var theirMachines: Map<UserId, Deferred<Map<MachineId, Machine>>> = emptyMap()
     private var removing: Visit? = null
     private var mates: List<Friend> = emptyList()
-    private var hidden: Set<HiddenPerson> = people.hidden.value
+    private var selections: Set<SelectedPerson> = people.selected.value
 
     private val friendsOnline: Boolean get() = friendsEnd?.isSuccess != false && owner != null
 
-    private val ownShown: Boolean get() = owner?.let(::shows) ?: true
+    /** The person the feed shows alone; null when it shows everyone. */
+    private val selected: UserId?
+        get() = owner?.let { viewer -> selections.firstOrNull { it.viewer == viewer }?.person }
 
-    private val nobodyShown: Boolean
-        get() {
-            val viewer = owner ?: return false
-            return (listOf(viewer) + mates.map { it.userId }).none(::shows)
-        }
+    private val ownShown: Boolean get() = owner?.let(::shows) ?: true
 
     /** A shown visit is read, or none is left to read. */
     private val filled: Boolean
         get() =
             ended ||
-                nobodyShown ||
                 (ownShown && own.any { checkNotNull(it.day) >= from }) ||
                 friendVisits.any { shows(it.friend.userId) && checkNotNull(it.visit.day) >= from }
 
@@ -170,16 +167,20 @@ class VisitFeedViewModel(
     }
 
     fun loadMore() {
-        if (paging?.isActive == true || ended || nobodyShown) return
+        if (paging?.isActive == true || ended) return
         val key = owner
         paging = viewModelScope.launch { page(key) }
     }
 
-    /** Hides [person]'s cards, or shows them again, and keeps the choice on the device. */
-    fun toggle(person: UserId) {
-        val pair = HiddenPerson(owner ?: return, person)
-        val kept = if (pair in hidden) hidden - pair else hidden + pair
-        hidden = kept
+    /**
+     * Shows [person] alone, or everyone when [person] is the one shown already, and keeps the
+     * choice on the device.
+     */
+    fun select(person: UserId) {
+        val viewer = owner ?: return
+        val others = selections.filterTo(mutableSetOf()) { it.viewer != viewer }
+        val kept = if (selected == person) others else others + SelectedPerson(viewer, person)
+        selections = kept
         viewModelScope.launch { people.set(kept) }
         publish()
         if (!filled) loadMore()
@@ -266,13 +267,12 @@ class VisitFeedViewModel(
                     friendVisits.any {
                         shows(it.friend.userId) && checkNotNull(it.visit.day) in start..to
                     }
-        } while (!found && !ended && !nobodyShown)
+        } while (!found && !ended)
         loading = false
         publish()
         if (reader != null) readDetails(reader)
     }
 
-    /** Reads the friends for the people row, then reads on if they are all the feed shows. */
     private suspend fun readPeople(reader: UserId) {
         val read =
             catching {
@@ -286,11 +286,9 @@ class VisitFeedViewModel(
         mates = read.first
         friendColors = friendColors + read.second
         publish()
-        if (!filled) page(reader)
     }
 
-    private fun shows(person: UserId): Boolean =
-        owner?.let { HiddenPerson(it, person) !in hidden } ?: true
+    private fun shows(person: UserId): Boolean = selected.let { it == null || it == person }
 
     private suspend fun readFriends(
         reader: UserId,
@@ -380,7 +378,6 @@ class VisitFeedViewModel(
                 ended = ended,
                 removal = removing?.let { removalUi(it, today) },
                 people = peopleUi(),
-                nobodyShown = nobodyShown,
             )
     }
 
@@ -390,9 +387,9 @@ class VisitFeedViewModel(
             mates.mapNotNull { mate ->
                 val color = friendColors[mate.userId] ?: return@mapNotNull null
                 val person = PersonUi(mate.userId, mate.displayName, mate.avatar)
-                FeedPersonUi(person, color, shows(mate.userId))
+                FeedPersonUi(person, color, selected == mate.userId)
             }
-        return listOf(FeedPersonUi(ownPerson(), null, shows(viewer))) + friendsRow
+        return listOf(FeedPersonUi(ownPerson(), null, selected == viewer)) + friendsRow
     }
 
     private fun ownCardOn(

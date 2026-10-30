@@ -148,7 +148,6 @@ object EnStrings : Strings {
     override val yesterday = "Yesterday"
     override val firstVisit = "This is the first visit"
     override val noVisitsYet = "No visits yet"
-    override val chooseSomeone = "Choose at least one person"
     override val showLess = "Show less"
 
     override fun moreMachines(n: Int) = "$n more ${if (n == 1) "machine" else "machines"}"
