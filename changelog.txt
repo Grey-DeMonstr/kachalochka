@@ -1,5 +1,10 @@
 Kachalochka - Changelog
 
+1.8.3
+
+- On Android, your own visit cards can be shared as a picture.
+
+
 1.8.2
 
 - The feed's person filter shows one person or everyone.
