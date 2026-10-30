@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.ui.calendar
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -347,8 +348,10 @@ class CalendarScreenTest {
         val olegCard = "feed-friend-${OLEG.userId.value}-2023-11-12"
         runScreenTest(signed, screen = { calendar() }) {
             waitForIdle()
-            onNodeWithTag("feed-person-${anna.userId.value}-name", useUnmergedTree = true)
-                .assertTextEquals("Анна")
+            onNodeWithTag("feed-person-${anna.userId.value}")
+                .assertContentDescriptionEquals("Анна Карпелевич")
+            val top = { tag: String -> onNodeWithTag(tag).getBoundsInRoot().top }
+            assertEquals(top(oleg), top("feed-person-${anna.userId.value}"))
             onNodeWithTag(oleg).assertIsOn()
             onNodeWithTag(olegCard).assertExists()
 

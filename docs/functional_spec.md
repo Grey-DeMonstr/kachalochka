@@ -374,10 +374,10 @@ at all, "Визитов пока нет". The own card's menu is the calendar's;
 calendar on the visit's day, ready for the day tapped next.
 
 Signed in, a row of avatars is above the feed: the account first, then its friends by name, which
-come when they are read online. Under each avatar is the first word of the name, shortened with "…" when it is
-too long. A selected person has a ring and a check mark in their colour. At first all people are
-selected; a tap removes the person's cards from the feed or shows them again. Avatars that do not
-fit in the row go to a new row. With nobody selected, the feed says "Выберите хотя бы одного
+come when they are read online. The avatars are small and have no names. A selected person has a
+ring and a check mark in their colour. At first all people are selected; a tap removes the
+person's cards from the feed or shows them again. The row is always one line; when the avatars do
+not fit, a swipe moves the row. With nobody selected, the feed says "Выберите хотя бы одного
 человека". The device keeps the selection for each account.
 
 ## Sign-in and accounts
