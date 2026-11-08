@@ -115,6 +115,10 @@ Two documents, both describing the app as built:
 Feature designs produced while brainstorming go to `docs/superpowers/specs/`. All noticeable
 features are added to the two specs before implementation to keep them consistent.
 
+`GLOSSARY.md` in the repo root names the domain concepts. Use its terms in code, specs, commit
+messages and talks with the user, and not the words it lists under _Avoid_. A new domain concept
+gets its term there in the same commit that brings it in.
+
 # Generic code conventions
 
 These apply to **every file in the repository**, whatever the language, as well commit messages and
