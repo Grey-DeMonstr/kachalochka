@@ -92,6 +92,7 @@ gradle/libs.versions.toml   the only place library versions are declared
 
 ## Key Constraints
 
+- **Choose the simplest approach**: the one that adds the least code, or removes old code.
 - **TDD is mandatory.** Write the failing test first, then implement.
 - **Host tests only.** `.\gradlew check` runs everything; no emulator, device or browser is needed
   to pass it.
