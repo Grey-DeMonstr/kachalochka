@@ -123,6 +123,7 @@ object EnStrings : Strings {
         "Its machines will be added to today's visit, and the plan will disappear from the list."
     override val repeatToday = "Repeat today"
     override val toPlan = "Add to plan…"
+    override val reorderSets = "Reorder sets"
     override val choosePlan = "Which plan?"
     override val machineGone = "The machine is no longer available"
 

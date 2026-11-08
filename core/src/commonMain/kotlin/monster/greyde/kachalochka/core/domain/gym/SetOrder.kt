@@ -12,22 +12,30 @@ fun machineMovedTo(
     index: Int,
     now: Instant,
 ): List<WorkoutSet> {
-    val order = groupByMachine(visitSets).map { it.machineId }.toMutableList()
-    val from = order.indexOf(machine)
-    if (from < 0 || index !in order.indices || index == from) return emptyList()
-    order.add(index, order.removeAt(from))
-    return changed(visitSets, renumbered(visitSets, order), now)
+    val blocks = groupByMachine(visitSets).toMutableList()
+    val from = blocks.indexOfFirst { it.machineId == machine }
+    if (from < 0 || index !in blocks.indices || index == from) return emptyList()
+    blocks.add(index, blocks.removeAt(from))
+    return changed(visitSets, renumbered(blocks.map { it.sets }), now)
 }
 
-private fun renumbered(
+/** The sets whose position changes when [set] moves to [index] among its machine's sets. */
+fun setMovedTo(
     visitSets: List<WorkoutSet>,
-    machineOrder: List<MachineId>,
+    set: WorkoutSetId,
+    index: Int,
+    now: Instant,
 ): List<WorkoutSet> {
-    val byMachine = groupByMachine(visitSets).associate { it.machineId to it.sets }
-    return machineOrder
-        .flatMap { byMachine.getValue(it) }
-        .mapIndexed { index, set -> set.copy(position = index + 1) }
+    val blocks = groupByMachine(visitSets).map { it.sets.toMutableList() }
+    val block = blocks.firstOrNull { sets -> sets.any { it.id == set } } ?: return emptyList()
+    val from = block.indexOfFirst { it.id == set }
+    if (index !in block.indices || index == from) return emptyList()
+    block.add(index, block.removeAt(from))
+    return changed(visitSets, renumbered(blocks), now)
 }
+
+private fun renumbered(blocks: List<List<WorkoutSet>>): List<WorkoutSet> =
+    blocks.flatten().mapIndexed { index, set -> set.copy(position = index + 1) }
 
 private fun changed(
     before: List<WorkoutSet>,

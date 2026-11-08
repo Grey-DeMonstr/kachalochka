@@ -1007,6 +1007,56 @@ class VisitScreenTest {
         )
     }
 
+    @Test
+    fun a_page_with_one_set_offers_no_reorder() {
+        runScreenTest(gym, screen = { visitScreen(opened = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-reorder").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun the_page_s_menu_orders_its_sets_by_their_handles() {
+        val heavier =
+            recorded.copy(
+                id = WorkoutSetId.random(),
+                weight = 80.0,
+                recordedAt = gym.clock.current + 1.minutes,
+            )
+        runBlocking { gym.sets.upsert(heavier) }
+        runScreenTest(gym, screen = { visitScreen(opened = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-reorder").assertTextEquals("Порядок подходов").performClick()
+            waitForIdle()
+            onNodeWithTag("add-set").assertDoesNotExist()
+            onNodeWithTag("finish-ordering").assertTextEquals("Готово")
+            onNodeWithTag("drag-set-${recorded.id.value}").assertExists()
+
+            onNodeWithTag("drag-set-${heavier.id.value}").performTouchInput {
+                down(center)
+                repeat(10) { moveBy(Offset(0f, -10f)) }
+                up()
+            }
+            waitForIdle()
+            onNodeWithTag("set-row-${heavier.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("set-sheet").assertDoesNotExist()
+            onNodeWithTag("finish-ordering").performScrollTo().performClick()
+            waitForIdle()
+            onNodeWithTag("drag-set-${heavier.id.value}").assertDoesNotExist()
+            onNodeWithTag("add-set").assertExists()
+        }
+        assertEquals(
+            mapOf(heavier.id to 1, recorded.id to 2),
+            gym.sets.rows.values
+                .associate { it.id to it.position },
+        )
+    }
+
     private val saveProgress =
         hasAnyAncestor(hasTestTag("save-set")) and
             hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)

@@ -1936,6 +1936,95 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun only_a_page_with_two_sets_or_more_can_order_its_sets() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
+            gym.sets.upsert(set(visit.id, row, 45.0, 12, 1))
+            gym.sets.upsert(set(visit.id, row, 50.0, 10, 2))
+            val vm = viewModel().also { it.openMachine(press.id) }
+
+            assertFalse(assertNotNull(vm.state.value?.page).canOrder)
+            vm.openMachine(row.id)
+            assertTrue(assertNotNull(vm.state.value?.page).canOrder)
+        }
+
+    @Test
+    fun ordering_a_page_s_sets_closes_its_form_and_done_ends_it() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
+            gym.sets.upsert(set(visit.id, press, 75.0, 8, 1))
+            val vm = viewModel().also { it.selectMachine(press.id) }
+
+            vm.toggleSetOrdering()
+
+            val page = assertNotNull(vm.state.value?.page)
+            assertTrue(page.ordering)
+            assertNull(page.form)
+            vm.toggleSetOrdering()
+            assertFalse(assertNotNull(vm.state.value?.page).ordering)
+        }
+
+    @Test
+    fun a_set_dragged_to_the_top_of_its_page_goes_first_and_takes_number_one() =
+        runTest {
+            val first = set(visit.id, press, 70.0, 10, 0)
+            val pulled = set(visit.id, row, 45.0, 12, 1)
+            val second = set(visit.id, press, 75.0, 8, 2)
+            val third = set(visit.id, press, 80.0, 6, 3)
+            listOf(first, pulled, second, third).forEach { gym.sets.upsert(it) }
+            val vm = viewModel().also { it.openMachine(press.id) }
+            vm.toggleSetOrdering()
+
+            vm.moveSet(third.id, 0)
+
+            val page = assertNotNull(vm.state.value?.page)
+            assertEquals(listOf(third.id, first.id, second.id), page.sets.map { it.id })
+            assertEquals(listOf("#1", "#2", "#3"), page.sets.map { it.title })
+            assertTrue(page.ordering)
+            val reopened = viewModel().also { it.openMachine(press.id) }
+            assertEquals(
+                listOf(third.id, first.id, second.id),
+                assertNotNull(reopened.state.value?.page).sets.map { it.id },
+            )
+            assertEquals(
+                listOf(press.id, row.id),
+                assertNotNull(reopened.state.value).groups.map { it.machineId },
+            )
+        }
+
+    @Test
+    fun a_dropped_set_shows_in_its_new_place_before_the_write_finishes() =
+        runTest {
+            val first = set(visit.id, press, 70.0, 10, 0)
+            val second = set(visit.id, press, 75.0, 8, 1)
+            listOf(first, second).forEach { gym.sets.upsert(it) }
+            val vm = viewModel().also { it.openMachine(press.id) }
+            vm.toggleSetOrdering()
+            val gate = CompletableDeferred<Unit>().also { gym.sets.gate = it }
+
+            vm.moveSet(second.id, 0)
+
+            val page = assertNotNull(vm.state.value?.page)
+            assertEquals(listOf(second.id, first.id), page.sets.map { it.id })
+            gate.complete(Unit)
+        }
+
+    @Test
+    fun no_set_opens_in_the_form_while_its_page_orders_sets() =
+        runTest {
+            val recorded = set(visit.id, press, 70.0, 10, 0)
+            gym.sets.upsert(recorded)
+            gym.sets.upsert(set(visit.id, press, 75.0, 8, 1))
+            val vm = viewModel().also { it.openMachine(press.id) }
+            vm.toggleSetOrdering()
+
+            vm.editSet(recorded.id)
+            vm.openForm()
+
+            assertNull(assertNotNull(vm.state.value?.page).form)
+        }
+
+    @Test
     fun a_new_set_goes_after_every_set_of_the_visit() =
         runTest {
             gym.sets.upsert(set(visit.id, row, 45.0, 12, 0))

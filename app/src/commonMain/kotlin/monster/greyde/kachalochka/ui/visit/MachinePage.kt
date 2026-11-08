@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,7 @@ import monster.greyde.kachalochka.ui.account.PersonAvatar
 import monster.greyde.kachalochka.ui.account.dashedCircle
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ControlShape
+import monster.greyde.kachalochka.ui.components.DragHandle
 import monster.greyde.kachalochka.ui.components.OutlineButton
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
@@ -68,6 +70,9 @@ import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.Stepper
 import monster.greyde.kachalochka.ui.components.TagChip
 import monster.greyde.kachalochka.ui.components.TextInput
+import monster.greyde.kachalochka.ui.components.dragOutline
+import monster.greyde.kachalochka.ui.components.rememberReorderState
+import monster.greyde.kachalochka.ui.components.reorderItem
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.machine.MachineMenu
 import monster.greyde.kachalochka.ui.machine.MachinePlacementViewModel
@@ -114,6 +119,8 @@ internal fun MachinePage(
                     } else {
                         null
                     },
+                onReorder =
+                    (viewModel::toggleSetOrdering).takeIf { page.canOrder && !page.ordering },
             )
         },
         timer = true,
@@ -199,19 +206,47 @@ internal fun MachinePage(
                 page.daySets?.let {
                     SectionLabel(it, Modifier.padding(top = 4.dp).testTag("page-day-sets"))
                 }
+                val setOrder = rememberReorderState()
+                SideEffect { setOrder.retain(page.sets.size) }
                 Column {
-                    page.sets.forEach { row ->
-                        SetRow(
-                            row,
-                            onEdit = (viewModel::editSet).takeUnless { page.readOnly },
+                    page.sets.forEachIndexed { index, row ->
+                        Row(
                             Modifier
-                                .clip(ControlShape)
-                                .background(colors.onBackground.copy(alpha = 0.04f)),
-                        )
+                                .reorderItem(setOrder, index)
+                                .dragOutline(setOrder.dragging == index),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (page.ordering) {
+                                DragHandle(setOrder, index, "drag-set-${row.id.value}") {
+                                    from,
+                                    to,
+                                    ->
+                                    viewModel.moveSet(page.sets[from].id, to)
+                                }
+                            }
+                            SetRow(
+                                row,
+                                onEdit =
+                                    (viewModel::editSet).takeUnless {
+                                        page.readOnly || page.ordering
+                                    },
+                                Modifier
+                                    .weight(1f)
+                                    .clip(ControlShape)
+                                    .background(colors.onBackground.copy(alpha = 0.04f)),
+                            )
+                        }
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (!page.readOnly) {
+                    if (page.ordering) {
+                        OutlineButton(
+                            strings().done,
+                            PhosphorIcons.Check,
+                            viewModel::toggleSetOrdering,
+                            Modifier.weight(1f).testTag("finish-ordering"),
+                        )
+                    } else if (!page.readOnly) {
                         OutlineButton(
                             strings().add,
                             PhosphorIcons.Plus,

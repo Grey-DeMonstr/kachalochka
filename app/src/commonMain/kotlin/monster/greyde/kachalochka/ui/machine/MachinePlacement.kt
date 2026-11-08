@@ -24,10 +24,11 @@ import monster.greyde.kachalochka.ui.strings.strings
 internal fun MachineMenu(
     onToPlan: (() -> Unit)? = null,
     onToday: (() -> Unit)? = null,
+    onReorder: (() -> Unit)? = null,
     onUnlink: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
-    if (listOfNotNull(onToPlan, onToday, onUnlink, onDelete).isEmpty()) return
+    if (listOfNotNull(onToPlan, onToday, onReorder, onUnlink, onDelete).isEmpty()) return
     var expanded by remember { mutableStateOf(false) }
     Box {
         SquareIconButton(
@@ -50,6 +51,9 @@ internal fun MachineMenu(
                     "machine-to-today",
                     it,
                 ) { expanded = false }
+            }
+            onReorder?.let {
+                MenuItem(strings().reorderSets, "machine-reorder", it) { expanded = false }
             }
             onUnlink?.let {
                 MenuItem(strings().unlinkFromFriends, "unlink-machine", it) { expanded = false }

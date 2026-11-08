@@ -67,4 +67,44 @@ class SetOrderTest {
         )
         assertTrue(changed.all { it.updatedAt == now })
     }
+
+    @Test
+    fun the_last_set_of_a_machine_moved_to_the_top_goes_first_among_its_sets() {
+        val sets = threeMachines()
+
+        val changed = setMovedTo(sets, sets[3].id, 0, now)
+
+        assertEquals(
+            setOf(sets[2].id to 4, sets[3].id to 3),
+            changed.map { it.id to it.position }.toSet(),
+        )
+        assertTrue(changed.all { it.updatedAt == now })
+    }
+
+    @Test
+    fun a_set_moved_between_interleaved_sets_keeps_its_machine_s_block_in_place() {
+        val sets =
+            listOf(
+                set(VISIT_A, 60.0, atSeconds = 0, position = 1),
+                set(VISIT_A, 45.0, atSeconds = 1, machine = ROW, position = 2),
+                set(VISIT_A, 62.0, atSeconds = 2, position = 3),
+            )
+
+        val moved = sets.after(setMovedTo(sets, sets[2].id, 0, now))
+
+        assertEquals(
+            listOf(sets[2].id, sets[0].id, sets[1].id),
+            moved.sortedWith(visitOrder).map { it.id },
+        )
+    }
+
+    @Test
+    fun an_unknown_set_or_one_moved_to_its_own_or_a_missing_place_writes_nothing() {
+        val sets = threeMachines()
+
+        assertEquals(emptyList(), setMovedTo(sets, sets[2].id, 0, now))
+        assertEquals(emptyList(), setMovedTo(sets, sets[2].id, -1, now))
+        assertEquals(emptyList(), setMovedTo(sets, sets[2].id, 2, now))
+        assertEquals(emptyList(), setMovedTo(sets, WorkoutSetId.random(), 0, now))
+    }
 }

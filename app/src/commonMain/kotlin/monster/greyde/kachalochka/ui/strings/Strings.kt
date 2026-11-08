@@ -105,6 +105,7 @@ interface Strings {
     val startPlanText: String
     val repeatToday: String
     val toPlan: String
+    val reorderSets: String
     val choosePlan: String
     val machineGone: String
 

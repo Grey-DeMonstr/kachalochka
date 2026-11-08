@@ -29,10 +29,12 @@ import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.plannedWithoutSets
 import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
+import monster.greyde.kachalochka.core.domain.gym.setMovedTo
 import monster.greyde.kachalochka.core.domain.gym.shiftedSets
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
+import monster.greyde.kachalochka.core.domain.gym.visitOrder
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -144,6 +146,9 @@ data class MachinePageUi(
     val canUnplan: Boolean,
     val form: SetFormUi?,
     val readOnly: Boolean = false,
+    /** The day's sets on the page show drag handles. */
+    val ordering: Boolean = false,
+    val canOrder: Boolean = false,
 )
 
 /** The set being added or corrected; [weight] and [reps] are as typed. */
@@ -201,6 +206,7 @@ class VisitViewModel(
     private var open: Machine? = null
     private val form = SetForm()
     private var ordering = false
+    private var orderingSets = false
     private var saving = false
     private val groupReads = GroupReads(friends, reads, viewModelScope, ::publish)
     private var own: OwnMachines? = null
@@ -304,6 +310,7 @@ class VisitViewModel(
         selected = id
         if (withForm) form.openNew() else form.close()
         ordering = false
+        orderingSets = false
         viewModelScope.launch {
             if (plan) planOwnCopy(id)
             reload(reseed = true)
@@ -318,7 +325,7 @@ class VisitViewModel(
 
     /** The form for the open machine's next set, from the last set's values. */
     fun openForm() {
-        if (open == null || readOnly) return
+        if (open == null || readOnly || orderingSets) return
         form.openNew()
         viewModelScope.launch { reload(reseed = true) }
     }
@@ -421,13 +428,26 @@ class VisitViewModel(
         index: Int,
     ) = reorder { machineMovedTo(visitSets, id, index, it) }
 
+    /** Turns the drag handles of the open page's sets on or off; the form closes. */
+    fun toggleSetOrdering() {
+        if (readOnly && !orderingSets) return
+        orderingSets = !orderingSets
+        form.close()
+        publish()
+    }
+
+    fun moveSet(
+        id: WorkoutSetId,
+        index: Int,
+    ) = reorder { setMovedTo(visitSets, id, index, it) }
+
     private fun reorder(moved: (Instant) -> List<WorkoutSet>) {
         if (readOnly) return
         writes.launch {
             val changed = moved(clock.now())
             // Shown before the write, so the dropped item stays where the finger left it.
             val byId = changed.associateBy { it.id }
-            visitSets = visitSets.map { byId[it.id] ?: it }
+            visitSets = visitSets.map { byId[it.id] ?: it }.sortedWith(visitOrder)
             publish()
             recorder.reorder(changed)
             reload(reseed = false)
@@ -436,7 +456,7 @@ class VisitViewModel(
 
     /** Opens [id] in the form, on its machine's page. */
     fun editSet(id: WorkoutSetId) {
-        if (ordering || readOnly) return
+        if (ordering || orderingSets || readOnly) return
         val set = visitSets.firstOrNull { it.id == id } ?: return
         form.openOn(set)
         selected = set.machineId
@@ -467,6 +487,7 @@ class VisitViewModel(
 
     private fun closePage() {
         form.close()
+        orderingSets = false
         selected = null
         open = null
     }
@@ -710,6 +731,8 @@ class VisitViewModel(
             canUnplan = onMachine.isEmpty() && machine.id in planned && !readOnly,
             form = if (form.isOpen && !readOnly) formUi(machine, onMachine) else null,
             readOnly = readOnly,
+            ordering = orderingSets,
+            canOrder = onMachine.size > 1 && !readOnly,
         )
     }
 

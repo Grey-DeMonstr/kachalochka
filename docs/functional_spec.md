@@ -117,6 +117,10 @@ with its own sets: with a 20 kg platform here, a friend's +25 kg on a 10 kg plat
 "Сегодня") are the day's sets on the machine, "#1  (-)29.5 кг × 10" with the set's comment;
 tapping one opens it for editing. "Добавить" opens the form for the next set, and a planned
 machine without sets also offers "Убрать", which takes it out of the visit and returns to the list.
+With two sets or more, the page's "⋮" menu also has "Порядок подходов". It closes the form and
+shows a drag handle at the left of every set of the day; dragging it moves the set among the
+machine's sets, and the numbers follow the new order. While it is on, tapping a set opens nothing,
+and "Готово" replaces "Добавить" and hides the handles.
 Back, in the top bar or on the phone, closes an open form, then the page.
 
 A visit with sets has a "Поделиться" button in the top bar that hands the visit over as text:
