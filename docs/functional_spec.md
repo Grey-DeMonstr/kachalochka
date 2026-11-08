@@ -86,7 +86,7 @@ started plan. A visit is one calendar
 day; it has no start or end and comes into being with its first set. Below the card are rows for
 visits, machines, plans, statistics, friends and body measures. On Android with nobody signed
 in, "Войти через Google" sits at the bottom of the screen. The very bottom names the app's
-version, "Версия 1.1.0".
+version, "Версия 1.1.0"; on Android it also hides the network check.
 
 The visit screen is headed by its day, as "Вторник, 29 сентября" (with the year when it is not
 this one), and lists the day's machines in the order of their first set, ending with "Добавить",
@@ -749,6 +749,28 @@ made it.
 
 Unlinking and, when signed in, merging duplicates change friends' links on the server, so they
 need the network: without it the app says "Нет связи с сервером" and changes nothing.
+
+## Network check
+
+This part is for the app's owner, to find why a device cannot connect to the server. It is
+hidden and only on Android. Five taps on the version at the bottom of the home screen show a
+"Сеть" link next to the version, in the same small text, until the app stops. The link opens the
+network screen.
+
+The network screen shows the app and Android versions, the device, the time and the time zone,
+the network type, the DNS servers, the proxy in use, the number of signed-in accounts, and the
+time and result of the last sync and the last background error since the app started. Then it
+does the checks: it finds the addresses of the server, and sends requests to the server's
+sign-in, data and photo services, to ya.ru and to google.com. Each check shows a progress
+indicator while it runs. Then it shows its result, its time in milliseconds and the server's
+answer or the error text. A check is good when an answer comes, whatever its HTTP status.
+"Поделиться" sends the full report as text to the share sheet. The report never contains keys,
+tokens or e-mail addresses.
+
+The same screen has the proxy setting: an address as "host:port" and "Использовать прокси". When
+it is set, all requests of the app go through that HTTP proxy: sign-in, sync, friends' data,
+photos and the checks. The device keeps the setting. A changed setting applies after the app
+starts again.
 
 ## Privacy and terms
 

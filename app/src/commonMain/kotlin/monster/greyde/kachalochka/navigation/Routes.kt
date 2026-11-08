@@ -128,3 +128,6 @@ object PeopleRoute
 
 @Serializable
 object AccountRoute
+
+@Serializable
+object NetworkRoute

@@ -109,6 +109,11 @@ object RuStrings : Strings {
 
     override fun version(name: String) = "Версия $name"
 
+    override val network = "Сеть"
+    override val proxyAddress = "хост:порт"
+    override val useProxy = "Использовать прокси"
+    override val proxyAfterRestart = "Прокси начнёт работать после перезапуска приложения."
+
     override val todayTitle = "Сегодня"
     override val noSetsYet = "Подходов пока нет"
 

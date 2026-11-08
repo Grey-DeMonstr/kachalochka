@@ -1221,6 +1221,14 @@ builds them from its own address.
   after the sound, and a new rest restarts it. Settings picks the sound with the system ringtone
   picker (`ACTION_RINGTONE_PICKER`, notification sounds, no silence) and, on switching the sound
   on, asks for `POST_NOTIFICATIONS` on Android 13 and later; the sound plays without it.
+- The network check (`ui/network`) shows only where a `DeviceNetwork` is bound, and only
+  Android binds one: a browser page cannot choose a proxy or look up a host name. The HTTP proxy
+  is `SupabaseCredentials.proxy`, a Ktor `ProxyConfig`. Every Supabase client, Coil's client and
+  the checks' client put it in their engine config. Android replaces the core binding of the
+  credentials with one that adds the stored `ProxySetting`, so a changed setting applies at the
+  next start. The proxy address stays unresolved: OkHttp looks it up off the main thread, and
+  Android refuses a lookup on the main thread. The last sync pass and the last background
+  failure are kept in memory only, by `WorkManagerSyncTrigger` and `LastFailure`.
 - Release builds are minified and resource-shrunk by R8; the app bundle carries the mapping file
   Play uses to deobfuscate crashes. Class names do not survive R8, so code must never compare
   them: a platform error that common code reacts to is wrapped in a type `core` owns, as

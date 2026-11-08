@@ -6,6 +6,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import io.ktor.client.HttpClient
 import kotlinx.serialization.Serializable
 import monster.greyde.kachalochka.core.data.family.FamilyFollower
 import monster.greyde.kachalochka.core.data.friends.TraineeFriends
@@ -42,6 +43,9 @@ import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
+import monster.greyde.kachalochka.ui.network.DeviceNetwork
+import monster.greyde.kachalochka.ui.network.NetworkChecks
+import monster.greyde.kachalochka.ui.network.ProxyPreference
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.PhotoSharing
@@ -108,6 +112,9 @@ fun fakeGymModule(gym: FakeGym) =
         single<RestSoundPreference> { gym.restSounds }
         single<RestSoundChooser> { gym.restSoundChooser }
         single<SystemBars> { gym.systemBars }
+        single<DeviceNetwork> { gym.network }
+        single<ProxyPreference> { gym.proxies }
+        single { NetworkChecks(HttpClient(gym.serverAnswers), gym.network, gym.credentials) }
         single { gym.unsaved }
         viewModelOf(::AccountsViewModel)
     }

@@ -22,6 +22,8 @@ import monster.greyde.kachalochka.core.data.sync.runAndNormalize
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.util.concurrent.TimeUnit
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 private const val SYNC_WORK_NAME = "sync"
 private const val BACKOFF_SECONDS = 30L
@@ -34,7 +36,12 @@ class WorkManagerSyncTrigger(
 
     override val completed: Flow<Unit> = passes
 
-    fun passCompleted() {
+    /** When the newest pass of this process ended, and whether it was clean. */
+    var lastPass: Pair<Instant, Boolean>? = null
+        private set
+
+    fun passCompleted(clean: Boolean) {
+        lastPass = Clock.System.now() to clean
         passes.tryEmit(Unit)
     }
 
@@ -80,7 +87,7 @@ class SyncWorker(
                 failures.record(failed)
                 false
             }
-        get<WorkManagerSyncTrigger>().passCompleted()
+        get<WorkManagerSyncTrigger>().passCompleted(clean)
         return if (clean) Result.success() else Result.retry()
     }
 }

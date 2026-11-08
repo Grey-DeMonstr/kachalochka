@@ -5,6 +5,8 @@ package monster.greyde.kachalochka.core.data.supabase
 import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
+import io.ktor.client.engine.ProxyBuilder
+import io.ktor.http.Url
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.data.identity.AccountStore
@@ -141,6 +143,28 @@ class SupabaseClientFactoryTest {
 
         assertFalse(client.auth.config.autoLoadFromStorage)
         assertFalse(client.auth.config.autoSaveToStorage)
+    }
+
+    @Test
+    fun every_client_sends_its_requests_through_the_proxy() =
+        runTest {
+            val proxy = ProxyBuilder.http(Url("http://127.0.0.1:3128"))
+            val proxied = credentials.copy(proxy = proxy)
+            val clients =
+                listOf(
+                    supabaseClient(proxied),
+                    syncSupabaseClient(proxied, tokens(ivanStore()), SyncSession()),
+                )
+
+            clients.forEach { assertEquals(proxy, it.httpClient.httpClient.engine.config.proxy) }
+        }
+
+    @Test
+    fun a_client_without_a_proxy_goes_direct() {
+        assertNull(
+            supabaseClient(credentials)
+                .httpClient.httpClient.engine.config.proxy,
+        )
     }
 
     @Test

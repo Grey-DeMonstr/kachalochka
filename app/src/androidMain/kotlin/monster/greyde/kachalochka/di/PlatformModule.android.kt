@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import monster.greyde.kachalochka.FailureLog
+import monster.greyde.kachalochka.LastFailure
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.supabase.webAppUrlFromBuild
@@ -32,6 +33,10 @@ import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.ShareSheetInviteSharing
+import monster.greyde.kachalochka.ui.network.AndroidDeviceNetwork
+import monster.greyde.kachalochka.ui.network.DataStoreProxyPreference
+import monster.greyde.kachalochka.ui.network.DeviceNetwork
+import monster.greyde.kachalochka.ui.network.ProxyPreference
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.SystemPhotoCapture
 import monster.greyde.kachalochka.ui.share.CardSharing
@@ -62,7 +67,10 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.util.Locale
+import kotlin.time.Clock
 
 private const val LOG_TAG = "Kachalochka"
 
@@ -119,7 +127,23 @@ actual fun platformModule(): Module =
         singleOf(::ActivityHolder)
         single { WorkManagerSyncTrigger(androidContext()) } bind SyncTrigger::class
         single { VisitStore.Device }
-        single<FailureLog> { FailureLog { Log.w(LOG_TAG, "Background work failed", it) } }
+        single {
+            LastFailure(Clock.System) { Log.w(LOG_TAG, "Background work failed", it) }
+        } bind FailureLog::class
+        single<ProxyPreference> {
+            DataStoreProxyPreference(get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        }
+        // Replaces the core binding, so every client goes through the stored proxy. The address
+        // stays unresolved: OkHttp looks it up later, and Android refuses it on the main thread.
+        single {
+            val endpoint = get<ProxyPreference>().setting.value.endpoint
+            val proxy =
+                endpoint?.let { (host, port) ->
+                    Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(host, port))
+                }
+            SupabaseCredentials.fromBuild().copy(proxy = proxy)
+        }
+        single<DeviceNetwork> { AndroidDeviceNetwork(androidContext(), get(), get()) }
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }
         single<TextSharing> { ShareSheetTextSharing(androidContext()) }

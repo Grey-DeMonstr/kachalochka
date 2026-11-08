@@ -2,6 +2,8 @@ package monster.greyde.kachalochka.fakes
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.ImageBitmap
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -549,6 +551,11 @@ class FakeGym(
     val restSounds = InMemoryRestSoundPreference()
     val restSoundChooser = InstantRestSoundChooser("content://sound/7")
     val systemBars = RecordingSystemBars()
+    val network = FakeDeviceNetwork()
+    val proxies = InMemoryProxyPreference()
+
+    /** Every request of the network checks gets an empty 200. */
+    val serverAnswers = MockEngine { respond("") }
     val joinCodes = InMemoryJoinCodeStore()
     val parentCodes = InMemoryJoinCodeStore()
     val trainerCodes = InMemoryJoinCodeStore()

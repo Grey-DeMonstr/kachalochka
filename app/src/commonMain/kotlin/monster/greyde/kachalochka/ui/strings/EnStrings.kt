@@ -92,6 +92,11 @@ object EnStrings : Strings {
 
     override fun version(name: String) = "Version $name"
 
+    override val network = "Network"
+    override val proxyAddress = "host:port"
+    override val useProxy = "Use proxy"
+    override val proxyAfterRestart = "The proxy starts to work after the app restarts."
+
     override val todayTitle = "Today"
     override val noSetsYet = "No sets yet"
 

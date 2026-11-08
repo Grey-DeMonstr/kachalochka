@@ -75,6 +75,11 @@ interface Strings {
 
     fun version(name: String): String
 
+    val network: String
+    val proxyAddress: String
+    val useProxy: String
+    val proxyAfterRestart: String
+
     val todayTitle: String
     val noSetsYet: String
     val startVisit: String

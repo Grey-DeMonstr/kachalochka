@@ -19,6 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -38,9 +42,13 @@ import monster.greyde.kachalochka.ui.components.DISABLED_ALPHA
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
+import monster.greyde.kachalochka.ui.network.DeviceNetwork
 import monster.greyde.kachalochka.ui.strings.strings
+import org.koin.compose.getKoin
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+
+private const val NETWORK_TAPS = 5
 
 @Composable
 fun HomeScreen(
@@ -52,6 +60,7 @@ fun HomeScreen(
     onOpenMeasures: () -> Unit,
     onOpenPlans: () -> Unit,
     onOpenStatistics: () -> Unit = {},
+    onOpenNetwork: () -> Unit = {},
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -126,12 +135,36 @@ fun HomeScreen(
         }
         accounts.failure?.let { SignInFailure(it, Modifier.padding(horizontal = 16.dp)) }
         Spacer(Modifier.weight(1f))
+        VersionLine(onOpenNetwork)
+    }
+}
+
+/** Five taps on the version show the network check, where the platform has one. */
+@Composable
+private fun VersionLine(onOpenNetwork: () -> Unit) {
+    val koin = getKoin()
+    val checkable = remember { koin.getOrNull<DeviceNetwork>() != null }
+    var taps by rememberSaveable { mutableIntStateOf(0) }
+    val color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
+    Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            s.version(AppVersion.NAME),
-            modifier = Modifier.padding(16.dp).testTag("app-version"),
+            strings().version(AppVersion.NAME),
+            modifier =
+                Modifier
+                    .clickable(enabled = checkable, indication = null, interactionSource = null) {
+                        taps++
+                    }.testTag("app-version"),
             fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+            color = color,
         )
+        if (taps >= NETWORK_TAPS) {
+            Text(
+                strings().network,
+                modifier = Modifier.clickable(onClick = onOpenNetwork).testTag("network-link"),
+                fontSize = 12.sp,
+                color = color,
+            )
+        }
     }
 }
 

@@ -1,11 +1,14 @@
 package monster.greyde.kachalochka.core.data.supabase
 
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.SupabaseClientBuilder
+import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
+import io.ktor.client.engine.ProxyConfig
 import monster.greyde.kachalochka.core.data.identity.AccountStore
 import monster.greyde.kachalochka.core.data.identity.AccountTokens
 import monster.greyde.kachalochka.core.data.sync.SyncSession
@@ -20,9 +23,15 @@ private fun requireConfigured(credentials: SupabaseCredentials) {
     }
 }
 
+// supabase-kt marks its Ktor config internal, but it is the only way to give the engine a proxy.
+@OptIn(SupabaseInternal::class)
+private fun SupabaseClientBuilder.goThrough(proxy: ProxyConfig?) =
+    httpConfig { engine { this.proxy = proxy } }
+
 fun supabaseClient(credentials: SupabaseCredentials): SupabaseClient {
     requireConfigured(credentials)
     return createSupabaseClient(credentials.url, credentials.anonKey) {
+        goThrough(credentials.proxy)
         // The account store holds every signed-in session; supabase-kt's own storage keeps one and
         // would contend for the same slot.
         install(Auth) {
@@ -43,6 +52,7 @@ private fun tokenClient(
 ): SupabaseClient {
     requireConfigured(credentials)
     return createSupabaseClient(credentials.url, credentials.anonKey) {
+        goThrough(credentials.proxy)
         accessToken = token
         install(Postgrest)
         install(Storage)

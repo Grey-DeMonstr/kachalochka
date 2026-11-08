@@ -1,9 +1,11 @@
 package monster.greyde.kachalochka.ui.home
 
+import androidx.compose.ui.semantics.SemanticsActions.OnClick
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.AppVersion
 import monster.greyde.kachalochka.core.data.identity.Account
@@ -46,6 +48,27 @@ class HomeScreenTest {
         runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("app-version").assertTextEquals("Версия ${AppVersion.NAME}")
         }
+    }
+
+    @Test
+    fun five_taps_on_the_version_show_the_network_link() {
+        var opened = 0
+        runScreenTest(
+            FakeGym(),
+            screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}, onOpenNetwork = { opened++ }) },
+        ) {
+            // The test window is too short for the screen, so the version line has no height.
+            val tapVersion = { onNodeWithTag("app-version").performSemanticsAction(OnClick) }
+            repeat(4) { tapVersion() }
+            onNodeWithTag("network-link").assertDoesNotExist()
+
+            tapVersion()
+            onNodeWithTag("network-link")
+                .assertTextEquals("Сеть")
+                .performSemanticsAction(OnClick)
+            waitForIdle()
+        }
+        assertEquals(1, opened)
     }
 
     @Test

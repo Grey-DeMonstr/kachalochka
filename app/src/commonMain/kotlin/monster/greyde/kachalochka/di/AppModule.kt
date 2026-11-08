@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
+import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.domain.family.FamilyRepository
 import monster.greyde.kachalochka.sync.VisitNormalization
@@ -46,6 +47,9 @@ import monster.greyde.kachalochka.ui.measures.BodyFatViewModel
 import monster.greyde.kachalochka.ui.measures.MeasureViewModel
 import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
 import monster.greyde.kachalochka.ui.measures.MeasuresViewModel
+import monster.greyde.kachalochka.ui.network.NetworkChecks
+import monster.greyde.kachalochka.ui.network.NetworkViewModel
+import monster.greyde.kachalochka.ui.network.proxiedClient
 import monster.greyde.kachalochka.ui.photos.PhotoLoaders
 import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.plans.PlanFormViewModel
@@ -96,7 +100,8 @@ val appModule =
         }
         singleOf(::Nickname)
         singleOf(::FriendColorStore)
-        singleOf(::PhotoLoaders)
+        single { PhotoLoaders(get(), get<SupabaseCredentials>().proxy) }
+        single { NetworkChecks(proxiedClient(get<SupabaseCredentials>().proxy), get(), get()) }
         singleOf(::AccountAvatars)
         singleOf(::MachineCatalogue)
         singleOf(::MachineReads)
@@ -137,4 +142,5 @@ val appModule =
         viewModelOf(::PlanFormViewModel)
         viewModelOf(::StatisticsViewModel)
         viewModelOf(::LinkChooserViewModel)
+        viewModelOf(::NetworkViewModel)
     }
