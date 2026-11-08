@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
@@ -29,7 +30,7 @@ import monster.greyde.kachalochka.ui.format.machineCount
 import monster.greyde.kachalochka.ui.format.setsSummaryParts
 import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.machine.LinkedMachineUi
-import monster.greyde.kachalochka.ui.machine.MachineCatalogue
+import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 
 /** [title] is the friend's name, [day] heads the list over [countLabel], its machine count. */
@@ -57,7 +58,7 @@ class FriendVisitViewModel(
     private val name: String,
     private val day: CalendarDay,
     private val friends: FriendsRepository,
-    private val catalogue: MachineCatalogue,
+    private val reads: MachineReads,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: DeviceClock,
@@ -103,9 +104,7 @@ class FriendVisitViewModel(
             val visitSets = setsOn(day)
             val theirs = friends.machines(member)
             val me = currentUser.id()
-            val own = catalogue.own(me)
-            val group = me?.let { catalogue.group(it) }
-            val shown = ShownMachines(own, group)
+            val shown = reads.machines(me).last().shown
             val avatar =
                 me
                     ?.let { viewer -> friends.mates(viewer).firstOrNull { it.userId == member } }

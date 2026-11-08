@@ -87,11 +87,12 @@ class ShownMachines(
 
     val clusters: MachineClusters = this.group?.clusters ?: MachineClusters(own.links)
 
-    val offered: List<FriendMachine> = this.group?.offered(own.machines).orEmpty()
+    val offered: List<FriendMachine> by lazy { this.group?.offered(own.machines).orEmpty() }
 
     /** The own machines each could be merged with; offline, only own links join them. */
-    val suggestions: Map<MachineId, List<Machine>> =
+    val suggestions: Map<MachineId, List<Machine>> by lazy {
         linkSuggestions(own.machines, this.group?.links ?: own.links)
+    }
 
     /** The friends' machines [machine] is linked with, read online. */
     fun linked(machine: MachineId): List<FriendMachine> =

@@ -39,7 +39,7 @@ class FriendVisitViewModelTest {
             "Олег",
             day,
             gym.friends,
-            gym.catalogue,
+            gym.machineReads,
             gym.currentUser,
             gym.accounts,
             gym.deviceClock,
@@ -99,6 +99,39 @@ class FriendVisitViewModelTest {
                     emptyList(),
                 ),
                 state.groups.map { it.linkedWith },
+            )
+        }
+
+    @Test
+    fun a_failed_group_read_shows_the_visit_with_the_last_group_read() =
+        runTest {
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+            val pashas = Machine.new("Жим", PASHA.userId, gym.clock.current)
+            gym.friends.machines += pashas
+            gym.friends.links +=
+                MachineLink(
+                    MachineLinkId.random(),
+                    PASHA.userId,
+                    pashas.id,
+                    fixture.olegPress.id,
+                    gym.clock.current,
+                    deleted = false,
+                )
+            gym.catalogue.group(ME.userId)
+            gym.friends.gymOffline = true
+
+            val vm = viewModel()
+
+            assertFalse(vm.offline.value)
+            assertEquals(
+                listOf(
+                    LinkedMachineUi(fixture.myPress.id, ME, "Жим ногами", own = true),
+                    LinkedMachineUi(pashas.id, PASHA, "Жим"),
+                ),
+                vm.state.value
+                    ?.groups
+                    ?.first()
+                    ?.linkedWith,
             )
         }
 

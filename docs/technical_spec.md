@@ -713,16 +713,18 @@ the own read, for the visit screen, which reads its own machines on each reload.
 fails emits the last good one, marked offline. With `withCards`, `machines` adds both peaks and
 the friends' colours and keeps the last good friends' peaks and colours per account. A stream
 ends without a further emission once its account is no longer active. The machine list, the
-picker, the form, both link choosers, "Упражнение друга", the visit screen and the statistics
-take friends' machines only from it; the form's copy of a friend's settings reads the group
-itself. "Упражнение друга" shows "Нет связи с сервером" on an offline emission, and the form
-skips the own-only emission while it waits, so a re-read keeps its linked machines. The form
-reads the group once per load, for its links, photos and tags.
+picker, the form, both link choosers, "Упражнение друга", a friend's visit, the visit screen and
+the statistics take friends' machines only from it; the form's copy of a friend's settings reads
+the group itself. "Упражнение друга" shows "Нет связи с сервером" on an offline emission, and the
+form skips the own-only emission while it waits, so a re-read keeps its linked machines. The form
+reads the group once per load, for its links, photos and tags. A friend's visit takes the last
+emission, so a failed group read shows its covers and links from the last good one.
 
 `ShownMachines` joins an own read with a group read into what a screen shows, the clusters, each
 machine's cover photo and the friends' machines offered, and drops a group read made for another
 account than the own read's, so friends' rows read for one account are never shown or copied once
-another is active.
+another is active. It computes the offered machines and the merge suggestions only when a screen
+asks for them, and the visit screen makes one per redraw, since it redraws on each keystroke.
 
 `MachineCards` turns what a screen read — `ShownMachines` and both peaks — into the card every
 list draws, in the viewer's unit; the machine list and the picker group friends' cards by owner,

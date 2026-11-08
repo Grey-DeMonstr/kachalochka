@@ -533,9 +533,6 @@ class VisitViewModel(
         publish()
     }
 
-    private fun coverOf(machineId: MachineId): Photo? =
-        own?.let { ShownMachines(it, groupReads.group).cover(machineId) }
-
     /** [result]'s weights count on [mine]'s platform, so they compare with the viewer's own. */
     private fun friendLine(
         result: FriendResult,
@@ -556,14 +553,15 @@ class VisitViewModel(
     private fun publish() {
         val now = clock.now()
         val offset = clock.offsetAt(now)
-        val recorded = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets) }
+        val shown = own?.let { ShownMachines(it, groupReads.group) }
+        val recorded = groupByMachine(visitSets).map { groupUi(it.machineId, it.sets, shown) }
         // A planned row among the dragged ones could be dropped where no machine can go.
         val planned =
             if (ordering) {
                 emptyList()
             } else {
                 plannedWithoutSets(shownVisit?.planned.orEmpty(), visitSets, machinesById.keys)
-                    .map { plannedUi(it) }
+                    .map { plannedUi(it, shown) }
             }
         val groups = recorded + planned
         val sections = sections(groups)
@@ -574,7 +572,7 @@ class VisitViewModel(
                 sections = sections,
                 groupByTag = groupByTag,
                 canGroupByTag = groups.any { it.tags.isNotEmpty() },
-                page = pageUi(offset, sections.flatMap { it.groups }),
+                page = pageUi(offset, sections.flatMap { it.groups }, shown),
                 ordering = ordering,
                 card = card(now, offset),
                 canOrder = visitSets.isNotEmpty() && !readOnly,
@@ -619,6 +617,7 @@ class VisitViewModel(
     private fun groupUi(
         machineId: MachineId,
         machineSets: List<WorkoutSet>,
+        shown: ShownMachines?,
     ): SetGroupUi {
         val machine = machinesById[machineId]
         return SetGroupUi(
@@ -627,12 +626,15 @@ class VisitViewModel(
             setupNote = machine?.setupNote.orEmpty(),
             summary = machine?.let { setsSummaryParts(it, machineSets, preferred) }.orEmpty(),
             sets = setRows(machine, machineSets),
-            photo = coverOf(machineId),
+            photo = shown?.cover(machineId),
             tags = sortedTags(machine?.tags.orEmpty()),
         )
     }
 
-    private fun plannedUi(machineId: MachineId): SetGroupUi {
+    private fun plannedUi(
+        machineId: MachineId,
+        shown: ShownMachines?,
+    ): SetGroupUi {
         val machine = machinesById.getValue(machineId)
         return SetGroupUi(
             machineId = machineId,
@@ -640,7 +642,7 @@ class VisitViewModel(
             setupNote = machine.setupNote,
             summary = listOf(AppStrings.current.planned),
             sets = emptyList(),
-            photo = coverOf(machineId),
+            photo = shown?.cover(machineId),
             tags = sortedTags(machine.tags),
             planned = true,
         )
@@ -669,6 +671,7 @@ class VisitViewModel(
     private fun pageUi(
         offset: Duration,
         listed: List<SetGroupUi>,
+        shown: ShownMachines?,
     ): MachinePageUi? {
         val machine = open ?: return null
         val onMachine = visitSets.filter { it.machineId == machine.id }
@@ -689,7 +692,7 @@ class VisitViewModel(
             machineId = machine.id,
             name = machine.name,
             platformSuffix = platformSuffix(machine, preferred),
-            photo = coverOf(machine.id),
+            photo = shown?.cover(machine.id),
             tags = sortedTags(machine.tags),
             setupNote = machine.setupNote,
             record =
