@@ -706,8 +706,8 @@ app or with its eight-character code; the Android app joins by code. An invite l
 joining, warning that the group's members will see the user's visits and machines; a link opened
 while signed out is offered to whichever account signs in next in that browser. Every member sees
 the other members' calendars, visits and machine photos, read-only, and nothing is shared outside a
-group. A member can leave; the owner deletes the group instead. Friends' data is read online and
-never stored on the device.
+group. A member can leave; the owner deletes the group instead. Friends' data is read online. On
+Android a friend's photo, once shown, stays on the device and shows again without a network.
 
 The group screen starts each member's row with their avatar, or their initial in their colour, and
 ends every row but the user's own with a colour dot. Tapping it opens a palette of eight colours;

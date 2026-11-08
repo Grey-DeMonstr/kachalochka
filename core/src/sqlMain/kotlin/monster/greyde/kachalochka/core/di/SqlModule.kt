@@ -101,13 +101,6 @@ internal fun sqlModule(): Module =
             SupabaseAccountServer { owner -> ownerSupabaseClient(credentials, tokens, owner) }
         }
         single<PhotoImages> {
-            val store: AccountStore = get()
-            // An own photo pulled from another device is kept like the ones taken here.
-            StoragePhotoImages(
-                inject(ACTIVE_ACCOUNT_CLIENT),
-                get(),
-                { photo -> store.accounts.value.any { it.userId == photo.userId } },
-                Dispatchers.IO,
-            )
+            StoragePhotoImages(inject(ACTIVE_ACCOUNT_CLIENT), get(), Dispatchers.IO)
         }
     }

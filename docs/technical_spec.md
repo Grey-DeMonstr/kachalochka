@@ -445,8 +445,8 @@ it, and a deleted row after removing its Storage object; a pulled deleted row re
 uploads and deletes directly in `RemotePhotoRepository`.
 
 Displayed photos go through Coil with a `Photo` fetcher that asks `PhotoImages`: the device's file
-when there is one, else a download from Storage as the active account. On Android a downloaded
-photo of an account signed in on the device is kept as its file. One `ImageLoader`, held by
+when there is one, else a download from Storage as the active account. On Android every downloaded
+photo, a friend's too, is kept as its file, so it shows again without a network. One `ImageLoader`, held by
 `PhotoLoaders`, serves every screen, keyed by photo id. A photo not saved yet is shown from its
 bytes. A `MachineThumbnail` given `onOpenSettings` draws a gear: a badge over the cover, else
 in place of the placeholder icon.

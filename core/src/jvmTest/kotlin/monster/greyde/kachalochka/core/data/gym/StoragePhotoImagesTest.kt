@@ -26,7 +26,7 @@ class StoragePhotoImagesTest {
     private val requests = mutableListOf<HttpRequestData>()
     private val served = byteArrayOf(9, 8, 7)
 
-    private fun images(keeps: (Photo) -> Boolean = { false }): StoragePhotoImages {
+    private fun images(): StoragePhotoImages {
         val engine =
             MockEngine { request ->
                 requests += request
@@ -37,7 +37,7 @@ class StoragePhotoImagesTest {
                 httpEngine = engine
                 install(Storage)
             }
-        return StoragePhotoImages(lazyOf(client), files, keeps, Dispatchers.Unconfined)
+        return StoragePhotoImages(lazyOf(client), files, Dispatchers.Unconfined)
     }
 
     @Test
@@ -51,11 +51,11 @@ class StoragePhotoImagesTest {
         }
 
     @Test
-    fun another_photo_is_downloaded_from_its_owner_s_folder_and_kept_when_asked() =
+    fun another_photo_is_downloaded_from_its_owner_s_folder_and_kept() =
         runTest {
             val photo = Photo.new(MachineId.random(), ivan, now)
 
-            assertContentEquals(served, images(keeps = { it.userId == ivan }).bytes(photo))
+            assertContentEquals(served, images().bytes(photo))
 
             assertTrue(
                 requests
@@ -67,13 +67,13 @@ class StoragePhotoImagesTest {
         }
 
     @Test
-    fun a_friend_s_photo_is_downloaded_but_never_kept() =
+    fun a_friend_s_photo_is_kept_as_an_own_one_is() =
         runTest {
             val photo = Photo.new(MachineId.random(), oleg, now)
 
-            assertContentEquals(served, images(keeps = { it.userId == ivan }).bytes(photo))
+            assertContentEquals(served, images().bytes(photo))
 
-            assertNull(files.read(photo.id))
+            assertContentEquals(served, files.read(photo.id))
         }
 
     @Test

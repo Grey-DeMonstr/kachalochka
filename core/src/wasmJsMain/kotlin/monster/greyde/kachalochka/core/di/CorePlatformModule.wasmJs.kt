@@ -54,7 +54,7 @@ actual fun corePlatformModule(): Module =
         single<MeasureRepository> { RemoteMeasureRepository(get()) }
         single<PhotoRepository> { RemotePhotoRepository(get()) }
         single<PhotoImages> {
-            StoragePhotoImages(inject(), NoPhotoFiles, { false }, Dispatchers.Default)
+            StoragePhotoImages(inject(), NoPhotoFiles, Dispatchers.Default)
         }
         single<MeasurementRepository> { RemoteMeasurementRepository(get()) }
         single<FriendsRepository> {
