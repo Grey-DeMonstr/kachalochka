@@ -83,7 +83,6 @@ import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoLaunchers
 import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.share.CardSharing
-import monster.greyde.kachalochka.ui.share.InMemoryShareGroupingPreference
 import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
@@ -546,7 +545,6 @@ class FakeGym(
     val transitions = InMemoryTransitionPreference()
     val visitsModes = InMemoryVisitsModePreference()
     val feedPeople = InMemoryFeedPeoplePreference()
-    val shareGrouping = InMemoryShareGroupingPreference()
     val languages = InMemoryLanguagePreference()
     val restSounds = InMemoryRestSoundPreference()
     val restSoundChooser = InstantRestSoundChooser("content://sound/7")

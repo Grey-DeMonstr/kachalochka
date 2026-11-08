@@ -9,9 +9,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
+import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.identity.CurrentUser
+import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.ui.account.UnsavedChoices
+import monster.greyde.kachalochka.ui.account.groupByTagChoice
+import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.share.CardSharing
-import monster.greyde.kachalochka.ui.share.ShareGroupingPreference
 import monster.greyde.kachalochka.ui.share.TextSharing
 
 /** [day] is the shared visit's, so the notice shows under that visit only. */
@@ -36,31 +41,39 @@ data class VisitShareUi(
 class VisitShareViewModel(
     private val texts: TextSharing,
     private val cards: CardSharing,
-    private val grouping: ShareGroupingPreference,
+    profiles: ProfileRepository,
+    private val currentUser: CurrentUser,
+    clock: DeviceClock,
+    sync: SyncTrigger,
+    unsaved: UnsavedChoices,
     accounts: Accounts,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(VisitShareUi(canShareImage = cards.available))
     val state: StateFlow<VisitShareUi> = mutableState
 
+    /** The account's own choice, which the visit list and the statistics share. */
+    private val grouping =
+        groupByTagChoice(profiles, currentUser, clock, sync, unsaved, viewModelScope)
+
     init {
         viewModelScope.launch {
             accounts.activeId.collect { mutableState.update { it.copy(notice = null) } }
         }
-        viewModelScope.launch {
-            grouping.groupByTag.collect { grouped ->
-                mutableState.update { it.copy(groupByTag = grouped) }
-            }
-        }
     }
 
-    fun offer(card: VisitCardUi) =
+    fun offer(card: VisitCardUi) {
         mutableState.update { it.copy(offered = card, canGroupByTag = card.tags.isNotEmpty()) }
+        viewModelScope.launch {
+            grouping.read(currentUser.id())
+            mutableState.update { it.copy(groupByTag = grouping.current) }
+        }
+    }
 
     fun cancel() = mutableState.update { it.copy(offered = null) }
 
     fun toggleGroupByTag() {
-        val grouped = !state.value.groupByTag
-        viewModelScope.launch { grouping.set(grouped) }
+        grouping.choose(!grouping.current)
+        mutableState.update { it.copy(groupByTag = grouping.current) }
     }
 
     /** Hands the text over in the tap itself, from what the card read ahead. */

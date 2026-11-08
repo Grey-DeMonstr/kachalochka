@@ -160,8 +160,7 @@ comes from `statsExportText` in `app/ui/stats`, built from the cards as shown.
 `VisitShareViewModel` is the one place that shares a visit. The visit screen's button and the
 card menu's "Поделиться" give it the card; `VisitShareDialog` shows the popup and draws the card
 for its picture, and `VisitShareNotice` shows the platform's notice under the visit of that day.
-The popup's grouping is a device setting, `ShareGroupingPreference`, stored as the theme mode is
-(§10), apart from the synced `profile.group_by_tag` of the visit list.
+The popup's grouping is the visit list's `groupByTagChoice`, read again each time the popup opens.
 
 The rest timer's sound is a device setting, `RestSoundPreference` (enabled, and on Android the
 chosen sound's URI, null for the default one), stored as the theme mode is (§10). The process-wide

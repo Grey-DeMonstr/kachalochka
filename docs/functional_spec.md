@@ -132,8 +132,8 @@ on Android, "Картинкой", which shares the picture of the visit's calend
 the visit over as text: Android opens its share sheet, the web copies the text and says
 "Скопировано" (or "Не удалось скопировать"). The notice stays until it is tapped or another
 account becomes active. When a machine of the visit has tags, "Группировать по тегам" is under
-"Текстом": ticked, the text splits the machines into sections as the list does. It is off at first
-and is remembered on the device, apart from the list's choice.
+"Текстом": ticked, the text splits the machines into sections as the list does. It is the same
+choice as the list's.
 
 The text starts with the nickname and the short weekday ("ГДМ, чт", or only "чт" without a
 nickname), then an empty line, then one line per machine in visit order: the name, the platform

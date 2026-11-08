@@ -17,6 +17,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.SharedVisit
@@ -66,8 +67,17 @@ class VisitShareViewModelTest {
                 ),
         )
 
-    private fun viewModel() =
-        VisitShareViewModel(gym.texts, gym.cardShares, gym.shareGrouping, gym.accounts)
+    private fun viewModel(on: FakeGym = gym) =
+        VisitShareViewModel(
+            on.texts,
+            on.cardShares,
+            on.profiles,
+            on.currentUser,
+            on.deviceClock,
+            on.sync,
+            on.unsaved,
+            on.accounts,
+        )
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -125,13 +135,13 @@ class VisitShareViewModelTest {
     }
 
     @Test
-    fun grouping_is_kept_on_the_device_and_groups_the_text() =
+    fun grouping_is_kept_in_the_account_s_profile_and_groups_the_text() =
         runTest {
             val vm = viewModel().also { it.offer(card) }
 
             vm.toggleGroupByTag()
 
-            assertTrue(gym.shareGrouping.groupByTag.value)
+            assertEquals(true, gym.profiles.forOwner(null)?.groupByTag)
             assertTrue(vm.state.value.groupByTag)
             vm.shareText()
             assertEquals(
@@ -141,11 +151,14 @@ class VisitShareViewModelTest {
         }
 
     @Test
-    fun the_grouping_kept_on_the_device_is_read_back() =
+    fun the_popup_opens_with_the_account_s_grouping() =
         runTest {
-            gym.shareGrouping.set(true)
+            val vm = viewModel()
+            gym.profiles.upsert(Profile.new(null, t0).copy(groupByTag = true))
 
-            assertTrue(viewModel().state.value.groupByTag)
+            vm.offer(card)
+
+            assertTrue(vm.state.value.groupByTag)
         }
 
     @Test
@@ -180,13 +193,7 @@ class VisitShareViewModelTest {
             val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
             val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
             val shared = FakeGym().withAccounts(ivan, misha, active = ivan)
-            val vm =
-                VisitShareViewModel(
-                    shared.texts,
-                    shared.cardShares,
-                    shared.shareGrouping,
-                    shared.accounts,
-                )
+            val vm = viewModel(shared)
             vm.offer(card)
             vm.shareText()
 

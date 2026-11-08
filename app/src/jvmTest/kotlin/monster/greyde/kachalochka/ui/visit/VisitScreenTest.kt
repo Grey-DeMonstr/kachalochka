@@ -348,7 +348,7 @@ class VisitScreenTest {
             waitForIdle()
         }
         assertEquals(listOf("вт\n\nНОГИ\nЖим ногами 70кг 1x10"), gym.texts.shared)
-        assertTrue(gym.shareGrouping.groupByTag.value)
+        assertEquals(true, runBlocking { gym.profiles.forOwner(null) }?.groupByTag)
     }
 
     @Test
