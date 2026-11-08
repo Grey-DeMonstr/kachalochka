@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
-import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
+import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
@@ -21,7 +21,6 @@ import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
-import monster.greyde.kachalochka.core.domain.gym.VisitRows
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.allOn
@@ -110,7 +109,7 @@ class CalendarViewModel(
     private val avatars: AccountAvatars,
     private val profiles: ProfileRepository,
     private val nickname: Nickname,
-    private val priorBests: PriorBestsKeeper,
+    private val gymWrites: GymWrites,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<CalendarUiState?>(null)
     val state: StateFlow<CalendarUiState?> = mutableState
@@ -225,7 +224,7 @@ class CalendarViewModel(
             }
             val now = clock.now()
             val offset = clock.offsetAt(now)
-            write(movedVisit(visit, sets.forVisit(visit.id), day, offset, now))
+            gymWrites.write(movedVisit(visit, sets.forVisit(visit.id), day, offset, now))
             moving = null
             replacing = null
             selected = day
@@ -273,7 +272,7 @@ class CalendarViewModel(
         val visit = removing ?: return
         writes.launch {
             val now = clock.now()
-            write(removedVisit(visit, sets.forVisit(visit.id), now))
+            gymWrites.write(removedVisit(visit, sets.forVisit(visit.id), now))
             removing = null
             moving = null
             replacing = null
@@ -299,8 +298,10 @@ class CalendarViewModel(
                 visits
                     .allOn(currentUser.id(), day, clock::offsetAt)
                     .filter { it.id != visit.id }
-                    .forEach { write(removedVisit(it, sets.forVisit(it.id), now)) }
-                write(movedVisit(visit, sets.forVisit(visit.id), day, clock.offsetAt(now), now))
+                    .forEach { gymWrites.write(removedVisit(it, sets.forVisit(it.id), now)) }
+                gymWrites.write(
+                    movedVisit(visit, sets.forVisit(visit.id), day, clock.offsetAt(now), now),
+                )
                 selected = day
                 month = CalendarMonth.of(day)
                 sync.request()
@@ -309,12 +310,6 @@ class CalendarViewModel(
             replacing = null
             reload()
         }
-    }
-
-    private suspend fun write(rows: VisitRows) {
-        rows.sets.forEach { sets.upsert(it) }
-        visits.upsert(rows.visit)
-        priorBests.refresh(rows.visit.userId, rows.sets.map { it.machineId }.toSet())
     }
 
     /**

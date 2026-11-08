@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.catching
-import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
+import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -26,13 +26,12 @@ enum class VisitStore { Server, Device }
  * asks for the pass that does; a run that wrote asks for a pass. A run that fails, as the web does
  * offline, is recorded and waits for the next start or switch.
  *
- * The prior bests follow a normalization that wrote, since it removes sets. The anonymous owner
- * never pulls, so theirs are refreshed at every start; the refresh is idempotent and their data
- * is small.
+ * The anonymous owner never pulls, so their prior bests are recomputed at every start; the
+ * recompute is idempotent and their data is small.
  */
 class VisitNormalization(
     private val normalizer: VisitNormalizer,
-    private val priorBests: PriorBestsKeeper,
+    private val gymWrites: GymWrites,
     private val accounts: Accounts,
     private val sync: SyncTrigger,
     private val store: VisitStore,
@@ -61,7 +60,7 @@ class VisitNormalization(
         catching {
             if (coached(owner)) return@catching false
             val normalized = normalizer.normalize(owner)
-            val refreshed = (normalized || owner == null) && priorBests.refreshAll(owner)
+            val refreshed = owner == null && gymWrites.refreshAll(null)
             normalized || refreshed
         }.getOrElse { failed ->
             failures.record(failed)

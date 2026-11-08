@@ -1,7 +1,7 @@
 package monster.greyde.kachalochka.core.data.sync
 
 import monster.greyde.kachalochka.core.data.catching
-import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
+import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
@@ -17,7 +17,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 suspend fun SyncPass.runAndNormalize(
     owners: List<UserId>,
     normalizer: VisitNormalizer,
-    keeper: PriorBestsKeeper,
+    writes: GymWrites,
     failed: (Throwable) -> Unit,
     managed: Set<UserId> = emptySet(),
     trainees: Set<UserId> = emptySet(),
@@ -33,7 +33,7 @@ suspend fun SyncPass.runAndNormalize(
                         failed(failure)
                         false
                     }
-                val refreshed = keeper.refreshAll(owner)
+                val refreshed = writes.refreshAll(owner)
                 normalized || refreshed
             }.any { it }
     return if (wrote) run(owners, managed, trainees) else clean.size == owners.size

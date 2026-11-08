@@ -114,7 +114,7 @@ class VisitFeedViewModelTest {
         gym.profiles,
         Nickname(gym.profiles, gym.accounts),
         people,
-        gym.priorBests,
+        gym.gymWrites,
     )
 
     private fun FeedUiState.cardsOn(day: CalendarDay): List<VisitCardUi> =
@@ -237,7 +237,7 @@ class VisitFeedViewModelTest {
         runTest {
             val first = gym.ownVisit(CalendarDay(2023, 11, 1), weight = 60.0)
             val latest = gym.ownVisit(today, weight = 65.0)
-            gym.priorBests.refreshAll(ME.userId)
+            gym.gymWrites.refreshAll(ME.userId)
             assertEquals(
                 DayBest(60.0, 10, 1),
                 gym.sets

@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
+import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.FriendResult
@@ -188,14 +188,14 @@ class VisitViewModel(
     private val profiles: ProfileRepository,
     private val avatars: AccountAvatars,
     private val placement: Placement,
-    priorBests: PriorBestsKeeper,
+    gymWrites: GymWrites,
     unsaved: UnsavedChoices,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
     private val writes = WriteGuard(viewModelScope)
     private val recorder =
-        SetRecorder(day, visits, machines, sets, clock, restTimer, sync, priorBests)
+        SetRecorder(day, visits, machines, sets, clock, restTimer, sync, gymWrites)
 
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var visitSets: List<WorkoutSet> = emptyList()

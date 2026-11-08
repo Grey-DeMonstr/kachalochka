@@ -51,7 +51,7 @@ class SetRecorderTest {
             gym.deviceClock,
             timer,
             gym.sync,
-            gym.priorBests,
+            gym.gymWrites,
         )
 
     private fun priorOf(id: WorkoutSetId) =

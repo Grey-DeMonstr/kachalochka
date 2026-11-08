@@ -694,7 +694,7 @@ class MachineCatalogueTest {
             val stays = set(myPress, 70.0).copy(visitId = latest.id)
             gym.sets.upsert(moved)
             gym.sets.upsert(stays)
-            gym.priorBests.refreshAll(ME.userId)
+            gym.gymWrites.refreshAll(ME.userId)
             assertEquals(
                 DayBest.NONE,
                 gym.sets.rows

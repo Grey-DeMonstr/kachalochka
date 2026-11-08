@@ -150,7 +150,7 @@ class VisitViewModelTest {
         gym.profiles,
         AccountAvatars(gym.accounts, gym.profiles),
         gym.placement,
-        gym.priorBests,
+        gym.gymWrites,
         gym.unsaved,
     )
 

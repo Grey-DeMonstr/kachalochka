@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
-import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
+import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -192,7 +192,7 @@ class MachineFormViewModel(
     private val catalogue: MachineCatalogue,
     private val reads: MachineReads,
     private val sets: WorkoutSetRepository,
-    private val priorBests: PriorBestsKeeper,
+    private val gymWrites: GymWrites,
 ) : ViewModel() {
     private val mutableState =
         MutableStateFlow(
@@ -677,17 +677,17 @@ class MachineFormViewModel(
         val owner = currentUser.id()
         val (base, machine) = edited(form, owner)
         val now = machine.updatedAt
-        machines.upsert(machine)
-        if (recalculate) {
-            val recorded = recordedSets(base, owner)
-            val converted =
-                convertedSets(recorded, base.unit, machine.unit, machine.weightStep, now)
-            val sided = sidedSets(converted, sideFactor(base.weightMode, machine.weightMode), now)
-            shiftedSets(sided, platformShift(base, machine), now).forEach { sets.upsert(it) }
-        }
-        if (recalculate || base.weightMode != machine.weightMode) {
-            priorBests.refresh(owner, setOf(machine.id))
-        }
+        val rewritten =
+            if (recalculate) {
+                val recorded = recordedSets(base, owner)
+                val converted =
+                    convertedSets(recorded, base.unit, machine.unit, machine.weightStep, now)
+                val factor = sideFactor(base.weightMode, machine.weightMode)
+                shiftedSets(sidedSets(converted, factor, now), platformShift(base, machine), now)
+            } else {
+                emptyList()
+            }
+        gymWrites.write(machine, rewritten)
         takenPhotos.forEach {
             photoRows.add(Photo(it.id, owner, machine.id, it.takenAt, now, false), it.jpeg)
         }

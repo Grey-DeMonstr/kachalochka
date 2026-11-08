@@ -67,7 +67,7 @@ class MachineFormViewModelTest {
             gym.catalogue,
             gym.machineReads,
             gym.sets,
-            gym.priorBests,
+            gym.gymWrites,
         )
 
     @BeforeTest
@@ -119,7 +119,7 @@ class MachineFormViewModelTest {
         on.catalogue,
         on.machineReads,
         on.sets,
-        on.priorBests,
+        on.gymWrites,
     )
 
     @Test
@@ -215,7 +215,7 @@ class MachineFormViewModelTest {
                     catalogue,
                     on.machineReadsOver(catalogue),
                     on.sets,
-                    on.priorBests,
+                    on.gymWrites,
                 ).also { it.load() }
             // Breaking the links of a machine on the server drops the cached read.
             assertTrue(catalogue.unlink(ME.userId, MachineId.random()))
@@ -1058,7 +1058,7 @@ class MachineFormViewModelTest {
                         false,
                     ).also { gym.sets.upsert(it) }
                 }
-            gym.priorBests.refreshAll(null)
+            gym.gymWrites.refreshAll(null)
             assertEquals(
                 DayBest(30.0, 8, 1),
                 gym.sets.rows

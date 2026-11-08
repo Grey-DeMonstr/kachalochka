@@ -11,6 +11,8 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
+import monster.greyde.kachalochka.core.domain.gym.VisitRows
+import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -24,7 +26,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
-class PriorBestsKeeperTest {
+class GymWritesTest {
     private val database = inMemoryDatabase()
     private val outbox = OutboxDao(database)
     private val visits = LocalVisitRepository(database, outbox, Dispatchers.Unconfined)
@@ -40,12 +42,12 @@ class PriorBestsKeeperTest {
             override fun now(): Instant = later
         }
     private val failures = mutableListOf<Throwable>()
-    private val keeper =
-        PriorBestsKeeper(visits, sets, machines, clock, { Duration.ZERO }, failures::add)
+    private val writes = GymWrites(visits, sets, machines, clock, { Duration.ZERO }, failures::add)
     private val press = Machine.new("Жим ногами", ivan, t0)
     private val row = Machine.new("Тяга", ivan, t0)
     private val first = visit(CalendarDay(2023, 11, 1))
     private val second = visit(CalendarDay(2023, 11, 2))
+    private val third = visit(CalendarDay(2023, 11, 3))
 
     private fun visit(
         day: CalendarDay,
@@ -78,42 +80,89 @@ class PriorBestsKeeperTest {
     }
 
     @Test
-    fun a_machine_s_sets_get_their_prior_bests_and_the_owned_rows_are_enqueued() =
+    fun a_written_set_and_the_other_sets_of_its_machine_get_their_prior_bests() =
         runTest {
-            pulledPressHistory()
+            pulled.writeMachine(press)
+            pulled.writeVisit(first)
+            pulled.writeVisit(second)
+            pulled.writeSet(set(first, press, 70.0))
 
-            assertTrue(keeper.refresh(ivan, setOf(press.id)))
+            writes.write(listOf(set(second, press, 75.0)))
 
             assertEquals(DayBest.NONE, sets.forVisit(first.id).single().priorBest)
             assertEquals(DayBest(70.0, 10, 1), sets.forVisit(second.id).single().priorBest)
-            assertEquals(later, sets.forVisit(second.id).single().updatedAt)
-            assertEquals(2, outbox.pending().size)
+            assertEquals(later, sets.forVisit(first.id).single().updatedAt)
         }
 
     @Test
-    fun a_second_refresh_writes_nothing() =
+    fun a_visit_moved_before_another_day_changes_the_prior_bests_of_both() =
         runTest {
             pulledPressHistory()
-            keeper.refresh(ivan, setOf(press.id))
+            writes.refreshAll(ivan)
+            val earlier = CalendarDay(2023, 10, 31)
+            val moved =
+                second.copy(day = earlier, recordedAt = earlier.at(0L, Duration.ZERO))
 
-            assertFalse(keeper.refresh(ivan, setOf(press.id)))
+            writes.write(VisitRows(moved, sets.forVisit(second.id)))
 
-            assertEquals(2, outbox.pending().size)
+            assertEquals(earlier, visits.byId(second.id)?.day)
+            assertEquals(DayBest(75.0, 10, 1), sets.forVisit(first.id).single().priorBest)
+            assertEquals(DayBest.NONE, sets.forVisit(second.id).single().priorBest)
         }
 
     @Test
-    fun refresh_all_covers_every_machine_with_a_live_set() =
+    fun a_new_weight_mode_of_a_machine_orders_its_results_again() =
+        runTest {
+            pulledPressHistory()
+            pulled.writeVisit(third)
+            pulled.writeSet(set(third, press, 60.0))
+            writes.refreshAll(ivan)
+
+            writes.write(press.copy(weightMode = WeightMode.Counterweight), emptyList())
+
+            assertEquals(WeightMode.Counterweight, machines.byId(press.id)?.weightMode)
+            assertEquals(DayBest(70.0, 10, 1), sets.forVisit(third.id).single().priorBest)
+        }
+
+    @Test
+    fun the_rewritten_sets_of_a_machine_get_their_prior_bests() =
+        runTest {
+            pulledPressHistory()
+            writes.refreshAll(ivan)
+            val halved = sets.forMachine(press.id).map { it.copy(weight = it.weight / 2) }
+
+            writes.write(press.copy(weightMode = WeightMode.PerSide), halved)
+
+            assertEquals(37.5, sets.forVisit(second.id).single().weight)
+            assertEquals(DayBest(35.0, 10, 1), sets.forVisit(second.id).single().priorBest)
+        }
+
+    @Test
+    fun refresh_all_gives_pulled_rows_their_prior_bests_and_enqueues_them() =
         runTest {
             pulledPressHistory()
             pulled.writeMachine(row)
             pulled.writeSet(set(second, row, 40.0))
 
-            assertTrue(keeper.refreshAll(ivan))
+            assertTrue(writes.refreshAll(ivan))
 
+            assertEquals(DayBest.NONE, sets.forVisit(first.id).single().priorBest)
             assertEquals(
                 setOf(DayBest(70.0, 10, 1), DayBest.NONE),
                 sets.forVisit(second.id).map { it.priorBest }.toSet(),
             )
+            assertEquals(3, outbox.pending().size)
+        }
+
+    @Test
+    fun a_second_refresh_all_writes_nothing() =
+        runTest {
+            pulledPressHistory()
+            writes.refreshAll(ivan)
+
+            assertFalse(writes.refreshAll(ivan))
+
+            assertEquals(2, outbox.pending().size)
         }
 
     @Test
@@ -122,14 +171,14 @@ class PriorBestsKeeperTest {
             pulled.writeVisit(first)
             pulled.writeSet(set(first, press, 70.0))
 
-            assertFalse(keeper.refresh(ivan, setOf(press.id)))
+            assertFalse(writes.refreshAll(ivan))
 
             assertNull(sets.forVisit(first.id).single().priorBest)
             assertEquals(emptyList(), outbox.pending())
         }
 
     @Test
-    fun a_failing_read_is_reported_and_answers_false() =
+    fun a_failing_recompute_is_reported_and_the_write_stands() =
         runTest {
             pulledPressHistory()
             val broken =
@@ -137,12 +186,14 @@ class PriorBestsKeeperTest {
                     override suspend fun all(owner: UserId?): List<Visit> = error("unreadable row")
                 }
             val failing =
-                PriorBestsKeeper(broken, sets, machines, clock, { Duration.ZERO }, failures::add)
+                GymWrites(broken, sets, machines, clock, { Duration.ZERO }, failures::add)
+            val added = set(third, press, 80.0)
 
-            assertFalse(failing.refresh(ivan, setOf(press.id)))
+            failing.write(listOf(added))
 
             assertEquals(listOf("unreadable row"), failures.map { it.message })
-            assertNull(sets.forVisit(first.id).single().priorBest)
+            assertEquals(added, sets.forVisit(third.id).single())
+            assertFalse(failing.refreshAll(ivan))
         }
 
     @Test
@@ -153,7 +204,7 @@ class PriorBestsKeeperTest {
             pulled.writeVisit(hers)
             pulled.writeSet(set(hers, press, 90.0))
 
-            keeper.refresh(ivan, setOf(press.id))
+            writes.refreshAll(ivan)
 
             assertNull(sets.forVisit(hers.id).single().priorBest)
             assertEquals(DayBest(70.0, 10, 1), sets.forVisit(second.id).single().priorBest)

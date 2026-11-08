@@ -1,6 +1,6 @@
 package monster.greyde.kachalochka.ui.visit
 
-import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
+import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -37,7 +37,7 @@ class SetRecorder(
     private val clock: DeviceClock,
     private val restTimer: RestTimer,
     private val sync: SyncTrigger,
-    private val priorBests: PriorBestsKeeper,
+    private val gymWrites: GymWrites,
 ) {
     /**
      * Records a set for [owner] on [machine], the owner's own (see [MachineCatalogue.ownCopy]).
@@ -51,22 +51,23 @@ class SetRecorder(
         val now = clock.now()
         val today = CalendarDay.of(now, clock.offsetAt(now))
         val (target, targetSets) = shownOrNew(owner)
-        sets.upsert(
-            WorkoutSet(
-                WorkoutSetId.random(),
-                owner,
-                target.id,
-                machine.id,
-                values.weight,
-                values.reps,
-                nextPosition(targetSets),
-                recordingInstant(target, targetSets, today, now),
-                now,
-                false,
-                comment,
+        gymWrites.write(
+            listOf(
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    owner,
+                    target.id,
+                    machine.id,
+                    values.weight,
+                    values.reps,
+                    nextPosition(targetSets),
+                    recordingInstant(target, targetSets, today, now),
+                    now,
+                    false,
+                    comment,
+                ),
             ),
         )
-        priorBests.refresh(owner, setOf(machine.id))
         if (day == today) restTimer.start() else sync.request()
     }
 
@@ -120,27 +121,27 @@ class SetRecorder(
         values: SetValues,
         comment: String,
     ) {
-        sets.upsert(
-            set.copy(
-                weight = values.weight,
-                reps = values.reps,
-                comment = comment,
-                updatedAt = clock.now(),
+        gymWrites.write(
+            listOf(
+                set.copy(
+                    weight = values.weight,
+                    reps = values.reps,
+                    comment = comment,
+                    updatedAt = clock.now(),
+                ),
             ),
         )
-        priorBests.refresh(set.userId, setOf(set.machineId))
         pushIfPast()
     }
 
     suspend fun remove(set: WorkoutSet) {
-        sets.upsert(set.copy(deleted = true, updatedAt = clock.now()))
-        priorBests.refresh(set.userId, setOf(set.machineId))
+        gymWrites.write(listOf(set.copy(deleted = true, updatedAt = clock.now())))
         pushIfPast()
     }
 
     /** Writes the rows a move renumbered. */
     suspend fun reorder(changed: List<WorkoutSet>) {
-        changed.forEach { sets.upsert(it) }
+        gymWrites.write(changed)
         if (changed.isNotEmpty()) pushIfPast()
     }
 

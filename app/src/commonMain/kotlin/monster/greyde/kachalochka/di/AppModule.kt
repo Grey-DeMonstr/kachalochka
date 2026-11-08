@@ -5,7 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.FailureLog
-import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
+import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.di.coreModule
@@ -81,12 +81,12 @@ val appModule =
         singleOf(::RestSoundScheduler)
         single {
             val offset: UtcOffset = get()
-            VisitNormalizer(get(), get(), get(), offset::at)
+            VisitNormalizer(get(), get(), get(), get(), offset::at)
         }
         single {
             val offset: UtcOffset = get()
             val failures: FailureLog = get()
-            PriorBestsKeeper(get(), get(), get(), get(), offset::at, failures::record)
+            GymWrites(get(), get(), get(), get(), offset::at, failures::record)
         }
         singleOf(::VisitNormalization)
         singleOf(::PendingJoin)

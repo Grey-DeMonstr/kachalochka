@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.friends.KeptOnly
 import monster.greyde.kachalochka.core.data.friends.keptOnly
-import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
+import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
@@ -102,7 +102,7 @@ class VisitFeedViewModel(
     private val profiles: ProfileRepository,
     private val nickname: Nickname,
     private val people: FeedPeoplePreference,
-    private val priorBests: PriorBestsKeeper,
+    private val gymWrites: GymWrites,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<FeedUiState?>(null)
     val state: StateFlow<FeedUiState?> = mutableState
@@ -209,10 +209,7 @@ class VisitFeedViewModel(
     fun confirmRemoval() {
         val visit = removing ?: return
         writes.launch {
-            val removed = removedVisit(visit, sets.forVisit(visit.id), clock.now())
-            removed.sets.forEach { sets.upsert(it) }
-            visits.upsert(removed.visit)
-            priorBests.refresh(visit.userId, removed.sets.map { it.machineId }.toSet())
+            gymWrites.write(removedVisit(visit, sets.forVisit(visit.id), clock.now()))
             removing = null
             sync.request()
             readOwn(owner)

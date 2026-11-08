@@ -43,8 +43,8 @@ class VisitNormalizationTest {
         visits: VisitRepository = on.visits,
         store: VisitStore = VisitStore.Server,
     ) = VisitNormalization(
-        VisitNormalizer(visits, on.sets, on.clock) { Duration.ZERO },
-        on.priorBests,
+        VisitNormalizer(visits, on.sets, on.gymWrites, on.clock) { Duration.ZERO },
+        on.gymWrites,
         on.accounts,
         on.sync,
         store,

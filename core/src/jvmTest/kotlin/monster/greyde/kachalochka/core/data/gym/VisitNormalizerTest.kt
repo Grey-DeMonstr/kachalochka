@@ -6,6 +6,8 @@ import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.data.sync.LocalSyncRows
 import monster.greyde.kachalochka.core.data.sync.OutboxDao
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.DayBest
+import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -28,6 +30,7 @@ class VisitNormalizerTest {
     private val outbox = OutboxDao(database)
     private val visits = LocalVisitRepository(database, outbox, Dispatchers.Unconfined)
     private val sets = LocalWorkoutSetRepository(database, outbox, Dispatchers.Unconfined)
+    private val machines = LocalMachineRepository(database, outbox, Dispatchers.Unconfined)
     private val pulled = LocalSyncRows(database)
     private val ivan = UserId("11111111-1111-4111-8111-111111111111")
     private val misha = UserId("22222222-2222-4222-8222-222222222222")
@@ -37,7 +40,8 @@ class VisitNormalizerTest {
         object : Clock {
             override fun now(): Instant = later
         }
-    private val normalizer = VisitNormalizer(visits, sets, clock) { Duration.ZERO }
+    private val writes = GymWrites(visits, sets, machines, clock, { Duration.ZERO }, { throw it })
+    private val normalizer = VisitNormalizer(visits, sets, writes, clock) { Duration.ZERO }
     private val fourteenth = CalendarDay(2023, 11, 14)
 
     private fun visit(
@@ -46,19 +50,22 @@ class VisitNormalizerTest {
         owner: UserId = ivan,
     ) = Visit(VisitId.random(), owner, day, recordedAt, t0, false)
 
-    private fun set(visit: Visit) =
-        WorkoutSet(
-            WorkoutSetId.random(),
-            visit.userId,
-            visit.id,
-            MachineId.random(),
-            70.0,
-            10,
-            0,
-            visit.recordedAt,
-            t0,
-            false,
-        )
+    private fun set(
+        visit: Visit,
+        machine: MachineId = MachineId.random(),
+        weight: Double = 70.0,
+    ) = WorkoutSet(
+        WorkoutSetId.random(),
+        visit.userId,
+        visit.id,
+        machine,
+        weight,
+        10,
+        0,
+        visit.recordedAt,
+        t0,
+        false,
+    )
 
     @Test
     fun the_newest_visit_of_a_day_stays_and_the_others_leave_with_their_sets() =
@@ -100,6 +107,25 @@ class VisitNormalizerTest {
         }
 
     @Test
+    fun a_removed_set_no_longer_counts_in_the_prior_best_of_a_later_day() =
+        runTest {
+            val press = Machine.new("Жим", ivan, t0)
+            val morning = visit(t0 - 3.hours)
+            val evening = visit(t0)
+            val next = visit(t0 + 1.days, day = fourteenth.plusDays(1))
+            pulled.writeMachine(press)
+            listOf(morning, evening, next).forEach { pulled.writeVisit(it) }
+            pulled.writeSet(set(morning, press.id, weight = 90.0))
+            pulled.writeSet(set(evening, press.id))
+            pulled.writeSet(set(next, press.id, weight = 80.0))
+            writes.refreshAll(ivan)
+
+            assertTrue(normalizer.normalize(ivan))
+
+            assertEquals(DayBest(70.0, 10, 1), sets.forVisit(next.id).single().priorBest)
+        }
+
+    @Test
     fun a_visit_changed_after_the_normalizer_read_it_is_left_alone() =
         runTest {
             val morning = visit(t0 - 3.hours)
@@ -118,7 +144,8 @@ class VisitNormalizerTest {
                     }
                 }
 
-            assertFalse(VisitNormalizer(visits, pulling, clock) { Duration.ZERO }.normalize(ivan))
+            val normalizer = VisitNormalizer(visits, pulling, writes, clock) { Duration.ZERO }
+            assertFalse(normalizer.normalize(ivan))
 
             assertEquals(changed, visits.byId(morning.id))
             assertEquals(1, sets.forVisit(morning.id).size)

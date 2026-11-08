@@ -860,23 +860,24 @@ its visit's `dayAt`; every live set of one machine on one day carries the same v
 
 `withPriorBests` in `domain/gym` is the one rule: given a machine's sets and their days, it walks
 the days in order, carries the greatest result so far, and returns the live rows whose stored
-value is wrong, so a second run returns nothing. `PriorBestsKeeper` in `core/data/gym` applies it
-through the repositories: `refresh(owner, machines)` reads the owner's visits once and each
-machine's sets and weight mode; `refreshAll(owner)` covers every machine the owner has a live set
-on. It writes through `WorkoutSetRepository.storePriorBest`, which updates only the three columns
-and `updated_at` (an UPDATE and an outbox entry on Android, a PATCH by id on the web), so a set
-the screen amends while the sync worker recomputes keeps its amendment. A failure is reported to
-the keeper's `failed` and answers false; on the web, where a recompute follows a set write as its
-own requests, the write stands and the next write on the machine recomputes.
+value is wrong, so a second run returns nothing. `GymWrites` in `core/data/gym` is the one writer
+of workout sets, and applies the rule after each write to the machines it touched. Its `write`
+takes sets, a visit with its sets, or a machine with the sets rewritten for it, because a visit's
+day places its sets among the machine's days and a machine's weight mode orders its results. So
+`SetRecorder`, the calendar and the feed, the machine form, a merge and `VisitNormalizer` keep the
+prior bests right without a call of their own. A recompute reads the owner's visits once and each
+machine's sets and weight mode. It writes through `WorkoutSetRepository.storePriorBest`, which
+updates only the three columns and `updated_at` (an UPDATE and an outbox entry on Android, a PATCH
+by id on the web), so a set the screen amends while the sync worker recomputes keeps its
+amendment. A failed recompute is reported to `failed`; the write stands, and the next write on the
+machine recomputes.
 
-The writers that call it, for the machines they touched: `SetRecorder` after a record, amend or
-remove; a visit move, replacement or removal on the calendar or in the feed; the machine form's
-save when the weight mode changed or "Пересчитать" rewrote the sets; a merge, for the kept
-machine; `VisitNormalization` after a normalization that wrote, and for the anonymous owner at
-every start, since that owner never pulls; and the sync pass, which runs `refreshAll` for every
-clean owner after normalization and sends what it wrote in its second run (`runAndNormalize`).
-Two devices offline each compute from a partial view; the recompute after the pull is what makes
-them agree. A row the keeper wrote goes out whole, under the same rule as an edit (§4.2): a copy
+`refreshAll(owner)` recomputes every machine the owner has a live set on, for rows that no write
+on the device made: the sync pass runs it for every clean owner after normalization and sends what
+it wrote in its second run (`runAndNormalize`), and `VisitNormalization` runs it for the anonymous
+owner at every start, since that owner never pulls. Two devices offline each compute from a
+partial view; the recompute after the pull is what makes them agree. A row `GymWrites` wrote goes
+out whole, under the same rule as an edit (§4.2): a copy
 waiting in the outbox wins over the server's, so an edit of the same set made on another device
 in the meantime is lost, as it would be for two edits. A trainee's rows are never recomputed on
 the trainer's device. Migration `0030` adds

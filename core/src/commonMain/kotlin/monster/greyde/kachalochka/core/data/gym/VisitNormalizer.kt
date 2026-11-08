@@ -13,6 +13,7 @@ import kotlin.time.Instant
 class VisitNormalizer(
     private val visits: VisitRepository,
     private val sets: WorkoutSetRepository,
+    private val writes: GymWrites,
     private val clock: Clock,
     private val utcOffset: (Instant) -> Duration,
 ) {
@@ -32,8 +33,7 @@ class VisitNormalizer(
         normalizedVisits(owned, theirSets, utcOffset, clock.now()).forEach { row ->
             // A visit a sync or a screen changed since the read is judged again on the next run.
             if (visits.byId(row.visit.id)?.updatedAt != read[row.visit.id]) return@forEach
-            row.sets.forEach { sets.upsert(it) }
-            visits.upsert(row.visit)
+            writes.write(row)
             wrote = true
         }
         return wrote

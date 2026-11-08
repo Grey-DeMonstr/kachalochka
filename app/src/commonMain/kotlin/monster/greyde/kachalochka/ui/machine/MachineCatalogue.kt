@@ -12,7 +12,7 @@ import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.SingleFlight
 import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.friends.keptOnly
-import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
+import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.friends.Friend
@@ -181,7 +181,7 @@ class MachineCatalogue(
     private val accounts: Accounts,
     private val avatars: AccountAvatars,
     private val failures: FailureLog,
-    private val priorBests: PriorBestsKeeper,
+    private val gymWrites: GymWrites,
 ) {
     private val linkWrites = Mutex()
     private val groupReads = SingleFlight<UserId, GroupMachines>()
@@ -281,8 +281,7 @@ class MachineCatalogue(
                     photos.forMachine(removed).filter { it.userId == owner },
                     if (adjust) platformShift(removedRow, keptRow) else 0.0,
                 )
-            rows.sets.forEach { sets.upsert(it) }
-            priorBests.refresh(owner, setOf(kept))
+            gymWrites.write(rows.sets)
             writingLinks(requestSync = false) {
                 mergedLinks(kept, removed, links.all(owner), now).forEach { upsert(it) }
             }

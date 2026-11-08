@@ -32,7 +32,7 @@ class SyncAndNormalizeTest {
             h.gateway.setsToPull = listOf(oldSet, currentSet)
 
             assertTrue(
-                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.keeper, h.failures::add),
+                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.writes, h.failures::add),
             )
 
             assertEquals(
@@ -54,7 +54,7 @@ class SyncAndNormalizeTest {
             h.gateway.setsToPull = listOf(set)
 
             assertTrue(
-                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.keeper, h.failures::add),
+                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.writes, h.failures::add),
             )
 
             assertEquals(listOf("$WORKOUT_SET_TABLE:${set.id.value}"), h.gateway.pushed)
@@ -78,7 +78,7 @@ class SyncAndNormalizeTest {
                 listOf(ownedSet(IVAN, visit, press).copy(priorBest = DayBest.NONE))
 
             assertTrue(
-                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.keeper, h.failures::add),
+                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.writes, h.failures::add),
             )
 
             assertEquals(emptyList(), h.gateway.pushed)
@@ -95,7 +95,7 @@ class SyncAndNormalizeTest {
             h.gateway.pullFails = true
 
             assertFalse(
-                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.keeper, h.failures::add),
+                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.writes, h.failures::add),
             )
 
             assertEquals(older, h.visits.byId(older.id))
@@ -108,7 +108,7 @@ class SyncAndNormalizeTest {
             h.gateway.visitsToPull = listOf(ownedVisit(IVAN))
 
             assertTrue(
-                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.keeper, h.failures::add),
+                h.pass.runAndNormalize(listOf(IVAN), h.normalizer, h.writes, h.failures::add),
             )
 
             assertEquals(emptyList(), h.gateway.pushed)
@@ -131,10 +131,11 @@ class SyncAndNormalizeTest {
                     override suspend fun all(owner: UserId?): List<Visit> =
                         if (owner == IVAN) error("unreadable row") else h.visits.all(owner)
                 }
-            val normalizer = VisitNormalizer(brokenForIvan, h.sets, h.clock) { Duration.ZERO }
+            val normalizer =
+                VisitNormalizer(brokenForIvan, h.sets, h.writes, h.clock) { Duration.ZERO }
 
             assertTrue(
-                h.pass.runAndNormalize(listOf(IVAN, MISHA), normalizer, h.keeper, h.failures::add),
+                h.pass.runAndNormalize(listOf(IVAN, MISHA), normalizer, h.writes, h.failures::add),
             )
 
             assertEquals(listOf("unreadable row"), h.failures.map { it.message })

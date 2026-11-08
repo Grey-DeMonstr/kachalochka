@@ -93,7 +93,7 @@ class CalendarViewModelTest {
             AccountAvatars(gym.accounts, gym.profiles),
             gym.profiles,
             Nickname(gym.profiles, gym.accounts),
-            gym.priorBests,
+            gym.gymWrites,
         )
 
     private fun FakeGym.friendVisit(
@@ -277,7 +277,7 @@ class CalendarViewModelTest {
             gym.visits.upsert(fifthVisit)
             val earliest = set(fifthVisit, press, 0).copy(weight = 60.0)
             gym.sets.upsert(earliest)
-            gym.priorBests.refreshAll(null)
+            gym.gymWrites.refreshAll(null)
             val sundayPress =
                 gym.sets.rows.values.single {
                     it.visitId == sunday.id &&
