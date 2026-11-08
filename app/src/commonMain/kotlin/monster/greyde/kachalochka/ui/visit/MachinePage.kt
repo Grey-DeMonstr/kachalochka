@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
@@ -34,9 +36,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -127,140 +132,150 @@ internal fun MachinePage(
     ) {
         PlacementNotice(placement, page.machineId, Modifier.padding(horizontal = 16.dp))
         Box(Modifier.weight(1f).fillMaxWidth().testTag("machine-page")) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .alpha(if (page.form != null) 0.45f else 1f)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    MachineThumbnail(
-                        page.photo,
-                        PhosphorIcons.Barbell,
-                        Modifier.testTag("page-thumb"),
-                        size = 64.dp,
-                        onOpenSettings = onOpenMachineSettings.takeUnless { page.readOnly },
-                    )
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            buildAnnotatedString {
-                                append(page.name)
-                                page.platformSuffix?.let {
-                                    withStyle(
-                                        SpanStyle(
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.Normal,
-                                            color = colors.onBackground.copy(alpha = 0.55f),
-                                        ),
-                                    ) { append(" $it") }
-                                }
-                            },
-                            modifier = Modifier.testTag("page-machine-name"),
-                            fontSize = 21.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = colors.onBackground,
+            MachinePager(page, viewModel::openMachine) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .alpha(if (page.form != null) 0.45f else 1f)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        MachineThumbnail(
+                            page.photo,
+                            PhosphorIcons.Barbell,
+                            Modifier.testTag("page-thumb"),
+                            size = 64.dp,
+                            onOpenSettings = onOpenMachineSettings.takeUnless { page.readOnly },
                         )
-                        if (page.tags.isNotEmpty()) {
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                verticalArrangement = Arrangement.spacedBy(5.dp),
-                            ) {
-                                page.tags.forEach { TagChip(it, Modifier.testTag("page-tag-$it")) }
-                            }
-                        }
-                        if (page.setupNote.isNotBlank()) {
-                            Text(
-                                page.setupNote,
-                                modifier = Modifier.testTag("page-note"),
-                                fontSize = 15.sp,
-                                color = colors.onBackground.copy(alpha = 0.68f),
-                            )
-                        }
-                    }
-                }
-                if (page.record != null || page.previous != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        page.record?.let {
-                            StatCard(strings().record, it, "page-record", Modifier.weight(1f))
-                        }
-                        page.previous?.let {
-                            StatCard(
-                                page.previousAgo.orEmpty(),
-                                it,
-                                "page-previous",
-                                Modifier.weight(1f),
-                            )
-                        }
-                    }
-                }
-                if (page.friends.isNotEmpty()) {
-                    Column(
-                        Modifier.testTag("page-friends"),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        page.friends.forEach { FriendLine(it) }
-                    }
-                }
-                page.daySets?.let {
-                    SectionLabel(it, Modifier.padding(top = 4.dp).testTag("page-day-sets"))
-                }
-                val setOrder = rememberReorderState()
-                SideEffect { setOrder.retain(page.sets.size) }
-                Column {
-                    page.sets.forEachIndexed { index, row ->
-                        Row(
-                            Modifier
-                                .reorderItem(setOrder, index)
-                                .dragOutline(setOrder.dragging == index),
-                            verticalAlignment = Alignment.CenterVertically,
+                        Column(
+                            Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
-                            if (page.ordering) {
-                                DragHandle(setOrder, index, "drag-set-${row.id.value}") {
-                                    from,
-                                    to,
-                                    ->
-                                    viewModel.moveSet(page.sets[from].id, to)
+                            Text(
+                                buildAnnotatedString {
+                                    append(page.name)
+                                    page.platformSuffix?.let {
+                                        withStyle(
+                                            SpanStyle(
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.Normal,
+                                                color = colors.onBackground.copy(alpha = 0.55f),
+                                            ),
+                                        ) { append(" $it") }
+                                    }
+                                },
+                                modifier = Modifier.testTag("page-machine-name"),
+                                fontSize = 21.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = colors.onBackground,
+                            )
+                            if (page.tags.isNotEmpty()) {
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                                ) {
+                                    page.tags.forEach {
+                                        TagChip(
+                                            it,
+                                            Modifier.testTag("page-tag-$it"),
+                                        )
+                                    }
                                 }
                             }
-                            SetRow(
-                                row,
-                                onEdit =
-                                    (viewModel::editSet).takeUnless {
-                                        page.readOnly || page.ordering
-                                    },
-                                Modifier
-                                    .weight(1f)
-                                    .clip(ControlShape)
-                                    .background(colors.onBackground.copy(alpha = 0.04f)),
-                            )
+                            if (page.setupNote.isNotBlank()) {
+                                Text(
+                                    page.setupNote,
+                                    modifier = Modifier.testTag("page-note"),
+                                    fontSize = 15.sp,
+                                    color = colors.onBackground.copy(alpha = 0.68f),
+                                )
+                            }
                         }
                     }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (page.ordering) {
-                        OutlineButton(
-                            strings().done,
-                            PhosphorIcons.Check,
-                            viewModel::toggleSetOrdering,
-                            Modifier.weight(1f).testTag("finish-ordering"),
-                        )
-                    } else if (!page.readOnly) {
-                        OutlineButton(
-                            strings().add,
-                            PhosphorIcons.Plus,
-                            viewModel::openForm,
-                            Modifier.weight(1f).testTag("add-set"),
-                        )
+                    if (page.record != null || page.previous != null) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            page.record?.let {
+                                StatCard(strings().record, it, "page-record", Modifier.weight(1f))
+                            }
+                            page.previous?.let {
+                                StatCard(
+                                    page.previousAgo.orEmpty(),
+                                    it,
+                                    "page-previous",
+                                    Modifier.weight(1f),
+                                )
+                            }
+                        }
                     }
-                    if (page.canUnplan) {
-                        OutlineButton(
-                            strings().unplan,
-                            PhosphorIcons.Trash,
-                            { viewModel.unplan(page.machineId) },
-                            Modifier.weight(1f).testTag("unplan"),
-                        )
+                    if (page.friends.isNotEmpty()) {
+                        Column(
+                            Modifier.testTag("page-friends"),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            page.friends.forEach { FriendLine(it) }
+                        }
+                    }
+                    page.daySets?.let {
+                        SectionLabel(it, Modifier.padding(top = 4.dp).testTag("page-day-sets"))
+                    }
+                    val setOrder = rememberReorderState()
+                    SideEffect { setOrder.retain(page.sets.size) }
+                    Column {
+                        page.sets.forEachIndexed { index, row ->
+                            Row(
+                                Modifier
+                                    .reorderItem(setOrder, index)
+                                    .dragOutline(setOrder.dragging == index),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                if (page.ordering) {
+                                    DragHandle(setOrder, index, "drag-set-${row.id.value}") {
+                                        from,
+                                        to,
+                                        ->
+                                        viewModel.moveSet(page.sets[from].id, to)
+                                    }
+                                }
+                                SetRow(
+                                    row,
+                                    onEdit =
+                                        (viewModel::editSet).takeUnless {
+                                            page.readOnly || page.ordering
+                                        },
+                                    Modifier
+                                        .weight(1f)
+                                        .clip(ControlShape)
+                                        .background(colors.onBackground.copy(alpha = 0.04f)),
+                                )
+                            }
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (page.ordering) {
+                            OutlineButton(
+                                strings().done,
+                                PhosphorIcons.Check,
+                                viewModel::toggleSetOrdering,
+                                Modifier.weight(1f).testTag("finish-ordering"),
+                            )
+                        } else if (!page.readOnly) {
+                            OutlineButton(
+                                strings().add,
+                                PhosphorIcons.Plus,
+                                viewModel::openForm,
+                                Modifier.weight(1f).testTag("add-set"),
+                            )
+                        }
+                        if (page.canUnplan) {
+                            OutlineButton(
+                                strings().unplan,
+                                PhosphorIcons.Trash,
+                                { viewModel.unplan(page.machineId) },
+                                Modifier.weight(1f).testTag("unplan"),
+                            )
+                        }
                     }
                 }
             }
@@ -275,6 +290,60 @@ internal fun MachinePage(
         }
     }
     PlanChooser(placement, onNewPlan)
+}
+
+/**
+ * Swipes through the visit's machines. A neighbour shows its row's lines until the view model
+ * opens it. The open form and the set handles keep their gestures to themselves.
+ */
+@Composable
+private fun MachinePager(
+    page: MachinePageUi,
+    onOpen: (MachineId) -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val ids = page.swipeOrder.map { it.machineId }.ifEmpty { listOf(page.machineId) }
+    val index = ids.indexOf(page.machineId)
+    // Each machine gets a pager at rest on it, so only a swipe can settle on another page.
+    key(page.machineId, index) {
+        val pager = rememberPagerState(index) { ids.size }
+        val shown by rememberUpdatedState(ids)
+        LaunchedEffect(pager) {
+            snapshotFlow { pager.settledPage }.collect {
+                if (it != index) shown.getOrNull(it)?.let(onOpen)
+            }
+        }
+        HorizontalPager(
+            pager,
+            Modifier.fillMaxSize(),
+            userScrollEnabled = page.form == null && !page.ordering,
+            key = { ids[it] },
+        ) { shownIndex ->
+            if (shownIndex == index) {
+                content()
+            } else {
+                page.swipeOrder.getOrNull(shownIndex)?.let { MachinePreview(it) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MachinePreview(group: SetGroupUi) {
+    Row(
+        Modifier.fillMaxSize().padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        MachineThumbnail(group.photo, PhosphorIcons.Barbell, size = 64.dp)
+        MachineLines(
+            title = group.title,
+            tags = group.tags,
+            note = group.setupNote,
+            summary = group.summary,
+            tag = "preview-${group.machineId.value}",
+            modifier = Modifier.weight(1f),
+        )
+    }
 }
 
 @Composable

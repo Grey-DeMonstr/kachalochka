@@ -8,6 +8,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
@@ -30,7 +31,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.unit.width
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventDispatcher
@@ -661,6 +665,41 @@ class VisitScreenTest {
     }
 
     @Test
+    fun a_swipe_moves_between_the_visit_s_machines_and_stops_at_its_ends() {
+        planRow()
+        runScreenTest(gym, screen = { visitScreen(opened = press.id) }) {
+            fun swipe(gesture: TouchInjectionScope.() -> Unit) {
+                onNodeWithTag("machine-page").performTouchInput(gesture)
+                waitForIdle()
+            }
+            waitForIdle()
+            swipe { swipeRight() }
+            onNodeWithTag("page-machine-name").assertTextEquals("Жим ногами")
+            swipe { swipeLeft() }
+            onNodeWithTag("page-machine-name").assertTextEquals("Тяга")
+            onNodeWithTag("set-sheet").assertDoesNotExist()
+            swipe { swipeLeft() }
+            onNodeWithTag("page-machine-name").assertTextEquals("Тяга")
+            swipe { swipeRight() }
+            onNodeWithTag("page-machine-name").assertTextEquals("Жим ногами")
+        }
+    }
+
+    @Test
+    fun the_open_form_keeps_the_page_on_its_machine() {
+        planRow()
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("machine-page").performTouchInput {
+                swipe(Offset(right - 20f, top + 40f), Offset(left + 20f, top + 40f))
+            }
+            waitForIdle()
+            onNodeWithTag("page-machine-name").assertTextEquals("Жим ногами")
+            onNodeWithTag("set-sheet").assertIsDisplayed()
+        }
+    }
+
+    @Test
     fun a_machine_s_page_adds_its_next_set() {
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
@@ -1049,6 +1088,35 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("drag-set-${heavier.id.value}").assertDoesNotExist()
             onNodeWithTag("add-set").assertExists()
+        }
+        assertEquals(
+            mapOf(heavier.id to 1, recorded.id to 2),
+            gym.sets.rows.values
+                .associate { it.id to it.position },
+        )
+    }
+
+    @Test
+    fun ordering_the_sets_keeps_the_page_on_its_machine() {
+        planRow()
+        val heavier = recorded.copy(id = WorkoutSetId.random(), weight = 80.0)
+        runBlocking { gym.sets.upsert(heavier.copy(recordedAt = gym.clock.current + 1.minutes)) }
+        runScreenTest(gym, screen = { visitScreen(opened = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-reorder").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-page").performTouchInput { swipeLeft() }
+            waitForIdle()
+            onNodeWithTag("page-machine-name").assertTextEquals("Жим ногами")
+            onNodeWithTag("drag-set-${heavier.id.value}").performTouchInput {
+                down(center)
+                repeat(10) { moveBy(Offset(-10f, -10f)) }
+                up()
+            }
+            waitForIdle()
+            onNodeWithTag("page-machine-name").assertTextEquals("Жим ногами")
         }
         assertEquals(
             mapOf(heavier.id to 1, recorded.id to 2),

@@ -904,6 +904,30 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun a_swipe_goes_through_the_machines_in_the_list_s_order_with_the_planned_ones() =
+        runTest {
+            taggedVisit(grouped = true)
+            val squat = Machine.new("Присед", null, t0)
+            gym.machines.upsert(squat)
+            gym.visits.upsert(visit.copy(planned = listOf(squat.id)))
+            val vm = viewModel().also { it.openMachine(curl.id) }
+
+            assertEquals(
+                listOf(press.id, curl.id, row.id, squat.id),
+                assertNotNull(vm.state.value?.page).swipeOrder.map { it.machineId },
+            )
+        }
+
+    @Test
+    fun a_machine_outside_the_visit_has_no_machines_to_swipe_to() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 80.0, 8, 0))
+            val vm = viewModel().also { it.openMachine(row.id) }
+
+            assertEquals(emptyList(), assertNotNull(vm.state.value?.page).swipeOrder)
+        }
+
+    @Test
     fun a_grouped_visit_is_shared_in_sections() =
         runTest {
             taggedVisit(grouped = true)

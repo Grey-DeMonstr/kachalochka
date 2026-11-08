@@ -149,6 +149,8 @@ data class MachinePageUi(
     /** The day's sets on the page show drag handles. */
     val ordering: Boolean = false,
     val canOrder: Boolean = false,
+    /** The visit's machines in the list's order, which a swipe goes through; empty outside it. */
+    val swipeOrder: List<SetGroupUi> = emptyList(),
 )
 
 /** The set being added or corrected; [weight] and [reps] are as typed. */
@@ -600,14 +602,15 @@ class VisitViewModel(
                     .map { plannedUi(it) }
             }
         val groups = recorded + planned
+        val sections = sections(groups)
         mutableState.value =
             VisitUiState(
                 title = weekdayDate(day, withYear = day.year != CalendarDay.of(now, offset).year),
                 groups = groups,
-                sections = sections(groups),
+                sections = sections,
                 groupByTag = groupByTag,
                 canGroupByTag = groups.any { it.tags.isNotEmpty() },
-                page = pageUi(offset),
+                page = pageUi(offset, sections.flatMap { it.groups }),
                 ordering = ordering,
                 canShare = visitSets.isNotEmpty(),
                 canOrder = visitSets.isNotEmpty() && !readOnly,
@@ -683,7 +686,10 @@ class VisitViewModel(
             listOf(VisitSectionUi(null, groups))
         }
 
-    private fun pageUi(offset: Duration): MachinePageUi? {
+    private fun pageUi(
+        offset: Duration,
+        listed: List<SetGroupUi>,
+    ): MachinePageUi? {
         val machine = open ?: return null
         val onMachine = visitSets.filter { it.machineId == machine.id }
         val until = if (isToday) clock.now() else day.at(0L, offset)
@@ -733,6 +739,7 @@ class VisitViewModel(
             readOnly = readOnly,
             ordering = orderingSets,
             canOrder = onMachine.size > 1 && !readOnly,
+            swipeOrder = listed.takeIf { machine.id in it.map(SetGroupUi::machineId) }.orEmpty(),
         )
     }
 

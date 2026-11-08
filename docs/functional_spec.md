@@ -121,7 +121,11 @@ With two sets or more, the page's "⋮" menu also has "Порядок подхо
 shows a drag handle at the left of every set of the day; dragging it moves the set among the
 machine's sets, and the numbers follow the new order. While it is on, tapping a set opens nothing,
 and "Готово" replaces "Добавить" and hides the handles.
-Back, in the top bar or on the phone, closes an open form, then the page.
+Back, in the top bar or on the phone, closes an open form, then the page. A horizontal swipe on
+the page moves to the previous or the next machine in the order of the list, grouped by tags when
+the list is, planned machines included. The other machine's page opens without the form, as a tap
+on its row opens it. The swipe stops at the first and at the last machine. It does nothing while
+the form is open or the sets show drag handles, or on a machine that is not in the visit's list.
 
 A visit with sets has a "Поделиться" button in the top bar that hands the visit over as text:
 Android opens its share sheet, the web copies the text and says "Скопировано" (or "Не удалось
