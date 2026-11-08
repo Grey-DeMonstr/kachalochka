@@ -116,17 +116,18 @@ internal fun MachinePage(
                 onOpenStatistics,
                 Modifier.testTag("machine-statistics"),
             )
-            MachineMenu(
-                onToPlan = { placement.choosePlan(placed) },
-                onToday =
-                    if (canPlanToday && !page.readOnly) {
-                        { placement.planToday(placed, onOpen = onOpenVisit) }
-                    } else {
-                        null
-                    },
-                onReorder =
-                    (viewModel::toggleSetOrdering).takeIf { page.canOrder && !page.ordering },
-            )
+            if (!page.ordering) {
+                MachineMenu(
+                    onToPlan = { placement.choosePlan(placed) },
+                    onToday =
+                        if (canPlanToday && !page.readOnly) {
+                            { placement.planToday(placed, onOpen = onOpenVisit) }
+                        } else {
+                            null
+                        },
+                    onReorder = (viewModel::toggleSetOrdering).takeIf { page.canOrder },
+                )
+            }
         },
         timer = true,
     ) {

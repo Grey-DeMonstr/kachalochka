@@ -105,7 +105,7 @@ fun VisitScreen(
     val current = state
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
-        isBackEnabled = current?.page != null,
+        isBackEnabled = current?.page != null || current?.ordering == true,
         onBackCompleted = { viewModel.closeSheet() },
     )
     val page = current?.page
@@ -127,7 +127,7 @@ fun VisitScreen(
     }
     Screen(
         "",
-        onBack = onBack,
+        onBack = { if (!viewModel.closeSheet()) onBack() },
         onOpenSettings = onOpenSettings,
         actions = {
             if (current?.canOrder == true) {

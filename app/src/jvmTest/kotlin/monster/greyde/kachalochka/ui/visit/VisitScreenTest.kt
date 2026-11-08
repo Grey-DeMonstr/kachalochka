@@ -692,28 +692,98 @@ class VisitScreenTest {
     @Test
     fun system_back_closes_the_form() {
         var backs = 0
-        val dispatcher = NavigationEventDispatcher()
-        val systemBack = DirectNavigationEventInput().also(dispatcher::addInput)
-        val owner =
-            object : NavigationEventDispatcherOwner {
-                override val navigationEventDispatcher = dispatcher
-            }
+        val systemBack = SystemBack()
         runScreenTest(
             gym,
             screen = {
-                CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) {
-                    visitScreen(picked = press.id, onBack = { backs++ })
+                systemBack.Provide {
+                    visitScreen(
+                        picked = press.id,
+                        onBack = { backs++ },
+                    )
                 }
             },
         ) {
             waitForIdle()
             onNodeWithTag("save-set").assertIsDisplayed()
 
-            runOnIdle { systemBack.backCompleted() }
+            runOnIdle { systemBack.press() }
             waitForIdle()
             onNodeWithTag("set-sheet").assertDoesNotExist()
             assertEquals(0, backs)
         }
+    }
+
+    @Test
+    fun back_ends_the_machine_order_mode_before_it_leaves() {
+        var backs = 0
+        val systemBack = SystemBack()
+        runScreenTest(
+            gym,
+            screen = { systemBack.Provide { visitScreen(onBack = { backs++ }) } },
+        ) {
+            onNodeWithTag("reorder-toggle").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("reorder-toggle").assertIsOff()
+
+            onNodeWithTag("reorder-toggle").performClick()
+            waitForIdle()
+            runOnIdle { systemBack.press() }
+            waitForIdle()
+            onNodeWithTag("reorder-toggle").assertIsOff()
+            assertEquals(0, backs)
+
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            assertEquals(1, backs)
+        }
+    }
+
+    @Test
+    fun back_ends_the_set_order_mode_and_keeps_the_page() {
+        val second = recorded.copy(id = WorkoutSetId.random())
+        runBlocking { gym.sets.upsert(second.copy(recordedAt = gym.clock.current + 1.minutes)) }
+        val systemBack = SystemBack()
+        runScreenTest(
+            gym,
+            screen = { systemBack.Provide { visitScreen(opened = press.id) } },
+        ) {
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-reorder").performClick()
+            waitForIdle()
+            onNodeWithTag("top-bar-back").performClick()
+            waitForIdle()
+            onNodeWithTag("finish-ordering").assertDoesNotExist()
+            onNodeWithTag("add-set").assertExists()
+
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-reorder").performClick()
+            waitForIdle()
+            runOnIdle { systemBack.press() }
+            waitForIdle()
+            onNodeWithTag("finish-ordering").assertDoesNotExist()
+            onNodeWithTag("machine-page").assertIsDisplayed()
+        }
+    }
+
+    private class SystemBack {
+        private val dispatcher = NavigationEventDispatcher()
+        private val input = DirectNavigationEventInput().also(dispatcher::addInput)
+        private val owner =
+            object : NavigationEventDispatcherOwner {
+                override val navigationEventDispatcher = dispatcher
+            }
+
+        @Composable
+        fun Provide(content: @Composable () -> Unit) =
+            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner, content)
+
+        fun press() = input.backCompleted()
     }
 
     @Test
@@ -1134,6 +1204,7 @@ class VisitScreenTest {
             onNodeWithTag("machine-reorder").assertTextEquals("Порядок подходов").performClick()
             waitForIdle()
             onNodeWithTag("add-set").assertDoesNotExist()
+            onNodeWithTag("machine-menu").assertDoesNotExist()
             onNodeWithTag("finish-ordering").assertTextEquals("Готово")
             onNodeWithTag("drag-set-${recorded.id.value}").assertExists()
 

@@ -429,17 +429,17 @@ class VisitViewModel(
     }
 
     /**
-     * Steps back once: an open form closes, else the open page does. Returns false when there was
-     * neither, so back can leave the screen.
+     * Steps back once: an order mode ends, else an open form closes, else the open page does.
+     * Returns false when there was none of them, so back can leave the screen.
      */
     fun closeSheet(): Boolean {
-        if (form.isOpen && open != null) {
-            form.close()
-            publish()
-            return true
+        when {
+            ordering -> ordering = false
+            orderingSets -> orderingSets = false
+            open == null -> return false
+            form.isOpen -> form.close()
+            else -> closePage()
         }
-        if (open == null) return false
-        closePage()
         publish()
         return true
     }

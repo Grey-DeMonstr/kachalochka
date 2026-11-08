@@ -1926,6 +1926,32 @@ class VisitViewModelTest {
     }
 
     @Test
+    fun back_ends_order_mode_and_stays_on_the_list() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
+            val vm = viewModel().also { it.refresh() }
+            vm.toggleOrdering()
+
+            assertTrue(vm.closeSheet())
+
+            assertFalse(assertNotNull(vm.state.value).ordering)
+            assertFalse(vm.closeSheet())
+        }
+
+    @Test
+    fun back_ends_the_order_of_a_page_s_sets_and_keeps_the_page() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))
+            gym.sets.upsert(set(visit.id, press, 75.0, 8, 1))
+            val vm = viewModel().also { it.openMachine(press.id) }
+            vm.toggleSetOrdering()
+
+            assertTrue(vm.closeSheet())
+
+            assertFalse(assertNotNull(vm.state.value?.page).ordering)
+        }
+
+    @Test
     fun only_a_page_with_two_sets_or_more_can_order_its_sets() =
         runTest {
             gym.sets.upsert(set(visit.id, press, 70.0, 10, 0))

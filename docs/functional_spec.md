@@ -98,12 +98,12 @@ stands in for a missing photo. Tapping the row opens the machine's page. The lis
 row. A visit with sets has an order button in the top bar, left of "Поделиться", drawn like the
 drag handle and lit while on: it shows a handle at the left of every machine, and dragging it
 moves the machine with its sets. While it is on, a photo opens nothing, a barbell stands in for a
-missing one, and "Готово" replaces "Добавить" at the end of the list; it or the button again hides
-the handles. When a machine of the visit has tags, "Группировать по тегам" splits the list into
-sections, one per distinct set of tags in any letter case, headed by the tags and in the order of
-their first machine; untagged machines come last under "Остальное". A row under a heading does not
-repeat its tags. The choice is the account's, saved in its profile and synced, and ordering shows
-the plain list.
+missing one, the "⋮" menu is hidden, and "Готово" replaces "Добавить" at the end of the list; it,
+the button again or back, in the top bar or on the phone, hides the handles. When a machine of the
+visit has tags, "Группировать по тегам" splits the list into sections, one per distinct set of
+tags in any letter case, headed by the tags and in the order of their first machine; untagged
+machines come last under "Остальное". A row under a heading does not repeat its tags. The choice
+is the account's, saved in its profile and synced, and ordering shows the plain list.
 
 A machine's page covers the list. Its top bar has a chart button opening the machine's statistics
 and the rest timer. It shows the photo, which opens the machine form and carries the gear as in
@@ -120,7 +120,7 @@ machine without sets also offers "Убрать", which takes it out of the visit
 With two sets or more, the page's "⋮" menu also has "Порядок подходов". It closes the form and
 shows a drag handle at the left of every set of the day; dragging it moves the set among the
 machine's sets, and the numbers follow the new order. While it is on, tapping a set opens nothing,
-and "Готово" replaces "Добавить" and hides the handles.
+the "⋮" menu is hidden, and "Готово" replaces "Добавить"; it or back hides the handles.
 Back, in the top bar or on the phone, closes an open form, then the page. A horizontal swipe on
 the page moves to the previous or the next machine in the order of the list, grouped by tags when
 the list is, planned machines included. The other machine's page opens without the form, as a tap
