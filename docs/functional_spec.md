@@ -176,8 +176,10 @@ The machine picker lists the account's machines in that order under "Мои уп
 in and
 online, one section per friend headed by their avatar and name, with the friend's machines that are
 not yet the same machine as one of the account's. Opened from a visit, the machines the visit
-already holds, with sets or planned, come last of all, dimmed and marked "Уже в визите"; picking
-one opens its page with the form for its next set. A search keeps the machines whose name holds
+already holds, with sets or planned, come last of all, dimmed and marked "Уже в визите". Picking
+a machine for a visit opens its page with the form for its next set, and the machine joins the
+visit at once: until it gets a set, it is a planned one, so leaving without a set keeps it. A day
+without a visit gets one. A search keeps the machines whose name holds
 what is typed, in any letter case and with a few typos: none for up to 3 letters, one for 4-5, two
 for 6-8 and three for more; every machine search in the app works so. An own machine is also
 found by the names of the friends' machines it is linked with. A cross at its end, shown

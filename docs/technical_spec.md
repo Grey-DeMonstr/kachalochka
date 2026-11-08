@@ -813,6 +813,8 @@ writes a `linkedCopy` and the links from the copy to every machine of that clust
 (`missingDirectLinks`); the group read's
 upkeep adds the friends' machines those local links do not reach. `deviceStandIn` finds the same
 machine without a write, so after a switch the page shows the history the next save extends.
+A machine picked into the visit goes through `ownCopy` too, then `SetRecorder.plan` adds it to
+`visit.planned` before its page opens; `startedPlanned` skips it when the visit already holds it.
 "Повторить сегодня" on the calendar and the visit screen goes through `Placement` (see below),
 which calls `planFrom` of a recorder for today: it plans the shown visit's `visitMachines` as
 starting a plan does. The visit view model keeps the

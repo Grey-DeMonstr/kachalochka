@@ -32,6 +32,7 @@ import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.family.childAccount
+import monster.greyde.kachalochka.ui.family.traineeAccount
 import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -473,6 +474,71 @@ class VisitViewModelTest {
                     .getValue(visit.id)
                     .planned,
             )
+        }
+
+    @Test
+    fun a_picked_machine_left_without_a_set_stays_in_the_visit_as_planned() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(row.id) }
+
+            vm.cancelForm()
+            vm.closeSheet()
+
+            assertEquals(listOf(row.id), gym.visits.byId(visit.id)?.planned)
+            val group = assertNotNull(vm.state.value).groups.single()
+            assertEquals(row.id, group.machineId)
+            assertTrue(group.planned)
+        }
+
+    @Test
+    fun a_machine_picked_on_a_day_without_a_visit_starts_it_as_planned() =
+        runTest {
+            val vm = viewModel(day = seventh)
+            val before = gym.sync.requests
+
+            vm.selectMachine(row.id)
+
+            assertEquals(listOf(row.id), gym.visits.onDay(null, seventh)?.planned)
+            assertEquals(before + 1, gym.sync.requests)
+        }
+
+    @Test
+    fun a_picked_machine_with_sets_in_the_visit_is_not_planned() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 80.0, 6, 0))
+
+            viewModel().selectMachine(press.id)
+
+            assertEquals(emptyList(), gym.visits.byId(visit.id)?.planned)
+        }
+
+    @Test
+    fun a_machine_picked_while_another_account_s_is_shown_is_planned_as_the_active_one_s() =
+        runTest {
+            val two = twoAccountGym()
+            two.accounts.switchTo(misha.account.userId)
+
+            viewModel(two).selectMachine(ivanPress.id)
+
+            val mishaPress = assertNotNull(two.machines.named(misha.account.userId, "Жим ногами"))
+            assertEquals(
+                listOf(mishaPress.id),
+                two.visits.onDay(misha.account.userId, today)?.planned,
+            )
+        }
+
+    @Test
+    fun a_trainee_s_visit_gets_no_planned_machine_from_a_pick() =
+        runTest {
+            val coached =
+                FakeGym().withAccounts(ivan, active = ivan).withChild(traineeAccount(SASHA, ivan))
+            val sashaPress = Machine.new("Жим ногами", SASHA.userId, t0)
+            coached.machines.upsert(sashaPress)
+            coached.accounts.switchTo(SASHA.userId)
+
+            viewModel(coached).selectMachine(sashaPress.id)
+
+            assertTrue(coached.visits.rows.isEmpty())
         }
 
     @Test
@@ -988,11 +1054,11 @@ class VisitViewModelTest {
 
             val state = assertNotNull(vm.state.value)
             val page = assertNotNull(state.page)
-            assertEquals(listOf("99lb", "1x12"), state.groups.single().summary)
+            assertEquals(listOf("99lb", "1x12"), state.groups.first().summary)
             assertEquals(
                 "99 lb × 12",
                 state.groups
-                    .single()
+                    .first()
                     .sets
                     .single()
                     .value,
@@ -1638,10 +1704,11 @@ class VisitViewModelTest {
         runTest {
             gym.visits.upsert(lastWeek)
             viewModel(day = seventh).also { it.selectMachine(press.id) }
+            val before = gym.sync.requests
 
             gym.sync.completePass()
 
-            assertEquals(0, gym.sync.requests)
+            assertEquals(before, gym.sync.requests)
         }
 
     @Test
@@ -1655,11 +1722,10 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun the_first_set_of_another_day_creates_its_visit_at_local_noon() =
+    fun another_day_s_visit_starts_at_local_noon_and_its_first_set_a_second_later() =
         runTest {
             val tenth = CalendarDay(2023, 11, 10)
             val vm = viewModel(day = tenth).also { it.selectMachine(press.id) }
-            assertNull(gym.visits.onDay(null, tenth))
 
             vm.save()
 
@@ -1673,7 +1739,8 @@ class VisitViewModelTest {
                     .recordedAt,
             )
             assertNull(timer.startedAt.value)
-            assertEquals(1, gym.sync.requests)
+            // One for the picked machine's plan, one for the set.
+            assertEquals(2, gym.sync.requests)
         }
 
     @Test

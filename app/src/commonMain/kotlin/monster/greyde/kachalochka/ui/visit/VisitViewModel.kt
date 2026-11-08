@@ -284,8 +284,11 @@ class VisitViewModel(
         }
     }
 
-    /** Opens [id]'s page with the form for its next set, as a picked machine opens. */
-    fun selectMachine(id: MachineId) = showMachine(id, withForm = !readOnly)
+    /**
+     * Opens [id]'s page with the form for its next set, as a picked machine opens. The machine
+     * stays in the visit as planned until it gets a set.
+     */
+    fun selectMachine(id: MachineId) = showMachine(id, withForm = !readOnly, plan = !readOnly)
 
     // A trainer looks at a trainee's visit and records nothing in it.
     private val readOnly: Boolean get() = accounts.traineeActive()
@@ -296,11 +299,21 @@ class VisitViewModel(
     private fun showMachine(
         id: MachineId,
         withForm: Boolean,
+        plan: Boolean = false,
     ) {
         selected = id
         if (withForm) form.openNew() else form.close()
         ordering = false
-        viewModelScope.launch { reload(reseed = true) }
+        viewModelScope.launch {
+            if (plan) planOwnCopy(id)
+            reload(reseed = true)
+        }
+    }
+
+    private suspend fun planOwnCopy(id: MachineId) {
+        val owner = currentUser.id()
+        val machine = machines.byId(id) ?: return
+        recorder.plan(owner, listOf(catalogue.ownCopy(owner, machine).id))
     }
 
     /** The form for the open machine's next set, from the last set's values. */
