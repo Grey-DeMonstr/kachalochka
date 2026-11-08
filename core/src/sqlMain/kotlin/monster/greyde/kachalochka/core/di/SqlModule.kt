@@ -3,6 +3,9 @@ package monster.greyde.kachalochka.core.di
 import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.db.kachalochkaDatabase
 import monster.greyde.kachalochka.core.data.family.SupabaseFamilyRepository
+import monster.greyde.kachalochka.core.data.friends.FriendAnswers
+import monster.greyde.kachalochka.core.data.friends.KeptFriends
+import monster.greyde.kachalochka.core.data.friends.SqlFriendAnswers
 import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
 import monster.greyde.kachalochka.core.data.friends.TraineeFriends
 import monster.greyde.kachalochka.core.data.gym.LocalMachineLinkRepository
@@ -85,11 +88,11 @@ internal fun sqlModule(): Module =
         }
         single { SyncPass(get(), get(), get(), get(), get(), get(), Dispatchers.IO) }
         single(ACTIVE_ACCOUNT_CLIENT) { activeAccountSupabaseClient(get(), get(), get()) }
+        single<FriendAnswers> { SqlFriendAnswers(get(), Dispatchers.IO) }
         single<FriendsRepository> {
             val store: AccountStore = get()
-            TraineeFriends(
-                SupabaseFriendsRepository(inject(ACTIVE_ACCOUNT_CLIENT), Clock.System),
-            ) {
+            val server = SupabaseFriendsRepository(inject(ACTIVE_ACCOUNT_CLIENT), Clock.System)
+            TraineeFriends(KeptFriends(server, get(), { store.activeId.value }, Clock.System)) {
                 store.accounts.value
             }
         }

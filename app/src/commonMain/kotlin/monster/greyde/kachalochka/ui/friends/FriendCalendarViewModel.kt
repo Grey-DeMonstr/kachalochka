@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
+import monster.greyde.kachalochka.core.data.friends.keptOnly
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.namesForViewer
@@ -114,36 +115,44 @@ class FriendCalendarViewModel(
         reloading = viewModelScope.launch { load() }
     }
 
+    /** The kept answers first; the server's then replace them, and only fail with none shown. */
     private suspend fun load() {
-        catching {
-            if (stale) {
-                all = friends.visits(member).filter { it.day != null }
-                val theirs = friends.machines(member)
-                val me = currentUser.id()
-                val own = catalogue.own(me)
-                val clusters = me?.let { catalogue.clusters(it) } ?: MachineClusters(own.links)
-                names = namesForViewer(theirs, own.machines, clusters)
-                color = me?.let { colors.colorsFor(it, listOf(member))[member] }
+        val everything = stale
+        val kept = catching { keptOnly { read(everything) } }.onSuccess { shown() }
+        catching { read(everything) }
+            .onSuccess {
                 stale = false
-            }
-            val day = selected
-            dayCard =
-                shownVisit(all.filter { it.day == day }, friends::sets)?.let { (_, visitSets) ->
-                    val summary = summarize(visitSets)
-                    val machineNames = groupByMachine(visitSets).mapNotNull { names[it.machineId] }
-                    val machinesLabel = machineCount(summary.machineCount)
-                    val setsLabel = setCount(summary.setCount)
-                    FriendDayUi(
-                        counts = "$machinesLabel · $setsLabel",
-                        machines = machineNames.joinToString(", ").ifEmpty { null },
-                    )
-                }
-        }.onSuccess {
-            publish()
-            mutableOffline.value = false
-        }.onFailure {
-            mutableOffline.value = true
+                shown()
+            }.onFailure { mutableOffline.value = kept.isFailure }
+    }
+
+    private fun shown() {
+        publish()
+        mutableOffline.value = false
+    }
+
+    private suspend fun read(everything: Boolean) {
+        if (everything) {
+            all = friends.visits(member).filter { it.day != null }
+            val theirs = friends.machines(member)
+            val me = currentUser.id()
+            val own = catalogue.own(me)
+            val clusters = me?.let { catalogue.clusters(it) } ?: MachineClusters(own.links)
+            names = namesForViewer(theirs, own.machines, clusters)
+            color = me?.let { colors.colorsFor(it, listOf(member))[member] }
         }
+        val day = selected
+        dayCard =
+            shownVisit(all.filter { it.day == day }, friends::sets)?.let { (_, visitSets) ->
+                val summary = summarize(visitSets)
+                val machineNames = groupByMachine(visitSets).mapNotNull { names[it.machineId] }
+                val machinesLabel = machineCount(summary.machineCount)
+                val setsLabel = setCount(summary.setCount)
+                FriendDayUi(
+                    counts = "$machinesLabel · $setsLabel",
+                    machines = machineNames.joinToString(", ").ifEmpty { null },
+                )
+            }
     }
 
     private fun publish() {

@@ -1,11 +1,13 @@
 package monster.greyde.kachalochka.ui.friends
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
@@ -26,16 +28,23 @@ class FriendCalendarViewModelTest {
     private val t0 = gym.clock.current
     private val undated = Visit(VisitId.random(), OLEG.userId, null, t0 - 3.days, t0, false)
 
-    private fun viewModel() =
+    private fun viewModel(friends: FriendsRepository = gym.friends) =
         FriendCalendarViewModel(
             OLEG.userId,
-            gym.friends,
-            gym.catalogue,
+            friends,
+            gym.catalogueOver(gym.machineLinks, friends = friends),
             gym.currentUser,
             gym.accounts,
             gym.deviceClock,
-            FriendColorStore(gym.profiles, gym.clock, gym.friends),
+            FriendColorStore(gym.profiles, gym.clock, friends),
         )
+
+    private fun FriendCalendarUiState.marked(): List<CalendarDay> =
+        weeks
+            .flatten()
+            .filterNotNull()
+            .filter { it.friendDots.isNotEmpty() }
+            .map { it.day }
 
     @BeforeTest
     fun setUp() =
@@ -94,6 +103,39 @@ class FriendCalendarViewModelTest {
         vm.selectDay(gym.today.plusDays(1))
 
         assertEquals(gym.today, vm.state.value?.day)
+    }
+
+    @Test
+    fun without_a_network_the_calendar_shows_what_the_last_read_kept() {
+        viewModel(gym.keptFriends).selectDay(fixture.yesterday)
+        gym.friends.offline = true
+
+        val vm = viewModel(gym.keptFriends)
+        vm.selectDay(fixture.yesterday)
+
+        assertFalse(vm.offline.value)
+        assertEquals(listOf(fixture.yesterday), vm.state.value?.marked())
+        assertEquals(
+            FriendDayUi("2 упражнения · 3 подхода", "Жим ногами, Тяга"),
+            vm.state.value?.visit,
+        )
+    }
+
+    @Test
+    fun the_kept_calendar_shows_at_once_and_the_server_s_answer_replaces_it() {
+        viewModel(gym.keptFriends)
+        val later = gym.today.plusDays(-2)
+        gym.friends.visits += Visit(VisitId.random(), OLEG.userId, later, t0 - 2.days, t0, false)
+        val answer = CompletableDeferred<Unit>()
+        gym.friends.gate = answer
+
+        val vm = viewModel(gym.keptFriends)
+
+        assertEquals(listOf(fixture.yesterday), vm.state.value?.marked())
+
+        answer.complete(Unit)
+
+        assertEquals(listOf(later, fixture.yesterday), vm.state.value?.marked())
     }
 
     @Test

@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import monster.greyde.kachalochka.core.data.friends.NoFriendAnswers
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountKind
 import monster.greyde.kachalochka.core.data.identity.AccountSession
@@ -89,6 +90,7 @@ class AccountsViewModelTest {
                 NoOpOwnerlessRows(),
                 NoWatermarkReset,
                 HeldWrites(),
+                NoFriendAnswers,
             )
         return AccountsViewModel(accounts, sync, AccountAvatars(accounts, reads))
     }

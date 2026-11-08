@@ -2,6 +2,7 @@ package monster.greyde.kachalochka.core.data.identity
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
+import monster.greyde.kachalochka.core.data.friends.FriendAnswers
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -50,6 +51,27 @@ private class RecordingOwnerless : OwnerlessRows {
     }
 }
 
+/** Records the accounts each [keepOnly] call keeps. */
+private class RecordingAnswers : FriendAnswers {
+    val kept = mutableListOf<List<UserId>>()
+
+    override suspend fun answer(
+        account: UserId,
+        request: String,
+    ): String? = null
+
+    override suspend fun keep(
+        account: UserId,
+        request: String,
+        answer: String,
+        at: Instant,
+    ) = Unit
+
+    override suspend fun keepOnly(listed: List<UserId>) {
+        kept += listed
+    }
+}
+
 private fun session(
     id: String,
     name: String,
@@ -65,6 +87,7 @@ class AccountsTest {
     private val misha = session("22222222-2222-4222-8222-222222222222", "Misha")
 
     private val held = HeldWrites()
+    private val answers = RecordingAnswers()
 
     private fun accounts(
         queue: MutableList<AccountSession>,
@@ -77,6 +100,7 @@ class AccountsTest {
         ownerless,
         NoWatermarkReset,
         held,
+        answers,
     )
 
     private fun refusing(error: Throwable) =
@@ -87,6 +111,7 @@ class AccountsTest {
             RecordingOwnerless(),
             NoWatermarkReset,
             held,
+            answers,
         )
 
     /** Records the account active while each held write runs. */
@@ -123,6 +148,18 @@ class AccountsTest {
         }
 
     @Test
+    fun a_sign_out_forgets_the_friend_answers_of_every_account_that_left() =
+        runTest {
+            val service = accounts(mutableListOf(ivan, misha))
+            service.addAccount()
+            service.addAccount()
+
+            service.signOut(misha.account.userId)
+
+            assertEquals(listOf(listOf(ivan.account.userId)), answers.kept)
+        }
+
+    @Test
     fun a_sign_out_runs_the_held_writes_while_the_account_is_still_active() =
         runTest {
             val service = accounts(mutableListOf(ivan))
@@ -154,6 +191,7 @@ class AccountsTest {
                     RecordingOwnerless(),
                     NoWatermarkReset,
                     held,
+                    answers,
                 )
             held.hold { steps += "held write" }
 
@@ -344,6 +382,7 @@ class AccountsTest {
                     RecordingOwnerless(),
                     NoWatermarkReset,
                     held,
+                    answers,
                 )
             service.addAccount()
             service.addAccount()
@@ -368,6 +407,7 @@ class AccountsTest {
                     RecordingOwnerless(),
                     NoWatermarkReset,
                     held,
+                    answers,
                 )
             service.addAccount()
             service.addAccount()
@@ -394,6 +434,7 @@ class AccountsTest {
                     RecordingOwnerless(),
                     NoWatermarkReset,
                     held,
+                    answers,
                 )
             service.addAccount()
             service.addAccount()
@@ -421,6 +462,7 @@ class AccountsTest {
                     RecordingOwnerless(),
                     reset,
                     held,
+                    answers,
                 )
             service.addAccount()
             store.setManaged(listOf(managedChild(ivan)))
@@ -442,6 +484,7 @@ class AccountsTest {
                     RecordingOwnerless(),
                     reset,
                     held,
+                    answers,
                 )
 
             service.addAccount()

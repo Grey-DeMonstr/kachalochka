@@ -111,7 +111,7 @@ Three rules:
    tests. `app` renders results; it does not compute them.
 
 Friends' data is the exception: both platforms read it online, so `FriendsRepository` has one
-implementation in `commonMain`, and nothing it returns is written to SQLite. The web runs it on
+implementation in `commonMain`, and no synced table holds what it returns. The web runs it on
 the UI client. Android runs it on a client that, like the sync client (§4.2), asks
 `AccountTokens` for the active account's token on every request, because its UI client holds a
 session only after a sign-in or a switch in the same process. Concurrent refreshes of one
@@ -124,7 +124,7 @@ included; for a Google account every group it sees holds it.
 
 The calendar reads group mates' visits for the shown month with one `groupVisits` request, far
 under PostgREST's row cap. It reads them after its own rows, again on entering the screen, after
-a sync, after an account switch and on a month change, and never stores them. A read in flight
+a sync, after an account switch and on a month change. A read in flight
 is cancelled by the next one, and a result that lands for another account or month than the one
 shown is dropped. A failed read leaves friends out; the own calendar never waits for it.
 
@@ -138,6 +138,18 @@ windows read; an account switch starts the feed over.
 The feed's people are the account and its `mates`, read once per feed with their colours after
 the first window, so a slow read holds back no day. Paging reads back until a window holds a visit
 of a shown person: the selected one, or anyone when nobody is selected.
+
+On Android `KeptFriends` wraps the repository and keeps its answers in the local `friend_answer`
+table, one JSON text per account and request. The table is not synced. A read inside `keptOnly`
+gives the kept answer, or fails when there is none; every other read asks the server and keeps
+its answer. The feed, the friend's calendar and the machine page's `GroupReads` read inside
+`keptOnly` first and show the result, then read from the server; a failed server read keeps what
+is shown. `MachineCatalogue.lastGroup` takes the kept `groupGym` when it has no read in memory.
+The kept `groupVisits` of a viewer are one list: each window replaces the visits it covers, and
+visits recorded more than 31 days ago go out. An answer that is not read again for 31 days is
+removed. Signing out removes the answers of each account that is no longer on the device. The web
+wraps the repository in `KeptFriends` over `NoFriendAnswers`, which keeps nothing, so there a
+`keptOnly` read fails at once.
 
 A visit card's gain compares the day's result on a machine (`dayBest`) with the prior best the
 day's sets carry (§4.5, `exerciseRows`), so the own and the friends' cards need only the day's
@@ -692,8 +704,8 @@ switch, so the links that friends made since reach the account's machines withou
 reads the group. A read that fails, as offline, waits for the next start or switch.
 Group reads for one account share the read in flight, so the screens a sync pass reloads together
 send one request; when the screen that started it closes, the others read again. The catalogue
-keeps the last read of each account in memory, and `lastGroup` joins it to the own links read
-again.
+keeps the last read of each account in memory, and `lastGroup` joins it, or the kept `groupGym`
+(§3), to the own links read again.
 
 `MachineReads` gives each screen one stream per account. `machines` emits the own read first,
 joined to the last group read when there is one, then the fresh read. `group` is the same without

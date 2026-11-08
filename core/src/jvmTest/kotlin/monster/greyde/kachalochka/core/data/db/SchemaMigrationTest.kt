@@ -169,7 +169,7 @@ class SchemaMigrationTest {
         exec("DROP TABLE measurement")
         exec("DROP TABLE photo")
         exec("DROP TABLE workout_plan")
-        dropTagTables()
+        dropNewerTables()
     }
 
     /** Every version before 6 declares the profile table this way. */
@@ -652,7 +652,7 @@ class SchemaMigrationTest {
         val gone = MachineId("0e000000-0000-4000-8000-00000000000e")
         val pushed = MachineId("0f000000-0000-4000-8000-00000000000f")
         KachalochkaDatabase.Schema.create(driver)
-        dropTagTables()
+        dropNewerTables()
         exec(
             "INSERT INTO machine(id, user_id, name, weight_mode, unit, weight_step, updated_at, " +
                 "tags) VALUES ('${PRESS.value}', '${owner.value}', 'Жим', 'total', 'kg', " +
@@ -723,9 +723,24 @@ class SchemaMigrationTest {
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
 
-    private fun dropTagTables() {
+    @Test
+    fun version_21_gains_the_table_of_kept_friend_answers() {
+        KachalochkaDatabase.Schema.create(driver)
+        exec("DROP TABLE friend_answer")
+
+        KachalochkaDatabase.Schema.migrate(driver, 21, 22)
+
+        exec(
+            "INSERT INTO friend_answer(account, request, answer, read_at) " +
+                "VALUES ('ivan', 'mates', '[]', 5)",
+        )
+        assertEquals("[]", text("SELECT answer FROM friend_answer WHERE account = 'ivan'"))
+    }
+
+    private fun dropNewerTables() {
         exec("DROP TABLE tag")
         exec("DROP TABLE machine_tag")
+        exec("DROP TABLE friend_answer")
     }
 
     /** Versions 5 to 12 declare the machine table this way. */
@@ -819,7 +834,7 @@ class SchemaMigrationTest {
         version12MachineTable()
         version13VisitTable()
         exec("DROP TABLE workout_plan")
-        dropTagTables()
+        dropNewerTables()
     }
 
     /** Versions 6 to 8 declare the profile table this way. */
@@ -847,7 +862,7 @@ class SchemaMigrationTest {
         version12MachineTable()
         version13VisitTable()
         exec("DROP TABLE workout_plan")
-        dropTagTables()
+        dropNewerTables()
     }
 
     private fun at(millis: Long) = Instant.fromEpochMilliseconds(millis)

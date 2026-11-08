@@ -707,7 +707,11 @@ joining, warning that the group's members will see the user's visits and machine
 while signed out is offered to whichever account signs in next in that browser. Every member sees
 the other members' calendars, visits and machine photos, read-only, and nothing is shared outside a
 group. A member can leave; the owner deletes the group instead. Friends' data is read online. On
-Android a friend's photo, once shown, stays on the device and shows again without a network.
+Android a friend's photo, once shown, stays on the device and shows again without a network. The
+feed, a friend's calendar and the friends' results on a machine's page also keep on Android what
+they read last, for one month: they show it at once, and what the server sends next replaces it.
+With a bad network or none, they show what they kept. Signing out of an account removes what was
+kept for it.
 
 The group screen starts each member's row with their avatar, or their initial in their colour, and
 ends every row but the user's own with a colour dot. Tapping it opens a palette of eight colours;

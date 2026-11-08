@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
+import monster.greyde.kachalochka.core.data.friends.keptOnly
 import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -13,7 +14,8 @@ import monster.greyde.kachalochka.ui.machine.MachineReads
 
 /**
  * The group read for the active account and the friends' latest results on its open machine, which
- * wait for that read. A read for an owner or machine asked before the last one is dropped.
+ * wait for that read: the kept results first, then, after a fresh group read, the server's. A read
+ * for an owner or machine asked before the last one is dropped.
  */
 class GroupReads(
     private val friends: FriendsRepository,
@@ -56,13 +58,13 @@ class GroupReads(
             results = emptyList()
             loadingResults?.cancel()
             asked = next
-            if (!readGroup) loadResults()
+            if (!readGroup) loadResults(fresh = true)
         }
         if (readGroup) loadGroup(owner)
         stale = false
     }
 
-    private fun loadResults() {
+    private fun loadResults(fresh: Boolean) {
         val asked = asked ?: return
         val (owner, machine) = asked
         val clusters = group?.takeIf { it.owner == owner }?.clusters ?: return
@@ -70,16 +72,17 @@ class GroupReads(
         loadingResults?.cancel()
         loadingResults =
             scope.launch {
-                val read =
-                    catching {
-                        if (theirs.isEmpty()) emptyList() else friends.latestOn(owner, theirs)
+                suspend fun show(read: suspend () -> List<FriendResult>) {
+                    val found = catching { if (theirs.isEmpty()) emptyList() else read() }
+                    if (this@GroupReads.asked != asked) return
+                    // A failed re-read keeps what an earlier read of the same machine showed.
+                    found.onSuccess {
+                        results = it
+                        changed()
                     }
-                if (this@GroupReads.asked != asked) return@launch
-                // A failed re-read keeps what an earlier read of the same machine showed.
-                read.onSuccess { found ->
-                    results = found
-                    changed()
                 }
+                show { keptOnly { friends.latestOn(owner, theirs) } }
+                if (fresh) show { friends.latestOn(owner, theirs) }
             }
     }
 
@@ -94,7 +97,7 @@ class GroupReads(
                     if (groupFor != owner) return@collect
                     group = read.machines
                     changed()
-                    if (read.fresh) loadResults()
+                    loadResults(read.fresh)
                 }
             }
     }

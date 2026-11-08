@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.friends.Friend
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -95,24 +96,26 @@ class VisitFeedViewModelTest {
 
     private val people = InMemoryFeedPeoplePreference()
 
-    private fun viewModel(gym: FakeGym = this.gym) =
-        VisitFeedViewModel(
-            gym.visits,
-            gym.sets,
-            gym.machines,
-            gym.currentUser,
-            gym.accounts,
-            gym.deviceClock,
-            gym.placement,
-            gym.sync,
-            gym.friends,
-            FriendColorStore(gym.profiles, gym.clock, gym.friends),
-            AccountAvatars(gym.accounts, gym.profiles),
-            gym.profiles,
-            Nickname(gym.profiles, gym.accounts),
-            people,
-            gym.priorBests,
-        )
+    private fun viewModel(
+        gym: FakeGym = this.gym,
+        friends: FriendsRepository = gym.friends,
+    ) = VisitFeedViewModel(
+        gym.visits,
+        gym.sets,
+        gym.machines,
+        gym.currentUser,
+        gym.accounts,
+        gym.deviceClock,
+        gym.placement,
+        gym.sync,
+        friends,
+        FriendColorStore(gym.profiles, gym.clock, friends),
+        AccountAvatars(gym.accounts, gym.profiles),
+        gym.profiles,
+        Nickname(gym.profiles, gym.accounts),
+        people,
+        gym.priorBests,
+    )
 
     private fun FeedUiState.cardsOn(day: CalendarDay): List<VisitCardUi> =
         days.single { it.day == day }.cards
@@ -151,6 +154,51 @@ class VisitFeedViewModelTest {
             )
             assertEquals(listOf("Ноябрь 2023", null, null), state.days.map { it.month })
             assertFalse(state.loading)
+        }
+
+    @Test
+    fun without_a_network_the_feed_shows_the_friends_visits_the_last_read_kept() =
+        runTest {
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friendVisit(OLEG, today.plusDays(-1))
+            viewModel(friends = gym.keptFriends)
+            gym.friends.offline = true
+
+            val state = assertNotNull(viewModel(friends = gym.keptFriends).state.value)
+
+            val card = state.cardsOn(today.plusDays(-1)).single()
+            assertEquals("Олег", card.person.name)
+            assertEquals(listOf(ExerciseUi(press.name, "60 кг × 10", null)), card.exercises)
+            assertEquals(listOf("Иван", "Олег"), state.people.map { it.person.name })
+        }
+
+    @Test
+    fun the_kept_friends_show_at_once_and_the_server_s_answer_replaces_them() =
+        runTest {
+            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friendVisit(OLEG, today.plusDays(-1))
+            viewModel(friends = gym.keptFriends)
+            gym.friendVisit(OLEG, today)
+            val answer = CompletableDeferred<Unit>()
+            gym.friends.gate = answer
+
+            val vm = viewModel(friends = gym.keptFriends)
+
+            assertEquals(
+                listOf(today.plusDays(-1)),
+                vm.state.value
+                    ?.days
+                    ?.map { it.day },
+            )
+
+            answer.complete(Unit)
+
+            assertEquals(
+                listOf(today, today.plusDays(-1)),
+                vm.state.value
+                    ?.days
+                    ?.map { it.day },
+            )
         }
 
     @Test

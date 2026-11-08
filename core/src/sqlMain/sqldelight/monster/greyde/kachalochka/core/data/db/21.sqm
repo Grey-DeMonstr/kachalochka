@@ -1,0 +1,7 @@
+CREATE TABLE friend_answer (
+    account TEXT    NOT NULL,
+    request TEXT    NOT NULL,
+    answer  TEXT    NOT NULL,
+    read_at INTEGER NOT NULL,
+    PRIMARY KEY (account, request)
+);

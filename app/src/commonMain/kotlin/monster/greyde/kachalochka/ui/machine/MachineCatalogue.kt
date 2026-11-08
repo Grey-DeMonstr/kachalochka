@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.SingleFlight
 import monster.greyde.kachalochka.core.data.catching
+import monster.greyde.kachalochka.core.data.friends.keptOnly
 import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -223,9 +224,15 @@ class MachineCatalogue(
             GroupMachines(owner, gym.machines, all, gym.photos)
         }
 
-    /** [owner]'s last group read, joined to the own links as they are now; null before one. */
+    /**
+     * [owner]'s last group read, else the kept one, joined to the own links as they are now; null
+     * before one.
+     */
     suspend fun lastGroup(owner: UserId): GroupMachines? {
-        val gym = lastGyms.value[owner] ?: return null
+        val gym =
+            lastGyms.value[owner]
+                ?: catching { keptOnly { friends.groupGym(owner) } }.getOrNull()
+                ?: return null
         return GroupMachines(owner, gym.machines, links.all(owner) + gym.links, gym.photos)
     }
 

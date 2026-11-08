@@ -56,9 +56,9 @@ private const val NOT_FOUND = 404
 private const val FRIEND_RESULTS = 3
 
 /**
- * One implementation for both platforms (tech spec §3): friends are read online and nothing here
- * is written to SQLite. Row-level security decides whose rows come back, so every read names the
- * member it wants rather than trusting the viewer's filter.
+ * One implementation for both platforms (tech spec §3): friends are read online. Row-level
+ * security decides whose rows come back, so every read names the member it wants rather than
+ * trusting the viewer's filter.
  */
 class SupabaseFriendsRepository(
     private val client: Lazy<SupabaseClient>,

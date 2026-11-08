@@ -72,7 +72,7 @@ data class FriendResult(
 )
 
 /**
- * Friends' rows, read online and never stored; row-level security decides whose rows come back.
+ * Friends' rows, read online; row-level security decides whose rows come back.
  * Every call acts as the active account.
  */
 interface FriendsRepository {

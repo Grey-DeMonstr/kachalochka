@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.setMain
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.data.identity.AccountSession
 import monster.greyde.kachalochka.core.domain.friends.Friend
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -38,6 +39,8 @@ import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.olegTrainedOn
+import monster.greyde.kachalochka.ui.machine.MachineCatalogue
+import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.strings.inEnglish
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.test.AfterTest
@@ -122,6 +125,14 @@ class VisitViewModelTest {
     private fun viewModel(
         gym: FakeGym = this.gym,
         day: CalendarDay = today,
+    ) = viewModelOver(gym, day, gym.friends, gym.catalogue, gym.machineReads)
+
+    private fun viewModelOver(
+        gym: FakeGym,
+        day: CalendarDay,
+        friends: FriendsRepository,
+        catalogue: MachineCatalogue = gym.catalogueOver(gym.machineLinks, friends = friends),
+        reads: MachineReads = gym.machineReadsOver(catalogue, friends),
     ) = VisitViewModel(
         day,
         gym.visits,
@@ -132,10 +143,10 @@ class VisitViewModelTest {
         timer,
         gym.deviceClock,
         gym.sync,
-        gym.friends,
+        friends,
         Nickname(gym.profiles, gym.accounts),
-        gym.catalogue,
-        gym.machineReads,
+        catalogue,
+        reads,
         gym.profiles,
         AccountAvatars(gym.accounts, gym.profiles),
         gym.placement,
@@ -2295,6 +2306,24 @@ class VisitViewModelTest {
 
         two.friends.links += link
         two.sync.completePass()
+
+        assertEquals(
+            listOf("Олег · вчера · 80-85кг 8-6"),
+            vm.state.value
+                ?.page
+                ?.friends
+                ?.map { "${it.name} · ${it.text}" },
+        )
+    }
+
+    @Test
+    fun without_a_network_the_sheet_shows_the_friends_results_the_last_read_kept() {
+        val two = twoAccountGym()
+        two.olegTrainedOn(ivanPress, ivanFriend)
+        viewModelOver(two, today, two.keptFriends).selectMachine(ivanPress.id)
+        two.friends.offline = true
+
+        val vm = viewModelOver(two, today, two.keptFriends).also { it.selectMachine(ivanPress.id) }
 
         assertEquals(
             listOf("Олег · вчера · 80-85кг 8-6"),

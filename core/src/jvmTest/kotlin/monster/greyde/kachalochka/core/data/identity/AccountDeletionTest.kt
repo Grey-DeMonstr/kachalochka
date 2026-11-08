@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.core.data.identity
 
 import kotlinx.coroutines.test.runTest
+import monster.greyde.kachalochka.core.data.friends.NoFriendAnswers
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -51,6 +52,7 @@ class AccountDeletionTest {
             },
             NoWatermarkReset,
             HeldWrites(),
+            NoFriendAnswers,
         )
     private val deletion = AccountDeletion(server, RecordingPurge(steps), accounts)
 

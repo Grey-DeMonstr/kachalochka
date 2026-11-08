@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.family.FamilyFollower
+import monster.greyde.kachalochka.core.data.friends.KeptFriends
+import monster.greyde.kachalochka.core.data.friends.NoFriendAnswers
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
 import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.identity.Account
@@ -28,6 +30,7 @@ import monster.greyde.kachalochka.core.data.identity.PersistedAccountStore
 import monster.greyde.kachalochka.core.data.identity.SessionActivation
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
+import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -464,12 +467,17 @@ class FakeGym(
             NoOpOwnerlessRows(),
             NoWatermarkReset,
             held,
+            NoFriendAnswers,
         )
     val currentUser: CurrentUser = ActiveAccountUser(accountStore)
     val friends =
         FakeFriends {
             accounts.accounts.value.firstOrNull { it.userId == accounts.activeId.value }
         }
+
+    /** [friends] behind the device's kept answers, as Android reads them. */
+    val keptFriends =
+        KeptFriends(friends, InMemoryFriendAnswers(), { accounts.activeId.value }, clock)
     val family =
         FakeFamily {
             accounts.accounts.value.firstOrNull { it.userId == accounts.activeId.value }
@@ -498,6 +506,7 @@ class FakeGym(
         links: MachineLinkRepository,
         machines: MachineRepository = this.machines,
         sets: WorkoutSetRepository = this.sets,
+        friends: FriendsRepository = this.friends,
     ) = MachineCatalogue(
         machines,
         photos,
@@ -514,14 +523,16 @@ class FakeGym(
 
     val catalogue = catalogueOver(machineLinks)
 
-    fun machineReadsOver(catalogue: MachineCatalogue = this.catalogue) =
-        MachineReads(
-            catalogue,
-            accounts,
-            sets,
-            friends,
-            FriendColorStore(profiles, clock, friends),
-        )
+    fun machineReadsOver(
+        catalogue: MachineCatalogue = this.catalogue,
+        friends: FriendsRepository = this.friends,
+    ) = MachineReads(
+        catalogue,
+        accounts,
+        sets,
+        friends,
+        FriendColorStore(profiles, clock, friends),
+    )
 
     val machineReads = machineReadsOver()
     val placement =

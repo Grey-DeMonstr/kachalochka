@@ -3,6 +3,9 @@ package monster.greyde.kachalochka.core.di
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.Dispatchers
 import monster.greyde.kachalochka.core.data.family.SupabaseFamilyRepository
+import monster.greyde.kachalochka.core.data.friends.FriendAnswers
+import monster.greyde.kachalochka.core.data.friends.KeptFriends
+import monster.greyde.kachalochka.core.data.friends.NoFriendAnswers
 import monster.greyde.kachalochka.core.data.friends.SupabaseFriendsRepository
 import monster.greyde.kachalochka.core.data.friends.TraineeFriends
 import monster.greyde.kachalochka.core.data.gym.NoPhotoFiles
@@ -57,11 +60,14 @@ actual fun corePlatformModule(): Module =
             StoragePhotoImages(inject(), NoPhotoFiles, Dispatchers.Default)
         }
         single<MeasurementRepository> { RemoteMeasurementRepository(get()) }
+        single<FriendAnswers> { NoFriendAnswers }
         single<FriendsRepository> {
             val store: AccountStore = get()
-            TraineeFriends(
-                SupabaseFriendsRepository(inject(), Clock.System),
-            ) { store.accounts.value }
+            val server = SupabaseFriendsRepository(inject(), Clock.System)
+            // A keptOnly read must fail at once, never go to the server.
+            TraineeFriends(KeptFriends(server, get(), { store.activeId.value }, Clock.System)) {
+                store.accounts.value
+            }
         }
         single<FamilyRepository> { SupabaseFamilyRepository(inject()) }
         single<AccountStorage> { LocalStorageAccountStorage() }

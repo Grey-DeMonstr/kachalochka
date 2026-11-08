@@ -3,6 +3,7 @@ package monster.greyde.kachalochka.core.data.identity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import monster.greyde.kachalochka.core.data.catching
+import monster.greyde.kachalochka.core.data.friends.FriendAnswers
 import monster.greyde.kachalochka.core.domain.identity.UserId
 
 /**
@@ -16,6 +17,7 @@ class Accounts(
     private val ownerless: OwnerlessRows,
     private val watermarks: WatermarkReset,
     private val held: HeldWrites,
+    private val friendAnswers: FriendAnswers,
 ) {
     private val failure = MutableStateFlow<String?>(null)
 
@@ -60,6 +62,7 @@ class Accounts(
     suspend fun signOut(id: UserId) {
         held.writeAll()
         store.remove(id)
+        friendAnswers.keepOnly(store.accounts.value.map { it.userId })
         val next = store.activeId.value?.let { store.actingSessionOf(it) }
         reporting { if (next == null) sessions.clear() else sessions.activate(next) }
     }

@@ -1,0 +1,20 @@
+-- Friends' answers kept on the device; not synced. See KeptFriends.
+CREATE TABLE friend_answer (
+    account TEXT    NOT NULL,
+    request TEXT    NOT NULL,
+    answer  TEXT    NOT NULL,
+    read_at INTEGER NOT NULL,
+    PRIMARY KEY (account, request)
+);
+
+answer:
+SELECT answer FROM friend_answer WHERE account = ? AND request = ?;
+
+keep:
+INSERT OR REPLACE INTO friend_answer(account, request, answer, read_at) VALUES (?, ?, ?, ?);
+
+forgetReadBefore:
+DELETE FROM friend_answer WHERE read_at < ?;
+
+keepOnly:
+DELETE FROM friend_answer WHERE account NOT IN ?;

@@ -1,6 +1,8 @@
 package monster.greyde.kachalochka.fakes
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.currentCoroutineContext
+import monster.greyde.kachalochka.core.data.friends.KeptOnly
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
@@ -72,11 +74,16 @@ class FakeFriends(
         active()?.let { Friend(it.guardianId ?: it.userId, it.displayName) }
 
     private suspend fun <T> online(read: () -> T): T {
+        keepsNothing()
         reads++
         gate?.await()
         if (offline) error("no connection")
         return read()
     }
+
+    // As the web's KeptFriends does, over answers it never keeps.
+    private suspend fun keepsNothing() =
+        check(currentCoroutineContext()[KeptOnly] == null) { "Nothing kept" }
 
     private fun counted(group: FriendGroup) =
         group.copy(memberCount = members[group.id].orEmpty().size)
@@ -207,6 +214,7 @@ class FakeFriends(
         from: CalendarDay,
         to: CalendarDay,
     ): List<FriendVisit> {
+        keepsNothing()
         visitWindows += from to to
         return online {
             val mates = matesById(viewer).filterKeys(::visibleMember)
@@ -270,6 +278,7 @@ class FakeFriends(
         viewer: UserId,
         machines: Set<MachineId>,
     ): List<FriendResult> {
+        keepsNothing()
         latestOnAsked += machines
         return online {
             val mates = matesById(viewer)

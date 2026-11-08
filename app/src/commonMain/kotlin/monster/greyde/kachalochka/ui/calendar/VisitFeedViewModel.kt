@@ -5,10 +5,13 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
+import monster.greyde.kachalochka.core.data.friends.KeptOnly
+import monster.greyde.kachalochka.core.data.friends.keptOnly
 import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -45,6 +48,8 @@ import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.strings.AppStrings
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 /** How many days the feed reads at a time. */
 private const val WINDOW_DAYS = 21L
@@ -79,7 +84,8 @@ data class FeedDayUi(
 
 /**
  * The own and the friends' visits, newest day first. Own rows are local and shown at once;
- * friends' are read online [WINDOW_DAYS] days at a time, and a failed read leaves them out.
+ * friends' are read [WINDOW_DAYS] days at a time, kept answers first, then online. A failed
+ * online read keeps what the kept answers showed.
  */
 class VisitFeedViewModel(
     private val visits: VisitRepository,
@@ -230,18 +236,24 @@ class VisitFeedViewModel(
             viewModelScope.launch {
                 val reader = currentUser.id()
                 owner = reader
-                from = clock.today().plusDays(1)
-                friendsEnd = if (reader == null) Result.success(null) else null
                 friendVisits = emptyList()
                 friendColors = emptyMap()
-                asked = emptySet()
                 details = emptyMap()
-                theirMachines = emptyMap()
                 mates = emptyList()
                 readOwn(reader)
-                page(reader)
-                if (reader != null && friendsOnline) readPeople(reader)
+                if (reader != null) keptOnly { readFromToday(reader) }
+                readFromToday(reader)
             }
+    }
+
+    /** Pages back from today, keeping what is shown until each read replaces it. */
+    private suspend fun readFromToday(reader: UserId?) {
+        from = clock.today().plusDays(1)
+        friendsEnd = if (reader == null) Result.success(null) else null
+        asked = emptySet()
+        theirMachines = emptyMap()
+        page(reader)
+        if (reader != null && friendsOnline) readPeople(reader)
     }
 
     private suspend fun readOwn(reader: UserId?) {
@@ -317,22 +329,23 @@ class VisitFeedViewModel(
         read.onFailure { friendsEnd = Result.failure(it) }
         val (window, found) = read.getOrNull() ?: return
         if (currentUser.id() != reader) return
-        friendVisits = friendVisits + window
+        friendVisits = friendVisits.filterNot { checkNotNull(it.visit.day) in start..to } + window
         friendColors = friendColors + found
     }
 
     /** Reads each friend's day not read yet, all at once, publishing each as it lands. */
-    private fun readDetails(reader: UserId) {
+    private suspend fun readDetails(reader: UserId) {
+        val kept = currentCoroutineContext()[KeptOnly] ?: EmptyCoroutineContext
         val pending =
             friendVisits
                 .groupBy { it.friend.userId to checkNotNull(it.visit.day) }
                 .filterKeys { it !in asked }
         asked = asked + pending.keys
         pending.forEach { (key, theirs) ->
-            viewModelScope.launch {
+            viewModelScope.launch(kept) {
                 val found =
                     catching {
-                        val machines = machinesOf(key.first).await()
+                        val machines = machinesOf(key.first, kept).await()
                         friends.dayDetails(theirs.map { it.visit }, machines, preferred)
                     }.getOrNull() ?: return@launch
                 if (owner != reader) return@launch
@@ -343,9 +356,12 @@ class VisitFeedViewModel(
     }
 
     /** Each friend's machines are read once, however many of their days the feed shows. */
-    private fun machinesOf(friend: UserId): Deferred<Map<MachineId, Machine>> =
+    private fun machinesOf(
+        friend: UserId,
+        kept: CoroutineContext,
+    ): Deferred<Map<MachineId, Machine>> =
         theirMachines[friend] ?: viewModelScope
-            .async { friends.machines(friend).associateBy { it.id } }
+            .async(kept) { friends.machines(friend).associateBy { it.id } }
             .also { theirMachines = theirMachines + (friend to it) }
 
     private fun publish() {
