@@ -50,7 +50,7 @@ class StatisticsTest {
             )
 
         assertEquals(
-            MachineProgress(sets[1], sets[3], sinceBefore = true),
+            MachineProgress(sets[1], sets[3], sinceBefore = true, fromSets = 1, toSets = 1),
             machineProgress(sets, WeightMode.Total, start),
         )
     }
@@ -66,7 +66,7 @@ class StatisticsTest {
             )
 
         assertEquals(
-            MachineProgress(sets[1], sets[2], sinceBefore = false),
+            MachineProgress(sets[1], sets[2], sinceBefore = false, fromSets = 1, toSets = 1),
             machineProgress(sets, WeightMode.Total, T0),
         )
     }
@@ -86,40 +86,52 @@ class StatisticsTest {
     }
 
     @Test
-    fun growth_is_the_weight_gain_in_percent_of_the_starting_weight() {
-        fun progress(
-            from: Double,
-            to: Double,
-        ) = MachineProgress(set(VISIT_A, from, 10, 0), set(VISIT_B, to, 10, 1), true)
+    fun progress_counts_the_sets_equal_to_its_ends_in_their_visits() {
+        val sets =
+            listOf(
+                set(VISIT_A, 60.0, 10, 0),
+                set(VISIT_A, 60.0, 10, 1),
+                set(VISIT_B, 70.0, 6, 10 * day + 1),
+                set(VISIT_B, 70.0, 6, 10 * day + 2),
+                set(VISIT_B, 70.0, 6, 10 * day + 3),
+                set(VISIT_C, 70.0, 6, 11 * day, deleted = true),
+            )
 
-        assertEquals(25.0, growth(progress(40.0, 50.0), WeightMode.Total))
-        assertEquals(10.0, growth(progress(30.0, 27.0), WeightMode.Counterweight))
-        assertEquals(-10.0, growth(progress(50.0, 45.0), WeightMode.Total))
-        assertEquals(Double.POSITIVE_INFINITY, growth(progress(0.0, 5.0), WeightMode.Total))
-        assertEquals(0.0, growth(progress(0.0, 0.0), WeightMode.Total))
+        val progress = machineProgress(sets, WeightMode.Total, T0 + (10 * day).seconds)
+
+        assertEquals(2, progress?.fromSets)
+        assertEquals(3, progress?.toSets)
     }
 
     @Test
-    fun growth_orders_by_percent_then_by_reps_gained_then_by_recency_leaving_the_unused_last() {
+    fun growth_orders_as_a_visit_card_weighs_a_gain_then_by_recency_leaving_the_unused_last() {
         val abs = machine(MachineId("0f000000-0000-4000-8000-00000000000f"), "Аб")
         val press = machine(PRESS, "Жим ногами")
         val row = machine(ROW, "Тяга")
         val bench = machine(MachineId("0c100000-0000-4000-8000-00000000000c"), "Жим лёжа")
+        val curl = machine(MachineId("0c200000-0000-4000-8000-00000000000c"), "Бицепс")
+        val fly = machine(MachineId("0c300000-0000-4000-8000-00000000000c"), "Бабочка")
 
         fun progress(
             on: MachineId,
             from: Pair<Double, Int>,
             to: Pair<Double, Int>,
+            sets: Pair<Int, Int> = 1 to 1,
         ) = on to
             MachineProgress(
                 set(VISIT_A, from.first, from.second, 0, machine = on),
                 set(VISIT_B, to.first, to.second, 1, machine = on),
                 sinceBefore = true,
+                fromSets = sets.first,
+                toSets = sets.second,
             )
         val progress =
             mapOf(
+                // The biggest gain in kilograms, though the smallest in percent.
                 progress(PRESS, 100.0 to 10, 110.0 to 8),
+                progress(curl.id, 10.0 to 10, 15.0 to 10),
                 progress(ROW, 40.0 to 10, 40.0 to 12),
+                progress(fly.id, 40.0 to 10, 40.0 to 10, sets = 2 to 3),
                 progress(bench.id, 40.0 to 10, 40.0 to 10),
             )
         val peaks =
@@ -127,13 +139,9 @@ class StatisticsTest {
                 .associateBy { it.machineId }
 
         assertEquals(
-            listOf(press, row, bench, abs),
-            listOf(
-                abs,
-                bench,
-                row,
-                press,
-            ).sortedWith(statsOrder(StatsSort.Growth, peaks, progress)),
+            listOf(press, curl, row, fly, bench, abs),
+            listOf(abs, bench, fly, row, curl, press)
+                .sortedWith(statsOrder(StatsSort.Growth, peaks, progress)),
         )
         assertEquals(
             listOf(abs, bench, press, row),

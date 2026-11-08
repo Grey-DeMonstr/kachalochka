@@ -671,8 +671,9 @@ whatever the period. Tapping a visit opens it on the visit screen with the machi
 its sets can be edited.
 
 "Общая" starts with sort chips drawn like the tags: "Недавние" (the default), "А–Я" and
-"Частые", as in the machine list, and "Рост", the biggest weight gain in percent of the starting
-weight first, then the most reps gained. The sort is not remembered. When a machine has tags,
+"Частые", as in the machine list, and "Рост", the biggest gain first, as a visit card weighs it:
+the most weight gained, then the most reps, then the most sets of the best result in its visit.
+The sort is not remembered. When a machine has tags,
 "Группировать по тегам" follows, the same choice as the visit list's: it splits the cards into
 sections headed by their tags, as the visit does. The sort and the grouping order the search
 list's machines too. "Только улучшения", on each time the screen opens, keeps only the cards with

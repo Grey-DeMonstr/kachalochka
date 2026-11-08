@@ -1072,7 +1072,8 @@ leaves the arithmetic to `domain/gym/Statistics.kt`: `StatsPeriod.start` gives a
 day, `machineProgress` the two sets a card compares, `bestPerDay` the chart's points and
 `weightGain` which way a weight counts. `bestSet` and `worstSet` order sets by `setStrength`,
 which the suggested first set shares (§2). `statsOrder` sorts the machines by a `StatsSort`: the
-machine sorts over `machinePeaks` of the sets read, or by `growth`, the percent gained. Tag
+machine sorts over `machinePeaks` of the sets read, or by the gain as a visit card weighs it:
+`weightGain`, then the reps, then the sets equal to each end in its visit. Tag
 grouping is `profile.group_by_tag`, shared with the visit; both choices that are saved go through
 `ProfileChoice`, which writes one profile change at a time. "Только улучшения" lives in the view
 model only. A machine without a set before the period always reads as improved, because its change

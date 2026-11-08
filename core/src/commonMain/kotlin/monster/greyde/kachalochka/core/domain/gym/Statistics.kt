@@ -18,12 +18,15 @@ enum class StatsPeriod(
 
 /**
  * A machine's progress over a period: from the best set before it, when there is one, else from
- * the period's worst set, to the period's best.
+ * the period's worst set, to the period's best. [fromSets] and [toSets] count the sets equal to
+ * each end in its visit, as a visit card counts a day's best.
  */
 data class MachineProgress(
     val from: WorkoutSet,
     val to: WorkoutSet,
     val sinceBefore: Boolean,
+    val fromSets: Int,
+    val toSets: Int,
 )
 
 /** Null when no live set falls on or after [start]. */
@@ -32,14 +35,20 @@ fun machineProgress(
     mode: WeightMode,
     start: Instant,
 ): MachineProgress? {
-    val (inPeriod, before) = sets.filterNot { it.deleted }.partition { it.recordedAt >= start }
+    val live = sets.filterNot { it.deleted }
+    val (inPeriod, before) = live.partition { it.recordedAt >= start }
     val best = bestSet(inPeriod, mode) ?: return null
-    val earlier = bestSet(before, mode)
-    return if (earlier != null) {
-        MachineProgress(earlier, best, sinceBefore = true)
-    } else {
-        MachineProgress(checkNotNull(worstSet(inPeriod, mode)), best, sinceBefore = false)
-    }
+    val from = bestSet(before, mode) ?: checkNotNull(worstSet(inPeriod, mode))
+
+    fun equalInVisit(set: WorkoutSet) =
+        live.count { it.visitId == set.visitId && it.weight == set.weight && it.reps == set.reps }
+    return MachineProgress(
+        from,
+        best,
+        sinceBefore = before.isNotEmpty(),
+        fromSets = equalInVisit(from),
+        toSets = equalInVisit(best),
+    )
 }
 
 /** How much stronger [to] is than [from]; on a gravitron, less weight is the gain. */
@@ -59,24 +68,9 @@ enum class StatsSort(
     Growth(null),
 }
 
-/** The weight gained in percent of the starting weight; any gain from nothing is infinite. */
-fun growth(
-    progress: MachineProgress,
-    mode: WeightMode,
-): Double {
-    val gain = weightGain(progress.from.weight, progress.to.weight, mode)
-    return when {
-        progress.from.weight != 0.0 -> gain / progress.from.weight * PERCENT
-        gain > 0 -> Double.POSITIVE_INFINITY
-        else -> 0.0
-    }
-}
-
-private const val PERCENT = 100.0
-
 /**
- * [StatsSort.Growth] ranks by [growth], then by reps gained, then as [MachineSort.Recent];
- * machines without progress in the period come last.
+ * [StatsSort.Growth] ranks as a visit card weighs a gain: by the weight gained, then the reps,
+ * then the sets, then as [MachineSort.Recent]; machines without progress in the period come last.
  */
 fun statsOrder(
     sort: StatsSort,
@@ -84,8 +78,10 @@ fun statsOrder(
     progress: Map<MachineId, MachineProgress>,
 ): Comparator<Machine> {
     sort.machineSort?.let { return machineOrder(it, peaks) }
-    return compareByDescending<Machine> { m -> progress[m.id]?.let { growth(it, m.weightMode) } }
-        .thenByDescending { m -> progress[m.id]?.let { it.to.reps - it.from.reps } }
+    return compareByDescending<Machine> { m ->
+        progress[m.id]?.let { weightGain(it.from.weight, it.to.weight, m.weightMode) }
+    }.thenByDescending { m -> progress[m.id]?.let { it.to.reps - it.from.reps } }
+        .thenByDescending { m -> progress[m.id]?.let { it.toSets - it.fromSets } }
         .then(machineOrder(MachineSort.Recent, peaks))
 }
 

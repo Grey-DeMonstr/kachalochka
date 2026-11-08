@@ -380,7 +380,7 @@ class StatisticsViewModelTest {
     }
 
     @Test
-    fun growth_puts_the_biggest_weight_gain_in_percent_first() =
+    fun growth_puts_the_biggest_weight_gain_first() =
         runTest {
             record(gravitron, CalendarDay(2023, 10, 1), 40.0 to 8)
             record(gravitron, CalendarDay(2023, 11, 2), 30.0 to 8)
