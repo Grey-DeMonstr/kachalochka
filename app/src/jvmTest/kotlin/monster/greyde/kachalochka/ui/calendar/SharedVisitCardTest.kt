@@ -7,22 +7,31 @@ import androidx.compose.ui.test.onNodeWithTag
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.identity.Avatar
+import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
+import monster.greyde.kachalochka.ui.format.SharedVisit
 import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
 class SharedVisitCardTest {
     private val visit = VisitId.random()
+    private val day = CalendarDay(2026, 10, 29)
     private val card =
         VisitCardUi(
             tag = "card",
             person = PersonUi(null, "ГДМ", Avatar()),
             color = null,
-            day = CalendarDay(2026, 10, 29),
+            day = day,
             tags = listOf("НОГИ"),
             exercises = (1..5).map { ExerciseUi("Упражнение $it", "18 кг × 15", null) },
-            own = OwnVisitUi(visit, canRepeatToday = true, date = "четверг, 29 октября"),
+            own =
+                OwnVisitUi(
+                    visit,
+                    canRepeatToday = true,
+                    date = "четверг, 29 октября",
+                    shared = SharedVisit("ГДМ", day, emptyList(), PreferredWeightUnit.Kg),
+                ),
         )
 
     @Test

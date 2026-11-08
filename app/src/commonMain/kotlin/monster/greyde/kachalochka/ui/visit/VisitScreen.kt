@@ -41,6 +41,9 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
+import monster.greyde.kachalochka.ui.calendar.VisitShareDialog
+import monster.greyde.kachalochka.ui.calendar.VisitShareNotice
+import monster.greyde.kachalochka.ui.calendar.VisitShareViewModel
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.DragHandle
 import monster.greyde.kachalochka.ui.components.OutlineButton
@@ -84,6 +87,7 @@ fun VisitScreen(
     val viewModel: VisitViewModel = koinViewModel { parametersOf(day) }
     val accountsViewModel: AccountsViewModel = koinViewModel()
     val placement: VisitPlacementViewModel = koinViewModel()
+    val share: VisitShareViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.refresh() }
     LaunchedEffect(pickedMachineId) {
@@ -135,11 +139,11 @@ fun VisitScreen(
                     Modifier.testTag("reorder-toggle"),
                 )
             }
-            if (current?.canShare == true) {
+            current?.card?.let { card ->
                 SquareIconButton(
                     PhosphorIcons.ShareNetwork,
                     strings().share,
-                    viewModel::share,
+                    { share.offer(card) },
                     Modifier.testTag("share-visit"),
                 )
             }
@@ -158,9 +162,9 @@ fun VisitScreen(
     ) {
         if (current == null) return@Screen
         VisitPlacementNotice(placement, day, Modifier.padding(horizontal = 16.dp))
+        VisitShareNotice(share, day, Modifier.padding(horizontal = 16.dp))
         VisitList(
             state = current,
-            onDismissNotice = viewModel::dismissNotice,
             onOpen = viewModel::openMachine,
             onOpenSettings =
                 { id: MachineId -> viewModel.openMachineSettings(id, onOpenMachineSettings) }
@@ -174,12 +178,12 @@ fun VisitScreen(
         )
     }
     VisitPlanChooser(placement) { onSaveAsPlan() }
+    VisitShareDialog(share)
 }
 
 @Composable
 private fun VisitList(
     state: VisitUiState,
-    onDismissNotice: () -> Unit,
     onOpen: (MachineId) -> Unit,
     onOpenSettings: ((MachineId) -> Unit)?,
     onToggleOrdering: () -> Unit,
@@ -218,19 +222,6 @@ private fun VisitList(
                     color = colors.onBackground.copy(alpha = 0.7f),
                 )
             }
-        }
-        state.notice?.let {
-            Text(
-                it,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onDismissNotice)
-                        .padding(vertical = 8.dp)
-                        .testTag("visit-notice"),
-                fontSize = 15.sp,
-                color = colors.onBackground.copy(alpha = 0.6f),
-            )
         }
         val machineOrder = rememberReorderState()
         SideEffect { machineOrder.retain(state.groups.size) }

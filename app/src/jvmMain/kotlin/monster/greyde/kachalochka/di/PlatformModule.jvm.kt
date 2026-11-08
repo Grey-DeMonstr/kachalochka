@@ -24,7 +24,9 @@ import monster.greyde.kachalochka.ui.friends.UnavailableInviteSharing
 import monster.greyde.kachalochka.ui.photos.NoPhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.share.CardSharing
+import monster.greyde.kachalochka.ui.share.InMemoryShareGroupingPreference
 import monster.greyde.kachalochka.ui.share.PhotoSharing
+import monster.greyde.kachalochka.ui.share.ShareGroupingPreference
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.share.UnavailableCardSharing
@@ -54,6 +56,7 @@ actual fun platformModule(): Module =
         single<TransitionPreference> { InMemoryTransitionPreference() }
         single<VisitsModePreference> { InMemoryVisitsModePreference() }
         single<FeedPeoplePreference> { InMemoryFeedPeoplePreference() }
+        single<ShareGroupingPreference> { InMemoryShareGroupingPreference() }
         single<LanguagePreference> { InMemoryLanguagePreference() }
         single<RestSoundPreference> { InMemoryRestSoundPreference() }
         single<RestAlarm> { NoRestAlarm }

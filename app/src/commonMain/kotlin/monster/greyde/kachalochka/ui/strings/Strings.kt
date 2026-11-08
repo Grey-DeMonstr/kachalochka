@@ -86,6 +86,8 @@ interface Strings {
 
     val share: String
     val groupByTag: String
+    val asText: String
+    val asImage: String
     val untaggedSection: String
     val planned: String
     val unplan: String

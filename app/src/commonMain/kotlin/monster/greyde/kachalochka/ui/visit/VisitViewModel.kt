@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.gym.PriorBestsKeeper
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
@@ -48,8 +47,10 @@ import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.accountsUi
 import monster.greyde.kachalochka.ui.account.groupByTagChoice
 import monster.greyde.kachalochka.ui.account.traineeActive
+import monster.greyde.kachalochka.ui.calendar.VisitCardUi
+import monster.greyde.kachalochka.ui.calendar.ownCard
+import monster.greyde.kachalochka.ui.calendar.ownPerson
 import monster.greyde.kachalochka.ui.format.DeviceClock
-import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.headedTagSections
@@ -62,14 +63,12 @@ import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.setsSummary
 import monster.greyde.kachalochka.ui.format.setsSummaryParts
 import monster.greyde.kachalochka.ui.format.unitLabel
-import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.OwnMachines
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.plans.Placement
-import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import kotlin.time.Duration
@@ -82,8 +81,8 @@ data class VisitUiState(
     /** The machine being looked at, over the list; null shows the list. */
     val page: MachinePageUi?,
     val ordering: Boolean,
-    val canShare: Boolean,
-    val notice: String?,
+    /** The visit as its calendar card, which the share popup offers; null without sets. */
+    val card: VisitCardUi?,
     /** [groups] as shown: split by tag set when grouped, else one untitled section. */
     val sections: List<VisitSectionUi> = listOf(VisitSectionUi(null, groups)),
     val groupByTag: Boolean = false,
@@ -183,7 +182,6 @@ class VisitViewModel(
     private val clock: DeviceClock,
     private val sync: SyncTrigger,
     private val friends: FriendsRepository,
-    private val sharing: TextSharing,
     private val nickname: Nickname,
     private val catalogue: MachineCatalogue,
     private val reads: MachineReads,
@@ -212,17 +210,11 @@ class VisitViewModel(
     private var saving = false
     private val groupReads = GroupReads(friends, reads, viewModelScope, ::publish)
     private var own: OwnMachines? = null
-    private var notice: String? = null
     private var preferred = PreferredWeightUnit.Kg
     private val grouping =
         groupByTagChoice(profiles, currentUser, clock, sync, unsaved, viewModelScope)
     private val groupByTag: Boolean get() = grouping.current
-
-    /**
-     * Read ahead of the tap: a browser lets the clipboard be written only while a tap is recent,
-     * which a network read of the profile could outlast.
-     */
-    private var sharer: Pair<UserId?, String>? = null
+    private var sharer = ""
 
     private val isToday: Boolean get() = day == clock.today()
 
@@ -230,8 +222,6 @@ class VisitViewModel(
     init {
         viewModelScope.launch {
             accounts.activeId.collect {
-                notice = null
-                loadSharer(it)
                 reload(reseed = true)
             }
         }
@@ -262,34 +252,7 @@ class VisitViewModel(
     }
 
     private fun reloadShown() {
-        loadSharer(accounts.activeId.value)
         viewModelScope.launch { reload(reseed = false) }
-    }
-
-    fun share() {
-        if (visitSets.isEmpty()) return
-        val owner = accounts.activeId.value
-        val name = sharer?.takeIf { it.first == owner }?.second.orEmpty()
-        val shared =
-            groupByMachine(visitSets).mapNotNull { group ->
-                machinesById[group.machineId]?.let { SharedMachine(it, group.sets) }
-            }
-        val text = visitShareText(name, day, shared, preferred, groupByTag)
-        writes.launch {
-            notice = catching { sharing.share(text) }.getOrNull()
-            publish()
-        }
-    }
-
-    fun dismissNotice() {
-        notice = null
-        publish()
-    }
-
-    private fun loadSharer(owner: UserId?) {
-        viewModelScope.launch {
-            catching { nickname.of(owner) }.onSuccess { sharer = owner to it }
-        }
     }
 
     /**
@@ -533,6 +496,7 @@ class VisitViewModel(
         val owner = currentUser.id()
         val shown = visits.shownOn(owner, day, sets, clock::offsetAt)
         preferred = profiles.forOwner(owner)?.weightUnit ?: PreferredWeightUnit.Kg
+        sharer = nickname.of(owner)
         grouping.read(owner)
         val ownRead = catalogue.own(owner)
         own = ownRead
@@ -612,13 +576,29 @@ class VisitViewModel(
                 canGroupByTag = groups.any { it.tags.isNotEmpty() },
                 page = pageUi(offset, sections.flatMap { it.groups }),
                 ordering = ordering,
-                canShare = visitSets.isNotEmpty(),
+                card = card(now, offset),
                 canOrder = visitSets.isNotEmpty() && !readOnly,
                 canRepeatToday = groups.isNotEmpty() && !isToday && !readOnly,
                 isToday = isToday,
-                notice = notice,
                 readOnly = readOnly,
             )
+    }
+
+    private fun card(
+        now: Instant,
+        offset: Duration,
+    ): VisitCardUi? {
+        val visit = shownVisit?.takeIf { visitSets.isNotEmpty() } ?: return null
+        return ownCard(
+            visit,
+            visitSets,
+            day,
+            CalendarDay.of(now, offset),
+            ownPerson(accounts, avatars, accounts.activeId.value),
+            sharer,
+            machinesById,
+            preferred,
+        )
     }
 
     private fun setRows(

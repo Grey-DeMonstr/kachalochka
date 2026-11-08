@@ -2,9 +2,11 @@ package monster.greyde.kachalochka.ui.format
 
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.tagSections
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -14,6 +16,29 @@ data class SharedMachine(
     val machine: Machine,
     val sets: List<WorkoutSet>,
 )
+
+/**
+ * What a visit's shared text is made of. It is read ahead of the tap: a browser lets the
+ * clipboard be written only while a tap is recent, which a network read could outlast.
+ */
+data class SharedVisit(
+    val nickname: String,
+    val day: CalendarDay,
+    val machines: List<SharedMachine>,
+    val preferred: PreferredWeightUnit,
+) {
+    fun text(groupByTag: Boolean): String =
+        visitShareText(nickname, day, machines, preferred, groupByTag)
+}
+
+/** [visitSets] grouped by machine in visit order, on the machines of [machines]. */
+fun sharedMachines(
+    visitSets: List<WorkoutSet>,
+    machines: Map<MachineId, Machine>,
+): List<SharedMachine> =
+    groupByMachine(visitSets).mapNotNull { group ->
+        machines[group.machineId]?.let { SharedMachine(it, group.sets) }
+    }
 
 /** [machines] in visit order, each with its sets in visit order. */
 fun visitShareText(

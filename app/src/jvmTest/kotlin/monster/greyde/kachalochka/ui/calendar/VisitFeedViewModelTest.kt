@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.AccountAvatars
+import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
@@ -108,6 +109,7 @@ class VisitFeedViewModelTest {
             FriendColorStore(gym.profiles, gym.clock, gym.friends),
             AccountAvatars(gym.accounts, gym.profiles),
             gym.profiles,
+            Nickname(gym.profiles, gym.accounts),
             people,
             gym.priorBests,
         )

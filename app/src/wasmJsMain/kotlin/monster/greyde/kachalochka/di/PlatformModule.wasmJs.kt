@@ -31,7 +31,9 @@ import monster.greyde.kachalochka.ui.share.BrowserPhotoSharing
 import monster.greyde.kachalochka.ui.share.BrowserTextCopying
 import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.ClipboardTextSharing
+import monster.greyde.kachalochka.ui.share.LocalStorageShareGroupingPreference
 import monster.greyde.kachalochka.ui.share.PhotoSharing
+import monster.greyde.kachalochka.ui.share.ShareGroupingPreference
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.share.UnavailableCardSharing
@@ -57,6 +59,7 @@ actual fun platformModule(): Module =
         single<TransitionPreference> { LocalStorageTransitionPreference() }
         single<VisitsModePreference> { LocalStorageVisitsModePreference() }
         single<FeedPeoplePreference> { LocalStorageFeedPeoplePreference() }
+        single<ShareGroupingPreference> { LocalStorageShareGroupingPreference() }
         single<LanguagePreference> { LocalStorageLanguagePreference() }
         single<RestSoundPreference> { LocalStorageRestSoundPreference() }
         single<RestAlarm> { WebAudioRestAlarm(get()) }

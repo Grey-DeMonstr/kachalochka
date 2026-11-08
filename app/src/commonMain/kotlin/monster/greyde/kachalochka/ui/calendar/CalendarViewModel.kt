@@ -39,7 +39,7 @@ import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountAvatars
-import monster.greyde.kachalochka.ui.account.accountAvatar
+import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.format.DeviceClock
@@ -109,6 +109,7 @@ class CalendarViewModel(
     private val colors: FriendColorStore,
     private val avatars: AccountAvatars,
     private val profiles: ProfileRepository,
+    private val nickname: Nickname,
     private val priorBests: PriorBestsKeeper,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<CalendarUiState?>(null)
@@ -120,6 +121,7 @@ class CalendarViewModel(
     private val visitDays: Set<CalendarDay> get() = all.mapNotNull { it.day }.toSet()
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
+    private var sharer = ""
     private var stale = true
     private var dayCard: VisitCardUi? = null
     private var month: CalendarMonth = CalendarMonth.of(clock.today())
@@ -331,6 +333,7 @@ class CalendarViewModel(
             all = visits.all(owner).map { it.copy(day = it.dayAt(clock::offsetAt)) }
             machinesById = machines.all(owner).associateBy { it.id }
             preferred = profiles.preferredUnit(owner)
+            sharer = nickname.of(owner)
             shownFor = owner
             stale = false
             loadFriends()
@@ -346,6 +349,7 @@ class CalendarViewModel(
                     day,
                     today,
                     ownPerson(),
+                    sharer,
                     machinesById,
                     preferred,
                 )
@@ -456,14 +460,9 @@ class CalendarViewModel(
             )
     }
 
-    private fun ownPerson(): PersonUi = me() ?: PersonUi(null, AppStrings.current.me, Avatar())
+    private fun ownPerson(): PersonUi = ownPerson(accounts, avatars, shownFor)
 
-    private fun me(): PersonUi? {
-        val account =
-            accounts.accounts.value.firstOrNull { it.userId == shownFor } ?: return null
-        val avatar = accountAvatar(account, avatars.photos.value)
-        return PersonUi(account.userId, account.shownName, avatar)
-    }
+    private fun me(): PersonUi? = accountPerson(accounts, avatars, shownFor)
 
     private fun replacementUi(
         occupant: Visit,

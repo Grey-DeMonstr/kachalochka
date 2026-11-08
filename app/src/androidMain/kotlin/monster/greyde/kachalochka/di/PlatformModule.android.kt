@@ -36,7 +36,9 @@ import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.SystemPhotoCapture
 import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.ClipboardTextCopying
+import monster.greyde.kachalochka.ui.share.DataStoreShareGroupingPreference
 import monster.greyde.kachalochka.ui.share.PhotoSharing
+import monster.greyde.kachalochka.ui.share.ShareGroupingPreference
 import monster.greyde.kachalochka.ui.share.ShareSheetCardSharing
 import monster.greyde.kachalochka.ui.share.ShareSheetPhotoSharing
 import monster.greyde.kachalochka.ui.share.ShareSheetTextSharing
@@ -97,6 +99,12 @@ actual fun platformModule(): Module =
         }
         single<FeedPeoplePreference> {
             DataStoreFeedPeoplePreference(
+                get(),
+                CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            )
+        }
+        single<ShareGroupingPreference> {
+            DataStoreShareGroupingPreference(
                 get(),
                 CoroutineScope(SupervisorJob() + Dispatchers.Default),
             )

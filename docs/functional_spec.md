@@ -127,9 +127,13 @@ the list is, planned machines included. The other machine's page opens without t
 on its row opens it. The swipe stops at the first and at the last machine. It does nothing while
 the form is open or the sets show drag handles, or on a machine that is not in the visit's list.
 
-A visit with sets has a "Поделиться" button in the top bar that hands the visit over as text:
-Android opens its share sheet, the web copies the text and says "Скопировано" (or "Не удалось
-скопировать"). The notice stays until it is tapped or another account becomes active.
+A visit with sets has a "Поделиться" button in the top bar. It opens a popup with "Текстом" and,
+on Android, "Картинкой", which shares the picture of the visit's calendar card. "Текстом" hands
+the visit over as text: Android opens its share sheet, the web copies the text and says
+"Скопировано" (or "Не удалось скопировать"). The notice stays until it is tapped or another
+account becomes active. When a machine of the visit has tags, "Группировать по тегам" is under
+"Текстом": ticked, the text splits the machines into sections as the list does. It is off at first
+and is remembered on the device, apart from the list's choice.
 
 The text starts with the nickname and the short weekday ("ГДМ, чт", or only "чт" without a
 nickname), then an empty line, then one line per machine in visit order: the name, the platform
@@ -145,9 +149,9 @@ its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zer
 ("Гребная тяга (+11.3кг) 15кг на каждую, 3x12"). A gravitron's weights are written after "(-)",
 since a smaller one is progress ("Подтягивания в гравитроне (-)27-25-22.5кг 10-8-6"). The machine
 rows of the visit screen and of a friend's visit, and the previous visit's and friends' results on
-the machine's page, write a machine's weights and reps exactly the same way. When the visit is
-grouped by tags, the machine lines form the same sections, separated by an empty line, each tagged
-one starting with a line of its tags in capitals ("НОГИ").
+the machine's page, write a machine's weights and reps exactly the same way. With "Группировать по
+тегам" ticked in the popup, the machine lines form the list's sections, separated by an empty line,
+each tagged one starting with a line of its tags in capitals ("НОГИ").
 
 Adding or editing a set uses the same form, which slides up over the page. Adding shows the
 signed-in accounts as a row of avatar chips, which scrolls sideways when they do not fit. Only the
@@ -356,10 +360,11 @@ replacing removes it with its sets. Its "В план…" does what the visit's o
 its notice shows under the card. Its "Повторить сегодня", not shown for today's visit, adds the
 visit's machines to today's visit as planned ones, as starting a plan does, and opens today's
 visit; back returns to the calendar. Its "Удалить" asks "Удалить визит?" under the visit's date,
-then removes the visit and its sets from the history and the statistics. On Android its
-"Поделиться" opens the share sheet with a picture of the card in the current theme: every machine,
-the date ("четверг, 29 октября", with the year for an earlier year) in place of the menu, and
-without "Ещё" or "Свернуть". The picture has the same size on every phone.
+then removes the visit and its sets from the history and the statistics. Its "Поделиться" opens
+the same popup as the visit's own button, and the text notice shows under the card. "Картинкой"
+opens the share sheet with a picture of the card in the current theme: every machine, the date
+("четверг, 29 октября", with the year for an earlier year) in place of the menu, and without "Ещё"
+or "Свернуть". The picture has the same size on every phone.
 
 With a signed-in account and a network, the calendar also shows the visits of everyone sharing a
 group with it: each friend who trained on a day adds a dot in that friend's colour after the
@@ -668,7 +673,7 @@ its sets can be edited.
 "Общая" starts with sort chips drawn like the tags: "Недавние" (the default), "А–Я" and
 "Частые", as in the machine list, and "Рост", the biggest weight gain in percent of the starting
 weight first, then the most reps gained. The sort is not remembered. When a machine has tags,
-"Группировать по тегам" follows, the same choice as the visit screen's: it splits the cards into
+"Группировать по тегам" follows, the same choice as the visit list's: it splits the cards into
 sections headed by their tags, as the visit does. The sort and the grouping order the search
 list's machines too. "Только улучшения", on each time the screen opens, keeps only the cards with
 a green chip; with none left, the list says "Нет улучшений за период".

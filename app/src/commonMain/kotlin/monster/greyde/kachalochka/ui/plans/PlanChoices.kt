@@ -69,12 +69,13 @@ private fun PlanRow(
     )
 }
 
-/** What the last placement said; a tap hides it. */
+/** What the last placement or share said; a tap hides it. */
 @Composable
 internal fun PlacementNoticeText(
     text: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    tag: String = "placement-notice",
 ) {
     Text(
         text,
@@ -83,7 +84,7 @@ internal fun PlacementNoticeText(
                 .fillMaxWidth()
                 .clickable(onClick = onDismiss)
                 .padding(vertical = 8.dp)
-                .testTag("placement-notice"),
+                .testTag(tag),
         fontSize = 15.sp,
         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
     )

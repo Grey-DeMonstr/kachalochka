@@ -163,6 +163,8 @@ class CalendarScreenTest {
             onNodeWithTag("share-visit-${sunday.id.value}")
                 .assertTextEquals("Поделиться")
                 .performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-image").performClick()
             waitUntil { gym.cardShares.shared.isNotEmpty() }
         }
         assertEquals(
@@ -174,14 +176,46 @@ class CalendarScreenTest {
     }
 
     @Test
-    fun the_visit_menu_has_no_share_where_a_card_cannot_be_shared() {
+    fun the_visit_menu_shares_the_visit_as_text_and_says_so_under_the_card() {
+        runScreenTest(gym, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("share-visit-${sunday.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-text").performClick()
+            waitForIdle()
+            onNodeWithTag("share-notice").assertTextEquals("Скопировано")
+        }
+        assertEquals(listOf("вс\n\nЖим ногами 70кг 1x10"), gym.texts.shared)
+    }
+
+    @Test
+    fun the_feed_card_s_menu_shares_the_visit_as_text() {
+        runBlocking { gym.visitsModes.set(VisitsMode.Feed) }
+        runScreenTest(gym, screen = { calendar() }) {
+            waitForIdle()
+            onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
+            onNodeWithTag("share-visit-${sunday.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-text").performClick()
+            waitForIdle()
+            onNodeWithTag("share-notice").assertTextEquals("Скопировано")
+        }
+        assertEquals(listOf("вс\n\nЖим ногами 70кг 1x10"), gym.texts.shared)
+    }
+
+    @Test
+    fun the_share_popup_has_only_text_where_a_card_cannot_be_shared() {
         gym.cardShares.available = false
         runScreenTest(gym, screen = { calendar() }) {
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
             onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
-            onNodeWithTag("save-as-plan-${sunday.id.value}").assertExists()
-            onNodeWithTag("share-visit-${sunday.id.value}").assertDoesNotExist()
+            onNodeWithTag("share-visit-${sunday.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-text").assertExists()
+            onNodeWithTag("share-as-image").assertDoesNotExist()
         }
     }
 

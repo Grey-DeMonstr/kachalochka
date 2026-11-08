@@ -316,18 +316,80 @@ class VisitScreenTest {
         }
 
     @Test
-    fun sharing_the_visit_hands_its_text_over_and_shows_the_notice_until_tapped() {
+    fun sharing_the_visit_as_text_hands_it_over_and_shows_the_notice_until_tapped() {
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
             onNodeWithTag("share-visit").performClick()
             waitForIdle()
-
-            assertEquals(1, gym.texts.shared.size)
-            onNodeWithTag("visit-notice").assertTextEquals("Скопировано")
-
-            onNodeWithTag("visit-notice").performClick()
+            onNodeWithTag("share-as-text").assertTextEquals("Текстом").performClick()
             waitForIdle()
-            onNodeWithTag("visit-notice").assertDoesNotExist()
+
+            assertEquals(listOf("вт\n\nЖим ногами 70кг 1x10"), gym.texts.shared)
+            onNodeWithTag("share-as-text").assertDoesNotExist()
+            onNodeWithTag("share-notice").assertTextEquals("Скопировано")
+
+            onNodeWithTag("share-notice").performClick()
+            waitForIdle()
+            onNodeWithTag("share-notice").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun sharing_the_visit_as_text_groups_it_by_tag_when_the_box_is_ticked() {
+        runBlocking { gym.machines.upsert(press.copy(tags = setOf("Ноги"))) }
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("share-visit").performClick()
+            waitForIdle()
+            onNodeWithTag("share-group-by-tag").assertIsOff().performClick()
+            waitForIdle()
+            onNodeWithTag("share-group-by-tag").assertIsOn()
+            onNodeWithTag("share-as-text").performClick()
+            waitForIdle()
+        }
+        assertEquals(listOf("вт\n\nНОГИ\nЖим ногами 70кг 1x10"), gym.texts.shared)
+        assertTrue(gym.shareGrouping.groupByTag.value)
+    }
+
+    @Test
+    fun the_share_popup_of_a_visit_without_tags_offers_no_grouping() {
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("share-visit").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-text").assertExists()
+            onNodeWithTag("share-group-by-tag").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun sharing_the_visit_as_an_image_shares_the_picture_of_its_card() {
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("share-visit").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-image").assertTextEquals("Картинкой").performClick()
+            waitUntil { gym.cardShares.shared.isNotEmpty() }
+            onNodeWithTag("share-as-image").assertDoesNotExist()
+        }
+        assertEquals(
+            1080,
+            gym.cardShares.shared
+                .single()
+                .width,
+        )
+        assertTrue(gym.texts.shared.isEmpty())
+    }
+
+    @Test
+    fun the_share_popup_has_no_image_where_a_card_cannot_be_shared() {
+        gym.cardShares.available = false
+        runScreenTest(gym, screen = { visitScreen() }) {
+            waitForIdle()
+            onNodeWithTag("share-visit").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-text").assertExists()
+            onNodeWithTag("share-as-image").assertDoesNotExist()
         }
     }
 

@@ -120,6 +120,8 @@ object RuStrings : Strings {
 
     override val share = "Поделиться"
     override val groupByTag = "Группировать по тегам"
+    override val asText = "Текстом"
+    override val asImage = "Картинкой"
     override val untaggedSection = "Остальное"
     override val planned = "Запланировано"
     override val unplan = "Убрать"

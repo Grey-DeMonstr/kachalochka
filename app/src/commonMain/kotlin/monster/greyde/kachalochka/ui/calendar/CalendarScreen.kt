@@ -68,6 +68,7 @@ fun CalendarScreen(
 ) {
     val viewModel: CalendarViewModel = koinViewModel()
     val placement: VisitPlacementViewModel = koinViewModel()
+    val share: VisitShareViewModel = koinViewModel()
     val modes: VisitsModePreference = koinInject()
     val mode by modes.mode.collectAsState()
     val scope = rememberCoroutineScope()
@@ -102,16 +103,17 @@ fun CalendarScreen(
         )
         when (mode) {
             VisitsMode.Calendar ->
-                CalendarMode(viewModel, placement, onOpenVisit, onOpenFriendVisit)
+                CalendarMode(viewModel, placement, share, onOpenVisit, onOpenFriendVisit)
 
             VisitsMode.Feed ->
-                FeedMode(placement, onOpenVisit, onOpenFriendVisit) { day, visit ->
+                FeedMode(placement, share, onOpenVisit, onOpenFriendVisit) { day, visit ->
                     show(VisitsMode.Calendar)
                     viewModel.openDay(day)
                     viewModel.startMove(visit)
                 }
         }
         VisitPlanChooser(placement, onSaveAsPlan)
+        VisitShareDialog(share)
     }
 }
 
@@ -119,6 +121,7 @@ fun CalendarScreen(
 private fun ColumnScope.CalendarMode(
     viewModel: CalendarViewModel,
     placement: VisitPlacementViewModel,
+    share: VisitShareViewModel,
     onOpenVisit: (CalendarDay) -> Unit,
     onOpenFriendVisit: (UserId, String, CalendarDay) -> Unit,
 ) {
@@ -159,12 +162,14 @@ private fun ColumnScope.CalendarMode(
                     VisitMenuActions(
                         onMove = { viewModel.startMove(visit) }.takeUnless { readOnly },
                         onToPlan = { placement.choosePlan(current.day) },
+                        onShare = { share.offer(card) },
                         onRepeatToday =
                             { viewModel.repeatToday(onOpenVisit) }.takeUnless { readOnly },
                         onRemove = { viewModel.askToRemove(visit) }.takeUnless { readOnly },
                     ).takeIf { !current.moving },
             )
             VisitPlacementNotice(placement, current.day)
+            VisitShareNotice(share, current.day)
         }
         if (current.noVisit) {
             Text(
@@ -214,6 +219,7 @@ private fun ColumnScope.CalendarMode(
 @Composable
 private fun ColumnScope.FeedMode(
     placement: VisitPlacementViewModel,
+    share: VisitShareViewModel,
     onOpenVisit: (CalendarDay) -> Unit,
     onOpenFriendVisit: (UserId, String, CalendarDay) -> Unit,
     onMove: (CalendarDay, VisitId) -> Unit,
@@ -257,6 +263,7 @@ private fun ColumnScope.FeedMode(
                                 VisitMenuActions(
                                     onMove = { onMove(card.day, own.id) }.takeUnless { readOnly },
                                     onToPlan = { placement.choosePlan(card.day) },
+                                    onShare = { share.offer(card) },
                                     onRepeatToday =
                                         { feed.repeatToday(card.day, onOpenVisit) }
                                             .takeUnless { readOnly },
@@ -269,6 +276,7 @@ private fun ColumnScope.FeedMode(
                                 ),
                         )
                         VisitPlacementNotice(placement, card.day)
+                        VisitShareNotice(share, card.day)
                     }
                 }
             }

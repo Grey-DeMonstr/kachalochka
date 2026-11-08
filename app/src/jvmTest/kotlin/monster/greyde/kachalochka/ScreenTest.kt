@@ -45,6 +45,7 @@ import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.PhotoSharing
+import monster.greyde.kachalochka.ui.share.ShareGroupingPreference
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.AppStrings
@@ -104,6 +105,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<TransitionPreference> { gym.transitions }
         single<VisitsModePreference> { gym.visitsModes }
         single<FeedPeoplePreference> { gym.feedPeople }
+        single<ShareGroupingPreference> { gym.shareGrouping }
         single<LanguagePreference> { gym.languages }
         single<RestSoundPreference> { gym.restSounds }
         single<RestSoundChooser> { gym.restSoundChooser }

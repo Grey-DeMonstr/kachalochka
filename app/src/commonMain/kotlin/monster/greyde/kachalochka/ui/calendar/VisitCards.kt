@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.calendar
 
+import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
@@ -14,10 +15,17 @@ import monster.greyde.kachalochka.core.domain.gym.groupByMachine
 import monster.greyde.kachalochka.core.domain.gym.shownVisit
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.visitMachines
+import monster.greyde.kachalochka.core.domain.identity.Avatar
+import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
+import monster.greyde.kachalochka.ui.account.AccountAvatars
+import monster.greyde.kachalochka.ui.account.accountAvatar
+import monster.greyde.kachalochka.ui.format.SharedVisit
 import monster.greyde.kachalochka.ui.format.dayBestGain
 import monster.greyde.kachalochka.ui.format.inlineWeekdayDate
 import monster.greyde.kachalochka.ui.format.setValue
+import monster.greyde.kachalochka.ui.format.sharedMachines
+import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /**
  * A machine on a visit card: the day's best set, how it beats every earlier day's best, and
@@ -35,6 +43,7 @@ data class OwnVisitUi(
     val id: VisitId,
     val canRepeatToday: Boolean,
     val date: String,
+    val shared: SharedVisit,
 )
 
 /** One person's visit on one day, on the calendar and in the feed. */
@@ -60,6 +69,7 @@ internal fun ownCard(
     day: CalendarDay,
     today: CalendarDay,
     person: PersonUi,
+    nickname: String,
     machines: Map<MachineId, Machine>,
     preferred: PreferredWeightUnit,
 ): VisitCardUi {
@@ -77,9 +87,33 @@ internal fun ownCard(
                 canRepeatToday =
                     day != today && visitMachines(visitSets, visit.planned).isNotEmpty(),
                 date = inlineWeekdayDate(day, withYear = day.year != today.year),
+                shared =
+                    SharedVisit(nickname, day, sharedMachines(visitSets, machines), preferred),
             ),
     )
 }
+
+/** [owner]'s account as its card shows it; null when the device holds no such account. */
+internal fun accountPerson(
+    accounts: Accounts,
+    avatars: AccountAvatars,
+    owner: UserId?,
+): PersonUi? {
+    val account = accounts.accounts.value.firstOrNull { it.userId == owner } ?: return null
+    return PersonUi(
+        account.userId,
+        account.shownName,
+        accountAvatar(account, avatars.photos.value),
+    )
+}
+
+/** [accountPerson], else "Я" on a device nobody has signed in on. */
+internal fun ownPerson(
+    accounts: Accounts,
+    avatars: AccountAvatars,
+    owner: UserId?,
+): PersonUi =
+    accountPerson(accounts, avatars, owner) ?: PersonUi(null, AppStrings.current.me, Avatar())
 
 /** A friend's visit on one day, once its sets are read. */
 internal data class FriendDayDetails(

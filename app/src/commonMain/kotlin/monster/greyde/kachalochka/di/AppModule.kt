@@ -16,6 +16,7 @@ import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
 import monster.greyde.kachalochka.ui.calendar.VisitFeedViewModel
+import monster.greyde.kachalochka.ui.calendar.VisitShareViewModel
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.family.PendingLink
 import monster.greyde.kachalochka.ui.family.PeopleViewModel
@@ -119,6 +120,7 @@ val appModule =
         viewModelOf(::PeopleViewModel)
         viewModelOf(::MachinePlacementViewModel)
         viewModelOf(::VisitPlacementViewModel)
+        viewModelOf(::VisitShareViewModel)
         viewModelOf(::BodyFatViewModel)
         viewModelOf(::MeasureViewModel)
         viewModelOf(::VisitViewModel)

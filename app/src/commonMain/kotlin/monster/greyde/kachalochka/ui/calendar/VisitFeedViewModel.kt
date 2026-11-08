@@ -29,14 +29,13 @@ import monster.greyde.kachalochka.core.domain.gym.dayAt
 import monster.greyde.kachalochka.core.domain.gym.keptVisit
 import monster.greyde.kachalochka.core.domain.gym.removedVisit
 import monster.greyde.kachalochka.core.domain.gym.visitOrder
-import monster.greyde.kachalochka.core.domain.identity.Avatar
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.AccountAvatars
-import monster.greyde.kachalochka.ui.account.accountAvatar
+import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.format.DeviceClock
@@ -95,6 +94,7 @@ class VisitFeedViewModel(
     private val colors: FriendColorStore,
     private val avatars: AccountAvatars,
     private val profiles: ProfileRepository,
+    private val nickname: Nickname,
     private val people: FeedPeoplePreference,
     private val priorBests: PriorBestsKeeper,
 ) : ViewModel() {
@@ -107,6 +107,7 @@ class VisitFeedViewModel(
     private var setsByVisit: Map<VisitId, List<WorkoutSet>> = emptyMap()
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var preferred = PreferredWeightUnit.Kg
+    private var sharer = ""
 
     /** The oldest day read so far; the day after today before the first read. */
     private var from: CalendarDay = clock.today().plusDays(1)
@@ -251,6 +252,7 @@ class VisitFeedViewModel(
         setsByVisit = ownSets.groupBy { it.visitId }.mapValues { it.value.sortedWith(visitOrder) }
         machinesById = machines.all(reader).associateBy { it.id }
         preferred = profiles.preferredUnit(reader)
+        sharer = nickname.of(reader)
     }
 
     /** Reads windows back until one holds a visit or none is older. */
@@ -406,6 +408,7 @@ class VisitFeedViewModel(
             day,
             today,
             ownPerson(),
+            sharer,
             machinesById,
             preferred,
         ).copy(tag = "feed-visit-${visit.id.value}")
@@ -426,12 +429,7 @@ class VisitFeedViewModel(
                 friendCard(tag, friend, color, day, details[friend.userId to day])
             }
 
-    private fun ownPerson(): PersonUi {
-        val account = accounts.accounts.value.firstOrNull { it.userId == owner }
-        return account?.let {
-            PersonUi(it.userId, it.shownName, accountAvatar(it, avatars.photos.value))
-        } ?: PersonUi(null, AppStrings.current.me, Avatar())
-    }
+    private fun ownPerson(): PersonUi = ownPerson(accounts, avatars, owner)
 }
 
 private fun dayTitle(

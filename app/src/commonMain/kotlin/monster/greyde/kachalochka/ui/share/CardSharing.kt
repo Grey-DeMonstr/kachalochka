@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 
 /** Android's share sheet for a visit card drawn as a picture. */
 interface CardSharing {
-    /** False hides the card menu's share item. */
+    /** False hides the share popup's picture choice. */
     val available: Boolean
 
     suspend fun share(card: ImageBitmap)

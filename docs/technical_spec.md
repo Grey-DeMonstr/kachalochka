@@ -150,9 +150,18 @@ the same platform call. A shared visit's text comes from the pure `visitShareTex
 `app/ui/format`. Its `setsSummary` writes one machine's weights and reps, and every screen that
 sums up a machine's sets calls it, so they read exactly like the shared text; `setsSummaryParts`
 gives the same text as its weights and its reps, which a row wraps apart when they do not fit.
-`VisitViewModel` reads the nickname ahead of the tap, because a browser accepts a clipboard write
-only shortly after the user's gesture. The statistics export does the same; its text comes from
-`statsExportText` in `app/ui/stats`, built from the cards as shown.
+A browser accepts a clipboard write only shortly after the user's gesture, so the text's parts
+are read ahead of the tap: `ownCard` puts a `SharedVisit` (nickname, day, machines with their
+sets, unit) into the card's `OwnVisitUi`, and `SharedVisit.text` writes it at the tap. The
+calendar, the feed and `VisitViewModel` read the nickname with the rest of the visit, and the
+visit screen shows its visit as the same card. The statistics export also reads ahead; its text
+comes from `statsExportText` in `app/ui/stats`, built from the cards as shown.
+
+`VisitShareViewModel` is the one place that shares a visit. The visit screen's button and the
+card menu's "Поделиться" give it the card; `VisitShareDialog` shows the popup and draws the card
+for its picture, and `VisitShareNotice` shows the platform's notice under the visit of that day.
+The popup's grouping is a device setting, `ShareGroupingPreference`, stored as the theme mode is
+(§10), apart from the synced `profile.group_by_tag` of the visit list.
 
 The rest timer's sound is a device setting, `RestSoundPreference` (enabled, and on Android the
 chosen sound's URI, null for the default one), stored as the theme mode is (§10). The process-wide
@@ -451,9 +460,9 @@ The photo viewer shares the shown photo's bytes, read through `PhotoImages`, wit
 Android's writes them to the cache, served by the same `FileProvider`, and opens the share sheet;
 the web's calls `navigator.share` with a file where the browser can, else downloads the photo.
 
-An own visit card shares itself as a picture through `CardSharing`, which only Android makes
-`available`. `VisitCard` composes `SharedVisitCard` off screen in a zero-size box, under a fixed
-width and `LocalDensity`, so the picture is 1080 px wide on every phone, and records it into a
+An own visit card shares as a picture through `CardSharing`, which only Android makes `available`.
+`VisitShareDialog` composes `SharedVisitCard` off screen in a zero-size box, under a fixed width
+and `LocalDensity`, so the picture is 1080 px wide on every phone, and records it into a
 `GraphicsLayer` without drawing it. Once the avatar settles, `toImageBitmap()` gives the picture;
 Android encodes it as PNG and shares it through the same cache and `FileProvider` as a photo.
 

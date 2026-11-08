@@ -25,6 +25,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.AccountAvatars
+import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
@@ -91,6 +92,7 @@ class CalendarViewModelTest {
             FriendColorStore(gym.profiles, gym.clock, gym.friends),
             AccountAvatars(gym.accounts, gym.profiles),
             gym.profiles,
+            Nickname(gym.profiles, gym.accounts),
             gym.priorBests,
         )
 
@@ -883,9 +885,30 @@ class CalendarViewModelTest {
 
             assertEquals("Иван", card.person.name)
             assertNull(card.color)
+            val own = assertNotNull(card.own)
+            assertEquals(sunday.id, own.id)
+            assertFalse(own.canRepeatToday)
+            assertEquals("воскресенье, 12 ноября", own.date)
+        }
+
+    @Test
+    fun the_own_card_shares_its_visit_as_text_under_the_nickname() =
+        runTest {
+            val signed = signedInGym()
+            signed.visits.upsert(sunday.copy(userId = ME.userId))
+            signed.machines.upsert(press.copy(userId = ME.userId))
+            signed.sets.upsert(set(sunday.copy(userId = ME.userId), press, 0))
+            signed.profiles.upsert(Profile.new(ME.userId, t0).copy(displayName = "Ванёк"))
+
+            val card =
+                viewModel(signed)
+                    .also { it.selectDay(twelfth) }
+                    .state.value
+                    ?.visit
+
             assertEquals(
-                OwnVisitUi(sunday.id, canRepeatToday = false, date = "воскресенье, 12 ноября"),
-                card.own,
+                "Ванёк, вс\n\nЖим ногами 70кг 1x10",
+                assertNotNull(card?.own).shared.text(groupByTag = false),
             )
         }
 

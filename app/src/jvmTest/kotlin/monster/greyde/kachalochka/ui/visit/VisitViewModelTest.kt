@@ -133,7 +133,6 @@ class VisitViewModelTest {
         gym.deviceClock,
         gym.sync,
         gym.friends,
-        gym.texts,
         Nickname(gym.profiles, gym.accounts),
         gym.catalogue,
         gym.machineReads,
@@ -174,17 +173,21 @@ class VisitViewModelTest {
         }
     }
 
+    /** The text the share popup hands over for the visit as shown. */
+    private fun VisitViewModel.sharedText(groupByTag: Boolean = false): String =
+        assertNotNull(state.value?.card?.own)
+            .shared
+            .text(groupByTag)
+
     @Test
     fun a_visit_without_sets_cannot_be_shared() {
         val vm = viewModel().also { it.refresh() }
 
-        assertFalse(assertNotNull(vm.state.value).canShare)
-        vm.share()
-        assertTrue(gym.texts.shared.isEmpty())
+        assertNull(assertNotNull(vm.state.value).card)
     }
 
     @Test
-    fun sharing_hands_the_visit_as_text_under_the_stored_nickname() =
+    fun the_visit_is_shared_as_text_under_the_stored_nickname() =
         runTest {
             val gym = twoAccountGym()
             val owner = ivan.account.userId
@@ -193,10 +196,22 @@ class VisitViewModelTest {
             gym.sets.upsert(set(ivanVisit.id, ivanPress, 85.0, 8, 1, owner))
             val vm = viewModel(gym)
 
-            assertTrue(assertNotNull(vm.state.value).canShare)
-            vm.share()
+            assertEquals("Ванёк, вт\n\nЖим ногами 80-85кг 2x8", vm.sharedText())
+        }
 
-            assertEquals(listOf("Ванёк, вт\n\nЖим ногами 80-85кг 2x8"), gym.texts.shared)
+    @Test
+    fun the_visit_is_shared_as_the_card_the_calendar_draws_for_it() =
+        runTest {
+            val gym = twoAccountGym()
+            val owner = ivan.account.userId
+            gym.sets.upsert(set(ivanVisit.id, ivanPress, 80.0, 8, 0, owner))
+            val vm = viewModel(gym)
+
+            val card = assertNotNull(vm.state.value?.card)
+            assertEquals("Иван", card.person.name)
+            assertEquals(listOf("Жим ногами"), card.exercises?.map { it.name })
+            assertEquals(ivanVisit.id, card.own?.id)
+            assertEquals("вторник, 14 ноября", card.own?.date)
         }
 
     @Test
@@ -209,41 +224,8 @@ class VisitViewModelTest {
 
             gym.profiles.upsert(Profile.new(owner, t0).copy(displayName = "Ванёк"))
             vm.refresh()
-            vm.share()
 
-            assertEquals(
-                "Ванёк, вт",
-                gym.texts.shared
-                    .single()
-                    .substringBefore("\n"),
-            )
-        }
-
-    @Test
-    fun the_platform_s_notice_shows_until_it_is_dismissed() =
-        runTest {
-            gym.sets.upsert(set(visit.id, press, 80.0, 8, 0))
-            val vm = viewModel()
-
-            vm.share()
-            assertEquals("Скопировано", vm.state.value?.notice)
-
-            vm.dismissNotice()
-            assertNull(vm.state.value?.notice)
-        }
-
-    @Test
-    fun switching_accounts_clears_the_notice() =
-        runTest {
-            val gym = twoAccountGym()
-            gym.sets.upsert(set(ivanVisit.id, ivanPress, 80.0, 8, 0, ivan.account.userId))
-            val vm = viewModel(gym)
-            vm.share()
-            assertEquals("Скопировано", vm.state.value?.notice)
-
-            gym.accounts.switchTo(misha.account.userId)
-
-            assertNull(vm.state.value?.notice)
+            assertEquals("Ванёк, вт", vm.sharedText().substringBefore("\n"))
         }
 
     @Test
@@ -928,17 +910,15 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun a_grouped_visit_is_shared_in_sections() =
+    fun a_visit_shared_grouped_by_tag_is_in_sections() =
         runTest {
-            taggedVisit(grouped = true)
+            taggedVisit(grouped = false)
             val vm = viewModel().also { it.refresh() }
-
-            vm.share()
 
             assertEquals(
                 "вт\n\nЖИМ, НОГИ\nЖим ногами (+20кг) 80кг 1x8\n\nРУКИ\nБицепс 14кг 1x12\n\n" +
                     "Остальное\nТяга верхнего блока 45кг 1x12",
-                gym.texts.shared.single(),
+                vm.sharedText(groupByTag = true),
             )
         }
 
@@ -962,17 +942,12 @@ class VisitViewModelTest {
             gym.sets.upsert(set(visit.id, cable, 45.0, 8, 3))
             val vm = viewModel().also { it.refresh() }
 
-            vm.share()
-
             val summaries =
                 assertNotNull(vm.state.value).groups.map { it.summary.joinToString(" ") }
             assertEquals(listOf("60-70кг 2x10", "20.5кг 10-8"), summaries)
             assertEquals(
                 listOf("Жим ногами (+20кг) 60-70кг 2x10", "Кроссовер 20.5кг 10-8"),
-                gym.texts.shared
-                    .single()
-                    .lines()
-                    .drop(2),
+                vm.sharedText().lines().drop(2),
             )
         }
 
@@ -1092,16 +1067,7 @@ class VisitViewModelTest {
             assertEquals("75", page.form?.weight)
             assertEquals("кг", page.form?.weightUnit)
             assertEquals("165.5 lb", page.form?.converted)
-
-            vm.share()
-
-            assertEquals(
-                "Тяга верхнего блока 99lb 1x12",
-                gym.texts.shared
-                    .single()
-                    .lines()
-                    .last(),
-            )
+            assertEquals("Тяга верхнего блока 99lb 1x12", vm.sharedText().lines().last())
         }
 
     @Test
