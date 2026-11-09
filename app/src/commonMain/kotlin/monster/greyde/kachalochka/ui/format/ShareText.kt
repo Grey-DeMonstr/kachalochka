@@ -7,6 +7,7 @@ import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WeightUnit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
+import monster.greyde.kachalochka.core.domain.gym.pyramidGroups
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.tagSections
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
@@ -119,8 +120,10 @@ fun setsSummaryParts(
     preferred: PreferredWeightUnit,
 ): List<String> {
     val unit = sharedUnit(machine, preferred)
-    val weights = sets.map { shownWeight(it.weight, machine, preferred) }
-    val reps = sets.map { it.reps }
+    val groups = pyramidGroups(sets).map { it.sets }
+    val separator = if (groups.any { it.size > 1 }) " - " else "-"
+    val weights = groups.map { group -> group.map { shownWeight(it.weight, machine, preferred) } }
+    val reps = groups.map { group -> group.map { it.reps } }
     val side =
         if (machine.weightMode ==
             WeightMode.PerSide
@@ -131,12 +134,25 @@ fun setsSummaryParts(
         }
     val sign = counterweightSign(machine)
     val weightPart =
-        when {
-            weights.all { it == 0.0 } -> null
-            weights.distinct().size == 1 -> sign + formatNumber(weights.first()) + unit + side
-            else -> sign + weights.joinToString("-") { formatNumber(it) } + unit + side
+        if (weights.flatten().all { it == 0.0 }) {
+            null
+        } else {
+            sign + groupsText(weights.map { it.map(::formatNumber) }, separator) + unit + side
         }
     val repsPart =
-        if (reps.distinct().size == 1) "${reps.size}x${reps.first()}" else reps.joinToString("-")
+        when {
+            reps.distinct().size != 1 -> groupsText(reps, separator)
+            reps.first().size == 1 -> "${reps.size}x${reps.first().single()}"
+            reps.size == 1 -> reps.first().joinToString("+")
+            else -> "${reps.size}x(${reps.first().joinToString("+")})"
+        }
     return listOfNotNull(weightPart, repsPart)
 }
+
+/** A pyramid's values are joined with "+"; equal groups are written once. */
+private fun groupsText(
+    groups: List<List<Any>>,
+    separator: String,
+): String =
+    (if (groups.distinct().size == 1) groups.take(1) else groups)
+        .joinToString(separator) { it.joinToString("+") }

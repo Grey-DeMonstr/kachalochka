@@ -139,6 +139,9 @@ object EnStrings : Strings {
     override val reps = "reps"
     override val comment = "Comment"
     override val deleteSet = "Delete set"
+    override val pyramid = "Pyramid"
+    override val startPyramid = "Start a pyramid"
+    override val startNewPyramid = "Start a new pyramid"
     override val saveSet = "Add"
 
     override val newSet = "New set"

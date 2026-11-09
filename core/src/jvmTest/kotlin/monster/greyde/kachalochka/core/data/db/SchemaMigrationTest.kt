@@ -737,6 +737,26 @@ class SchemaMigrationTest {
         assertEquals("[]", text("SELECT answer FROM friend_answer WHERE account = 'ivan'"))
     }
 
+    @Test
+    fun version_22_sets_start_no_pyramid_and_every_row_is_pulled_again() {
+        KachalochkaDatabase.Schema.create(driver)
+        version11SetTable()
+        exec("ALTER TABLE workout_set ADD COLUMN comment TEXT NOT NULL DEFAULT ''")
+        exec("ALTER TABLE workout_set ADD COLUMN prior_best_weight REAL")
+        exec("ALTER TABLE workout_set ADD COLUMN prior_best_reps INTEGER")
+        exec("ALTER TABLE workout_set ADD COLUMN prior_best_sets INTEGER")
+        exec(
+            "INSERT INTO workout_set VALUES ('${SET.value}', NULL, '${VISIT.value}', " +
+                "'${PRESS.value}', 80.0, 8, 1, 1, 0, 0, '', NULL, NULL, NULL)",
+        )
+        exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
+
+        KachalochkaDatabase.Schema.migrate(driver, 22, 23)
+
+        assertEquals(0L, number("SELECT pyramid FROM workout_set WHERE id = '${SET.value}'"))
+        assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
+    }
+
     private fun dropNewerTables() {
         exec("DROP TABLE tag")
         exec("DROP TABLE machine_tag")

@@ -147,8 +147,11 @@ machine's weights stay in its own unit. An own unit is never converted and is wr
 its name ("Блок 3-4 плитка 2x10"). A machine whose weights are all zero shows only its reps
 ("Подтягивания 3x10"). A machine whose weight is counted per side says so after the weights
 ("Гребная тяга (+11.3кг) 15кг на каждую, 3x12"). A gravitron's weights are written after "(-)",
-since a smaller one is progress ("Подтягивания в гравитроне (-)27-25-22.5кг 10-8-6"). The machine
-rows of the visit screen and of a friend's visit, and the previous visit's and friends' results on
+since a smaller one is progress ("Подтягивания в гравитроне (-)27-25-22.5кг 10-8-6"). With a
+pyramid, every pyramid and every set outside one is a group: the values of a pyramid are joined
+with "+", groups with " - ", and equal groups are written once ("Гребная тяга
+40+31+22 - 36+27+18кг 2x(10+10+10)", "Жим 50 - 40+31+22кг 12 - 10+10+10"). The machine rows
+of the visit screen and of a friend's visit, and the previous visit's and friends' results on
 the machine's page, write a machine's weights and reps exactly the same way. With "Группировать по
 тегам" ticked in the popup, the machine lines form the list's sections, separated by an empty line,
 each tagged one starting with a line of its tags in capitals ("НОГИ").
@@ -174,6 +177,18 @@ follows that person, and the set is recorded into their own visit. It goes to th
 linked with the shown one, else to their machine of the same name in any letter case. Without
 either, the app makes them a copy of the shown machine with its tags, linked to it and to the
 machines it is linked with. The chips show who records, so the button stays "Добавить".
+
+A pyramid is sets whose weight steps up or down, for example 40, 31 and 22 kg. Above the comment,
+the form has a checkbox row with a pyramid icon, three bars that go down. A tap anywhere on the
+row checks or clears it. On a new set it reads "Начать пирамиду" until the day has a pyramid on
+the machine, then "Начать новую пирамиду": checking it then sets the weight and the reps of the
+current pyramid's first set. Editing reads "Начать пирамиду" and shows whether that set starts a
+pyramid, so pyramids can be made, split or joined on any day. A pyramid holds the set that starts
+it and the sets after it up to the next start; sets before the first start stay alone. On the
+machine's page a pyramid is one row, "#4–6 ▮▮▮ 36 кг × 10 ⌄", with the numbers of its sets and its
+best set. A tap opens it: its sets follow, indented, with a line at their left, and tapping one
+edits it. The last pyramid of the machine shows open, the others closed. While the sets show drag
+handles the list is flat, and the set that starts a pyramid shows the pyramid icon.
 
 Every list of machines draws a machine the same way: its photo, its name, its tags, then, for the
 account's own machine, signed in and online, a link icon with the machines it is linked with, each

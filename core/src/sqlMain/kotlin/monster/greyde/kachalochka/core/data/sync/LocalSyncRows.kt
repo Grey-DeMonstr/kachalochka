@@ -90,6 +90,7 @@ class LocalSyncRows(
             set.priorBest?.weight,
             set.priorBest?.reps?.toLong(),
             set.priorBest?.sets?.toLong(),
+            set.pyramid,
         )
 
     fun writePlan(plan: Plan) = database.planQueries.write(plan)

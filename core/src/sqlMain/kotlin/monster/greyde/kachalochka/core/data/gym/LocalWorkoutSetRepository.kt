@@ -41,6 +41,7 @@ class LocalWorkoutSetRepository(
                     set.priorBest?.weight,
                     set.priorBest?.reps?.toLong(),
                     set.priorBest?.sets?.toLong(),
+                    set.pyramid,
                 )
                 if (set.userId != null) {
                     outbox.enqueue(OutboxEntry(WORKOUT_SET_TABLE, set.id.value, set.updatedAt))
@@ -103,6 +104,7 @@ internal fun workoutSetOf(
     priorBestWeight: Double?,
     priorBestReps: Long?,
     priorBestSets: Long?,
+    pyramid: Boolean,
 ) = WorkoutSet(
     id = WorkoutSetId(id),
     userId = userId?.let(::UserId),
@@ -119,4 +121,5 @@ internal fun workoutSetOf(
         priorBestWeight?.let {
             DayBest(it, checkNotNull(priorBestReps).toInt(), checkNotNull(priorBestSets).toInt())
         },
+    pyramid = pyramid,
 )

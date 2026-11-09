@@ -531,6 +531,71 @@ class VisitScreenTest {
     }
 
     @Test
+    fun a_ticked_pyramid_row_records_a_start_that_the_page_shows_as_a_pyramid() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("set-pyramid").assertTextEquals("Начать пирамиду")
+            onNodeWithTag("set-pyramid").performClick()
+            onNodeWithTag("save-set").performClick()
+            waitForIdle()
+
+            val start =
+                gym.sets.rows.values
+                    .single { it.pyramid }
+            onNodeWithTag("pyramid-${start.id.value}").assertTextEquals("#2", "70 кг × 10")
+            onNodeWithTag("set-pyramid").assertTextEquals("Начать новую пирамиду")
+        }
+    }
+
+    @Test
+    fun a_tap_on_a_pyramid_row_hides_and_shows_its_sets() {
+        val start = recorded.copy(pyramid = true)
+        val next =
+            recorded.copy(
+                id = WorkoutSetId.random(),
+                recordedAt =
+                    start.recordedAt + 1.minutes,
+            )
+        runBlocking { listOf(start, next).forEach { gym.sets.upsert(it) } }
+        runScreenTest(gym, screen = { visitScreen(opened = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("set-row-${next.id.value}").assertIsDisplayed()
+
+            onNodeWithTag("pyramid-${start.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("set-row-${next.id.value}").assertDoesNotExist()
+
+            onNodeWithTag("pyramid-${start.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("set-row-${next.id.value}").assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun ordering_lists_the_sets_flat_with_the_pyramid_start_marked() {
+        val start = recorded.copy(pyramid = true)
+        val next =
+            recorded.copy(
+                id = WorkoutSetId.random(),
+                recordedAt =
+                    start.recordedAt + 1.minutes,
+            )
+        runBlocking { listOf(start, next).forEach { gym.sets.upsert(it) } }
+        runScreenTest(gym, screen = { visitScreen(opened = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("machine-menu").performClick()
+            waitForIdle()
+            onNodeWithTag("machine-reorder").performClick()
+            waitForIdle()
+
+            onNodeWithTag("pyramid-${start.id.value}").assertDoesNotExist()
+            onNodeWithTag("pyramid-mark-${start.id.value}", useUnmergedTree = true).assertExists()
+            onNodeWithTag("pyramid-mark-${next.id.value}", useUnmergedTree = true)
+                .assertDoesNotExist()
+        }
+    }
+
+    @Test
     fun a_weight_typed_with_a_comma_is_saved() {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()

@@ -1,0 +1,4 @@
+ALTER TABLE workout_set ADD COLUMN pyramid INTEGER NOT NULL DEFAULT 0;
+
+-- A set pulled before this version lost its pyramid start.
+UPDATE syncState SET lastPullAt = NULL;

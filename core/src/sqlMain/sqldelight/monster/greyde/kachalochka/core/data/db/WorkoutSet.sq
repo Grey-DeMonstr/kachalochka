@@ -11,12 +11,13 @@ CREATE TABLE workout_set (
     recorded_at INTEGER AS Instant NOT NULL,
     updated_at  INTEGER AS Instant NOT NULL,
     deleted     INTEGER AS Boolean NOT NULL DEFAULT 0,
-    -- In the order the ALTER TABLEs of 3.sqm, 11.sqm and 20.sqm put them.
+    -- In the order the ALTER TABLEs of 3.sqm, 11.sqm, 20.sqm and 22.sqm put them.
     position    INTEGER NOT NULL DEFAULT 0,
     comment     TEXT    NOT NULL DEFAULT '',
     prior_best_weight REAL,
     prior_best_reps   INTEGER,
-    prior_best_sets   INTEGER
+    prior_best_sets   INTEGER,
+    pyramid     INTEGER AS Boolean NOT NULL DEFAULT 0
 );
 
 CREATE INDEX workout_set_visit_idx ON workout_set (visit_id);
@@ -25,8 +26,9 @@ CREATE INDEX workout_set_updated_at_idx ON workout_set (updated_at);
 
 upsert:
 INSERT OR REPLACE INTO workout_set(id, user_id, visit_id, machine_id, weight, reps, recorded_at,
-    updated_at, deleted, position, comment, prior_best_weight, prior_best_reps, prior_best_sets)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    updated_at, deleted, position, comment, prior_best_weight, prior_best_reps, prior_best_sets,
+    pyramid)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 storePriorBest:
 UPDATE workout_set SET prior_best_weight = ?, prior_best_reps = ?, prior_best_sets = ?,

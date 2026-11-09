@@ -356,6 +356,46 @@ class SupabaseSyncGatewayTest {
             )
         }
 
+    // A cleared flag must reach the server, so false is sent as well.
+    @Test
+    fun a_pushed_set_always_carries_its_pyramid_flag() =
+        runTest {
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
+            engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
+            val set = ownedSet(OWNER, ownedVisit(OWNER), ownedPress(OWNER))
+            val gateway = gatewayOn(engine, pageSize = 10)
+
+            gateway.pushSet(set.copy(pyramid = true))
+            gateway.pushSet(set)
+
+            val (started, plain) =
+                engine.requestHistory.map { it.body.toByteArray().decodeToString() }
+            assertTrue("\"pyramid\":true" in started, started)
+            assertTrue("\"pyramid\":false" in plain, plain)
+        }
+
+    @Test
+    fun a_pulled_set_carries_its_pyramid_flag() =
+        runTest {
+            val row =
+                """{"id":"44444444-4444-4444-8444-444444444444",""" +
+                    """"user_id":"${OWNER.value}",""" +
+                    """"visit_id":"11111111-0000-4000-8000-000000000001",""" +
+                    """"machine_id":"33333333-3333-4333-8333-333333333333",""" +
+                    """"weight":70.0,"reps":10,"position":3,""" +
+                    """"recorded_at":"2024-01-01T00:00:00+00:00",""" +
+                    """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false,""" +
+                    """"comment":"","pyramid":true}"""
+            val engine = MockEngine.Queue()
+            engine.enqueue { respond("[$row]", HttpStatusCode.OK, jsonHeaders()) }
+            engine.enqueue { respond("[]", HttpStatusCode.OK, jsonHeaders()) }
+
+            val pulled = gatewayOn(engine, pageSize = 10).pullSets(OWNER, since = null)
+
+            assertEquals(listOf(true), pulled.map { it.pyramid })
+        }
+
     @Test
     fun a_pulled_set_carries_its_prior_best_and_none_when_the_server_has_none() =
         runTest {

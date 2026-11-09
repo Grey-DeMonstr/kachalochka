@@ -2524,4 +2524,130 @@ class VisitViewModelTest {
             assertNull(family.profiles.forOwner(SASHA.userId))
             assertEquals(before, family.sync.requests)
         }
+
+    private fun pyramidOf(vararg weights: Double): List<WorkoutSet> =
+        weights.mapIndexed { i, weight ->
+            set(visit.id, press, weight, 12 - i, todaySets().size + i).copy(pyramid = i == 0)
+        }
+
+    @Test
+    fun a_new_set_starts_a_pyramid_when_ticked() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            val form =
+                assertNotNull(
+                    vm.state.value
+                        ?.page
+                        ?.form,
+                )
+            assertEquals("Начать пирамиду" to false, form.pyramidLabel to form.pyramid)
+
+            vm.togglePyramidStart()
+            vm.save()
+
+            assertEquals(
+                true,
+                gym.sets
+                    .forVisit(visit.id)
+                    .single()
+                    .pyramid,
+            )
+            val next =
+                assertNotNull(
+                    vm.state.value
+                        ?.page
+                        ?.form,
+                )
+            assertEquals("Начать новую пирамиду" to false, next.pyramidLabel to next.pyramid)
+        }
+
+    @Test
+    fun a_new_pyramid_starts_from_the_first_step_of_the_last_one() =
+        runTest {
+            pyramidOf(40.0, 31.0, 22.0).forEach { gym.sets.upsert(it) }
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            assertEquals(
+                "22",
+                vm.state.value
+                    ?.page
+                    ?.form
+                    ?.weight,
+            )
+
+            vm.togglePyramidStart()
+
+            val form =
+                assertNotNull(
+                    vm.state.value
+                        ?.page
+                        ?.form,
+                )
+            assertEquals(Triple("40", "12", true), Triple(form.weight, form.reps, form.pyramid))
+        }
+
+    @Test
+    fun an_edit_shows_and_changes_whether_the_set_starts_a_pyramid() =
+        runTest {
+            val recorded = set(visit.id, press, 70.0, 10, 0)
+            gym.sets.upsert(recorded)
+            val vm = viewModel().also { it.refresh() }
+            vm.editSet(recorded.id)
+            val form =
+                assertNotNull(
+                    vm.state.value
+                        ?.page
+                        ?.form,
+                )
+            assertEquals("Начать пирамиду" to false, form.pyramidLabel to form.pyramid)
+
+            vm.togglePyramidStart()
+            vm.save()
+
+            val saved = gym.sets.forVisit(visit.id).single()
+            assertEquals(70.0 to true, saved.weight to saved.pyramid)
+        }
+
+    @Test
+    fun the_page_shows_a_pyramid_as_one_row_and_only_the_last_one_open() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 50.0, 10, 0))
+            val first = pyramidOf(40.0, 31.0)
+            first.forEach { gym.sets.upsert(it) }
+            pyramidOf(36.0, 27.0).forEach { gym.sets.upsert(it) }
+            val vm = viewModel().also { it.openMachine(press.id) }
+
+            fun blocks() =
+                assertNotNull(vm.state.value?.page)
+                    .blocks
+                    .map { block ->
+                        block.pyramid?.let { listOf(it.numbers, it.best, it.expanded) } to
+                            block.sets.map { it.title }
+                    }
+
+            assertEquals(
+                listOf(
+                    null to listOf("#1"),
+                    listOf("#2–3", "40 кг × 12", false) to listOf("#2", "#3"),
+                    listOf("#4–5", "36 кг × 12", true) to listOf("#4", "#5"),
+                ),
+                blocks(),
+            )
+
+            vm.togglePyramidOpen(first.first().id)
+
+            assertEquals(true, blocks()[1].first?.get(2))
+        }
+
+    @Test
+    fun ordering_lists_the_sets_flat_and_marks_a_pyramid_start() =
+        runTest {
+            gym.sets.upsert(set(visit.id, press, 50.0, 10, 0))
+            pyramidOf(40.0, 31.0).forEach { gym.sets.upsert(it) }
+            val vm = viewModel().also { it.openMachine(press.id) }
+
+            vm.toggleSetOrdering()
+
+            val page = assertNotNull(vm.state.value?.page)
+            assertEquals(listOf(false, true, false), page.sets.map { it.pyramid })
+        }
 }

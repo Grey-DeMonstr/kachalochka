@@ -850,6 +850,12 @@ calls `openMachine`. The pager is keyed by the open machine and its index, so th
 gets a new pager at rest on its own page. The swipe is off while the form is open or the sets are
 being ordered, so the steppers, the sheet and the drag handles keep their gestures.
 
+A pyramid is stored as one flag, `workout_set.pyramid`, true on the set that starts it. Nothing
+stores its end: `pyramidGroups` (`domain/gym`) cuts a machine's sets, in the order given, at each
+flagged set, so a move or an edit of the flag regroups them with no other write. The form's
+checkbox is the flag of the set it records or edits. `WorkoutSetRow.pyramid` is `@EncodeDefault`: the wire
+leaves default values out, but a cleared flag must reach the server.
+
 A machine's result on one day is a `DayBest` (`domain/gym`): the day's best set as `bestSet`
 picks it, and how many of the day's live sets equal it in weight and reps. Results compare by
 weight (inverted on a gravitron), then reps, then sets (`dayBestOrder`). Every `workout_set` row

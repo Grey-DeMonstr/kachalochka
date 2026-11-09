@@ -69,6 +69,16 @@ class LocalWorkoutSetRepositoryTest {
         }
 
     @Test
+    fun a_set_keeps_its_pyramid_start() =
+        runTest {
+            val set = set(visitA, press, 0).copy(pyramid = true)
+
+            repository.upsert(set)
+
+            assertEquals(listOf(set), repository.forVisit(visitA))
+        }
+
+    @Test
     fun a_set_keeps_its_prior_best() =
         runTest {
             val set = set(visitA, press, 0).copy(priorBest = DayBest(60.0, 10, 2))

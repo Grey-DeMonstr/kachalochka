@@ -127,6 +127,12 @@ One try on a machine: a weight, the reps and an optional comment.
 _UI_: Подход
 _Avoid_: approach, rep
 
+**Pyramid**:
+Sets on a machine in one visit whose weight steps up or down. The set that starts it is marked,
+and it holds the sets after that set up to the next start.
+_UI_: Пирамида
+_Avoid_: series, drop set
+
 **Planned machine**:
 A machine in a visit that has no set yet.
 _UI_: Запланировано

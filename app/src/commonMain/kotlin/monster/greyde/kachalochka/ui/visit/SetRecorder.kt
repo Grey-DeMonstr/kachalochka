@@ -47,6 +47,7 @@ class SetRecorder(
         machine: Machine,
         values: SetValues,
         comment: String,
+        pyramid: Boolean = false,
     ) {
         val now = clock.now()
         val today = CalendarDay.of(now, clock.offsetAt(now))
@@ -65,6 +66,7 @@ class SetRecorder(
                     now,
                     false,
                     comment,
+                    pyramid = pyramid,
                 ),
             ),
         )
@@ -120,6 +122,7 @@ class SetRecorder(
         set: WorkoutSet,
         values: SetValues,
         comment: String,
+        pyramid: Boolean = set.pyramid,
     ) {
         gymWrites.write(
             listOf(
@@ -127,6 +130,7 @@ class SetRecorder(
                     weight = values.weight,
                     reps = values.reps,
                     comment = comment,
+                    pyramid = pyramid,
                     updatedAt = clock.now(),
                 ),
             ),

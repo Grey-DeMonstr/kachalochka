@@ -24,6 +24,8 @@ class SetForm {
         private set
     var comment = ""
         private set
+    var pyramid = false
+        private set
 
     /** The text as typed; null while the weight shows the stepped, formatted value. */
     private var weightText: String? = null
@@ -45,6 +47,7 @@ class SetForm {
         isOpen = true
         editing = null
         comment = ""
+        pyramid = false
     }
 
     fun openOn(set: WorkoutSet) {
@@ -54,6 +57,7 @@ class SetForm {
         weightText = null
         repsText = null
         comment = set.comment
+        pyramid = set.pyramid
     }
 
     fun close() {
@@ -62,6 +66,7 @@ class SetForm {
         weightText = null
         repsText = null
         comment = ""
+        pyramid = false
     }
 
     /** Shows [next] in place of what was chosen or typed. */
@@ -98,7 +103,13 @@ class SetForm {
         comment = text.take(COMMENT_LENGTH)
     }
 
-    fun clearComment() {
+    fun togglePyramid() {
+        pyramid = !pyramid
+    }
+
+    /** Clears what belongs to the set just recorded only. */
+    fun clearForNext() {
         comment = ""
+        pyramid = false
     }
 }

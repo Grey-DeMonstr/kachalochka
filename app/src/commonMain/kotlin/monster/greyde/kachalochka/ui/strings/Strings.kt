@@ -121,6 +121,9 @@ interface Strings {
     val reps: String
     val comment: String
     val deleteSet: String
+    val pyramid: String
+    val startPyramid: String
+    val startNewPyramid: String
     val saveSet: String
 
     val newSet: String

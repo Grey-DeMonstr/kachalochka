@@ -1,5 +1,7 @@
 package monster.greyde.kachalochka.core.data.gym
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -165,6 +167,7 @@ internal data class VisitRow(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 internal data class WorkoutSetRow(
     val id: String,
@@ -181,6 +184,8 @@ internal data class WorkoutSetRow(
     @SerialName("prior_best_weight") val priorBestWeight: Double? = null,
     @SerialName("prior_best_reps") val priorBestReps: Int? = null,
     @SerialName("prior_best_sets") val priorBestSets: Int? = null,
+    // Sent when false as well, so a cleared flag reaches the server.
+    @EncodeDefault val pyramid: Boolean = false,
 ) {
     fun toWorkoutSet(): WorkoutSet =
         WorkoutSet(
@@ -199,6 +204,7 @@ internal data class WorkoutSetRow(
                 priorBestWeight?.let {
                     DayBest(it, checkNotNull(priorBestReps), checkNotNull(priorBestSets))
                 },
+            pyramid = pyramid,
         )
 
     companion object {
@@ -218,6 +224,7 @@ internal data class WorkoutSetRow(
                 priorBestWeight = set.priorBest?.weight,
                 priorBestReps = set.priorBest?.reps,
                 priorBestSets = set.priorBest?.sets,
+                pyramid = set.pyramid,
             )
     }
 }

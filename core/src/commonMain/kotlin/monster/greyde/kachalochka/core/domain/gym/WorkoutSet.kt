@@ -17,6 +17,8 @@ data class WorkoutSet(
     val comment: String = "",
     /** The machine's best result over the days before this set's day; null until computed. */
     val priorBest: DayBest? = null,
+    /** The set starts a pyramid (see [pyramidGroups]). */
+    val pyramid: Boolean = false,
 )
 
 /** A visit's sets run by position; sets at the same position keep their recording order. */

@@ -264,6 +264,38 @@ class ShareTextTest {
         )
     }
 
+    private fun List<WorkoutSet>.startingPyramidsAt(vararg indices: Int) =
+        mapIndexed { index, set -> set.copy(pyramid = index in indices) }
+
+    @Test
+    fun pyramids_join_their_values_with_plus_and_equal_reps_are_counted() {
+        val sets =
+            sets(40.0 to 10, 31.0 to 10, 22.0 to 10, 36.0 to 10, 27.0 to 10, 18.0 to 10)
+                .startingPyramidsAt(0, 3)
+
+        assertEquals(
+            "40+31+22 - 36+27+18кг 2x(10+10+10)",
+            setsSummary(machine("Тяга"), sets, kg),
+        )
+    }
+
+    @Test
+    fun a_set_outside_a_pyramid_is_a_group_of_its_own() {
+        val sets = sets(50.0 to 12, 40.0 to 10, 31.0 to 10, 22.0 to 10).startingPyramidsAt(1)
+
+        assertEquals("50 - 40+31+22кг 12 - 10+10+10", setsSummary(machine("Жим"), sets, kg))
+    }
+
+    @Test
+    fun equal_pyramids_are_written_once_and_one_pyramid_is_not_counted() {
+        val twice =
+            sets(36.0 to 10, 27.0 to 10, 36.0 to 10, 27.0 to 10).startingPyramidsAt(0, 2)
+        val once = sets(36.0 to 10, 27.0 to 8).startingPyramidsAt(0)
+
+        assertEquals("36+27кг 2x(10+10)", setsSummary(machine("Жим"), twice, kg))
+        assertEquals("36+27кг 10+8", setsSummary(machine("Жим"), once, kg))
+    }
+
     @Test
     fun machines_follow_one_per_line_and_one_without_sets_is_skipped() {
         val text =

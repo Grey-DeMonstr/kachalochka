@@ -15,19 +15,23 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineRepository
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.SetValues
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.bestSet
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
+import monster.greyde.kachalochka.core.domain.gym.lastPyramidStart
 import monster.greyde.kachalochka.core.domain.gym.machineMovedTo
 import monster.greyde.kachalochka.core.domain.gym.machinePeaks
 import monster.greyde.kachalochka.core.domain.gym.plannedWithoutSets
 import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
+import monster.greyde.kachalochka.core.domain.gym.pyramidGroups
 import monster.greyde.kachalochka.core.domain.gym.setMovedTo
 import monster.greyde.kachalochka.core.domain.gym.shiftedSets
 import monster.greyde.kachalochka.core.domain.gym.shownOn
@@ -117,6 +121,22 @@ data class SetRowUi(
     val value: String,
     val selected: Boolean,
     val comment: String = "",
+    /** The set starts a pyramid. */
+    val pyramid: Boolean = false,
+)
+
+/** A pyramid's row: "#4–6", its best set, and whether its sets show under it. */
+data class PyramidUi(
+    val start: WorkoutSetId,
+    val numbers: String,
+    val best: String,
+    val expanded: Boolean,
+)
+
+/** One set alone, or a pyramid with its sets. */
+data class SetBlockUi(
+    val pyramid: PyramidUi?,
+    val sets: List<SetRowUi>,
 )
 
 data class FriendLineUi(
@@ -150,6 +170,8 @@ data class MachinePageUi(
     val canOrder: Boolean = false,
     /** The visit's machines in the list's order, which a swipe goes through; empty outside it. */
     val swipeOrder: List<SetGroupUi> = emptyList(),
+    /** [sets] cut into pyramids, as the page shows them outside ordering. */
+    val blocks: List<SetBlockUi> = emptyList(),
 )
 
 /** The set being added or corrected; [weight] and [reps] are as typed. */
@@ -164,6 +186,8 @@ data class SetFormUi(
     val converted: String?,
     val reps: String,
     val comment: String,
+    val pyramid: Boolean,
+    val pyramidLabel: String,
     val editing: Boolean,
     val people: List<AccountUi>,
     val saveLabel: String,
@@ -208,6 +232,9 @@ class VisitViewModel(
     private var ordering = false
     private var orderingSets = false
     private var saving = false
+
+    /** Pyramids opened or closed by a tap, against their default. */
+    private var toggledPyramids = emptySet<WorkoutSetId>()
     private val groupReads = GroupReads(friends, reads, viewModelScope, ::publish)
     private var own: OwnMachines? = null
     private var preferred = PreferredWeightUnit.Kg
@@ -273,6 +300,7 @@ class VisitViewModel(
         plan: Boolean = false,
     ) {
         selected = id
+        toggledPyramids = emptySet()
         if (withForm) form.openNew() else form.close()
         ordering = false
         orderingSets = false
@@ -321,6 +349,24 @@ class VisitViewModel(
         publish()
     }
 
+    /** A new pyramid of a new set starts from the first step of the last one. */
+    fun togglePyramidStart() {
+        val machine = open ?: return
+        form.togglePyramid()
+        if (form.pyramid && form.editing == null) {
+            lastPyramidStart(visitSets.filter { it.machineId == machine.id })?.let {
+                form.suggest(SetValues(it.weight, it.reps))
+            }
+        }
+        publish()
+    }
+
+    fun togglePyramidOpen(start: WorkoutSetId) {
+        toggledPyramids =
+            if (start in toggledPyramids) toggledPyramids - start else toggledPyramids + start
+        publish()
+    }
+
     fun switchTo(id: UserId) {
         viewModelScope.launch { accounts.switchTo(id) }
     }
@@ -331,6 +377,7 @@ class VisitViewModel(
         // Taken now: while the write waits on the network the page may move to another machine.
         val saved = form.values
         val comment = form.comment.trim()
+        val pyramid = form.pyramid
         val edited = form.editing
         writes.launch {
             saving = true
@@ -338,13 +385,14 @@ class VisitViewModel(
             try {
                 if (edited == null) {
                     val owner = currentUser.id()
-                    recorder.record(owner, catalogue.ownCopy(owner, machine), saved, comment)
+                    val own = catalogue.ownCopy(owner, machine)
+                    recorder.record(owner, own, saved, comment, pyramid)
                 } else {
-                    recorder.amend(edited, saved, comment)
+                    recorder.amend(edited, saved, comment, pyramid)
                 }
                 val stillOpen = open?.id == machine.id
                 if (stillOpen && form.editing?.id == edited?.id) {
-                    form.clearComment()
+                    form.clearForNext()
                     // A correction is done with; a new set is followed by the next one.
                     if (edited != null) form.close()
                 }
@@ -611,8 +659,41 @@ class VisitViewModel(
                     ?: setValue(set.weight, set.reps, AppStrings.current.kg),
                 set.id == form.editing?.id,
                 set.comment,
+                set.pyramid,
             )
         }
+
+    /** The last pyramid shows open unless tapped closed, the others the other way round. */
+    private fun setBlocks(
+        machine: Machine,
+        onMachine: List<WorkoutSet>,
+        rows: List<SetRowUi>,
+    ): List<SetBlockUi> {
+        val groups = pyramidGroups(onMachine)
+        val lastStart =
+            groups
+                .lastOrNull { it.pyramid }
+                ?.sets
+                ?.first()
+                ?.id
+        var end = 0
+        return groups.map { group ->
+            val from = end
+            end += group.sets.size
+            val start = group.sets.first().id
+            val pyramid =
+                group.takeIf { it.pyramid }?.let {
+                    val best = checkNotNull(bestSet(it.sets, machine.weightMode))
+                    PyramidUi(
+                        start,
+                        if (end - from == 1) "#$end" else "#${from + 1}–$end",
+                        setValue(best.weight, best.reps, machine, preferred),
+                        (start == lastStart) != (start in toggledPyramids),
+                    )
+                }
+            SetBlockUi(pyramid, rows.subList(from, end))
+        }
+    }
 
     private fun groupUi(
         machineId: MachineId,
@@ -688,6 +769,7 @@ class VisitViewModel(
                 dayMonthLabel(day, CalendarDay.of(clock.now(), offset).year)
             }
         val planned = shownVisit?.planned.orEmpty()
+        val rows = setRows(machine, onMachine)
         return MachinePageUi(
             machineId = machine.id,
             name = machine.name,
@@ -716,13 +798,14 @@ class VisitViewModel(
                 onMachine.takeIf { it.isNotEmpty() }?.let {
                     "$dayName · ${setCount(it.size)}"
                 },
-            sets = setRows(machine, onMachine),
+            sets = rows,
             canUnplan = onMachine.isEmpty() && machine.id in planned && !readOnly,
             form = if (form.isOpen && !readOnly) formUi(machine, onMachine) else null,
             readOnly = readOnly,
             ordering = orderingSets,
             canOrder = onMachine.size > 1 && !readOnly,
             swipeOrder = listed.takeIf { machine.id in it.map(SetGroupUi::machineId) }.orEmpty(),
+            blocks = setBlocks(machine, onMachine, rows),
         )
     }
 
@@ -755,6 +838,13 @@ class VisitViewModel(
             converted = recordingConversion(machine, form.values.weight, preferred),
             reps = form.repsShown,
             comment = form.comment,
+            pyramid = form.pyramid,
+            pyramidLabel =
+                if (edited == null && onMachine.any { it.pyramid }) {
+                    AppStrings.current.startNewPyramid
+                } else {
+                    AppStrings.current.startPyramid
+                },
             editing = edited != null,
             people = people,
             saveLabel = saveLabel(edited != null),

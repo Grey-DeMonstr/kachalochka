@@ -25,10 +25,12 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,8 +48,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -61,6 +66,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountUi
 import monster.greyde.kachalochka.ui.account.PersonAvatar
@@ -223,33 +229,43 @@ internal fun MachinePage(
                     }
                     val setOrder = rememberReorderState()
                     SideEffect { setOrder.retain(page.sets.size) }
-                    Column {
-                        page.sets.forEachIndexed { index, row ->
-                            Row(
-                                Modifier
-                                    .reorderItem(setOrder, index)
-                                    .dragOutline(setOrder.dragging == index),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                if (page.ordering) {
+                    val pyramidName = strings().pyramid
+                    val rowLook =
+                        Modifier
+                            .clip(ControlShape)
+                            .background(colors.onBackground.copy(alpha = 0.04f))
+                    if (!page.ordering) {
+                        SetBlocks(
+                            page.blocks,
+                            (viewModel::editSet).takeUnless { page.readOnly },
+                            viewModel::togglePyramidOpen,
+                            rowLook,
+                        )
+                    } else {
+                        Column {
+                            page.sets.forEachIndexed { index, row ->
+                                Row(
+                                    Modifier
+                                        .reorderItem(setOrder, index)
+                                        .dragOutline(setOrder.dragging == index),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
                                     DragHandle(setOrder, index, "drag-set-${row.id.value}") {
                                         from,
                                         to,
                                         ->
                                         viewModel.moveSet(page.sets[from].id, to)
                                     }
+                                    if (row.pyramid) {
+                                        PyramidIcon(
+                                            Modifier
+                                                .padding(end = 8.dp)
+                                                .semantics { contentDescription = pyramidName }
+                                                .testTag("pyramid-mark-${row.id.value}"),
+                                        )
+                                    }
+                                    SetRow(row, null, Modifier.weight(1f).then(rowLook))
                                 }
-                                SetRow(
-                                    row,
-                                    onEdit =
-                                        (viewModel::editSet).takeUnless {
-                                            page.readOnly || page.ordering
-                                        },
-                                    Modifier
-                                        .weight(1f)
-                                        .clip(ControlShape)
-                                        .background(colors.onBackground.copy(alpha = 0.04f)),
-                                )
                             }
                         }
                     }
@@ -460,6 +476,28 @@ private fun SetForm(
             onValueChange = viewModel::typeReps,
             keyboardType = KeyboardType.Number,
         )
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .toggleable(
+                    value = form.pyramid,
+                    role = Role.Checkbox,
+                    onValueChange = { viewModel.togglePyramidStart() },
+                ).padding(horizontal = 4.dp)
+                .testTag("set-pyramid"),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(checked = form.pyramid, onCheckedChange = null)
+            Text(
+                form.pyramidLabel,
+                Modifier.weight(1f),
+                fontSize = 16.sp,
+                color = colors.onBackground,
+            )
+            PyramidIcon()
+        }
         TextInput(
             form.comment,
             strings().comment,
@@ -491,6 +529,93 @@ private fun SetForm(
                 height = 56.dp,
                 enabled = form.canSave,
                 loading = form.saving,
+            )
+        }
+    }
+}
+
+/** Frame 12a4: the day's sets, a pyramid as one row that opens to its sets. */
+@Composable
+private fun SetBlocks(
+    blocks: List<SetBlockUi>,
+    onEdit: ((WorkoutSetId) -> Unit)?,
+    onToggle: (WorkoutSetId) -> Unit,
+    rowLook: Modifier,
+) {
+    val line = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+    Column {
+        blocks.forEach { block ->
+            val pyramid = block.pyramid
+            if (pyramid == null) {
+                block.sets.forEach { SetRow(it, onEdit, rowLook) }
+            } else {
+                PyramidRow(pyramid) { onToggle(pyramid.start) }
+                if (pyramid.expanded) {
+                    Column(
+                        Modifier
+                            .padding(start = 22.dp)
+                            .drawBehind {
+                                drawLine(
+                                    line,
+                                    Offset.Zero,
+                                    Offset(0f, size.height),
+                                    strokeWidth = 1.5.dp.toPx(),
+                                )
+                            }.padding(start = 12.dp),
+                    ) {
+                        block.sets.forEach { SetRow(it, onEdit, rowLook) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PyramidRow(
+    pyramid: PyramidUi,
+    onToggle: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp)
+            .clip(ControlShape)
+            .background(colors.primary.copy(alpha = 0.09f))
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .testTag("pyramid-${pyramid.start.value}"),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(pyramid.numbers, fontSize = 15.sp, color = colors.onBackground.copy(alpha = 0.5f))
+        PyramidIcon()
+        Text(pyramid.best, Modifier.weight(1f), fontSize = 16.sp, color = colors.onBackground)
+        Icon(
+            if (pyramid.expanded) PhosphorIcons.CaretUp else PhosphorIcons.CaretDown,
+            null,
+            tint = colors.onBackground.copy(alpha = 0.55f),
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
+/** Three bars that step down; the same for every pyramid, whatever its weights. */
+@Composable
+private fun PyramidIcon(modifier: Modifier = Modifier) {
+    val color = MaterialTheme.colorScheme.secondary
+    Row(
+        modifier.height(20.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        listOf(20.dp, 16.dp, 11.dp).forEach {
+            Box(
+                Modifier
+                    .size(width = 5.dp, height = it)
+                    .clip(RoundedCornerShape(1.5.dp))
+                    .background(color),
             )
         }
     }

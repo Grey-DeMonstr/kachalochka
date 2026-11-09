@@ -156,6 +156,9 @@ object RuStrings : Strings {
     override val reps = "повторы"
     override val comment = "Комментарий"
     override val deleteSet = "Удалить подход"
+    override val pyramid = "Пирамида"
+    override val startPyramid = "Начать пирамиду"
+    override val startNewPyramid = "Начать новую пирамиду"
     override val saveSet = "Добавить"
 
     override val newSet = "Новый подход"
