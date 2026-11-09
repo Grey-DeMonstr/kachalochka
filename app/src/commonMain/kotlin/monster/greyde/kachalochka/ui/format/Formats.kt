@@ -95,11 +95,6 @@ fun weightShift(
     machine: Machine,
 ): String = "${if (shift < 0) "−" else "+"}${formatNumber(abs(shift))} ${unitLabel(machine)}"
 
-fun machineTitle(
-    machine: Machine,
-    preferred: PreferredWeightUnit,
-): String = platformSuffix(machine, preferred)?.let { "${machine.name} $it" } ?: machine.name
-
 fun setValue(
     weight: Double,
     reps: Int,

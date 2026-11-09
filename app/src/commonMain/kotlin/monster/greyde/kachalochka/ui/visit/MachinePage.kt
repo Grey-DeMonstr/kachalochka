@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountUi
@@ -148,59 +149,15 @@ internal fun MachinePage(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        MachineThumbnail(
-                            page.photo,
-                            PhosphorIcons.Barbell,
-                            Modifier.testTag("page-thumb"),
-                            size = 64.dp,
-                            onOpenSettings = onOpenMachineSettings.takeUnless { page.readOnly },
-                        )
-                        Column(
-                            Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Text(
-                                buildAnnotatedString {
-                                    append(page.name)
-                                    page.platformSuffix?.let {
-                                        withStyle(
-                                            SpanStyle(
-                                                fontSize = 15.sp,
-                                                fontWeight = FontWeight.Normal,
-                                                color = colors.onBackground.copy(alpha = 0.55f),
-                                            ),
-                                        ) { append(" $it") }
-                                    }
-                                },
-                                modifier = Modifier.testTag("page-machine-name"),
-                                fontSize = 21.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = colors.onBackground,
-                            )
-                            if (page.tags.isNotEmpty()) {
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                                ) {
-                                    page.tags.forEach {
-                                        TagChip(
-                                            it,
-                                            Modifier.testTag("page-tag-$it"),
-                                        )
-                                    }
-                                }
-                            }
-                            if (page.setupNote.isNotBlank()) {
-                                Text(
-                                    page.setupNote,
-                                    modifier = Modifier.testTag("page-note"),
-                                    fontSize = 15.sp,
-                                    color = colors.onBackground.copy(alpha = 0.68f),
-                                )
-                            }
-                        }
-                    }
+                    MachineHeader(
+                        page.name,
+                        page.platformSuffix,
+                        page.photo,
+                        page.tags,
+                        page.setupNote,
+                        "page",
+                        onOpenSettings = onOpenMachineSettings.takeUnless { page.readOnly },
+                    )
                     if (page.record != null || page.previous != null) {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             page.record?.let {
@@ -310,7 +267,7 @@ internal fun MachinePage(
 }
 
 /**
- * Swipes through the visit's machines. A neighbour shows its row's lines until the view model
+ * Swipes through the visit's machines. A neighbour shows its page's header until the view model
  * opens it. The open form and the set handles keep their gestures to themselves.
  */
 @Composable
@@ -345,21 +302,76 @@ private fun MachinePager(
     }
 }
 
+/** Drawn as the page's own header, so the swipe does not change it when the page opens. */
 @Composable
 private fun MachinePreview(group: SetGroupUi) {
-    Row(
-        Modifier.fillMaxSize().padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        MachineThumbnail(group.photo, PhosphorIcons.Barbell, size = 64.dp)
-        MachineLines(
-            title = group.title,
-            tags = group.tags,
-            note = group.setupNote,
-            summary = group.summary,
-            tag = "preview-${group.machineId.value}",
-            modifier = Modifier.weight(1f),
+    Box(Modifier.fillMaxSize().padding(16.dp)) {
+        MachineHeader(
+            group.name,
+            group.platformSuffix,
+            group.photo,
+            group.tags,
+            group.setupNote,
+            "preview-${group.machineId.value}",
         )
+    }
+}
+
+@Composable
+private fun MachineHeader(
+    name: String,
+    platformSuffix: String?,
+    photo: Photo?,
+    tags: List<String>,
+    note: String,
+    tag: String,
+    onOpenSettings: (() -> Unit)? = null,
+) {
+    val colors = MaterialTheme.colorScheme
+    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        MachineThumbnail(
+            photo,
+            PhosphorIcons.Barbell,
+            Modifier.testTag("$tag-thumb"),
+            size = 64.dp,
+            onOpenSettings = onOpenSettings,
+        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                buildAnnotatedString {
+                    append(name)
+                    platformSuffix?.let {
+                        withStyle(
+                            SpanStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = colors.onBackground.copy(alpha = 0.55f),
+                            ),
+                        ) { append(" $it") }
+                    }
+                },
+                modifier = Modifier.testTag("$tag-machine-name"),
+                fontSize = 21.sp,
+                fontWeight = FontWeight.Medium,
+                color = colors.onBackground,
+            )
+            if (tags.isNotEmpty()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    tags.forEach { TagChip(it, Modifier.testTag("$tag-tag-$it")) }
+                }
+            }
+            if (note.isNotBlank()) {
+                Text(
+                    note,
+                    modifier = Modifier.testTag("$tag-note"),
+                    fontSize = 15.sp,
+                    color = colors.onBackground.copy(alpha = 0.68f),
+                )
+            }
+        }
     }
 }
 

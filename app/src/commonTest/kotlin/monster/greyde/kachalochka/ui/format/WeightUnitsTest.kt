@@ -81,8 +81,8 @@ class WeightUnitsTest {
         assertEquals("90 lb × 8", setValue(90.0, 8, lbCable, PreferredWeightUnit.Mixed))
         assertEquals("(+45.5 кг)", platformSuffix(lbCable.copy(platformWeight = 100.0), kg))
         assertEquals(
-            "Жим ногами (+44 lb)",
-            machineTitle(kgPress.copy(platformWeight = 20.0), PreferredWeightUnit.Lb),
+            "(+44 lb)",
+            platformSuffix(kgPress.copy(platformWeight = 20.0), PreferredWeightUnit.Lb),
         )
     }
 }

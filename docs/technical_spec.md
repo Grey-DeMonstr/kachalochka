@@ -845,8 +845,8 @@ state of the machine's page and its set form, both drawn by the visit screen ove
 hands the recorder what to write. The page's `swipeOrder` is the list's rows, flattened from its
 sections, when the open machine is one of them. `MachinePager` shows the page in a
 `HorizontalPager` over these rows. The view model holds the state of the open machine only, so a
-neighbour page shows the lines of its row (`MachinePreview`) until the pager settles on it and
-calls `openMachine`. The pager is keyed by the open machine and its index, so the next machine
+neighbour page shows only the header of its page, from its row (`MachinePreview`), until the
+pager settles on it and calls `openMachine`. The pager is keyed by the open machine and its index, so the next machine
 gets a new pager at rest on its own page. The swipe is off while the form is open or the sets are
 being ordered, so the steppers, the sheet and the drag handles keep their gestures.
 

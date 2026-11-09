@@ -58,7 +58,6 @@ import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.daysAgoLabel
 import monster.greyde.kachalochka.ui.format.headedTagSections
-import monster.greyde.kachalochka.ui.format.machineTitle
 import monster.greyde.kachalochka.ui.format.platformSuffix
 import monster.greyde.kachalochka.ui.format.recordingConversion
 import monster.greyde.kachalochka.ui.format.saveLabel
@@ -106,14 +105,17 @@ data class VisitSectionUi(
 /** A machine's row; [summary] is its results, the weights and the reps, which may wrap apart. */
 data class SetGroupUi(
     val machineId: MachineId,
-    val title: String,
+    val name: String,
     val setupNote: String,
     val summary: List<String>,
     val sets: List<SetRowUi>,
     val photo: Photo? = null,
     val tags: List<String> = emptyList(),
     val planned: Boolean = false,
-)
+    val platformSuffix: String? = null,
+) {
+    val title: String get() = platformSuffix?.let { "$name $it" } ?: name
+}
 
 data class SetRowUi(
     val id: WorkoutSetId,
@@ -703,7 +705,8 @@ class VisitViewModel(
         val machine = machinesById[machineId]
         return SetGroupUi(
             machineId = machineId,
-            title = machine?.let { machineTitle(it, preferred) }.orEmpty(),
+            name = machine?.name.orEmpty(),
+            platformSuffix = machine?.let { platformSuffix(it, preferred) },
             setupNote = machine?.setupNote.orEmpty(),
             summary = machine?.let { setsSummaryParts(it, machineSets, preferred) }.orEmpty(),
             sets = setRows(machine, machineSets),
@@ -719,7 +722,8 @@ class VisitViewModel(
         val machine = machinesById.getValue(machineId)
         return SetGroupUi(
             machineId = machineId,
-            title = machineTitle(machine, preferred),
+            name = machine.name,
+            platformSuffix = platformSuffix(machine, preferred),
             setupNote = machine.setupNote,
             summary = listOf(AppStrings.current.planned),
             sets = emptyList(),

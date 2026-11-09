@@ -57,10 +57,8 @@ class FormatsTest {
         val sled = press.copy(platformWeight = 20.0)
 
         assertEquals("(+20 кг)", platformSuffix(sled, kg))
-        assertEquals("Жим ногами (+20 кг)", machineTitle(sled, kg))
         assertNull(platformSuffix(sled.copy(platformIncluded = true), kg))
         assertNull(platformSuffix(press, kg))
-        assertEquals("Жим ногами", machineTitle(press, kg))
     }
 
     @Test
