@@ -150,6 +150,35 @@ class StatisticsTest {
     }
 
     @Test
+    fun growth_compares_gains_of_machines_in_different_units_in_one_unit() {
+        val pounds = machine(PRESS, "Жим ногами").copy(unit = WeightUnit.Lb)
+        val kilograms = machine(ROW, "Тяга")
+
+        fun progress(
+            on: MachineId,
+            from: Double,
+            to: Double,
+        ) = on to
+            MachineProgress(
+                set(VISIT_A, from, 10, 0, machine = on),
+                set(VISIT_B, to, 10, 1, machine = on),
+                sinceBefore = true,
+                fromSets = 1,
+                toSets = 1,
+            )
+        // 50 lb are less than 25 kg.
+        val progress = mapOf(progress(PRESS, 100.0, 150.0), progress(ROW, 0.0, 25.0))
+
+        assertEquals(
+            listOf(kilograms, pounds),
+            listOf(
+                pounds,
+                kilograms,
+            ).sortedWith(statsOrder(StatsSort.Growth, emptyMap(), progress)),
+        )
+    }
+
+    @Test
     fun each_day_shows_its_best_set_oldest_first() {
         val utc: (Instant) -> Duration = { Duration.ZERO }
         val sets =

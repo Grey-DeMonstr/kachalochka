@@ -687,10 +687,10 @@ its sets can be edited.
 
 "Общая" starts with sort chips drawn like the tags: "Недавние" (the default), "А–Я" and
 "Частые", as in the machine list, and "Рост", the biggest gain first, as a visit card weighs it:
-the most weight gained, then the most reps, then the most sets of the best result in its visit.
-The sort is not remembered. When a machine has tags,
-"Группировать по тегам" follows, the same choice as the visit list's: it splits the cards into
-sections headed by their tags, as the visit does. The sort and the grouping order the search
+the most weight gained, compared in kg across machines in kg and lb, then the most reps, then
+the most sets of the best result in its visit. The sort is not remembered. When a machine has
+tags, "Группировать по тегам" follows, the same choice as the visit list's: it splits the cards
+into sections headed by their tags, as the visit does. The sort and the grouping order the search
 list's machines too. "Только улучшения", on each time the screen opens, keeps only the cards with
 a green chip; with none left, the list says "Нет улучшений за период".
 

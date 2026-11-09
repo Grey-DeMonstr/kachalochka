@@ -69,8 +69,9 @@ enum class StatsSort(
 }
 
 /**
- * [StatsSort.Growth] ranks as a visit card weighs a gain: by the weight gained, then the reps,
- * then the sets, then as [MachineSort.Recent]; machines without progress in the period come last.
+ * [StatsSort.Growth] ranks as a visit card weighs a gain: by the weight gained, in kilograms
+ * across machines, then the reps, then the sets, then as [MachineSort.Recent]; machines without
+ * progress in the period come last.
  */
 fun statsOrder(
     sort: StatsSort,
@@ -79,7 +80,10 @@ fun statsOrder(
 ): Comparator<Machine> {
     sort.machineSort?.let { return machineOrder(it, peaks) }
     return compareByDescending<Machine> { m ->
-        progress[m.id]?.let { weightGain(it.from.weight, it.to.weight, m.weightMode) }
+        progress[m.id]?.let {
+            val gain = weightGain(it.from.weight, it.to.weight, m.weightMode)
+            if (m.unit == WeightUnit.Lb) gain * KG_PER_LB else gain
+        }
     }.thenByDescending { m -> progress[m.id]?.let { it.to.reps - it.from.reps } }
         .thenByDescending { m -> progress[m.id]?.let { it.toSets - it.fromSets } }
         .then(machineOrder(MachineSort.Recent, peaks))
