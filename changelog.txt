@@ -1,5 +1,19 @@
 Kachalochka - Changelog
 
+1.9.0
+
+- Pyramids added.
+- The sets of a machine can be reordered.
+- Swipe left or right on a machine's page to go to the other machines of the visit.
+- A visit is shared as text or as a picture from one popup.
+- On Android, friends' results and machine photos show also without a network.
+- On Android, a hidden network check and a proxy setting added.
+- Back ends the reorder mode.
+- Fixed: a machine added to a visit disappeared when its set form closed without a save.
+- Fixed: the "Рост" sort in statistics put small gains on light machines first.
+- Fixed: a friend's visit could stay empty with a bad network.
+
+
 1.8.3
 
 - On Android, your own visit cards can be shared as a picture.
