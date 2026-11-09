@@ -1,5 +1,10 @@
 Kachalochka - Changelog
 
+1.9.1
+
+- Fixed: on Android, the app crashed when a machine of a visit was opened.
+
+
 1.9.0
 
 - Pyramids added.
