@@ -334,7 +334,7 @@ private fun MachinePager(
             pager,
             Modifier.fillMaxSize(),
             userScrollEnabled = page.form == null && !page.ordering,
-            key = { ids[it] },
+            key = { ids[it].value },
         ) { shownIndex ->
             if (shownIndex == index) {
                 content()

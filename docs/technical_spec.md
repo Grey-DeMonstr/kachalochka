@@ -1278,6 +1278,10 @@ moves back-stack entries. `runNavigationUiTest` sets an unconfined one for the d
 test, which is all such a test needs. The cost is the guard: lifecycle can no longer reject a
 main-thread violation in the code under test.
 
+`runNavigationUiTest` also refuses saved state that an Android `Bundle` cannot hold, as Android
+does. A lazy list or a pager keeps each item's state under the item's key, so its keys must be
+strings or other `Bundle` types, not value classes such as `MachineId`.
+
 App UI tests that host a single screen instead use `runScreenTest`: a single-destination
 `NavHost`, so the screen under test still gets a `ViewModelStoreOwner`. It wires in fake
 repositories, a fixed clock and a ticker that only advances when the test tells it to.
