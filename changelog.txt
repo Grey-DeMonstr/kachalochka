@@ -21,7 +21,7 @@ Kachalochka - Changelog
 - On Android, a hidden network check and a proxy setting added.
 - Back ends the reorder mode.
 - Fixed: a machine added to a visit disappeared when its set form closed without a save.
-- Fixed: the "Рост" sort in statistics put small gains on light machines first.
+- Fixed: the "Growth" sort in statistics put small gains on light machines first.
 - Fixed: a friend's visit could stay empty with a bad network.
 
 
@@ -37,7 +37,7 @@ Kachalochka - Changelog
 
 1.8.1
 
-- Visit cards show a gain in sets and mark a machine's first day with "Новое".
+- Visit cards show a gain in sets and mark a machine's first day with "New".
 - Friends' visit cards show their gains.
 - The feed can be filtered by person.
 - A machine without recorded sets can be deleted from its form.
