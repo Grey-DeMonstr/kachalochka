@@ -20,24 +20,24 @@ class SharedVisitCardTest {
     private val card =
         VisitCardUi(
             tag = "card",
-            person = PersonUi(null, "ГДМ", Avatar()),
+            person = PersonUi(null, "GDM", Avatar()),
             color = null,
             day = day,
-            tags = listOf("НОГИ"),
-            exercises = (1..5).map { ExerciseUi("Упражнение $it", "18 кг × 15", null) },
+            tags = listOf("LEGS"),
+            exercises = (1..5).map { ExerciseUi("Machine $it", "18 kg × 15", null) },
             own =
                 OwnVisitUi(
                     visit,
                     canRepeatToday = true,
-                    date = "четверг, 29 октября",
-                    shared = SharedVisit("ГДМ", day, emptyList(), PreferredWeightUnit.Kg),
+                    date = "Thursday, 29 October",
+                    shared = SharedVisit("GDM", day, emptyList(), PreferredWeightUnit.Kg),
                 ),
         )
 
     @Test
     fun the_shared_card_shows_every_machine_and_the_date_without_the_controls() =
         runScreenTest(FakeGym(), screen = { SharedVisitCard(card) }) {
-            onNodeWithTag("card-date").assertTextEquals("четверг, 29 октября").assertIsDisplayed()
+            onNodeWithTag("card-date").assertTextEquals("Thursday, 29 October").assertIsDisplayed()
             onNodeWithTag("card-machine-4").assertIsDisplayed()
             onNodeWithTag("card-more").assertDoesNotExist()
             onNodeWithTag("visit-menu-${visit.value}").assertDoesNotExist()

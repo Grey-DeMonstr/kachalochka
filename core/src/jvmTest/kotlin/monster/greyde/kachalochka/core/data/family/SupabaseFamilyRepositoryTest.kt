@@ -54,12 +54,12 @@ class SupabaseFamilyRepositoryTest {
             val picture = "https://example.test/m.png"
             val engine = MockEngine.Queue()
             engine.answer(
-                """[{"user_id":"${SASHA.value}","relation":"child","display_name":"Саша",""" +
+                """[{"user_id":"${SASHA.value}","relation":"child","display_name":"Sasha",""" +
                     """"avatar_photo":"${photo.value}","picture_url":null},""" +
-                    """{"user_id":"${MASHA.value}","relation":"child","display_name":"Маша",""" +
+                    """{"user_id":"${MASHA.value}","relation":"child","display_name":"Masha",""" +
                     """"avatar_photo":null,"picture_url":"$picture"},""" +
                     """{"user_id":"${IVAN.value}","relation":"guardian",""" +
-                    """"display_name":"Иван","avatar_photo":null,"picture_url":null}]""",
+                    """"display_name":"Ivan","avatar_photo":null,"picture_url":null}]""",
             )
             engine.answer("[]")
 
@@ -69,10 +69,10 @@ class SupabaseFamilyRepositoryTest {
                 Family(
                     children =
                         listOf(
-                            FamilyMember(MASHA, "Маша", Avatar(picture = picture)),
-                            FamilyMember(SASHA, "Саша", Avatar(photo = photo)),
+                            FamilyMember(MASHA, "Masha", Avatar(picture = picture)),
+                            FamilyMember(SASHA, "Sasha", Avatar(photo = photo)),
                         ),
-                    guardians = listOf(FamilyMember(IVAN, "Иван")),
+                    guardians = listOf(FamilyMember(IVAN, "Ivan")),
                 ),
                 family,
             )
@@ -88,23 +88,23 @@ class SupabaseFamilyRepositoryTest {
             val engine = MockEngine.Queue()
             engine.answer(
                 """[{"user_id":"${MASHA.value}","relation":"child",""" +
-                    """"display_name":"Маша","avatar_photo":null,"picture_url":null}]""",
+                    """"display_name":"Masha","avatar_photo":null,"picture_url":null}]""",
             )
             engine.answer(
-                """[{"user_id":"${SASHA.value}","relation":"trainee","display_name":"Саша",""" +
+                """[{"user_id":"${SASHA.value}","relation":"trainee","display_name":"Sasha",""" +
                     """"avatar_photo":null,"picture_url":null},""" +
                     """{"user_id":"${IVAN.value}","relation":"trainer",""" +
-                    """"display_name":"Иван","avatar_photo":null,"picture_url":null}]""",
+                    """"display_name":"Ivan","avatar_photo":null,"picture_url":null}]""",
             )
 
             val family = repositoryOn(engine).family()
 
             assertEquals(
                 Family(
-                    children = listOf(FamilyMember(MASHA, "Маша")),
+                    children = listOf(FamilyMember(MASHA, "Masha")),
                     guardians = emptyList(),
-                    trainees = listOf(FamilyMember(SASHA, "Саша")),
-                    trainers = listOf(FamilyMember(IVAN, "Иван")),
+                    trainees = listOf(FamilyMember(SASHA, "Sasha")),
+                    trainers = listOf(FamilyMember(IVAN, "Ivan")),
                 ),
                 family,
             )

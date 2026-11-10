@@ -11,7 +11,7 @@ internal val ROW = MachineId("0e000000-0000-4000-8000-00000000000e")
 
 internal fun machine(
     id: MachineId = PRESS,
-    name: String = "Жим ногами",
+    name: String = "Leg press",
     platformWeight: Double = 0.0,
     platformIncluded: Boolean = false,
 ) = Machine.new(name, null, T0).copy(

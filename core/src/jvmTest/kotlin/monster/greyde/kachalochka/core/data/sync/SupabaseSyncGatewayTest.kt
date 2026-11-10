@@ -145,9 +145,9 @@ class SupabaseSyncGatewayTest {
         runTest {
             val row =
                 """[{"id":"33333333-3333-4333-8333-333333333333","user_id":"${OWNER.value}",""" +
-                    """"name":"Гравитрон","setup_note":"","weight_mode":"hydraulic",""" +
+                    """"name":"Gravitron","setup_note":"","weight_mode":"hydraulic",""" +
                     """"platform_weight":0.0,"platform_included":false,"unit":"custom",""" +
-                    """"unit_label":"плитка","weight_step":1.0,""" +
+                    """"unit_label":"plate","weight_step":1.0,""" +
                     """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false,""" +
                     """"link_id":null,"photo_id":null,"tags":"[]","cover_photo":null}]"""
             val engine = MockEngine.Queue()
@@ -159,7 +159,7 @@ class SupabaseSyncGatewayTest {
             val machine = pulled.single()
 
             assertEquals(WeightMode.Total, machine.weightMode)
-            assertEquals(WeightUnit.Custom to "плитка", machine.unit to machine.unitLabel)
+            assertEquals(WeightUnit.Custom to "plate", machine.unit to machine.unitLabel)
         }
 
     @Test
@@ -167,7 +167,7 @@ class SupabaseSyncGatewayTest {
         runTest {
             val engine = MockEngine.Queue()
             engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
-            val press = Machine.new("Жим ногами", OWNER, Instant.parse("2024-01-01T00:00:00Z"))
+            val press = Machine.new("Leg press", OWNER, Instant.parse("2024-01-01T00:00:00Z"))
 
             gatewayOn(engine, pageSize = 10).pushMachine(press)
 
@@ -185,7 +185,7 @@ class SupabaseSyncGatewayTest {
         runTest {
             val engine = MockEngine.Queue()
             engine.enqueue { respond("", HttpStatusCode.Created, jsonHeaders()) }
-            val press = Machine.new("Жим ногами", OWNER, Instant.parse("2024-01-01T00:00:00Z"))
+            val press = Machine.new("Leg press", OWNER, Instant.parse("2024-01-01T00:00:00Z"))
 
             gatewayOn(engine, pageSize = 10).pushMachine(press)
 

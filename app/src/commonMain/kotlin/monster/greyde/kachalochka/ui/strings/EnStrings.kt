@@ -543,6 +543,7 @@ object EnStrings : Strings {
     override val themeDark = "Dark"
     override val language = "Language"
     override val languageSystem = "System"
+    override val languageName = "English"
     override val animation = "Animation"
     override val transitions = "Screen transitions"
     override val transitionNone = "No animation"

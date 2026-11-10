@@ -75,7 +75,7 @@ import org.koin.core.parameter.parametersOf
 
 private val CardShape = RoundedCornerShape(12.dp)
 
-/** Opens on [initial], or on "Общая" when it is null. */
+/** Opens on [initial], or on "Overall" when it is null. */
 @Composable
 fun StatisticsScreen(
     initial: MachineId?,

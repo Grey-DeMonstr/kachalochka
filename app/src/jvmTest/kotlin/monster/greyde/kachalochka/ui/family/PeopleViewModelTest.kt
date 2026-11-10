@@ -89,7 +89,7 @@ class PeopleViewModelTest {
         vm.addChild()
 
         assertNull(vm.state.value.offer)
-        assertEquals("Нет связи с сервером", vm.state.value.notice)
+        assertEquals("No connection to the server", vm.state.value.notice)
     }
 
     @Test
@@ -101,7 +101,7 @@ class PeopleViewModelTest {
         assertEquals(
             listOf(
                 Invite(
-                    "Добавь меня родителем в Качалочке",
+                    "Add me as your parent in Kachalochka",
                     "PAPA2345",
                     "https://example.test/kachalochka/?parent=PAPA2345",
                 ),
@@ -109,7 +109,7 @@ class PeopleViewModelTest {
             gym.invites.shared,
         )
         assertEquals(
-            "Ссылка скопирована",
+            "Link copied",
             vm.state.value.offer
                 ?.notice,
         )
@@ -172,7 +172,7 @@ class PeopleViewModelTest {
         vm.link()
 
         assertEquals(
-            "Код не найден или устарел",
+            "Code not found or expired",
             vm.state.value.entry
                 ?.error,
         )
@@ -188,7 +188,7 @@ class PeopleViewModelTest {
         vm.link()
 
         assertEquals(
-            "Это ваш собственный код",
+            "That is your own code",
             vm.state.value.entry
                 ?.error,
         )
@@ -206,7 +206,7 @@ class PeopleViewModelTest {
         vm.link()
 
         assertEquals(
-            "Нет связи с сервером",
+            "No connection to the server",
             vm.state.value.entry
                 ?.error,
         )
@@ -263,7 +263,7 @@ class PeopleViewModelTest {
         vm.confirmRemove()
 
         assertEquals(1, gym.family.links.size)
-        assertEquals("Нет связи с сервером", vm.state.value.notice)
+        assertEquals("No connection to the server", vm.state.value.notice)
     }
 
     @Test
@@ -333,7 +333,7 @@ class PeopleViewModelTest {
         vm.share()
 
         assertEquals(
-            "Добавь меня тренером в Качалочке",
+            "Add me as your trainer in Kachalochka",
             gym.invites.shared
                 .single()
                 .call,
@@ -365,7 +365,7 @@ class PeopleViewModelTest {
         vm.link()
 
         assertEquals(
-            "Код не найден или устарел",
+            "Code not found or expired",
             vm.state.value.entry
                 ?.error,
         )

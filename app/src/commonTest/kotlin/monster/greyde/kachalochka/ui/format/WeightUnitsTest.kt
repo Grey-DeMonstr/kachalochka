@@ -9,13 +9,13 @@ import kotlin.time.Instant
 
 class WeightUnitsTest {
     private val t0 = Instant.fromEpochSeconds(1_700_000_000)
-    private val kgPress = Machine.new("Жим ногами", null, t0)
+    private val kgPress = Machine.new("Leg press", null, t0)
     private val lbCable =
-        Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb, weightStep = 5.0)
+        Machine.new("Cable crossover", null, t0).copy(unit = WeightUnit.Lb, weightStep = 5.0)
     private val gravitron =
         Machine
-            .new("Гравитрон", null, t0)
-            .copy(unit = WeightUnit.Custom, unitLabel = "плитка", weightStep = 1.0)
+            .new("Gravitron", null, t0)
+            .copy(unit = WeightUnit.Custom, unitLabel = "plate", weightStep = 1.0)
 
     @Test
     fun kilograms_or_pounds_replace_the_machine_s_unit_and_mixed_keeps_it() {
@@ -54,15 +54,15 @@ class WeightUnitsTest {
 
     @Test
     fun a_machine_s_caption_names_the_shown_unit_and_the_converted_step() {
-        assertEquals("кг всего · ±2.3", weightCaption(lbCable, PreferredWeightUnit.Kg))
-        assertEquals("lb всего · ±5.5", weightCaption(kgPress, PreferredWeightUnit.Lb))
-        assertEquals("lb всего · ±5", weightCaption(lbCable, PreferredWeightUnit.Mixed))
-        assertEquals("плитка всего · ±1", weightCaption(gravitron, PreferredWeightUnit.Lb))
+        assertEquals("kg total · ±2.3", weightCaption(lbCable, PreferredWeightUnit.Kg))
+        assertEquals("lb total · ±5.5", weightCaption(kgPress, PreferredWeightUnit.Lb))
+        assertEquals("lb total · ±5", weightCaption(lbCable, PreferredWeightUnit.Mixed))
+        assertEquals("plate total · ±1", weightCaption(gravitron, PreferredWeightUnit.Lb))
     }
 
     @Test
     fun a_weight_recorded_in_another_unit_is_converted_to_the_chosen_one() {
-        assertEquals("41 кг", recordingConversion(lbCable, 90.0, PreferredWeightUnit.Kg))
+        assertEquals("41 kg", recordingConversion(lbCable, 90.0, PreferredWeightUnit.Kg))
         assertEquals("88 lb", recordingConversion(kgPress, 40.0, PreferredWeightUnit.Lb))
     }
 
@@ -77,9 +77,9 @@ class WeightUnitsTest {
     @Test
     fun a_set_and_a_platform_read_in_the_shown_unit() {
         val kg = PreferredWeightUnit.Kg
-        assertEquals("41 кг × 8", setValue(90.0, 8, lbCable, kg))
+        assertEquals("41 kg × 8", setValue(90.0, 8, lbCable, kg))
         assertEquals("90 lb × 8", setValue(90.0, 8, lbCable, PreferredWeightUnit.Mixed))
-        assertEquals("(+45.5 кг)", platformSuffix(lbCable.copy(platformWeight = 100.0), kg))
+        assertEquals("(+45.5 kg)", platformSuffix(lbCable.copy(platformWeight = 100.0), kg))
         assertEquals(
             "(+44 lb)",
             platformSuffix(kgPress.copy(platformWeight = 20.0), PreferredWeightUnit.Lb),

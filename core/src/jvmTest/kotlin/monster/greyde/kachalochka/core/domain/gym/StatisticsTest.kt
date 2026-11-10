@@ -105,12 +105,12 @@ class StatisticsTest {
 
     @Test
     fun growth_orders_as_a_visit_card_weighs_a_gain_then_by_recency_leaving_the_unused_last() {
-        val abs = machine(MachineId("0f000000-0000-4000-8000-00000000000f"), "Аб")
-        val press = machine(PRESS, "Жим ногами")
-        val row = machine(ROW, "Тяга")
-        val bench = machine(MachineId("0c100000-0000-4000-8000-00000000000c"), "Жим лёжа")
-        val curl = machine(MachineId("0c200000-0000-4000-8000-00000000000c"), "Бицепс")
-        val fly = machine(MachineId("0c300000-0000-4000-8000-00000000000c"), "Бабочка")
+        val abs = machine(MachineId("0f000000-0000-4000-8000-00000000000f"), "Abs")
+        val press = machine(PRESS, "Leg press")
+        val row = machine(ROW, "Row")
+        val bench = machine(MachineId("0c100000-0000-4000-8000-00000000000c"), "Bench press")
+        val curl = machine(MachineId("0c200000-0000-4000-8000-00000000000c"), "Biceps curl")
+        val fly = machine(MachineId("0c300000-0000-4000-8000-00000000000c"), "Pec deck")
 
         fun progress(
             on: MachineId,
@@ -151,8 +151,8 @@ class StatisticsTest {
 
     @Test
     fun growth_compares_gains_of_machines_in_different_units_in_one_unit() {
-        val pounds = machine(PRESS, "Жим ногами").copy(unit = WeightUnit.Lb)
-        val kilograms = machine(ROW, "Тяга")
+        val pounds = machine(PRESS, "Leg press").copy(unit = WeightUnit.Lb)
+        val kilograms = machine(ROW, "Row")
 
         fun progress(
             on: MachineId,

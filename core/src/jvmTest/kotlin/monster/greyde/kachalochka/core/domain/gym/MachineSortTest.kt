@@ -5,9 +5,9 @@ import kotlin.test.assertEquals
 import kotlin.time.Instant
 
 class MachineSortTest {
-    private val abs = machine(MachineId("0f000000-0000-4000-8000-00000000000f"), "Аб")
-    private val press = machine(PRESS, "Жим ногами")
-    private val smith = machine(ROW, "Приседания в Смите")
+    private val abs = machine(MachineId("0f000000-0000-4000-8000-00000000000f"), "Abs")
+    private val press = machine(PRESS, "Leg press")
+    private val smith = machine(ROW, "Smith squat")
     private val machines = listOf(press, abs, smith)
 
     private fun used(

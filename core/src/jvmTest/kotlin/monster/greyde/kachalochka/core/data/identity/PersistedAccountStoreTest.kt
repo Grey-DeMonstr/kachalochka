@@ -81,12 +81,12 @@ class PersistedAccountStoreTest {
             val storage = FakeStorage()
             PersistedAccountStore(storage).run {
                 add(ivan)
-                rememberNickname(ivan.account.userId, "Ванёк")
+                rememberNickname(ivan.account.userId, "Vanya")
             }
 
             val shown = PersistedAccountStore(storage).accounts.value.single()
 
-            assertEquals("Ванёк", shown.shownName)
+            assertEquals("Vanya", shown.shownName)
             assertEquals("Ivan", shown.displayName)
         }
 
@@ -108,11 +108,11 @@ class PersistedAccountStoreTest {
         runTest {
             val store = PersistedAccountStore(FakeStorage())
             store.add(ivan)
-            store.rememberNickname(ivan.account.userId, "Ванёк")
+            store.rememberNickname(ivan.account.userId, "Vanya")
 
             store.replaceSession(ivan.copy(accessToken = "fresh"))
             assertEquals(
-                "Ванёк",
+                "Vanya",
                 store.accounts.value
                     .single()
                     .nickname,
@@ -120,7 +120,7 @@ class PersistedAccountStoreTest {
 
             store.add(ivan.copy(accessToken = "again"))
             assertEquals(
-                "Ванёк",
+                "Vanya",
                 store.accounts.value
                     .single()
                     .nickname,
@@ -135,7 +135,7 @@ class PersistedAccountStoreTest {
             val sasha = managedChild(ivan)
             store.setManaged(listOf(sasha))
 
-            store.rememberNickname(SASHA_ID, "Санёк")
+            store.rememberNickname(SASHA_ID, "Sanya")
 
             assertEquals(listOf(ivan.account, sasha), store.accounts.value)
         }

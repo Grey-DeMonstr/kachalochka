@@ -24,11 +24,11 @@ import kotlin.time.Duration.Companion.hours
 class PlansScreenTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val row = Machine.new("Тяга", null, t0)
-    private val gone = Machine.new("Гакк", null, t0).copy(deleted = true)
+    private val press = Machine.new("Leg press", null, t0)
+    private val row = Machine.new("Row", null, t0)
+    private val gone = Machine.new("Hack squat", null, t0).copy(deleted = true)
     private val legs =
-        Plan(PlanId.random(), null, "Ноги", listOf(press.id, gone.id), t0, t0, false)
+        Plan(PlanId.random(), null, "Legs", listOf(press.id, gone.id), t0, t0, false)
     private val unnamed =
         Plan(PlanId.random(), null, " ", listOf(row.id, press.id), t0 + 1.hours, t0, false)
 
@@ -52,19 +52,19 @@ class PlansScreenTest {
     fun plans_list_oldest_first_by_name_or_machines_with_their_live_count() =
         runScreenTest(gym, screen = plans()) {
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Планы")
+            onNodeWithTag("top-bar-title").assertTextEquals("Plans")
             onNodeWithTag(
                 "plan-title-${legs.id.value}",
                 useUnmergedTree = true,
-            ).assertTextEquals("Ноги")
+            ).assertTextEquals("Legs")
             onNodeWithTag(
                 "plan-count-${legs.id.value}",
                 useUnmergedTree = true,
-            ).assertTextEquals("1 упражнение")
+            ).assertTextEquals("1 machine")
             onNodeWithTag(
                 "plan-title-${unnamed.id.value}",
                 useUnmergedTree = true,
-            ).assertTextEquals("Тяга, Жим ногами")
+            ).assertTextEquals("Row, Leg press")
             onNodeWithTag("no-plans").assertDoesNotExist()
         }
 

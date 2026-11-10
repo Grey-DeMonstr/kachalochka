@@ -3,7 +3,7 @@ package monster.greyde.kachalochka.ui.stats
 import monster.greyde.kachalochka.core.domain.gym.StatsPeriod
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
-/** The overall [sections] as a message: "ГДМ, за месяц", then each card's change and best set. */
+/** The overall [sections] as a message: "GDM, past month", then each card's change and best. */
 internal fun statsExportText(
     nickname: String,
     period: StatsPeriod,

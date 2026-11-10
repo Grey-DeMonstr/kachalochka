@@ -19,7 +19,7 @@ class FriendColorStoreTest {
     private val vova = UserId("55555555-5555-4555-8555-555555555555")
 
     private suspend fun storedProfile() =
-        Profile.new(owner, gym.clock.current).copy(displayName = "Ванёк").also {
+        Profile.new(owner, gym.clock.current).copy(displayName = "Vanya").also {
             gym.profiles.upsert(it)
         }
 
@@ -58,7 +58,7 @@ class FriendColorStoreTest {
         runTest {
             val gym = signedInGym()
             val store = FriendColorStore(gym.profiles, gym.clock, gym.friends)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
 
             val everyone = store.colorsFor(owner, listOf(OLEG.userId, PASHA.userId))
 
@@ -131,7 +131,7 @@ class FriendColorStoreTest {
             val original =
                 Profile
                     .new(owner, gym.clock.current)
-                    .copy(displayName = "Ванёк", friendColors = mapOf(OLEG.userId to 1))
+                    .copy(displayName = "Vanya", friendColors = mapOf(OLEG.userId to 1))
             gym.profiles.upsert(original)
             gym.clock.current += 1.hours
 
@@ -139,7 +139,7 @@ class FriendColorStoreTest {
 
             val profile = assertNotNull(gym.profiles.forOwner(owner))
             assertEquals(mapOf(OLEG.userId to 6), profile.friendColors)
-            assertEquals("Ванёк", profile.displayName)
+            assertEquals("Vanya", profile.displayName)
             assertEquals(gym.clock.current, profile.updatedAt)
         }
 }

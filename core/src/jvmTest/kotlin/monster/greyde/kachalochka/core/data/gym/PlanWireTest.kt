@@ -21,7 +21,7 @@ class PlanWireTest {
         Plan(
             PlanId("9b1f0c3e-0000-4000-8000-000000000001"),
             UserId("9b1f0c3e-0000-4000-8000-000000000002"),
-            "Ноги",
+            "Legs",
             listOf(row, press),
             at,
             at,

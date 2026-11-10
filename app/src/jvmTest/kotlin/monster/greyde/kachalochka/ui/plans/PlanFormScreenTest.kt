@@ -37,11 +37,11 @@ import kotlin.test.assertTrue
 class PlanFormScreenTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val row = Machine.new("Тяга", null, t0)
-    private val gone = Machine.new("Гакк", null, t0).copy(deleted = true)
+    private val press = Machine.new("Leg press", null, t0)
+    private val row = Machine.new("Row", null, t0)
+    private val gone = Machine.new("Hack squat", null, t0).copy(deleted = true)
     private val legs =
-        Plan(PlanId.random(), null, "Ноги", listOf(press.id, gone.id), t0, t0, false)
+        Plan(PlanId.random(), null, "Legs", listOf(press.id, gone.id), t0, t0, false)
 
     init {
         runBlocking {
@@ -82,7 +82,7 @@ class PlanFormScreenTest {
                     .single { it.id != legs.id }
             assertEquals(listOf(row.id, press.id), written.machineIds)
             assertEquals(null, written.userId)
-            onNodeWithTag("plan-name").performTextReplacement("  Спина  ")
+            onNodeWithTag("plan-name").performTextReplacement("  Back  ")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
         }
@@ -91,7 +91,7 @@ class PlanFormScreenTest {
         val saved =
             gym.plans.rows.values
                 .single { it.id != legs.id }
-        assertEquals("Спина", saved.name)
+        assertEquals("Back", saved.name)
         assertEquals(listOf(row.id, press.id), saved.machineIds)
     }
 
@@ -101,13 +101,13 @@ class PlanFormScreenTest {
             PlanFormScreen(legs.id, null, {}, {}, {}, onDone = { done++ })
         }) {
             waitForIdle()
-            onNodeWithTag("plan-name").assertTextEquals("Ноги")
+            onNodeWithTag("plan-name").assertTextEquals("Legs")
             onNodeWithTag("plan-machine-${press.id.value}").assertIsDisplayed()
             onNodeWithTag("plan-machine-${gone.id.value}").assertDoesNotExist()
             onNodeWithTag("remove-${press.id.value}").performClick()
             waitForIdle()
             assertEquals(emptyList(), stored().machineIds)
-            assertEquals("Ноги", stored().name)
+            assertEquals("Legs", stored().name)
         }
 
     @Test
@@ -156,7 +156,7 @@ class PlanFormScreenTest {
 
     @Test
     fun while_ordering_a_tap_on_a_machine_opens_nothing() {
-        val back = Plan(PlanId.random(), null, "Спина", listOf(press.id, row.id), t0, t0, false)
+        val back = Plan(PlanId.random(), null, "Back", listOf(press.id, row.id), t0, t0, false)
         runBlocking { gym.plans.upsert(back) }
         val opened = mutableListOf<MachineId>()
         runScreenTest(gym, screen = {
@@ -185,12 +185,12 @@ class PlanFormScreenTest {
             PlanFormScreen(legs.id, null, {}, {}, {}, onDone = { done++ })
         }) {
             waitForIdle()
-            onNodeWithTag("plan-name").performTextReplacement("Спина")
+            onNodeWithTag("plan-name").performTextReplacement("Back")
             onNodeWithTag("plan-name").assertIsFocused()
             onNodeWithTag("plan-name").performKeyInput { pressKey(Key.Tab) }
             waitForIdle()
             onNodeWithTag("plan-name").assertIsNotFocused()
-            assertEquals("Спина", stored().name)
+            assertEquals("Back", stored().name)
             assertEquals(0, done)
         }
 
@@ -208,11 +208,11 @@ class PlanFormScreenTest {
             }
         }) {
             waitForIdle()
-            onNodeWithTag("plan-name").performTextReplacement("Спина")
+            onNodeWithTag("plan-name").performTextReplacement("Back")
             runOnIdle { systemBack.backCompleted() }
             waitForIdle()
         }
-        assertEquals("Спина", stored().name)
+        assertEquals("Back", stored().name)
         assertEquals(1, done)
     }
 

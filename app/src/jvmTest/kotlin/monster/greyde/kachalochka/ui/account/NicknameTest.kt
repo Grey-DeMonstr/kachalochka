@@ -18,17 +18,17 @@ private fun session(
 private val t0 = Instant.fromEpochSeconds(1_700_000_000)
 
 class NicknameTest {
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan")
 
     @Test
     fun a_profile_nickname_wins_over_the_account_name() =
         runTest {
             val gym = FakeGym().withAccounts(ivan, active = ivan)
             val owner = ivan.account.userId
-            gym.profiles.upsert(Profile.new(owner, gym.clock.now()).copy(displayName = "Ванёк"))
+            gym.profiles.upsert(Profile.new(owner, gym.clock.now()).copy(displayName = "Vanya"))
             val nickname = Nickname(gym.profiles, gym.accounts)
 
-            assertEquals("Ванёк", nickname.of(owner))
+            assertEquals("Vanya", nickname.of(owner))
         }
 
     @Test
@@ -39,7 +39,7 @@ class NicknameTest {
             gym.profiles.upsert(Profile.new(owner, gym.clock.now()).copy(displayName = "   "))
             val nickname = Nickname(gym.profiles, gym.accounts)
 
-            assertEquals("Иван", nickname.of(owner))
+            assertEquals("Ivan", nickname.of(owner))
         }
 
     @Test

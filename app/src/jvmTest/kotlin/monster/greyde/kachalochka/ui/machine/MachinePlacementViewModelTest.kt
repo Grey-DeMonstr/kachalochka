@@ -32,9 +32,9 @@ import kotlin.test.assertTrue
 class MachinePlacementViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val row = Machine.new("Тяга", null, t0)
-    private val legs = Plan(PlanId.random(), null, "Ноги", listOf(row.id), t0, t0, false)
+    private val press = Machine.new("Leg press", null, t0)
+    private val row = Machine.new("Row", null, t0)
+    private val legs = Plan(PlanId.random(), null, "Legs", listOf(row.id), t0, t0, false)
 
     @BeforeTest
     fun setUp() {
@@ -61,7 +61,7 @@ class MachinePlacementViewModelTest {
         vm.choosePlan(PlacedMachine(press.id))
 
         assertEquals(
-            listOf(PlanChoiceUi(unnamed.id, "Жим ногами"), PlanChoiceUi(legs.id, "Ноги")),
+            listOf(PlanChoiceUi(unnamed.id, "Leg press"), PlanChoiceUi(legs.id, "Legs")),
             vm.state.value.choices,
         )
     }
@@ -81,7 +81,7 @@ class MachinePlacementViewModelTest {
         )
         assertNull(vm.state.value.choices)
         assertEquals(
-            PlacementNoticeUi(press.id, "Добавлено в «Ноги»"),
+            PlacementNoticeUi(press.id, "Added to “Legs”"),
             vm.state.value.notice,
         )
     }
@@ -95,7 +95,7 @@ class MachinePlacementViewModelTest {
 
         assertEquals(legs, gym.plans.rows.getValue(legs.id))
         assertEquals(
-            "Добавлено в «Ноги»",
+            "Added to “Legs”",
             vm.state.value.notice
                 ?.text,
         )
@@ -136,11 +136,11 @@ class MachinePlacementViewModelTest {
         assertNull(vm.state.value.notice)
     }
 
-    /** Иван's tagged press, with Саша, his child, active on the device. */
+    /** Ivan's tagged press, with Sasha, his child, active on the device. */
     private class SashasGym {
         val gym = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
         val ivansPress =
-            Machine.new("Жим ногами", ME.userId, gym.clock.current).copy(tags = setOf("ноги"))
+            Machine.new("Leg press", ME.userId, gym.clock.current).copy(tags = setOf("legs"))
 
         init {
             runBlocking {
@@ -160,8 +160,8 @@ class MachinePlacementViewModelTest {
         vm.planToday(PlacedMachine(sashas.ivansPress.id)) { opened = it }
 
         val copy = runBlocking { on.machines.all(SASHA.userId) }.single()
-        assertEquals("Жим ногами", copy.name)
-        assertEquals(setOf("ноги"), copy.tags)
+        assertEquals("Leg press", copy.name)
+        assertEquals(setOf("legs"), copy.tags)
         assertTrue(
             on.machineLinks.rows.values.any {
                 it.machineId == copy.id && it.linkedMachineId == sashas.ivansPress.id
@@ -179,7 +179,7 @@ class MachinePlacementViewModelTest {
         val sashas = SashasGym()
         val on = sashas.gym
         val (copy, link) = linkedCopy(sashas.ivansPress, SASHA.userId, t0)
-        val mine = Plan(PlanId.random(), SASHA.userId, "Ноги", emptyList(), t0, t0, false)
+        val mine = Plan(PlanId.random(), SASHA.userId, "Legs", emptyList(), t0, t0, false)
         runBlocking {
             on.machines.upsert(copy)
             on.machineLinks.upsert(link)
@@ -199,16 +199,16 @@ class MachinePlacementViewModelTest {
         assertEquals(listOf(copy), runBlocking { on.machines.all(SASHA.userId) })
     }
 
-    /** Иван's press, with Олег's linked copy of it, and Олег's row, linked to nothing. */
+    /** Ivan's press, with Oleg's linked copy of it, and Oleg's row, linked to nothing. */
     private class OlegsGym {
         val gym = signedInGym()
-        val myPress = Machine.new("Жим ногами", ME.userId, gym.clock.current)
+        val myPress = Machine.new("Leg press", ME.userId, gym.clock.current)
         private val olegCopy = linkedCopy(myPress, OLEG.userId, gym.clock.current)
         val olegPress = olegCopy.first
-        val olegRow = Machine.new("Тяга", OLEG.userId, gym.clock.current)
+        val olegRow = Machine.new("Row", OLEG.userId, gym.clock.current)
 
         init {
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friends.machines += listOf(olegPress, olegRow)
             gym.friends.links += olegCopy.second
             runBlocking { gym.machines.upsert(myPress) }
@@ -219,7 +219,7 @@ class MachinePlacementViewModelTest {
     fun a_friend_s_machine_goes_in_as_the_account_s_machine_of_its_cluster() {
         val olegs = OlegsGym()
         val on = olegs.gym
-        val mine = Plan(PlanId.random(), ME.userId, "Ноги", emptyList(), t0, t0, false)
+        val mine = Plan(PlanId.random(), ME.userId, "Legs", emptyList(), t0, t0, false)
         runBlocking { on.plans.upsert(mine) }
         val vm = viewModel(on)
         var stoodIn = false
@@ -251,7 +251,7 @@ class MachinePlacementViewModelTest {
 
         vm.planToday(PlacedMachine(olegs.olegRow.id, ofFriend = true)) { opened = it }
 
-        val copy = runBlocking { on.machines.all(ME.userId) }.single { it.name == "Тяга" }
+        val copy = runBlocking { on.machines.all(ME.userId) }.single { it.name == "Row" }
         assertEquals(on.today, opened)
         assertEquals(
             listOf(copy.id),
@@ -277,7 +277,7 @@ class MachinePlacementViewModelTest {
         assertNull(opened)
         assertTrue(on.visits.rows.isEmpty())
         assertEquals(
-            PlacementNoticeUi(olegs.olegRow.id, "Нет связи с сервером"),
+            PlacementNoticeUi(olegs.olegRow.id, "No connection to the server"),
             vm.state.value.notice,
         )
     }
@@ -294,7 +294,7 @@ class MachinePlacementViewModelTest {
         assertEquals(olegs.myPress.id, opened)
     }
 
-    /** Олег's gym with Саша, Иван's child, beside Иван on the device. */
+    /** Oleg's gym with Sasha, Ivan's child, beside Ivan on the device. */
     private fun olegsGymWithSasha(): OlegsGym {
         val olegs = OlegsGym()
         olegs.gym.withChild(childAccount(SASHA, IVAN_SESSION))
@@ -305,7 +305,7 @@ class MachinePlacementViewModelTest {
     fun a_switch_during_a_friend_s_read_leaves_the_plan_as_it_was_and_says_nothing() {
         val olegs = olegsGymWithSasha()
         val on = olegs.gym
-        val mine = Plan(PlanId.random(), ME.userId, "Ноги", emptyList(), t0, t0, false)
+        val mine = Plan(PlanId.random(), ME.userId, "Legs", emptyList(), t0, t0, false)
         runBlocking { on.plans.upsert(mine) }
         val vm = viewModel(on)
         vm.choosePlan(PlacedMachine(olegs.olegRow.id, ofFriend = true))
@@ -325,7 +325,7 @@ class MachinePlacementViewModelTest {
     fun a_switch_closes_the_choice_and_drops_the_notice() {
         val olegs = olegsGymWithSasha()
         val on = olegs.gym
-        val mine = Plan(PlanId.random(), ME.userId, "Ноги", emptyList(), t0, t0, false)
+        val mine = Plan(PlanId.random(), ME.userId, "Legs", emptyList(), t0, t0, false)
         runBlocking { on.plans.upsert(mine) }
         val vm = viewModel(on)
         val placed = PlacedMachine(olegs.olegPress.id, ofFriend = true)
@@ -348,7 +348,7 @@ class MachinePlacementViewModelTest {
     @Test
     fun a_friend_s_machine_gone_from_the_group_says_so() {
         val olegs = OlegsGym()
-        val gone = Machine.new("Гакк", OLEG.userId, t0)
+        val gone = Machine.new("Hack squat", OLEG.userId, t0)
         val vm = viewModel(olegs.gym)
         var opened: CalendarDay? = null
 
@@ -356,7 +356,7 @@ class MachinePlacementViewModelTest {
 
         assertNull(opened)
         assertEquals(
-            PlacementNoticeUi(gone.id, "Упражнение больше недоступно"),
+            PlacementNoticeUi(gone.id, "The machine is no longer available"),
             vm.state.value.notice,
         )
     }

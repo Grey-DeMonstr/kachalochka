@@ -34,7 +34,7 @@ import kotlin.test.assertNull
 class SettingsViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван", t0)
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan", t0)
 
     private val themes = InMemoryThemePreference()
     private val transitions = InMemoryTransitionPreference()
@@ -76,7 +76,7 @@ class SettingsViewModelTest {
             gym.withAccounts(ivan, active = ivan)
             gym.profiles.upsert(
                 Profile.new(ivan.account.userId, t0).copy(
-                    displayName = "ГДМ",
+                    displayName = "GDM",
                     sex = Sex.Male,
                     birthDate = CalendarDay(1990, 6, 5),
                     heightCm = 174.0,
@@ -87,7 +87,7 @@ class SettingsViewModelTest {
             val card = assertNotNull(viewModel().hub.value.card)
 
             assertEquals(ivan.account.userId, card.owner)
-            assertEquals("ГДМ", card.name)
+            assertEquals("GDM", card.name)
             assertEquals(Sex.Male, card.sex)
             val today = CalendarDay.of(t0, gym.utcOffset.at(t0))
             assertEquals(ageOn(CalendarDay(1990, 6, 5), today), card.age)
@@ -101,7 +101,7 @@ class SettingsViewModelTest {
             gym.withAccounts(ivan, active = ivan)
 
             assertEquals(
-                "Иван",
+                "Ivan",
                 viewModel()
                     .hub.value.card
                     ?.name,
@@ -117,7 +117,7 @@ class SettingsViewModelTest {
 
             val hub = viewModel().hub.value
 
-            assertEquals("Иван@example.test", hub.email)
+            assertEquals("Ivan@example.test", hub.email)
             assertEquals(
                 PeopleUi(children = 1, guardians = 1, trainers = 0, trainees = 0),
                 hub.people,

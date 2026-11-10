@@ -34,8 +34,8 @@ class VisitShareViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
     private val thursday = CalendarDay(2026, 10, 29)
-    private val legs = Machine.new("Жим ногами", null, t0).copy(tags = setOf("Ноги"))
-    private val row = Machine.new("Тяга", null, t0)
+    private val legs = Machine.new("Leg press", null, t0).copy(tags = setOf("Legs"))
+    private val row = Machine.new("Row", null, t0)
     private val visit = VisitId.random()
 
     private fun set(machine: Machine) =
@@ -44,19 +44,19 @@ class VisitShareViewModelTest {
     private val card =
         VisitCardUi(
             tag = "card",
-            person = PersonUi(null, "Я", Avatar()),
+            person = PersonUi(null, "Me", Avatar()),
             color = null,
             day = thursday,
-            tags = listOf("ноги"),
-            exercises = listOf(ExerciseUi("Тяга", "50 кг × 8", null)),
+            tags = listOf("legs"),
+            exercises = listOf(ExerciseUi("Row", "50 kg × 8", null)),
             own =
                 OwnVisitUi(
                     visit,
                     canRepeatToday = true,
-                    date = "четверг, 29 октября",
+                    date = "Thursday, 29 October",
                     shared =
                         SharedVisit(
-                            "ГДМ",
+                            "GDM",
                             thursday,
                             listOf(
                                 SharedMachine(row, listOf(set(row))),
@@ -126,9 +126,9 @@ class VisitShareViewModelTest {
 
         vm.shareText()
 
-        assertEquals(listOf("ГДМ, чт\n\nТяга 50кг 1x8\nЖим ногами 50кг 1x8"), gym.texts.shared)
+        assertEquals(listOf("GDM, Thu\n\nRow 50kg 1x8\nLeg press 50kg 1x8"), gym.texts.shared)
         assertNull(vm.state.value.offered)
-        assertEquals(VisitShareNoticeUi(thursday, "Скопировано"), vm.state.value.notice)
+        assertEquals(VisitShareNoticeUi(thursday, "Copied"), vm.state.value.notice)
 
         vm.dismissNotice()
         assertNull(vm.state.value.notice)
@@ -145,7 +145,7 @@ class VisitShareViewModelTest {
             assertTrue(vm.state.value.groupByTag)
             vm.shareText()
             assertEquals(
-                "ГДМ, чт\n\nНОГИ\nЖим ногами 50кг 1x8\n\nОстальное\nТяга 50кг 1x8",
+                "GDM, Thu\n\nLEGS\nLeg press 50kg 1x8\n\nOther\nRow 50kg 1x8",
                 gym.texts.shared.single(),
             )
         }
@@ -190,8 +190,8 @@ class VisitShareViewModelTest {
     @Test
     fun another_account_becoming_active_hides_the_notice() =
         runTest {
-            val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
-            val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+            val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan")
+            val misha = session("22222222-2222-4222-8222-222222222222", "Misha")
             val shared = FakeGym().withAccounts(ivan, misha, active = ivan)
             val vm = viewModel(shared)
             vm.offer(card)

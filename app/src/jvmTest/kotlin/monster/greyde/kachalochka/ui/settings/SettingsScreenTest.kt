@@ -12,12 +12,11 @@ import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.family.IVAN_MEMBER
 import monster.greyde.kachalochka.ui.family.PAPA
 import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.strings.AppLanguage
-import monster.greyde.kachalochka.ui.strings.RuStrings
+import monster.greyde.kachalochka.ui.strings.EnStrings
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import monster.greyde.kachalochka.ui.timer.RestSound
 import kotlin.test.Test
@@ -27,7 +26,7 @@ import kotlin.time.Instant
 @OptIn(ExperimentalTestApi::class)
 class SettingsScreenTest {
     private val ivan =
-        session("11111111-1111-4111-8111-111111111111", "Иван", Instant.fromEpochSeconds(0))
+        session("11111111-1111-4111-8111-111111111111", "Ivan", Instant.fromEpochSeconds(0))
 
     @Test
     fun the_hub_opens_the_profile_the_people_and_the_account() {
@@ -57,7 +56,7 @@ class SettingsScreenTest {
         runBlocking {
             gym.profiles.upsert(
                 Profile.new(ivan.account.userId, gym.clock.current).copy(
-                    displayName = "ГДМ",
+                    displayName = "GDM",
                     sex = Sex.Male,
                     birthDate = CalendarDay(1900, 1, 1),
                     heightCm = 174.0,
@@ -66,21 +65,21 @@ class SettingsScreenTest {
         }
         gym.family.link(SASHA, IVAN_MEMBER)
         gym.family.link(IVAN_MEMBER, PAPA)
-        val age = RuStrings.years(ageOn(CalendarDay(1900, 1, 1), gym.today))
+        val age = EnStrings.years(ageOn(CalendarDay(1900, 1, 1), gym.today))
         runScreenTest(gym, screen = { SettingsScreen(onBack = {}) }) {
-            onNodeWithTag("settings-profile-name", useUnmergedTree = true).assertTextEquals("ГДМ")
+            onNodeWithTag("settings-profile-name", useUnmergedTree = true).assertTextEquals("GDM")
             onNodeWithTag("settings-profile-line", useUnmergedTree = true)
-                .assertTextEquals("Мужской · $age · 174 см · кг")
+                .assertTextEquals("Male · $age · 174 cm · kg")
             onNodeWithTag("settings-theme-value", useUnmergedTree = true)
-                .assertTextEquals("Системная")
+                .assertTextEquals("System")
             onNodeWithTag("settings-animation-value", useUnmergedTree = true)
-                .assertTextEquals("Быстрая")
+                .assertTextEquals("Fast")
             onNodeWithTag("settings-rest-sound-value", useUnmergedTree = true)
-                .assertTextEquals("Выключен")
+                .assertTextEquals("Off")
             onNodeWithTag("settings-people-counts", useUnmergedTree = true)
-                .assertTextEquals("1 ребёнок · 1 родитель")
+                .assertTextEquals("1 child · 1 parent")
             onNodeWithTag("settings-account-value", useUnmergedTree = true)
-                .assertTextEquals("Иван@example.test")
+                .assertTextEquals("Ivan@example.test")
         }
     }
 
@@ -88,7 +87,7 @@ class SettingsScreenTest {
     fun without_an_account_there_are_no_people_and_no_account() {
         runScreenTest(FakeGym(), screen = { SettingsScreen(onBack = {}) }) {
             onNodeWithTag("settings-profile-name", useUnmergedTree = true)
-                .assertTextEquals("Профиль")
+                .assertTextEquals("Profile")
             onNodeWithTag("settings-people").assertDoesNotExist()
             onNodeWithTag("settings-account").assertDoesNotExist()
         }
@@ -107,7 +106,7 @@ class SettingsScreenTest {
 
             onNodeWithTag("theme-dark").assertDoesNotExist()
             onNodeWithTag("settings-theme-value", useUnmergedTree = true)
-                .assertTextEquals("Тёмная")
+                .assertTextEquals("Dark")
         }
         assertEquals(ThemeMode.Dark, gym.themes.mode.value)
     }
@@ -138,7 +137,7 @@ class SettingsScreenTest {
             waitForIdle()
 
             onNodeWithTag("settings-animation-value", useUnmergedTree = true)
-                .assertTextEquals("Плавная")
+                .assertTextEquals("Smooth")
         }
         assertEquals(500, gym.transitions.millis.value)
     }
@@ -156,7 +155,7 @@ class SettingsScreenTest {
             waitForIdle()
 
             onNodeWithTag("settings-rest-sound-value", useUnmergedTree = true)
-                .assertTextEquals("Включён")
+                .assertTextEquals("On")
         }
         assertEquals(1, gym.restSoundChooser.notificationAsks)
         assertEquals(true, gym.restSounds.sound.value.enabled)
@@ -170,7 +169,7 @@ class SettingsScreenTest {
             onNodeWithTag("settings-rest-sound").performClick()
             waitForIdle()
             onNodeWithTag("rest-sound-name", useUnmergedTree = true)
-                .assertTextEquals("По умолчанию")
+                .assertTextEquals("Default")
 
             onNodeWithTag("rest-sound-pick").performClick()
             waitForIdle()
@@ -185,7 +184,7 @@ class SettingsScreenTest {
     @Test
     fun the_settings_speak_english() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
-        runScreenTestInEnglish(gym, screen = { SettingsScreen(onBack = {}) }) {
+        runScreenTest(gym, screen = { SettingsScreen(onBack = {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Settings")
             onNodeWithTag("settings-title").assertTextEquals("APP")
             onNodeWithTag("settings-theme-value", useUnmergedTree = true)

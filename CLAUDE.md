@@ -49,6 +49,7 @@ skill, never bump a version or write an entry by hand.
 .\gradlew :app:wasmJsBrowserDevelopmentRun   # web app in the browser
 .\gradlew :app:wasmJsBrowserDistribution     # production web bundle
 supabase db push                         # apply supabase/migrations to the linked project
+git config core.hooksPath .githooks      # once per clone: enable the commit hooks
 ```
 
 ## Architecture

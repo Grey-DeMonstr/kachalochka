@@ -23,10 +23,10 @@ class LocalMeasureRepositoryTest {
 
     private fun measure(
         owner: UserId?,
-        name: String = "Предплечье",
+        name: String = "Forearm",
         kind: MeasureKind? = null,
         position: Int = 0,
-    ) = Measure(MeasureId.random(), owner, name, "см", kind, position, now, false)
+    ) = Measure(MeasureId.random(), owner, name, "cm", kind, position, now, false)
 
     @Test
     fun a_measure_reads_back_field_for_field() =
@@ -55,9 +55,9 @@ class LocalMeasureRepositoryTest {
     @Test
     fun all_lists_the_owner_s_live_measures_by_position_then_name() =
         runTest {
-            val third = measure(ivan, name = "Шея", position = 1)
-            val second = measure(ivan, name = "Бедро", position = 1)
-            val first = measure(ivan, name = "Шея", position = 0)
+            val third = measure(ivan, name = "Neck", position = 1)
+            val second = measure(ivan, name = "Calf", position = 1)
+            val first = measure(ivan, name = "Neck", position = 0)
             listOf(third, measure(ivan).copy(deleted = true), second, measure(misha), first)
                 .forEach { repository.upsert(it) }
 

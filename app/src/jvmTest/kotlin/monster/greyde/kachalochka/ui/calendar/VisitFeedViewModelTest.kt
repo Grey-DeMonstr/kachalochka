@@ -29,7 +29,8 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
-import monster.greyde.kachalochka.ui.strings.inEnglish
+import monster.greyde.kachalochka.ui.strings.RuStrings
+import monster.greyde.kachalochka.ui.strings.inRussian
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -46,7 +47,7 @@ import kotlin.time.Duration.Companion.minutes
 class VisitFeedViewModelTest {
     private val gym = signedInGym()
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", ME.userId, t0)
+    private val press = Machine.new("Leg press", ME.userId, t0)
     private val today = CalendarDay(2023, 11, 14)
 
     private fun FakeGym.ownVisit(
@@ -135,7 +136,7 @@ class VisitFeedViewModelTest {
         runTest {
             gym.ownVisit(today)
             gym.ownVisit(CalendarDay(2023, 11, 12))
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, CalendarDay(2023, 11, 13))
 
             val state = assertNotNull(viewModel().state.value)
@@ -145,21 +146,21 @@ class VisitFeedViewModelTest {
                 state.days.map { it.day },
             )
             assertEquals(
-                listOf("Сегодня", "Вчера", "Воскресенье, 12 ноября"),
+                listOf("Today", "Yesterday", "Sunday, 12 November"),
                 state.days.map { it.title },
             )
             assertEquals(
-                listOf("вторник, 14 ноября", "понедельник, 13 ноября", null),
+                listOf("Tuesday, 14 November", "Monday, 13 November", null),
                 state.days.map { it.aside },
             )
-            assertEquals(listOf("Ноябрь 2023", null, null), state.days.map { it.month })
+            assertEquals(listOf("November 2023", null, null), state.days.map { it.month })
             assertFalse(state.loading)
         }
 
     @Test
     fun without_a_network_the_feed_shows_the_friends_visits_the_last_read_kept() =
         runTest {
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, today.plusDays(-1))
             viewModel(friends = gym.keptFriends)
             gym.friends.offline = true
@@ -167,15 +168,15 @@ class VisitFeedViewModelTest {
             val state = assertNotNull(viewModel(friends = gym.keptFriends).state.value)
 
             val card = state.cardsOn(today.plusDays(-1)).single()
-            assertEquals("Олег", card.person.name)
-            assertEquals(listOf(ExerciseUi(press.name, "60 кг × 10", null)), card.exercises)
-            assertEquals(listOf("Иван", "Олег"), state.people.map { it.person.name })
+            assertEquals("Oleg", card.person.name)
+            assertEquals(listOf(ExerciseUi(press.name, "60 kg × 10", null)), card.exercises)
+            assertEquals(listOf("Ivan", "Oleg"), state.people.map { it.person.name })
         }
 
     @Test
     fun the_kept_friends_show_at_once_and_the_server_s_answer_replaces_them() =
         runTest {
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, today.plusDays(-1))
             viewModel(friends = gym.keptFriends)
             gym.friendVisit(OLEG, today)
@@ -205,16 +206,16 @@ class VisitFeedViewModelTest {
     fun a_day_shows_the_own_card_first_then_friends_by_name() =
         runTest {
             val mine = gym.ownVisit(today)
-            gym.friends.group("Зал на Лесной", owner = PASHA, OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = PASHA, OLEG, ME)
             gym.friendVisit(PASHA, today)
             gym.friendVisit(OLEG, today)
 
             val cards = assertNotNull(viewModel().state.value).cardsOn(today)
 
-            assertEquals(listOf("Иван", "Олег", "Паша"), cards.map { it.person.name })
+            assertEquals(listOf("Ivan", "Oleg", "Pasha"), cards.map { it.person.name })
             assertEquals(mine.id, cards.first().own?.id)
             assertEquals(
-                listOf(ExerciseUi(press.name, "60 кг × 10", null)),
+                listOf(ExerciseUi(press.name, "60 kg × 10", null)),
                 cards.last().exercises,
             )
         }
@@ -229,7 +230,7 @@ class VisitFeedViewModelTest {
 
             val card = assertNotNull(viewModel().state.value).cardsOn(today).single()
 
-            assertEquals("+5 кг", card.exercises?.single()?.growth)
+            assertEquals("+5 kg", card.exercises?.single()?.growth)
         }
 
     @Test
@@ -264,7 +265,7 @@ class VisitFeedViewModelTest {
         runTest {
             gym.ownVisit(today)
             gym.ownVisit(CalendarDay(2023, 10, 20))
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, CalendarDay(2023, 9, 1))
             val vm = viewModel()
 
@@ -283,7 +284,7 @@ class VisitFeedViewModelTest {
 
             val state = assertNotNull(vm.state.value)
             assertEquals(listOf(today, CalendarDay(2023, 10, 20)), state.days.map { it.day })
-            assertEquals("Октябрь 2023", state.days.last().month)
+            assertEquals("October 2023", state.days.last().month)
             assertEquals(
                 CalendarDay(2023, 10, 4) to CalendarDay(2023, 10, 24),
                 gym.friends.visitWindows.last(),
@@ -309,7 +310,7 @@ class VisitFeedViewModelTest {
     fun the_feed_ends_at_the_oldest_visit_of_the_account_and_its_friends() =
         runTest {
             gym.ownVisit(today)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, CalendarDay(2023, 10, 10))
             val withFriends = viewModel()
             assertFalse(assertNotNull(withFriends.state.value).ended)
@@ -342,14 +343,14 @@ class VisitFeedViewModelTest {
     fun offline_the_feed_shows_the_own_visits_only() =
         runTest {
             gym.ownVisit(today)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, today)
             gym.friendVisit(OLEG, CalendarDay(2023, 1, 1))
             gym.friends.offline = true
 
             val state = assertNotNull(viewModel().state.value)
 
-            assertEquals(listOf("Иван"), state.cardsOn(today).map { it.person.name })
+            assertEquals(listOf("Ivan"), state.cardsOn(today).map { it.person.name })
             assertTrue(state.ended)
         }
 
@@ -357,7 +358,7 @@ class VisitFeedViewModelTest {
     fun own_days_show_while_friends_are_read() =
         runTest {
             gym.ownVisit(today)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, today)
             val read = CompletableDeferred<Unit>()
             gym.friends.gate = read
@@ -384,7 +385,7 @@ class VisitFeedViewModelTest {
 
             vm.askToRemove(visit.id)
             assertEquals(
-                "Воскресенье, 12 ноября",
+                "Sunday, 12 November",
                 vm.state.value
                     ?.removal
                     ?.text,
@@ -419,7 +420,7 @@ class VisitFeedViewModelTest {
                     Account(
                         UserId("22222222-2222-4222-8222-222222222222"),
                         "m@example.test",
-                        "Миша",
+                        "Misha",
                     ),
                     "access",
                     "refresh",
@@ -442,11 +443,11 @@ class VisitFeedViewModelTest {
     @Test
     fun the_people_are_the_account_then_its_friends_by_name_none_selected_at_first() =
         runTest {
-            gym.friends.group("Зал на Лесной", owner = PASHA, OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = PASHA, OLEG, ME)
 
             val shown = assertNotNull(viewModel().state.value).people
 
-            assertEquals(listOf("Иван", "Олег", "Паша"), shown.map { it.person.name })
+            assertEquals(listOf("Ivan", "Oleg", "Pasha"), shown.map { it.person.name })
             assertEquals(listOf(false, false, false), shown.map { it.selected })
             assertNull(shown.first().color)
             assertNotNull(shown.last().color)
@@ -464,18 +465,18 @@ class VisitFeedViewModelTest {
     fun a_selected_friend_is_shown_alone_and_the_device_keeps_it_for_the_account() =
         runTest {
             gym.ownVisit(today)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, today)
             val vm = viewModel()
 
             vm.select(OLEG.userId)
 
             val state = assertNotNull(vm.state.value)
-            assertEquals(listOf("Олег"), state.cardsOn(today).map { it.person.name })
+            assertEquals(listOf("Oleg"), state.cardsOn(today).map { it.person.name })
             assertEquals(listOf(false, true), state.people.map { it.selected })
             assertEquals(setOf(SelectedPerson(ME.userId, OLEG.userId)), people.selected.value)
             assertEquals(
-                listOf("Олег"),
+                listOf("Oleg"),
                 assertNotNull(viewModel().state.value).cardsOn(today).map { it.person.name },
             )
         }
@@ -484,7 +485,7 @@ class VisitFeedViewModelTest {
     fun selecting_the_selected_person_again_shows_everyone() =
         runTest {
             gym.ownVisit(today)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, today)
             val vm = viewModel()
 
@@ -499,7 +500,7 @@ class VisitFeedViewModelTest {
     fun selecting_another_person_moves_the_selection() =
         runTest {
             gym.ownVisit(today)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, today)
             val vm = viewModel()
 
@@ -507,7 +508,7 @@ class VisitFeedViewModelTest {
             vm.select(ME.userId)
 
             val state = assertNotNull(vm.state.value)
-            assertEquals(listOf("Иван"), state.cardsOn(today).map { it.person.name })
+            assertEquals(listOf("Ivan"), state.cardsOn(today).map { it.person.name })
             assertEquals(setOf(SelectedPerson(ME.userId, ME.userId)), people.selected.value)
         }
 
@@ -515,7 +516,7 @@ class VisitFeedViewModelTest {
     fun another_account_s_selection_leaves_everyone_shown() =
         runTest {
             gym.ownVisit(today)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, today)
             people.set(setOf(SelectedPerson(PASHA.userId, OLEG.userId)))
 
@@ -526,7 +527,7 @@ class VisitFeedViewModelTest {
     fun paging_reads_on_to_a_visit_of_the_selected_person() =
         runTest {
             gym.ownVisit(today)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, CalendarDay(2023, 10, 1))
             people.set(setOf(SelectedPerson(ME.userId, OLEG.userId)))
 
@@ -540,7 +541,7 @@ class VisitFeedViewModelTest {
     fun selecting_a_person_without_visits_read_reads_on_to_their_visit() =
         runTest {
             gym.ownVisit(today)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friendVisit(OLEG, CalendarDay(2023, 10, 1))
             val vm = viewModel()
 
@@ -551,15 +552,21 @@ class VisitFeedViewModelTest {
         }
 
     @Test
-    fun the_feed_speaks_english() =
+    fun the_feed_speaks_russian() =
         runTest {
             gym.ownVisit(today)
             gym.ownVisit(CalendarDay(2023, 11, 13))
 
-            inEnglish {
+            inRussian {
                 val state = assertNotNull(viewModel().state.value)
-                assertEquals(listOf("Today", "Yesterday"), state.days.map { it.title })
-                assertEquals("Tuesday, 14 November", state.days.first().aside)
+                assertEquals(
+                    listOf(RuStrings.todayTitle, RuStrings.yesterday),
+                    state.days.map { it.title },
+                )
+                assertEquals(
+                    "${RuStrings.weekdayInline(2)}, ${RuStrings.dayMonth(14, 11)}",
+                    state.days.first().aside,
+                )
             }
         }
 }

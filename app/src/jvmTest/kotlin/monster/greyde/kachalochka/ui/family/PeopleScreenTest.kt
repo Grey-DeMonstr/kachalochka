@@ -8,7 +8,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -21,9 +20,9 @@ class PeopleScreenTest {
     fun the_screen_groups_children_and_parents_and_hides_an_empty_group() {
         gym.family.link(SASHA, IVAN_MEMBER)
         runScreenTest(gym, screen = { PeopleScreen(onBack = {}) }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Люди")
+            onNodeWithTag("top-bar-title").assertTextEquals("People")
             onNodeWithTag("people-children").assertExists()
-            onNodeWithText("Саша").assertExists()
+            onNodeWithText("Sasha").assertExists()
             onNodeWithTag("people-guardians").assertDoesNotExist()
         }
     }
@@ -31,7 +30,7 @@ class PeopleScreenTest {
     @Test
     fun with_nobody_linked_the_screen_says_so() =
         runScreenTest(gym, screen = { PeopleScreen(onBack = {}) }) {
-            onNodeWithTag("people-empty").assertTextEquals("Пока никого нет")
+            onNodeWithTag("people-empty").assertTextEquals("Nobody here yet")
         }
 
     @Test
@@ -42,7 +41,7 @@ class PeopleScreenTest {
             onNodeWithTag("add-child").performClick()
             waitForIdle()
 
-            onNodeWithTag("offer-code").assertTextEquals("Код для ребёнка: PAPA2345")
+            onNodeWithTag("offer-code").assertTextEquals("Code for your child: PAPA2345")
             onNodeWithTag("offer-code-link")
                 .assertTextEquals("https://example.test/kachalochka/?parent=PAPA2345")
             onNodeWithTag("offer-code-hint").assertExists()
@@ -83,7 +82,7 @@ class PeopleScreenTest {
             waitForIdle()
 
             onNodeWithTag("entry-code-field").assertDoesNotExist()
-            onNodeWithText("Папа").assertExists()
+            onNodeWithText("Dad").assertExists()
         }
     }
 
@@ -98,7 +97,7 @@ class PeopleScreenTest {
             onNodeWithTag("entry-link").performClick()
             waitForIdle()
 
-            onNodeWithTag("entry-code-error").assertTextEquals("Код не найден или устарел")
+            onNodeWithTag("entry-code-error").assertTextEquals("Code not found or expired")
         }
 
     @Test
@@ -136,7 +135,7 @@ class PeopleScreenTest {
             onNodeWithTag("add-trainee").performClick()
             waitForIdle()
 
-            onNodeWithTag("offer-code").assertTextEquals("Код для ученика: TREN2345")
+            onNodeWithTag("offer-code").assertTextEquals("Code for your trainee: TREN2345")
             onNodeWithTag("offer-code-link")
                 .assertTextEquals("https://example.test/kachalochka/?trainer=TREN2345")
         }
@@ -162,7 +161,7 @@ class PeopleScreenTest {
 
     @Test
     fun the_screen_speaks_english() =
-        runScreenTestInEnglish(gym, screen = { PeopleScreen(onBack = {}) }) {
+        runScreenTest(gym, screen = { PeopleScreen(onBack = {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("People")
             onNodeWithTag("people-empty").assertTextEquals("Nobody here yet")
         }

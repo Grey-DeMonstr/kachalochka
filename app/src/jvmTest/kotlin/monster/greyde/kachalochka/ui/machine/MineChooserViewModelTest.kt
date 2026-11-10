@@ -29,10 +29,10 @@ import kotlin.test.assertTrue
 class MineChooserViewModelTest {
     private val gym = signedInGym()
     private val t0 = gym.clock.current
-    private val olegs = Machine.new("Жим ногами", OLEG.userId, t0)
-    private val press = Machine.new("Жим ногами", ME.userId, t0)
-    private val legPress = Machine.new("Жим ногами в тренажёре", ME.userId, t0)
-    private val row = Machine.new("Тяга", ME.userId, t0)
+    private val olegs = Machine.new("Leg press", OLEG.userId, t0)
+    private val press = Machine.new("Leg press", ME.userId, t0)
+    private val legPress = Machine.new("Leg press machine", ME.userId, t0)
+    private val row = Machine.new("Row", ME.userId, t0)
 
     private fun viewModel() =
         MineChooserViewModel(
@@ -48,7 +48,7 @@ class MineChooserViewModelTest {
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
         gym.friends.machines += olegs
         runBlocking { listOf(press, legPress, row).forEach { gym.machines.upsert(it) } }
     }
@@ -60,7 +60,7 @@ class MineChooserViewModelTest {
     fun the_search_starts_with_the_friend_s_machine_name_and_lists_only_own_machines() {
         val vm = viewModel()
 
-        assertEquals("Жим ногами", vm.state.value.query)
+        assertEquals("Leg press", vm.state.value.query)
         assertEquals(
             listOf(press.id, legPress.id),
             vm.state.value.own
@@ -78,7 +78,7 @@ class MineChooserViewModelTest {
 
     @Test
     fun an_own_machine_already_joined_with_it_is_not_offered() {
-        val pashas = Machine.new("Жим", PASHA.userId, t0)
+        val pashas = Machine.new("Press", PASHA.userId, t0)
         gym.friends.machines += pashas
         gym.friends.links +=
             MachineLink(MachineLinkId.random(), PASHA.userId, pashas.id, olegs.id, t0, false)
@@ -99,7 +99,7 @@ class MineChooserViewModelTest {
 
     @Test
     fun links_read_before_keep_joined_machines_out_at_once() {
-        val pashas = Machine.new("Жим", PASHA.userId, t0)
+        val pashas = Machine.new("Press", PASHA.userId, t0)
         gym.friends.machines += pashas
         gym.friends.links +=
             MachineLink(MachineLinkId.random(), PASHA.userId, pashas.id, olegs.id, t0, false)
@@ -145,13 +145,13 @@ class MineChooserViewModelTest {
     fun a_choice_made_while_a_switch_is_still_reading_links_nothing_for_the_new_account() {
         val misha =
             AccountSession(
-                Account(UserId("22222222-2222-4222-8222-222222222222"), "m@example.test", "Миша"),
+                Account(UserId("22222222-2222-4222-8222-222222222222"), "m@example.test", "Misha"),
                 "access",
                 "refresh",
                 t0,
             )
         val two = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
-        two.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        two.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
         two.friends.machines += olegs
         runBlocking { two.machines.upsert(row) }
         val vm =
@@ -177,7 +177,7 @@ class MineChooserViewModelTest {
 
     @Test
     fun choosing_an_own_machine_links_it_to_the_whole_cluster_of_the_friend_s() {
-        val pashas = Machine.new("Жим", PASHA.userId, t0)
+        val pashas = Machine.new("Press", PASHA.userId, t0)
         gym.friends.machines += pashas
         gym.friends.links +=
             MachineLink(MachineLinkId.random(), PASHA.userId, pashas.id, olegs.id, t0, false)

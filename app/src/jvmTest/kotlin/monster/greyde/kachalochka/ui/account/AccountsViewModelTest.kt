@@ -146,14 +146,14 @@ class AccountsViewModelTest {
             val viewModel = viewModel(SucceedingSignIn(session), sync)
             viewModel.addAccount()
 
-            profiles.upsert(Profile.new(id, Instant.fromEpochSeconds(0)).copy(displayName = "Сэм"))
+            profiles.upsert(Profile.new(id, Instant.fromEpochSeconds(0)).copy(displayName = "Ace"))
             sync.completePass()
 
             val shown =
                 viewModel.state.value.accounts
                     .single()
-            assertEquals("Сэм", shown.displayName)
-            assertEquals("С", shown.monogram)
+            assertEquals("Ace", shown.displayName)
+            assertEquals("A", shown.monogram)
         }
 
     @Test
@@ -170,13 +170,13 @@ class AccountsViewModelTest {
             val sync = RecordingSyncTrigger()
             val viewModel = viewModel(SucceedingSignIn(session), sync)
             viewModel.addAccount()
-            profiles.upsert(Profile.new(id, Instant.fromEpochSeconds(0)).copy(displayName = "Сэм"))
+            profiles.upsert(Profile.new(id, Instant.fromEpochSeconds(0)).copy(displayName = "Ace"))
             sync.completePass()
 
             reads.refusing = true
             sync.completePass()
             assertEquals(
-                "Сэм",
+                "Ace",
                 viewModel.state.value.accounts
                     .single()
                     .displayName,
@@ -186,7 +186,7 @@ class AccountsViewModelTest {
             profiles.rows.clear()
             sync.completePass()
             assertEquals(
-                "Сэм",
+                "Ace",
                 viewModel.state.value.accounts
                     .single()
                     .displayName,
@@ -248,7 +248,7 @@ class AccountsViewModelTest {
             Account(
                 UserId("66666666-6666-4666-8666-666666666666"),
                 "",
-                "Саша",
+                "Sasha",
                 "https://example.test/s.png",
                 AccountKind.Managed(UserId("11111111-1111-4111-8111-111111111111"), photo),
             )

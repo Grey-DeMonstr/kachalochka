@@ -93,9 +93,9 @@ private fun repositoryOn(engine: HttpClientEngine): SupabaseFriendsRepository {
 }
 
 private val MEMBERSHIPS =
-    """[{"group_id":"$GROUP","user_id":"${IVAN.value}","display_name":"Иван",""" +
+    """[{"group_id":"$GROUP","user_id":"${IVAN.value}","display_name":"Ivan",""" +
         """"deleted":false},{"group_id":"$GROUP","user_id":"${OLEG.value}",""" +
-        """"display_name":"Олег","deleted":false}]"""
+        """"display_name":"Oleg","deleted":false}]"""
 
 private fun olegSet(
     visit: VisitId,
@@ -116,7 +116,7 @@ private fun olegSet(
 )
 
 private val OLEG_S_GROUP =
-    """[{"id":"$GROUP","name":"Зал на Лесной","owner_id":"${OLEG.value}",""" +
+    """[{"id":"$GROUP","name":"Forest Street Gym","owner_id":"${OLEG.value}",""" +
         """"invite_code":"ABCD2345","deleted":false}]"""
 
 class SupabaseFriendsRepositoryTest {
@@ -125,11 +125,11 @@ class SupabaseFriendsRepositoryTest {
     @Test
     fun the_group_gym_is_one_request_for_the_mates_machines_with_tags_links_and_photos() =
         runTest {
-            val press = Machine.new("Жим ногами", OLEG, NOW)
-            val row = Machine.new("Тяга", OLEG, NOW)
-            val tag = Tag(tagId(OLEG, "ноги"), OLEG, "ноги", NOW, false)
+            val press = Machine.new("Leg press", OLEG, NOW)
+            val row = Machine.new("Row", OLEG, NOW)
+            val tag = Tag(tagId(OLEG, "legs"), OLEG, "legs", NOW, false)
             val tagged =
-                MachineTag(machineTagId(press.id, "ноги"), OLEG, press.id, tag.id, NOW, false)
+                MachineTag(machineTagId(press.id, "legs"), OLEG, press.id, tag.id, NOW, false)
             val link =
                 MachineLink(MachineLinkId.random(), OLEG, press.id, MachineId.random(), NOW, false)
             val photo = Photo.new(press.id, OLEG, NOW)
@@ -146,11 +146,11 @@ class SupabaseFriendsRepositoryTest {
 
             val gym = repositoryOn(engine).groupGym(IVAN)
 
-            val oleg = Friend(OLEG, "Олег")
+            val oleg = Friend(OLEG, "Oleg")
             assertEquals(
                 GroupGym(
                     listOf(
-                        FriendMachine(press.copy(tags = setOf("ноги")), oleg),
+                        FriendMachine(press.copy(tags = setOf("legs")), oleg),
                         FriendMachine(row, oleg),
                     ),
                     listOf(link),
@@ -190,7 +190,7 @@ class SupabaseFriendsRepositoryTest {
             val groups = repositoryOn(engine).groups()
 
             assertEquals(
-                listOf(FriendGroup(GroupId(GROUP), "Зал на Лесной", OLEG, "ABCD2345", 2)),
+                listOf(FriendGroup(GroupId(GROUP), "Forest Street Gym", OLEG, "ABCD2345", 2)),
                 groups,
             )
             val requests = engine.requestHistory.associateBy { it.table() }
@@ -288,7 +288,7 @@ class SupabaseFriendsRepositoryTest {
                     CalendarDay(2023, 11, 30),
                 )
 
-            val oleg = Friend(OLEG, "Олег")
+            val oleg = Friend(OLEG, "Oleg")
             assertEquals(listOf(FriendVisit(oleg, dated), FriendVisit(oleg, undated)), visits)
             val params = engine.requestHistory[1].url.parameters
             assertEquals("in.(${OLEG.value})", params["user_id"])
@@ -376,23 +376,23 @@ class SupabaseFriendsRepositoryTest {
             val photo = PhotoId.random()
             val picture = "https://example.test/oleg.png"
             val rows =
-                """[{"group_id":"$GROUP","user_id":"${IVAN.value}","display_name":"Иван",""" +
+                """[{"group_id":"$GROUP","user_id":"${IVAN.value}","display_name":"Ivan",""" +
                     """"deleted":false,"avatar_photo":"${photo.value}","picture_url":null},""" +
-                    """{"group_id":"$GROUP","user_id":"${OLEG.value}","display_name":"Олег",""" +
+                    """{"group_id":"$GROUP","user_id":"${OLEG.value}","display_name":"Oleg",""" +
                     """"deleted":false,"avatar_photo":null,"picture_url":"$picture"}]"""
             val engine = MockEngine { respond(rows, HttpStatusCode.OK, jsonHeaders()) }
             val repository = repositoryOn(engine)
-            val group = FriendGroup(GroupId(GROUP), "Зал на Лесной", OLEG, "ABCD2345", 2)
+            val group = FriendGroup(GroupId(GROUP), "Forest Street Gym", OLEG, "ABCD2345", 2)
 
             assertEquals(
                 listOf(
-                    GroupMember(OLEG, "Олег", isOwner = true, Avatar(picture = picture)),
-                    GroupMember(IVAN, "Иван", isOwner = false, Avatar(photo = photo)),
+                    GroupMember(OLEG, "Oleg", isOwner = true, Avatar(picture = picture)),
+                    GroupMember(IVAN, "Ivan", isOwner = false, Avatar(photo = photo)),
                 ),
                 repository.members(group),
             )
             assertEquals(
-                listOf(Friend(OLEG, "Олег", Avatar(picture = picture))),
+                listOf(Friend(OLEG, "Oleg", Avatar(picture = picture))),
                 repository.mates(IVAN),
             )
         }
@@ -422,7 +422,7 @@ class SupabaseFriendsRepositoryTest {
     @Test
     fun the_latest_results_on_a_cluster_come_from_each_friend_s_latest_visit() =
         runTest {
-            val press = Machine.new("Жим ногами", OLEG, NOW)
+            val press = Machine.new("Leg press", OLEG, NOW)
             val latest = VisitId.random()
 
             fun set(
@@ -441,7 +441,7 @@ class SupabaseFriendsRepositoryTest {
             val results = repositoryOn(engine).latestOn(IVAN, setOf(press.id))
 
             assertEquals(
-                listOf(FriendResult(Friend(OLEG, "Олег"), press, listOf(first, second))),
+                listOf(FriendResult(Friend(OLEG, "Oleg"), press, listOf(first, second))),
                 results,
             )
             val (_, machineRequest, newestRequest, visitRequest) = engine.requestHistory
@@ -492,22 +492,22 @@ class SupabaseFriendsRepositoryTest {
     fun a_friend_with_many_newer_sets_never_crowds_another_out() =
         runTest {
             val anna = UserId("44444444-4444-4444-8444-444444444444")
-            val olegPress = Machine.new("Жим ногами", OLEG, NOW)
-            val annaPress = Machine.new("Платформа", anna, NOW)
+            val olegPress = Machine.new("Leg press", OLEG, NOW)
+            val annaPress = Machine.new("Platform", anna, NOW)
             val annaSet = olegSet(VisitId.random(), annaPress.id, 60.0, 0).copy(userId = anna)
             val olegSets = (1..60).map { olegSet(VisitId.random(), olegPress.id, 80.0, it) }
             val memberships =
                 MEMBERSHIPS.dropLast(1) +
                     """,{"group_id":"$GROUP","user_id":"${anna.value}",""" +
-                    """"display_name":"Анна","deleted":false}]"""
+                    """"display_name":"Anna","deleted":false}]"""
             val server = serverWith(memberships, listOf(olegPress, annaPress), olegSets + annaSet)
 
             val results = repositoryOn(server).latestOn(IVAN, setOf(olegPress.id, annaPress.id))
 
             assertEquals(
                 listOf(
-                    FriendResult(Friend(OLEG, "Олег"), olegPress, listOf(olegSets.last())),
-                    FriendResult(Friend(anna, "Анна"), annaPress, listOf(annaSet)),
+                    FriendResult(Friend(OLEG, "Oleg"), olegPress, listOf(olegSets.last())),
+                    FriendResult(Friend(anna, "Anna"), annaPress, listOf(annaSet)),
                 ),
                 results,
             )
@@ -595,17 +595,17 @@ class SupabaseFriendsRepositoryTest {
             engine.answer(
                 MEMBERSHIPS.dropLast(1) +
                     """,{"group_id":"$GROUP","user_id":"${anna.value}",""" +
-                    """"display_name":"Анна","deleted":false}]""",
+                    """"display_name":"Anna","deleted":false}]""",
             )
-            val group = FriendGroup(GroupId(GROUP), "Зал на Лесной", OLEG, "ABCD2345", 3)
+            val group = FriendGroup(GroupId(GROUP), "Forest Street Gym", OLEG, "ABCD2345", 3)
 
             val members = repositoryOn(engine).members(group)
 
             assertEquals(
                 listOf(
-                    GroupMember(OLEG, "Олег", isOwner = true),
-                    GroupMember(anna, "Анна", isOwner = false),
-                    GroupMember(IVAN, "Иван", isOwner = false),
+                    GroupMember(OLEG, "Oleg", isOwner = true),
+                    GroupMember(anna, "Anna", isOwner = false),
+                    GroupMember(IVAN, "Ivan", isOwner = false),
                 ),
                 members,
             )
@@ -625,7 +625,7 @@ class SupabaseFriendsRepositoryTest {
             engine.answer(MEMBERSHIPS)
 
             assertEquals(
-                FriendGroup(GroupId(GROUP), "Зал на Лесной", OLEG, "ABCD2345", 2),
+                FriendGroup(GroupId(GROUP), "Forest Street Gym", OLEG, "ABCD2345", 2),
                 repositoryOn(engine).group(GroupId(GROUP)),
             )
             val (groupRequest, memberRequest) = engine.requestHistory
@@ -650,13 +650,13 @@ class SupabaseFriendsRepositoryTest {
             val engine = MockEngine.Queue()
             engine.answer("\"$GROUP\"")
 
-            assertEquals(GroupId(GROUP), repositoryOn(engine).create("  Зал на Лесной "))
+            assertEquals(GroupId(GROUP), repositoryOn(engine).create("  Forest Street Gym "))
 
             val request = engine.requestHistory.single()
             val path = request.url.encodedPath
             assertTrue(path.endsWith("/rpc/create_group"), path)
             val body = request.bodyText()
-            assertTrue("\"group_name\":\"Зал на Лесной\"" in body, body)
+            assertTrue("\"group_name\":\"Forest Street Gym\"" in body, body)
         }
 
     @Test
@@ -738,17 +738,17 @@ class SupabaseFriendsRepositoryTest {
                 """"deleted":false}"""
             val rows =
                 listOf(
-                    member(GROUP, IVAN, "Иван"),
-                    member(GROUP, sasha, "Саша"),
-                    member(GROUP, OLEG, "Олег"),
-                    member(work, IVAN, "Иван"),
-                    member(work, pasha, "Паша"),
+                    member(GROUP, IVAN, "Ivan"),
+                    member(GROUP, sasha, "Sasha"),
+                    member(GROUP, OLEG, "Oleg"),
+                    member(work, IVAN, "Ivan"),
+                    member(work, pasha, "Pasha"),
                 ).joinToString(",", "[", "]")
             val repository =
                 repositoryOn(MockEngine { respond(rows, HttpStatusCode.OK, jsonHeaders()) })
 
             assertEquals(
-                listOf(Friend(IVAN, "Иван"), Friend(OLEG, "Олег")),
+                listOf(Friend(IVAN, "Ivan"), Friend(OLEG, "Oleg")),
                 repository.mates(sasha),
             )
             assertEquals(

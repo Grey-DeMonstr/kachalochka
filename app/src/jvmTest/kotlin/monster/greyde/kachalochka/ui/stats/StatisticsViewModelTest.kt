@@ -48,10 +48,10 @@ import kotlin.time.Instant
 class StatisticsViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val row = Machine.new("Тяга", null, t0)
+    private val press = Machine.new("Leg press", null, t0)
+    private val row = Machine.new("Row", null, t0)
     private val gravitron =
-        Machine.new("Гравитрон", null, t0).copy(weightMode = WeightMode.Counterweight)
+        Machine.new("Gravitron", null, t0).copy(weightMode = WeightMode.Counterweight)
 
     /** Each day is its own visit, at noon. */
     private suspend fun record(
@@ -180,29 +180,29 @@ class StatisticsViewModelTest {
 
         assertNull(state.selected)
         assertEquals(StatsPeriod.Month, state.period)
-        assertEquals("Упражнения за период · с 14 октября", state.overallTitle)
+        assertEquals("Machines in the period · since 14 October", state.overallTitle)
         assertEquals(
             listOf(
                 ProgressCardUi(
                     row.id,
-                    "Тяга",
+                    "Row",
                     null,
-                    "Начальный",
-                    "40 кг × 10",
-                    "Лучший",
-                    "40 кг × 12",
-                    "+2 повт.",
+                    "Start",
+                    "40 kg × 10",
+                    "Best",
+                    "40 kg × 12",
+                    "+2 reps",
                     improved = true,
                 ),
                 ProgressCardUi(
                     press.id,
-                    "Жим ногами",
+                    "Leg press",
                     null,
-                    "До 14 октября",
-                    "70 кг × 10",
-                    "С 14 октября",
-                    "75 кг × 8",
-                    "+5 кг",
+                    "Before 14 October",
+                    "70 kg × 10",
+                    "Since 14 October",
+                    "75 kg × 8",
+                    "+5 kg",
                     improved = true,
                 ),
             ),
@@ -221,8 +221,8 @@ class StatisticsViewModelTest {
                     .state.value.overall
                     .single { it.id == gravitron.id }
 
-            assertEquals("(-)30 кг × 8" to "(-)27.5 кг × 8", card.from to card.to)
-            assertEquals("+2.5 кг", card.change)
+            assertEquals("(-)30 kg × 8" to "(-)27.5 kg × 8", card.from to card.to)
+            assertEquals("+2.5 kg", card.change)
             assertTrue(card.improved)
         }
 
@@ -239,9 +239,9 @@ class StatisticsViewModelTest {
                 vm.state.value.overall
                     .associateBy { it.id }
 
-            assertEquals("−5 кг", cards.getValue(row.id).change)
+            assertEquals("−5 kg", cards.getValue(row.id).change)
             assertFalse(cards.getValue(row.id).improved)
-            assertEquals("Без изменений", cards.getValue(gravitron.id).change)
+            assertEquals("No change", cards.getValue(gravitron.id).change)
         }
 
     @Test
@@ -254,7 +254,7 @@ class StatisticsViewModelTest {
 
             assertTrue(vm.state.value.improvementsOnly)
             assertEquals(
-                listOf("Жим ногами"),
+                listOf("Leg press"),
                 vm.state.value.overall
                     .map { it.name },
             )
@@ -263,7 +263,7 @@ class StatisticsViewModelTest {
 
             assertFalse(vm.state.value.improvementsOnly)
             assertEquals(
-                listOf("Тяга", "Жим ногами", "Гравитрон"),
+                listOf("Row", "Leg press", "Gravitron"),
                 vm.state.value.overall
                     .map { it.name },
             )
@@ -279,7 +279,7 @@ class StatisticsViewModelTest {
                     .state.value.overall
                     .single { it.id == gravitron.id }
 
-            assertEquals("Новое упражнение", card.change)
+            assertEquals("New machine", card.change)
             assertTrue(card.improved)
             assertTrue(card.newMachine)
         }
@@ -304,7 +304,7 @@ class StatisticsViewModelTest {
     @Test
     fun export_writes_the_shown_cards_under_the_period_and_their_tags() =
         runTest {
-            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
+            gym.machines.upsert(press.copy(tags = setOf("Legs")))
             record(gravitron, CalendarDay(2023, 11, 2), 27.5 to 8)
             val vm = viewModel()
             vm.toggleGroupByTag()
@@ -313,23 +313,23 @@ class StatisticsViewModelTest {
 
             assertEquals(
                 listOf(
-                    "за месяц\n\n" +
-                        "НОГИ\n" +
-                        "Жим ногами +5 кг (75 кг × 8)\n\n" +
-                        "Остальное\n" +
-                        "Тяга +2 повт. (40 кг × 12)\n" +
-                        "Гравитрон — новое упражнение ((-)27.5 кг × 8)",
+                    "past month\n\n" +
+                        "LEGS\n" +
+                        "Leg press +5 kg (75 kg × 8)\n\n" +
+                        "Other\n" +
+                        "Row +2 reps (40 kg × 12)\n" +
+                        "Gravitron — new machine ((-)27.5 kg × 8)",
                 ),
                 gym.texts.shared,
             )
-            assertEquals("Скопировано", vm.state.value.notice)
+            assertEquals("Copied", vm.state.value.notice)
         }
 
     @Test
     fun export_starts_with_the_nickname_and_names_the_period() {
-        val text = statsExportText("ГДМ", StatsPeriod.SixMonths, emptyList())
+        val text = statsExportText("GDM", StatsPeriod.SixMonths, emptyList())
 
-        assertEquals("ГДМ, за 6 месяцев", text.substringBefore("\n"))
+        assertEquals("GDM, past 6 months", text.substringBefore("\n"))
     }
 
     @Test
@@ -339,7 +339,7 @@ class StatisticsViewModelTest {
                 .state.value.overall
                 .single { it.id == press.id }
 
-        assertEquals("До 14 октября" to "70 кг × 10", card.fromLabel to card.from)
+        assertEquals("Before 14 October" to "70 kg × 10", card.fromLabel to card.from)
     }
 
     @Test
@@ -349,10 +349,10 @@ class StatisticsViewModelTest {
         vm.choosePeriod(StatsPeriod.ThreeMonths)
 
         val state = vm.state.value
-        assertEquals("Упражнения за период · с 14 августа", state.overallTitle)
+        assertEquals("Machines in the period · since 14 August", state.overallTitle)
         val card = state.overall.single { it.id == press.id }
-        assertEquals("Начальный" to "Лучший", card.fromLabel to card.toLabel)
-        assertEquals("70 кг × 10" to "75 кг × 8", card.from to card.to)
+        assertEquals("Start" to "Best", card.fromLabel to card.toLabel)
+        assertEquals("70 kg × 10" to "75 kg × 8", card.from to card.to)
     }
 
     @Test
@@ -360,7 +360,7 @@ class StatisticsViewModelTest {
         val vm = viewModel()
         assertEquals(StatsSort.Recent, vm.state.value.sort)
         assertEquals(
-            listOf("Тяга", "Жим ногами", "Гравитрон"),
+            listOf("Row", "Leg press", "Gravitron"),
             vm.state.value.choices
                 .map { it.name },
         )
@@ -368,12 +368,12 @@ class StatisticsViewModelTest {
         vm.chooseSort(StatsSort.Name)
 
         assertEquals(
-            listOf("Гравитрон", "Жим ногами", "Тяга"),
+            listOf("Gravitron", "Leg press", "Row"),
             vm.state.value.choices
                 .map { it.name },
         )
         assertEquals(
-            listOf("Жим ногами", "Тяга"),
+            listOf("Leg press", "Row"),
             vm.state.value.overall
                 .map { it.name },
         )
@@ -389,7 +389,7 @@ class StatisticsViewModelTest {
             vm.chooseSort(StatsSort.Growth)
 
             assertEquals(
-                listOf("Гравитрон", "Жим ногами", "Тяга"),
+                listOf("Gravitron", "Leg press", "Row"),
                 vm.state.value.overall
                     .map { it.name },
             )
@@ -398,8 +398,8 @@ class StatisticsViewModelTest {
     @Test
     fun grouping_by_tags_splits_the_cards_and_the_choices_and_is_kept_in_the_profile() =
         runTest {
-            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
-            gym.machines.upsert(gravitron.copy(tags = setOf("Ноги")))
+            gym.machines.upsert(press.copy(tags = setOf("Legs")))
+            gym.machines.upsert(gravitron.copy(tags = setOf("Legs")))
             val vm = viewModel()
             assertTrue(vm.state.value.canGroupByTag)
             assertFalse(vm.state.value.groupByTag)
@@ -413,14 +413,14 @@ class StatisticsViewModelTest {
 
             assertTrue(vm.state.value.groupByTag)
             assertEquals(
-                listOf("НОГИ" to listOf("Жим ногами"), "Остальное" to listOf("Тяга")),
+                listOf("LEGS" to listOf("Leg press"), "Other" to listOf("Row")),
                 vm.state.value.overallSections
                     .map { s -> s.title to s.items.map { it.name } },
             )
             assertEquals(
                 listOf(
-                    "НОГИ" to listOf("Жим ногами", "Гравитрон"),
-                    "Остальное" to listOf("Тяга"),
+                    "LEGS" to listOf("Leg press", "Gravitron"),
+                    "Other" to listOf("Row"),
                 ),
                 vm.state.value.choiceSections
                     .map { s -> s.title to s.items.map { it.name } },
@@ -445,7 +445,7 @@ class StatisticsViewModelTest {
             vm.state.value.selected
                 ?.id,
         )
-        assertEquals("75 кг × 8", chosen.best)
+        assertEquals("75 kg × 8", chosen.best)
         assertEquals(
             listOf(CalendarDay(2023, 11, 10) to 75.0, CalendarDay(2023, 11, 12) to 72.5),
             chosen.points,
@@ -454,9 +454,9 @@ class StatisticsViewModelTest {
         assertFalse(chosen.zeroOnTop)
         assertEquals(
             listOf(
-                "12 ноября" to "72.5кг 1x10",
-                "10 ноября" to "75кг 8-6",
-                "10 октября" to "70кг 1x10",
+                "12 November" to "72.5kg 1x10",
+                "10 November" to "75kg 8-6",
+                "10 October" to "70kg 1x10",
             ),
             chosen.history.map { it.date to it.results },
         )
@@ -487,22 +487,22 @@ class StatisticsViewModelTest {
     @Test
     fun a_search_keeps_the_matching_choices_in_their_sections_with_the_matched_part() =
         runTest {
-            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
+            gym.machines.upsert(press.copy(tags = setOf("Legs")))
             val vm = viewModel()
             vm.toggleGroupByTag()
             assertTrue(vm.state.value.showsOverall)
 
-            vm.search("ногм")
+            vm.search("pross")
 
             assertFalse(vm.state.value.showsOverall)
             assertEquals(
-                listOf("НОГИ" to listOf(press.id to 4..8)),
+                listOf("LEGS" to listOf(press.id to 4..8)),
                 vm.state.value.choiceSections
                     .map { s -> s.title to s.items.map { it.id to it.matched } },
             )
             assertFalse(vm.state.value.nothingFound)
 
-            vm.search("присед")
+            vm.search("squat")
 
             assertEquals(emptyList(), vm.state.value.choiceSections)
             assertTrue(vm.state.value.nothingFound)
@@ -512,16 +512,16 @@ class StatisticsViewModelTest {
     fun a_search_finds_an_own_machine_by_the_name_of_a_linked_friend_s_one() =
         runTest {
             val on = signedInGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
-            val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME)
+            val olegs = Machine.new("Hack machine", OLEG.userId, t0)
             val (copy, link) = linkedCopy(olegs, ME.userId, t0)
-            val mine = copy.copy(name = "Присед в тренажёре")
+            val mine = copy.copy(name = "Sled squat")
             on.friends.machines += olegs
             on.machines.upsert(mine)
             on.machineLinks.upsert(link)
             val vm = viewModel(on = on)
 
-            vm.search("гакк")
+            vm.search("hack")
 
             val found = vm.state.value.choices
             assertEquals(listOf(mine.id), found.map { it.id })
@@ -537,7 +537,7 @@ class StatisticsViewModelTest {
             on.friends.gate = CompletableDeferred()
             val vm = viewModel(on = on)
 
-            vm.search("гакк")
+            vm.search("hack")
 
             assertEquals(
                 listOf(mine.id),
@@ -555,7 +555,7 @@ class StatisticsViewModelTest {
             on.friends.offline = true
 
             on.sync.completePass()
-            vm.search("гакк")
+            vm.search("hack")
 
             assertEquals(
                 listOf(mine.id),
@@ -568,14 +568,14 @@ class StatisticsViewModelTest {
     fun a_search_takes_effect_at_once_while_the_same_account_reloads() =
         runTest {
             val on = signedInGym()
-            val pull = Machine.new("Тяга", ME.userId, t0)
+            val pull = Machine.new("Row", ME.userId, t0)
             on.machines.upsert(pull)
-            on.machines.upsert(Machine.new("Жим", ME.userId, t0))
+            on.machines.upsert(Machine.new("Bench press", ME.userId, t0))
             val vm = viewModel(on = on)
             on.machines.readGate = CompletableDeferred()
             on.sync.completePass()
 
-            vm.search("тяг")
+            vm.search("row")
 
             assertEquals(
                 listOf(pull.id),
@@ -585,10 +585,10 @@ class StatisticsViewModelTest {
         }
 
     private fun linkedMachine(on: FakeGym): Machine {
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
+        val olegs = Machine.new("Hack machine", OLEG.userId, t0)
         val (copy, link) = linkedCopy(olegs, ME.userId, t0)
-        val mine = copy.copy(name = "Присед в тренажёре")
+        val mine = copy.copy(name = "Sled squat")
         on.friends.machines += olegs
         runBlocking {
             on.machines.upsert(mine)
@@ -602,7 +602,7 @@ class StatisticsViewModelTest {
         runTest {
             val on = signedInGym()
             on.friends.offline = true
-            val mine = Machine.new("Тяга", ME.userId, t0)
+            val mine = Machine.new("Row", ME.userId, t0)
             on.machines.upsert(mine)
             val vm = viewModel(on = on)
             assertEquals(
@@ -611,7 +611,7 @@ class StatisticsViewModelTest {
                     .map { it.id },
             )
 
-            vm.search("тяг")
+            vm.search("row")
 
             val found = vm.state.value.choices
             assertEquals(listOf(mine.id), found.map { it.id })
@@ -621,7 +621,7 @@ class StatisticsViewModelTest {
     @Test
     fun choosing_a_machine_ends_the_search() {
         val vm = viewModel()
-        vm.search("тяг")
+        vm.search("row")
 
         vm.choose(row.id)
 

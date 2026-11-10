@@ -21,36 +21,36 @@ class TagsTest {
 
     @Test
     fun each_tag_is_kept_once_as_met_first() {
-        assertEquals(listOf("Ноги", "Руки"), distinctTags(listOf("Ноги", "Руки", "ноги", "РУКИ")))
+        assertEquals(listOf("Legs", "Arms"), distinctTags(listOf("Legs", "Arms", "legs", "ARMS")))
     }
 
     @Test
     fun sorted_tags_are_distinct_and_in_alphabetical_order_without_letter_case() {
-        assertEquals(listOf("бицепс", "Ноги"), sortedTags(listOf("Ноги", "бицепс", "НОГИ")))
+        assertEquals(listOf("biceps", "Legs"), sortedTags(listOf("Legs", "biceps", "LEGS")))
     }
 
     @Test
     fun a_tag_set_holds_a_tag_in_any_letter_case() {
-        val tags = setOf("Ноги", "Жим")
+        val tags = setOf("Legs", "Press")
 
-        assertTrue(hasTag(tags, "ноги"))
-        assertFalse(hasTag(tags, "Спина"))
-        assertTrue(hasAllTags(tags, setOf("НОГИ", "жим")))
-        assertFalse(hasAllTags(tags, setOf("ноги", "Спина")))
+        assertTrue(hasTag(tags, "legs"))
+        assertFalse(hasTag(tags, "Back"))
+        assertTrue(hasAllTags(tags, setOf("LEGS", "press")))
+        assertFalse(hasAllTags(tags, setOf("legs", "Back")))
     }
 
     @Test
     fun a_toggle_takes_out_the_tag_in_any_case_or_else_adds_it() {
-        assertEquals(setOf("Жим"), toggledTag(setOf("Ноги", "Жим"), "НОГИ"))
-        assertEquals(setOf("Ноги", "Спина"), toggledTag(setOf("Ноги"), "Спина"))
+        assertEquals(setOf("Press"), toggledTag(setOf("Legs", "Press"), "LEGS"))
+        assertEquals(setOf("Legs", "Back"), toggledTag(setOf("Legs"), "Back"))
     }
 
     @Test
     fun linked_machines_suggest_each_tag_the_machine_lacks_once() {
         assertEquals(
-            listOf("жим", "ноги"),
-            suggestedTags(linked = listOf("ноги", "спина", "жим", "ноги"), tags = setOf("спина")),
+            listOf("arms", "legs"),
+            suggestedTags(linked = listOf("legs", "back", "arms", "legs"), tags = setOf("back")),
         )
-        assertEquals(emptyList(), suggestedTags(listOf("ноги"), setOf("ноги")))
+        assertEquals(emptyList(), suggestedTags(listOf("legs"), setOf("legs")))
     }
 }

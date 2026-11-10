@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.legal
 
+import monster.greyde.kachalochka.ui.strings.EnStrings
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,7 +46,7 @@ class LegalPagesTest {
     @Test
     fun privacyPolicyExplainsHowToDeleteAnAccount() {
         val html = page("privacy.html")
-        assertTrue("“Удалить аккаунт” (Delete account) in the app’s settings" in html)
+        assertTrue("“${EnStrings.deleteAccount}” in the app’s settings" in html)
         assertTrue("$ISSUES/new" in html)
         assertTrue("within 30 days" in html)
     }

@@ -107,7 +107,7 @@ internal fun accountPerson(
     )
 }
 
-/** [accountPerson], else "Я" on a device nobody has signed in on. */
+/** [accountPerson], else "Me" on a device nobody has signed in on. */
 internal fun ownPerson(
     accounts: Accounts,
     avatars: AccountAvatars,

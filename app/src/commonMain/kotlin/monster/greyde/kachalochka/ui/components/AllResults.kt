@@ -22,7 +22,7 @@ data class HistoryRowUi(
     val results: String,
 )
 
-/** "Все результаты": one row per day, the date and what was recorded on it. */
+/** "All results": one row per day, the date and what was recorded on it. */
 @Composable
 fun AllResults(
     rows: List<HistoryRowUi>,

@@ -19,7 +19,6 @@ import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
@@ -30,7 +29,7 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalTestApi::class)
 class MachineListScreenTest {
     private val gym = FakeGym()
-    private val press = Machine.new("Жим ногами", null, gym.clock.current)
+    private val press = Machine.new("Leg press", null, gym.clock.current)
 
     @Test
     fun a_machine_opens_for_editing_and_the_button_adds_one() {
@@ -46,7 +45,7 @@ class MachineListScreenTest {
                 onOpenFriendMachine = { _, _ -> },
             )
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
+            onNodeWithTag("top-bar-title").assertTextEquals("Machines")
             onNodeWithTag("machine-list-row-${press.id.value}").performClick()
             onNodeWithTag("new-machine").performClick()
             waitForIdle()
@@ -60,9 +59,9 @@ class MachineListScreenTest {
     fun a_sort_chip_orders_the_list_and_is_remembered() {
         runBlocking { gym.machines.upsert(press) }
         runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
-            onNodeWithTag("sort-recent").assertTextEquals("Недавние")
-            onNodeWithTag("sort-frequent").assertTextEquals("Частые")
-            onNodeWithTag("sort-name").assertTextEquals("А–Я").performClick()
+            onNodeWithTag("sort-recent").assertTextEquals("Recent")
+            onNodeWithTag("sort-frequent").assertTextEquals("Most used")
+            onNodeWithTag("sort-name").assertTextEquals("A–Z").performClick()
             waitForIdle()
         }
         assertEquals(MachineSort.Name, runBlocking { gym.profiles.forOwner(null)?.machineSort })
@@ -70,17 +69,17 @@ class MachineListScreenTest {
 
     @Test
     fun a_search_and_a_tag_narrow_the_list() {
-        val row = Machine.new("Тяга", null, gym.clock.current).copy(tags = setOf("Спина"))
+        val row = Machine.new("Row", null, gym.clock.current).copy(tags = setOf("Back"))
         runBlocking {
             gym.machines.upsert(press)
             gym.machines.upsert(row)
         }
         runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
-            onNodeWithTag("machine-search").performTextInput("гакк")
+            onNodeWithTag("machine-search").performTextInput("hack")
             waitForIdle()
-            onNodeWithTag("machine-list-nothing").assertTextEquals("Ничего не найдено")
+            onNodeWithTag("machine-list-nothing").assertTextEquals("Nothing found")
             onNodeWithTag("clear-search").performClick()
-            onNodeWithTag("list-tag-спина").assertTextEquals("СПИНА").performClick()
+            onNodeWithTag("list-tag-back").assertTextEquals("BACK").performClick()
             waitForIdle()
 
             onNodeWithTag("machine-list-row-${row.id.value}").assertIsDisplayed()
@@ -90,8 +89,8 @@ class MachineListScreenTest {
 
     @Test
     fun a_suggestion_opens_the_link_chooser_and_the_chip_keeps_only_suggested_machines() {
-        val twin = Machine.new("жим ногами", null, gym.clock.current)
-        val row = Machine.new("Тяга", null, gym.clock.current)
+        val twin = Machine.new("leg press", null, gym.clock.current)
+        val row = Machine.new("Row", null, gym.clock.current)
         runBlocking { listOf(press, twin, row).forEach { gym.machines.upsert(it) } }
         val suggested = mutableListOf<Pair<MachineId, String>>()
         runScreenTest(gym, screen = {
@@ -105,16 +104,16 @@ class MachineListScreenTest {
             onNodeWithTag("machine-list-row-${row.id.value}").assertDoesNotExist()
             onNodeWithTag("machine-list-row-${twin.id.value}").assertIsDisplayed()
         }
-        assertEquals(listOf(press.id to "жим ногами"), suggested)
+        assertEquals(listOf(press.id to "leg press"), suggested)
     }
 
     @Test
     fun a_machine_names_the_friends_machines_it_is_linked_with() {
         val on = signedInGym()
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
+        val olegs = Machine.new("Hack machine", OLEG.userId, on.clock.current)
         val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current)
-        val mine = copy.copy(name = "Жим")
+        val mine = copy.copy(name = "Press")
         on.friends.machines += olegs
         runBlocking {
             on.machines.upsert(mine)
@@ -123,20 +122,20 @@ class MachineListScreenTest {
         runScreenTest(on, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
             waitForIdle()
             val row = hasAnyAncestor(hasTestTag("card-linked-${mine.id.value}-${olegs.id.value}"))
-            onNode(hasText("Гакк-машина") and row, useUnmergedTree = true).assertIsDisplayed()
-            onNode(hasText("О") and row, useUnmergedTree = true).assertIsDisplayed()
+            onNode(hasText("Hack machine") and row, useUnmergedTree = true).assertIsDisplayed()
+            onNode(hasText("O") and row, useUnmergedTree = true).assertIsDisplayed()
         }
     }
 
     @Test
     fun linked_machines_of_one_name_share_it_and_the_machine_s_own_name_is_not_written() {
         val on = signedInGym()
-        on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-        val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+        val olegs = Machine.new("Hack machine", OLEG.userId, on.clock.current)
         val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current)
         val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, on.clock.current)
-        val mine = copy.copy(name = "ГАКК-МАШИНА ")
-        on.friends.machines += listOf(olegs, pashas.copy(name = "гакк-машина"))
+        val mine = copy.copy(name = "HACK MACHINE ")
+        on.friends.machines += listOf(olegs, pashas.copy(name = "hack machine"))
         on.friends.links += pashaLink
         runBlocking {
             on.machines.upsert(mine)
@@ -145,9 +144,9 @@ class MachineListScreenTest {
         runScreenTest(on, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
             waitForIdle()
             val row = hasAnyAncestor(hasTestTag("card-linked-${mine.id.value}-${olegs.id.value}"))
-            onNode(hasText("О") and row, useUnmergedTree = true).assertIsDisplayed()
-            onNode(hasText("П") and row, useUnmergedTree = true).assertIsDisplayed()
-            onAllNodes(hasText("Гакк-машина", ignoreCase = true) and row, useUnmergedTree = true)
+            onNode(hasText("O") and row, useUnmergedTree = true).assertIsDisplayed()
+            onNode(hasText("P") and row, useUnmergedTree = true).assertIsDisplayed()
+            onAllNodes(hasText("Hack machine", ignoreCase = true) and row, useUnmergedTree = true)
                 .assertCountEquals(0)
         }
     }
@@ -155,12 +154,12 @@ class MachineListScreenTest {
     @Test
     fun linked_machines_of_other_names_share_a_name_once() {
         val on = signedInGym()
-        on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-        val olegs = Machine.new("Гакк-машина", OLEG.userId, on.clock.current)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+        val olegs = Machine.new("Hack machine", OLEG.userId, on.clock.current)
         val (copy, link) = linkedCopy(olegs, ME.userId, on.clock.current)
         val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, on.clock.current)
-        val mine = copy.copy(name = "Жим")
-        on.friends.machines += listOf(olegs, pashas.copy(name = "гакк-машина"))
+        val mine = copy.copy(name = "Press")
+        on.friends.machines += listOf(olegs, pashas.copy(name = "hack machine"))
         on.friends.links += pashaLink
         runBlocking {
             on.machines.upsert(mine)
@@ -169,22 +168,22 @@ class MachineListScreenTest {
         runScreenTest(on, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
             waitForIdle()
             val row = hasAnyAncestor(hasTestTag("card-linked-${mine.id.value}-${olegs.id.value}"))
-            onNode(hasText("Гакк-машина") and row, useUnmergedTree = true).assertIsDisplayed()
-            onNode(hasText("О") and row, useUnmergedTree = true).assertIsDisplayed()
-            onNode(hasText("П") and row, useUnmergedTree = true).assertIsDisplayed()
+            onNode(hasText("Hack machine") and row, useUnmergedTree = true).assertIsDisplayed()
+            onNode(hasText("O") and row, useUnmergedTree = true).assertIsDisplayed()
+            onNode(hasText("P") and row, useUnmergedTree = true).assertIsDisplayed()
         }
     }
 
     @Test
     fun without_machines_the_list_says_so() =
         runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
-            onNodeWithTag("machine-list-empty").assertTextEquals("Упражнений пока нет")
+            onNodeWithTag("machine-list-empty").assertTextEquals("No machines yet")
             onNodeWithTag("machine-list-friend-section-${OLEG.userId.value}").assertDoesNotExist()
         }
 
     @Test
     fun the_machine_list_speaks_english() =
-        runScreenTestInEnglish(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
+        runScreenTest(gym, screen = { MachineListScreen({}, {}, {}, {}, { _, _ -> }) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Machines")
             onNodeWithTag("machine-list-empty").assertTextEquals("No machines yet")
         }
@@ -192,8 +191,8 @@ class MachineListScreenTest {
     @Test
     fun a_friend_s_machine_is_listed_under_its_own_title_and_opens_with_its_owner() {
         val on = signedInGym()
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val olegPress = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
+        val olegPress = Machine.new("Leg press", OLEG.userId, on.clock.current)
         on.friends.machines += olegPress
         val opened = mutableListOf<Pair<MachineId, UserId>>()
         runScreenTest(on, screen = {

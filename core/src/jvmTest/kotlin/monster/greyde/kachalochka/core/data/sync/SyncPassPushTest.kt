@@ -65,7 +65,7 @@ class SyncPassPushTest {
     fun a_machine_s_tags_follow_it_each_tag_before_its_link_and_both_before_visits() =
         runTest {
             h.visits.upsert(ownedVisit(IVAN))
-            h.machines.upsert(ownedPress(IVAN).copy(tags = setOf("ноги")))
+            h.machines.upsert(ownedPress(IVAN).copy(tags = setOf("legs")))
 
             h.pass.run(listOf(IVAN))
 

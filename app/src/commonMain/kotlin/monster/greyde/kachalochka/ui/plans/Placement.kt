@@ -34,7 +34,7 @@ class Placement(
     private val sync: SyncTrigger,
     private val gymWrites: GymWrites,
 ) {
-    /** [owner]'s plans as "В план…" offers them, named and ordered as in the list. */
+    /** [owner]'s plans as "Add to plan…" offers them, named and ordered as in the list. */
     suspend fun choices(owner: UserId?): List<PlanChoiceUi>? {
         val names = machines.all(owner).associate { it.id to it.name }
         val choices =

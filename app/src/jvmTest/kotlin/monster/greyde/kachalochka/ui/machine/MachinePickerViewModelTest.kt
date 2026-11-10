@@ -34,7 +34,8 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
-import monster.greyde.kachalochka.ui.strings.inEnglish
+import monster.greyde.kachalochka.ui.strings.RuStrings
+import monster.greyde.kachalochka.ui.strings.inRussian
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -52,11 +53,11 @@ class MachinePickerViewModelTest {
     private val t0 = gym.clock.current
     private val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
     private val otherVisit = VisitId.random()
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val smith = Machine.new("Приседания в Смите", null, t0)
+    private val press = Machine.new("Leg press", null, t0)
+    private val smith = Machine.new("Smith squats", null, t0)
 
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
-    private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan")
+    private val misha = session("22222222-2222-4222-8222-222222222222", "Misha")
 
     private fun session(
         id: String,
@@ -106,8 +107,8 @@ class MachinePickerViewModelTest {
     fun a_machine_without_its_own_photo_shows_a_linked_friend_s_one() =
         runTest {
             val on = signedInGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
-            val olegs = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME)
+            val olegs = Machine.new("Leg press", OLEG.userId, on.clock.current)
             val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current)
             val olegsPhoto = Photo.new(olegs.id, OLEG.userId, on.clock.current)
             on.friends.machines += olegs
@@ -126,10 +127,10 @@ class MachinePickerViewModelTest {
 
     private fun olegsGym(): Pair<FakeGym, Machine> {
         val on = signedInGym()
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
         val olegPress =
             Machine
-                .new("Жим ногами", OLEG.userId, t0)
+                .new("Leg press", OLEG.userId, t0)
                 .copy(weightMode = WeightMode.PerSide, weightStep = 5.0)
         on.friends.machines += olegPress
         return on to olegPress
@@ -138,8 +139,8 @@ class MachinePickerViewModelTest {
     /** Oleg's original machine and Pasha's copy of it, linked to the same physical machine. */
     private fun sharedLinkGym(): Pair<FakeGym, Machine> {
         val on = signedInGym()
-        on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-        val olegPress = Machine.new("Жим ногами", OLEG.userId, t0)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+        val olegPress = Machine.new("Leg press", OLEG.userId, t0)
         val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0)
         on.friends.machines += listOf(pashaCopy, olegPress)
         on.friends.links += link
@@ -165,7 +166,7 @@ class MachinePickerViewModelTest {
     @Test
     fun a_finished_sync_lists_the_machines_it_pulled() {
         val vm = viewModel().also { it.load() }
-        val pulled = Machine.new("Бабочка", null, t0)
+        val pulled = Machine.new("Butterfly", null, t0)
 
         runBlocking { gym.machines.upsert(pulled) }
         gym.sync.completePass()
@@ -183,13 +184,13 @@ class MachinePickerViewModelTest {
 
         assertEquals(
             listOf(
-                Triple("Жим ногами", "14 ноября", "75 кг × 8"),
-                Triple("Приседания в Смите", "10 ноября", "80 кг × 8"),
+                Triple("Leg press", "14 November", "75 kg × 8"),
+                Triple("Smith squats", "10 November", "80 kg × 8"),
             ),
             vm.state.value.rows
                 .map { Triple(it.name, it.lastUsed, it.record) },
         )
-        assertEquals("Мои упражнения", vm.state.value.sectionLabel)
+        assertEquals("My machines", vm.state.value.sectionLabel)
         assertNull(vm.state.value.createLabel)
     }
 
@@ -198,14 +199,14 @@ class MachinePickerViewModelTest {
         runTest {
             val gravitron =
                 Machine
-                    .new("Гравитрон", null, t0)
-                    .copy(unit = WeightUnit.Custom, unitLabel = "плитка")
+                    .new("Gravitron", null, t0)
+                    .copy(unit = WeightUnit.Custom, unitLabel = "plate")
             gym.machines.upsert(gravitron)
             gym.sets.upsert(set(otherVisit, gravitron, 7.0, 10, t0 - 1.days))
             val vm = viewModel().also { it.load() }
 
             assertEquals(
-                "7 плитка × 10",
+                "7 plate × 10",
                 vm.state.value.rows
                     .single { it.id == gravitron.id }
                     .record,
@@ -215,7 +216,7 @@ class MachinePickerViewModelTest {
     @Test
     fun a_last_result_reads_in_the_unit_chosen_in_the_profile() =
         runTest {
-            val cable = Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb)
+            val cable = Machine.new("Cable crossover", null, t0).copy(unit = WeightUnit.Lb)
             gym.machines.upsert(cable)
             gym.sets.upsert(set(otherVisit, cable, 90.0, 8, t0 - 1.days))
             val vm = viewModel().also { it.load() }
@@ -223,23 +224,23 @@ class MachinePickerViewModelTest {
             fun records() =
                 vm.state.value.rows
                     .associate { it.name to it.record }
-            assertEquals("41 кг × 8", records()["Кроссовер"])
+            assertEquals("41 kg × 8", records()["Cable crossover"])
 
             gym.profiles.upsert(Profile.new(null, t0).copy(weightUnit = PreferredWeightUnit.Lb))
             vm.load()
 
-            assertEquals("90 lb × 8", records()["Кроссовер"])
-            assertEquals("176.5 lb × 8", records()["Приседания в Смите"])
+            assertEquals("90 lb × 8", records()["Cable crossover"])
+            assertEquals("176.5 lb × 8", records()["Smith squats"])
         }
 
     @Test
     fun typing_a_new_name_offers_to_create_it_and_finds_nothing() {
         val vm = viewModel().also { it.load() }
 
-        vm.onQueryChange("гакк")
+        vm.onQueryChange("hack")
 
-        assertEquals("Создать «гакк»", vm.state.value.createLabel)
-        assertEquals("Фото, комментарий и настройка веса", vm.state.value.createHint)
+        assertEquals("Create \"hack\"", vm.state.value.createLabel)
+        assertEquals("Photos, comment and weight setup", vm.state.value.createHint)
         assertEquals(emptyList(), vm.state.value.rows)
         assertTrue(vm.state.value.nothingFound)
     }
@@ -247,28 +248,28 @@ class MachinePickerViewModelTest {
     @Test
     fun tags_under_the_search_narrow_the_list_and_go_to_a_created_machine() =
         runTest {
-            gym.machines.upsert(press.copy(tags = setOf("Ноги", "Жим")))
-            gym.machines.upsert(smith.copy(tags = setOf("Ноги")))
+            gym.machines.upsert(press.copy(tags = setOf("Legs", "Press")))
+            gym.machines.upsert(smith.copy(tags = setOf("Legs")))
             val vm = viewModel().also { it.load() }
             assertEquals(
-                listOf("жим" to false, "ноги" to false),
+                listOf("legs" to false, "press" to false),
                 vm.state.value.tags
                     .map { it.name to it.chosen },
             )
 
-            vm.toggleTag("Жим")
+            vm.toggleTag("Press")
 
             assertEquals(
-                listOf("Жим ногами"),
+                listOf("Leg press"),
                 vm.state.value.rows
                     .map { it.name },
             )
-            vm.onQueryChange("гакк")
-            assertEquals("С тегом «ЖИМ»", vm.state.value.createHint)
-            assertEquals(listOf("жим"), vm.createTags)
+            vm.onQueryChange("hack")
+            assertEquals("Tagged \"PRESS\"", vm.state.value.createHint)
+            assertEquals(listOf("press"), vm.createTags)
             assertTrue(vm.state.value.nothingFound)
 
-            vm.toggleTag("Жим")
+            vm.toggleTag("Press")
             vm.onQueryChange("")
             assertEquals(2, vm.state.value.rows.size)
         }
@@ -276,10 +277,10 @@ class MachinePickerViewModelTest {
     @Test
     fun a_chosen_tag_no_machine_has_any_more_stops_filtering_and_creating() =
         runTest {
-            gym.machines.upsert(press.copy(tags = setOf("ноги")))
+            gym.machines.upsert(press.copy(tags = setOf("legs")))
             gym.machines.upsert(smith)
             val vm = viewModel().also { it.load() }
-            vm.toggleTag("ноги")
+            vm.toggleTag("legs")
             assertEquals(1, vm.state.value.rows.size)
 
             gym.machines.upsert(press.copy(tags = emptySet()))
@@ -291,27 +292,27 @@ class MachinePickerViewModelTest {
         }
 
     @Test
-    fun the_picker_speaks_english_when_entered_again() {
+    fun the_picker_speaks_russian_when_entered_again() {
         val vm = viewModel().also { it.load() }
-        vm.onQueryChange("гакк")
+        vm.onQueryChange("hack")
 
-        inEnglish {
+        inRussian {
             vm.load()
-            assertEquals("Create \"гакк\"", vm.state.value.createLabel)
-            assertEquals("Photos, comment and weight setup", vm.state.value.createHint)
+            assertEquals(RuStrings.createNamed("hack"), vm.state.value.createLabel)
+            assertEquals(RuStrings.photoNoteAndSetup, vm.state.value.createHint)
         }
     }
 
     @Test
-    fun the_english_create_hint_quotes_the_tags_in_capitals() =
+    fun the_russian_create_hint_quotes_the_tags_in_capitals() =
         runTest {
-            gym.machines.upsert(press.copy(tags = setOf("Ноги")))
+            gym.machines.upsert(press.copy(tags = setOf("Legs")))
             val vm = viewModel().also { it.load() }
-            vm.toggleTag("Ноги")
+            vm.toggleTag("Legs")
 
-            inEnglish {
+            inRussian {
                 vm.load()
-                assertEquals("Tagged \"НОГИ\"", vm.state.value.createHint)
+                assertEquals(RuStrings.withTags(listOf("LEGS")), vm.state.value.createHint)
             }
         }
 
@@ -319,11 +320,11 @@ class MachinePickerViewModelTest {
     fun typing_an_existing_name_does_not_offer_creation() {
         val vm = viewModel().also { it.load() }
 
-        vm.onQueryChange("жим ногами")
+        vm.onQueryChange("leg press")
 
         assertNull(vm.state.value.createLabel)
         assertEquals(
-            listOf("Жим ногами"),
+            listOf("Leg press"),
             vm.state.value.rows
                 .map { it.name },
         )
@@ -336,8 +337,8 @@ class MachinePickerViewModelTest {
             val shared = FakeGym().withAccounts(misha, ivan, active = misha)
             val hers = Visit(VisitId.random(), misha.account.userId, shared.today, t0, t0, false)
             val his = Visit(VisitId.random(), ivan.account.userId, shared.today, t0, t0, false)
-            val herPress = Machine.new("Жим ногами", misha.account.userId, t0)
-            val hisPress = Machine.new("Жим Ивана", ivan.account.userId, t0)
+            val herPress = Machine.new("Leg press", misha.account.userId, t0)
+            val hisPress = Machine.new("Ivan's press", ivan.account.userId, t0)
             shared.visits.upsert(hers)
             shared.visits.upsert(his)
             shared.machines.upsert(herPress)
@@ -354,7 +355,7 @@ class MachinePickerViewModelTest {
             }
             val vm = pickerOn(shared).also { it.load() }
             assertEquals(
-                listOf("Жим ногами" to "70 кг × 10"),
+                listOf("Leg press" to "70 kg × 10"),
                 vm.state.value.rows
                     .map { it.name to it.record },
             )
@@ -363,7 +364,7 @@ class MachinePickerViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                listOf("Жим Ивана" to "60 кг × 10"),
+                listOf("Ivan's press" to "60 kg × 10"),
                 vm.state.value.rows
                     .map { it.name to it.record },
             )
@@ -395,13 +396,13 @@ class MachinePickerViewModelTest {
     fun own_machines_show_while_the_friends_read_is_still_in_flight() =
         runTest {
             val (on, _) = olegsGym()
-            on.machines.upsert(Machine.new("Тяга", ME.userId, t0))
+            on.machines.upsert(Machine.new("Row", ME.userId, t0))
             on.friends.gate = CompletableDeferred()
 
             val vm = pickerOn(on).also { it.load() }
 
             assertEquals(
-                listOf("Тяга"),
+                listOf("Row"),
                 vm.state.value.rows
                     .map { it.name },
             )
@@ -415,11 +416,11 @@ class MachinePickerViewModelTest {
         val vm = pickerOn(on).also { it.load() }
 
         assertEquals(
-            listOf(MachineCardUi(olegPress.id, "Жим ногами", null, emptyList(), "", null, null)),
+            listOf(MachineCardUi(olegPress.id, "Leg press", null, emptyList(), "", null, null)),
             vm.state.value.friendRows,
         )
         assertEquals(
-            listOf("Олег"),
+            listOf("Oleg"),
             vm.state.value.friendSections
                 .map { it.friend.displayName },
         )
@@ -453,7 +454,7 @@ class MachinePickerViewModelTest {
     fun a_friend_s_machine_linked_to_an_own_one_is_not_offered() =
         runTest {
             val (on, olegPress) = olegsGym()
-            val mine = Machine.new("Жим", ME.userId, t0)
+            val mine = Machine.new("Press", ME.userId, t0)
             on.machines.upsert(mine)
             on.friends.links +=
                 MachineLink(MachineLinkId.random(), OLEG.userId, olegPress.id, mine.id, t0, false)
@@ -467,8 +468,8 @@ class MachinePickerViewModelTest {
     fun friends_read_for_the_previous_account_never_show_or_get_picked() =
         runTest {
             val on = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
-            val olegPress = Machine.new("Жим ногами", OLEG.userId, t0)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME)
+            val olegPress = Machine.new("Leg press", OLEG.userId, t0)
             on.friends.machines += olegPress
             val ivansRead = CompletableDeferred<Unit>()
             on.friends.gate = ivansRead
@@ -518,7 +519,7 @@ class MachinePickerViewModelTest {
     @Test
     fun machines_already_in_the_visit_follow_everything_else() =
         runTest {
-            val bench = Machine.new("Жим лёжа", null, t0)
+            val bench = Machine.new("Bench press", null, t0)
             gym.machines.upsert(bench)
             gym.visits.upsert(visit.copy(planned = listOf(smith.id)))
 

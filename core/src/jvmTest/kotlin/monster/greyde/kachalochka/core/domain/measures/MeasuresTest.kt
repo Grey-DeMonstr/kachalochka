@@ -82,11 +82,11 @@ class MeasuresTest {
 
     @Test
     fun a_predefined_measure_shows_the_app_s_name_and_unit_whatever_is_stored() {
-        val hips = predefined(MeasureKind.Hips).copy(name = "Бёдра", unit = "дюйм")
-        val own = hips.copy(kind = null, name = "Предплечье", unit = "см")
+        val hips = predefined(MeasureKind.Hips).copy(name = "Hips", unit = "in")
+        val own = hips.copy(kind = null, name = "Forearm", unit = "cm")
 
         assertEquals("Обхват бёдер" to "см", hips.displayName to hips.displayUnit)
-        assertEquals("Предплечье" to "см", own.displayName to own.displayUnit)
+        assertEquals("Forearm" to "cm", own.displayName to own.displayUnit)
     }
 
     @Test
@@ -240,7 +240,7 @@ class MeasuresTest {
             ?: everyPredefined().first().copy(
                 id = MeasureId(derivedId(ivan, kind)),
                 kind = kind,
-                name = "Жир",
+                name = "Body fat",
                 unit = "%",
             )
 

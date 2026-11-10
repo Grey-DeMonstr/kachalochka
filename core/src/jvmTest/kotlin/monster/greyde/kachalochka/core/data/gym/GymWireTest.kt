@@ -54,7 +54,7 @@ class GymWireTest {
             Instant.fromEpochSeconds(1_700_000_000),
             Instant.fromEpochSeconds(1_700_000_000),
             false,
-            comment = "Тяжело",
+            comment = "Heavy",
         )
 
     @Test
@@ -73,8 +73,8 @@ class GymWireTest {
     fun a_machine_row_sends_no_tags_so_an_upsert_leaves_older_clients_column_alone() {
         val machine =
             Machine
-                .new("Жим ногами", null, Instant.fromEpochSeconds(1_700_000_000))
-                .copy(tags = setOf("ноги"))
+                .new("Leg press", null, Instant.fromEpochSeconds(1_700_000_000))
+                .copy(tags = setOf("legs"))
         val json = Json.encodeToString(MachineRow.of(machine))
 
         assertTrue("\"tags\"" !in json, json)
@@ -86,7 +86,7 @@ class GymWireTest {
         val cover = PhotoId.random()
         val machine =
             Machine
-                .new("Жим ногами", null, Instant.fromEpochSeconds(1_700_000_000))
+                .new("Leg press", null, Instant.fromEpochSeconds(1_700_000_000))
                 .copy(coverPhoto = cover)
 
         assertEquals(cover.value, MachineRow.of(machine).coverPhoto)

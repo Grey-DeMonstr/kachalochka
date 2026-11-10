@@ -27,7 +27,7 @@ class LocalPlanRepositoryTest {
     ) = Plan(
         PlanId.random(),
         owner,
-        "Ноги",
+        "Legs",
         listOf(ROW, PRESS),
         T0 - createdHoursAgo.hours,
         T0,

@@ -24,13 +24,13 @@ class FriendCalendarScreenTest {
     fun a_marked_day_opens_the_friend_s_visit_and_nothing_can_be_edited() {
         var opened: CalendarDay? = null
         runScreenTest(gym, screen = {
-            FriendCalendarScreen(OLEG.userId, "Олег", {}, {}, onOpenVisit = { opened = it })
+            FriendCalendarScreen(OLEG.userId, "Oleg", {}, {}, onOpenVisit = { opened = it })
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Олег")
-            onNodeWithTag("calendar-empty").assertTextEquals("Нет визита")
+            onNodeWithTag("top-bar-title").assertTextEquals("Oleg")
+            onNodeWithTag("calendar-empty").assertTextEquals("No visit")
             onNodeWithTag("add-visit").assertDoesNotExist()
-            // One load on mount: visits, machines, links and the group mates for the friend's colour;
-            // today has no visit's sets to read.
+            // One load on mount: visits, machines, links and the group mates for the friend's
+            // colour; today has no visit's sets to read.
             assertEquals(4, gym.friends.reads)
             onNodeWithTag("day-2023-11-13").performClick()
             waitForIdle()
@@ -44,14 +44,14 @@ class FriendCalendarScreenTest {
     fun offline_it_offers_a_retry() {
         gym.friends.offline = true
         runScreenTest(gym, screen = {
-            FriendCalendarScreen(OLEG.userId, "Олег", {}, {}, {})
+            FriendCalendarScreen(OLEG.userId, "Oleg", {}, {}, {})
         }) {
-            onNodeWithTag("friends-offline").assertTextEquals("Нет связи с сервером")
+            onNodeWithTag("friends-offline").assertTextEquals("No connection to the server")
             gym.friends.offline = false
             onNodeWithTag("friends-retry").performClick()
             waitForIdle()
             onNodeWithTag("friends-offline").assertDoesNotExist()
-            onNodeWithTag("calendar-empty").assertTextEquals("Нет визита")
+            onNodeWithTag("calendar-empty").assertTextEquals("No visit")
         }
     }
 }

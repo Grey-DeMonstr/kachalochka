@@ -68,16 +68,16 @@ class BodyFatScreenTest {
     @Test
     fun the_formula_shows_its_chart_latest_value_and_all_results() {
         runScreenTest(gym, screen = { BodyFatScreen(BodyFatMethod.Deurenberg, {}, {}) }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Дойренберг")
+            onNodeWithTag("top-bar-title").assertTextEquals("Deurenberg")
             onNodeWithTag("period-Quarter").assertIsSelected()
             onNodeWithTag("measure-chart").assertIsDisplayed()
             onNodeWithTag("measure-latest", useUnmergedTree = true)
                 .assertTextEquals(percent(85.0))
             onNodeWithTag("measure-last", useUnmergedTree = true)
-                .assertTextEquals("Последний замер: сегодня")
+                .assertTextEquals("Last measured: today")
             onNodeWithTag("fat-history-date-1", useUnmergedTree = true)
                 .performScrollTo()
-                .assertTextEquals("7 ноября")
+                .assertTextEquals("7 November")
             onNodeWithTag("fat-history-results-1", useUnmergedTree = true)
                 .assertTextEquals(percent(86.0))
             onNodeWithTag("entry-value").assertDoesNotExist()
@@ -89,9 +89,9 @@ class BodyFatScreenTest {
     fun a_formula_without_a_measure_names_it() {
         runScreenTest(gym, screen = { BodyFatScreen(BodyFatMethod.Ymca, {}, {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("YMCA")
-            onNodeWithTag("fat-required").assertTextEquals("Нужно: пол, вес, талия")
+            onNodeWithTag("fat-required").assertTextEquals("Needs: sex, weight, waist")
             onNodeWithTag("measure-latest", useUnmergedTree = true)
-                .assertTextEquals("Нет значений")
+                .assertTextEquals("No values")
             onNodeWithTag("fat-profile-link").assertDoesNotExist()
             onNodeWithTag("measure-chart").assertDoesNotExist()
             onNodeWithTag("fat-history-0").assertDoesNotExist()
@@ -109,7 +109,8 @@ class BodyFatScreenTest {
             gym,
             screen = { BodyFatScreen(BodyFatMethod.Deurenberg, {}, { settings++ }) },
         ) {
-            onNodeWithTag("fat-required").assertTextEquals("Нужно: пол, дата рождения, рост, вес")
+            onNodeWithTag("fat-required")
+                .assertTextEquals("Needs: sex, birth date, height, weight")
             onNodeWithTag("fat-profile-link").performClick()
             waitForIdle()
         }

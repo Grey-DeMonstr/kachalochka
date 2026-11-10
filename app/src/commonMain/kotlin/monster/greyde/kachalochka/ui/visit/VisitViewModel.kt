@@ -161,7 +161,7 @@ data class MachinePageUi(
     val previousAgo: String?,
     val previous: String?,
     val friends: List<FriendLineUi>,
-    /** "Сегодня · 3 подхода" over [sets], the day's sets on the machine; null without any. */
+    /** "Today · 3 sets" over [sets], the day's sets on the machine; null without any. */
     val daySets: String?,
     val sets: List<SetRowUi>,
     val canUnplan: Boolean,

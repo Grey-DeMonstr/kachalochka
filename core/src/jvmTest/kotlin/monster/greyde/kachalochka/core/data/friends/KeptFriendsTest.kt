@@ -36,7 +36,7 @@ private val MISHA = UserId("22222222-2222-4222-8222-222222222222")
 private val OLEG =
     Friend(
         UserId("33333333-3333-4333-8333-333333333333"),
-        "Олег",
+        "Oleg",
         Avatar(PhotoId.random(), "https://example.test/oleg.png"),
     )
 
@@ -106,7 +106,7 @@ class KeptFriendsTest {
         }, clock)
 
     private val press =
-        Machine.new("Жим ногами", OLEG.userId, now).copy(tags = setOf("ноги", "грудь"))
+        Machine.new("Leg press", OLEG.userId, now).copy(tags = setOf("legs", "chest"))
 
     private fun visitOn(day: CalendarDay) =
         Visit(
@@ -130,7 +130,7 @@ class KeptFriendsTest {
             visit.recordedAt,
             now,
             false,
-            "узко",
+            "narrow",
             DayBest(75.0, 8, 2),
         )
 

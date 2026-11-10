@@ -47,7 +47,7 @@ import kotlin.math.abs
 /**
  * [points] are the period's values, oldest first; [results] are all values, newest first;
  * [history] is open while shown. [phasesOnly] draws the [phases] instead of the values.
- * [cycleDay] is today's day of the account's cycle, "День 12 из 28".
+ * [cycleDay] is today's day of the account's cycle, "Day 12 of 28".
  */
 data class MeasureUi(
     val name: String,
@@ -409,7 +409,7 @@ class MeasureViewModel(
 
     private fun ownCycle(): Cycle? = cycleFrom(values, profile?.cycleLength)
 
-    /** Over the period up to today; "Всё" starts with the first value. */
+    /** Over the period up to today; "All" starts with the first value. */
     private fun ownPhases(today: CalendarDay): CyclePhasesUi? {
         val cycle = ownCycle() ?: return null
         val start = periodStart(period, today) ?: values.last().day

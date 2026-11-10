@@ -21,8 +21,8 @@ import kotlin.test.assertTrue
 class AccountViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван", t0)
-    private val misha = session("22222222-2222-4222-8222-222222222222", "Миша", t0)
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan", t0)
+    private val misha = session("22222222-2222-4222-8222-222222222222", "Misha", t0)
 
     private fun viewModel() = AccountViewModel(gym.accounts, gym.currentUser, gym.deletion)
 
@@ -35,7 +35,7 @@ class AccountViewModelTest {
         runTest {
             gym.withAccounts(ivan, misha, active = misha)
 
-            assertEquals("Миша@example.test", viewModel().email.value)
+            assertEquals("Misha@example.test", viewModel().email.value)
         }
 
     @Test
@@ -62,7 +62,7 @@ class AccountViewModelTest {
                 gym.accounts.accounts.value
                     .map { it.userId },
             )
-            assertEquals("Миша@example.test", vm.email.value)
+            assertEquals("Misha@example.test", vm.email.value)
         }
 
     @Test
@@ -97,7 +97,7 @@ class AccountViewModelTest {
             vm.typeDeleteWord("DELETE")
             vm.confirmDelete()
 
-            assertEquals("Нет связи с сервером", vm.deletion.value.error)
+            assertEquals("No connection to the server", vm.deletion.value.error)
             assertEquals(ivan.account.userId, gym.accounts.activeId.value)
             assertFalse(vm.deletion.value.running)
         }

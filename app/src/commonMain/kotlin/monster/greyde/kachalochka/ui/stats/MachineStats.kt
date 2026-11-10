@@ -58,7 +58,7 @@ data class MachineStatsUi(
     val phases: CyclePhasesUi? = null,
 )
 
-/** "с 1 сентября", the period's first day as [today]'s year writes it. */
+/** "since 1 September", the period's first day as [today]'s year writes it. */
 internal fun periodLabel(
     start: CalendarDay,
     today: CalendarDay,

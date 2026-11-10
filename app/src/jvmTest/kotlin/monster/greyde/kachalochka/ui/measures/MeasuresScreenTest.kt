@@ -60,12 +60,12 @@ class MeasuresScreenTest {
     fun a_row_reads_its_latest_value_change_and_age_and_the_button_starts_a_measurement() {
         var started = 0
         runScreenTest(gym, screen = { MeasuresScreen({}, {}, { started++ }, {}, {}) }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Measurements")
             val id = weight.id.value
-            onNodeWithTag("measure-value-$id", useUnmergedTree = true).assertTextEquals("82 кг")
+            onNodeWithTag("measure-value-$id", useUnmergedTree = true).assertTextEquals("82 kg")
             onNodeWithTag("measure-delta-$id", useUnmergedTree = true)
                 .assertTextEquals("−0.4")
-            onNodeWithTag("measure-ago-$id", useUnmergedTree = true).assertTextEquals("вчера")
+            onNodeWithTag("measure-ago-$id", useUnmergedTree = true).assertTextEquals("yesterday")
             onNodeWithTag("measure-value-${waist.id.value}", useUnmergedTree = true)
                 .assertDoesNotExist()
 
@@ -157,13 +157,13 @@ class MeasuresScreenTest {
         runScreenTest(gym, screen = { MeasuresScreen({}, {}, {}, {}, {}) }) {
             onNodeWithTag("add-measure").performClick()
             waitForIdle()
-            onNodeWithTag("new-measure-name").performTextInput("Предплечье")
-            onNodeWithTag("new-measure-unit").performTextInput("см")
+            onNodeWithTag("new-measure-name").performTextInput("Forearm")
+            onNodeWithTag("new-measure-unit").performTextInput("cm")
             onNodeWithTag("confirm-new-measure").performClick()
             waitForIdle()
 
             val added = runBlocking { gym.measures.all(null) }.last()
-            assertEquals("Предплечье", added.name)
+            assertEquals("Forearm", added.name)
             onNodeWithTag("measure-row-${added.id.value}").performScrollTo().assertIsDisplayed()
         }
     }
@@ -172,9 +172,9 @@ class MeasuresScreenTest {
     fun ordering_drags_a_measure_by_its_handle() {
         runScreenTest(gym, screen = { MeasuresScreen({}, {}, {}, {}, {}) }) {
             onNodeWithTag("drag-measure-${chest.id.value}").assertDoesNotExist()
-            onNodeWithTag("reorder-toggle").assertTextEquals("Порядок").performClick()
+            onNodeWithTag("reorder-toggle").assertTextEquals("Reorder").performClick()
             waitForIdle()
-            onNodeWithTag("reorder-toggle").assertTextEquals("Готово")
+            onNodeWithTag("reorder-toggle").assertTextEquals("Done")
 
             onNodeWithTag("drag-measure-${chest.id.value}").performTouchInput {
                 down(center)

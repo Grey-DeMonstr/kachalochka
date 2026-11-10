@@ -35,14 +35,14 @@ class GroupsViewModelTest {
 
     @Test
     fun the_account_s_groups_are_listed_by_name_with_their_member_counts() {
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
-        gym.friends.group("Бассейн", owner = ME)
-        gym.friends.group("Чужая", owner = OLEG)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME)
+        gym.friends.group("City Pool", owner = ME)
+        gym.friends.group("Strangers", owner = OLEG)
 
         val groups = viewModel().state.value.groups
 
         assertEquals(
-            listOf("Бассейн" to "1 участник", "Зал на Лесной" to "2 участника"),
+            listOf("City Pool" to "1 member", "Forest Street Gym" to "2 members"),
             groups?.map { it.name to it.members },
         )
     }
@@ -50,22 +50,22 @@ class GroupsViewModelTest {
     @Test
     fun groups_read_ahead_show_while_the_fresh_read_is_in_flight() =
         runTest {
-            gym.friends.group("Зал на Лесной", owner = ME)
+            gym.friends.group("Forest Street Gym", owner = ME)
             cache.refresh(ME.userId)
-            gym.friends.group("Бассейн", owner = ME)
+            gym.friends.group("City Pool", owner = ME)
             val gate = CompletableDeferred<Unit>()
             gym.friends.gate = gate
 
             val vm = viewModel()
             assertEquals(
-                listOf("Зал на Лесной"),
+                listOf("Forest Street Gym"),
                 vm.state.value.groups
                     ?.map { it.name },
             )
 
             gate.complete(Unit)
             assertEquals(
-                listOf("Бассейн", "Зал на Лесной"),
+                listOf("City Pool", "Forest Street Gym"),
                 vm.state.value.groups
                     ?.map { it.name },
             )
@@ -82,14 +82,14 @@ class GroupsViewModelTest {
                 ?.canConfirm,
         )
 
-        vm.type("  Зал на Лесной  ")
+        vm.type("  Forest Street Gym  ")
         var opened: GroupId? = null
         vm.confirm { opened = it }
 
         val created =
             gym.friends.groups.values
                 .single()
-        assertEquals("Зал на Лесной", created.name)
+        assertEquals("Forest Street Gym", created.name)
         assertEquals(created.id, opened)
         assertNull(vm.state.value.dialog)
     }
@@ -98,7 +98,7 @@ class GroupsViewModelTest {
     fun a_group_name_keeps_at_most_forty_characters() {
         val vm = viewModel().also { it.openCreate() }
 
-        vm.type("а".repeat(45))
+        vm.type("a".repeat(45))
 
         assertEquals(
             40,
@@ -134,7 +134,7 @@ class GroupsViewModelTest {
         vm.confirm { fail("nothing to open") }
 
         assertEquals(
-            "Приглашение не найдено",
+            "Invitation not found",
             vm.state.value.dialog
                 ?.error,
         )
@@ -142,7 +142,7 @@ class GroupsViewModelTest {
 
     @Test
     fun a_known_code_joins_and_opens_the_group() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, code = "ABCD2345")
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, code = "ABCD2345")
         val vm = viewModel().also { it.openJoin() }
         vm.type("abcd2345")
         var opened: GroupId? = null
@@ -156,13 +156,13 @@ class GroupsViewModelTest {
     @Test
     fun a_failed_create_says_so_in_the_dialog() {
         val vm = viewModel().also { it.openCreate() }
-        vm.type("Зал")
+        vm.type("Gym")
         gym.friends.offline = true
 
         vm.confirm { fail("nothing to open") }
 
         assertEquals(
-            "Нет связи с сервером",
+            "No connection to the server",
             vm.state.value.dialog
                 ?.error,
         )

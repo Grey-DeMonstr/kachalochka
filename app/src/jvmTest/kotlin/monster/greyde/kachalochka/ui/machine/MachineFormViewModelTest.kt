@@ -45,10 +45,10 @@ import kotlin.time.Duration.Companion.minutes
 class MachineFormViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
-    private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
-    private val ivanFriend = Friend(ivan.account.userId, "Иван")
-    private val mishaFriend = Friend(misha.account.userId, "Миша")
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan")
+    private val misha = session("22222222-2222-4222-8222-222222222222", "Misha")
+    private val ivanFriend = Friend(ivan.account.userId, "Ivan")
+    private val mishaFriend = Friend(misha.account.userId, "Misha")
 
     private fun session(
         id: String,
@@ -81,15 +81,15 @@ class MachineFormViewModelTest {
     @Test
     fun the_form_offers_every_tag_of_the_account_s_machines_sorted() =
         runTest {
-            gym.machines.upsert(Machine.new("Жим", null, t0).copy(tags = setOf("руки", "Грудь")))
-            gym.machines.upsert(Machine.new("Присед", null, t0).copy(tags = setOf("Ноги")))
+            gym.machines.upsert(Machine.new("Press", null, t0).copy(tags = setOf("arms", "Chest")))
+            gym.machines.upsert(Machine.new("Squat", null, t0).copy(tags = setOf("Legs")))
             gym.machines.upsert(
-                Machine.new("Старый", null, t0).copy(tags = setOf("Спина"), deleted = true),
+                Machine.new("Old", null, t0).copy(tags = setOf("Back"), deleted = true),
             )
 
-            val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+            val vm = viewModel(MachineFormArgs(null, null, "Hack")).also { it.load() }
 
-            assertEquals(listOf("грудь", "ноги", "руки"), vm.state.value.shownTags)
+            assertEquals(listOf("arms", "chest", "legs"), vm.state.value.shownTags)
             assertEquals(emptySet(), vm.state.value.tags)
         }
 
@@ -97,12 +97,12 @@ class MachineFormViewModelTest {
     fun a_machine_created_from_a_tag_filter_starts_with_its_tags() =
         runTest {
             val vm =
-                viewModel(MachineFormArgs(null, null, "Гакк", listOf("Руки"))).also { it.load() }
+                viewModel(MachineFormArgs(null, null, "Hack", listOf("Arms"))).also { it.load() }
             var saved: MachineId? = null
 
             vm.save { saved = it }
 
-            assertEquals(setOf("руки"), gym.machines.byId(assertNotNull(saved))?.tags)
+            assertEquals(setOf("arms"), gym.machines.byId(assertNotNull(saved))?.tags)
         }
 
     private fun formOn(
@@ -126,30 +126,30 @@ class MachineFormViewModelTest {
     fun friends_tags_the_account_lacks_are_offered_and_one_chosen_becomes_its_own() =
         runTest {
             val on = signedInGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME)
             on.friends.machines +=
-                Machine.new("Жим", OLEG.userId, t0).copy(tags = setOf("Плечи", "ноги"))
-            on.machines.upsert(Machine.new("Присед", ME.userId, t0).copy(tags = setOf("Ноги")))
-            val vm = formOn(on, MachineFormArgs(null, null, "Гакк")).also { it.load() }
+                Machine.new("Press", OLEG.userId, t0).copy(tags = setOf("Shoulders", "legs"))
+            on.machines.upsert(Machine.new("Squat", ME.userId, t0).copy(tags = setOf("Legs")))
+            val vm = formOn(on, MachineFormArgs(null, null, "Hack")).also { it.load() }
 
             assertEquals(
-                listOf("плечи" to OLEG.userId),
+                listOf("shoulders" to OLEG.userId),
                 vm.state.value.offeredFriendTags
                     .map { it.tag to it.friend.userId },
             )
 
-            vm.toggleTag("плечи")
+            vm.toggleTag("shoulders")
             var saved: MachineId? = null
             vm.save { saved = it }
 
-            assertEquals(setOf("плечи"), on.machines.byId(assertNotNull(saved))?.tags)
+            assertEquals(setOf("shoulders"), on.machines.byId(assertNotNull(saved))?.tags)
             assertEquals(emptyList(), vm.state.value.offeredFriendTags)
         }
 
-    /** Иван's copy of Олег's press, linked to it, in a group with Олег. */
+    /** Ivan's copy of Oleg's press, linked to it, in a group with Oleg. */
     private suspend fun FakeGym.myCopyOfOlegsPress(): Pair<Machine, Machine> {
-        friends.group("Зал на Лесной", owner = OLEG, ME)
-        val olegs = Machine.new("Жим", OLEG.userId, t0).copy(tags = setOf("плечи"))
+        friends.group("Forest Street Gym", owner = OLEG, ME)
+        val olegs = Machine.new("Press", OLEG.userId, t0).copy(tags = setOf("shoulders"))
         friends.machines += olegs
         val (copy, link) = linkedCopy(olegs, ME.userId, t0)
         machines.upsert(copy)
@@ -242,41 +242,41 @@ class MachineFormViewModelTest {
     fun linked_machines_suggest_the_tags_the_machine_lacks_apart_from_other_tags() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            val oleg = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Олег")
-            gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend, oleg)
+            val oleg = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Oleg")
+            gym.friends.group("Forest Street Gym", owner = mishaFriend, ivanFriend, oleg)
             val hers =
                 Machine
-                    .new("Платформа", misha.account.userId, t0)
-                    .copy(tags = setOf("Квадрицепс", "НОГИ", "спина"))
+                    .new("Platform", misha.account.userId, t0)
+                    .copy(tags = setOf("Quads", "LEGS", "back"))
             val (copy, link) = linkedCopy(hers, ivan.account.userId, t0)
-            val press = copy.copy(tags = setOf("Ноги"))
+            val press = copy.copy(tags = setOf("Legs"))
             gym.machines.upsert(press)
             gym.machineLinks.upsert(link)
             gym.machines.upsert(
-                Machine.new("Тяга", ivan.account.userId, t0).copy(tags = setOf("Спина")),
+                Machine.new("Row", ivan.account.userId, t0).copy(tags = setOf("Back")),
             )
             gym.friends.machines +=
                 listOf(
                     hers,
-                    Machine.new("Жим", oleg.userId, t0).copy(tags = setOf("Плечи", "квадрицепс")),
+                    Machine.new("Press", oleg.userId, t0).copy(tags = setOf("Shoulders", "quads")),
                 )
 
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
-            assertEquals(listOf("квадрицепс", "спина"), vm.state.value.suggestedTags)
-            assertEquals(listOf("ноги"), vm.state.value.shownTags)
+            assertEquals(listOf("back", "quads"), vm.state.value.suggestedTags)
+            assertEquals(listOf("legs"), vm.state.value.shownTags)
             assertEquals(
-                listOf("плечи"),
+                listOf("shoulders"),
                 vm.state.value.offeredFriendTags
                     .map { it.tag },
             )
 
-            vm.toggleTag("спина")
+            vm.toggleTag("back")
             vm.save {}
 
-            assertEquals(listOf("квадрицепс"), vm.state.value.suggestedTags)
-            assertEquals(listOf("ноги", "спина"), vm.state.value.shownTags)
-            assertEquals(setOf("ноги", "спина"), gym.machines.byId(press.id)?.tags)
+            assertEquals(listOf("quads"), vm.state.value.suggestedTags)
+            assertEquals(listOf("legs", "back"), vm.state.value.shownTags)
+            assertEquals(setOf("legs", "back"), gym.machines.byId(press.id)?.tags)
         }
 
     @Test
@@ -284,9 +284,9 @@ class MachineFormViewModelTest {
         runTest {
             gym.withAccounts(ivan, active = ivan)
             gym.friends.offline = true
-            val press = Machine.new("Жим ногами", ivan.account.userId, t0)
+            val press = Machine.new("Leg press", ivan.account.userId, t0)
             val squat =
-                Machine.new("Гакк", ivan.account.userId, t0).copy(tags = setOf("Ноги"))
+                Machine.new("Hack", ivan.account.userId, t0).copy(tags = setOf("Legs"))
             gym.machines.upsert(press)
             gym.machines.upsert(squat)
             gym.machineLinks.upsert(
@@ -302,63 +302,63 @@ class MachineFormViewModelTest {
 
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
-            assertEquals(listOf("ноги"), vm.state.value.suggestedTags)
+            assertEquals(listOf("legs"), vm.state.value.suggestedTags)
             assertEquals(emptyList(), vm.state.value.shownTags)
         }
 
     @Test
     fun the_machine_s_own_tags_come_before_the_account_s_other_tags() =
         runTest {
-            val press = Machine.new("Жим", null, t0).copy(tags = setOf("Спина"))
+            val press = Machine.new("Press", null, t0).copy(tags = setOf("Back"))
             gym.machines.upsert(press)
             gym.machines.upsert(
-                Machine.new("Присед", null, t0).copy(tags = setOf("Ноги", "Адукторы")),
+                Machine.new("Squat", null, t0).copy(tags = setOf("Legs", "Adductors")),
             )
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
-            assertEquals(listOf("спина", "адукторы", "ноги"), vm.state.value.shownTags)
+            assertEquals(listOf("back", "adductors", "legs"), vm.state.value.shownTags)
             assertEquals(emptyList(), vm.state.value.suggestedTags)
         }
 
     @Test
     fun tapping_chips_keeps_every_held_chip_in_its_place_and_drops_one_no_machine_holds() =
         runTest {
-            val press = Machine.new("Жим", null, t0).copy(tags = setOf("Спина"))
+            val press = Machine.new("Press", null, t0).copy(tags = setOf("Back"))
             gym.machines.upsert(press)
             gym.machines.upsert(
-                Machine.new("Присед", null, t0).copy(tags = setOf("Ноги", "Адукторы")),
+                Machine.new("Squat", null, t0).copy(tags = setOf("Legs", "Adductors")),
             )
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
-            val order = listOf("спина", "адукторы", "ноги")
+            val order = listOf("back", "adductors", "legs")
 
-            vm.toggleTag("ноги")
+            vm.toggleTag("legs")
             assertEquals(order, vm.state.value.shownTags)
-            vm.toggleTag("ноги")
+            vm.toggleTag("legs")
             assertEquals(order, vm.state.value.shownTags)
-            vm.toggleTag("спина")
-            assertEquals(listOf("адукторы", "ноги"), vm.state.value.shownTags)
+            vm.toggleTag("back")
+            assertEquals(listOf("adductors", "legs"), vm.state.value.shownTags)
         }
 
     @Test
     fun a_tag_a_new_machine_started_with_loses_its_chip_once_no_machine_would_hold_it() =
         runTest {
-            gym.machines.upsert(Machine.new("Жим", null, t0).copy(tags = setOf("грудь")))
+            gym.machines.upsert(Machine.new("Press", null, t0).copy(tags = setOf("chest")))
             val vm =
-                viewModel(MachineFormArgs(null, null, "Гакк", listOf("Руки", "грудь")))
+                viewModel(MachineFormArgs(null, null, "Hack", listOf("Arms", "chest")))
                     .also { it.load() }
 
-            vm.toggleTag("руки")
-            vm.toggleTag("грудь")
+            vm.toggleTag("arms")
+            vm.toggleTag("chest")
 
-            assertEquals(listOf("грудь"), vm.state.value.shownTags)
-            assertFalse(vm.state.value.chosen("руки"))
+            assertEquals(listOf("chest"), vm.state.value.shownTags)
+            assertFalse(vm.state.value.chosen("arms"))
         }
 
     @Test
     fun signed_out_the_own_linked_machines_suggest_tags() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
-            val squat = Machine.new("Гакк", null, t0).copy(tags = setOf("Ноги"))
+            val press = Machine.new("Leg press", null, t0)
+            val squat = Machine.new("Hack", null, t0).copy(tags = setOf("Legs"))
             gym.machines.upsert(press)
             gym.machines.upsert(squat)
             gym.machineLinks.upsert(
@@ -367,46 +367,46 @@ class MachineFormViewModelTest {
 
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
-            assertEquals(listOf("ноги"), vm.state.value.suggestedTags)
+            assertEquals(listOf("legs"), vm.state.value.suggestedTags)
         }
 
     @Test
     fun chosen_and_added_tags_are_saved_with_the_machine() =
         runTest {
-            gym.machines.upsert(Machine.new("Присед", null, t0).copy(tags = setOf("Ноги")))
-            val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+            gym.machines.upsert(Machine.new("Squat", null, t0).copy(tags = setOf("Legs")))
+            val vm = viewModel(MachineFormArgs(null, null, "Hack")).also { it.load() }
 
-            vm.toggleTag("Ноги")
-            vm.typeNewTag("  Жим  ")
+            vm.toggleTag("Legs")
+            vm.typeNewTag("  Press  ")
             vm.addNewTag()
             vm.typeNewTag("   ")
             vm.addNewTag()
             var saved: MachineId? = null
             vm.save { saved = it }
 
-            assertEquals(setOf("ноги", "жим"), gym.machines.byId(assertNotNull(saved))?.tags)
-            assertEquals(listOf("жим", "ноги"), vm.state.value.shownTags)
+            assertEquals(setOf("legs", "press"), gym.machines.byId(assertNotNull(saved))?.tags)
+            assertEquals(listOf("legs", "press"), vm.state.value.shownTags)
             assertEquals("", vm.state.value.newTag)
         }
 
     @Test
     fun a_typed_tag_is_kept_as_its_key_so_one_in_another_case_is_the_existing_one() =
         runTest {
-            gym.machines.upsert(Machine.new("Присед", null, t0).copy(tags = setOf("Ноги")))
-            val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+            gym.machines.upsert(Machine.new("Squat", null, t0).copy(tags = setOf("Legs")))
+            val vm = viewModel(MachineFormArgs(null, null, "Hack")).also { it.load() }
 
-            vm.typeNewTag(" НОГИ ")
+            vm.typeNewTag(" LEGS ")
             vm.addNewTag()
 
-            assertEquals(setOf("ноги"), vm.state.value.tags)
-            assertEquals(listOf("ноги"), vm.state.value.shownTags)
+            assertEquals(setOf("legs"), vm.state.value.tags)
+            assertEquals(listOf("legs"), vm.state.value.shownTags)
         }
 
     @Test
     fun a_tag_in_two_letter_cases_is_one_chip_and_the_machine_keeps_it_once() =
         runTest {
-            gym.machines.upsert(Machine.new("Присед", null, t0).copy(tags = setOf("Ноги")))
-            val press = Machine.new("Жим", null, t0).copy(tags = setOf("ноги", "НОГИ "))
+            gym.machines.upsert(Machine.new("Squat", null, t0).copy(tags = setOf("Legs")))
+            val press = Machine.new("Press", null, t0).copy(tags = setOf("legs", "LEGS "))
             gym.machines.upsert(press)
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
@@ -426,30 +426,30 @@ class MachineFormViewModelTest {
                     ?.size,
             )
 
-            vm.toggleTag("Ноги")
+            vm.toggleTag("Legs")
 
             assertEquals(emptySet(), vm.state.value.tags)
-            assertFalse(vm.state.value.chosen("Ноги"))
+            assertFalse(vm.state.value.chosen("Legs"))
         }
 
     @Test
     fun a_saved_machine_opens_with_its_tags_chosen_and_a_tap_removes_one() =
         runTest {
-            val press = Machine.new("Жим", null, t0).copy(tags = setOf("Грудь", "Руки"))
+            val press = Machine.new("Press", null, t0).copy(tags = setOf("Chest", "Arms"))
             gym.machines.upsert(press)
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
-            assertEquals(setOf("грудь", "руки"), vm.state.value.tags)
-            vm.toggleTag("руки")
+            assertEquals(setOf("chest", "arms"), vm.state.value.tags)
+            vm.toggleTag("arms")
             vm.save {}
 
-            assertEquals(setOf("грудь"), gym.machines.byId(press.id)?.tags)
+            assertEquals(setOf("chest"), gym.machines.byId(press.id)?.tags)
         }
 
     @Test
     fun photos_taken_in_the_form_are_written_with_the_machine_it_saves() =
         runTest {
-            val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+            val vm = viewModel(MachineFormArgs(null, null, "Hack")).also { it.load() }
 
             vm.addPhoto(byteArrayOf(7))
             gym.clock.current = t0 + 1.minutes
@@ -469,7 +469,7 @@ class MachineFormViewModelTest {
     @Test
     fun a_saved_machine_shows_its_photos_and_a_removal_waits_for_the_save() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             val photo = Photo.new(press.id, null, t0)
             gym.machines.upsert(press)
             gym.photos.add(photo, byteArrayOf(1))
@@ -489,11 +489,11 @@ class MachineFormViewModelTest {
             )
         }
 
-    /** Иван's press, linked to Миша's; each has a photo, Миша's the older. */
+    /** Ivan's press, linked to Misha's; each has a photo, Misha's the older. */
     private suspend fun pressWithFriendsPhoto(): Triple<Machine, Photo, Photo> {
         gym.withAccounts(ivan, active = ivan)
-        gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
-        val hers = Machine.new("Жим ногами", misha.account.userId, t0)
+        gym.friends.group("Forest Street Gym", owner = mishaFriend, ivanFriend)
+        val hers = Machine.new("Leg press", misha.account.userId, t0)
         val (press, link) = linkedCopy(hers, ivan.account.userId, t0)
         gym.machines.upsert(press)
         gym.machineLinks.upsert(link)
@@ -513,7 +513,7 @@ class MachineFormViewModelTest {
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
             assertEquals(
-                listOf(mine.id.value to null, theirs.id.value to "Миша"),
+                listOf(mine.id.value to null, theirs.id.value to "Misha"),
                 vm.photos.value.map { it.key to it.owner?.displayName },
             )
             assertEquals(listOf(true, false), vm.photos.value.map { it.cover })
@@ -587,11 +587,11 @@ class MachineFormViewModelTest {
     @Test
     fun a_copied_machine_starts_without_the_source_s_photos() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             gym.machines.upsert(press)
             gym.photos.add(Photo.new(press.id, null, t0), byteArrayOf(1))
 
-            val vm = viewModel(MachineFormArgs(null, press.id, "Жим ногами 2")).also { it.load() }
+            val vm = viewModel(MachineFormArgs(null, press.id, "Leg press 2")).also { it.load() }
 
             assertEquals(emptyList(), vm.photos.value)
         }
@@ -600,7 +600,7 @@ class MachineFormViewModelTest {
     fun a_switch_drops_the_other_account_s_photos_and_keeps_the_ones_just_taken() =
         runTest {
             gym.withAccounts(ivan, misha, active = ivan)
-            val press = Machine.new("Жим ногами", ivan.account.userId, t0)
+            val press = Machine.new("Leg press", ivan.account.userId, t0)
             gym.machines.upsert(press)
             gym.photos.add(Photo.new(press.id, ivan.account.userId, t0), byteArrayOf(1))
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
@@ -617,27 +617,27 @@ class MachineFormViewModelTest {
 
     @Test
     fun a_new_machine_starts_from_the_typed_name_and_the_defaults() {
-        val vm = viewModel(MachineFormArgs(null, null, "гакк")).also { it.load() }
+        val vm = viewModel(MachineFormArgs(null, null, "hack")).also { it.load() }
 
-        assertEquals(MachineFormState(name = "гакк"), vm.state.value)
+        assertEquals(MachineFormState(name = "hack"), vm.state.value)
         assertEquals(true, vm.state.value.canSave)
     }
 
     @Test
     fun loading_again_keeps_the_unsaved_edits() {
-        val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
-        vm.update { it.copy(setupNote = "Упоры на 3") }
+        val vm = viewModel(MachineFormArgs(null, null, "Hack")).also { it.load() }
+        vm.update { it.copy(setupNote = "Pads at 3") }
 
         vm.load()
 
-        assertEquals("Упоры на 3", vm.state.value.setupNote)
+        assertEquals("Pads at 3", vm.state.value.setupNote)
     }
 
     @Test
     fun a_blank_name_or_a_bad_platform_weight_cannot_be_saved() {
         assertEquals(false, MachineFormState(name = " ").canSave)
-        assertEquals(false, MachineFormState(name = "Гакк", platformWeight = "-5").canSave)
-        assertEquals(false, MachineFormState(name = "Гакк", platformWeight = "abc").canSave)
+        assertEquals(false, MachineFormState(name = "Hack", platformWeight = "-5").canSave)
+        assertEquals(false, MachineFormState(name = "Hack", platformWeight = "abc").canSave)
         assertEquals(25.5, MachineFormState(platformWeight = "25.5").platformWeightValue)
         assertEquals(0.0, MachineFormState(platformWeight = "").platformWeightValue)
     }
@@ -645,10 +645,10 @@ class MachineFormViewModelTest {
     @Test
     fun saving_a_new_machine_stores_every_field() =
         runTest {
-            val vm = viewModel(MachineFormArgs(null, null, "Гакк-машина")).also { it.load() }
+            val vm = viewModel(MachineFormArgs(null, null, "Hack machine")).also { it.load() }
             vm.update {
                 it.copy(
-                    setupNote = "Упоры на 3",
+                    setupNote = "Pads at 3",
                     weightMode = WeightMode.PerSide,
                     platformWeight = "25",
                     platformIncluded = true,
@@ -663,8 +663,8 @@ class MachineFormViewModelTest {
             val machine = assertNotNull(gym.machines.byId(assertNotNull(saved)))
             assertEquals(
                 listOf(
-                    "Гакк-машина",
-                    "Упоры на 3",
+                    "Hack machine",
+                    "Pads at 3",
                     WeightMode.PerSide,
                     25.0,
                     true,
@@ -689,14 +689,14 @@ class MachineFormViewModelTest {
             val source =
                 Machine
                     .new(
-                        "Жим ногами",
+                        "Leg press",
                         null,
                         t0,
-                    ).copy(setupNote = "Сиденье на 4", platformWeight = 20.0)
+                    ).copy(setupNote = "Seat at 4", platformWeight = 20.0)
             gym.machines.upsert(source)
             val vm =
                 viewModel(
-                    MachineFormArgs(null, source.id, "Жим одной ногой"),
+                    MachineFormArgs(null, source.id, "Single-leg press"),
                 ).also { it.load() }
             var saved: MachineId? = null
 
@@ -704,19 +704,19 @@ class MachineFormViewModelTest {
 
             val copy = assertNotNull(gym.machines.byId(assertNotNull(saved)))
             assertNotEquals(source.id, copy.id)
-            assertEquals("Жим одной ногой", copy.name)
-            assertEquals("Сиденье на 4", copy.setupNote)
+            assertEquals("Single-leg press", copy.name)
+            assertEquals("Seat at 4", copy.setupNote)
             assertEquals(20.0, copy.platformWeight)
         }
 
     @Test
     fun editing_an_existing_machine_keeps_its_id() =
         runTest {
-            val source = Machine.new("Жим ногами", null, t0)
+            val source = Machine.new("Leg press", null, t0)
             gym.machines.upsert(source)
             gym.clock.current += 1.minutes
             val vm = viewModel(MachineFormArgs(source.id, null, "")).also { it.load() }
-            assertEquals("Жим ногами", vm.state.value.name)
+            assertEquals("Leg press", vm.state.value.name)
 
             vm.update { it.copy(weightStep = "10") }
             vm.save {}
@@ -731,15 +731,15 @@ class MachineFormViewModelTest {
     fun a_friend_s_settings_copied_into_the_form_ask_to_recalculate_on_save() =
         runTest {
             val on = signedInGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME)
             val olegs =
-                Machine.new("Жим", OLEG.userId, t0).copy(
+                Machine.new("Press", OLEG.userId, t0).copy(
                     weightMode = WeightMode.PerSide,
                     platformWeight = 20.0,
                     weightStep = 5.0,
                 )
             on.friends.machines += olegs
-            val mine = Machine.new("Жим ногами", ME.userId, t0)
+            val mine = Machine.new("Leg press", ME.userId, t0)
             on.machines.upsert(mine)
             on.sets.upsert(
                 WorkoutSet(
@@ -770,45 +770,45 @@ class MachineFormViewModelTest {
     fun copied_settings_take_the_friend_s_name_and_add_its_tags() =
         runTest {
             val on = signedInGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME)
             val olegs =
-                Machine.new("Жим платформой", OLEG.userId, t0).copy(tags = setOf("ноги", "Жим"))
+                Machine.new("Platform press", OLEG.userId, t0).copy(tags = setOf("legs", "Press"))
             on.friends.machines += olegs
-            val mine = Machine.new("Жим ногами", ME.userId, t0).copy(tags = setOf("Ноги"))
+            val mine = Machine.new("Leg press", ME.userId, t0).copy(tags = setOf("Legs"))
             on.machines.upsert(mine)
             val vm = formOn(on, MachineFormArgs(mine.id, null, "")).also { it.load() }
 
             vm.copySettings(olegs.id)
 
-            assertEquals("Жим платформой", vm.state.value.name)
-            assertEquals(setOf("ноги", "жим"), vm.state.value.tags)
+            assertEquals("Platform press", vm.state.value.name)
+            assertEquals(setOf("legs", "press"), vm.state.value.tags)
         }
 
     @Test
     fun a_friend_s_unit_is_copied_with_its_name() =
         runTest {
             val on = signedInGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME)
             val olegs =
                 Machine
-                    .new("Блок", OLEG.userId, t0)
-                    .copy(unit = WeightUnit.Custom, unitLabel = "плитка", weightStep = 1.0)
+                    .new("Cable", OLEG.userId, t0)
+                    .copy(unit = WeightUnit.Custom, unitLabel = "plate", weightStep = 1.0)
             on.friends.machines += olegs
-            val mine = Machine.new("Блок", ME.userId, t0)
+            val mine = Machine.new("Cable", ME.userId, t0)
             on.machines.upsert(mine)
             val vm = formOn(on, MachineFormArgs(mine.id, null, "")).also { it.load() }
 
             vm.copySettings(olegs.id)
 
             assertEquals(
-                WeightUnit.Custom to "плитка",
+                WeightUnit.Custom to "plate",
                 vm.state.value.unit to vm.state.value.unitLabel,
             )
         }
 
     /** A machine with imported totals and two sets, its platform then typed beside the name. */
     private suspend fun platformTyped(): Triple<MachineFormViewModel, Machine, List<WorkoutSet>> {
-        val press = Machine.new("Жим ногами", null, t0)
+        val press = Machine.new("Leg press", null, t0)
         gym.machines.upsert(press)
         val recorded =
             listOf(70.0, 90.0).map { weight ->
@@ -843,8 +843,8 @@ class MachineFormViewModelTest {
 
             assertEquals(
                 RecalculationUi(
-                    "Платформа изменилась. Изменить вес записанных подходов (2 подхода) на " +
-                        "−25 кг, чтобы итоговый вес остался прежним?",
+                    "The platform changed. Change the weight of the recorded sets (2 sets) by " +
+                        "−25 kg, so that their totals stay the same?",
                 ),
                 vm.recalculation.value,
             )
@@ -905,7 +905,7 @@ class MachineFormViewModelTest {
     /** A kilogram machine with a 20 kg platform and sets read off a 5 lb stack. */
     private suspend fun kgMachine(): Pair<MachineFormViewModel, List<WorkoutSet>> {
         val press =
-            Machine.new("Жим ногами", null, t0).copy(platformWeight = 20.0, weightStep = 2.5)
+            Machine.new("Leg press", null, t0).copy(platformWeight = 20.0, weightStep = 2.5)
         gym.machines.upsert(press)
         val recorded =
             listOf(22.7, 27.2).map { weight ->
@@ -946,7 +946,7 @@ class MachineFormViewModelTest {
         runTest {
             val press =
                 Machine
-                    .new("Жим ногами", null, t0)
+                    .new("Leg press", null, t0)
                     .copy(unit = WeightUnit.Lb, platformWeight = 45.0, weightStep = 5.0)
             gym.machines.upsert(press)
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
@@ -984,8 +984,8 @@ class MachineFormViewModelTest {
 
             assertEquals(
                 RecalculationUi(
-                    "Единица изменилась: кг → lb. Перевести вес записанных подходов " +
-                        "(2 подхода) в новую единицу?",
+                    "The unit changed: kg → lb. Convert the weight of the recorded sets " +
+                        "(2 sets) to the new unit?",
                 ),
                 vm.recalculation.value,
             )
@@ -1011,8 +1011,8 @@ class MachineFormViewModelTest {
 
             assertEquals(
                 RecalculationUi(
-                    "Единица изменилась: кг → lb. Перевести вес записанных подходов " +
-                        "(2 подхода) в новую единицу и изменить его на +10 lb под платформу?",
+                    "The unit changed: kg → lb. Convert the weight of the recorded sets " +
+                        "(2 sets) to the new unit and change it by +10 lb for the platform?",
                 ),
                 vm.recalculation.value,
             )
@@ -1032,7 +1032,7 @@ class MachineFormViewModelTest {
     @Test
     fun saving_a_machine_as_a_gravitron_turns_its_prior_bests_around() =
         runTest {
-            val press = Machine.new("Гравитрон", null, t0)
+            val press = Machine.new("Gravitron", null, t0)
             gym.machines.upsert(press)
             val days =
                 listOf(
@@ -1096,8 +1096,8 @@ class MachineFormViewModelTest {
 
             assertEquals(
                 RecalculationUi(
-                    "Вес теперь считается на сторону. Разделить вес записанных подходов " +
-                        "(2 подхода) пополам?",
+                    "The weight now counts per side. Halve the weight of the recorded sets " +
+                        "(2 sets)?",
                 ),
                 vm.recalculation.value,
             )
@@ -1131,9 +1131,9 @@ class MachineFormViewModelTest {
 
             assertEquals(
                 RecalculationUi(
-                    "Вес теперь считается всего. Удвоить вес записанных подходов " +
-                        "(2 подхода)?\n\nЕдиница изменилась: кг → lb. Перевести вес " +
-                        "записанных подходов (2 подхода) в новую единицу?",
+                    "The weight now counts in total. Double the weight of the recorded sets " +
+                        "(2 sets)?\n\nThe unit changed: kg → lb. Convert the weight of the " +
+                        "recorded sets (2 sets) to the new unit?",
                 ),
                 again.recalculation.value,
             )
@@ -1167,7 +1167,7 @@ class MachineFormViewModelTest {
     @Test
     fun a_platform_change_without_recorded_sets_saves_at_once() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             gym.machines.upsert(press)
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
             vm.update { it.copy(platformWeight = "25") }
@@ -1181,27 +1181,27 @@ class MachineFormViewModelTest {
 
     @Test
     fun an_own_unit_needs_a_name() {
-        val custom = MachineFormState(name = "Гравитрон", unit = WeightUnit.Custom)
+        val custom = MachineFormState(name = "Gravitron", unit = WeightUnit.Custom)
 
         assertEquals(false, custom.canSave)
         assertEquals(false, custom.copy(unitLabel = "  ").canSave)
-        assertEquals(true, custom.copy(unitLabel = "плитка").canSave)
+        assertEquals(true, custom.copy(unitLabel = "plate").canSave)
     }
 
     @Test
     fun an_own_unit_is_saved_with_its_name_and_kilograms_without_one() =
         runTest {
-            val vm = viewModel(MachineFormArgs(null, null, "Гравитрон")).also { it.load() }
-            vm.update { it.copy(unit = WeightUnit.Custom, unitLabel = " плитка ") }
+            val vm = viewModel(MachineFormArgs(null, null, "Gravitron")).also { it.load() }
+            vm.update { it.copy(unit = WeightUnit.Custom, unitLabel = " plate ") }
             var saved: MachineId? = null
 
             vm.save { saved = it }
 
             val machine = assertNotNull(gym.machines.byId(assertNotNull(saved)))
-            assertEquals(WeightUnit.Custom to "плитка", machine.unit to machine.unitLabel)
+            assertEquals(WeightUnit.Custom to "plate", machine.unit to machine.unitLabel)
 
             val again = viewModel(MachineFormArgs(machine.id, null, "")).also { it.load() }
-            assertEquals("плитка", again.state.value.unitLabel)
+            assertEquals("plate", again.state.value.unitLabel)
             again.update { it.copy(unit = WeightUnit.Kg) }
             again.save {}
 
@@ -1213,12 +1213,12 @@ class MachineFormViewModelTest {
     fun a_switch_while_editing_saves_a_copy_for_the_account_that_became_active() =
         runTest {
             gym.withAccounts(misha, ivan, active = misha)
-            val hers = Machine.new("Жим ногами", misha.account.userId, t0)
+            val hers = Machine.new("Leg press", misha.account.userId, t0)
             gym.machines.upsert(hers)
             val vm = viewModel(MachineFormArgs(hers.id, null, "")).also { it.load() }
 
             gym.accounts.switchTo(ivan.account.userId)
-            vm.update { it.copy(weightStep = "10", setupNote = "Упоры на 3") }
+            vm.update { it.copy(weightStep = "10", setupNote = "Pads at 3") }
             var saved: MachineId? = null
             vm.save { saved = it }
 
@@ -1233,18 +1233,18 @@ class MachineFormViewModelTest {
 
     @Test
     fun the_weight_step_is_any_positive_decimal() {
-        assertEquals(1.25, MachineFormState(name = "Гакк", weightStep = "1,25").weightStepValue)
-        assertEquals(0.5, MachineFormState(name = "Гакк", weightStep = "0.5").weightStepValue)
-        assertEquals(false, MachineFormState(name = "Гакк", weightStep = "0").canSave)
-        assertEquals(false, MachineFormState(name = "Гакк", weightStep = "0,0001").canSave)
-        assertEquals(false, MachineFormState(name = "Гакк", weightStep = "").canSave)
-        assertEquals(false, MachineFormState(name = "Гакк", weightStep = "-1").canSave)
+        assertEquals(1.25, MachineFormState(name = "Hack", weightStep = "1,25").weightStepValue)
+        assertEquals(0.5, MachineFormState(name = "Hack", weightStep = "0.5").weightStepValue)
+        assertEquals(false, MachineFormState(name = "Hack", weightStep = "0").canSave)
+        assertEquals(false, MachineFormState(name = "Hack", weightStep = "0,0001").canSave)
+        assertEquals(false, MachineFormState(name = "Hack", weightStep = "").canSave)
+        assertEquals(false, MachineFormState(name = "Hack", weightStep = "-1").canSave)
     }
 
     @Test
     fun an_existing_step_loads_as_text() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0).copy(weightStep = 1.25)
+            val press = Machine.new("Leg press", null, t0).copy(weightStep = 1.25)
             gym.machines.upsert(press)
 
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
@@ -1252,9 +1252,9 @@ class MachineFormViewModelTest {
             assertEquals("1.25", vm.state.value.weightStep)
         }
 
-    /** Иван's press, linked by Иван to a friend's machine. */
+    /** Ivan's press, linked by Ivan to a friend's machine. */
     private suspend fun linkedPress(): Pair<Machine, MachineLink> {
-        val hers = Machine.new("Жим ногами", misha.account.userId, t0)
+        val hers = Machine.new("Leg press", misha.account.userId, t0)
         val (press, link) = linkedCopy(hers, ivan.account.userId, t0)
         gym.machines.upsert(press)
         gym.machineLinks.upsert(link)
@@ -1265,12 +1265,12 @@ class MachineFormViewModelTest {
     fun only_an_own_saved_machine_can_be_linked() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            val press = Machine.new("Жим ногами", ivan.account.userId, t0)
+            val press = Machine.new("Leg press", ivan.account.userId, t0)
             gym.machines.upsert(press)
 
             val saved = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
-            val fresh = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
-            val copy = viewModel(MachineFormArgs(null, press.id, "Гакк")).also { it.load() }
+            val fresh = viewModel(MachineFormArgs(null, null, "Hack")).also { it.load() }
+            val copy = viewModel(MachineFormArgs(null, press.id, "Hack")).also { it.load() }
 
             assertTrue(saved.linking.value.canLink)
             assertFalse(fresh.linking.value.canLink)
@@ -1281,25 +1281,25 @@ class MachineFormViewModelTest {
     fun the_form_names_every_friend_s_machine_that_is_the_same_by_owner_then_name() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            val oleg = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Олег")
-            gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend, oleg)
-            val hers = Machine.new("Платформа", misha.account.userId, t0)
+            val oleg = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Oleg")
+            gym.friends.group("Forest Street Gym", owner = mishaFriend, ivanFriend, oleg)
+            val hers = Machine.new("Platform", misha.account.userId, t0)
             val (press, link) = linkedCopy(hers, ivan.account.userId, t0)
             val (his, hisLink) = linkedCopy(hers, oleg.userId, t0)
             val (hisOther, otherLink) = linkedCopy(his, oleg.userId, t0)
             gym.machines.upsert(press)
             gym.machineLinks.upsert(link)
             gym.friends.machines +=
-                listOf(hers, his.copy(name = "Жим ногами"), hisOther.copy(name = "Жим"))
+                listOf(hers, his.copy(name = "Leg press"), hisOther.copy(name = "Incline press"))
             gym.friends.links += listOf(hisLink, otherLink)
 
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
             assertEquals(
                 listOf(
-                    LinkedMachineUi(hers.id, mishaFriend, "Платформа"),
-                    LinkedMachineUi(hisOther.id, oleg, "Жим"),
-                    LinkedMachineUi(his.id, oleg, "Жим ногами"),
+                    LinkedMachineUi(hers.id, mishaFriend, "Platform"),
+                    LinkedMachineUi(hisOther.id, oleg, "Incline press"),
+                    LinkedMachineUi(his.id, oleg, "Leg press"),
                 ),
                 vm.linking.value.linkedWith,
             )
@@ -1339,7 +1339,7 @@ class MachineFormViewModelTest {
             vm.askToUnlink()
             vm.confirmUnlink()
 
-            assertEquals("Нет связи с сервером", vm.linking.value.error)
+            assertEquals("No connection to the server", vm.linking.value.error)
             assertEquals(link, gym.machineLinks.rows[link.id])
             assertFalse(vm.linking.value.confirmingUnlink)
             assertEquals(0, gym.sync.requests)
@@ -1377,7 +1377,7 @@ class MachineFormViewModelTest {
     @Test
     fun a_machine_without_live_sets_is_deleted_after_a_confirmation() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             gym.machines.upsert(press)
             gym.sets.upsert(setOn(press).copy(deleted = true))
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
@@ -1409,12 +1409,12 @@ class MachineFormViewModelTest {
     @Test
     fun a_machine_with_a_live_set_or_a_new_one_offers_no_deletion() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             gym.machines.upsert(press)
             gym.sets.upsert(setOn(press))
 
             val recorded = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
-            val fresh = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+            val fresh = viewModel(MachineFormArgs(null, null, "Hack")).also { it.load() }
 
             assertFalse(recorded.canDelete.value)
             assertFalse(fresh.canDelete.value)
@@ -1423,7 +1423,7 @@ class MachineFormViewModelTest {
     @Test
     fun a_set_recorded_while_the_form_is_open_keeps_the_machine() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             gym.machines.upsert(press)
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
             var deleted = 0
@@ -1446,7 +1446,7 @@ class MachineFormViewModelTest {
     fun a_switch_to_another_account_ends_the_deletion_offer() =
         runTest {
             gym.withAccounts(ivan, misha, active = ivan)
-            val press = Machine.new("Жим ногами", ivan.account.userId, t0)
+            val press = Machine.new("Leg press", ivan.account.userId, t0)
             gym.machines.upsert(press)
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
             assertTrue(vm.canDelete.value)
@@ -1459,21 +1459,21 @@ class MachineFormViewModelTest {
     @Test
     fun a_new_machine_or_one_without_an_account_offers_no_unlinking() =
         runTest {
-            val anonymous = Machine.new("Жим ногами", null, t0)
+            val anonymous = Machine.new("Leg press", null, t0)
             gym.machines.upsert(anonymous)
 
             val existing = viewModel(MachineFormArgs(anonymous.id, null, "")).also { it.load() }
-            val fresh = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+            val fresh = viewModel(MachineFormArgs(null, null, "Hack")).also { it.load() }
 
             assertFalse(existing.linking.value.canUnlink)
             assertFalse(fresh.linking.value.canUnlink)
         }
 
-    /** Иван's original, which Миша linked her copy to. */
+    /** Ivan's original, which Misha linked her copy to. */
     private suspend fun copiedOriginal(): Machine {
-        val original = Machine.new("Жим ногами", ivan.account.userId, t0)
+        val original = Machine.new("Leg press", ivan.account.userId, t0)
         gym.machines.upsert(original)
-        gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
+        gym.friends.group("Forest Street Gym", owner = mishaFriend, ivanFriend)
         val (copy, link) = linkedCopy(original, misha.account.userId, t0)
         gym.friends.machines += copy
         gym.friends.links += link
@@ -1490,7 +1490,7 @@ class MachineFormViewModelTest {
 
             assertTrue(vm.linking.value.canUnlink)
             assertEquals(
-                listOf("Жим ногами" to "Миша"),
+                listOf("Leg press" to "Misha"),
                 vm.linking.value.linkedWith
                     .map { it.name to it.owner.displayName },
             )
@@ -1520,7 +1520,7 @@ class MachineFormViewModelTest {
     fun an_original_with_no_copies_offers_no_unlinking() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            val original = Machine.new("Жим ногами", ivan.account.userId, t0)
+            val original = Machine.new("Leg press", ivan.account.userId, t0)
             gym.machines.upsert(original)
 
             val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
@@ -1563,13 +1563,13 @@ class MachineFormViewModelTest {
     fun coming_back_to_the_form_reads_the_links_again() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            val original = Machine.new("Жим ногами", ivan.account.userId, t0)
+            val original = Machine.new("Leg press", ivan.account.userId, t0)
             gym.machines.upsert(original)
-            gym.friends.group("Зал на Лесной", owner = mishaFriend, ivanFriend)
-            val hers = Machine.new("Жим ногами", misha.account.userId, t0)
+            gym.friends.group("Forest Street Gym", owner = mishaFriend, ivanFriend)
+            val hers = Machine.new("Leg press", misha.account.userId, t0)
             gym.friends.machines += hers
             val vm = viewModel(MachineFormArgs(original.id, null, "")).also { it.load() }
-            vm.update { it.copy(setupNote = "Сиденье на 4") }
+            vm.update { it.copy(setupNote = "Seat at 4") }
 
             gym.machineLinks.upsert(
                 MachineLink(
@@ -1584,24 +1584,24 @@ class MachineFormViewModelTest {
             vm.load()
 
             assertEquals(
-                listOf("Жим ногами" to "Миша"),
+                listOf("Leg press" to "Misha"),
                 vm.linking.value.linkedWith
                     .map { it.name to it.owner.displayName },
             )
-            assertEquals("Сиденье на 4", vm.state.value.setupNote)
+            assertEquals("Seat at 4", vm.state.value.setupNote)
         }
 
     @Test
     fun leaving_an_untouched_form_asks_nothing() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0).copy(tags = setOf("Ноги"))
+            val press = Machine.new("Leg press", null, t0).copy(tags = setOf("Legs"))
             gym.machines.upsert(press)
             val forms =
                 listOf(
                     MachineFormArgs(press.id, null, ""),
                     MachineFormArgs(null, null, ""),
-                    MachineFormArgs(null, null, "Гакк", listOf("Ноги")),
-                    MachineFormArgs(null, press.id, "Жим ногами 2"),
+                    MachineFormArgs(null, null, "Hack", listOf("Legs")),
+                    MachineFormArgs(null, press.id, "Leg press 2"),
                 )
 
             forms.forEach { args ->
@@ -1614,27 +1614,27 @@ class MachineFormViewModelTest {
     @Test
     fun leaving_with_an_edit_asks_and_staying_keeps_the_form() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             gym.machines.upsert(press)
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
-            vm.update { it.copy(setupNote = "Сиденье на 4") }
+            vm.update { it.copy(setupNote = "Seat at 4") }
 
             assertFalse(vm.requestLeave())
             assertTrue(vm.confirmingLeave.value)
             vm.stay()
             assertFalse(vm.confirmingLeave.value)
-            assertEquals("Сиденье на 4", vm.state.value.setupNote)
+            assertEquals("Seat at 4", vm.state.value.setupNote)
         }
 
     @Test
     fun an_edit_typed_back_to_the_start_is_no_change() =
         runTest {
-            val vm = viewModel(MachineFormArgs(null, null, "Гакк")).also { it.load() }
+            val vm = viewModel(MachineFormArgs(null, null, "Hack")).also { it.load() }
 
-            vm.update { it.copy(name = "Гакк-машина") }
-            vm.update { it.copy(name = "Гакк") }
-            vm.typeNewTag("Ноги")
+            vm.update { it.copy(name = "Hack machine") }
+            vm.update { it.copy(name = "Hack") }
+            vm.typeNewTag("Legs")
 
             assertTrue(vm.requestLeave())
         }
@@ -1642,7 +1642,7 @@ class MachineFormViewModelTest {
     @Test
     fun weights_compare_by_value_and_an_unreadable_one_by_its_text() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0).copy(platformWeight = 20.0)
+            val press = Machine.new("Leg press", null, t0).copy(platformWeight = 20.0)
             gym.machines.upsert(press)
             val vm = viewModel(MachineFormArgs(press.id, null, "")).also { it.load() }
 
@@ -1659,8 +1659,8 @@ class MachineFormViewModelTest {
             val (press, mine, theirs) = pressWithFriendsPhoto()
             val edits: List<(MachineFormViewModel) -> Unit> =
                 listOf(
-                    { it.update { form -> form.copy(name = "Жим") } },
-                    { it.toggleTag("Ноги") },
+                    { it.update { form -> form.copy(name = "Press") } },
+                    { it.toggleTag("Legs") },
                     { it.update { form -> form.copy(weightMode = WeightMode.PerSide) } },
                     { it.update { form -> form.copy(platformWeight = "20") } },
                     { it.update { form -> form.copy(platformIncluded = true) } },
@@ -1682,7 +1682,7 @@ class MachineFormViewModelTest {
     fun a_switch_alone_is_no_change_but_a_photo_taken_before_it_is() =
         runTest {
             gym.withAccounts(ivan, misha, active = ivan)
-            val press = Machine.new("Жим ногами", ivan.account.userId, t0)
+            val press = Machine.new("Leg press", ivan.account.userId, t0)
             gym.machines.upsert(press)
             val photo = Photo.new(press.id, ivan.account.userId, t0)
             gym.photos.add(photo, byteArrayOf(1))

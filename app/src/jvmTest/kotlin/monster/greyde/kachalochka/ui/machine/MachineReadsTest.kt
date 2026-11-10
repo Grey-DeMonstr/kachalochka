@@ -36,22 +36,22 @@ import kotlin.time.Duration.Companion.seconds
 class MachineReadsTest {
     private val gym = signedInGym()
     private val t0 = gym.clock.current
-    private val myPress = Machine.new("Жим ногами", ME.userId, t0)
+    private val myPress = Machine.new("Leg press", ME.userId, t0)
     private val olegCopy = linkedCopy(myPress, OLEG.userId, t0)
     private val olegPress = olegCopy.first
-    private val olegRow = Machine.new("Тяга", OLEG.userId, t0)
+    private val olegRow = Machine.new("Row", OLEG.userId, t0)
     private val reads = gym.machineReads
     private val misha =
         AccountSession(
-            Account(UserId("22222222-2222-4222-8222-222222222222"), "m@example.test", "Миша"),
+            Account(UserId("22222222-2222-4222-8222-222222222222"), "m@example.test", "Misha"),
             "access",
             "refresh",
             t0,
         )
 
-    /** Олег shares a group with Иван; his press copy links to Иван's, his row to nothing. */
+    /** Oleg shares a group with Ivan; his press copy links to Ivan's, his row to nothing. */
     private suspend fun olegsGym(on: FakeGym = gym) {
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
         on.friends.machines += listOf(olegPress, olegRow)
         on.friends.links += olegCopy.second
         on.machines.upsert(myPress)
@@ -109,7 +109,7 @@ class MachineReadsTest {
         runTest {
             olegsGym()
             gym.catalogue.group(ME.userId)
-            val newer = Machine.new("Жим лёжа", OLEG.userId, t0)
+            val newer = Machine.new("Bench press", OLEG.userId, t0)
             gym.friends.machines += newer
             val gate = CompletableDeferred<Unit>().also { gym.friends.gate = it }
 
@@ -163,7 +163,7 @@ class MachineReadsTest {
     fun signed_out_only_own_machines_come_and_no_friends_are_asked() =
         runTest {
             val out = FakeGym()
-            val machine = Machine.new("Тяга", null, t0)
+            val machine = Machine.new("Row", null, t0)
             out.machines.upsert(machine)
 
             out.machineReads.machines(null).test(timeout = 10.seconds) {
@@ -291,7 +291,7 @@ class MachineReadsTest {
     fun signed_out_cards_carry_the_local_peaks() =
         runTest {
             val out = FakeGym()
-            val machine = Machine.new("Тяга", null, t0)
+            val machine = Machine.new("Row", null, t0)
             out.machines.upsert(machine)
             out.sets.upsert(setOn(machine, null))
 

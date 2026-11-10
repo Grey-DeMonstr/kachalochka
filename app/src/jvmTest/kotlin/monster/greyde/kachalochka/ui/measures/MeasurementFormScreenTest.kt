@@ -49,8 +49,8 @@ class MeasurementFormScreenTest {
         runScreenTest(gym, screen = {
             MeasurementFormScreen(null, {}, {}, onSaved = { saved++ }, onDeleted = {})
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Замер")
-            onNodeWithTag("measurement-day").assertTextEquals("Сегодня, 14 ноября")
+            onNodeWithTag("top-bar-title").assertTextEquals("Measurement")
+            onNodeWithTag("measurement-day").assertTextEquals("Today, 14 November")
             onNodeWithTag("measure-hint-${weight.id.value}", useUnmergedTree = true)
                 .assertTextEquals("82.4")
             onNodeWithTag("delete-measurement").assertDoesNotExist()
@@ -79,7 +79,7 @@ class MeasurementFormScreenTest {
             waitForIdle()
 
             onNodeWithTag("day-picker").assertDoesNotExist()
-            onNodeWithTag("measurement-day").assertTextEquals("Суббота, 11 ноября")
+            onNodeWithTag("measurement-day").assertTextEquals("Saturday, 11 November")
             onNodeWithTag("measure-field-${weight.id.value}").assertTextEquals("82.4")
         }
     }

@@ -15,12 +15,12 @@ import kotlin.test.assertNull
 
 private val MISHA_SESSION =
     AccountSession(
-        Account(UserId("22222222-2222-4222-8222-222222222222"), "misha@example.test", "Миша"),
+        Account(UserId("22222222-2222-4222-8222-222222222222"), "misha@example.test", "Misha"),
         "access",
         "refresh",
         IVAN_SESSION.expiresAt,
     )
-private val MISHA = Friend(MISHA_SESSION.account.userId, "Миша")
+private val MISHA = Friend(MISHA_SESSION.account.userId, "Misha")
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GroupsCacheTest {
@@ -29,20 +29,20 @@ class GroupsCacheTest {
     @Test
     fun warming_reads_the_active_account_s_groups() =
         runTest {
-            gym.friends.group("Зал на Лесной", owner = ME)
+            gym.friends.group("Forest Street Gym", owner = ME)
             val cache = GroupsCache(gym.friends, gym.accounts, backgroundScope)
 
             cache.warm()
             runCurrent()
 
-            assertEquals(listOf("Зал на Лесной"), cache.cached(ME.userId)?.map { it.name })
+            assertEquals(listOf("Forest Street Gym"), cache.cached(ME.userId)?.map { it.name })
         }
 
     @Test
     fun switching_account_reads_the_new_one_and_keeps_the_old_list() =
         runTest {
-            gym.friends.group("Зал на Лесной", owner = ME)
-            gym.friends.group("Бассейн", owner = MISHA)
+            gym.friends.group("Forest Street Gym", owner = ME)
+            gym.friends.group("City Pool", owner = MISHA)
             val cache = GroupsCache(gym.friends, gym.accounts, backgroundScope)
             cache.warm()
             runCurrent()
@@ -50,8 +50,8 @@ class GroupsCacheTest {
             gym.accounts.switchTo(MISHA.userId)
             runCurrent()
 
-            assertEquals(listOf("Бассейн"), cache.cached(MISHA.userId)?.map { it.name })
-            assertEquals(listOf("Зал на Лесной"), cache.cached(ME.userId)?.map { it.name })
+            assertEquals(listOf("City Pool"), cache.cached(MISHA.userId)?.map { it.name })
+            assertEquals(listOf("Forest Street Gym"), cache.cached(ME.userId)?.map { it.name })
         }
 
     @Test
@@ -73,13 +73,13 @@ class GroupsCacheTest {
     @Test
     fun an_offline_refresh_throws_and_keeps_what_was_read_before() =
         runTest {
-            gym.friends.group("Зал на Лесной", owner = ME)
+            gym.friends.group("Forest Street Gym", owner = ME)
             val cache = GroupsCache(gym.friends, gym.accounts, backgroundScope)
             cache.refresh(ME.userId)
 
             gym.friends.offline = true
 
             assertFailsWith<IllegalStateException> { cache.refresh(ME.userId) }
-            assertEquals(listOf("Зал на Лесной"), cache.cached(ME.userId)?.map { it.name })
+            assertEquals(listOf("Forest Street Gym"), cache.cached(ME.userId)?.map { it.name })
         }
 }

@@ -10,7 +10,6 @@ import androidx.compose.ui.test.performTextInput
 import kotlinx.coroutines.CompletableDeferred
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -20,10 +19,10 @@ class GroupsScreenTest {
 
     @Test
     fun a_group_row_opens_the_group() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         val opened = mutableListOf<GroupId>()
         runScreenTest(gym, screen = { GroupsScreen({}, {}, onOpenGroup = { opened += it }) }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Друзья")
+            onNodeWithTag("top-bar-title").assertTextEquals("Friends")
             onNodeWithTag("group-row-${group.id.value}").performClick()
             waitForIdle()
         }
@@ -34,7 +33,7 @@ class GroupsScreenTest {
     fun groups_show_as_loading_until_the_read_completes() {
         val gate = CompletableDeferred<Unit>()
         gym.friends.gate = gate
-        val group = gym.friends.group("Зал на Лесной", owner = ME)
+        val group = gym.friends.group("Forest Street Gym", owner = ME)
         runScreenTest(gym, screen = { GroupsScreen({}, {}, {}) }) {
             onNodeWithTag("groups-loading").assertExists()
             onAllNodesWithTag("groups-empty").assertCountEquals(0)
@@ -48,12 +47,12 @@ class GroupsScreenTest {
     @Test
     fun without_groups_the_list_says_so() =
         runScreenTest(gym, screen = { GroupsScreen({}, {}, {}) }) {
-            onNodeWithTag("groups-empty").assertTextEquals("Групп пока нет")
+            onNodeWithTag("groups-empty").assertTextEquals("No groups yet")
         }
 
     @Test
     fun the_groups_screen_speaks_english() =
-        runScreenTestInEnglish(gym, screen = { GroupsScreen({}, {}, {}) }) {
+        runScreenTest(gym, screen = { GroupsScreen({}, {}, {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Friends")
             onNodeWithTag("groups-empty").assertTextEquals("No groups yet")
         }
@@ -64,7 +63,7 @@ class GroupsScreenTest {
         runScreenTest(gym, screen = { GroupsScreen({}, {}, onOpenGroup = { opened += it }) }) {
             onNodeWithTag("create-group").performClick()
             waitForIdle()
-            onNodeWithTag("group-dialog-field").performTextInput("Зал")
+            onNodeWithTag("group-dialog-field").performTextInput("Gym")
             waitForIdle()
             onNodeWithTag("group-dialog-confirm").performClick()
             waitForIdle()
@@ -86,12 +85,12 @@ class GroupsScreenTest {
             onNodeWithTag("group-dialog-field").assertTextEquals("ZZZZ2345")
             onNodeWithTag("group-dialog-confirm").performClick()
             waitForIdle()
-            onNodeWithTag("group-dialog-error").assertTextEquals("Приглашение не найдено")
+            onNodeWithTag("group-dialog-error").assertTextEquals("Invitation not found")
         }
 
     @Test
     fun mounting_the_screen_reads_the_groups_once() {
-        gym.friends.group("Зал на Лесной", owner = ME)
+        gym.friends.group("Forest Street Gym", owner = ME)
         runScreenTest(gym, screen = { GroupsScreen({}, {}, {}) }) {
             waitForIdle()
             assertEquals(1, gym.friends.reads)
@@ -102,7 +101,7 @@ class GroupsScreenTest {
     fun offline_it_offers_a_retry() {
         gym.friends.offline = true
         runScreenTest(gym, screen = { GroupsScreen({}, {}, {}) }) {
-            onNodeWithTag("friends-offline").assertTextEquals("Нет связи с сервером")
+            onNodeWithTag("friends-offline").assertTextEquals("No connection to the server")
             gym.friends.offline = false
             onNodeWithTag("friends-retry").performClick()
             waitForIdle()

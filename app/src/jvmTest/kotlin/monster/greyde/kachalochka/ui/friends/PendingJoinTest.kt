@@ -21,7 +21,7 @@ class PendingJoinTest {
     @Test
     fun a_stored_code_joins_its_group_once() =
         runTest {
-            val group = gym.friends.group("Зал на Лесной", owner = OLEG, code = "ABCD2345")
+            val group = gym.friends.group("Forest Street Gym", owner = OLEG, code = "ABCD2345")
             gym.joinCodes.save("ABCD2345")
             assertTrue(pending.waiting)
 

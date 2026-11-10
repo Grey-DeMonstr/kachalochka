@@ -12,7 +12,8 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
-import monster.greyde.kachalochka.ui.strings.inEnglish
+import monster.greyde.kachalochka.ui.strings.RuStrings
+import monster.greyde.kachalochka.ui.strings.inRussian
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -36,7 +37,7 @@ class HomeViewModelTest {
         visit: Visit,
         at: Instant = t0,
     ) {
-        val press = Machine.new("Жим ногами", null, t0)
+        val press = Machine.new("Leg press", null, t0)
         gym.visits.upsert(visit)
         gym.machines.upsert(press)
         gym.sets.upsert(
@@ -60,7 +61,7 @@ class HomeViewModelTest {
         val vm = viewModel().also { it.refresh() }
 
         assertEquals(
-            HomeUiState(TodayUi(gym.today, "Вторник, 14 ноября 2023", started = false)),
+            HomeUiState(TodayUi(gym.today, "Tuesday, 14 November 2023", started = false)),
             vm.state.value,
         )
     }
@@ -83,7 +84,7 @@ class HomeViewModelTest {
     @Test
     fun a_started_plan_counts_as_a_visit() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             gym.machines.upsert(press)
             gym.visits.upsert(
                 Visit(
@@ -108,13 +109,13 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun the_date_speaks_english_when_entered_again() {
+    fun the_date_speaks_russian_when_entered_again() {
         val vm = viewModel().also { it.refresh() }
 
-        inEnglish {
+        inRussian {
             vm.refresh()
             assertEquals(
-                "Tuesday, 14 November 2023",
+                "${RuStrings.weekday(2)}, ${RuStrings.dayMonth(14, 11)} 2023",
                 vm.state.value
                     ?.today
                     ?.date,

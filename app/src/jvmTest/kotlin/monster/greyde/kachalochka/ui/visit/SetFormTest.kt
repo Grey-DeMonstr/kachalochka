@@ -85,13 +85,13 @@ class SetFormTest {
 
     @Test
     fun an_edit_starts_from_the_set_and_a_close_drops_it() {
-        val edited = set(70.0, 8, "тяжело")
+        val edited = set(70.0, 8, "heavy")
 
         form.openOn(edited)
         assertTrue(form.isOpen)
         assertEquals(edited, form.editing)
         assertEquals(SetValues(70.0, 8), form.values)
-        assertEquals("тяжело", form.comment)
+        assertEquals("heavy", form.comment)
 
         form.close()
         assertFalse(form.isOpen)
@@ -101,7 +101,7 @@ class SetFormTest {
 
     @Test
     fun a_new_set_keeps_the_values_but_not_the_comment() {
-        form.typeComment("старое")
+        form.typeComment("old")
 
         form.openNew()
 

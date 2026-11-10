@@ -23,7 +23,7 @@ data class PlacementNoticeUi(
 )
 
 data class PlacementUi(
-    /** The plans offered while "В план…" asks which; null while it does not ask. */
+    /** The plans offered while "Add to plan…" asks which; null while it does not ask. */
     val choices: List<PlanChoiceUi>? = null,
     val notice: PlacementNoticeUi? = null,
 )

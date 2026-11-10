@@ -20,7 +20,7 @@ import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-/** "Привязать к моему": the account's machine to link the friend's [machineId] to. */
+/** "Link to mine": the account's machine to link the friend's [machineId] to. */
 @Composable
 fun MineChooserScreen(
     machineId: MachineId,

@@ -35,10 +35,10 @@ import kotlin.time.Duration.Companion.minutes
 class FriendMachineScreenTest {
     private val on = signedInGym()
     private val olegPress =
-        Machine.new("Жим ногами", OLEG.userId, on.clock.current).copy(setupNote = "Спинка на 4")
+        Machine.new("Leg press", OLEG.userId, on.clock.current).copy(setupNote = "Back pad at 4")
 
     init {
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
         on.friends.machines += olegPress
     }
 
@@ -48,10 +48,10 @@ class FriendMachineScreenTest {
         runScreenTest(on, screen = {
             FriendMachineScreen(olegPress.id, OLEG.userId, {}, {}, onTaken = { taken += it })
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Упражнение друга")
-            onNodeWithTag("friend-machine-name").assertTextEquals("Жим ногами")
-            onNodeWithTag("friend-machine-owner").assertTextEquals("Олег")
-            onNodeWithTag("friend-machine-note").assertTextEquals("Спинка на 4")
+            onNodeWithTag("top-bar-title").assertTextEquals("Friend's machine")
+            onNodeWithTag("friend-machine-name").assertTextEquals("Leg press")
+            onNodeWithTag("friend-machine-owner").assertTextEquals("Oleg")
+            onNodeWithTag("friend-machine-note").assertTextEquals("Back pad at 4")
             onAllNodes(hasSetTextAction()).assertCountEquals(0)
 
             onNodeWithTag("take-machine").performClick()
@@ -72,13 +72,13 @@ class FriendMachineScreenTest {
             onNodeWithTag("copy-friend-machine-note").performClick()
             waitForIdle()
         }
-        assertEquals(listOf("Жим ногами", "Спинка на 4"), on.clipboard.copied)
+        assertEquals(listOf("Leg press", "Back pad at 4"), on.clipboard.copied)
     }
 
     @Test
     fun link_to_mine_hands_on_the_machine_s_name_and_a_linked_machine_opens() {
-        val pashas = Machine.new("Платформа", PASHA.userId, on.clock.current)
-        on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        val pashas = Machine.new("Platform", PASHA.userId, on.clock.current)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
         on.friends.machines += pashas
         on.friends.links +=
             MachineLink(
@@ -106,7 +106,7 @@ class FriendMachineScreenTest {
             onNodeWithTag("friend-machine-linked-${pashas.id.value}").performClick()
             waitForIdle()
         }
-        assertEquals(listOf("Жим ногами"), linking)
+        assertEquals(listOf("Leg press"), linking)
         assertEquals(listOf(pashas.id to PASHA.userId), opened)
     }
 
@@ -154,7 +154,7 @@ class FriendMachineScreenTest {
         val second = Photo.new(olegPress.id, OLEG.userId, on.clock.current + 1.minutes)
         on.friends.photos += listOf(first, second)
         on.friends.machines.clear()
-        on.friends.machines += olegPress.copy(tags = setOf("Ноги"), coverPhoto = second.id)
+        on.friends.machines += olegPress.copy(tags = setOf("Legs"), coverPhoto = second.id)
         val visit = VisitId.random()
         on.friends.sets +=
             listOf(80.0 to 8, 85.0 to 6).mapIndexed { i, (weight, reps) ->
@@ -174,13 +174,13 @@ class FriendMachineScreenTest {
         runScreenTest(on, screen = {
             FriendMachineScreen(olegPress.id, OLEG.userId, {}, {}, {})
         }) {
-            onNodeWithTag("friend-machine-tag-ноги").assertTextEquals("НОГИ")
+            onNodeWithTag("friend-machine-tag-legs").assertTextEquals("LEGS")
             onAllNodesWithTag("photo-cover", useUnmergedTree = true).assertCountEquals(1)
             onNodeWithTag("stats-chart-title").assertDoesNotExist()
             onNodeWithTag("stats-best-trophy", useUnmergedTree = true).assertExists()
-            onNodeWithTag("stats-best").assertTextEquals("85 кг × 6")
-            onNodeWithTag("stats-history-date-0").assertTextEquals("13 ноября")
-            onNodeWithTag("stats-history-results-0").assertTextEquals("80-85кг 8-6")
+            onNodeWithTag("stats-best").assertTextEquals("85 kg × 6")
+            onNodeWithTag("stats-history-date-0").assertTextEquals("13 November")
+            onNodeWithTag("stats-history-results-0").assertTextEquals("80-85kg 8-6")
             onAllNodes(hasSetTextAction()).assertCountEquals(0)
             onNodeWithTag("stats-history-0").assertHasNoClickAction()
         }
@@ -192,7 +192,7 @@ class FriendMachineScreenTest {
         runScreenTest(on, screen = {
             FriendMachineScreen(olegPress.id, OLEG.userId, {}, {}, {})
         }) {
-            onNodeWithTag("friends-offline").assertTextEquals("Нет связи с сервером")
+            onNodeWithTag("friends-offline").assertTextEquals("No connection to the server")
             onNodeWithTag("take-machine").assertDoesNotExist()
             onNodeWithTag("machine-menu").assertDoesNotExist()
         }
@@ -204,7 +204,7 @@ class FriendMachineScreenTest {
             Plan(
                 PlanId.random(),
                 ME.userId,
-                "Ноги",
+                "Legs",
                 emptyList(),
                 on.clock.current,
                 on.clock.current,
@@ -220,7 +220,7 @@ class FriendMachineScreenTest {
             onNodeWithTag("plan-choice-${legs.id.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("placement-notice").assertTextEquals("Добавлено в «Ноги»")
+            onNodeWithTag("placement-notice").assertTextEquals("Added to “Legs”")
             onNodeWithTag("take-machine").assertDoesNotExist()
         }
         val copy = runBlocking { on.machines.all(ME.userId) }.single()

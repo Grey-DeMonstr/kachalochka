@@ -62,7 +62,7 @@ fun FriendMachineScreen(
     onLinkToMine: (name: String) -> Unit = {},
     onOpenMachine: (MachineId) -> Unit = {},
     onOpenFriendMachine: (MachineId, UserId) -> Unit = { _, _ -> },
-    /** True once "Привязать к моему" has written a link, so the links are read again. */
+    /** True once "Link to mine" has written a link, so the links are read again. */
     linked: Boolean = false,
     onLinkedConsumed: () -> Unit = {},
     onOpenVisit: (CalendarDay) -> Unit = {},

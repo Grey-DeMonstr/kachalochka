@@ -7,7 +7,7 @@ import kotlin.time.Duration.Companion.days
 
 class PlatformShiftTest {
     private val ivan = UserId("11111111-1111-4111-8111-111111111111")
-    private val bare = Machine.new("Жим ногами", ivan, T0)
+    private val bare = Machine.new("Leg press", ivan, T0)
     private val now = T0 + 1.days
 
     private fun platform(

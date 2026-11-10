@@ -42,8 +42,8 @@ import kotlin.time.Duration.Companion.minutes
 class MachineListViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
-    private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan")
+    private val misha = session("22222222-2222-4222-8222-222222222222", "Misha")
 
     private fun session(
         id: String,
@@ -63,10 +63,10 @@ class MachineListViewModelTest {
 
     private fun olegsGym(): Pair<FakeGym, Machine> {
         val on = signedInGym()
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
         val olegPress =
             Machine
-                .new("Жим ногами", OLEG.userId, t0)
+                .new("Leg press", OLEG.userId, t0)
                 .copy(weightMode = WeightMode.PerSide, weightStep = 5.0)
         on.friends.machines += olegPress
         return on to olegPress
@@ -83,8 +83,8 @@ class MachineListViewModelTest {
     @Test
     fun a_chosen_sort_reorders_the_machines_and_is_kept_in_the_profile() =
         runTest {
-            val abs = Machine.new("Аб", null, t0)
-            val row = Machine.new("Тяга", null, t0)
+            val abs = Machine.new("Abs", null, t0)
+            val row = Machine.new("Row", null, t0)
             gym.machines.upsert(abs)
             gym.machines.upsert(row)
             gym.sets.upsert(set(row, 50.0, 10))
@@ -93,12 +93,12 @@ class MachineListViewModelTest {
             fun names() =
                 vm.state.value.own
                     ?.map { it.name }
-            assertEquals(listOf("Тяга", "Аб"), names())
+            assertEquals(listOf("Row", "Abs"), names())
             assertEquals(MachineSort.Recent, vm.state.value.sort)
 
             vm.chooseSort(MachineSort.Name)
 
-            assertEquals(listOf("Аб", "Тяга"), names())
+            assertEquals(listOf("Abs", "Row"), names())
             assertEquals(MachineSort.Name, vm.state.value.sort)
             assertEquals(MachineSort.Name, gym.profiles.forOwner(null)?.machineSort)
         }
@@ -108,17 +108,17 @@ class MachineListViewModelTest {
         runTest {
             val (on, olegPress) = olegsGym()
             on.friends.machines.replaceAll {
-                if (it.id == olegPress.id) it.copy(tags = setOf("НОГИ")) else it
+                if (it.id == olegPress.id) it.copy(tags = setOf("LEGS")) else it
             }
-            on.machines.upsert(Machine.new("Присед", ME.userId, t0).copy(tags = setOf("Ноги")))
+            on.machines.upsert(Machine.new("Squat", ME.userId, t0).copy(tags = setOf("Legs")))
             val vm = viewModel(on).also { it.load() }
             assertEquals(
-                listOf("ноги" to false),
+                listOf("legs" to false),
                 vm.state.value.tags
                     .map { it.name to it.chosen },
             )
 
-            vm.toggleTag("НОГИ")
+            vm.toggleTag("LEGS")
 
             assertEquals(
                 listOf(true),
@@ -126,7 +126,7 @@ class MachineListViewModelTest {
                     .map { it.chosen },
             )
             assertEquals(
-                listOf("Присед"),
+                listOf("Squat"),
                 vm.state.value.own
                     ?.map { it.name },
             )
@@ -142,8 +142,8 @@ class MachineListViewModelTest {
         runTest {
             val on = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
             on.accounts.switchTo(SASHA.userId)
-            on.machines.upsert(Machine.new("Тяга", SASHA.userId, t0))
-            on.machines.upsert(Machine.new("Аб", SASHA.userId, t0))
+            on.machines.upsert(Machine.new("Row", SASHA.userId, t0))
+            on.machines.upsert(Machine.new("Abs", SASHA.userId, t0))
             val vm = viewModel(on).also { it.load() }
 
             vm.chooseSort(MachineSort.Name)
@@ -151,7 +151,7 @@ class MachineListViewModelTest {
 
             assertEquals(MachineSort.Name, vm.state.value.sort)
             assertEquals(
-                listOf("Аб", "Тяга"),
+                listOf("Abs", "Row"),
                 vm.state.value.own
                     ?.map { it.name },
             )
@@ -161,8 +161,8 @@ class MachineListViewModelTest {
     fun the_profile_s_sort_puts_the_most_used_machine_first() =
         runTest {
             gym.profiles.upsert(Profile.new(null, t0).copy(machineSort = MachineSort.Frequent))
-            val abs = Machine.new("Аб", null, t0)
-            val row = Machine.new("Тяга", null, t0)
+            val abs = Machine.new("Abs", null, t0)
+            val row = Machine.new("Row", null, t0)
             gym.machines.upsert(abs)
             gym.machines.upsert(row)
             gym.sets.upsert(set(row, 50.0, 10).copy(recordedAt = t0 + 5.minutes))
@@ -172,7 +172,7 @@ class MachineListViewModelTest {
             val vm = viewModel().also { it.load() }
 
             assertEquals(
-                listOf("Аб", "Тяга"),
+                listOf("Abs", "Row"),
                 vm.state.value.own
                     ?.map { it.name },
             )
@@ -182,14 +182,14 @@ class MachineListViewModelTest {
     @Test
     fun the_machines_are_listed_most_recent_first_with_their_tags_comment_last_use_and_record() =
         runTest {
-            val row = Machine.new("Тяга", null, t0)
+            val row = Machine.new("Row", null, t0)
             gym.machines.upsert(row)
             val press =
                 Machine
-                    .new("Жим ногами", null, t0)
-                    .copy(setupNote = "Сиденье на 4", tags = setOf("Ноги", "Жим"))
+                    .new("Leg press", null, t0)
+                    .copy(setupNote = "Seat at 4", tags = setOf("Legs", "Press"))
             gym.machines.upsert(press)
-            gym.machines.upsert(Machine.new("Гакк", null, t0).copy(deleted = true))
+            gym.machines.upsert(Machine.new("Hack squat", null, t0).copy(deleted = true))
             gym.sets.upsert(set(press, 80.0, 8))
             gym.sets.upsert(set(press, 80.0, 10))
 
@@ -199,14 +199,14 @@ class MachineListViewModelTest {
                 listOf(
                     MachineCardUi(
                         press.id,
-                        "Жим ногами",
+                        "Leg press",
                         null,
-                        listOf("жим", "ноги"),
-                        "Сиденье на 4",
-                        "14 ноября",
-                        "80 кг × 10",
+                        listOf("legs", "press"),
+                        "Seat at 4",
+                        "14 November",
+                        "80 kg × 10",
                     ),
-                    MachineCardUi(row.id, "Тяга", null, emptyList(), "", null, null),
+                    MachineCardUi(row.id, "Row", null, emptyList(), "", null, null),
                 ),
                 vm.state.value.own,
             )
@@ -232,13 +232,13 @@ class MachineListViewModelTest {
     @Test
     fun a_record_reads_in_the_unit_chosen_in_the_profile() =
         runTest {
-            val cable = Machine.new("Кроссовер", null, t0).copy(unit = WeightUnit.Lb)
+            val cable = Machine.new("Cable crossover", null, t0).copy(unit = WeightUnit.Lb)
             gym.machines.upsert(cable)
             gym.sets.upsert(set(cable, 90.0, 8))
             val vm = viewModel().also { it.load() }
 
             assertEquals(
-                listOf("41 кг × 8"),
+                listOf("41 kg × 8"),
                 vm.state.value.own
                     ?.map { it.record },
             )
@@ -256,7 +256,7 @@ class MachineListViewModelTest {
     @Test
     fun an_own_machine_shows_its_own_first_photo() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             gym.machines.upsert(press)
             val photo = Photo.new(press.id, null, t0)
             gym.photos.add(photo, byteArrayOf(1))
@@ -275,8 +275,8 @@ class MachineListViewModelTest {
     fun without_an_own_photo_a_linked_friend_s_photo_stands_for_the_machine() =
         runTest {
             val on = signedInGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
-            val olegs = Machine.new("Жим ногами", OLEG.userId, t0)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME)
+            val olegs = Machine.new("Leg press", OLEG.userId, t0)
             val (mine, link) = linkedCopy(olegs, ME.userId, t0)
             val olegsPhoto = Photo.new(olegs.id, OLEG.userId, t0)
             on.friends.machines += olegs
@@ -297,15 +297,15 @@ class MachineListViewModelTest {
     fun own_machines_of_the_same_name_suggest_each_other_and_the_chip_keeps_only_them() =
         runTest {
             val (on, _) = olegsGym()
-            val press = Machine.new("Жим ногами", ME.userId, t0)
-            val twin = Machine.new("жим ногами", ME.userId, t0)
-            val row = Machine.new("Тяга", ME.userId, t0)
+            val press = Machine.new("Leg press", ME.userId, t0)
+            val twin = Machine.new("leg press", ME.userId, t0)
+            val row = Machine.new("Row", ME.userId, t0)
             listOf(press, twin, row).forEach { on.machines.upsert(it) }
             val vm = viewModel(on).also { it.load() }
 
             assertEquals(true, vm.state.value.hasSuggestions)
             assertEquals(
-                mapOf(press.id to "жим ногами", twin.id to "Жим ногами", row.id to null),
+                mapOf(press.id to "leg press", twin.id to "Leg press", row.id to null),
                 vm.state.value.own
                     ?.associate { it.id to it.suggestion },
             )
@@ -327,9 +327,9 @@ class MachineListViewModelTest {
     fun a_friend_s_machine_reached_through_another_friend_s_is_linked_instead_of_suggested() =
         runTest {
             val (on, olegPress) = olegsGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-            val mine = Machine.new("Жим ногами", ME.userId, t0)
-            val pashas = Machine.new("Платформа", PASHA.userId, t0)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+            val mine = Machine.new("Leg press", ME.userId, t0)
+            val pashas = Machine.new("Platform", PASHA.userId, t0)
             on.machines.upsert(mine)
             on.machineLinks.upsert(
                 MachineLink(MachineLinkId.random(), ME.userId, mine.id, olegPress.id, t0, false),
@@ -359,7 +359,7 @@ class MachineListViewModelTest {
     @Test
     fun without_suggestions_there_is_no_chip_and_nothing_is_kept_out() =
         runTest {
-            val row = Machine.new("Тяга", null, t0)
+            val row = Machine.new("Row", null, t0)
             gym.machines.upsert(row)
             val vm = viewModel().also { it.load() }
 
@@ -378,13 +378,13 @@ class MachineListViewModelTest {
     fun a_card_names_the_own_machine_joined_through_a_friend_s_with_the_account() =
         runTest {
             val on = signedInGym()
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
-            val olegs = Machine.new("Гакк-машина", OLEG.userId, t0)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME)
+            val olegs = Machine.new("Hack machine", OLEG.userId, t0)
             val (first, firstLink) = linkedCopy(olegs, ME.userId, t0)
             val (second, secondLink) = linkedCopy(olegs, ME.userId, t0)
             on.friends.machines += olegs
-            on.machines.upsert(first.copy(name = "Гакк"))
-            on.machines.upsert(second.copy(name = "Присед"))
+            on.machines.upsert(first.copy(name = "Hack squat"))
+            on.machines.upsert(second.copy(name = "Squat"))
             on.machineLinks.upsert(firstLink)
             on.machineLinks.upsert(secondLink)
             val vm = viewModel(on).also { it.load() }
@@ -394,8 +394,8 @@ class MachineListViewModelTest {
                     ?.single { it.id == first.id }
             assertEquals(
                 listOf(
-                    LinkedMachineUi(second.id, ME, "Присед", own = true),
-                    LinkedMachineUi(olegs.id, OLEG, "Гакк-машина"),
+                    LinkedMachineUi(second.id, ME, "Squat", own = true),
+                    LinkedMachineUi(olegs.id, OLEG, "Hack machine"),
                 ),
                 card?.linkedWith,
             )
@@ -445,14 +445,14 @@ class MachineListViewModelTest {
     fun a_switch_lists_the_other_account_s_machines() =
         runTest {
             gym.withAccounts(ivan, misha, active = ivan)
-            gym.machines.upsert(Machine.new("Жим ногами", ivan.account.userId, t0))
-            gym.machines.upsert(Machine.new("Тяга", misha.account.userId, t0))
+            gym.machines.upsert(Machine.new("Leg press", ivan.account.userId, t0))
+            gym.machines.upsert(Machine.new("Row", misha.account.userId, t0))
             val vm = viewModel().also { it.load() }
 
             gym.accounts.switchTo(misha.account.userId)
 
             assertEquals(
-                listOf("Тяга"),
+                listOf("Row"),
                 vm.state.value.own
                     ?.map { it.name },
             )
@@ -463,11 +463,11 @@ class MachineListViewModelTest {
         runTest {
             val vm = viewModel().also { it.load() }
 
-            gym.machines.upsert(Machine.new("Тяга", null, t0))
+            gym.machines.upsert(Machine.new("Row", null, t0))
             gym.sync.completePass()
 
             assertEquals(
-                listOf("Тяга"),
+                listOf("Row"),
                 vm.state.value.own
                     ?.map { it.name },
             )
@@ -480,7 +480,7 @@ class MachineListViewModelTest {
         val vm = viewModel(on).also { it.load() }
 
         assertEquals(
-            listOf(MachineCardUi(olegPress.id, "Жим ногами", null, emptyList(), "", null, null)),
+            listOf(MachineCardUi(olegPress.id, "Leg press", null, emptyList(), "", null, null)),
             vm.state.value.friends,
         )
         val section =
@@ -494,7 +494,7 @@ class MachineListViewModelTest {
     fun a_friend_s_machine_linked_to_an_own_one_is_not_listed() =
         runTest {
             val (on, olegPress) = olegsGym()
-            val mine = Machine.new("Жим", ME.userId, t0)
+            val mine = Machine.new("Press", ME.userId, t0)
             on.machines.upsert(mine)
             on.friends.links +=
                 MachineLink(MachineLinkId.random(), OLEG.userId, olegPress.id, mine.id, t0, false)
@@ -507,8 +507,8 @@ class MachineListViewModelTest {
     @Test
     fun a_machine_two_friends_linked_is_listed_once_as_the_original() {
         val on = signedInGym()
-        on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-        val olegPress = Machine.new("Жим ногами", OLEG.userId, t0)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+        val olegPress = Machine.new("Leg press", OLEG.userId, t0)
         val (pashaCopy, link) = linkedCopy(olegPress, PASHA.userId, t0)
         on.friends.machines += listOf(pashaCopy, olegPress)
         on.friends.links += link
@@ -526,8 +526,8 @@ class MachineListViewModelTest {
     fun friends_read_for_the_previous_account_are_dropped_on_a_switch() =
         runTest {
             val on = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
-            on.friends.group("Зал на Лесной", owner = OLEG, ME)
-            on.friends.machines += Machine.new("Жим ногами", OLEG.userId, t0)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME)
+            on.friends.machines += Machine.new("Leg press", OLEG.userId, t0)
             val vm = viewModel(on).also { it.load() }
             assertEquals(1, vm.state.value.friends.size)
 

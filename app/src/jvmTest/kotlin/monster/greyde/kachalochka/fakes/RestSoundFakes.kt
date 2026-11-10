@@ -33,6 +33,6 @@ class InstantRestSoundChooser(
         RestSoundLaunchers(
             pick = { onPicked(picked) },
             allowNotifications = { notificationAsks++ },
-            nameOf = { it ?: "По умолчанию" },
+            nameOf = { it ?: "Default" },
         )
 }

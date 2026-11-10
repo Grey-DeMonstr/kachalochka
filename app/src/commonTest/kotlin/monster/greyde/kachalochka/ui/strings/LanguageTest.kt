@@ -45,12 +45,14 @@ class LanguageTest {
 
     @Test
     fun the_app_s_strings_switch_as_a_whole() {
+        val before = AppStrings.current
+        val other = if (before === RuStrings) EnStrings else RuStrings
         try {
-            AppStrings.set(EnStrings)
-            assertSame(EnStrings, AppStrings.current)
+            AppStrings.set(other)
+            assertSame(other, AppStrings.current)
         } finally {
-            AppStrings.set(RuStrings)
+            AppStrings.set(before)
         }
-        assertSame(RuStrings, AppStrings.flow.value)
+        assertSame(before, AppStrings.flow.value)
     }
 }

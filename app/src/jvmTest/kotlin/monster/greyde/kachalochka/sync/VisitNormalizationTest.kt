@@ -29,8 +29,8 @@ import kotlin.time.Duration.Companion.hours
 class VisitNormalizationTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
-    private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan")
+    private val misha = session("22222222-2222-4222-8222-222222222222", "Misha")
     private val failures = mutableListOf<Throwable>()
 
     private fun session(
@@ -54,7 +54,7 @@ class VisitNormalizationTest {
     @Test
     fun the_anonymous_owner_s_prior_bests_are_refreshed_at_start() =
         runTest(UnconfinedTestDispatcher()) {
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             val first =
                 Visit(VisitId.random(), null, gym.today.plusDays(-2), t0 - 48.hours, t0, false)
             val latest = Visit(VisitId.random(), null, gym.today, t0, t0, false)
@@ -133,7 +133,7 @@ class VisitNormalizationTest {
                 Account(
                     sasha,
                     "",
-                    "Саша",
+                    "Sasha",
                     kind = AccountKind.Managed(ivan.account.userId, trainee = true),
                 ),
             )

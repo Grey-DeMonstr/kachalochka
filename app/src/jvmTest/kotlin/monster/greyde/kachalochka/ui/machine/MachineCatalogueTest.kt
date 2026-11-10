@@ -48,10 +48,10 @@ import kotlin.time.Duration.Companion.minutes
 class MachineCatalogueTest {
     private val gym = signedInGym()
     private val t0 = gym.clock.current
-    private val myPress = Machine.new("Жим ногами", ME.userId, t0)
+    private val myPress = Machine.new("Leg press", ME.userId, t0)
     private val olegCopy = linkedCopy(myPress, OLEG.userId, t0)
     private val olegPress = olegCopy.first
-    private val olegRow = Machine.new("Тяга", OLEG.userId, t0)
+    private val olegRow = Machine.new("Row", OLEG.userId, t0)
     private val catalogue = gym.catalogue
 
     /** Links whose writes after the first [kept] fail. */
@@ -65,9 +65,9 @@ class MachineCatalogueTest {
             }
         }
 
-    /** Олег shares a group with Иван; his copy of the press links to Иван's, his row to nothing. */
+    /** Oleg shares a group with Ivan; his press copy links to Ivan's, his row to nothing. */
     private suspend fun olegsGym() {
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         gym.friends.machines += listOf(olegPress, olegRow)
         gym.friends.links += olegCopy.second
         gym.machines.upsert(myPress)
@@ -80,7 +80,7 @@ class MachineCatalogueTest {
             val link =
                 MachineLink(MachineLinkId.random(), ME.userId, myPress.id, olegRow.id, t0, false)
             gym.machines.upsert(myPress)
-            gym.machines.upsert(Machine.new("Ушла", ME.userId, t0).copy(deleted = true))
+            gym.machines.upsert(Machine.new("Gone", ME.userId, t0).copy(deleted = true))
             gym.photos.upsert(photo)
             gym.machineLinks.upsert(link)
 
@@ -162,7 +162,7 @@ class MachineCatalogueTest {
     fun linked_rows_are_the_own_machines_of_the_cluster_then_the_friends_linked_ones() =
         runTest {
             olegsGym()
-            val squat = Machine.new("Гакк", ME.userId, t0)
+            val squat = Machine.new("Hack squat", ME.userId, t0)
             gym.machines.upsert(squat)
             gym.machineLinks.upsert(
                 MachineLink(MachineLinkId.random(), ME.userId, myPress.id, squat.id, t0, false),
@@ -179,8 +179,8 @@ class MachineCatalogueTest {
     @Test
     fun signed_out_own_linked_machines_are_linked_rows() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
-            val squat = Machine.new("Гакк", null, t0)
+            val press = Machine.new("Leg press", null, t0)
+            val squat = Machine.new("Hack squat", null, t0)
             gym.machines.upsert(press)
             gym.machines.upsert(squat)
             gym.machineLinks.upsert(
@@ -215,10 +215,10 @@ class MachineCatalogueTest {
             assertTrue(clusters.sameMachine(myPress.id, olegPress.id))
         }
 
-    /** Паша joins the group; his machine of his own links to [to]. */
+    /** Pasha joins the group; his machine of his own links to [to]. */
     private fun pashaLinksTo(to: Machine): Machine {
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-        val pashas = Machine.new("Платформа", PASHA.userId, t0)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+        val pashas = Machine.new("Platform", PASHA.userId, t0)
         gym.friends.machines += pashas
         gym.friends.links +=
             MachineLink(MachineLinkId.random(), PASHA.userId, pashas.id, to.id, t0, false)
@@ -307,7 +307,7 @@ class MachineCatalogueTest {
         runTest {
             olegsGym()
             val pashas = pashaLinksTo(olegRow)
-            val mine = Machine.new("Тяга", ME.userId, t0)
+            val mine = Machine.new("Row", ME.userId, t0)
             gym.machines.upsert(mine)
             val linking = gym.catalogueOver(failingLinks(kept = 1))
 
@@ -366,7 +366,7 @@ class MachineCatalogueTest {
             olegsGym()
             pashaLinksTo(olegPress)
             gym.friends.machines += myPress
-            val mine = Machine.new("Жим", PASHA.userId, t0)
+            val mine = Machine.new("Press", PASHA.userId, t0)
             gym.machines.upsert(mine)
             gym.machineLinks.upsert(
                 MachineLink(MachineLinkId.random(), PASHA.userId, mine.id, olegRow.id, t0, false),
@@ -405,13 +405,13 @@ class MachineCatalogueTest {
     fun a_taken_machine_keeps_the_friend_s_tags() =
         runTest {
             olegsGym()
-            gym.machines.upsert(myPress.copy(tags = setOf("ноги")))
-            val tagged = olegRow.copy(tags = setOf("ноги", "спина"))
+            gym.machines.upsert(myPress.copy(tags = setOf("legs")))
+            val tagged = olegRow.copy(tags = setOf("legs", "back"))
             gym.friends.machines.replaceAll { if (it.id == olegRow.id) tagged else it }
 
             val copy = catalogue.take(ME.userId, tagged, catalogue.group(ME.userId))
 
-            assertEquals(setOf("ноги", "спина"), gym.machines.byId(copy.id)?.tags)
+            assertEquals(setOf("legs", "back"), gym.machines.byId(copy.id)?.tags)
         }
 
     @Test
@@ -432,7 +432,7 @@ class MachineCatalogueTest {
 
             val own = catalogue.friendStandIn(ME.userId, olegRow.id, catalogue.group(ME.userId))
 
-            assertEquals("Тяга", own?.name)
+            assertEquals("Row", own?.name)
             assertEquals(own, own?.id?.let { gym.machines.byId(it) })
             assertTrue(own?.id to olegRow.id in linkedPairs())
             assertEquals(1, gym.sync.requests)
@@ -473,7 +473,7 @@ class MachineCatalogueTest {
         runTest {
             olegsGym()
             val pashas = pashaLinksTo(olegRow)
-            val mine = Machine.new("Тяга", ME.userId, t0)
+            val mine = Machine.new("Row", ME.userId, t0)
             gym.machines.upsert(mine)
             val group = catalogue.group(ME.userId)
 
@@ -488,7 +488,7 @@ class MachineCatalogueTest {
         runTest {
             olegsGym()
             pashaLinksTo(olegRow)
-            val mine = Machine.new("Тяга", ME.userId, t0)
+            val mine = Machine.new("Row", ME.userId, t0)
             gym.machines.upsert(mine)
 
             catalogue.link(ME.userId, mine.id, olegRow.id, group = null)
@@ -539,7 +539,7 @@ class MachineCatalogueTest {
             assertNull(catalogue.lastGroup(ME.userId))
             catalogue.group(ME.userId)
             gym.friends.offline = true
-            val mine = Machine.new("Тяга", ME.userId, t0)
+            val mine = Machine.new("Row", ME.userId, t0)
             gym.machines.upsert(mine)
             gym.machineLinks.upsert(
                 MachineLink(MachineLinkId.random(), ME.userId, mine.id, olegRow.id, t0, false),
@@ -577,10 +577,10 @@ class MachineCatalogueTest {
         adjust: Boolean = false,
     ) = catalogue.merge(owner, kept.id, removed.id, convert = convert, adjust = adjust)
 
-    /** Иван's second machine, read with the group so the last group read is in memory. */
+    /** Ivan's second machine, read with the group so the last group read is in memory. */
     private suspend fun mineWithGroupRead(): Machine {
         olegsGym()
-        val mine = Machine.new("Жим", ME.userId, t0)
+        val mine = Machine.new("Press", ME.userId, t0)
         gym.machines.upsert(mine)
         catalogue.group(ME.userId)
         return mine
@@ -642,8 +642,8 @@ class MachineCatalogueTest {
     @Test
     fun a_merge_moves_the_own_links_to_the_kept_machine_and_asks_for_one_sync() =
         runTest {
-            val removed = Machine.new("Жим", ME.userId, t0)
-            val kept = Machine.new("Жим лёжа", ME.userId, t0)
+            val removed = Machine.new("Press", ME.userId, t0)
+            val kept = Machine.new("Bench press", ME.userId, t0)
             gym.machines.upsert(removed)
             gym.machines.upsert(kept)
             val x = MachineId.random()
@@ -674,7 +674,7 @@ class MachineCatalogueTest {
     @Test
     fun merging_recomputes_the_kept_machine_s_prior_bests() =
         runTest {
-            val removed = Machine.new("Жим", ME.userId, t0)
+            val removed = Machine.new("Press", ME.userId, t0)
             gym.machines.upsert(removed)
             gym.machines.upsert(myPress)
             val first =
@@ -715,7 +715,7 @@ class MachineCatalogueTest {
     @Test
     fun a_merge_moves_the_removed_machine_s_sets_and_photos_to_the_kept_one() =
         runTest {
-            val removed = Machine.new("Жим", ME.userId, t0)
+            val removed = Machine.new("Press", ME.userId, t0)
             gym.machines.upsert(removed)
             gym.machines.upsert(myPress)
             val moved = set(removed)
@@ -743,7 +743,7 @@ class MachineCatalogueTest {
     @Test
     fun a_merge_converts_the_moved_sets_to_the_kept_machine_s_unit_when_asked() =
         runTest {
-            val removed = Machine.new("Жим", ME.userId, t0)
+            val removed = Machine.new("Press", ME.userId, t0)
             val kept = myPress.copy(unit = WeightUnit.Lb, weightStep = 5.0)
             gym.machines.upsert(removed)
             gym.machines.upsert(kept)
@@ -763,7 +763,7 @@ class MachineCatalogueTest {
     @Test
     fun a_merge_keeps_the_moved_sets_totals_under_the_kept_platform_when_asked() =
         runTest {
-            val removed = Machine.new("Жим", ME.userId, t0)
+            val removed = Machine.new("Press", ME.userId, t0)
             val kept = myPress.copy(platformWeight = 25.0)
             gym.machines.upsert(removed)
             gym.machines.upsert(kept)
@@ -783,7 +783,7 @@ class MachineCatalogueTest {
     @Test
     fun a_merge_writes_the_sets_then_the_links_and_the_machine_last() =
         runTest {
-            val removed = Machine.new("Жим", ME.userId, t0)
+            val removed = Machine.new("Press", ME.userId, t0)
             gym.machines.upsert(removed)
             gym.machines.upsert(myPress)
             gym.sets.upsert(set(removed))
@@ -822,7 +822,7 @@ class MachineCatalogueTest {
     fun a_merge_of_a_machine_that_is_gone_writes_nothing() =
         runTest {
             gym.machines.upsert(myPress)
-            val gone = Machine.new("Жим", ME.userId, t0).copy(deleted = true)
+            val gone = Machine.new("Press", ME.userId, t0).copy(deleted = true)
             gym.machines.upsert(gone)
 
             assertEquals(MergeOutcome.Gone, merge(ME.userId, kept = myPress, removed = gone))
@@ -839,7 +839,7 @@ class MachineCatalogueTest {
     @Test
     fun a_merge_for_an_account_no_longer_active_writes_nothing() =
         runTest {
-            val removed = Machine.new("Жим", ME.userId, t0)
+            val removed = Machine.new("Press", ME.userId, t0)
             gym.machines.upsert(removed)
             gym.machines.upsert(myPress)
             gym.withChild(childAccount(SASHA, IVAN_SESSION))
@@ -859,8 +859,8 @@ class MachineCatalogueTest {
     fun without_an_account_a_merge_stays_on_the_device() =
         runTest {
             val device = FakeGym()
-            val removed = Machine.new("Жим", null, t0)
-            val kept = Machine.new("Жим лёжа", null, t0)
+            val removed = Machine.new("Press", null, t0)
+            val kept = Machine.new("Bench press", null, t0)
             device.machines.upsert(removed)
             device.machines.upsert(kept)
 
@@ -909,16 +909,16 @@ class MachineCatalogueTest {
     @Test
     fun a_device_account_s_copy_keeps_the_tags_and_links_to_the_shown_machine() =
         runTest {
-            val sashas = myPress.copy(userId = SASHA.userId, tags = setOf("ноги", "спина"))
+            val sashas = myPress.copy(userId = SASHA.userId, tags = setOf("legs", "back"))
             gym.machines.upsert(sashas)
-            gym.machines.upsert(olegRow.copy(userId = ME.userId, tags = setOf("ноги")))
+            gym.machines.upsert(olegRow.copy(userId = ME.userId, tags = setOf("legs")))
 
             catalogue.ownCopy(ME.userId, sashas)
 
             val copy =
                 gym.machines.rows.values
                     .single { it.userId == ME.userId && it.name == myPress.name }
-            assertEquals(setOf("ноги", "спина"), copy.tags)
+            assertEquals(setOf("legs", "back"), copy.tags)
             val link =
                 gym.machineLinks.rows.values
                     .single()
@@ -931,8 +931,8 @@ class MachineCatalogueTest {
     fun a_device_account_s_copy_links_to_every_machine_the_shown_one_is_linked_with() =
         runTest {
             val sashas = myPress.copy(userId = SASHA.userId)
-            val sashasOld = Machine.new("Жим", SASHA.userId, t0)
-            val olegs = Machine.new("Платформа", OLEG.userId, t0)
+            val sashasOld = Machine.new("Press", SASHA.userId, t0)
+            val olegs = Machine.new("Platform", OLEG.userId, t0)
             gym.machines.upsert(sashas)
             gym.machines.upsert(sashasOld)
             gym.machineLinks.upsert(ownLink(SASHA.userId, sashas.id, olegs.id))
@@ -954,7 +954,7 @@ class MachineCatalogueTest {
     fun the_owner_s_machine_linked_with_the_shown_one_stands_in() =
         runTest {
             val sashas = myPress.copy(userId = SASHA.userId)
-            val platform = Machine.new("Платформа", ME.userId, t0)
+            val platform = Machine.new("Platform", ME.userId, t0)
             val press = myPress.copy(id = MachineId.random())
             gym.machines.upsert(sashas)
             gym.machines.upsert(platform)
@@ -969,7 +969,7 @@ class MachineCatalogueTest {
     fun an_own_link_also_joins_the_owner_s_machine_to_the_shown_one() =
         runTest {
             val sashas = myPress.copy(userId = SASHA.userId)
-            val platform = Machine.new("Платформа", ME.userId, t0)
+            val platform = Machine.new("Platform", ME.userId, t0)
             gym.machines.upsert(sashas)
             gym.machines.upsert(platform)
             gym.machineLinks.upsert(ownLink(ME.userId, platform.id, sashas.id))
@@ -981,7 +981,7 @@ class MachineCatalogueTest {
     fun the_owner_s_machine_of_the_same_name_in_any_letter_case_stands_in() =
         runTest {
             val sashas = myPress.copy(userId = SASHA.userId)
-            val mine = Machine.new("ЖИМ НОГАМИ", ME.userId, t0)
+            val mine = Machine.new("LEG PRESS", ME.userId, t0)
             gym.machines.upsert(sashas)
             gym.machines.upsert(mine)
 
@@ -992,7 +992,7 @@ class MachineCatalogueTest {
     @Test
     fun a_device_stand_in_writes_nothing() =
         runTest {
-            val sashas = Machine.new("Гакк", SASHA.userId, t0)
+            val sashas = Machine.new("Hack squat", SASHA.userId, t0)
             gym.machines.upsert(myPress)
             gym.machines.upsert(sashas)
 
@@ -1006,7 +1006,7 @@ class MachineCatalogueTest {
     @Test
     fun a_device_copy_stopped_while_writing_still_asks_for_a_sync() =
         runTest {
-            val sashas = Machine.new("Гакк", SASHA.userId, t0)
+            val sashas = Machine.new("Hack squat", SASHA.userId, t0)
             gym.machines.upsert(sashas)
             val stuck =
                 object : MachineLinkRepository by gym.machineLinks {
@@ -1028,7 +1028,7 @@ class MachineCatalogueTest {
     @Test
     fun a_device_copy_stopped_before_its_link_still_asks_for_a_sync() =
         runTest {
-            val sashas = Machine.new("Гакк", SASHA.userId, t0)
+            val sashas = Machine.new("Hack squat", SASHA.userId, t0)
             gym.machines.upsert(sashas)
             val stuck =
                 object : MachineRepository by gym.machines {
@@ -1063,9 +1063,9 @@ class MachineCatalogueTest {
     @Test
     fun a_device_copy_and_a_group_read_at_the_same_time_write_each_link_once() =
         runTest {
-            // Паша's rows are on the device too, as a second account's are.
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-            val pashas = Machine.new("Тяга", PASHA.userId, t0)
+            // Pasha's rows are on the device too, as a second account's are.
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+            val pashas = Machine.new("Row", PASHA.userId, t0)
             val pashaLink = ownLink(PASHA.userId, pashas.id, olegRow.id)
             gym.friends.machines += listOf(olegRow, pashas)
             gym.friends.links += pashaLink
@@ -1101,7 +1101,7 @@ class MachineCatalogueTest {
 
     private suspend fun linkedMine(): Pair<Machine, MachineLink> {
         olegsGym()
-        val mine = Machine.new("Тяга", ME.userId, t0)
+        val mine = Machine.new("Row", ME.userId, t0)
         gym.machines.upsert(mine)
         val link = ownLink(ME.userId, mine.id, olegRow.id)
         gym.machineLinks.upsert(link)
@@ -1143,8 +1143,8 @@ class MachineCatalogueTest {
     @Test
     fun signed_out_unlinking_deletes_the_own_links_without_the_server() =
         runTest {
-            val press = Machine.new("Жим ногами", null, t0)
-            val squat = Machine.new("Гакк", null, t0)
+            val press = Machine.new("Leg press", null, t0)
+            val squat = Machine.new("Hack squat", null, t0)
             gym.machines.upsert(press)
             gym.machines.upsert(squat)
             val link = MachineLink(MachineLinkId.random(), null, press.id, squat.id, t0, false)
@@ -1203,10 +1203,10 @@ class MachineCatalogueTest {
     @Test
     fun a_machine_with_a_live_set_another_owner_s_or_a_deleted_one_is_not_deleted() =
         runTest {
-            val gone = Machine.new("Ушла", ME.userId, t0).copy(deleted = true)
+            val gone = Machine.new("Gone", ME.userId, t0).copy(deleted = true)
             gym.machines.upsert(myPress)
             gym.machines.upsert(gone)
-            val recorded = Machine.new("Гакк", ME.userId, t0)
+            val recorded = Machine.new("Hack squat", ME.userId, t0)
             gym.machines.upsert(recorded)
             gym.sets.upsert(setOn(recorded))
             val requests = gym.sync.requests
@@ -1242,7 +1242,7 @@ class MachineCatalogueTest {
     fun another_device_account_s_machine_stands_in_as_the_owner_s_linked_one_without_a_write() =
         runTest {
             val sashas = myPress.copy(userId = SASHA.userId)
-            val platform = Machine.new("Платформа", ME.userId, t0)
+            val platform = Machine.new("Platform", ME.userId, t0)
             gym.machines.upsert(sashas)
             gym.machines.upsert(platform)
             gym.machineLinks.upsert(ownLink(SASHA.userId, sashas.id, platform.id))
@@ -1259,14 +1259,14 @@ class MachineCatalogueTest {
     @Test
     fun another_device_account_s_machine_without_an_own_one_stands_in_as_a_linked_copy() =
         runTest {
-            val sashas = myPress.copy(userId = SASHA.userId, tags = setOf("ноги"))
+            val sashas = myPress.copy(userId = SASHA.userId, tags = setOf("legs"))
             gym.machines.upsert(sashas)
 
             val found =
                 assertIs<StandIn.Found>(catalogue.standIn(ME.userId, PlacedMachine(sashas.id)))
 
             assertEquals(found.machine, gym.machines.all(ME.userId).single())
-            assertEquals(setOf("ноги"), found.machine.tags)
+            assertEquals(setOf("legs"), found.machine.tags)
             assertTrue(found.machine.id to sashas.id in linkedPairs())
             assertEquals(1, gym.sync.requests)
         }
@@ -1304,7 +1304,7 @@ class MachineCatalogueTest {
                 )
 
             assertEquals(1, gym.friends.reads)
-            assertEquals("Тяга", found.machine.name)
+            assertEquals("Row", found.machine.name)
             assertTrue(found.machine.id to olegRow.id in linkedPairs())
         }
 
@@ -1345,7 +1345,7 @@ class MachineCatalogueTest {
             assertEquals(0, device.friends.reads)
         }
 
-    /** Иван's stand-in waits on [gate] while Саша, his child, becomes active, then goes on. */
+    /** Ivan's stand-in waits on [gate] while Sasha, his child, becomes active, then goes on. */
     private suspend fun TestScope.switchedDuring(
         gate: CompletableDeferred<Unit>,
         placed: PlacedMachine,

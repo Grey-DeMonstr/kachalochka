@@ -144,16 +144,16 @@ class BodyFatViewModelTest {
         // The waist goes from 92 to 90 over 35 days; 28 of them have passed on 7 November.
         val before = navy(90.4)
         val latest = navy(90.0)
-        assertEquals("ВМС США", ui.title)
+        assertEquals("US Navy", ui.title)
         assertEquals(MeasurePeriod.Quarter, ui.period)
         assertEquals(listOf(lastWeek to before, today to latest), ui.points)
         assertEquals("${oneDecimal(latest)} %", ui.latest)
         assertEquals(measureDelta(latest, before), ui.change)
-        assertEquals("Последний замер: сегодня", ui.lastMeasured)
+        assertEquals("Last measured: today", ui.lastMeasured)
         assertEquals(
             listOf(
-                HistoryRowUi(today, "14 ноября", "${oneDecimal(latest)} %"),
-                HistoryRowUi(lastWeek, "7 ноября", "${oneDecimal(before)} %"),
+                HistoryRowUi(today, "14 November", "${oneDecimal(latest)} %"),
+                HistoryRowUi(lastWeek, "7 November", "${oneDecimal(before)} %"),
             ),
             ui.results,
         )
@@ -199,7 +199,7 @@ class BodyFatViewModelTest {
         assertNull(ui.latest)
         assertNull(ui.lastMeasured)
         assertTrue(ui.results.isEmpty())
-        assertEquals("Нужно: пол, вес, талия", ui.required)
+        assertEquals("Needs: sex, weight, waist", ui.required)
         assertTrue(ui.profileIncomplete)
     }
 
@@ -207,7 +207,7 @@ class BodyFatViewModelTest {
     fun a_formula_with_its_inputs_still_names_them() {
         val ui = viewModel(BodyFatMethod.Navy).ui
 
-        assertEquals("Нужно: пол, рост, талия, шея", ui.required)
+        assertEquals("Needs: sex, height, waist, neck", ui.required)
         assertFalse(ui.profileIncomplete)
     }
 

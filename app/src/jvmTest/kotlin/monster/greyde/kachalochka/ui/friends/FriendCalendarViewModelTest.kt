@@ -91,7 +91,7 @@ class FriendCalendarViewModelTest {
         vm.selectDay(CalendarDay(2023, 11, 13))
 
         assertEquals(
-            FriendDayUi("2 упражнения · 3 подхода", "Жим ногами, Тяга"),
+            FriendDayUi("2 machines · 3 sets", "Leg press, Row"),
             vm.state.value?.visit,
         )
     }
@@ -116,7 +116,7 @@ class FriendCalendarViewModelTest {
         assertFalse(vm.offline.value)
         assertEquals(listOf(fixture.yesterday), vm.state.value?.marked())
         assertEquals(
-            FriendDayUi("2 упражнения · 3 подхода", "Жим ногами, Тяга"),
+            FriendDayUi("2 machines · 3 sets", "Leg press, Row"),
             vm.state.value?.visit,
         )
     }

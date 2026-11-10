@@ -562,6 +562,7 @@ object RuStrings : Strings {
     override val themeDark = "Тёмная"
     override val language = "Язык"
     override val languageSystem = "Системный"
+    override val languageName = "Русский"
     override val animation = "Анимация"
     override val transitions = "Анимация переходов"
     override val transitionNone = "Без анимации"

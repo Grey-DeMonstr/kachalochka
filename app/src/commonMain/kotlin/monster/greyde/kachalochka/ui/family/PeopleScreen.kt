@@ -48,7 +48,7 @@ import monster.greyde.kachalochka.ui.settings.SettingsGroup
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 
-/** Every person the account is linked to, by how they are linked, with one "Добавить". */
+/** Every person the account is linked to, by how they are linked, with one "Add". */
 @Composable
 fun PeopleScreen(onBack: () -> Unit) {
     val viewModel: PeopleViewModel = koinViewModel()
@@ -327,7 +327,7 @@ private fun AddOption(
     }
 }
 
-/** The account's new code for a child or a trainee, with how to use it and "Поделиться". */
+/** The account's new code for a child or a trainee, with how to use it and "Share". */
 @Composable
 private fun OfferDialog(
     offer: CodeOffer,

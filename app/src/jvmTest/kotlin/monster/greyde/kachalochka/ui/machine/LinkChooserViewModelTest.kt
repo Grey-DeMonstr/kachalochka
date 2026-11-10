@@ -52,9 +52,9 @@ class LinkChooserViewModelTest {
     private lateinit var smith: Machine
 
     private fun machinesOf(owner: UserId?) {
-        press = Machine.new("Жим ногами", owner, t0)
-        duplicate = Machine.new("Жим ногами 2", owner, t0)
-        smith = Machine.new("Смит", owner, t0)
+        press = Machine.new("Leg press", owner, t0)
+        duplicate = Machine.new("Leg press 2", owner, t0)
+        smith = Machine.new("Smith", owner, t0)
         runBlocking { listOf(press, duplicate, smith).forEach { gym.machines.upsert(it) } }
     }
 
@@ -100,11 +100,11 @@ class LinkChooserViewModelTest {
         }
     }
 
-    /** Олег's machines: his copy of [press], linked to it, and one of his own. */
+    /** Oleg's machines: his copy of [press], linked to it, and one of his own. */
     private fun olegsMachines(): Pair<Machine, Machine> {
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         val (copy, link) = linkedCopy(press, OLEG.userId, t0)
-        val bench = Machine.new("Жим лёжа", OLEG.userId, t0)
+        val bench = Machine.new("Bench press", OLEG.userId, t0)
         gym.friends.machines += listOf(copy, bench)
         gym.friends.links += link
         return copy to bench
@@ -123,24 +123,24 @@ class LinkChooserViewModelTest {
     fun the_search_starts_with_the_machine_s_name_and_keeps_what_is_typed() {
         val vm = viewModel(query = null)
 
-        assertEquals("Жим ногами", vm.state.value.query)
+        assertEquals("Leg press", vm.state.value.query)
         assertEquals(
             listOf(duplicate.id),
             vm.state.value.own
                 .map { it.id },
         )
 
-        vm.onQueryChange("смит")
+        vm.onQueryChange("smith")
         vm.load()
 
-        assertEquals("смит", vm.state.value.query)
+        assertEquals("smith", vm.state.value.query)
     }
 
     @Test
     fun a_suggestion_starts_the_search_with_the_suggested_machine_s_name() {
-        val vm = viewModel(query = null, start = "Смит")
+        val vm = viewModel(query = null, start = "Smith")
 
-        assertEquals("Смит", vm.state.value.query)
+        assertEquals("Smith", vm.state.value.query)
         assertEquals(
             listOf(smith.id),
             vm.state.value.own
@@ -150,15 +150,15 @@ class LinkChooserViewModelTest {
 
     @Test
     fun a_friend_s_machine_reached_through_another_friend_s_is_linked_and_not_offered() {
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
         val (olegs, link) = linkedCopy(press, OLEG.userId, t0)
-        val pashas = Machine.new("Платформа", PASHA.userId, t0)
+        val pashas = Machine.new("Platform", PASHA.userId, t0)
         gym.friends.machines += listOf(olegs, pashas)
         gym.friends.links += link
         gym.friends.links +=
             MachineLink(MachineLinkId.random(), PASHA.userId, pashas.id, olegs.id, t0, false)
 
-        val vm = viewModel(query = null, start = "Платформа")
+        val vm = viewModel(query = null, start = "Platform")
 
         assertEquals(emptyList(), vm.state.value.friendGroups)
         val written =
@@ -171,7 +171,7 @@ class LinkChooserViewModelTest {
     fun choosing_a_friend_s_machine_links_this_one_to_its_whole_cluster() {
         val (_, bench) = olegsMachines()
         val (pashas, link) = linkedCopy(bench, PASHA.userId, t0)
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
         gym.friends.machines += pashas
         gym.friends.links += link
 
@@ -188,15 +188,15 @@ class LinkChooserViewModelTest {
 
     @Test
     fun a_search_finds_an_own_machine_by_the_name_of_a_linked_friend_s_one() {
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         val (olegs, link) = linkedCopy(smith, OLEG.userId, t0)
-        gym.friends.machines += olegs.copy(name = "Гакк-машина")
+        gym.friends.machines += olegs.copy(name = "Hack machine")
         gym.friends.links += link
 
-        val vm = viewModel(query = "гакк")
+        val vm = viewModel(query = "hack")
 
         assertEquals(
-            listOf(smith.id to listOf(LinkedMachineUi(olegs.id, OLEG, "Гакк-машина"))),
+            listOf(smith.id to listOf(LinkedMachineUi(olegs.id, OLEG, "Hack machine"))),
             vm.state.value.own
                 .map { it.id to it.linkedWith },
         )
@@ -223,7 +223,7 @@ class LinkChooserViewModelTest {
         assertEquals(
             ChooserRowUi(
                 duplicate.id,
-                "Жим ногами 2",
+                "Leg press 2",
                 weightCaption(duplicate, PreferredWeightUnit.Kg),
             ),
             state.own.first(),
@@ -238,7 +238,7 @@ class LinkChooserViewModelTest {
 
         val state = viewModel().state.value
 
-        assertEquals("lb всего · ±5.5", state.own.first().detail)
+        assertEquals("lb total · ±5.5", state.own.first().detail)
     }
 
     @Test
@@ -251,8 +251,8 @@ class LinkChooserViewModelTest {
             listOf(
                 ChooserRowUi(
                     bench.id,
-                    "Жим лёжа",
-                    "Олег · ${weightCaption(bench, PreferredWeightUnit.Kg)}",
+                    "Bench press",
+                    "Oleg · ${weightCaption(bench, PreferredWeightUnit.Kg)}",
                 ),
             ),
             friends,
@@ -262,10 +262,10 @@ class LinkChooserViewModelTest {
     @Test
     fun linked_friends_machines_are_each_offered_together() {
         val (_, bench) = olegsMachines()
-        val pashas = Machine.new("Жим на скамье", PASHA.userId, t0)
+        val pashas = Machine.new("Incline press", PASHA.userId, t0)
         val (olegsBench, link) = linkedCopy(bench, PASHA.userId, t0)
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-        gym.friends.machines += listOf(pashas, olegsBench.copy(name = "Скамья"))
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+        gym.friends.machines += listOf(pashas, olegsBench.copy(name = "Chest station"))
         gym.friends.links += link
 
         val groups = viewModel().state.value.friendGroups
@@ -280,12 +280,12 @@ class LinkChooserViewModelTest {
     fun a_search_keeps_a_whole_group_when_one_of_it_matches() {
         val (_, bench) = olegsMachines()
         val (pashasBench, link) = linkedCopy(bench, PASHA.userId, t0)
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-        gym.friends.machines += pashasBench.copy(name = "Скамья")
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+        gym.friends.machines += pashasBench.copy(name = "Chest station")
         gym.friends.links += link
         val vm = viewModel()
 
-        vm.onQueryChange("скамья")
+        vm.onQueryChange("chest")
 
         assertEquals(
             listOf(bench.id, pashasBench.id),
@@ -361,7 +361,7 @@ class LinkChooserViewModelTest {
         olegsMachines()
         val vm = viewModel()
 
-        vm.onQueryChange("жим")
+        vm.onQueryChange("press")
 
         assertEquals(
             listOf(duplicate.id),
@@ -369,12 +369,12 @@ class LinkChooserViewModelTest {
                 .map { it.id },
         )
         assertEquals(
-            listOf("Жим лёжа"),
+            listOf("Bench press"),
             vm.state.value.friends
                 ?.map { it.name },
         )
 
-        vm.onQueryChange("смит")
+        vm.onQueryChange("smith")
 
         assertEquals(
             listOf(smith.id),
@@ -418,18 +418,18 @@ class LinkChooserViewModelTest {
             MergeUi(
                 choices =
                     listOf(
-                        MergeChoiceUi(press.id, "Жим ногами", "0 подходов", suggested = false),
+                        MergeChoiceUi(press.id, "Leg press", "0 sets", suggested = false),
                         MergeChoiceUi(
                             duplicate.id,
-                            "Жим ногами 2",
-                            "1 подход · последний $lastDay",
+                            "Leg press 2",
+                            "1 set · last on $lastDay",
                             suggested = true,
                         ),
                     ),
                 kept = duplicate.id,
                 text =
-                    "Останется «Жим ногами 2», подходы «Жим ногами» перейдут к нему. " +
-                        "Это нельзя отменить.",
+                    "\"Leg press 2\" stays and the sets of \"Leg press\" move to it. " +
+                        "This cannot be undone.",
             ),
             vm.state.value.merge,
         )
@@ -470,8 +470,8 @@ class LinkChooserViewModelTest {
         vm.keep(duplicate.id)
 
         assertEquals(
-            "Останется «Жим ногами 2», подходы «Жим ногами» перейдут к нему. " +
-                "Это нельзя отменить.",
+            "\"Leg press 2\" stays and the sets of \"Leg press\" move to it. " +
+                "This cannot be undone.",
             vm.state.value.merge
                 ?.text,
         )
@@ -498,7 +498,7 @@ class LinkChooserViewModelTest {
 
         val merge = vm.state.value.merge!!
         assertEquals(
-            "Пересчитать подходы «Жим ногами 2» под платформу «Жим ногами»: −25 кг",
+            "Recalculate the sets of \"Leg press 2\" for the platform of \"Leg press\": −25 kg",
             merge.adjustText,
         )
         assertTrue(merge.adjust)
@@ -554,7 +554,7 @@ class LinkChooserViewModelTest {
         vm.chooseOwn(duplicate.id)
 
         val merge = vm.state.value.merge!!
-        assertEquals("Перевести подходы «Жим ногами 2» из кг в lb", merge.convertText)
+        assertEquals("Convert the sets of \"Leg press 2\" from kg to lb", merge.convertText)
         assertTrue(merge.convert)
         vm.confirmMerge {}
         assertEquals(
@@ -669,7 +669,7 @@ class LinkChooserViewModelTest {
         vm.chooseOwn(duplicate.id)
         vm.confirmMerge { done = true }
 
-        assertEquals("Нет связи с сервером", vm.state.value.error)
+        assertEquals("No connection to the server", vm.state.value.error)
         assertNull(vm.state.value.merge)
         assertEquals(false, done)
         assertEquals(

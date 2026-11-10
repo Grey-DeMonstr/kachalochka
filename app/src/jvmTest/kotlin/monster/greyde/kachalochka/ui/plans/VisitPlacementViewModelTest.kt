@@ -27,10 +27,10 @@ import kotlin.time.Duration.Companion.minutes
 class VisitPlacementViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val row = Machine.new("Тяга", null, t0)
-    private val curl = Machine.new("Сгибание рук", null, t0)
-    private val legs = Plan(PlanId.random(), null, "Ноги", listOf(row.id), t0, t0, false)
+    private val press = Machine.new("Leg press", null, t0)
+    private val row = Machine.new("Row", null, t0)
+    private val curl = Machine.new("Biceps curl", null, t0)
+    private val legs = Plan(PlanId.random(), null, "Legs", listOf(row.id), t0, t0, false)
     private val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false, listOf(curl.id))
 
     private fun set(
@@ -72,7 +72,7 @@ class VisitPlacementViewModelTest {
 
         vm.choosePlan(gym.today)
 
-        assertEquals(listOf(PlanChoiceUi(legs.id, "Ноги")), vm.state.value.choices)
+        assertEquals(listOf(PlanChoiceUi(legs.id, "Legs")), vm.state.value.choices)
     }
 
     @Test
@@ -90,7 +90,7 @@ class VisitPlacementViewModelTest {
         )
         assertNull(vm.state.value.choices)
         assertEquals(
-            VisitPlacementNoticeUi(gym.today, "Добавлено в «Ноги»"),
+            VisitPlacementNoticeUi(gym.today, "Added to “Legs”"),
             vm.state.value.notice,
         )
     }

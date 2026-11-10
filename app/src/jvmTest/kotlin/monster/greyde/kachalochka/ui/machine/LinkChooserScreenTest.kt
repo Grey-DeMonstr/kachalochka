@@ -23,16 +23,16 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalTestApi::class)
 class LinkChooserScreenTest {
     private val gym = signedInGym()
-    private val press = Machine.new("Жим ногами", ME.userId, gym.clock.current)
-    private val duplicate = Machine.new("Жим ногами 2", ME.userId, gym.clock.current)
-    private val bench = Machine.new("Жим лёжа", OLEG.userId, gym.clock.current)
+    private val press = Machine.new("Leg press", ME.userId, gym.clock.current)
+    private val duplicate = Machine.new("Leg press 2", ME.userId, gym.clock.current)
+    private val bench = Machine.new("Bench press", OLEG.userId, gym.clock.current)
 
     init {
         runBlocking {
             gym.machines.upsert(press)
             gym.machines.upsert(duplicate)
         }
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         gym.friends.machines += bench
     }
 
@@ -79,7 +79,7 @@ class LinkChooserScreenTest {
     @Test
     fun any_machine_of_a_linked_group_can_be_chosen() {
         val (pashas, link) = linkedCopy(bench, PASHA.userId, gym.clock.current)
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
         gym.friends.machines += pashas
         gym.friends.links += link
         var copyFrom: MachineId? = null

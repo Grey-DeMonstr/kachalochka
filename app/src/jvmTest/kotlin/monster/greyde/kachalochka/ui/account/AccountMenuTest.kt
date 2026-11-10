@@ -115,7 +115,7 @@ class AccountMenuTest {
         runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-${SASHA.userId.value}")
-                .assertTextContains("Ребёнок", substring = true)
+                .assertTextContains("Child", substring = true)
 
             onNodeWithTag("account-${SASHA.userId.value}").performClick()
             waitForIdle()

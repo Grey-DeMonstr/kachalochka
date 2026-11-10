@@ -23,10 +23,10 @@ class PlacementTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
     private val yesterday = gym.today.plusDays(-1)
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val row = Machine.new("Тяга", null, t0)
-    private val curl = Machine.new("Сгибание рук", null, t0)
-    private val legs = Plan(PlanId.random(), null, "Ноги", listOf(row.id), t0, t0, false)
+    private val press = Machine.new("Leg press", null, t0)
+    private val row = Machine.new("Row", null, t0)
+    private val curl = Machine.new("Biceps curl", null, t0)
+    private val legs = Plan(PlanId.random(), null, "Legs", listOf(row.id), t0, t0, false)
     private val visit =
         Visit(VisitId.random(), null, yesterday, t0 - 1.days, t0, false, listOf(curl.id))
 
@@ -83,7 +83,7 @@ class PlacementTest {
         runTest {
             seed()
 
-            assertEquals(listOf(PlanChoiceUi(legs.id, "Ноги")), placement.choices(null))
+            assertEquals(listOf(PlanChoiceUi(legs.id, "Legs")), placement.choices(null))
         }
 
     @Test

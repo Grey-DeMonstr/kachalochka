@@ -61,7 +61,7 @@ class LocalWorkoutSetRepositoryTest {
     @Test
     fun a_set_keeps_its_comment() =
         runTest {
-            val set = set(visitA, press, 0).copy(comment = "Тяжело")
+            val set = set(visitA, press, 0).copy(comment = "Heavy")
 
             repository.upsert(set)
 

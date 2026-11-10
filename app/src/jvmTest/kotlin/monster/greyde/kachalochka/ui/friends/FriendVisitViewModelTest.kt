@@ -17,7 +17,8 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.ui.machine.LinkedMachineUi
-import monster.greyde.kachalochka.ui.strings.inEnglish
+import monster.greyde.kachalochka.ui.strings.RuStrings
+import monster.greyde.kachalochka.ui.strings.inRussian
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -36,7 +37,7 @@ class FriendVisitViewModelTest {
     private fun viewModel(day: CalendarDay = fixture.yesterday) =
         FriendVisitViewModel(
             OLEG.userId,
-            "Олег",
+            "Oleg",
             day,
             gym.friends,
             gym.machineReads,
@@ -60,13 +61,13 @@ class FriendVisitViewModelTest {
     fun a_friend_s_visit_lists_their_machines_under_their_own_names() {
         val state = assertNotNull(viewModel().state.value)
 
-        assertEquals("Олег", state.title)
-        assertEquals("Понедельник, 13 ноября", state.day)
-        assertEquals("2 упражнения", state.countLabel)
+        assertEquals("Oleg", state.title)
+        assertEquals("Monday, 13 November", state.day)
+        assertEquals("2 machines", state.countLabel)
         assertEquals(
             listOf(
-                "Платформа" to listOf("80-85кг", "8-6"),
-                "Тяга" to listOf("45.5кг", "1x10"),
+                "Platform" to listOf("80-85kg", "8-6"),
+                "Row" to listOf("45.5kg", "1x10"),
             ),
             state.groups.map { it.title to it.summary },
         )
@@ -75,8 +76,8 @@ class FriendVisitViewModelTest {
     @Test
     fun a_friend_s_machine_names_the_viewer_s_and_other_friends_machines_linked_to_it() =
         runTest {
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-            val pashas = Machine.new("Жим", PASHA.userId, gym.clock.current)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+            val pashas = Machine.new("Press", PASHA.userId, gym.clock.current)
             gym.friends.machines += pashas
             gym.friends.links +=
                 MachineLink(
@@ -93,8 +94,8 @@ class FriendVisitViewModelTest {
             assertEquals(
                 listOf(
                     listOf(
-                        LinkedMachineUi(fixture.myPress.id, ME, "Жим ногами", own = true),
-                        LinkedMachineUi(pashas.id, PASHA, "Жим"),
+                        LinkedMachineUi(fixture.myPress.id, ME, "Leg press", own = true),
+                        LinkedMachineUi(pashas.id, PASHA, "Press"),
                     ),
                     emptyList(),
                 ),
@@ -105,8 +106,8 @@ class FriendVisitViewModelTest {
     @Test
     fun a_failed_group_read_shows_the_visit_with_the_last_group_read() =
         runTest {
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-            val pashas = Machine.new("Жим", PASHA.userId, gym.clock.current)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+            val pashas = Machine.new("Press", PASHA.userId, gym.clock.current)
             gym.friends.machines += pashas
             gym.friends.links +=
                 MachineLink(
@@ -125,8 +126,8 @@ class FriendVisitViewModelTest {
             assertFalse(vm.offline.value)
             assertEquals(
                 listOf(
-                    LinkedMachineUi(fixture.myPress.id, ME, "Жим ногами", own = true),
-                    LinkedMachineUi(pashas.id, PASHA, "Жим"),
+                    LinkedMachineUi(fixture.myPress.id, ME, "Leg press", own = true),
+                    LinkedMachineUi(pashas.id, PASHA, "Press"),
                 ),
                 vm.state.value
                     ?.groups
@@ -143,9 +144,12 @@ class FriendVisitViewModelTest {
         vm.enter()
         assertEquals(reads, gym.friends.reads)
 
-        inEnglish {
+        inRussian {
             vm.enter()
-            assertEquals("Monday, 13 November", vm.state.value?.day)
+            assertEquals(
+                "${RuStrings.weekday(1)}, ${RuStrings.dayMonth(13, 11)}",
+                vm.state.value?.day,
+            )
         }
     }
 
@@ -154,7 +158,7 @@ class FriendVisitViewModelTest {
         runTest {
             val vm = viewModel()
             vm.enter()
-            val myRow = Machine.new("Тяга верхнего блока", ME.userId, gym.clock.current)
+            val myRow = Machine.new("Lat pulldown", ME.userId, gym.clock.current)
             gym.machines.upsert(myRow)
             gym.machineLinks.upsert(
                 MachineLink(
@@ -198,7 +202,7 @@ class FriendVisitViewModelTest {
     @Test
     fun a_friend_s_machine_the_viewer_linked_to_names_the_viewer_s_machine() =
         runTest {
-            val myRow = Machine.new("Тяга верхнего блока", ME.userId, gym.clock.current)
+            val myRow = Machine.new("Lat pulldown", ME.userId, gym.clock.current)
             gym.machines.upsert(myRow)
             gym.machineLinks.upsert(
                 MachineLink(
@@ -214,7 +218,7 @@ class FriendVisitViewModelTest {
             val state = assertNotNull(viewModel().state.value)
 
             assertEquals(
-                listOf("Тяга" to listOf(LinkedMachineUi(myRow.id, ME, myRow.name, own = true))),
+                listOf("Row" to listOf(LinkedMachineUi(myRow.id, ME, myRow.name, own = true))),
                 state.groups.drop(1).map { it.title to it.linkedWith },
             )
         }
@@ -224,7 +228,7 @@ class FriendVisitViewModelTest {
         val state = assertNotNull(viewModel(day = gym.today).state.value)
 
         assertEquals(emptyList(), state.groups)
-        assertEquals("0 упражнений", state.countLabel)
+        assertEquals("0 machines", state.countLabel)
     }
 
     @Test
@@ -242,7 +246,7 @@ class FriendVisitViewModelTest {
 
         val state = assertNotNull(viewModel().state.value)
 
-        assertEquals("2 упражнения", state.countLabel)
+        assertEquals("2 machines", state.countLabel)
         assertEquals(2, state.groups.size)
         // The visits, each visit's sets once, the machines, the group read and the mates.
         assertEquals(6, gym.friends.reads)
@@ -260,7 +264,7 @@ class FriendVisitViewModelTest {
 
         val state = assertNotNull(viewModel(day = gym.today.plusDays(-3)).state.value)
 
-        assertEquals("1 упражнение", state.countLabel)
+        assertEquals("1 machine", state.countLabel)
     }
 
     @Test
@@ -275,7 +279,7 @@ class FriendVisitViewModelTest {
         first.complete(Unit)
 
         assertFalse(vm.offline.value)
-        assertEquals("2 упражнения", vm.state.value?.countLabel)
+        assertEquals("2 machines", vm.state.value?.countLabel)
     }
 
     @Test

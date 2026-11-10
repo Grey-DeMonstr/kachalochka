@@ -23,7 +23,7 @@ data class PlanChoiceUi(
     val title: String,
 )
 
-/** Asks "В какой план?" with [choices], then "Новый план". */
+/** Asks "Which plan?" with [choices], then "New plan". */
 @Composable
 internal fun PlanChoiceDialog(
     choices: List<PlanChoiceUi>,

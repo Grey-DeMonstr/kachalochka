@@ -37,9 +37,9 @@ import kotlin.time.Duration.Companion.milliseconds
 class PlanFormViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val row = Machine.new("Тяга", null, t0)
-    private val legs = Plan(PlanId.random(), null, "Ноги", listOf(press.id, row.id), t0, t0, false)
+    private val press = Machine.new("Leg press", null, t0)
+    private val row = Machine.new("Row", null, t0)
+    private val legs = Plan(PlanId.random(), null, "Legs", listOf(press.id, row.id), t0, t0, false)
 
     private val main = UnconfinedTestDispatcher()
 
@@ -71,12 +71,12 @@ class PlanFormViewModelTest {
     fun shown_again_it_shows_a_machine_as_its_form_left_it() =
         runTest {
             val vm = viewModel(legs.id)
-            gym.machines.upsert(press.copy(name = "Платформа"))
+            gym.machines.upsert(press.copy(name = "Platform"))
 
             vm.refresh()
 
             assertEquals(
-                listOf("Платформа", "Тяга"),
+                listOf("Platform", "Row"),
                 vm.state.value.rows
                     .map { it.name },
             )
@@ -86,13 +86,13 @@ class PlanFormViewModelTest {
     fun a_linked_friend_s_photo_stands_in_for_a_machine_without_one() =
         runTest {
             val signed = signedInGym()
-            val mine = Machine.new("Жим ногами", ME.userId, t0)
+            val mine = Machine.new("Leg press", ME.userId, t0)
             signed.machines.upsert(mine)
             signed.olegTrainedOn(mine, ME)
             val olegPress = signed.friends.machines.single { it.userId == OLEG.userId }
             val olegs = Photo.new(olegPress.id, OLEG.userId, t0)
             signed.friends.photos += olegs
-            val plan = Plan(PlanId.random(), ME.userId, "Ноги", listOf(mine.id), t0, t0, false)
+            val plan = Plan(PlanId.random(), ME.userId, "Legs", listOf(mine.id), t0, t0, false)
             signed.plans.upsert(plan)
 
             val vm = viewModel(plan.id, gym = signed)
@@ -210,14 +210,14 @@ class PlanFormViewModelTest {
     fun the_name_is_written_after_a_pause_in_typing() {
         val vm = viewModel(legs.id)
 
-        vm.typeName("Сп")
+        vm.typeName("Ba")
         main.scheduler.advanceTimeBy(NAME_PAUSE - 1.milliseconds)
-        vm.typeName("Спина")
+        vm.typeName("Back")
         main.scheduler.advanceTimeBy(NAME_PAUSE - 1.milliseconds)
-        assertEquals("Ноги", stored().name)
+        assertEquals("Legs", stored().name)
         main.scheduler.advanceTimeBy(2.milliseconds)
 
-        assertEquals("Спина", stored().name)
+        assertEquals("Back", stored().name)
         assertFalse(vm.state.value.done)
     }
 
@@ -225,7 +225,7 @@ class PlanFormViewModelTest {
     @Test
     fun an_account_change_made_without_a_switch_closes_the_form_without_writing() {
         val vm = viewModel(legs.id, held = HeldWrites())
-        vm.typeName("Спина")
+        vm.typeName("Back")
 
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
         main.scheduler.advanceTimeBy(NAME_PAUSE * 2)
@@ -238,12 +238,12 @@ class PlanFormViewModelTest {
     fun a_switch_writes_the_typed_name_first_wherever_it_comes_from() =
         runTest(main) {
             val vm = viewModel(legs.id)
-            vm.typeName("Спина")
+            vm.typeName("Back")
 
             gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
 
             assertTrue(vm.state.value.done)
-            assertEquals("Спина", stored().name)
+            assertEquals("Back", stored().name)
         }
 
     @Test
@@ -276,7 +276,7 @@ class PlanFormViewModelTest {
     @Test
     fun a_failed_write_on_leaving_still_closes_the_form() {
         val vm = viewModel(legs.id)
-        vm.typeName("Спина")
+        vm.typeName("Back")
         gym.plans.failure = IllegalStateException("refused")
 
         vm.leave()
@@ -338,7 +338,7 @@ class PlanFormViewModelTest {
     @Test
     fun an_added_machine_is_written_once_the_machines_are_read() =
         runTest {
-            val fresh = Machine.new("Гакк", null, t0)
+            val fresh = Machine.new("Hack squat", null, t0)
             val vm = viewModel(legs.id)
             gym.machines.upsert(fresh)
             val read = CompletableDeferred<Unit>()
@@ -354,7 +354,7 @@ class PlanFormViewModelTest {
     @Test
     fun an_added_machine_is_written_also_when_the_form_refreshes_at_once() =
         runTest {
-            val fresh = Machine.new("Гакк", null, t0)
+            val fresh = Machine.new("Hack squat", null, t0)
             val vm = viewModel(legs.id)
             gym.machines.upsert(fresh)
             val read = CompletableDeferred<Unit>()
@@ -371,28 +371,28 @@ class PlanFormViewModelTest {
     fun the_name_is_written_trimmed_when_committed_not_while_typed() {
         val vm = viewModel(legs.id)
 
-        vm.typeName("  Спина  ")
+        vm.typeName("  Back  ")
         assertEquals(legs, stored())
         vm.commitName()
 
-        assertEquals("Спина", stored().name)
+        assertEquals("Back", stored().name)
     }
 
     @Test
     fun leaving_writes_the_typed_name_and_closes_the_form() {
         val vm = viewModel(legs.id)
-        vm.typeName("Спина")
+        vm.typeName("Back")
 
         vm.leave()
 
-        assertEquals("Спина", stored().name)
+        assertEquals("Back", stored().name)
         assertTrue(vm.state.value.done)
     }
 
     @Test
     fun leaving_unchanged_writes_nothing() {
         val vm = viewModel(legs.id)
-        vm.typeName("Ноги ")
+        vm.typeName("Legs ")
         vm.commitName()
 
         vm.leave()
@@ -434,13 +434,13 @@ class PlanFormViewModelTest {
 
         vm.add(press.id)
         vm.add(row.id)
-        vm.typeName("Спина")
+        vm.typeName("Back")
         vm.leave()
         assertFalse(vm.state.value.done)
         write.complete(Unit)
 
         val written = newPlans().single()
-        assertEquals("Спина", written.name)
+        assertEquals("Back", written.name)
         assertEquals(listOf(press.id, row.id), written.machineIds)
         assertTrue(vm.state.value.done)
     }

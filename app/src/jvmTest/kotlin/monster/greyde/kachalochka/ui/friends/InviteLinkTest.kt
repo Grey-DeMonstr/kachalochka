@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.ui.friends
 
-import monster.greyde.kachalochka.ui.strings.inEnglish
+import monster.greyde.kachalochka.ui.strings.RuStrings
+import monster.greyde.kachalochka.ui.strings.inRussian
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -62,21 +63,22 @@ class InviteLinkTest {
     }
 
     @Test
-    fun the_invitation_is_written_in_english_too() =
-        inEnglish {
+    fun the_invitation_is_written_in_russian_too() =
+        inRussian {
+            val call = RuStrings.inviteMessage("Gym")
             assertEquals(
-                "Join the group \"Зал\" in Kachalochka\nCode: ABCD2345",
-                inviteText(Invite("Join the group \"Зал\" in Kachalochka", "ABCD2345", null)),
+                "$call\n${RuStrings.codeLine("ABCD2345")}",
+                inviteText(Invite(call, "ABCD2345", null)),
             )
         }
 
     @Test
     fun the_shared_text_carries_the_link_only_when_there_is_one() {
-        val call = "Вступай в группу «Зал» в Качалочке"
+        val call = "Join the group \"Gym\" in Kachalochka"
         assertEquals(
-            "$call: https://example.test/k/?join=ABCD2345\nКод: ABCD2345",
+            "$call: https://example.test/k/?join=ABCD2345\nCode: ABCD2345",
             inviteText(Invite(call, "ABCD2345", "https://example.test/k/?join=ABCD2345")),
         )
-        assertEquals("$call\nКод: ABCD2345", inviteText(Invite(call, "ABCD2345", null)))
+        assertEquals("$call\nCode: ABCD2345", inviteText(Invite(call, "ABCD2345", null)))
     }
 }

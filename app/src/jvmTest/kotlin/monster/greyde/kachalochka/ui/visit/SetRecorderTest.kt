@@ -25,8 +25,8 @@ class SetRecorderTest {
     private val today = gym.today
     private val seventh = CalendarDay(2023, 11, 7)
     private val timer = RestTimer(gym.clock)
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val row = Machine.new("Тяга", null, t0)
+    private val press = Machine.new("Leg press", null, t0)
+    private val row = Machine.new("Row", null, t0)
     private val lastWeek = Visit(VisitId.random(), null, seventh, t0 - 7.days, t0, false)
     private val lastWeekSet =
         WorkoutSet(
@@ -137,7 +137,7 @@ class SetRecorderTest {
             gym.visits.upsert(lastWeek)
             gym.sets.upsert(lastWeekSet)
 
-            recorder(seventh).record(null, press, SetValues(70.0, 8), "тяжело")
+            recorder(seventh).record(null, press, SetValues(70.0, 8), "heavy")
 
             val added =
                 gym.sets.rows.values
@@ -145,7 +145,7 @@ class SetRecorderTest {
             assertEquals(lastWeek.id, added.visitId)
             assertEquals(lastWeekSet.recordedAt + 1.seconds, added.recordedAt)
             assertEquals(2, added.position)
-            assertEquals("тяжело", added.comment)
+            assertEquals("heavy", added.comment)
             assertNull(timer.startedAt.value)
             assertEquals(1, gym.sync.requests)
         }
@@ -157,12 +157,12 @@ class SetRecorderTest {
             gym.visits.upsert(lastWeek)
             gym.sets.upsert(lastWeekSet)
 
-            recorder(seventh).amend(lastWeekSet, SetValues(65.0, 12), "легче")
+            recorder(seventh).amend(lastWeekSet, SetValues(65.0, 12), "lighter")
 
             val amended = gym.sets.rows.getValue(lastWeekSet.id)
             assertEquals(65.0, amended.weight)
             assertEquals(12, amended.reps)
-            assertEquals("легче", amended.comment)
+            assertEquals("lighter", amended.comment)
             assertEquals(lastWeekSet.recordedAt, amended.recordedAt)
             assertEquals(lastWeekSet.position, amended.position)
             assertEquals(t0, amended.updatedAt)
@@ -237,7 +237,7 @@ class SetRecorderTest {
         runTest {
             gym.machines.upsert(press)
             gym.machines.upsert(row)
-            val gone = Machine.new("Гакк", null, t0).copy(deleted = true)
+            val gone = Machine.new("Hack squat", null, t0).copy(deleted = true)
             gym.machines.upsert(gone)
             recorder().record(null, press, SetValues(60.0, 10), "")
 

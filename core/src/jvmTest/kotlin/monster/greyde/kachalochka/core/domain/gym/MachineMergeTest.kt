@@ -9,8 +9,8 @@ import kotlin.time.Instant
 
 class MachineMergeTest {
     private val ivan = UserId("11111111-1111-4111-8111-111111111111")
-    private val edited = Machine.new("Жим ногами", ivan, T0)
-    private val other = Machine.new("Жим ногами (2)", ivan, T0)
+    private val edited = Machine.new("Leg press", ivan, T0)
+    private val other = Machine.new("Leg press (2)", ivan, T0)
     private val now = T0 + 1.days
     private val friendsMachine = MachineId.random()
     private val anotherFriendsMachine = MachineId.random()

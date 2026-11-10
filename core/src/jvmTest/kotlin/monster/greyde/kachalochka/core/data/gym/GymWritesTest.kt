@@ -43,8 +43,8 @@ class GymWritesTest {
         }
     private val failures = mutableListOf<Throwable>()
     private val writes = GymWrites(visits, sets, machines, clock, { Duration.ZERO }, failures::add)
-    private val press = Machine.new("Жим ногами", ivan, t0)
-    private val row = Machine.new("Тяга", ivan, t0)
+    private val press = Machine.new("Leg press", ivan, t0)
+    private val row = Machine.new("Row", ivan, t0)
     private val first = visit(CalendarDay(2023, 11, 1))
     private val second = visit(CalendarDay(2023, 11, 2))
     private val third = visit(CalendarDay(2023, 11, 3))

@@ -106,7 +106,7 @@ data class BodyFatRoute(
 @Serializable
 object PlansRoute
 
-/** [machineId] null opens "Общая". */
+/** [machineId] null opens "Overall". */
 @Serializable
 data class StatisticsRoute(
     val machineId: String? = null,

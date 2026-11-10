@@ -32,6 +32,7 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import monster.greyde.kachalochka.ui.strings.AppStrings
+import monster.greyde.kachalochka.ui.strings.EnStrings
 import monster.greyde.kachalochka.ui.strings.RuStrings
 import monster.greyde.kachalochka.ui.theme.ThemeMode
 import kotlin.test.Test
@@ -51,7 +52,7 @@ class AppTest {
     @Test
     fun the_app_opens_on_home_with_the_sections_disabled() =
         runApp {
-            onNodeWithTag("top-bar-title").assertTextEquals("Качалочка")
+            onNodeWithTag("top-bar-title").assertTextEquals("Kachalochka")
             onNodeWithTag("top-bar-back").assertDoesNotExist()
             onNodeWithTag("section-plans").assertIsEnabled()
             onNodeWithTag("section-stats").assertIsEnabled()
@@ -66,7 +67,7 @@ class AppTest {
             onNodeWithTag("section-stats").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Статистика")
+            onNodeWithTag("top-bar-title").assertTextEquals("Statistics")
             onNodeWithTag("stats-choice").assertIsDisplayed()
         }
 
@@ -102,7 +103,7 @@ class AppTest {
         runApp {
             onNodeWithTag("section-measures").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Measurements")
             val weight = runBlocking { gym.measures.all(null) }.first()
             onNodeWithTag("new-measurement").performClick()
             waitForIdle()
@@ -110,9 +111,9 @@ class AppTest {
             onNodeWithTag("save-measurement").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Measurements")
             onNodeWithTag("measure-value-${weight.id.value}", useUnmergedTree = true)
-                .assertTextEquals("82.4 кг")
+                .assertTextEquals("82.4 kg")
         }
 
     @Test
@@ -123,18 +124,18 @@ class AppTest {
             val weight = runBlocking { gym.measures.all(null) }.first()
             onNodeWithTag("measure-row-${weight.id.value}").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Вес")
+            onNodeWithTag("top-bar-title").assertTextEquals("Weight")
 
             onNodeWithTag("edit-history").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Вес · история")
+            onNodeWithTag("top-bar-title").assertTextEquals("Weight · history")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Вес")
+            onNodeWithTag("top-bar-title").assertTextEquals("Weight")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Measurements")
         }
 
     @Test
@@ -144,12 +145,12 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("fat-NAVY").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("ВМС США")
+            onNodeWithTag("top-bar-title").assertTextEquals("US Navy")
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Measurements")
         }
 
     @Test
@@ -165,7 +166,7 @@ class AppTest {
         }
 
     @Test
-    fun english_chosen_in_settings_speaks_on_return_home() =
+    fun russian_chosen_in_settings_speaks_on_return_home() =
         try {
             runApp {
                 onNodeWithTag("account-avatar").performClick()
@@ -173,19 +174,19 @@ class AppTest {
                 waitForIdle()
                 onNodeWithTag("settings-language").performClick()
                 waitForIdle()
-                onNodeWithTag("language-english").performClick()
+                onNodeWithTag("language-russian").performClick()
                 waitForIdle()
-                onNodeWithTag("top-bar-title").assertTextEquals("Settings")
+                onNodeWithTag("top-bar-title").assertTextEquals(RuStrings.settings)
 
                 onNodeWithTag("top-bar-back").performClick()
                 waitForIdle()
-                onNodeWithTag("top-bar-title").assertTextEquals("Kachalochka")
-                onNodeWithTag("section-machines").assertTextEquals("Machines")
-                AppStrings.set(RuStrings)
+                onNodeWithTag("top-bar-title").assertTextEquals(RuStrings.appName)
+                onNodeWithTag("section-machines").assertTextEquals(RuStrings.machinesSection)
+                AppStrings.set(EnStrings)
                 waitForIdle()
             }
         } finally {
-            AppStrings.set(RuStrings)
+            AppStrings.set(EnStrings)
         }
 
     @Test
@@ -193,10 +194,10 @@ class AppTest {
         runApp {
             onNodeWithTag("open-today").performClick()
             waitForIdle()
-            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
+            onNodeWithTag("visit-title").assertTextEquals("Tuesday, 14 November")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("open-today").assertTextEquals("Начать")
+            onNodeWithTag("open-today").assertTextEquals("Start")
         }
 
     @Test
@@ -208,17 +209,17 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("add-visit").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("visit-title").assertTextEquals("Пятница, 10 ноября")
+            onNodeWithTag("visit-title").assertTextEquals("Friday, 10 November")
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Визиты")
+            onNodeWithTag("top-bar-title").assertTextEquals("Visits")
         }
 
     @Test
     fun picking_a_machine_from_the_visit_fills_the_sheet() {
-        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        val press = Machine.new("Leg press", null, gym.clock.current)
         runBlocking { gym.machines.upsert(press) }
         runApp {
             onNodeWithTag("open-today").performClick()
@@ -230,7 +231,7 @@ class AppTest {
             onNodeWithTag(
                 "page-machine-name",
                 useUnmergedTree = true,
-            ).assertTextEquals("Жим ногами")
+            ).assertTextEquals("Leg press")
         }
     }
 
@@ -241,18 +242,18 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("pick-machine").performClick()
             waitForIdle()
-            onNodeWithTag("machine-search").performTextInput("Гакк")
+            onNodeWithTag("machine-search").performTextInput("Hack squat")
             waitForIdle()
             onNodeWithTag("create-machine").performClick()
             waitForIdle()
-            onNodeWithTag("machine-name").assertTextContains("Гакк")
+            onNodeWithTag("machine-name").assertTextContains("Hack squat")
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
             onNodeWithTag(
                 "page-machine-name",
                 useUnmergedTree = true,
-            ).assertTextEquals("Гакк")
+            ).assertTextEquals("Hack squat")
         }
 
     @Test
@@ -264,16 +265,16 @@ class AppTest {
         runApp {
             onNodeWithTag("section-visits").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визиты")
+            onNodeWithTag("top-bar-title").assertTextEquals("Visits")
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
             onNodeWithTag("calendar-visit-${past.id.value}").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("visit-title").assertTextEquals("Воскресенье, 12 ноября")
+            onNodeWithTag("visit-title").assertTextEquals("Sunday, 12 November")
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визиты")
+            onNodeWithTag("top-bar-title").assertTextEquals("Visits")
         }
     }
 
@@ -307,30 +308,30 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("new-machine").performClick()
             waitForIdle()
-            onNodeWithTag("machine-name").performTextInput("Гакк")
+            onNodeWithTag("machine-name").performTextInput("Hack squat")
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
-            val gakk = runBlocking { gym.machines.all(null) }.single()
-            onNodeWithTag("machine-list-row-${gakk.id.value}").assertIsDisplayed()
+            onNodeWithTag("top-bar-title").assertTextEquals("Machines")
+            val hack = runBlocking { gym.machines.all(null) }.single()
+            onNodeWithTag("machine-list-row-${hack.id.value}").assertIsDisplayed()
         }
 
     @Test
     fun a_machine_edited_from_the_list_returns_to_it() {
-        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        val press = Machine.new("Leg press", null, gym.clock.current)
         runBlocking { gym.machines.upsert(press) }
         runApp {
             onNodeWithTag("section-machines").performClick()
             waitForIdle()
             onNodeWithTag("machine-list-row-${press.id.value}").performClick()
             waitForIdle()
-            onNodeWithTag("machine-name").assertTextContains("Жим ногами")
+            onNodeWithTag("machine-name").assertTextContains("Leg press")
             onNodeWithTag("weight-step").performScrollTo().performTextReplacement("10")
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
+            onNodeWithTag("top-bar-title").assertTextEquals("Machines")
             assertEquals(10.0, runBlocking { gym.machines.byId(press.id) }?.weightStep)
         }
     }
@@ -338,8 +339,8 @@ class AppTest {
     @Test
     fun a_machine_opened_from_a_plan_returns_to_it_as_edited() {
         val now = gym.clock.current
-        val press = Machine.new("Жим ногами", null, now)
-        val legs = Plan(PlanId.random(), null, "Ноги", listOf(press.id), now, now, false)
+        val press = Machine.new("Leg press", null, now)
+        val legs = Plan(PlanId.random(), null, "Legs", listOf(press.id), now, now, false)
         runBlocking {
             gym.machines.upsert(press)
             gym.plans.upsert(legs)
@@ -351,13 +352,13 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("plan-machine-${press.id.value}").performClick()
             waitForIdle()
-            onNodeWithTag("machine-name").assertTextContains("Жим ногами")
-            onNodeWithTag("machine-name").performTextReplacement("Платформа")
+            onNodeWithTag("machine-name").assertTextContains("Leg press")
+            onNodeWithTag("machine-name").performTextReplacement("Platform")
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("План")
-            onNodeWithText("Платформа").assertIsDisplayed()
+            onNodeWithTag("top-bar-title").assertTextEquals("Plan")
+            onNodeWithText("Platform").assertIsDisplayed()
             assertEquals(
                 listOf(press.id),
                 gym.plans.rows
@@ -367,11 +368,11 @@ class AppTest {
         }
     }
 
-    /** A new "Жим ногами" and its duplicate "Жим ногами старый", which has a set already. */
+    /** A new "Leg press" and its duplicate "Old leg press", which has a set already. */
     private fun duplicatePresses(): Pair<Machine, Machine> {
         val now = gym.clock.current
-        val press = Machine.new("Жим ногами", null, now)
-        val older = Machine.new("Жим ногами старый", null, now)
+        val press = Machine.new("Leg press", null, now)
+        val older = Machine.new("Old leg press", null, now)
         val used =
             WorkoutSet(
                 WorkoutSetId.random(),
@@ -417,7 +418,7 @@ class AppTest {
             onNodeWithTag(
                 "page-machine-name",
                 useUnmergedTree = true,
-            ).assertTextEquals("Жим ногами старый")
+            ).assertTextEquals("Old leg press")
         }
     }
 
@@ -436,10 +437,10 @@ class AppTest {
             onNodeWithTag("confirm-merge").performClick()
             waitForIdle()
 
-            onNodeWithTag("machine-name").assertTextContains("Жим ногами старый")
+            onNodeWithTag("machine-name").assertTextContains("Old leg press")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
+            onNodeWithTag("top-bar-title").assertTextEquals("Machines")
             onNodeWithTag("machine-list-row-${press.id.value}").assertDoesNotExist()
         }
     }
@@ -447,8 +448,8 @@ class AppTest {
     @Test
     fun a_friend_s_machine_taken_from_the_list_opens_as_the_own_copy() {
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val olegPress = Machine.new("Жим ногами", OLEG.userId, gym.clock.current)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME)
+        val olegPress = Machine.new("Leg press", OLEG.userId, gym.clock.current)
         gym.friends.machines += olegPress
         runApp {
             onNodeWithTag("section-machines").performClick()
@@ -458,10 +459,10 @@ class AppTest {
             onNodeWithTag("take-machine").performClick()
             waitForIdle()
 
-            onNodeWithTag("machine-name").assertTextContains("Жим ногами")
+            onNodeWithTag("machine-name").assertTextContains("Leg press")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
+            onNodeWithTag("top-bar-title").assertTextEquals("Machines")
             val copy = runBlocking { gym.machines.all(ME.userId) }.single()
             onNodeWithTag("machine-list-row-${copy.id.value}").assertIsDisplayed()
             onNodeWithTag("machine-list-friend-${olegPress.id.value}").assertDoesNotExist()
@@ -474,21 +475,21 @@ class AppTest {
         runApp {
             onNodeWithTag("section-friends").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Друзья")
+            onNodeWithTag("top-bar-title").assertTextEquals("Friends")
             onNodeWithTag("create-group").performClick()
             waitForIdle()
-            onNodeWithTag("group-dialog-field").performTextInput("Зал на Лесной")
+            onNodeWithTag("group-dialog-field").performTextInput("Forest Street Gym")
             onNodeWithTag("group-dialog-confirm").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Зал на Лесной")
+            onNodeWithTag("top-bar-title").assertTextEquals("Forest Street Gym")
         }
     }
 
     @Test
     fun leaving_a_group_updates_the_list_on_return() {
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         runApp {
             onNodeWithTag("section-friends").performClick()
             waitForIdle()
@@ -499,24 +500,24 @@ class AppTest {
             onNodeWithTag("group-confirm").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Друзья")
-            onNodeWithTag("groups-empty").assertTextEquals("Групп пока нет")
+            onNodeWithTag("top-bar-title").assertTextEquals("Friends")
+            onNodeWithTag("groups-empty").assertTextEquals("No groups yet")
         }
     }
 
     @Test
     fun a_stored_invite_asks_first_then_opens_its_group() {
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
-        gym.friends.group("Зал на Лесной", owner = OLEG, code = "ABCD2345")
+        gym.friends.group("Forest Street Gym", owner = OLEG, code = "ABCD2345")
         gym.joinCodes.save("ABCD2345")
         runApp {
             waitForIdle()
-            onNodeWithText("Вступить в группу по приглашению?").assertIsDisplayed()
-            onNodeWithText("Участники группы увидят ваши визиты и упражнения.").assertIsDisplayed()
+            onNodeWithText("Join the group from the invitation?").assertIsDisplayed()
+            onNodeWithText("Group members will see your visits and machines.").assertIsDisplayed()
             assertEquals(0, gym.friends.reads)
-            onNodeWithTag("invite-confirm").assertTextEquals("Вступить").performClick()
+            onNodeWithTag("invite-confirm").assertTextEquals("Join").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Зал на Лесной")
+            onNodeWithTag("top-bar-title").assertTextEquals("Forest Street Gym")
         }
         assertNull(gym.joinCodes.code())
     }
@@ -524,14 +525,14 @@ class AppTest {
     @Test
     fun a_declined_invite_joins_nothing_and_is_forgotten() {
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, code = "ABCD2345")
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, code = "ABCD2345")
         gym.joinCodes.save("ABCD2345")
         runApp {
             waitForIdle()
-            onNodeWithTag("invite-cancel").assertTextEquals("Отмена").performClick()
+            onNodeWithTag("invite-cancel").assertTextEquals("Cancel").performClick()
             waitForIdle()
             onNodeWithTag("invite-confirm").assertDoesNotExist()
-            onNodeWithTag("top-bar-title").assertTextEquals("Качалочка")
+            onNodeWithTag("top-bar-title").assertTextEquals("Kachalochka")
         }
         assertNull(gym.joinCodes.code())
         assertEquals(listOf(OLEG), gym.friends.members.getValue(group.id))
@@ -574,7 +575,7 @@ class AppTest {
             onNodeWithTag("guardian-invite-confirm").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Люди")
+            onNodeWithTag("top-bar-title").assertTextEquals("People")
             onNodeWithTag("people-guardians").assertExists()
         }
         assertEquals(listOf(IVAN_MEMBER.userId to PAPA.userId), signed.family.links)
@@ -625,14 +626,14 @@ class AppTest {
     @Test
     fun a_started_plan_opens_today_s_visit_and_back_returns_home() =
         runApp {
-            val press = Machine.new("Жим ногами", null, gym.clock.current)
+            val press = Machine.new("Leg press", null, gym.clock.current)
             runBlocking {
                 gym.machines.upsert(press)
                 gym.plans.upsert(
                     Plan(
                         PlanId.random(),
                         null,
-                        "Ноги",
+                        "Legs",
                         listOf(press.id),
                         gym.clock.current,
                         gym.clock.current,
@@ -642,13 +643,13 @@ class AppTest {
             }
             onNodeWithTag("section-plans").performClick()
             waitForIdle()
-            onNodeWithText("Начать").performClick()
+            onNodeWithText("Start").performClick()
             waitForIdle()
             onNodeWithTag("confirm-start-plan").performClick()
             waitForIdle()
 
-            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
-            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Запланировано")
+            onNodeWithTag("visit-title").assertTextEquals("Tuesday, 14 November")
+            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Planned")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
             onNodeWithTag("open-today").assertIsDisplayed()
@@ -656,7 +657,7 @@ class AppTest {
 
     private fun pastVisitWithPress(): Pair<Visit, Machine> {
         val now = gym.clock.current
-        val press = Machine.new("Жим ногами", null, now)
+        val press = Machine.new("Leg press", null, now)
         val past =
             Visit(VisitId.random(), null, CalendarDay(2023, 11, 12), now - 2.days, now, false)
         val set =
@@ -695,11 +696,11 @@ class AppTest {
             onNodeWithTag("repeat-today").performClick()
             waitForIdle()
 
-            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
-            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Запланировано")
+            onNodeWithTag("visit-title").assertTextEquals("Tuesday, 14 November")
+            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Planned")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("visit-title").assertTextEquals("Воскресенье, 12 ноября")
+            onNodeWithTag("visit-title").assertTextEquals("Sunday, 12 November")
         }
     }
 
@@ -716,16 +717,16 @@ class AppTest {
             onNodeWithTag("repeat-today-${past.id.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
-            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Запланировано")
+            onNodeWithTag("visit-title").assertTextEquals("Tuesday, 14 November")
+            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Planned")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Визиты")
+            onNodeWithTag("top-bar-title").assertTextEquals("Visits")
         }
     }
 
     private fun savedPress(): Machine {
-        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        val press = Machine.new("Leg press", null, gym.clock.current)
         runBlocking { gym.machines.upsert(press) }
         return press
     }
@@ -743,11 +744,11 @@ class AppTest {
             onNodeWithTag("machine-to-today").performClick()
             waitForIdle()
 
-            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
-            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Запланировано")
+            onNodeWithTag("visit-title").assertTextEquals("Tuesday, 14 November")
+            onNodeWithTag("group-summary-${press.id.value}").assertTextEquals("Planned")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("machine-name").assertTextContains("Жим ногами")
+            onNodeWithTag("machine-name").assertTextContains("Leg press")
         }
     }
 
@@ -766,11 +767,11 @@ class AppTest {
             onNodeWithTag("plan-choice-new").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("План")
+            onNodeWithTag("top-bar-title").assertTextEquals("Plan")
             onNodeWithTag("plan-machine-${press.id.value}").assertIsDisplayed()
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("machine-name").assertTextContains("Жим ногами")
+            onNodeWithTag("machine-name").assertTextContains("Leg press")
         }
         assertEquals(listOf(press.id), runBlocking { gym.plans.all(null) }.single().machineIds)
     }
@@ -778,8 +779,8 @@ class AppTest {
     @Test
     fun today_from_a_friend_s_machine_plans_the_account_s_copy_and_back_returns_to_it() {
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val olegPress = Machine.new("Жим ногами", OLEG.userId, gym.clock.current)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME)
+        val olegPress = Machine.new("Leg press", OLEG.userId, gym.clock.current)
         gym.friends.machines += olegPress
         runApp {
             onNodeWithTag("section-machines").performClick()
@@ -792,10 +793,10 @@ class AppTest {
             waitForIdle()
 
             val copy = runBlocking { gym.machines.all(ME.userId) }.single()
-            onNodeWithTag("group-summary-${copy.id.value}").assertTextEquals("Запланировано")
+            onNodeWithTag("group-summary-${copy.id.value}").assertTextEquals("Planned")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Упражнение друга")
+            onNodeWithTag("top-bar-title").assertTextEquals("Friend's machine")
             onNodeWithTag("take-machine").assertDoesNotExist()
         }
     }
@@ -803,7 +804,7 @@ class AppTest {
     @Test
     fun a_machine_picked_for_a_new_plan_lands_in_its_form() =
         runApp {
-            val press = Machine.new("Жим ногами", null, gym.clock.current)
+            val press = Machine.new("Leg press", null, gym.clock.current)
             runBlocking { gym.machines.upsert(press) }
             onNodeWithTag("section-plans").performClick()
             waitForIdle()
@@ -815,11 +816,11 @@ class AppTest {
             onNodeWithTag("machine-row-${press.id.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("План")
+            onNodeWithTag("top-bar-title").assertTextEquals("Plan")
             onNodeWithTag("plan-machine-${press.id.value}").assertIsDisplayed()
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Планы")
+            onNodeWithTag("top-bar-title").assertTextEquals("Plans")
             onNodeWithTag("plan-row-${runBlocking { gym.plans.all(null) }.single().id.value}")
                 .assertIsDisplayed()
         }
@@ -833,14 +834,14 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("plan-add-machine").performClick()
             waitForIdle()
-            onNodeWithTag("machine-search").performTextInput("Гакк")
+            onNodeWithTag("machine-search").performTextInput("Hack squat")
             waitForIdle()
             onNodeWithTag("create-machine").performClick()
             waitForIdle()
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("План")
+            onNodeWithTag("top-bar-title").assertTextEquals("Plan")
             val created = runBlocking { gym.machines.all(null) }.single()
             onNodeWithTag("plan-machine-${created.id.value}").assertIsDisplayed()
         }
@@ -851,13 +852,13 @@ class AppTest {
         runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
             onNodeWithTag("section-measures").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Замеры")
+            onNodeWithTag("top-bar-title").assertTextEquals("Measurements")
 
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-${SASHA.userId.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Качалочка")
+            onNodeWithTag("top-bar-title").assertTextEquals("Kachalochka")
             onNodeWithTag("section-measures").assertDoesNotExist()
         }
     }
@@ -876,7 +877,7 @@ class AppTest {
             onNodeWithTag("account-${SASHA.userId.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Качалочка")
+            onNodeWithTag("top-bar-title").assertTextEquals("Kachalochka")
             onNodeWithTag("section-measures").assertDoesNotExist()
         }
     }
@@ -884,8 +885,8 @@ class AppTest {
     @Test
     fun switching_to_a_managed_child_closes_a_friend_s_machine() {
         val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
-        signed.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val olegPress = Machine.new("Жим ногами", OLEG.userId, signed.clock.current)
+        signed.friends.group("Forest Street Gym", owner = OLEG, ME)
+        val olegPress = Machine.new("Leg press", OLEG.userId, signed.clock.current)
         signed.friends.machines += olegPress
         runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
             onNodeWithTag("section-machines").performClick()
@@ -899,14 +900,14 @@ class AppTest {
             waitForIdle()
 
             onNodeWithTag("take-machine").assertDoesNotExist()
-            onNodeWithTag("top-bar-title").assertTextEquals("Упражнения")
+            onNodeWithTag("top-bar-title").assertTextEquals("Machines")
         }
     }
 
     @Test
     fun switching_to_a_managed_child_closes_a_friend_s_visit() {
         val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
-        signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+        signed.friends.group("Forest Street Gym", owner = OLEG, ME)
         val t0 = signed.clock.current
         signed.friends.visits +=
             Visit(VisitId.random(), OLEG.userId, signed.today, t0 - 2.hours, t0, false)
@@ -917,13 +918,13 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("friend-visit-${OLEG.userId.value}").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextContains("Олег")
+            onNodeWithTag("top-bar-title").assertTextContains("Oleg")
 
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-${SASHA.userId.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Визиты")
+            onNodeWithTag("top-bar-title").assertTextEquals("Visits")
         }
     }
 
@@ -931,7 +932,7 @@ class AppTest {
     fun a_kept_group_invite_waits_while_a_managed_child_is_active() {
         val signed = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
         runBlocking { signed.accounts.switchTo(SASHA.userId) }
-        signed.friends.group("Зал на Лесной", owner = OLEG, code = "ABCD2345")
+        signed.friends.group("Forest Street Gym", owner = OLEG, code = "ABCD2345")
         signed.joinCodes.save("ABCD2345")
         runNavigationUiTest(content = { TestKoin(signed) { App() } }) {
             waitForIdle()
@@ -973,7 +974,7 @@ class AppTest {
             waitForIdle()
             onNodeWithTag("settings-people").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Люди")
+            onNodeWithTag("top-bar-title").assertTextEquals("People")
 
             onNodeWithTag("account-avatar").performClick()
             onNodeWithTag("account-${SASHA.userId.value}").performClick()

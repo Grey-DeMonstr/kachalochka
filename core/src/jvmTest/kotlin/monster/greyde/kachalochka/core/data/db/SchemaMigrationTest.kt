@@ -100,11 +100,11 @@ class SchemaMigrationTest {
         )
         exec(
             "INSERT INTO machine(id, name, weight_mode, unit, weight_step, updated_at) " +
-                "VALUES ('gravitron', 'Гравитрон', 'counterweight', 'kg', 2.5, 7)",
+                "VALUES ('gravitron', 'Gravitron', 'counterweight', 'kg', 2.5, 7)",
         )
         exec(
             "INSERT INTO machine(id, name, weight_mode, unit, weight_step, updated_at) " +
-                "VALUES ('press', 'Жим ногами', 'per_side', 'lb', 5, 7)",
+                "VALUES ('press', 'Leg press', 'per_side', 'lb', 5, 7)",
         )
 
         KachalochkaDatabase.Schema.migrate(driver, 2, 3)
@@ -240,11 +240,11 @@ class SchemaMigrationTest {
     @Test
     fun a_version_3_profile_reads_back_whole_on_the_current_schema() {
         val owner = UserId("11111111-1111-4111-8111-111111111111")
-        val profile = Profile(ProfileId(owner.value), owner, "Иван", at(7), false)
+        val profile = Profile(ProfileId(owner.value), owner, "Ivan", at(7), false)
         version3VisitTables()
         exec(
             "INSERT INTO profile(id, user_id, display_name, updated_at) " +
-                "VALUES ('${owner.value}', '${owner.value}', 'Иван', 7)",
+                "VALUES ('${owner.value}', '${owner.value}', 'Ivan', 7)",
         )
 
         KachalochkaDatabase.Schema.migrate(driver, 3, KachalochkaDatabase.Schema.version)
@@ -280,14 +280,14 @@ class SchemaMigrationTest {
         )
         exec(
             "INSERT INTO machine(id, name, weight_mode, unit, weight_step, updated_at, " +
-                "unit_label) VALUES ('press', 'Жим ногами', 'total', 'custom', 5, 7, 'плитка')",
+                "unit_label) VALUES ('press', 'Leg press', 'total', 'custom', 5, 7, 'plate')",
         )
         exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
 
         KachalochkaDatabase.Schema.migrate(driver, 4, 5)
 
         assertEquals(null, text("SELECT link_id FROM machine WHERE id = 'press'"))
-        assertEquals("плитка", text("SELECT unit_label FROM machine WHERE id = 'press'"))
+        assertEquals("plate", text("SELECT unit_label FROM machine WHERE id = 'press'"))
         assertEquals(7L, number("SELECT updated_at FROM machine WHERE id = 'press'"))
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
@@ -298,7 +298,7 @@ class SchemaMigrationTest {
         version5ProfileTable()
         exec(
             "INSERT INTO profile(id, user_id, display_name, updated_at) " +
-                "VALUES ('ivan', 'ivan', 'Иван', 7)",
+                "VALUES ('ivan', 'ivan', 'Ivan', 7)",
         )
         exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
 
@@ -308,7 +308,7 @@ class SchemaMigrationTest {
         assertEquals(null, text("SELECT sex FROM profile WHERE id = 'ivan'"))
         assertEquals(null, number("SELECT birth_year FROM profile WHERE id = 'ivan'"))
         assertEquals(null, text("SELECT height_cm FROM profile WHERE id = 'ivan'"))
-        assertEquals("Иван", text("SELECT display_name FROM profile WHERE id = 'ivan'"))
+        assertEquals("Ivan", text("SELECT display_name FROM profile WHERE id = 'ivan'"))
         assertEquals(7L, number("SELECT updated_at FROM profile WHERE id = 'ivan'"))
         assertEquals(null, number("SELECT lastPullAt FROM syncState WHERE user_id = 'ivan'"))
     }
@@ -351,7 +351,7 @@ class SchemaMigrationTest {
 
         exec(
             "INSERT INTO measure(id, user_id, name, updated_at) " +
-                "VALUES ('neck', 'ivan', 'Шея', 7)",
+                "VALUES ('neck', 'ivan', 'Neck', 7)",
         )
         exec(
             "INSERT INTO measurement(id, user_id, measure_id, day, value, updated_at) " +
@@ -381,7 +381,7 @@ class SchemaMigrationTest {
         version8ProfileTable()
         exec(
             "INSERT INTO profile(id, user_id, display_name, updated_at, friend_colors, sex, " +
-                "birth_year, height_cm) VALUES ('${owner.value}', '${owner.value}', 'Иван', 7, " +
+                "birth_year, height_cm) VALUES ('${owner.value}', '${owner.value}', 'Ivan', 7, " +
                 "'{}', 'male', 1990, 180.5)",
         )
         exec(
@@ -396,7 +396,7 @@ class SchemaMigrationTest {
             Profile(
                 ProfileId(owner.value),
                 owner,
-                "Иван",
+                "Ivan",
                 at(7),
                 false,
                 sex = Sex.Male,
@@ -428,7 +428,7 @@ class SchemaMigrationTest {
         version9ProfileTable()
         exec(
             "INSERT INTO profile(id, user_id, display_name, updated_at, friend_colors, sex, " +
-                "birth_date, height_cm) VALUES ('${owner.value}', '${owner.value}', 'Иван', 7, " +
+                "birth_date, height_cm) VALUES ('${owner.value}', '${owner.value}', 'Ivan', 7, " +
                 "'{}', 'male', '1990-06-15', 180.5)",
         )
         exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
@@ -440,7 +440,7 @@ class SchemaMigrationTest {
             Profile(
                 ProfileId(owner.value),
                 owner,
-                "Иван",
+                "Ivan",
                 at(7),
                 false,
                 sex = Sex.Male,
@@ -505,7 +505,7 @@ class SchemaMigrationTest {
         version12ProfileTable()
         exec(
             "INSERT INTO machine(id, name, weight_mode, unit, weight_step, updated_at) " +
-                "VALUES ('press', 'Жим', 'total', 'kg', 2.5, 1)",
+                "VALUES ('press', 'Press', 'total', 'kg', 2.5, 1)",
         )
         exec("INSERT INTO profile(id, updated_at) VALUES ('me', 1)")
         exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
@@ -594,7 +594,7 @@ class SchemaMigrationTest {
         exec("ALTER TABLE machine ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'")
         exec(
             "INSERT INTO machine(id, name, weight_mode, unit, weight_step, updated_at) " +
-                "VALUES ('press', 'Жим', 'total', 'kg', 2.5, 1)",
+                "VALUES ('press', 'Press', 'total', 'kg', 2.5, 1)",
         )
         exec("INSERT INTO syncState(user_id, lastPullAt) VALUES ('ivan', 9)")
 
@@ -655,18 +655,18 @@ class SchemaMigrationTest {
         dropNewerTables()
         exec(
             "INSERT INTO machine(id, user_id, name, weight_mode, unit, weight_step, updated_at, " +
-                "tags) VALUES ('${PRESS.value}', '${owner.value}', 'Жим', 'total', 'kg', " +
-                "2.5, 1, '[\"Ноги\", \" Жим  лёжа \"]')",
+                "tags) VALUES ('${PRESS.value}', '${owner.value}', 'Press', 'total', 'kg', " +
+                "2.5, 1, '[\"Legs\", \" Bench  press \"]')",
         )
         exec(
             "INSERT INTO machine(id, user_id, name, weight_mode, unit, weight_step, updated_at, " +
-                "deleted, tags) VALUES ('${gone.value}', '${owner.value}', 'Тяга', 'total', " +
-                "'kg', 2.5, 1, 1, '[\"ноги\", \"Спина\"]')",
+                "deleted, tags) VALUES ('${gone.value}', '${owner.value}', 'Row', 'total', " +
+                "'kg', 2.5, 1, 1, '[\"legs\", \"Back\"]')",
         )
         exec(
             "INSERT INTO machine(id, user_id, name, weight_mode, unit, weight_step, updated_at, " +
-                "tags) VALUES ('${pushed.value}', '${owner.value}', 'Присед', 'total', 'kg', " +
-                "2.5, 1, '[\"ноги\"]')",
+                "tags) VALUES ('${pushed.value}', '${owner.value}', 'Squat', 'total', 'kg', " +
+                "2.5, 1, '[\"legs\"]')",
         )
         listOf(PRESS, gone).forEach {
             exec(
@@ -682,9 +682,9 @@ class SchemaMigrationTest {
 
         fun tag(name: String) =
             database.tagQueries.byId(tagId(owner, name), ::tagOf).executeAsOneOrNull()
-        assertEquals(Tag(tagId(owner, "ноги"), owner, "ноги", at(5), false), tag("ноги"))
-        assertEquals(false, tag("жим лёжа")?.deleted)
-        assertEquals(null, tag("спина"))
+        assertEquals(Tag(tagId(owner, "legs"), owner, "legs", at(5), false), tag("legs"))
+        assertEquals(false, tag("bench press")?.deleted)
+        assertEquals(null, tag("back"))
         assertEquals(
             listOf(false, false),
             database.machineTagQueries

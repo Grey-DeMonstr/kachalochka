@@ -20,7 +20,6 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.family.childAccount
 import kotlin.test.Test
@@ -46,7 +45,7 @@ class HomeScreenTest {
     fun the_home_screen_names_the_app_version() {
         assertTrue(Regex("""\d+\.\d+\.\d+""").matches(AppVersion.NAME), AppVersion.NAME)
         runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}) }) {
-            onNodeWithTag("app-version").assertTextEquals("Версия ${AppVersion.NAME}")
+            onNodeWithTag("app-version").assertTextEquals("Version ${AppVersion.NAME}")
         }
     }
 
@@ -64,7 +63,7 @@ class HomeScreenTest {
 
             tapVersion()
             onNodeWithTag("network-link")
-                .assertTextEquals("Сеть")
+                .assertTextEquals("Network")
                 .performSemanticsAction(OnClick)
             waitForIdle()
         }
@@ -73,7 +72,7 @@ class HomeScreenTest {
 
     @Test
     fun the_home_screen_speaks_english() =
-        runScreenTestInEnglish(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}) }) {
+        runScreenTest(FakeGym(), screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Kachalochka")
             onNodeWithTag("today-date").assertTextEquals("Tuesday, 14 November 2023")
             onNodeWithTag("open-today").assertTextEquals("Start")
@@ -132,9 +131,9 @@ class HomeScreenTest {
             FakeGym(),
             screen = { HomeScreen({ opened += it }, {}, {}, {}, {}, {}, {}) },
         ) {
-            onNodeWithTag("today-date").assertTextEquals("Вторник, 14 ноября 2023")
+            onNodeWithTag("today-date").assertTextEquals("Tuesday, 14 November 2023")
             onNodeWithTag("visit-counts").assertDoesNotExist()
-            onNodeWithTag("open-today").assertTextEquals("Начать")
+            onNodeWithTag("open-today").assertTextEquals("Start")
             onNodeWithTag("open-today").performClick()
             waitForIdle()
         }
@@ -146,7 +145,7 @@ class HomeScreenTest {
         val gym = FakeGym()
         val t0 = gym.clock.current
         val visit = Visit(VisitId.random(), null, gym.today, t0, t0, false)
-        val press = Machine.new("Жим ногами", null, t0)
+        val press = Machine.new("Leg press", null, t0)
         runBlocking {
             gym.visits.upsert(visit)
             gym.machines.upsert(press)
@@ -167,7 +166,7 @@ class HomeScreenTest {
         }
         runScreenTest(gym, screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}) }) {
             onNodeWithTag("visit-last-set").assertDoesNotExist()
-            onNodeWithTag("open-today").assertTextEquals("Продолжить")
+            onNodeWithTag("open-today").assertTextEquals("Continue")
         }
     }
 
@@ -211,7 +210,7 @@ class HomeScreenTest {
                 )
             },
         ) {
-            onNodeWithTag("section-measures").assertTextEquals("Замеры").performClick()
+            onNodeWithTag("section-measures").assertTextEquals("Measurements").performClick()
             waitForIdle()
         }
         assertEquals(1, opened)

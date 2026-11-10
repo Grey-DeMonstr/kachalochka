@@ -60,9 +60,10 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
+import monster.greyde.kachalochka.runScreenTestInRussian
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.olegTrainedOn
+import monster.greyde.kachalochka.ui.strings.RuStrings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -75,7 +76,7 @@ class VisitScreenTest {
     private val gym = FakeGym()
     private val visit =
         Visit(VisitId.random(), null, gym.today, gym.clock.current, gym.clock.current, false)
-    private val press = Machine.new("Жим ногами", null, gym.clock.current)
+    private val press = Machine.new("Leg press", null, gym.clock.current)
     private val recorded =
         WorkoutSet(
             WorkoutSetId.random(),
@@ -90,8 +91,8 @@ class VisitScreenTest {
             false,
         )
 
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
-    private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan")
+    private val misha = session("22222222-2222-4222-8222-222222222222", "Misha")
     private val shared = FakeGym().withAccounts(ivan, misha, active = ivan)
     private val sharedVisit =
         Visit(
@@ -102,7 +103,7 @@ class VisitScreenTest {
             shared.clock.current,
             false,
         )
-    private val sharedPress = Machine.new("Жим ногами", ivan.account.userId, shared.clock.current)
+    private val sharedPress = Machine.new("Leg press", ivan.account.userId, shared.clock.current)
 
     init {
         runBlocking {
@@ -114,7 +115,7 @@ class VisitScreenTest {
         }
     }
 
-    private val row = Machine.new("Тяга", null, gym.clock.current)
+    private val row = Machine.new("Row", null, gym.clock.current)
 
     private fun planRow() =
         runBlocking {
@@ -127,7 +128,7 @@ class VisitScreenTest {
         planRow()
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
-            onNodeWithTag("group-summary-${row.id.value}").assertTextEquals("Запланировано")
+            onNodeWithTag("group-summary-${row.id.value}").assertTextEquals("Planned")
             val pressTop = onNodeWithTag("group-${press.id.value}").getBoundsInRoot().top
             val rowTop = onNodeWithTag("group-${row.id.value}").getBoundsInRoot().top
             assertTrue(pressTop < rowTop)
@@ -156,7 +157,7 @@ class VisitScreenTest {
             onNodeWithTag("top-bar-back").performClick()
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithText("Запланировано").assertDoesNotExist()
+            onNodeWithText("Planned").assertDoesNotExist()
         }
     }
 
@@ -208,10 +209,10 @@ class VisitScreenTest {
     fun a_fresh_visit_names_its_day_and_asks_for_a_machine() {
         var picks = 0
         runScreenTest(gym, screen = { visitScreen(onPickMachine = { picks++ }) }) {
-            onNodeWithTag("visit-title").assertTextEquals("Вторник, 14 ноября")
+            onNodeWithTag("visit-title").assertTextEquals("Tuesday, 14 November")
             onNodeWithTag("top-bar-title").assertTextEquals("")
             onNodeWithTag("set-sheet").assertDoesNotExist()
-            onNodeWithTag("pick-machine").assertTextEquals("Добавить")
+            onNodeWithTag("pick-machine").assertTextEquals("Add")
             onNodeWithTag("pick-machine").performScrollTo().performClick()
             waitForIdle()
             assertEquals(1, picks)
@@ -225,9 +226,9 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("visit-menu").performClick()
             waitForIdle()
-            onNodeWithTag("save-as-plan").assertTextEquals("В план…").performClick()
+            onNodeWithTag("save-as-plan").assertTextEquals("Add to plan…").performClick()
             waitForIdle()
-            onNodeWithTag("plan-choice-new").assertTextEquals("Новый план").performClick()
+            onNodeWithTag("plan-choice-new").assertTextEquals("New plan").performClick()
             waitForIdle()
         }
         assertEquals(1, saves)
@@ -236,7 +237,7 @@ class VisitScreenTest {
     @Test
     fun the_menu_adds_the_visit_s_machines_to_a_chosen_plan_and_says_so() {
         val now = gym.clock.current
-        val back = Plan(PlanId.random(), null, "Спина", emptyList(), now, now, false)
+        val back = Plan(PlanId.random(), null, "Back", emptyList(), now, now, false)
         runBlocking { gym.plans.upsert(back) }
         var saves = 0
         runScreenTest(gym, screen = { visitScreen(onSaveAsPlan = { saves++ }) }) {
@@ -245,9 +246,9 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("save-as-plan").performClick()
             waitForIdle()
-            onNodeWithTag("plan-choice-${back.id.value}").assertTextEquals("Спина").performClick()
+            onNodeWithTag("plan-choice-${back.id.value}").assertTextEquals("Back").performClick()
             waitForIdle()
-            onNodeWithTag("placement-notice").assertTextEquals("Добавлено в «Спина»")
+            onNodeWithTag("placement-notice").assertTextEquals("Added to “Back”")
         }
         assertEquals(0, saves)
         assertEquals(
@@ -272,7 +273,7 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("visit-menu").performClick()
             waitForIdle()
-            onNodeWithTag("repeat-today").assertTextEquals("Повторить сегодня").performClick()
+            onNodeWithTag("repeat-today").assertTextEquals("Repeat today").performClick()
             waitForIdle()
         }
         assertEquals(gym.today, opened)
@@ -299,20 +300,21 @@ class VisitScreenTest {
     }
 
     @Test
-    fun the_visit_screen_speaks_english() =
-        runScreenTestInEnglish(gym, screen = { visitScreen() }) {
+    fun the_visit_screen_speaks_russian() =
+        runScreenTestInRussian(gym, screen = { visitScreen() }) {
             waitForIdle()
-            onNodeWithTag("pick-machine").assertTextEquals("Add")
-            onNodeWithTag("visit-title").assertTextEquals("Tuesday, 14 November")
+            onNodeWithTag("pick-machine").assertTextEquals(RuStrings.add)
+            onNodeWithTag("visit-title")
+                .assertTextEquals("${RuStrings.weekday(2)}, ${RuStrings.dayMonth(14, 11)}")
         }
 
     @Test
-    fun the_set_form_speaks_english() =
-        runScreenTestInEnglish(gym, screen = { visitScreen(picked = press.id) }) {
+    fun the_set_form_speaks_russian() =
+        runScreenTestInRussian(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
-            onNodeWithTag("save-set").assertTextEquals("Add")
-            onNodeWithTag("cancel-set").assertTextEquals("Cancel")
-            onNodeWithTag("set-title").assertTextEquals("New set")
+            onNodeWithTag("save-set").assertTextEquals(RuStrings.saveSet)
+            onNodeWithTag("cancel-set").assertTextEquals(RuStrings.cancel)
+            onNodeWithTag("set-title").assertTextEquals(RuStrings.newSet)
         }
 
     @Test
@@ -321,12 +323,12 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("share-visit").performClick()
             waitForIdle()
-            onNodeWithTag("share-as-text").assertTextEquals("Текстом").performClick()
+            onNodeWithTag("share-as-text").assertTextEquals("As text").performClick()
             waitForIdle()
 
-            assertEquals(listOf("вт\n\nЖим ногами 70кг 1x10"), gym.texts.shared)
+            assertEquals(listOf("Tue\n\nLeg press 70kg 1x10"), gym.texts.shared)
             onNodeWithTag("share-as-text").assertDoesNotExist()
-            onNodeWithTag("share-notice").assertTextEquals("Скопировано")
+            onNodeWithTag("share-notice").assertTextEquals("Copied")
 
             onNodeWithTag("share-notice").performClick()
             waitForIdle()
@@ -336,7 +338,7 @@ class VisitScreenTest {
 
     @Test
     fun sharing_the_visit_as_text_groups_it_by_tag_when_the_box_is_ticked() {
-        runBlocking { gym.machines.upsert(press.copy(tags = setOf("Ноги"))) }
+        runBlocking { gym.machines.upsert(press.copy(tags = setOf("Legs"))) }
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
             onNodeWithTag("share-visit").performClick()
@@ -347,7 +349,7 @@ class VisitScreenTest {
             onNodeWithTag("share-as-text").performClick()
             waitForIdle()
         }
-        assertEquals(listOf("вт\n\nНОГИ\nЖим ногами 70кг 1x10"), gym.texts.shared)
+        assertEquals(listOf("Tue\n\nLEGS\nLeg press 70kg 1x10"), gym.texts.shared)
         assertEquals(true, runBlocking { gym.profiles.forOwner(null) }?.groupByTag)
     }
 
@@ -368,7 +370,7 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("share-visit").performClick()
             waitForIdle()
-            onNodeWithTag("share-as-image").assertTextEquals("Картинкой").performClick()
+            onNodeWithTag("share-as-image").assertTextEquals("As image").performClick()
             waitUntil { gym.cardShares.shared.isNotEmpty() }
             onNodeWithTag("share-as-image").assertDoesNotExist()
         }
@@ -395,13 +397,13 @@ class VisitScreenTest {
 
     @Test
     fun a_machine_row_puts_its_note_and_its_results_each_on_a_line_under_the_name() {
-        runBlocking { gym.machines.upsert(press.copy(setupNote = "Сиденье на 4")) }
+        runBlocking { gym.machines.upsert(press.copy(setupNote = "Seat at 4")) }
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
             val id = press.id.value
             onNodeWithTag("group-note-$id", useUnmergedTree = true)
-                .assertTextEquals("Сиденье на 4")
-            onNodeWithTag("group-summary-$id").assertTextEquals("70кг", "1x10")
+                .assertTextEquals("Seat at 4")
+            onNodeWithTag("group-summary-$id").assertTextEquals("70kg", "1x10")
             val title = onNodeWithTag("group-title-$id", useUnmergedTree = true).getBoundsInRoot()
             val note = onNodeWithTag("group-note-$id", useUnmergedTree = true).getBoundsInRoot()
             val summary = onNodeWithTag("group-summary-$id").getBoundsInRoot()
@@ -412,7 +414,7 @@ class VisitScreenTest {
 
     @Test
     fun a_long_name_takes_the_room_of_the_row() {
-        val name = "Жим ногами в раме Смита с широкой постановкой стоп ".repeat(3).trim()
+        val name = "Leg press in a Smith machine with a wide stance ".repeat(3).trim()
         runBlocking { gym.machines.upsert(press.copy(name = name, setupNote = "4")) }
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
@@ -425,18 +427,18 @@ class VisitScreenTest {
 
     @Test
     fun grouping_by_tag_heads_each_section_with_its_tags() {
-        runBlocking { gym.machines.upsert(press.copy(tags = setOf("Ноги"))) }
+        runBlocking { gym.machines.upsert(press.copy(tags = setOf("Legs"))) }
         runScreenTest(gym, screen = { visitScreen() }) {
             waitForIdle()
             val id = press.id.value
-            onNodeWithTag("group-tag-$id-ноги", useUnmergedTree = true).assertTextEquals("НОГИ")
-            onNodeWithTag("section-НОГИ").assertDoesNotExist()
+            onNodeWithTag("group-tag-$id-legs", useUnmergedTree = true).assertTextEquals("LEGS")
+            onNodeWithTag("section-LEGS").assertDoesNotExist()
 
             onNodeWithTag("group-by-tag").performClick()
             waitForIdle()
 
-            onNodeWithTag("section-НОГИ").assertTextEquals("НОГИ")
-            onNodeWithTag("group-tag-$id-ноги", useUnmergedTree = true).assertDoesNotExist()
+            onNodeWithTag("section-LEGS").assertTextEquals("LEGS")
+            onNodeWithTag("group-tag-$id-legs", useUnmergedTree = true).assertDoesNotExist()
         }
     }
 
@@ -452,7 +454,7 @@ class VisitScreenTest {
     fun a_visit_without_sets_offers_no_share() {
         runScreenTest(gym, screen = { visitScreen(day = CalendarDay(2023, 11, 12)) }) {
             waitForIdle()
-            onNodeWithTag("visit-title").assertTextEquals("Воскресенье, 12 ноября")
+            onNodeWithTag("visit-title").assertTextEquals("Sunday, 12 November")
             onNodeWithTag("share-visit").assertDoesNotExist()
         }
     }
@@ -486,8 +488,8 @@ class VisitScreenTest {
 
             onNodeWithTag("machine-page").assertIsDisplayed()
             onNodeWithTag("page-machine-name", useUnmergedTree = true)
-                .assertTextEquals("Жим ногами")
-            onNodeWithTag("page-day-sets").assertTextEquals("СЕГОДНЯ · 1 ПОДХОД")
+                .assertTextEquals("Leg press")
+            onNodeWithTag("page-day-sets").assertTextEquals("TODAY · 1 SET")
             onNodeWithTag("set-sheet").assertDoesNotExist()
         }
     }
@@ -508,7 +510,7 @@ class VisitScreenTest {
 
             assertEquals(2, gym.sets.rows.size)
             onNodeWithTag("set-number").assertTextEquals("#3")
-            onNodeWithTag("page-day-sets").assertTextEquals("СЕГОДНЯ · 2 ПОДХОДА")
+            onNodeWithTag("page-day-sets").assertTextEquals("TODAY · 2 SETS")
             onNodeWithTag("rest-timer").assertTextEquals("1:30")
             assertEquals(1, consumed)
         }
@@ -518,7 +520,7 @@ class VisitScreenTest {
     fun a_comment_typed_in_the_form_shows_in_the_set_s_row() {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
-            onNodeWithTag("set-comment-field").performTextReplacement("Тяжело")
+            onNodeWithTag("set-comment-field").performTextReplacement("Heavy")
             onNodeWithTag("save-set").performClick()
             waitForIdle()
 
@@ -526,7 +528,7 @@ class VisitScreenTest {
                 gym.sets.rows.values
                     .single { it.id != recorded.id }
             onNodeWithTag("set-comment-${saved.id.value}", useUnmergedTree = true)
-                .assertTextEquals("Тяжело")
+                .assertTextEquals("Heavy")
         }
     }
 
@@ -534,7 +536,7 @@ class VisitScreenTest {
     fun a_ticked_pyramid_row_records_a_start_that_the_page_shows_as_a_pyramid() {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
-            onNodeWithTag("set-pyramid").assertTextEquals("Начать пирамиду")
+            onNodeWithTag("set-pyramid").assertTextEquals("Start a pyramid")
             onNodeWithTag("set-pyramid").performClick()
             onNodeWithTag("save-set").performClick()
             waitForIdle()
@@ -542,8 +544,8 @@ class VisitScreenTest {
             val start =
                 gym.sets.rows.values
                     .single { it.pyramid }
-            onNodeWithTag("pyramid-${start.id.value}").assertTextEquals("#2", "70 кг × 10")
-            onNodeWithTag("set-pyramid").assertTextEquals("Начать новую пирамиду")
+            onNodeWithTag("pyramid-${start.id.value}").assertTextEquals("#2", "70 kg × 10")
+            onNodeWithTag("set-pyramid").assertTextEquals("Start a new pyramid")
         }
     }
 
@@ -653,7 +655,7 @@ class VisitScreenTest {
     fun a_pound_machine_is_recorded_in_pounds_with_kilograms_under_them() {
         val cable =
             Machine
-                .new("Кроссовер", null, gym.clock.current)
+                .new("Cable crossover", null, gym.clock.current)
                 .copy(unit = WeightUnit.Lb, weightStep = 5.0)
         runBlocking {
             gym.machines.upsert(cable)
@@ -665,7 +667,7 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("weight-value").assertTextEquals("90")
             onNodeWithText("lb").assertIsDisplayed()
-            onNodeWithTag("weight-note").assertTextEquals("41 кг")
+            onNodeWithTag("weight-note").assertTextEquals("41 kg")
         }
     }
 
@@ -673,7 +675,7 @@ class VisitScreenTest {
     fun a_gravitron_s_weight_is_written_negative() {
         val gravitron =
             Machine
-                .new("Подтягивания", null, gym.clock.current)
+                .new("Pull-up", null, gym.clock.current)
                 .copy(weightMode = WeightMode.Counterweight)
         runBlocking { gym.machines.upsert(gravitron) }
         runScreenTest(gym, screen = { visitScreen(picked = gravitron.id) }) {
@@ -687,7 +689,7 @@ class VisitScreenTest {
     fun another_day_is_titled_with_its_date() {
         runScreenTest(gym, screen = { visitScreen(day = CalendarDay(2022, 11, 12)) }) {
             waitForIdle()
-            onNodeWithTag("visit-title").assertTextEquals("Суббота, 12 ноября 2022")
+            onNodeWithTag("visit-title").assertTextEquals("Saturday, 12 November 2022")
         }
     }
 
@@ -724,8 +726,8 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("set-row-${recorded.id.value}").performClick()
             waitForIdle()
-            onNodeWithTag("set-title").assertTextEquals("Правка: 70 кг × 10")
-            onNodeWithTag("save-set").assertTextEquals("Сохранить")
+            onNodeWithTag("set-title").assertTextEquals("Edit: 70 kg × 10")
+            onNodeWithTag("save-set").assertTextEquals("Save")
 
             onNodeWithTag("weight-plus").performClick()
             onNodeWithTag("save-set").performClick()
@@ -871,14 +873,14 @@ class VisitScreenTest {
             }
             waitForIdle()
             swipe { swipeRight() }
-            onNodeWithTag("page-machine-name").assertTextEquals("Жим ногами")
+            onNodeWithTag("page-machine-name").assertTextEquals("Leg press")
             swipe { swipeLeft() }
-            onNodeWithTag("page-machine-name").assertTextEquals("Тяга")
+            onNodeWithTag("page-machine-name").assertTextEquals("Row")
             onNodeWithTag("set-sheet").assertDoesNotExist()
             swipe { swipeLeft() }
-            onNodeWithTag("page-machine-name").assertTextEquals("Тяга")
+            onNodeWithTag("page-machine-name").assertTextEquals("Row")
             swipe { swipeRight() }
-            onNodeWithTag("page-machine-name").assertTextEquals("Жим ногами")
+            onNodeWithTag("page-machine-name").assertTextEquals("Leg press")
         }
     }
 
@@ -908,7 +910,7 @@ class VisitScreenTest {
                 swipe(Offset(right - 20f, top + 40f), Offset(left + 20f, top + 40f))
             }
             waitForIdle()
-            onNodeWithTag("page-machine-name").assertTextEquals("Жим ногами")
+            onNodeWithTag("page-machine-name").assertTextEquals("Leg press")
             onNodeWithTag("set-sheet").assertIsDisplayed()
         }
     }
@@ -953,7 +955,7 @@ class VisitScreenTest {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
             onNodeWithTag("person-add").assertDoesNotExist()
-            onNodeWithTag("save-set").assertTextEquals("Добавить")
+            onNodeWithTag("save-set").assertTextEquals("Add")
         }
     }
 
@@ -965,12 +967,12 @@ class VisitScreenTest {
         ) {
             waitForIdle()
             onNodeWithTag("person-add").assertExists()
-            onNodeWithTag("save-set").assertTextEquals("Добавить")
+            onNodeWithTag("save-set").assertTextEquals("Add")
 
             onNodeWithTag("person-${misha.account.userId.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("save-set").assertTextEquals("Добавить")
+            onNodeWithTag("save-set").assertTextEquals("Add")
             onNodeWithTag("save-set").performClick()
             waitForIdle()
             assertEquals(
@@ -985,28 +987,28 @@ class VisitScreenTest {
     @Test
     fun person_chips_name_only_the_active_person_by_nickname_and_scroll_to_everybody() {
         val guests =
-            (3..6).map { session("3333333$it-3333-4333-8333-333333333333", "Гость Номер $it") }
+            (3..6).map { session("3333333$it-3333-4333-8333-333333333333", "Guest Number $it") }
         val crowd = FakeGym().withAccounts(ivan, misha, *guests.toTypedArray(), active = ivan)
         val visit = sharedVisit.copy(day = crowd.today)
-        val press = Machine.new("Жим ногами", ivan.account.userId, crowd.clock.current)
+        val press = Machine.new("Leg press", ivan.account.userId, crowd.clock.current)
         runBlocking {
             crowd.visits.upsert(visit)
             crowd.machines.upsert(press)
-            crowd.accountStore.rememberNickname(ivan.account.userId, "Ванёк")
+            crowd.accountStore.rememberNickname(ivan.account.userId, "Vanya")
         }
         runScreenTest(crowd, screen = { visitScreen(day = crowd.today, picked = press.id) }) {
             waitForIdle()
             onNodeWithTag("person-chips").assert(hasScrollAction())
-            onNodeWithTag("person-${ivan.account.userId.value}").assert(hasText("Ванёк"))
+            onNodeWithTag("person-${ivan.account.userId.value}").assert(hasText("Vanya"))
             onNodeWithTag("person-${misha.account.userId.value}")
-                .assert(hasText("Миша").not())
-                .assertContentDescriptionEquals("Миша")
+                .assert(hasText("Misha").not())
+                .assertContentDescriptionEquals("Misha")
 
             onNodeWithTag("person-add").performScrollTo().assertIsDisplayed()
             onNodeWithTag("person-${guests.last().account.userId.value}").performClick()
             waitForIdle()
             onNodeWithTag("person-${guests.last().account.userId.value}")
-                .assert(hasText("Гость Номер 6"))
+                .assert(hasText("Guest Number 6"))
         }
     }
 
@@ -1017,12 +1019,12 @@ class VisitScreenTest {
             (3..24).map {
                 session(
                     "${it.toString().padStart(8, '0')}-3333-4333-8333-333333333333",
-                    "Гость $it",
+                    "Guest $it",
                 )
             }
         val last = guests.last()
         val crowd = FakeGym().withAccounts(ivan, misha, *guests.toTypedArray(), active = last)
-        val press = Machine.new("Жим ногами", last.account.userId, crowd.clock.current)
+        val press = Machine.new("Leg press", last.account.userId, crowd.clock.current)
         runBlocking {
             crowd.visits.upsert(
                 sharedVisit.copy(userId = last.account.userId, day = crowd.today),
@@ -1062,7 +1064,7 @@ class VisitScreenTest {
         }
         val mishaPress = shared.machines.rows.getValue(assertNotNull(opened))
         assertEquals(misha.account.userId, mishaPress.userId)
-        assertEquals("Жим ногами", mishaPress.name)
+        assertEquals("Leg press", mishaPress.name)
     }
 
     @Test
@@ -1112,19 +1114,19 @@ class VisitScreenTest {
     @Test
     fun the_page_of_today_s_visit_puts_its_machine_into_a_plan_but_not_into_today() {
         val now = gym.clock.current
-        val legs = Plan(PlanId.random(), null, "Ноги", emptyList(), now, now, false)
+        val legs = Plan(PlanId.random(), null, "Legs", emptyList(), now, now, false)
         runBlocking { gym.plans.upsert(legs) }
         runScreenTest(gym, screen = { visitScreen(opened = press.id) }) {
             waitForIdle()
             onNodeWithTag("machine-menu").performClick()
             waitForIdle()
             onNodeWithTag("machine-to-today").assertDoesNotExist()
-            onNodeWithTag("machine-to-plan").assertTextEquals("В план…").performClick()
+            onNodeWithTag("machine-to-plan").assertTextEquals("Add to plan…").performClick()
             waitForIdle()
             onNodeWithTag("plan-choice-${legs.id.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("placement-notice").assertTextEquals("Добавлено в «Ноги»")
+            onNodeWithTag("placement-notice").assertTextEquals("Added to “Legs”")
         }
         assertEquals(
             listOf(press.id),
@@ -1213,8 +1215,8 @@ class VisitScreenTest {
 
     @Test
     fun order_mode_drags_a_machine_by_its_handle_and_shows_no_sets() {
-        val row = Machine.new("Тяга", null, gym.clock.current)
-        val curl = Machine.new("Сгибание рук", null, gym.clock.current)
+        val row = Machine.new("Row", null, gym.clock.current)
+        val curl = Machine.new("Biceps curl", null, gym.clock.current)
         val pulled = recorded.copy(id = WorkoutSetId.random(), machineId = row.id)
         val curled = recorded.copy(id = WorkoutSetId.random(), machineId = curl.id)
         runBlocking {
@@ -1228,7 +1230,7 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("reorder-toggle").assertIsOn()
             onNodeWithTag("pick-machine").assertDoesNotExist()
-            onNodeWithTag("finish-ordering").assertTextEquals("Готово")
+            onNodeWithTag("finish-ordering").assertTextEquals("Done")
             listOf(press, row, curl).forEach {
                 onNodeWithTag("drag-machine-${it.id.value}").assertExists()
             }
@@ -1283,11 +1285,11 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("machine-menu").performClick()
             waitForIdle()
-            onNodeWithTag("machine-reorder").assertTextEquals("Порядок подходов").performClick()
+            onNodeWithTag("machine-reorder").assertTextEquals("Reorder sets").performClick()
             waitForIdle()
             onNodeWithTag("add-set").assertDoesNotExist()
             onNodeWithTag("machine-menu").assertDoesNotExist()
-            onNodeWithTag("finish-ordering").assertTextEquals("Готово")
+            onNodeWithTag("finish-ordering").assertTextEquals("Done")
             onNodeWithTag("drag-set-${recorded.id.value}").assertExists()
 
             onNodeWithTag("drag-set-${heavier.id.value}").performTouchInput {
@@ -1324,14 +1326,14 @@ class VisitScreenTest {
             waitForIdle()
             onNodeWithTag("machine-page").performTouchInput { swipeLeft() }
             waitForIdle()
-            onNodeWithTag("page-machine-name").assertTextEquals("Жим ногами")
+            onNodeWithTag("page-machine-name").assertTextEquals("Leg press")
             onNodeWithTag("drag-set-${heavier.id.value}").performTouchInput {
                 down(center)
                 repeat(10) { moveBy(Offset(-10f, -10f)) }
                 up()
             }
             waitForIdle()
-            onNodeWithTag("page-machine-name").assertTextEquals("Жим ногами")
+            onNodeWithTag("page-machine-name").assertTextEquals("Leg press")
         }
         assertEquals(
             mapOf(heavier.id to 1, recorded.id to 2),
@@ -1352,7 +1354,7 @@ class VisitScreenTest {
     @Test
     fun friends_results_show_on_the_page() {
         val ivanId = checkNotNull(shared.accounts.activeId.value)
-        shared.olegTrainedOn(sharedPress, Friend(ivanId, "Иван"))
+        shared.olegTrainedOn(sharedPress, Friend(ivanId, "Ivan"))
         runScreenTest(
             shared,
             screen = { visitScreen(day = shared.today, picked = sharedPress.id) },
@@ -1380,9 +1382,9 @@ class VisitScreenTest {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
             onNodeWithTag("page-record").assertExists()
-            onNodeWithText("80 кг × 6").assertExists()
+            onNodeWithText("80 kg × 6").assertExists()
             onNodeWithTag("page-previous").assertExists()
-            onNodeWithText("80кг 1x6").assertExists()
+            onNodeWithText("80kg 1x6").assertExists()
         }
     }
 

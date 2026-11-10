@@ -5,8 +5,8 @@ import kotlin.test.assertEquals
 import kotlin.time.Instant
 
 class MachineRankingTest {
-    private val press = machine(PRESS, "Жим ногами")
-    private val smith = machine(ROW, "Приседания в Смите")
+    private val press = machine(PRESS, "Leg press")
+    private val smith = machine(ROW, "Smith squat")
     private val lastUsed =
         machineOrder(
             MachineSort.Recent,
@@ -31,14 +31,14 @@ class MachineRankingTest {
 
     @Test
     fun a_query_keeps_the_machines_whose_name_contains_it() {
-        val ranking = rankMachines("жим", listOf(press, smith), lastUsed)
+        val ranking = rankMachines("press", listOf(press, smith), lastUsed)
 
         assertEquals(MachineRanking(offerCreate = true, machines = listOf(press)), ranking)
     }
 
     @Test
     fun a_query_with_a_typo_still_keeps_the_machine() {
-        val ranking = rankMachines("ногпм", listOf(press, smith), lastUsed)
+        val ranking = rankMachines("prass", listOf(press, smith), lastUsed)
 
         assertEquals(listOf(press), ranking.machines)
     }
@@ -46,8 +46,8 @@ class MachineRankingTest {
     @Test
     fun a_query_keeps_a_machine_by_another_name_it_goes_by() {
         val ranking =
-            rankMachines("гакк", listOf(press, smith), lastUsed, alsoGoesBy = {
-                if (it == smith) listOf("Гакк-машина") else emptyList()
+            rankMachines("hack", listOf(press, smith), lastUsed, alsoGoesBy = {
+                if (it == smith) listOf("Hack machine") else emptyList()
             })
 
         assertEquals(MachineRanking(offerCreate = true, machines = listOf(smith)), ranking)
@@ -55,44 +55,44 @@ class MachineRankingTest {
 
     @Test
     fun a_query_nothing_contains_lists_nothing() {
-        val ranking = rankMachines("гакк", listOf(press, smith), lastUsed)
+        val ranking = rankMachines("hack", listOf(press, smith), lastUsed)
 
         assertEquals(MachineRanking(offerCreate = true, machines = emptyList()), ranking)
     }
 
     @Test
     fun tags_keep_the_machines_carrying_every_one_of_them() {
-        val legs = press.copy(tags = setOf("Ноги", "Жим"))
-        val back = smith.copy(tags = setOf("Ноги"))
+        val legs = press.copy(tags = setOf("Legs", "Press"))
+        val back = smith.copy(tags = setOf("Legs"))
 
         assertEquals(
             listOf(back, legs),
-            rankMachines("", listOf(legs, back), lastUsed, setOf("Ноги")).machines,
+            rankMachines("", listOf(legs, back), lastUsed, setOf("Legs")).machines,
         )
         assertEquals(
             listOf(legs),
-            rankMachines("", listOf(legs, back), lastUsed, setOf("Ноги", "Жим")).machines,
+            rankMachines("", listOf(legs, back), lastUsed, setOf("Legs", "Press")).machines,
         )
     }
 
     @Test
     fun tags_keep_machines_whatever_letter_case_either_spells_them_in() {
-        val legs = press.copy(tags = setOf("Ноги"))
+        val legs = press.copy(tags = setOf("Legs"))
 
         assertEquals(
             listOf(legs),
-            rankMachines("", listOf(legs), lastUsed, setOf("НОГИ")).machines,
+            rankMachines("", listOf(legs), lastUsed, setOf("LEGS")).machines,
         )
     }
 
     @Test
     fun an_existing_name_is_not_offered_for_creation() {
-        assertEquals(false, rankMachines("жим НОГАМИ ", listOf(press), lastUsed).offerCreate)
+        assertEquals(false, rankMachines("leg PRESS ", listOf(press), lastUsed).offerCreate)
     }
 
     @Test
     fun machines_never_used_follow_the_used_ones_by_name() {
-        val abs = machine(MachineId("0f000000-0000-4000-8000-00000000000f"), "Аб")
+        val abs = machine(MachineId("0f000000-0000-4000-8000-00000000000f"), "Abs")
 
         val ranking = rankMachines("", listOf(abs, press, smith), lastUsed)
 

@@ -58,8 +58,8 @@ actual fun platformModule(): Module =
         single<RestSoundPreference> { InMemoryRestSoundPreference() }
         single<RestAlarm> { NoRestAlarm }
         single<RestSoundChooser> { FixedRestSound }
-        // The host tests assert Russian text, whatever the machine running them speaks.
-        single { SystemLanguage { "ru" } }
+        // The host tests assert English text, whatever the machine running them speaks.
+        single { SystemLanguage { "en" } }
         single<GoogleSignIn> { UnavailableGoogleSignIn }
         single { SignInRequired(false) }
         single { SignInAvailable(get<SupabaseCredentials>().canSignInWithGoogleId) }

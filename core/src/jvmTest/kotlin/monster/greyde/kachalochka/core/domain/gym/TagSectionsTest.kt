@@ -6,12 +6,12 @@ import kotlin.test.assertEquals
 class TagSectionsTest {
     private val tags =
         mapOf(
-            "press" to setOf("Ноги"),
-            "curl" to setOf("Руки", "Бицепс"),
+            "press" to setOf("Legs"),
+            "curl" to setOf("Arms", "Biceps"),
             "abs" to emptySet(),
-            "squat" to setOf("Ноги"),
-            "hammer" to setOf("Бицепс", "Руки"),
-            "row" to setOf("Спина"),
+            "squat" to setOf("Legs"),
+            "hammer" to setOf("Biceps", "Arms"),
+            "row" to setOf("Back"),
         )
 
     private fun sections(vararg items: String) =
@@ -21,9 +21,9 @@ class TagSectionsTest {
     fun sections_follow_their_first_item_and_untagged_items_come_last() {
         assertEquals(
             listOf(
-                setOf("Ноги") to listOf("press", "squat"),
-                setOf("Руки", "Бицепс") to listOf("curl", "hammer"),
-                setOf("Спина") to listOf("row"),
+                setOf("Legs") to listOf("press", "squat"),
+                setOf("Arms", "Biceps") to listOf("curl", "hammer"),
+                setOf("Back") to listOf("row"),
                 emptySet<String>() to listOf("abs"),
             ),
             sections("press", "abs", "curl", "squat", "hammer", "row"),
@@ -32,10 +32,10 @@ class TagSectionsTest {
 
     @Test
     fun tag_sets_equal_without_letter_case_share_a_section_spelled_as_its_first_item() {
-        val spelled = mapOf("press" to setOf("Ноги", "Жим"), "squat" to setOf("жим", "НОГИ"))
+        val spelled = mapOf("press" to setOf("Legs", "Press"), "squat" to setOf("press", "LEGS"))
 
         assertEquals(
-            listOf(setOf("Ноги", "Жим") to listOf("press", "squat")),
+            listOf(setOf("Legs", "Press") to listOf("press", "squat")),
             tagSections(listOf("press", "squat")) { spelled.getValue(it) }
                 .map { it.tags to it.items },
         )

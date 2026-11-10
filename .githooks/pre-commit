@@ -1,0 +1,34 @@
+#!/bin/sh
+# Refuses a commit that adds Cyrillic outside the files that hold Russian text on purpose.
+# Only added lines count, so older text does not block an edit next to it.
+
+# The translation file, the glossary and the tests of Cyrillic-specific behaviour: letter case,
+# search, UTF-8 hashing and Russian plurals.
+app=app/src/commonTest/kotlin/monster/greyde/kachalochka/ui
+core=core/src/jvmTest/kotlin/monster/greyde/kachalochka/core
+allowed="^(GLOSSARY\.md"
+allowed="$allowed|app/src/commonMain/kotlin/monster/greyde/kachalochka/ui/strings/RuStrings\.kt"
+allowed="$allowed|$app/format/FormatsTest\.kt|$app/strings/LanguageTest\.kt"
+allowed="$allowed|$core/data/gym/TagWireTest\.kt|$core/domain/identity/UuidV5Test\.kt"
+allowed="$allowed|$core/domain/gym/NameSearchTest\.kt|$core/domain/gym/TagsTest\.kt)$"
+
+cyrillic=$(printf '[\320-\323][\200-\277]')
+status=0
+
+for file in $(git diff --cached --name-only --diff-filter=ACMR); do
+    echo "$file" | grep -Eq "$allowed" && continue
+    added=$(git diff --cached -U0 --no-color -- "$file" | grep -a '^+' | grep -av '^+++')
+    found=$(printf '%s\n' "$added" | LC_ALL=C grep -a "$cyrillic")
+    if [ -n "$found" ]; then
+        echo "$file:"
+        printf '%s\n' "$found" | sed 's/^+/    /'
+        status=1
+    fi
+done
+
+if [ "$status" -ne 0 ]; then
+    echo
+    echo "Cyrillic is allowed only in RuStrings.kt, GLOSSARY.md and the tests this hook lists."
+    echo "Put Russian UI text into RuStrings.kt; write code, comments, tests and docs in English."
+fi
+exit "$status"

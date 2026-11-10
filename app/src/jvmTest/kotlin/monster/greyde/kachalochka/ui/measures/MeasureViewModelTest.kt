@@ -53,13 +53,13 @@ class MeasureViewModelTest {
             CalendarDay(2023, 11, 14) to 82.0,
         ).map { (day, value) -> record(weight, day, value) }
     private val waisted = record(waist, CalendarDay(2023, 11, 14), 90.0)
-    private val forearm = Measure(MeasureId.random(), null, "Предплечье", "см", null, 7, t0, false)
+    private val forearm = Measure(MeasureId.random(), null, "Forearm", "cm", null, 7, t0, false)
     private val forearmed =
         listOf(CalendarDay(2023, 11, 1) to 30.0, CalendarDay(2023, 11, 14) to 31.0)
             .map { (day, value) -> record(forearm, day, value) }
     private val ivan =
         AccountSession(
-            Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Иван"),
+            Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Ivan"),
             "access",
             "refresh",
             t0,
@@ -104,8 +104,8 @@ class MeasureViewModelTest {
     fun the_measure_opens_on_the_last_three_months() {
         val ui = viewModel().ui
 
-        assertEquals("Вес", ui.name)
-        assertEquals("кг", ui.unit)
+        assertEquals("Weight", ui.name)
+        assertEquals("kg", ui.unit)
         assertEquals(MeasurePeriod.Quarter, ui.period)
         assertEquals(
             listOf(
@@ -115,7 +115,7 @@ class MeasureViewModelTest {
             ),
             ui.points,
         )
-        assertEquals("82 кг", ui.latest)
+        assertEquals("82 kg", ui.latest)
         assertEquals("−1", ui.change)
         assertNull(ui.editing)
         assertFalse(ui.deleting)
@@ -236,7 +236,7 @@ class MeasureViewModelTest {
         woman(cycleLength = 30)
         record(cycleDay, CalendarDay(2023, 11, 3), 1.0)
 
-        assertEquals("День 12 из 30", viewModel().ui.cycleDay)
+        assertEquals("Day 12 of 30", viewModel().ui.cycleDay)
     }
 
     @Test
@@ -254,7 +254,7 @@ class MeasureViewModelTest {
         vm.choose(MeasurePeriod.All)
         assertEquals(6, vm.ui.points.size)
         assertEquals("−4", vm.ui.change)
-        assertEquals("82 кг", vm.ui.latest)
+        assertEquals("82 kg", vm.ui.latest)
     }
 
     @Test
@@ -267,7 +267,7 @@ class MeasureViewModelTest {
         vm.choose(MeasurePeriod.Month)
 
         assertEquals(listOf(CalendarDay(2023, 11, 7) to 82.4), vm.ui.points)
-        assertEquals("82.4 кг", vm.ui.latest)
+        assertEquals("82.4 kg", vm.ui.latest)
         assertNull(vm.ui.change)
     }
 
@@ -291,11 +291,11 @@ class MeasureViewModelTest {
     fun the_measure_opens_on_today_s_value() {
         val ui = viewModel().ui
 
-        assertEquals("Вес", ui.title)
+        assertEquals("Weight", ui.title)
         assertEquals(
             MeasureEntryUi(
                 CalendarDay(2023, 11, 14),
-                "Сегодня, 14 ноября",
+                "Today, 14 November",
                 "82",
                 canSave = false,
                 canDelete = true,
@@ -320,7 +320,7 @@ class MeasureViewModelTest {
         assertEquals(31.5, after.value)
         assertEquals("31.5", vm.ui.entry.text)
         assertFalse(vm.ui.entry.canSave)
-        assertEquals("31.5 см", vm.ui.latest)
+        assertEquals("31.5 cm", vm.ui.latest)
         assertEquals(0, gym.sync.requests)
     }
 
@@ -341,7 +341,7 @@ class MeasureViewModelTest {
         assertEquals(
             MeasureEntryUi(
                 CalendarDay(2023, 11, 15),
-                "Сегодня, 15 ноября",
+                "Today, 15 November",
                 "82",
                 canSave = true,
                 canDelete = false,
@@ -382,7 +382,7 @@ class MeasureViewModelTest {
         forearmVm.stepValue(+1)
         assertEquals("32", forearmVm.ui.entry.text)
 
-        val wrist = Measure(MeasureId.random(), null, "Запястье", "см", null, 8, t0, false)
+        val wrist = Measure(MeasureId.random(), null, "Wrist", "cm", null, 8, t0, false)
         runBlocking { gym.measures.upsert(wrist) }
         val wristVm = viewModel(wrist.id)
         assertEquals("", wristVm.ui.entry.text)
@@ -409,14 +409,14 @@ class MeasureViewModelTest {
 
     @Test
     fun the_screen_tells_the_day_of_the_latest_value() {
-        assertEquals("Последний замер: сегодня", viewModel().ui.lastMeasured)
+        assertEquals("Last measured: today", viewModel().ui.lastMeasured)
 
         gym.clock.current = t0 + 1.days
-        assertEquals("Последний замер: вчера", viewModel().ui.lastMeasured)
+        assertEquals("Last measured: yesterday", viewModel().ui.lastMeasured)
 
         gym.clock.current = t0 + 5.days
 
-        assertEquals("Последний замер: 14 ноября, 5 дней назад", viewModel().ui.lastMeasured)
+        assertEquals("Last measured: 14 November, 5 days ago", viewModel().ui.lastMeasured)
         val chest = seeded.first { it.kind == MeasureKind.Chest }
         assertNull(viewModel(chest.id).ui.lastMeasured)
     }
@@ -425,12 +425,12 @@ class MeasureViewModelTest {
     fun all_results_list_every_value_newest_first() {
         assertEquals(
             listOf(
-                HistoryRowUi(CalendarDay(2023, 11, 14), "14 ноября", "82 кг"),
-                HistoryRowUi(CalendarDay(2023, 11, 7), "7 ноября", "82.4 кг"),
-                HistoryRowUi(CalendarDay(2023, 10, 10), "10 октября", "83 кг"),
-                HistoryRowUi(CalendarDay(2023, 8, 1), "1 августа", "84 кг"),
-                HistoryRowUi(CalendarDay(2023, 5, 10), "10 мая", "85 кг"),
-                HistoryRowUi(CalendarDay(2022, 12, 1), "1 декабря 2022", "86 кг"),
+                HistoryRowUi(CalendarDay(2023, 11, 14), "14 November", "82 kg"),
+                HistoryRowUi(CalendarDay(2023, 11, 7), "7 November", "82.4 kg"),
+                HistoryRowUi(CalendarDay(2023, 10, 10), "10 October", "83 kg"),
+                HistoryRowUi(CalendarDay(2023, 8, 1), "1 August", "84 kg"),
+                HistoryRowUi(CalendarDay(2023, 5, 10), "10 May", "85 kg"),
+                HistoryRowUi(CalendarDay(2022, 12, 1), "1 December 2022", "86 kg"),
             ),
             viewModel().ui.results,
         )
@@ -443,9 +443,9 @@ class MeasureViewModelTest {
 
         vm.openDay(day)
 
-        assertEquals("Октябрь 2023", vm.ui.history?.monthTitle)
+        assertEquals("October 2023", vm.ui.history?.monthTitle)
         assertEquals(
-            MeasureEntryUi(day, "Вторник, 10 октября", "83", canSave = false, canDelete = true),
+            MeasureEntryUi(day, "Tuesday, 10 October", "83", canSave = false, canDelete = true),
             vm.ui.entry,
         )
         assertTrue(vm.closeHistory())
@@ -468,15 +468,15 @@ class MeasureViewModelTest {
 
         vm.openHistory()
 
-        assertEquals("Вес · история", vm.ui.title)
+        assertEquals("Weight · history", vm.ui.title)
         val history = vm.ui.history!!
-        assertEquals("Ноябрь 2023", history.monthTitle)
+        assertEquals("November 2023", history.monthTitle)
         assertFalse(history.canShowNextMonth)
         assertEquals(listOf(CalendarDay(2023, 11, 7), CalendarDay(2023, 11, 14)), history.marked)
 
         vm.showHistoryMonth(-1)
 
-        assertEquals("Октябрь 2023", vm.ui.history?.monthTitle)
+        assertEquals("October 2023", vm.ui.history?.monthTitle)
         assertEquals(listOf(CalendarDay(2023, 10, 10)), vm.ui.history?.marked)
     }
 
@@ -487,7 +487,7 @@ class MeasureViewModelTest {
 
         vm.chooseDay(day)
         assertEquals(
-            MeasureEntryUi(day, "Вторник, 7 ноября", "82.4", canSave = false, canDelete = true),
+            MeasureEntryUi(day, "Tuesday, 7 November", "82.4", canSave = false, canDelete = true),
             vm.ui.entry,
         )
         vm.deleteValue()
@@ -529,7 +529,7 @@ class MeasureViewModelTest {
         assertTrue(vm.closeHistory())
 
         assertNull(vm.ui.history)
-        assertEquals("Вес", vm.ui.title)
+        assertEquals("Weight", vm.ui.title)
         assertEquals(CalendarDay(2023, 11, 14), vm.ui.entry.day)
         assertFalse(vm.closeHistory())
     }
@@ -541,28 +541,28 @@ class MeasureViewModelTest {
 
         assertTrue(vm.ui.canEdit)
         vm.openEdit()
-        assertEquals(EditMeasureUi("Предплечье", "см", true), vm.ui.editing)
+        assertEquals(EditMeasureUi("Forearm", "cm", true), vm.ui.editing)
         vm.typeName("  ")
         assertFalse(vm.ui.editing!!.canSave)
         vm.confirmEdit()
         assertEquals(
-            "Предплечье",
+            "Forearm",
             gym.measures.rows
                 .getValue(forearm.id)
                 .name,
         )
 
-        vm.typeName("Запястье ")
-        vm.typeUnit("дюйм")
+        vm.typeName("Wrist ")
+        vm.typeUnit("in")
         vm.confirmEdit()
 
         assertEquals(
-            forearm.copy(name = "Запястье", unit = "дюйм", updatedAt = t0 + 5.minutes),
+            forearm.copy(name = "Wrist", unit = "in", updatedAt = t0 + 5.minutes),
             gym.measures.rows.getValue(forearm.id),
         )
         assertNull(vm.ui.editing)
-        assertEquals("Запястье", vm.ui.name)
-        assertEquals("31 дюйм", vm.ui.latest)
+        assertEquals("Wrist", vm.ui.name)
+        assertEquals("31 in", vm.ui.latest)
         assertEquals(1, gym.sync.requests)
     }
 
@@ -571,7 +571,7 @@ class MeasureViewModelTest {
         val vm = viewModel(forearm.id)
 
         vm.openEdit()
-        vm.typeName("Запястье")
+        vm.typeName("Wrist")
         vm.dismissEdit()
 
         assertNull(vm.ui.editing)
@@ -580,10 +580,10 @@ class MeasureViewModelTest {
 
     @Test
     fun a_predefined_measure_shows_the_app_s_name_and_cannot_be_renamed() {
-        runBlocking { gym.measures.upsert(weight.copy(name = "Масса", unit = "lb")) }
+        runBlocking { gym.measures.upsert(weight.copy(name = "Mass", unit = "lb")) }
         val vm = viewModel()
 
-        assertEquals("Вес" to "кг", vm.ui.name to vm.ui.unit)
+        assertEquals("Weight" to "kg", vm.ui.name to vm.ui.unit)
         assertFalse(vm.ui.canEdit)
         vm.openEdit()
         assertNull(vm.ui.editing)

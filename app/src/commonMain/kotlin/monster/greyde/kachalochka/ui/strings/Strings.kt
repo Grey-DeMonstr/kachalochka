@@ -40,7 +40,7 @@ interface Strings {
 
     fun daysAgo(days: Int): String
 
-    /** [month] 1..12, as in "12 ноября". */
+    /** [month] 1..12, as in "12 November". */
     fun dayMonth(
         day: Int,
         month: Int,
@@ -284,7 +284,7 @@ interface Strings {
     val noImprovements: String
     val export: String
 
-    /** "за месяц", the period an export covers. */
+    /** "past month", the period an export covers. */
     fun forPeriod(months: Int): String
 
     fun sinceDay(day: String): String
@@ -295,7 +295,7 @@ interface Strings {
 
     fun fewerReps(n: Int): String
 
-    /** "+1 подход": the best set repeated more often than on the best earlier day. */
+    /** "+1 set": the best set repeated more often than on the best earlier day. */
     fun moreSets(n: Int): String
 
     /** The chip on a machine's first day. */
@@ -429,7 +429,7 @@ interface Strings {
     val noValues: String
     val noValuesInPeriod: String
 
-    /** [day] as "12 октября, вчера". */
+    /** [day] as "12 October, yesterday". */
     fun lastMeasured(day: String): String
 
     val nameAndUnit: String
@@ -474,7 +474,7 @@ interface Strings {
     val menstruation: String
     val ovulation: String
 
-    /** "День 12 из 28". */
+    /** "Day 12 of 28". */
     fun cycleDayOf(
         day: Int,
         length: Int,
@@ -484,7 +484,7 @@ interface Strings {
     val appSection: String
     val profile: String
 
-    /** "39 лет". */
+    /** "39 years". */
     fun years(n: Int): String
 
     val savedAtOnce: String
@@ -506,6 +506,9 @@ interface Strings {
     val themeDark: String
     val language: String
     val languageSystem: String
+
+    /** This language's own name, the same in every language's list. */
+    val languageName: String
     val animation: String
     val transitions: String
     val transitionNone: String

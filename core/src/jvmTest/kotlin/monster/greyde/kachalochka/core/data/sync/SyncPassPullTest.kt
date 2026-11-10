@@ -30,31 +30,31 @@ class SyncPassPullTest {
     fun a_pulled_machine_takes_its_tags_from_the_pulled_tag_rows() =
         runTest {
             val press = ownedPress(IVAN)
-            val tag = Tag(tagId(IVAN, "ноги"), IVAN, "ноги", T0 + 3.hours, false)
+            val tag = Tag(tagId(IVAN, "legs"), IVAN, "legs", T0 + 3.hours, false)
             val link =
-                MachineTag(machineTagId(press.id, "ноги"), IVAN, press.id, tag.id, T0, false)
+                MachineTag(machineTagId(press.id, "legs"), IVAN, press.id, tag.id, T0, false)
             h.gateway.machinesToPull = listOf(press)
             h.gateway.tagsToPull = listOf(tag)
             h.gateway.machineTagsToPull = listOf(link)
 
             h.pass.run(listOf(IVAN))
 
-            assertEquals(setOf("ноги"), h.machines.byId(press.id)?.tags)
+            assertEquals(setOf("legs"), h.machines.byId(press.id)?.tags)
             assertEquals(T0 + 3.hours, h.watermarks.lastPullAt(IVAN))
         }
 
     @Test
     fun a_tag_link_waiting_in_the_outbox_survives_the_pull_that_would_overwrite_it() =
         runTest {
-            val press = ownedPress(IVAN).copy(tags = setOf("ноги"))
+            val press = ownedPress(IVAN).copy(tags = setOf("legs"))
             h.machines.upsert(press)
             h.gateway.failing = MACHINE_TAG_TABLE
             val link =
                 MachineTag(
-                    machineTagId(press.id, "ноги"),
+                    machineTagId(press.id, "legs"),
                     IVAN,
                     press.id,
-                    tagId(IVAN, "ноги"),
+                    tagId(IVAN, "legs"),
                     T0,
                     true,
                 )
@@ -62,7 +62,7 @@ class SyncPassPullTest {
 
             h.pass.run(listOf(IVAN))
 
-            assertEquals(setOf("ноги"), h.machines.byId(press.id)?.tags)
+            assertEquals(setOf("legs"), h.machines.byId(press.id)?.tags)
         }
 
     @Test
@@ -105,7 +105,7 @@ class SyncPassPullTest {
             val mine = ownedPlan(IVAN)
             h.plans.upsert(mine)
             h.gateway.failing = PLAN_TABLE
-            h.gateway.plansToPull = listOf(mine.copy(name = "Спина"))
+            h.gateway.plansToPull = listOf(mine.copy(name = "Back"))
 
             h.pass.run(listOf(IVAN))
 
@@ -135,7 +135,7 @@ class SyncPassPullTest {
     @Test
     fun a_pulled_machine_keeps_its_own_unit() =
         runTest {
-            val gravitron = ownedPress(IVAN).copy(unit = WeightUnit.Custom, unitLabel = "плитка")
+            val gravitron = ownedPress(IVAN).copy(unit = WeightUnit.Custom, unitLabel = "plate")
             h.gateway.machinesToPull = listOf(gravitron)
 
             h.pass.run(listOf(IVAN))
@@ -209,7 +209,7 @@ class SyncPassPullTest {
             val neck = ownedMeasure(IVAN)
             h.measures.upsert(neck)
             h.gateway.failing = MEASURE_TABLE
-            h.gateway.measuresToPull = listOf(neck.copy(name = "Шея сзади"))
+            h.gateway.measuresToPull = listOf(neck.copy(name = "Back of neck"))
 
             h.pass.run(listOf(IVAN))
 
@@ -221,7 +221,7 @@ class SyncPassPullTest {
         runTest {
             val seed =
                 missingDefaults(IVAN, MeasureKind.entries.toSet() - MeasureKind.Neck).single()
-            val renamed = seed.copy(name = "Шея сзади", updatedAt = T0)
+            val renamed = seed.copy(name = "Back of neck", updatedAt = T0)
             h.measures.upsert(seed)
             h.gateway.failing = MEASURE_TABLE
             h.gateway.measuresToPull = listOf(renamed)

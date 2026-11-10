@@ -8,7 +8,7 @@ import kotlin.test.assertNull
 class MeasureFormatsTest {
     @Test
     fun a_value_reads_with_the_decimal_point_and_its_unit() {
-        assertEquals("82.4 кг", measureValue(82.4, "кг"))
+        assertEquals("82.4 kg", measureValue(82.4, "kg"))
         assertEquals("18 %", measureValue(18.0, "%"))
         assertEquals("7", measureValue(7.0, ""))
     }
@@ -35,8 +35,8 @@ class MeasureFormatsTest {
 
     @Test
     fun a_chart_day_reads_as_the_day_and_the_short_month() {
-        assertEquals("14 ноя", chartDayLabel(CalendarDay(2023, 11, 14)))
-        assertEquals("1 мая", chartDayLabel(CalendarDay(2023, 5, 1)))
+        assertEquals("14 Nov", chartDayLabel(CalendarDay(2023, 11, 14)))
+        assertEquals("1 May", chartDayLabel(CalendarDay(2023, 5, 1)))
     }
 
     @Test

@@ -42,8 +42,8 @@ internal fun session(
 class ProfileViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван", t0)
-    private val misha = session("22222222-2222-4222-8222-222222222222", "Миша", t0)
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan", t0)
+    private val misha = session("22222222-2222-4222-8222-222222222222", "Misha", t0)
 
     private fun viewModel() =
         ProfileViewModel(
@@ -169,7 +169,7 @@ class ProfileViewModelTest {
             gym.withAccounts(ivan, active = ivan)
             gym.profiles.upsert(
                 Profile.new(ivan.account.userId, t0).copy(
-                    displayName = "Ванёк",
+                    displayName = "Vanya",
                     sex = Sex.Male,
                     birthDate = CalendarDay(1990, 6, 5),
                     heightCm = 180.5,
@@ -179,7 +179,7 @@ class ProfileViewModelTest {
             val vm = viewModel()
 
             assertEquals(
-                ProfileUi("Ванёк", "Иван", Sex.Male, "05.06.1990", "180.5", true, true),
+                ProfileUi("Vanya", "Ivan", Sex.Male, "05.06.1990", "180.5", true, true),
                 vm.ui,
             )
         }
@@ -201,7 +201,7 @@ class ProfileViewModelTest {
             gym.withAccounts(ivan, active = ivan)
             val vm = viewModel()
 
-            vm.type("Ванёк")
+            vm.type("Vanya")
             vm.typeBirthDate("15.06.1990")
             vm.typeHeight("165,5")
             assertNull(gym.profiles.forOwner(ivan.account.userId))
@@ -209,7 +209,7 @@ class ProfileViewModelTest {
 
             val profile = assertNotNull(gym.profiles.forOwner(ivan.account.userId))
             assertEquals(ivan.account.userId.value, profile.id.value)
-            assertEquals("Ванёк", profile.displayName)
+            assertEquals("Vanya", profile.displayName)
             assertEquals(CalendarDay(1990, 6, 15), profile.birthDate)
             assertEquals(165.5, profile.heightCm)
             assertEquals(1, gym.sync.requests)
@@ -308,7 +308,7 @@ class ProfileViewModelTest {
             vm.typeBirthDate("15.06.1990")
             assertTrue(vm.ui.birthDateValid)
 
-            listOf("18", "1800", "сто").forEach {
+            listOf("18", "1800", "hundred").forEach {
                 vm.typeHeight(it)
                 assertFalse(vm.ui.heightValid, it)
             }
@@ -365,7 +365,7 @@ class ProfileViewModelTest {
             gym.profiles.upsert(Profile.new(null, t0).copy(sex = Sex.Female, cycleLength = 30))
             val vm = viewModel()
 
-            listOf("13", "61", "28.5", "месяц").forEach {
+            listOf("13", "61", "28.5", "month").forEach {
                 vm.typeCycleLength(it)
                 assertFalse(vm.ui.cycleLengthValid, it)
             }
@@ -397,14 +397,14 @@ class ProfileViewModelTest {
         runTest {
             gym.withAccounts(ivan, misha, active = ivan)
             gym.profiles.upsert(
-                Profile.new(misha.account.userId, t0).copy(displayName = "Мишка"),
+                Profile.new(misha.account.userId, t0).copy(displayName = "Mike"),
             )
             val vm = viewModel()
 
             gym.accounts.switchTo(misha.account.userId)
 
-            assertEquals("Мишка", vm.ui.nickname)
-            assertEquals("Миша", vm.ui.placeholder)
+            assertEquals("Mike", vm.ui.nickname)
+            assertEquals("Misha", vm.ui.placeholder)
         }
 
     @Test
@@ -413,11 +413,11 @@ class ProfileViewModelTest {
             gym.withAccounts(ivan, misha, active = ivan)
             val vm = viewModel()
 
-            vm.type("Ваня")
+            vm.type("Van")
             gym.accounts.switchTo(misha.account.userId)
             pause()
 
-            assertEquals("Ваня", gym.profiles.forOwner(ivan.account.userId)?.displayName)
+            assertEquals("Van", gym.profiles.forOwner(ivan.account.userId)?.displayName)
             assertNull(gym.profiles.forOwner(misha.account.userId))
             assertEquals("", vm.ui.nickname)
         }
@@ -428,37 +428,37 @@ class ProfileViewModelTest {
             gym.withAccounts(ivan, active = ivan)
             val vm = viewModel()
 
-            vm.type("Ванёк")
+            vm.type("Vanya")
             vm.leave()
 
             assertEquals(
-                "Ванёк",
+                "Vanya",
                 gym.accounts.accounts.value
                     .single()
                     .shownName,
             )
-            assertEquals("Иван", vm.ui.placeholder)
+            assertEquals("Ivan", vm.ui.placeholder)
         }
 
     @Test
     fun the_avatar_is_named_by_the_stored_nickname() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            gym.profiles.upsert(Profile.new(ivan.account.userId, t0).copy(displayName = "ГДМ"))
+            gym.profiles.upsert(Profile.new(ivan.account.userId, t0).copy(displayName = "GDM"))
 
-            assertEquals("ГДМ", viewModel().avatar.value?.name)
+            assertEquals("GDM", viewModel().avatar.value?.name)
         }
 
     @Test
     fun opening_the_profile_remembers_the_stored_nickname() =
         runTest {
             gym.withAccounts(ivan, active = ivan)
-            gym.profiles.upsert(Profile.new(ivan.account.userId, t0).copy(displayName = "Ванёк"))
+            gym.profiles.upsert(Profile.new(ivan.account.userId, t0).copy(displayName = "Vanya"))
 
             viewModel()
 
             assertEquals(
-                "Ванёк",
+                "Vanya",
                 gym.accounts.accounts.value
                     .single()
                     .shownName,

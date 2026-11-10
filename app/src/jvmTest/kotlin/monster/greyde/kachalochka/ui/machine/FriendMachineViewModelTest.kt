@@ -53,16 +53,16 @@ class FriendMachineViewModelTest {
     private val t0 = on.clock.current
     private val olegPress =
         Machine
-            .new("Жим ногами", OLEG.userId, t0)
+            .new("Leg press", OLEG.userId, t0)
             .copy(
-                setupNote = "Спинка на 4",
+                setupNote = "Back pad at 4",
                 weightMode = WeightMode.PerSide,
                 weightStep = 5.0,
                 platformWeight = 25.0,
             )
 
     init {
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
         on.friends.machines += olegPress
     }
 
@@ -116,10 +116,10 @@ class FriendMachineViewModelTest {
 
         val state = assertNotNull(vm.state.value)
         assertEquals(
-            listOf("Жим ногами", "Олег", "Спинка на 4", "кг на сторону · ±5"),
+            listOf("Leg press", "Oleg", "Back pad at 4", "kg per side · ±5"),
             listOf(state.name, state.owner, state.note, state.caption),
         )
-        assertEquals("25 кг · рядом с названием", state.platform)
+        assertEquals("25 kg · shown beside the name", state.platform)
         assertTrue(state.canTake)
         assertFalse(vm.offline.value)
     }
@@ -169,9 +169,9 @@ class FriendMachineViewModelTest {
     @Test
     fun the_friend_s_tags_are_shown_in_their_order() {
         on.friends.machines.clear()
-        on.friends.machines += olegPress.copy(tags = setOf("Ноги", "База"))
+        on.friends.machines += olegPress.copy(tags = setOf("Legs", "Core"))
 
-        assertEquals(listOf("база", "ноги"), viewModel().state.value?.tags)
+        assertEquals(listOf("core", "legs"), viewModel().state.value?.tags)
     }
 
     @Test
@@ -208,10 +208,13 @@ class FriendMachineViewModelTest {
         val vm = viewModel()
 
         val month = assertNotNull(vm.state.value?.stats)
-        assertEquals("85 кг × 6", month.best)
+        assertEquals("85 kg × 6", month.best)
         assertEquals(listOf(on.today.plusDays(-1) to 85.0), month.points)
         assertEquals(
-            listOf("13 ноября" to "80-85кг на каждую, 8-6", "5 октября" to "70кг на каждую, 1x10"),
+            listOf(
+                "13 November" to "80-85kg each side, 8-6",
+                "5 October" to "70kg each side, 1x10",
+            ),
             month.history.map { it.date to it.results },
         )
 
@@ -237,7 +240,7 @@ class FriendMachineViewModelTest {
             val stats = assertNotNull(viewModel().state.value?.stats)
 
             assertEquals("187.5 lb × 6", stats.best)
-            assertEquals("176.5-187.5lb на каждую, 8-6", stats.history.single().results)
+            assertEquals("176.5-187.5lb each side, 8-6", stats.history.single().results)
         }
 
     @Test
@@ -249,8 +252,8 @@ class FriendMachineViewModelTest {
 
             val state = assertNotNull(viewModel().state.value)
 
-            assertEquals("кг на сторону · ±5", state.caption)
-            assertEquals("25 кг · рядом с названием", state.platform)
+            assertEquals("kg per side · ±5", state.caption)
+            assertEquals("25 kg · shown beside the name", state.platform)
         }
 
     @Test
@@ -261,15 +264,15 @@ class FriendMachineViewModelTest {
 
         val state = assertNotNull(viewModel().state.value)
 
-        assertEquals("lb на сторону · ±5", state.caption)
-        assertEquals("45 lb · рядом с названием", state.platform)
+        assertEquals("lb per side · ±5", state.caption)
+        assertEquals("45 lb · shown beside the name", state.platform)
     }
 
     @Test
     fun a_platform_added_to_the_record_says_so_and_none_shows_nothing() {
         on.friends.machines.clear()
         on.friends.machines += olegPress.copy(platformIncluded = true)
-        assertEquals("25 кг · прибавляется к записи", viewModel().state.value?.platform)
+        assertEquals("25 kg · added to the record", viewModel().state.value?.platform)
 
         on.friends.machines.clear()
         on.friends.machines += olegPress.copy(platformWeight = 0.0)
@@ -299,7 +302,7 @@ class FriendMachineViewModelTest {
     @Test
     fun a_machine_the_account_already_has_linked_cannot_be_taken_again() =
         runTest {
-            val mine = Machine.new("Жим", ME.userId, t0)
+            val mine = Machine.new("Press", ME.userId, t0)
             on.machines.upsert(mine)
             on.machineLinks.upsert(
                 MachineLink(MachineLinkId.random(), ME.userId, mine.id, olegPress.id, t0, false),
@@ -314,9 +317,9 @@ class FriendMachineViewModelTest {
     @Test
     fun a_machine_linked_to_the_account_s_through_a_friend_cannot_be_taken_either() =
         runTest {
-            val mine = Machine.new("Жим", ME.userId, t0)
-            val pashaPress = Machine.new("Жим ногами", PASHA.userId, t0)
-            on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+            val mine = Machine.new("Press", ME.userId, t0)
+            val pashaPress = Machine.new("Leg press", PASHA.userId, t0)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
             on.friends.machines += pashaPress
             on.machines.upsert(mine)
             on.machineLinks.upsert(
@@ -338,9 +341,9 @@ class FriendMachineViewModelTest {
     @Test
     fun the_machines_it_is_linked_with_are_named_with_their_owners() =
         runTest {
-            val mine = Machine.new("Жим", ME.userId, t0)
-            val pashaPress = Machine.new("Платформа", PASHA.userId, t0)
-            on.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
+            val mine = Machine.new("Press", ME.userId, t0)
+            val pashaPress = Machine.new("Platform", PASHA.userId, t0)
+            on.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
             on.friends.machines += pashaPress
             on.machines.upsert(mine)
             on.machineLinks.upsert(
@@ -358,8 +361,8 @@ class FriendMachineViewModelTest {
 
             assertEquals(
                 listOf(
-                    LinkedMachineUi(mine.id, ME, "Жим", own = true),
-                    LinkedMachineUi(pashaPress.id, PASHA, "Платформа"),
+                    LinkedMachineUi(mine.id, ME, "Press", own = true),
+                    LinkedMachineUi(pashaPress.id, PASHA, "Platform"),
                 ),
                 viewModel().state.value?.linkedWith,
             )
@@ -401,11 +404,11 @@ class FriendMachineViewModelTest {
 
         val vm = viewModel()
 
-        assertEquals("Жим ногами", vm.state.value?.name)
+        assertEquals("Leg press", vm.state.value?.name)
         assertNull(vm.state.value?.stats)
         gate.complete(Unit)
         assertEquals(
-            "80 кг × 8",
+            "80 kg × 8",
             vm.state.value
                 ?.stats
                 ?.best,
@@ -421,7 +424,7 @@ class FriendMachineViewModelTest {
         vm.refresh()
 
         assertFalse(vm.offline.value)
-        assertEquals("Жим ногами", vm.state.value?.name)
+        assertEquals("Leg press", vm.state.value?.name)
     }
 
     @Test
@@ -432,14 +435,14 @@ class FriendMachineViewModelTest {
                     Account(
                         UserId("22222222-2222-4222-8222-222222222222"),
                         "misha@example.test",
-                        "Миша",
+                        "Misha",
                     ),
                     "access",
                     "refresh",
                     t0,
                 )
             val gym = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             gym.friends.machines += olegPress
             val vm = viewModel(gym)
 

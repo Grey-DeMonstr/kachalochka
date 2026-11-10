@@ -45,20 +45,20 @@ class TagConversionTest {
     @Test
     fun a_machine_still_waiting_to_be_pushed_takes_its_tags_from_its_column_once() =
         runTest {
-            val press = stored(Machine.new("Жим", ivan, now), """["Ноги", "НОГИ", "Спина"]""")
+            val press = stored(Machine.new("Press", ivan, now), """["Legs", "LEGS", "Back"]""")
 
             database.convertTagMirrors(now)
             val first = h.outbox.pending()
             database.convertTagMirrors(now + 1.minutes)
 
-            assertEquals(setOf("ноги", "спина"), h.machines.byId(press.id)?.tags)
+            assertEquals(setOf("legs", "back"), h.machines.byId(press.id)?.tags)
             assertEquals(
                 setOf(
                     MACHINE_TABLE to press.id.value,
-                    TAG_TABLE to tagId(ivan, "ноги"),
-                    TAG_TABLE to tagId(ivan, "спина"),
-                    MACHINE_TAG_TABLE to machineTagId(press.id, "ноги"),
-                    MACHINE_TAG_TABLE to machineTagId(press.id, "спина"),
+                    TAG_TABLE to tagId(ivan, "legs"),
+                    TAG_TABLE to tagId(ivan, "back"),
+                    MACHINE_TAG_TABLE to machineTagId(press.id, "legs"),
+                    MACHINE_TAG_TABLE to machineTagId(press.id, "back"),
                 ),
                 pending(),
             )
@@ -68,23 +68,23 @@ class TagConversionTest {
     @Test
     fun a_pushed_machine_is_not_converted_and_takes_the_server_s_tags_on_the_next_pull() =
         runTest {
-            val press = Machine.new("Жим", ivan, now)
+            val press = Machine.new("Press", ivan, now)
             h.machines.upsert(press)
             h.pass.run(listOf(ivan))
-            withMirror(press.id.value, """["ноги", "спина"]""")
+            withMirror(press.id.value, """["legs", "back"]""")
 
             database.convertTagMirrors(now)
 
             assertEquals(emptySet(), h.machines.byId(press.id)?.tags)
             assertEquals(emptySet(), pending())
 
-            val legs = Tag(tagId(ivan, "ноги"), ivan, "ноги", now, false)
-            val back = Tag(tagId(ivan, "спина"), ivan, "спина", now + 1.minutes, true)
+            val legs = Tag(tagId(ivan, "legs"), ivan, "legs", now, false)
+            val back = Tag(tagId(ivan, "back"), ivan, "back", now + 1.minutes, true)
             h.gateway.tagsToPull = listOf(legs, back)
             h.gateway.machineTagsToPull =
                 listOf(
                     MachineTag(
-                        machineTagId(press.id, "ноги"),
+                        machineTagId(press.id, "legs"),
                         ivan,
                         press.id,
                         legs.id,
@@ -92,7 +92,7 @@ class TagConversionTest {
                         false,
                     ),
                     MachineTag(
-                        machineTagId(press.id, "спина"),
+                        machineTagId(press.id, "back"),
                         ivan,
                         press.id,
                         back.id,
@@ -102,25 +102,25 @@ class TagConversionTest {
                 )
             h.pass.run(listOf(ivan))
 
-            assertEquals(setOf("ноги"), h.machines.byId(press.id)?.tags)
+            assertEquals(setOf("legs"), h.machines.byId(press.id)?.tags)
         }
 
     @Test
     fun a_deleted_machine_waiting_to_be_pushed_never_deletes_a_tag_the_server_holds() =
         runTest {
-            val press = Machine.new("Жим", ivan, now)
+            val press = Machine.new("Press", ivan, now)
             h.machines.upsert(press)
             h.pass.run(listOf(ivan))
-            val row = Machine.new("Тяга", ivan, now).copy(deleted = true)
-            stored(row, """["ноги"]""")
+            val row = Machine.new("Row", ivan, now).copy(deleted = true)
+            stored(row, """["legs"]""")
 
             database.convertTagMirrors(now)
-            val legs = Tag(tagId(ivan, "ноги"), ivan, "ноги", now, false)
+            val legs = Tag(tagId(ivan, "legs"), ivan, "legs", now, false)
             h.gateway.tagsToPull = listOf(legs)
             h.gateway.machineTagsToPull =
                 listOf(
                     MachineTag(
-                        machineTagId(press.id, "ноги"),
+                        machineTagId(press.id, "legs"),
                         ivan,
                         press.id,
                         legs.id,
@@ -132,7 +132,7 @@ class TagConversionTest {
             h.pass.run(listOf(ivan))
 
             assertEquals(listOf("$MACHINE_TABLE:${row.id.value}"), h.gateway.pushed)
-            assertEquals(setOf("ноги"), h.machines.byId(press.id)?.tags)
+            assertEquals(setOf("legs"), h.machines.byId(press.id)?.tags)
             assertEquals(
                 false,
                 database.tagQueries
@@ -145,10 +145,10 @@ class TagConversionTest {
     @Test
     fun a_machine_that_has_ever_had_a_tag_row_is_left_alone() =
         runTest {
-            val press = Machine.new("Жим", ivan, now).copy(tags = setOf("ноги"))
+            val press = Machine.new("Press", ivan, now).copy(tags = setOf("legs"))
             h.machines.upsert(press)
             h.machines.upsert(press.copy(tags = emptySet(), updatedAt = now + 1.minutes))
-            withMirror(press.id.value, """["Спина"]""")
+            withMirror(press.id.value, """["Back"]""")
 
             database.convertTagMirrors(now + 2.minutes)
 
@@ -158,7 +158,7 @@ class TagConversionTest {
     @Test
     fun unreadable_text_converts_to_no_tags() =
         runTest {
-            val press = stored(Machine.new("Жим", ivan, now), "{")
+            val press = stored(Machine.new("Press", ivan, now), "{")
 
             database.convertTagMirrors(now)
 
@@ -171,30 +171,30 @@ class TagConversionTest {
             driver.execute(
                 null,
                 "INSERT INTO machine(id, name, weight_mode, unit, weight_step, updated_at, " +
-                    "tags) VALUES ('not-an-id', 'Тяга', 'total', 'kg', 2.5, 1, '[\"спина\"]')",
+                    "tags) VALUES ('not-an-id', 'Row', 'total', 'kg', 2.5, 1, '[\"back\"]')",
                 0,
             )
-            val press = stored(Machine.new("Жим", null, now), """["Ноги"]""")
+            val press = stored(Machine.new("Press", null, now), """["Legs"]""")
 
             database.convertTagMirrors(now)
 
-            assertEquals(setOf("ноги"), h.machines.byId(press.id)?.tags)
+            assertEquals(setOf("legs"), h.machines.byId(press.id)?.tags)
         }
 
     @Test
     fun an_anonymous_machine_s_rows_wait_for_the_claim() =
         runTest {
-            val press = stored(Machine.new("Жим", null, now), """["Ноги"]""")
+            val press = stored(Machine.new("Press", null, now), """["Legs"]""")
 
             database.convertTagMirrors(now)
 
-            assertEquals(setOf("ноги"), h.machines.byId(press.id)?.tags)
+            assertEquals(setOf("legs"), h.machines.byId(press.id)?.tags)
             assertEquals(emptyList(), h.outbox.pending())
         }
 
     @Test
     fun unreadable_entries_of_the_column_read_as_no_tags() {
         assertEquals(emptySet(), tagsOf("{"))
-        assertEquals(setOf("Ноги"), tagsOf("""["Ноги", 3, " Ноги "]"""))
+        assertEquals(setOf("Legs"), tagsOf("""["Legs", 3, " Legs "]"""))
     }
 }

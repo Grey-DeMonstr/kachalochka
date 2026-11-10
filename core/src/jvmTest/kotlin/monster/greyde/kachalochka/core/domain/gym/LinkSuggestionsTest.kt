@@ -21,9 +21,9 @@ class LinkSuggestionsTest {
 
     @Test
     fun own_machines_of_the_same_name_suggest_each_other() {
-        val a = machine("Жим ногами", me)
-        val b = machine(" жим НОГАМИ ", me)
-        val c = machine("Жим", me)
+        val a = machine("Leg press", me)
+        val b = machine(" leg PRESS ", me)
+        val c = machine("Press", me)
 
         val suggested = linkSuggestions(listOf(a, b, c), emptyList())
 
@@ -32,9 +32,9 @@ class LinkSuggestionsTest {
 
     @Test
     fun own_machines_joined_through_a_friend_s_suggest_each_other() {
-        val a = machine("Гакк", me)
-        val c = machine("Присед", me)
-        val b = machine("Гакк-машина", oleg)
+        val a = machine("Hack squat", me)
+        val c = machine("Squat", me)
+        val b = machine("Hack machine", oleg)
 
         val suggested = linkSuggestions(listOf(a, c), listOf(link(a, b), link(c, b)))
 
@@ -43,9 +43,9 @@ class LinkSuggestionsTest {
 
     @Test
     fun a_friend_s_machine_is_never_suggested() {
-        val a = machine("Гакк", me)
-        val b = machine("Гакк-машина", oleg)
-        val c = machine("Присед", oleg)
+        val a = machine("Hack squat", me)
+        val b = machine("Hack machine", oleg)
+        val c = machine("Squat", oleg)
 
         val suggested = linkSuggestions(listOf(a), listOf(link(a, b), link(c, b)))
 
@@ -54,9 +54,9 @@ class LinkSuggestionsTest {
 
     @Test
     fun a_deleted_link_joins_nothing() {
-        val a = machine("Гакк", me)
-        val c = machine("Присед", me)
-        val b = machine("Гакк-машина", oleg)
+        val a = machine("Hack squat", me)
+        val c = machine("Squat", me)
+        val b = machine("Hack machine", oleg)
 
         val suggested = linkSuggestions(listOf(a, c), listOf(link(a, b), link(c, b, true)))
 
@@ -65,10 +65,10 @@ class LinkSuggestionsTest {
 
     @Test
     fun the_machines_to_merge_with_come_by_name() {
-        val a = machine("Гакк", me)
-        val later = machine("Гакк", me)
-        val first = machine("Арка", me)
-        val b = machine("Гакк-машина", oleg)
+        val a = machine("Hack squat", me)
+        val later = machine("Hack squat", me)
+        val first = machine("Calf raise", me)
+        val b = machine("Hack machine", oleg)
 
         val suggested =
             linkSuggestions(listOf(a, later, first), listOf(link(a, b), link(first, b)))

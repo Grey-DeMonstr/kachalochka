@@ -34,12 +34,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** Иван trains Саша and has switched to Саша, as a trainer does to plan for a trainee. */
+/** Ivan trains Sasha and has switched to Sasha, as a trainer does to plan for a trainee. */
 @OptIn(ExperimentalTestApi::class)
 class TraineeModeTest {
     private val gym = signedInGym().withChild(traineeAccount(SASHA, IVAN_SESSION))
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", SASHA.userId, t0)
+    private val press = Machine.new("Leg press", SASHA.userId, t0)
     private val visit = Visit(VisitId.random(), SASHA.userId, gym.today, t0, t0, false)
     private val set =
         WorkoutSet(
@@ -54,7 +54,7 @@ class TraineeModeTest {
             t0,
             false,
         )
-    private val plan = Plan(PlanId.random(), SASHA.userId, "Ноги", listOf(press.id), t0, t0, false)
+    private val plan = Plan(PlanId.random(), SASHA.userId, "Legs", listOf(press.id), t0, t0, false)
 
     init {
         runBlocking {
@@ -124,8 +124,8 @@ class TraineeModeTest {
 
     @Test
     fun the_machines_show_no_friends_and_open_to_be_looked_at() {
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
-        gym.friends.machines += Machine.new("Жим Олега", OLEG.userId, t0)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME)
+        gym.friends.machines += Machine.new("Oleg's leg press", OLEG.userId, t0)
         val opened = mutableListOf<Any>()
         var added = 0
         runScreenTest(gym, screen = {
@@ -146,7 +146,7 @@ class TraineeModeTest {
             MachineFormScreen(MachineFormArgs(press.id, null, ""), {}, {}, {})
         }) {
             waitForIdle()
-            onNodeWithTag("machine-name").assertTextEquals("Жим ногами")
+            onNodeWithTag("machine-name").assertTextEquals("Leg press")
             onNodeWithTag("save-machine").assertDoesNotExist()
             onNodeWithTag("new-tag").assertDoesNotExist()
             onNodeWithTag("link-machine").assertDoesNotExist()
@@ -155,7 +155,7 @@ class TraineeModeTest {
 
     @Test
     fun a_trainee_s_machine_without_sets_is_not_offered_for_deletion() {
-        val unused = Machine.new("Гакк", SASHA.userId, t0)
+        val unused = Machine.new("Hack squat", SASHA.userId, t0)
         runBlocking { gym.machines.upsert(unused) }
         runScreenTest(gym, screen = {
             MachineFormScreen(MachineFormArgs(unused.id, null, ""), {}, {}, {})
@@ -170,7 +170,7 @@ class TraineeModeTest {
     fun a_new_machine_is_added_for_the_trainee_without_photos() {
         var saved = 0
         runScreenTest(gym, screen = {
-            MachineFormScreen(MachineFormArgs(null, null, "Тяга"), {}, {}, { saved++ })
+            MachineFormScreen(MachineFormArgs(null, null, "Row"), {}, {}, { saved++ })
         }) {
             waitForIdle()
             onNodeWithTag("machine-photo").assertDoesNotExist()
@@ -178,7 +178,7 @@ class TraineeModeTest {
             waitForIdle()
         }
         assertEquals(1, saved)
-        assertTrue(runBlocking { gym.machines.all(SASHA.userId) }.any { it.name == "Тяга" })
+        assertTrue(runBlocking { gym.machines.all(SASHA.userId) }.any { it.name == "Row" })
     }
 
     @Test
@@ -189,6 +189,6 @@ class TraineeModeTest {
             waitForIdle()
             onNodeWithTag("account-avatar").performClick()
             waitForIdle()
-            onNodeWithText("Ученик").assertExists()
+            onNodeWithText("Trainee").assertExists()
         }
 }

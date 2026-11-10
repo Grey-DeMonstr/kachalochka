@@ -23,7 +23,8 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
+import monster.greyde.kachalochka.runScreenTestInRussian
+import monster.greyde.kachalochka.ui.strings.RuStrings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days
@@ -32,8 +33,8 @@ import kotlin.time.Duration.Companion.days
 class StatisticsScreenTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val row = Machine.new("Тяга", null, t0)
+    private val press = Machine.new("Leg press", null, t0)
+    private val row = Machine.new("Row", null, t0)
 
     init {
         runBlocking {
@@ -61,26 +62,26 @@ class StatisticsScreenTest {
     @Test
     fun a_card_of_the_overall_view_opens_its_machine() =
         runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {
-            onNodeWithTag("stats-choice").assertTextContains("Общая")
+            onNodeWithTag("stats-choice").assertTextContains("Overall")
             onNodeWithTag("period-month").assertIsOn()
             onNodeWithTag(
                 "stats-overall-title",
-            ).assertTextEquals("УПРАЖНЕНИЯ ЗА ПЕРИОД · С 14 ОКТЯБРЯ")
+            ).assertTextEquals("MACHINES IN THE PERIOD · SINCE 14 OCTOBER")
             onNodeWithTag("stats-change-${press.id.value}", useUnmergedTree = true)
-                .assertTextContains("+5 кг")
+                .assertTextContains("+5 kg")
             onNodeWithTag("stats-card-${row.id.value}").assertDoesNotExist()
 
             onNodeWithTag("stats-card-${press.id.value}").performClick()
             waitForIdle()
 
-            onNodeWithTag("stats-choice").assertTextContains("Жим ногами")
+            onNodeWithTag("stats-choice").assertTextContains("Leg press")
             onNodeWithTag("stats-chart-title").assertDoesNotExist()
             onNodeWithTag("stats-best-trophy", useUnmergedTree = true).assertExists()
-            onNodeWithTag("stats-best").assertTextEquals("75 кг × 8")
+            onNodeWithTag("stats-best").assertTextEquals("75 kg × 8")
             onNodeWithTag("stats-history-date-0", useUnmergedTree = true)
-                .assertTextEquals("13 ноября")
+                .assertTextEquals("13 November")
             onNodeWithTag("stats-history-results-1", useUnmergedTree = true)
-                .assertTextEquals("70кг 1x8")
+                .assertTextEquals("70kg 1x8")
         }
 
     @Test
@@ -102,8 +103,8 @@ class StatisticsScreenTest {
             onNodeWithTag("stats-export").performClick()
             waitForIdle()
 
-            assertEquals(listOf("за месяц\n\nЖим ногами +5 кг (75 кг × 8)"), gym.texts.shared)
-            onNodeWithTag("stats-notice").assertTextEquals("Скопировано")
+            assertEquals(listOf("past month\n\nLeg press +5 kg (75 kg × 8)"), gym.texts.shared)
+            onNodeWithTag("stats-notice").assertTextEquals("Copied")
 
             onNodeWithTag("stats-card-${press.id.value}").performClick()
             waitForIdle()
@@ -123,7 +124,7 @@ class StatisticsScreenTest {
                 .assertExists()
             onNodeWithTag("stats-choice-check-${row.id.value}", useUnmergedTree = true)
                 .assertDoesNotExist()
-            onNodeWithTag("stats-search").assertIsFocused().performTextInput("ног")
+            onNodeWithTag("stats-search").assertIsFocused().performTextInput("pre")
             waitForIdle()
 
             onNodeWithTag("stats-choice-overall").assertDoesNotExist()
@@ -133,17 +134,17 @@ class StatisticsScreenTest {
                     .fetchSemanticsNode()
                     .config[SemanticsProperties.Text]
                     .single()
-            assertEquals("Жим ногами", name.text)
+            assertEquals("Leg press", name.text)
             assertEquals(listOf(4 until 7), name.spanStyles.map { it.start until it.end })
 
             onNodeWithTag("stats-search").performTextInput("xyz")
             waitForIdle()
-            onNodeWithTag("stats-choice-empty").assertTextEquals("Ничего не найдено")
+            onNodeWithTag("stats-choice-empty").assertTextEquals("Nothing found")
 
             onNodeWithTag("stats-search-cancel").performClick()
             waitForIdle()
             onNodeWithTag("stats-choice-list").assertDoesNotExist()
-            onNodeWithTag("stats-choice").assertTextContains("Жим ногами")
+            onNodeWithTag("stats-choice").assertTextContains("Leg press")
 
             onNodeWithTag("stats-choice").performClick()
             waitForIdle()
@@ -156,14 +157,14 @@ class StatisticsScreenTest {
         var left = 0
         runScreenTest(gym, screen = { StatisticsScreen(press.id, { left++ }, {}) }) {
             onNodeWithTag("stats-choice").performClick()
-            onNodeWithTag("stats-search").performTextInput("тяг")
+            onNodeWithTag("stats-search").performTextInput("row")
             waitForIdle()
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
 
             onNodeWithTag("stats-choice-list").assertDoesNotExist()
-            onNodeWithTag("stats-choice").assertTextContains("Жим ногами")
+            onNodeWithTag("stats-choice").assertTextContains("Leg press")
         }
         assertEquals(0, left)
     }
@@ -198,13 +199,13 @@ class StatisticsScreenTest {
     fun the_machine_choice_and_the_period_chips_change_what_is_shown() =
         runScreenTest(gym, screen = { StatisticsScreen(press.id, {}, {}) }) {
             onNodeWithTag("stats-choice").performClick()
-            onNodeWithTag("stats-search").performTextInput("тяг")
+            onNodeWithTag("stats-search").performTextInput("row")
             onNodeWithTag("stats-choice-${row.id.value}").performClick()
             waitForIdle()
 
             onNodeWithTag("stats-choice-list").assertDoesNotExist()
-            onNodeWithTag("stats-choice").assertTextContains("Тяга")
-            onNodeWithTag("stats-empty").assertTextEquals("Нет подходов за период")
+            onNodeWithTag("stats-choice").assertTextContains("Row")
+            onNodeWithTag("stats-empty").assertTextEquals("No sets in this period")
 
             onNodeWithTag("period-threemonths").performClick()
             onNodeWithTag("stats-choice").performClick()
@@ -213,34 +214,34 @@ class StatisticsScreenTest {
 
             onNodeWithTag(
                 "stats-overall-title",
-            ).assertTextEquals("УПРАЖНЕНИЯ ЗА ПЕРИОД · С 14 АВГУСТА")
+            ).assertTextEquals("MACHINES IN THE PERIOD · SINCE 14 AUGUST")
         }
 
     @Test
     fun grouping_by_tags_heads_the_cards_and_the_dropdown_and_growth_can_be_chosen() {
-        runBlocking { gym.machines.upsert(press.copy(tags = setOf("Ноги"))) }
+        runBlocking { gym.machines.upsert(press.copy(tags = setOf("Legs"))) }
         runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {
-            onNodeWithTag("stats-section-НОГИ").assertDoesNotExist()
+            onNodeWithTag("stats-section-LEGS").assertDoesNotExist()
 
             onNodeWithTag("stats-group-by-tag").performClick()
             waitForIdle()
 
-            onNodeWithTag("stats-section-НОГИ").assertTextEquals("НОГИ")
+            onNodeWithTag("stats-section-LEGS").assertTextEquals("LEGS")
             onNodeWithTag("stats-choice").performClick()
-            onNodeWithTag("stats-choice-section-НОГИ").assertTextEquals("НОГИ")
+            onNodeWithTag("stats-choice-section-LEGS").assertTextEquals("LEGS")
             onNodeWithTag("stats-choice-overall").performClick()
-            onNodeWithTag("stats-sort-growth").assertTextEquals("Рост").performClick()
+            onNodeWithTag("stats-sort-growth").assertTextEquals("Growth").performClick()
             onNodeWithTag("stats-sort-growth").assertIsOn()
         }
     }
 
     @Test
-    fun statistics_speak_english() =
-        runScreenTestInEnglish(gym, screen = { StatisticsScreen(null, {}, {}) }) {
-            onNodeWithTag("stats-choice").assertTextContains("Overall")
-            onNodeWithTag("period-year").assertTextEquals("Year")
-            onNodeWithTag(
-                "stats-overall-title",
-            ).assertTextEquals("MACHINES IN THE PERIOD · SINCE 14 OCTOBER")
+    fun statistics_speak_russian() =
+        runScreenTestInRussian(gym, screen = { StatisticsScreen(null, {}, {}) }) {
+            val since = RuStrings.sinceDay(RuStrings.dayMonth(14, 10))
+            onNodeWithTag("stats-choice").assertTextContains(RuStrings.overallStats)
+            onNodeWithTag("period-year").assertTextEquals(RuStrings.statsYear)
+            onNodeWithTag("stats-overall-title")
+                .assertTextEquals("${RuStrings.machinesInPeriod} · $since".uppercase())
         }
 }

@@ -26,8 +26,8 @@ class FakeFriendsTest {
     @Test
     fun a_stranger_s_rows_stay_hidden_from_someone_outside_their_group() =
         runTest {
-            gym.friends.group("Зал на Лесной", owner = OLEG, ME)
-            val pashaMachine = Machine.new("Скамья", PASHA.userId, t0)
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
+            val pashaMachine = Machine.new("Bench", PASHA.userId, t0)
             val pashaVisit = Visit(VisitId.random(), PASHA.userId, gym.today, t0, t0, false)
             val pashaSet =
                 WorkoutSet(
@@ -56,9 +56,9 @@ class FakeFriendsTest {
         runTest {
             val family = signedInGym().withChild(childAccount(SASHA, IVAN_SESSION))
             val sasha = Friend(SASHA.userId, SASHA.displayName)
-            family.friends.group("Семья", owner = ME, sasha, OLEG)
-            family.friends.group("Работа", owner = PASHA, ME)
-            family.friends.group("Чужая", owner = PASHA, sasha)
+            family.friends.group("Family", owner = ME, sasha, OLEG)
+            family.friends.group("Work", owner = PASHA, ME)
+            family.friends.group("Strangers", owner = PASHA, sasha)
             runBlocking { family.accounts.switchTo(SASHA.userId) }
 
             assertEquals(

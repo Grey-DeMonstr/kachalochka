@@ -35,6 +35,8 @@ import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.format.formatNumber
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.strings.AppLanguage
+import monster.greyde.kachalochka.ui.strings.EnStrings
+import monster.greyde.kachalochka.ui.strings.RuStrings
 import monster.greyde.kachalochka.ui.strings.Strings
 import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.ThemeMode
@@ -162,8 +164,8 @@ fun SettingsScreen(
                 strings().language,
                 listOf(
                     SheetOption(strings().languageSystem, "language-system"),
-                    SheetOption("English", "language-english"),
-                    SheetOption("Русский", "language-russian"),
+                    SheetOption(EnStrings.languageName, "language-english"),
+                    SheetOption(RuStrings.languageName, "language-russian"),
                 ),
                 selected = languages.indexOf(device.language),
                 onSelect = { viewModel.chooseLanguage(languages[it]) },
@@ -297,7 +299,7 @@ private fun ProfileCard(
     }
 }
 
-/** "Мужской · 39 лет · 174 см · кг", leaving out what is not set. */
+/** "Male · 39 years · 174 cm · kg", leaving out what is not set. */
 private fun profileLine(
     card: ProfileCardUi,
     strings: Strings,
@@ -334,8 +336,8 @@ private fun themeName(mode: ThemeMode): String =
 private fun languageName(language: AppLanguage): String =
     when (language) {
         AppLanguage.System -> strings().languageSystem
-        AppLanguage.English -> "English"
-        AppLanguage.Russian -> "Русский"
+        AppLanguage.English -> EnStrings.languageName
+        AppLanguage.Russian -> RuStrings.languageName
     }
 
 @Composable

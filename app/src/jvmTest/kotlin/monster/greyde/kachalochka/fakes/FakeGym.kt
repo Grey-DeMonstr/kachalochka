@@ -375,7 +375,7 @@ class RecordingSyncTrigger : SyncTrigger {
 
 class RecordingInviteSharing : InviteSharing {
     override var pageAddress: String? = "https://example.test/kachalochka/"
-    var notice: String? = "Ссылка скопирована"
+    var notice: String? = "Link copied"
     val shared = mutableListOf<Invite>()
 
     override suspend fun share(invite: Invite): String? {
@@ -385,7 +385,7 @@ class RecordingInviteSharing : InviteSharing {
 }
 
 class RecordingTextSharing : TextSharing {
-    var notice: String? = "Скопировано"
+    var notice: String? = "Copied"
     val shared = mutableListOf<String>()
 
     override suspend fun share(text: String): String? {

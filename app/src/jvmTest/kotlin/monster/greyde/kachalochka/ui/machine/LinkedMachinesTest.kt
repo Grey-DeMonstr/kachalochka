@@ -32,7 +32,7 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalTestApi::class)
 class LinkedMachinesTest {
-    private val long = "Тяга на спину горизонтальная раздельными"
+    private val long = "Seated horizontal row with separate handles"
 
     private fun linked(
         owner: Friend,
@@ -97,7 +97,7 @@ class LinkedMachinesTest {
 
     @Test
     fun an_avatar_stays_round_at_a_small_font_size() {
-        val oleg = linked(OLEG, "Тяга")
+        val oleg = linked(OLEG, "Row")
         runScreenTest(FakeGym(), screen = {
             val density = LocalDensity.current
             CompositionLocalProvider(
@@ -117,9 +117,9 @@ class LinkedMachinesTest {
     @Test
     fun a_name_that_does_not_fit_after_another_starts_its_line_under_the_first_avatar() {
         // 12 overlapping avatars take 161 dp: no avatar and name fit after them in 176 dp.
-        val stack = List(12) { linked(OLEG, "Тяга") }
-        val press = linked(ME, "Жим")
-        narrow(stack + press, ownName = "Тяга") {
+        val stack = List(12) { linked(OLEG, "Row") }
+        val press = linked(ME, "Press")
+        narrow(stack + press, ownName = "Row") {
             val icon = bounds("linked-icon")
             val first = avatar(stack.first())
             val next = avatar(press)

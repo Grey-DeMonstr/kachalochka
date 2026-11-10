@@ -22,7 +22,7 @@ class NetworkScreenTest {
             waitUntil { gym.serverAnswers.requestHistory.size == 5 }
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Сеть")
+            onNodeWithTag("top-bar-title").assertTextEquals("Network")
             listOf(
                 "App: ${AppVersion.NAME}",
                 "Time: 2023-11-14T22:13:20Z",

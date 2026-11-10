@@ -23,10 +23,10 @@ class FriendVisitScreenTest {
     @Test
     fun a_friend_s_visit_is_read_only() {
         runScreenTest(gym, screen = {
-            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {}, {})
+            FriendVisitScreen(OLEG.userId, "Oleg", fixture.yesterday, {}, {}, {})
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Олег")
-            onNodeWithTag("friend-visit-day").assertTextEquals("Понедельник, 13 ноября")
+            onNodeWithTag("top-bar-title").assertTextEquals("Oleg")
+            onNodeWithTag("friend-visit-day").assertTextEquals("Monday, 13 November")
             onNodeWithTag("friend-group-${fixture.olegPress.id.value}").assertIsDisplayed()
             val olegPress = fixture.olegPress.id.value
             onNodeWithTag(
@@ -48,7 +48,7 @@ class FriendVisitScreenTest {
     fun tapping_a_machine_opens_the_friend_s_machine() {
         val opened = mutableListOf<MachineId>()
         runScreenTest(gym, screen = {
-            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {}, { opened += it })
+            FriendVisitScreen(OLEG.userId, "Oleg", fixture.yesterday, {}, {}, { opened += it })
         }) {
             onNodeWithTag("friend-group-${fixture.olegPress.id.value}").performClick()
             waitForIdle()
@@ -59,10 +59,10 @@ class FriendVisitScreenTest {
     @Test
     fun a_friend_s_machine_shows_its_results_as_an_own_row_does() {
         runScreenTest(gym, screen = {
-            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {}, {})
+            FriendVisitScreen(OLEG.userId, "Oleg", fixture.yesterday, {}, {}, {})
         }) {
             onNodeWithTag("group-summary-${fixture.olegPress.id.value}")
-                .assertTextEquals("80-85кг", "8-6")
+                .assertTextEquals("80-85kg", "8-6")
         }
     }
 
@@ -70,9 +70,9 @@ class FriendVisitScreenTest {
     fun offline_it_offers_a_retry() {
         gym.friends.offline = true
         runScreenTest(gym, screen = {
-            FriendVisitScreen(OLEG.userId, "Олег", fixture.yesterday, {}, {}, {})
+            FriendVisitScreen(OLEG.userId, "Oleg", fixture.yesterday, {}, {}, {})
         }) {
-            onNodeWithTag("friends-offline").assertTextEquals("Нет связи с сервером")
+            onNodeWithTag("friends-offline").assertTextEquals("No connection to the server")
             gym.friends.offline = false
             onNodeWithTag("friends-retry").performClick()
             waitForIdle()

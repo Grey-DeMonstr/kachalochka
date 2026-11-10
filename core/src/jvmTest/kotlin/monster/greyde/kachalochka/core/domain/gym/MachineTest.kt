@@ -15,9 +15,9 @@ class MachineTest {
     fun a_new_machine_carries_the_form_defaults() {
         val now = Instant.fromEpochSeconds(1_700_000_000)
 
-        val machine = Machine.new("Жим ногами", userId = null, now = now)
+        val machine = Machine.new("Leg press", userId = null, now = now)
 
-        assertEquals("Жим ногами", machine.name)
+        assertEquals("Leg press", machine.name)
         assertEquals("", machine.setupNote)
         assertEquals(WeightMode.Total, machine.weightMode)
         assertEquals(0.0, machine.platformWeight)
@@ -33,8 +33,8 @@ class MachineTest {
     fun a_linked_copy_is_the_owner_s_own_row_with_the_friend_s_settings() {
         val theirs =
             Machine
-                .new("Жим ногами", oleg, T0)
-                .copy(weightStep = 5.0, unit = WeightUnit.Custom, unitLabel = "плитка")
+                .new("Leg press", oleg, T0)
+                .copy(weightStep = 5.0, unit = WeightUnit.Custom, unitLabel = "plate")
         val later = T0 + 1.hours
 
         val (mine, _) = linkedCopy(theirs, ivan, later)
@@ -45,18 +45,18 @@ class MachineTest {
 
     @Test
     fun a_linked_copy_keeps_the_friend_s_tags() {
-        val theirs = Machine.new("Жим ногами", oleg, T0).copy(tags = setOf("Ноги", "Спина"))
+        val theirs = Machine.new("Leg press", oleg, T0).copy(tags = setOf("Legs", "Back"))
 
         val (mine, _) = linkedCopy(theirs, ivan, T0)
 
-        assertEquals(setOf("Ноги", "Спина"), mine.tags)
+        assertEquals(setOf("Legs", "Back"), mine.tags)
     }
 
     @Test
     fun the_owner_s_machine_of_the_shown_one_s_cluster_stands_in_for_it_before_a_namesake() {
-        val theirs = Machine.new("Жим ногами", oleg, T0)
-        val namesake = Machine.new("Жим ногами", ivan, T0)
-        val linked = Machine.new("Платформа", ivan, T0)
+        val theirs = Machine.new("Leg press", oleg, T0)
+        val namesake = Machine.new("Leg press", ivan, T0)
+        val linked = Machine.new("Platform", ivan, T0)
         val link = MachineLink(MachineLinkId.random(), oleg, theirs.id, linked.id, T0, false)
 
         val standIn = ownStandIn(theirs, listOf(namesake, linked), MachineClusters(listOf(link)))
@@ -66,9 +66,9 @@ class MachineTest {
 
     @Test
     fun without_a_linked_machine_one_of_the_same_name_in_any_letter_case_stands_in() {
-        val theirs = Machine.new("Жим ногами", oleg, T0)
-        val namesake = Machine.new(" жим НОГАМИ", ivan, T0)
-        val other = Machine.new("Тяга", ivan, T0)
+        val theirs = Machine.new("Leg press", oleg, T0)
+        val namesake = Machine.new(" leg PRESS", ivan, T0)
+        val other = Machine.new("Row", ivan, T0)
 
         val standIn = ownStandIn(theirs, listOf(other, namesake), MachineClusters(emptyList()))
 
@@ -77,10 +77,10 @@ class MachineTest {
 
     @Test
     fun nothing_stands_in_for_a_machine_the_owner_has_not_got() {
-        val theirs = Machine.new("Жим ногами", oleg, T0)
+        val theirs = Machine.new("Leg press", oleg, T0)
 
         val standIn =
-            ownStandIn(theirs, listOf(Machine.new("Тяга", ivan, T0)), MachineClusters(emptyList()))
+            ownStandIn(theirs, listOf(Machine.new("Row", ivan, T0)), MachineClusters(emptyList()))
 
         assertEquals(null, standIn)
     }
@@ -88,7 +88,7 @@ class MachineTest {
     @Test
     fun a_linked_copy_keeps_the_friend_s_cover_which_stays_in_its_cluster() {
         val cover = PhotoId.random()
-        val theirs = Machine.new("Жим ногами", oleg, T0).copy(coverPhoto = cover)
+        val theirs = Machine.new("Leg press", oleg, T0).copy(coverPhoto = cover)
 
         val (mine, _) = linkedCopy(theirs, ivan, T0)
 
@@ -97,7 +97,7 @@ class MachineTest {
 
     @Test
     fun a_linked_copy_comes_with_the_owner_s_link_to_the_friend_s_machine() {
-        val theirs = Machine.new("Жим ногами", oleg, T0)
+        val theirs = Machine.new("Leg press", oleg, T0)
         val later = T0 + 1.hours
 
         val (mine, link) = linkedCopy(theirs, ivan, later)

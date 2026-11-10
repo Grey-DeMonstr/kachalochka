@@ -65,15 +65,15 @@ class GroupViewModelTest {
                     Account(
                         UserId("22222222-2222-4222-8222-222222222222"),
                         "m@example.test",
-                        "Миша",
+                        "Misha",
                     ),
                     "access",
                     "refresh",
                     gym.clock.current,
                 )
             val two = FakeGym().withAccounts(IVAN_SESSION, misha, active = IVAN_SESSION)
-            val mishaFriend = Friend(misha.account.userId, "Миша")
-            val group = two.friends.group("Зал на Лесной", owner = OLEG, ME, mishaFriend)
+            val mishaFriend = Friend(misha.account.userId, "Misha")
+            val group = two.friends.group("Forest Street Gym", owner = OLEG, ME, mishaFriend)
             two.profiles.upsert(
                 Profile
                     .new(ME.userId, two.clock.current)
@@ -110,17 +110,18 @@ class GroupViewModelTest {
 
     @Test
     fun a_group_shows_its_members_owner_first_and_its_code() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, PASHA, ME, code = "ABCD2345")
+        val group =
+            gym.friends.group("Forest Street Gym", owner = OLEG, PASHA, ME, code = "ABCD2345")
 
         val state = assertNotNull(viewModel(group).state.value)
 
-        assertEquals("Зал на Лесной", state.title)
+        assertEquals("Forest Street Gym", state.title)
         assertEquals("ABCD2345", state.code)
         assertEquals(
             listOf(
-                Triple("Олег", true, true),
-                Triple("Иван", false, false),
-                Triple("Паша", false, true),
+                Triple("Oleg", true, true),
+                Triple("Ivan", false, false),
+                Triple("Pasha", false, true),
             ),
             state.members.map { Triple(it.friend.displayName, it.owner, it.opens) },
         )
@@ -130,7 +131,7 @@ class GroupViewModelTest {
     @Test
     fun a_member_carries_their_avatar() {
         val pictured = OLEG.copy(avatar = Avatar(picture = "https://example.test/oleg.png"))
-        val group = gym.friends.group("Зал на Лесной", owner = pictured, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = pictured, ME)
 
         val state = assertNotNull(viewModel(group).state.value)
 
@@ -150,7 +151,7 @@ class GroupViewModelTest {
                     .new(ME.userId, gym.clock.current)
                     .copy(friendColors = mapOf(OLEG.userId to 4)),
             )
-            val group = gym.friends.group("Зал на Лесной", owner = OLEG, PASHA, ME)
+            val group = gym.friends.group("Forest Street Gym", owner = OLEG, PASHA, ME)
 
             val state = assertNotNull(viewModel(group).state.value)
 
@@ -168,7 +169,7 @@ class GroupViewModelTest {
     @Test
     fun a_chosen_colour_is_stored_and_shown() =
         runTest {
-            val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             val vm = viewModel(group)
 
             vm.pickColor(OLEG.userId)
@@ -191,7 +192,7 @@ class GroupViewModelTest {
     @Test
     fun dismissing_the_palette_keeps_the_colour() =
         runTest {
-            val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+            val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
             val vm = viewModel(group)
             val before =
                 vm.state.value
@@ -210,16 +211,16 @@ class GroupViewModelTest {
 
     @Test
     fun a_member_leaves_once_they_confirm() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         val vm = viewModel(group)
 
         vm.askToGo()
 
         assertEquals(
             GroupConfirmUi(
-                "Выйти из группы?",
-                "Вы перестанете видеть визиты участников, а они — ваши.",
-                "Выйти",
+                "Leave the group?",
+                "You will stop seeing the members' visits, and they yours.",
+                "Leave",
             ),
             vm.state.value?.confirming,
         )
@@ -230,7 +231,7 @@ class GroupViewModelTest {
 
     @Test
     fun the_owner_deletes_the_group_once_they_confirm() {
-        val group = gym.friends.group("Зал на Лесной", owner = ME, OLEG)
+        val group = gym.friends.group("Forest Street Gym", owner = ME, OLEG)
         val vm = viewModel(group)
         assertTrue(assertNotNull(vm.state.value).isOwner)
 
@@ -238,9 +239,9 @@ class GroupViewModelTest {
 
         assertEquals(
             GroupConfirmUi(
-                "Удалить группу?",
-                "Участники перестанут видеть визиты друг друга.",
-                "Удалить",
+                "Delete the group?",
+                "Members will stop seeing each other's visits.",
+                "Delete",
             ),
             vm.state.value?.confirming,
         )
@@ -251,7 +252,7 @@ class GroupViewModelTest {
 
     @Test
     fun cancelling_keeps_the_group() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         val vm = viewModel(group)
         vm.askToGo()
 
@@ -268,14 +269,14 @@ class GroupViewModelTest {
 
     @Test
     fun a_group_the_account_is_not_in_is_gone() {
-        val group = gym.friends.group("Чужая", owner = OLEG)
+        val group = gym.friends.group("Strangers", owner = OLEG)
 
         assertTrue(viewModel(group).gone.value)
     }
 
     @Test
     fun a_leave_that_fails_keeps_the_group_and_says_so() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         val vm = viewModel(group)
         vm.askToGo()
         gym.friends.offline = true
@@ -284,12 +285,12 @@ class GroupViewModelTest {
 
         assertFalse(vm.gone.value)
         assertNull(vm.state.value?.confirming)
-        assertEquals("Нет связи с сервером", vm.state.value?.notice)
+        assertEquals("No connection to the server", vm.state.value?.notice)
     }
 
     @Test
     fun offline_the_group_says_so_and_a_retry_reads_it_again() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         gym.friends.offline = true
         val vm = viewModel(group)
         assertTrue(vm.offline.value)
@@ -297,12 +298,12 @@ class GroupViewModelTest {
         gym.friends.offline = false
         vm.refresh()
 
-        assertEquals("Зал на Лесной", vm.state.value?.title)
+        assertEquals("Forest Street Gym", vm.state.value?.title)
     }
 
     @Test
     fun inviting_hands_the_group_s_link_and_code_over_and_shows_what_came_back() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME, code = "ABCD2345")
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME, code = "ABCD2345")
         val vm = viewModel(group)
 
         vm.invite()
@@ -310,25 +311,25 @@ class GroupViewModelTest {
         assertEquals(
             listOf(
                 Invite(
-                    "Вступай в группу «Зал на Лесной» в Качалочке",
+                    "Join the group \"Forest Street Gym\" in Kachalochka",
                     "ABCD2345",
                     "https://example.test/kachalochka/?join=ABCD2345",
                 ),
             ),
             gym.invites.shared,
         )
-        assertEquals("Ссылка скопирована", vm.state.value?.notice)
+        assertEquals("Link copied", vm.state.value?.notice)
     }
 
     @Test
     fun without_an_address_only_the_code_is_shared() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME, code = "ABCD2345")
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME, code = "ABCD2345")
         gym.invites.pageAddress = null
         gym.invites.notice = null
 
         val vm = viewModel(group).also { it.invite() }
 
-        val call = "Вступай в группу «Зал на Лесной» в Качалочке"
+        val call = "Join the group \"Forest Street Gym\" in Kachalochka"
         assertEquals(listOf(Invite(call, "ABCD2345", null)), gym.invites.shared)
         // The share sheet speaks for itself, so the screen adds no notice.
         assertNull(assertNotNull(vm.state.value).notice)
@@ -341,7 +342,7 @@ class GroupViewModelTest {
             family.accounts.switchTo(SASHA.userId)
             val group =
                 family.friends.group(
-                    "Зал на Лесной",
+                    "Forest Street Gym",
                     owner = OLEG,
                     Friend(SASHA.userId, SASHA.displayName),
                 )

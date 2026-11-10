@@ -8,7 +8,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -17,15 +16,15 @@ import kotlin.time.Instant
 @OptIn(ExperimentalTestApi::class)
 class AccountScreenTest {
     private val ivan =
-        session("11111111-1111-4111-8111-111111111111", "Иван", Instant.fromEpochSeconds(0))
+        session("11111111-1111-4111-8111-111111111111", "Ivan", Instant.fromEpochSeconds(0))
 
     @Test
     fun the_screen_shows_the_email_and_how_the_account_signs_in() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
         runScreenTest(gym, screen = { AccountScreen(onBack = {}) }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Аккаунт")
+            onNodeWithTag("top-bar-title").assertTextEquals("Account")
             onNodeWithTag("account-email", useUnmergedTree = true)
-                .assertTextEquals("Иван@example.test")
+                .assertTextEquals("Ivan@example.test")
         }
     }
 
@@ -69,7 +68,7 @@ class AccountScreenTest {
     @Test
     fun the_screen_speaks_english() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
-        runScreenTestInEnglish(gym, screen = { AccountScreen(onBack = {}) }) {
+        runScreenTest(gym, screen = { AccountScreen(onBack = {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Account")
             onNodeWithTag("settings-sign-out-label", useUnmergedTree = true)
                 .assertTextEquals("Sign out")

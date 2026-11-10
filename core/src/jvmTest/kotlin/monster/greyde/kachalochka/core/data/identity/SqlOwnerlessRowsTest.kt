@@ -129,7 +129,7 @@ class SqlOwnerlessRowsTest {
     fun claiming_covers_machines_and_sets_as_well_as_visits() =
         runTest {
             val unowned = visit(null)
-            val press = Machine.new("Жим ногами", null, t0)
+            val press = Machine.new("Leg press", null, t0)
             val recorded =
                 WorkoutSet(
                     WorkoutSetId.random(),
@@ -172,8 +172,8 @@ class SqlOwnerlessRowsTest {
     @Test
     fun an_older_anonymous_profile_stays_older_than_the_account_s_pulled_one() =
         runTest {
-            val anonymous = Profile.new(null, t0).copy(displayName = "Аноним")
-            val pulled = Profile.new(owner, t0 + 0.5.hours).copy(displayName = "Ванёк")
+            val anonymous = Profile.new(null, t0).copy(displayName = "Anonymous")
+            val pulled = Profile.new(owner, t0 + 0.5.hours).copy(displayName = "Vanya")
             profiles.upsert(anonymous)
             profiles.upsert(pulled)
 
@@ -218,7 +218,7 @@ class SqlOwnerlessRowsTest {
     @Test
     fun claiming_stamps_anonymous_measures_and_their_values_and_enqueues_them() =
         runTest {
-            val neck = Measure(MeasureId.random(), null, "Шея", "см", null, 0, t0, false)
+            val neck = Measure(MeasureId.random(), null, "Neck", "cm", null, 0, t0, false)
             val monday =
                 Measurement(
                     MeasurementId.random(),
@@ -274,18 +274,18 @@ class SqlOwnerlessRowsTest {
     @Test
     fun a_claimed_tag_takes_the_owner_s_id_and_joins_the_owner_s_row_of_that_name() =
         runTest {
-            val anonymous = Machine.new("Жим", null, t0).copy(tags = setOf("ноги", "спина"))
-            val own = Machine.new("Тяга", owner, t0).copy(tags = setOf("ноги"))
+            val anonymous = Machine.new("Press", null, t0).copy(tags = setOf("legs", "back"))
+            val own = Machine.new("Row", owner, t0).copy(tags = setOf("legs"))
             machines.upsert(anonymous)
             machines.upsert(own)
 
             rows.claim(owner)
 
-            assertEquals(setOf("ноги", "спина"), machines.byId(anonymous.id)?.tags)
+            assertEquals(setOf("legs", "back"), machines.byId(anonymous.id)?.tags)
             assertEquals(
-                setOf(tagId(owner, "ноги"), tagId(owner, "спина")),
+                setOf(tagId(owner, "legs"), tagId(owner, "back")),
                 database.tagQueries
-                    .byIds(listOf(tagId(owner, "ноги"), tagId(owner, "спина")), ::tagOf)
+                    .byIds(listOf(tagId(owner, "legs"), tagId(owner, "back")), ::tagOf)
                     .executeAsList()
                     .filter { !it.deleted && it.userId == owner }
                     .map { it.id }
@@ -295,8 +295,8 @@ class SqlOwnerlessRowsTest {
             assertTrue(
                 outbox.pending().map { it.tableName to it.rowId }.containsAll(
                     listOf(
-                        TAG_TABLE to tagId(owner, "спина"),
-                        MACHINE_TAG_TABLE to machineTagId(anonymous.id, "спина"),
+                        TAG_TABLE to tagId(owner, "back"),
+                        MACHINE_TAG_TABLE to machineTagId(anonymous.id, "back"),
                     ),
                 ),
             )
@@ -305,10 +305,10 @@ class SqlOwnerlessRowsTest {
     @Test
     fun an_anonymous_tag_nothing_holds_is_forgotten_and_leaves_the_owner_s_tag_alone() =
         runTest {
-            val anonymous = Machine.new("Жим", null, t0).copy(tags = setOf("ноги"))
+            val anonymous = Machine.new("Press", null, t0).copy(tags = setOf("legs"))
             machines.upsert(anonymous)
             machines.upsert(anonymous.copy(tags = emptySet(), updatedAt = t0 + 1.hours))
-            val pulled = Tag(tagId(owner, "ноги"), owner, "ноги", t0, deleted = false)
+            val pulled = Tag(tagId(owner, "legs"), owner, "legs", t0, deleted = false)
             database.tagQueries.write(pulled)
 
             rows.claim(owner)

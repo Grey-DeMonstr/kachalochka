@@ -11,7 +11,7 @@ import kotlin.time.Instant
 class TagWireTest {
     private val ivan = UserId("11111111-1111-4111-8111-111111111111")
     private val t0 = Instant.parse("2026-10-16T10:00:00Z")
-    private val press = Machine.new("Жим ногами", ivan, t0)
+    private val press = Machine.new("Leg press", ivan, t0)
 
     @Test
     fun ids_are_uuid_v5_of_the_owner_or_machine_and_the_key_as_postgres_makes_them() {
@@ -25,8 +25,8 @@ class TagWireTest {
 
     @Test
     fun machines_read_the_names_of_their_live_links() {
-        val live = Tag(tagId(ivan, "ноги"), ivan, "ноги", t0, false)
-        val back = Tag(tagId(ivan, "спина"), ivan, "спина", t0, false)
+        val live = Tag(tagId(ivan, "legs"), ivan, "legs", t0, false)
+        val back = Tag(tagId(ivan, "back"), ivan, "back", t0, false)
         val links =
             listOf(live to false, back to true).map { (tag, deleted) ->
                 MachineTag(machineTagId(press.id, tag.name), ivan, press.id, tag.id, t0, deleted)
@@ -34,17 +34,17 @@ class TagWireTest {
 
         val read = listOf(press).withTagRows(links, listOf(live, back)).single()
 
-        assertEquals(setOf("ноги"), read.tags)
+        assertEquals(setOf("legs"), read.tags)
     }
 
     @Test
     fun a_group_mate_s_link_or_tag_on_a_machine_is_not_its_tag() {
         val mate = UserId("33333333-3333-4333-8333-333333333333")
-        val theirs = Tag(tagId(mate, "чужой"), mate, "чужой", t0, false)
+        val theirs = Tag(tagId(mate, "theirs"), mate, "theirs", t0, false)
         val link =
-            MachineTag(machineTagId(press.id, "чужой"), mate, press.id, theirs.id, t0, false)
-        val taken = Tag(tagId(ivan, "ноги"), mate, "чужой", t0, false)
-        val own = MachineTag(machineTagId(press.id, "ноги"), ivan, press.id, taken.id, t0, false)
+            MachineTag(machineTagId(press.id, "theirs"), mate, press.id, theirs.id, t0, false)
+        val taken = Tag(tagId(ivan, "legs"), mate, "theirs", t0, false)
+        val own = MachineTag(machineTagId(press.id, "legs"), ivan, press.id, taken.id, t0, false)
 
         val read = listOf(press).withTagRows(listOf(link, own), listOf(theirs, taken)).single()
 
@@ -53,11 +53,11 @@ class TagWireTest {
 
     @Test
     fun rows_travel_in_the_wire_format() {
-        val tag = Tag(tagId(ivan, "ноги"), ivan, "ноги", t0, false)
-        val link = MachineTag(machineTagId(press.id, "ноги"), ivan, press.id, tag.id, t0, false)
+        val tag = Tag(tagId(ivan, "legs"), ivan, "legs", t0, false)
+        val link = MachineTag(machineTagId(press.id, "legs"), ivan, press.id, tag.id, t0, false)
 
         assertEquals(
-            """{"id":"${tag.id}","user_id":"${ivan.value}","name":"ноги",""" +
+            """{"id":"${tag.id}","user_id":"${ivan.value}","name":"legs",""" +
                 """"updated_at":"2026-10-16T10:00:00Z","deleted":false}""",
             Json.encodeToString(TagRow.of(tag)),
         )

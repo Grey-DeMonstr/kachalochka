@@ -163,7 +163,7 @@ class LocalProfileRepositoryTest {
         runTest {
             val repository = koin.get<ProfileRepository>()
             val owner = profile.userId
-            val older = profile.copy(id = ProfileId.random(), displayName = "Старый")
+            val older = profile.copy(id = ProfileId.random(), displayName = "Old")
             val newest =
                 profile.copy(
                     id = ProfileId.random(),

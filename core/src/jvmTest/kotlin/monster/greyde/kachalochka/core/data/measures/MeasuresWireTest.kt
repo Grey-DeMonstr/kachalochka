@@ -18,7 +18,7 @@ class MeasuresWireTest {
         Measure(
             id = MeasureId("9b1f0c3e-0000-4000-8000-000000000001"),
             userId = UserId("9b1f0c3e-0000-4000-8000-000000000002"),
-            name = "Жир",
+            name = "Body fat",
             unit = "%",
             kind = MeasureKind.BodyFat,
             position = 7,

@@ -30,7 +30,6 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
@@ -49,7 +48,7 @@ class CalendarScreenTest {
     private val sunday =
         Visit(VisitId.random(), null, CalendarDay(2023, 11, 12), t0 - 2.days, t0, false)
 
-    private val press = Machine.new("Жим ногами", null, t0)
+    private val press = Machine.new("Leg press", null, t0)
 
     init {
         runBlocking {
@@ -94,7 +93,7 @@ class CalendarScreenTest {
             waitForIdle()
             onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
             onNodeWithTag("save-as-plan-${sunday.id.value}")
-                .assertTextEquals("В план…")
+                .assertTextEquals("Add to plan…")
                 .performClick()
             waitForIdle()
             onNodeWithTag("plan-choice-new").performClick()
@@ -105,7 +104,7 @@ class CalendarScreenTest {
 
     @Test
     fun the_visit_menu_adds_the_visit_s_machines_to_a_chosen_plan_and_says_so() {
-        val back = Plan(PlanId.random(), null, "Спина", emptyList(), t0, t0, false)
+        val back = Plan(PlanId.random(), null, "Back", emptyList(), t0, t0, false)
         runBlocking { gym.plans.upsert(back) }
         var saved: CalendarDay? = null
         runScreenTest(gym, screen = { calendar(onSaveAsPlan = { saved = it }) }) {
@@ -116,7 +115,7 @@ class CalendarScreenTest {
             waitForIdle()
             onNodeWithTag("plan-choice-${back.id.value}").performClick()
             waitForIdle()
-            onNodeWithTag("placement-notice").assertTextEquals("Добавлено в «Спина»")
+            onNodeWithTag("placement-notice").assertTextEquals("Added to “Back”")
         }
         assertNull(saved)
         assertEquals(
@@ -135,7 +134,7 @@ class CalendarScreenTest {
             waitForIdle()
             onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
             onNodeWithTag("repeat-today-${sunday.id.value}")
-                .assertTextEquals("Повторить сегодня")
+                .assertTextEquals("Repeat today")
                 .performClick()
             waitForIdle()
         }
@@ -161,7 +160,7 @@ class CalendarScreenTest {
             waitForIdle()
             onNodeWithTag("visit-menu-${sunday.id.value}").performScrollTo().performClick()
             onNodeWithTag("share-visit-${sunday.id.value}")
-                .assertTextEquals("Поделиться")
+                .assertTextEquals("Share")
                 .performClick()
             waitForIdle()
             onNodeWithTag("share-as-image").performClick()
@@ -185,9 +184,9 @@ class CalendarScreenTest {
             waitForIdle()
             onNodeWithTag("share-as-text").performClick()
             waitForIdle()
-            onNodeWithTag("share-notice").assertTextEquals("Скопировано")
+            onNodeWithTag("share-notice").assertTextEquals("Copied")
         }
-        assertEquals(listOf("вс\n\nЖим ногами 70кг 1x10"), gym.texts.shared)
+        assertEquals(listOf("Sun\n\nLeg press 70kg 1x10"), gym.texts.shared)
     }
 
     @Test
@@ -200,9 +199,9 @@ class CalendarScreenTest {
             waitForIdle()
             onNodeWithTag("share-as-text").performClick()
             waitForIdle()
-            onNodeWithTag("share-notice").assertTextEquals("Скопировано")
+            onNodeWithTag("share-notice").assertTextEquals("Copied")
         }
-        assertEquals(listOf("вс\n\nЖим ногами 70кг 1x10"), gym.texts.shared)
+        assertEquals(listOf("Sun\n\nLeg press 70kg 1x10"), gym.texts.shared)
     }
 
     @Test
@@ -219,10 +218,10 @@ class CalendarScreenTest {
         }
     }
 
-    /** Иван signed in, with [trained] in his group each having a visit on the 12th. */
+    /** Ivan signed in, with [trained] in his group each having a visit on the 12th. */
     private fun friendsGym(vararg trained: Friend): FakeGym {
         val signed = signedInGym()
-        signed.friends.group("Зал на Лесной", owner = ME, *trained)
+        signed.friends.group("Forest Street Gym", owner = ME, *trained)
         trained.forEach {
             signed.friends.visits +=
                 Visit(
@@ -256,13 +255,13 @@ class CalendarScreenTest {
             onNodeWithTag("friend-visit-${OLEG.userId.value}").performScrollTo().performClick()
             waitForIdle()
         }
-        assertEquals(Triple(OLEG.userId, "Олег", CalendarDay(2023, 11, 12)), opened)
+        assertEquals(Triple(OLEG.userId, "Oleg", CalendarDay(2023, 11, 12)), opened)
     }
 
     @Test
     fun a_day_draws_at_most_four_dots_the_own_one_first() {
-        val anna = Friend(UserId("55555555-5555-4555-8555-555555555555"), "Анна")
-        val misha = Friend(UserId("66666666-6666-4666-8666-666666666666"), "Миша")
+        val anna = Friend(UserId("55555555-5555-4555-8555-555555555555"), "Anna")
+        val misha = Friend(UserId("66666666-6666-4666-8666-666666666666"), "Misha")
         val signed = friendsGym(OLEG, PASHA, anna, misha)
         runBlocking {
             signed.visits.upsert(
@@ -285,7 +284,7 @@ class CalendarScreenTest {
 
     @Test
     fun the_calendar_screen_speaks_english() =
-        runScreenTestInEnglish(FakeGym(), screen = { calendar() }) {
+        runScreenTest(FakeGym(), screen = { calendar() }) {
             waitForIdle()
             onNodeWithTag("top-bar-title").assertTextEquals("Visits")
             onNodeWithTag("calendar-empty").performScrollTo().assertTextEquals("No visit")
@@ -295,7 +294,7 @@ class CalendarScreenTest {
     fun a_marked_day_lists_its_visit_and_opens_it() {
         var opened: CalendarDay? = null
         runScreenTest(gym, screen = { calendar(onOpenVisit = { opened = it }) }) {
-            onNodeWithTag("calendar-month").assertTextEquals("Ноябрь 2023")
+            onNodeWithTag("calendar-month").assertTextEquals("November 2023")
             onNodeWithTag("day-2023-11-15").assertIsNotEnabled()
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
@@ -307,7 +306,7 @@ class CalendarScreenTest {
 
     @Test
     fun a_visit_card_draws_its_tags_in_capitals() {
-        val press = Machine.new("Жим ногами", null, t0).copy(tags = setOf("Ноги", "Жим"))
+        val press = Machine.new("Leg press", null, t0).copy(tags = setOf("Legs", "Press"))
         runBlocking {
             gym.machines.upsert(press)
             gym.sets.upsert(
@@ -329,8 +328,8 @@ class CalendarScreenTest {
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
             val card = "calendar-visit-${sunday.id.value}"
-            onNodeWithTag("$card-tag-жим", useUnmergedTree = true).assertTextEquals("ЖИМ")
-            onNodeWithTag("$card-tag-ноги", useUnmergedTree = true).assertTextEquals("НОГИ")
+            onNodeWithTag("$card-tag-press", useUnmergedTree = true).assertTextEquals("PRESS")
+            onNodeWithTag("$card-tag-legs", useUnmergedTree = true).assertTextEquals("LEGS")
         }
     }
 
@@ -344,13 +343,13 @@ class CalendarScreenTest {
             onNodeWithTag("day-2023-11-12").performClick()
             waitForIdle()
             val card = "calendar-visit-${sunday.id.value}"
-            onNodeWithTag("$card-machine-0-new", useUnmergedTree = true).assertTextEquals("Новое")
+            onNodeWithTag("$card-machine-0-new", useUnmergedTree = true).assertTextEquals("New")
         }
     }
 
     @Test
     fun a_card_shows_three_machines_and_the_rest_on_request() {
-        val names = listOf("Гиперэкстензия", "Тяга", "Бабочка", "Приседания")
+        val names = listOf("Hyperextension", "Row", "Butterfly", "Squat")
         runBlocking {
             names.forEachIndexed { i, name ->
                 val machine = Machine.new(name, null, t0)
@@ -379,11 +378,11 @@ class CalendarScreenTest {
             onNodeWithTag("$card-machine-3", useUnmergedTree = true).assertDoesNotExist()
             onNodeWithTag("$card-more")
                 .performScrollTo()
-                .assertTextEquals("Ещё 2 упражнения")
+                .assertTextEquals("2 more machines")
                 .performClick()
             waitForIdle()
             onNodeWithTag("$card-machine-4", useUnmergedTree = true).assertExists()
-            onNodeWithTag("$card-more").assertTextEquals("Свернуть")
+            onNodeWithTag("$card-more").assertTextEquals("Show less")
         }
     }
 
@@ -393,10 +392,11 @@ class CalendarScreenTest {
         runScreenTest(gym, screen = { calendar(onOpenVisit = { opened = it }) }) {
             onNodeWithTag("mode-feed").performClick()
             waitForIdle()
-            onNodeWithTag("feed-day-2023-11-12").assertTextEquals("Воскресенье, 12 ноября")
+            onNodeWithTag("feed-day-2023-11-12").assertTextEquals("Sunday, 12 November")
             onNodeWithTag("feed-month-2023-11-12", useUnmergedTree = true)
-                .assertTextEquals("НОЯБРЬ 2023")
-            onNodeWithTag("feed-end", useUnmergedTree = true).assertTextEquals("Это первый визит")
+                .assertTextEquals("NOVEMBER 2023")
+            onNodeWithTag("feed-end", useUnmergedTree = true)
+                .assertTextEquals("This is the first visit")
             onNodeWithTag("feed-visit-${sunday.id.value}").performClick()
             waitForIdle()
         }
@@ -406,7 +406,7 @@ class CalendarScreenTest {
 
     @Test
     fun a_selected_person_shows_alone_in_the_feed() {
-        val anna = Friend(UserId("55555555-5555-4555-8555-555555555555"), "Анна Карпелевич")
+        val anna = Friend(UserId("55555555-5555-4555-8555-555555555555"), "Anna Karpelevich")
         val signed = friendsGym(OLEG, anna)
         runBlocking { signed.visitsModes.set(VisitsMode.Feed) }
         val oleg = "feed-person-${OLEG.userId.value}"
@@ -415,7 +415,7 @@ class CalendarScreenTest {
         runScreenTest(signed, screen = { calendar() }) {
             waitForIdle()
             onNodeWithTag("feed-person-${anna.userId.value}")
-                .assertContentDescriptionEquals("Анна Карпелевич")
+                .assertContentDescriptionEquals("Anna Karpelevich")
                 .assertWidthIsEqualTo(48.dp)
             val top = { tag: String -> onNodeWithTag(tag).getBoundsInRoot().top }
             assertEquals(top(oleg), top("feed-person-${anna.userId.value}"))
@@ -443,7 +443,7 @@ class CalendarScreenTest {
             onNodeWithTag("move-visit-${sunday.id.value}").performClick()
             waitForIdle()
             onNodeWithTag("move-banner").assertIsDisplayed()
-            onNodeWithTag("calendar-day-title").assertTextEquals("Воскресенье, 12 ноября")
+            onNodeWithTag("calendar-day-title").assertTextEquals("Sunday, 12 November")
         }
         assertEquals(VisitsMode.Calendar, gym.visitsModes.mode.value)
     }
@@ -499,7 +499,7 @@ class CalendarScreenTest {
                     .deleted,
             )
             onNodeWithTag("calendar-empty").performScrollTo().assertIsDisplayed()
-            onNodeWithTag("calendar-empty").assertTextEquals("Нет визита")
+            onNodeWithTag("calendar-empty").assertTextEquals("No visit")
         }
     }
 
@@ -566,7 +566,7 @@ class CalendarScreenTest {
         runScreenTest(gym, screen = { calendar(onOpenVisit = { opened = it }) }) {
             onNodeWithTag("day-2023-11-10").performClick()
             waitForIdle()
-            onNodeWithTag("add-visit").performScrollTo().assertTextEquals("Добавить визит")
+            onNodeWithTag("add-visit").performScrollTo().assertTextEquals("Add visit")
             onNodeWithTag("add-visit").performClick()
             waitForIdle()
         }
@@ -619,7 +619,7 @@ class CalendarScreenTest {
     fun today_without_a_visit_offers_to_add_one() {
         var opened: CalendarDay? = null
         runScreenTest(gym, screen = { calendar(onOpenVisit = { opened = it }) }) {
-            onNodeWithTag("calendar-empty").performScrollTo().assertTextEquals("Нет визита")
+            onNodeWithTag("calendar-empty").performScrollTo().assertTextEquals("No visit")
             onNodeWithTag("add-visit").performScrollTo().performClick()
             waitForIdle()
         }

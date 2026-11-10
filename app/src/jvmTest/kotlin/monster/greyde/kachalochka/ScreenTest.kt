@@ -164,26 +164,26 @@ fun runScreenTest(
 )
 
 /**
- * [runScreenTest] with the app speaking English. Russian comes back before the test ends, while
+ * [runScreenTest] with the app speaking Russian. English comes back before the test ends, while
  * the screen's view models can still react to it.
  */
 @OptIn(ExperimentalTestApi::class)
-fun runScreenTestInEnglish(
+fun runScreenTestInRussian(
     gym: FakeGym,
     screen: @Composable () -> Unit,
     assertions: ComposeUiTest.() -> Unit,
 ) {
-    AppStrings.set(EnStrings)
+    AppStrings.set(RuStrings)
     try {
         runScreenTest(gym, screen) {
             try {
                 assertions()
             } finally {
-                AppStrings.set(RuStrings)
+                AppStrings.set(EnStrings)
                 waitForIdle()
             }
         }
     } finally {
-        AppStrings.set(RuStrings)
+        AppStrings.set(EnStrings)
     }
 }

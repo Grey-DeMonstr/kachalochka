@@ -18,10 +18,10 @@ import kotlin.time.Instant
 
 class VisitCardsTest {
     private val t0 = Instant.parse("2023-11-14T10:00:00Z")
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val row = Machine.new("Тяга верхнего блока", null, t0)
+    private val press = Machine.new("Leg press", null, t0)
+    private val row = Machine.new("Pulldown", null, t0)
     private val gravitron =
-        Machine.new("Гравитрон", null, t0).copy(weightMode = WeightMode.Counterweight)
+        Machine.new("Gravitron", null, t0).copy(weightMode = WeightMode.Counterweight)
     private val machines = listOf(press, row, gravitron).associateBy { it.id }
     private val today = VisitId.random()
 
@@ -63,8 +63,8 @@ class VisitCardsTest {
 
         assertEquals(
             listOf(
-                ExerciseUi("Тяга верхнего блока", "40 кг × 12", null),
-                ExerciseUi("Жим ногами", "80 кг × 8", null),
+                ExerciseUi("Pulldown", "40 kg × 12", null),
+                ExerciseUi("Leg press", "80 kg × 8", null),
             ),
             rows(sets),
         )
@@ -74,14 +74,14 @@ class VisitCardsTest {
     fun a_heavier_best_than_the_prior_shows_the_weight_gained() {
         val sets = listOf(set(today, press, 82.5, 8, prior = DayBest(80.0, 6, 1)))
 
-        assertEquals("+2.5 кг", rows(sets).single().growth)
+        assertEquals("+2.5 kg", rows(sets).single().growth)
     }
 
     @Test
     fun at_the_same_weight_more_reps_show_the_reps_gained() {
         val sets = listOf(set(today, press, 80.0, 10, prior = DayBest(80.0, 8, 2)))
 
-        assertEquals("+2 повт.", rows(sets).single().growth)
+        assertEquals("+2 reps", rows(sets).single().growth)
     }
 
     @Test
@@ -93,7 +93,7 @@ class VisitCardsTest {
                 set(today, press, 16.0, 10, position = 1, prior = prior),
             )
 
-        assertEquals("+1 подход", rows(sets).single().growth)
+        assertEquals("+1 set", rows(sets).single().growth)
     }
 
     @Test
@@ -139,8 +139,8 @@ class VisitCardsTest {
                 listOf(set(today, gravitron, 25.0, 8, prior = DayBest(30.0, 8, 1))),
             ).single()
 
-        assertEquals("(-)25 кг × 8", shown.best)
-        assertEquals("+5 кг", shown.growth)
+        assertEquals("(-)25 kg × 8", shown.best)
+        assertEquals("+5 kg", shown.growth)
     }
 
     @Test
@@ -155,8 +155,8 @@ class VisitCardsTest {
                 PreferredWeightUnit.Kg,
             ).single()
 
-        assertEquals("50 кг × 8", shown.best)
-        assertEquals("+4.5 кг", shown.growth)
+        assertEquals("50 kg × 8", shown.best)
+        assertEquals("+4.5 kg", shown.growth)
     }
 
     @Test

@@ -27,7 +27,8 @@ import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.family.childAccount
-import monster.greyde.kachalochka.ui.strings.inEnglish
+import monster.greyde.kachalochka.ui.strings.RuStrings
+import monster.greyde.kachalochka.ui.strings.inRussian
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -54,10 +55,10 @@ class MeasuresViewModelTest {
     private val gym = FakeGym()
     private val counting = CountingMeasures(gym.measures)
     private val t0 = gym.clock.current
-    private val ivan = session("11111111-1111-4111-8111-111111111111", "Иван")
-    private val misha = session("22222222-2222-4222-8222-222222222222", "Миша")
+    private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan")
+    private val misha = session("22222222-2222-4222-8222-222222222222", "Misha")
     private val defaults =
-        listOf("Вес", "Талия", "Грудь", "Обхват бёдер", "Бицепс", "Окружность бедра", "Шея")
+        listOf("Weight", "Waist", "Chest", "Hips", "Biceps", "Thigh", "Neck")
 
     private fun session(
         id: String,
@@ -137,7 +138,7 @@ class MeasuresViewModelTest {
             )
             val neck = own.first { it.kind == MeasureKind.Neck }
             assertEquals(
-                "38.5 см",
+                "38.5 cm",
                 vm.state.value.rows
                     .first { it.id == neck.id }
                     .value,
@@ -217,7 +218,7 @@ class MeasuresViewModelTest {
             val vm = viewModel().also { it.load() }
 
             assertEquals(
-                defaults + "День цикла",
+                defaults + "Cycle day",
                 vm.state.value.rows
                     .map { it.name },
             )
@@ -228,7 +229,7 @@ class MeasuresViewModelTest {
             val row =
                 vm.state.value.rows
                     .last()
-            assertEquals("12 день" to null, row.value to row.delta)
+            assertEquals("12 day" to null, row.value to row.delta)
             assertEquals(emptyList(), row.tags)
 
             gym.profiles.upsert(woman.copy(sex = Sex.Male, updatedAt = t0 + 1.minutes))
@@ -239,32 +240,42 @@ class MeasuresViewModelTest {
                 vm.state.value.rows
                     .map { it.name },
             )
-            inEnglish {
+            inRussian {
                 assertEquals(
-                    "Cycle day" to "day",
+                    RuStrings.measureCycleDay to RuStrings.dayUnit,
                     cycle.shownName() to cycle.shownUnit(),
                 )
             }
         }
 
     @Test
-    fun predefined_measures_and_formulas_read_in_english() =
+    fun predefined_measures_and_formulas_read_in_russian() =
         runTest {
             val vm = viewModel().also { it.load() }
             val weight = measureOf(MeasureKind.Weight)
             record(weight, gym.today, 82.0)
 
-            inEnglish {
+            inRussian {
                 vm.load()
                 val rows = vm.state.value.rows
                 assertEquals(
-                    listOf("Weight", "Waist", "Chest", "Hips", "Biceps", "Thigh", "Neck"),
+                    with(RuStrings) {
+                        listOf(
+                            measureWeight,
+                            measureWaist,
+                            measureChest,
+                            measureHips,
+                            measureBiceps,
+                            measureThigh,
+                            measureNeck,
+                        )
+                    },
                     rows.map { it.name },
                 )
-                assertEquals("82 kg", rows.first().value)
-                assertEquals("today", rows.first().ago)
+                assertEquals("82 ${RuStrings.kg}", rows.first().value)
+                assertEquals(RuStrings.daysAgo(0), rows.first().ago)
                 assertEquals(
-                    "US Navy",
+                    RuStrings.navy,
                     vm.state.value.fat
                         .first()
                         .name,
@@ -281,7 +292,7 @@ class MeasuresViewModelTest {
             val vm = viewModel().also { it.load() }
 
             assertEquals(
-                defaults - "Грудь",
+                defaults - "Chest",
                 vm.state.value.rows
                     .map { it.name },
             )
@@ -306,21 +317,21 @@ class MeasuresViewModelTest {
             assertEquals(
                 MeasureRowUi(
                     weight.id,
-                    "Вес",
-                    "82 кг",
+                    "Weight",
+                    "82 kg",
                     "−0.4",
-                    "2 дня назад",
+                    "2 days ago",
                     listOf("YMCA", "BMI"),
                 ),
                 rows[weight.id],
             )
             assertEquals(
-                MeasureRowUi(chest.id, "Грудь", "101 см", null, "сегодня", emptyList()),
+                MeasureRowUi(chest.id, "Chest", "101 cm", null, "today", emptyList()),
                 rows[chest.id],
             )
             val waist = measureOf(MeasureKind.Waist)
             assertEquals(
-                MeasureRowUi(waist.id, "Талия", null, null, null, listOf("NAVY", "YMCA")),
+                MeasureRowUi(waist.id, "Waist", null, null, null, listOf("NAVY", "YMCA")),
                 rows[waist.id],
             )
         }
@@ -329,7 +340,7 @@ class MeasuresViewModelTest {
     fun a_predefined_measure_shows_the_app_s_name_whatever_is_stored() =
         runTest {
             viewModel().load()
-            gym.measures.upsert(measureOf(MeasureKind.Hips).copy(name = "Бёдра"))
+            gym.measures.upsert(measureOf(MeasureKind.Hips).copy(name = "Hip girth"))
 
             val vm = viewModel().also { it.load() }
 
@@ -365,7 +376,7 @@ class MeasuresViewModelTest {
     fun the_fat_measure_goes_with_its_values() =
         runTest {
             val fat =
-                Measure(MeasureId.random(), null, "Жир", "%", MeasureKind.BodyFat, 7, t0, false)
+                Measure(MeasureId.random(), null, "Fat", "%", MeasureKind.BodyFat, 7, t0, false)
             gym.measures.upsert(fat)
             record(fat, gym.today, 18.0)
             gym.clock.current = t0 + 5.minutes
@@ -408,7 +419,7 @@ class MeasuresViewModelTest {
                     FatRowUi(
                         BodyFatMethod.Navy,
                         "NAVY",
-                        "ВМС США",
+                        "US Navy",
                         percent(BodyFatMethod.Navy, inputs),
                         null,
                     ),
@@ -422,7 +433,7 @@ class MeasuresViewModelTest {
                     FatRowUi(
                         BodyFatMethod.Deurenberg,
                         "BMI",
-                        "Дойренберг",
+                        "Deurenberg",
                         percent(BodyFatMethod.Deurenberg, inputs),
                         null,
                     ),
@@ -445,17 +456,17 @@ class MeasuresViewModelTest {
                     FatRowUi(
                         BodyFatMethod.Navy,
                         "NAVY",
-                        "ВМС США",
+                        "US Navy",
                         null,
-                        "Нужно: пол, рост, талия, шея",
+                        "Needs: sex, height, waist, neck",
                     ),
-                    FatRowUi(BodyFatMethod.Ymca, "YMCA", "YMCA", null, "Нужно: пол, талия"),
+                    FatRowUi(BodyFatMethod.Ymca, "YMCA", "YMCA", null, "Needs: sex, waist"),
                     FatRowUi(
                         BodyFatMethod.Deurenberg,
                         "BMI",
-                        "Дойренберг",
+                        "Deurenberg",
                         null,
-                        "Нужно: пол, дата рождения, рост",
+                        "Needs: sex, birth date, height",
                     ),
                 ),
                 vm.state.value.fat,
@@ -475,19 +486,19 @@ class MeasuresViewModelTest {
 
             vm.openAdd()
             assertEquals(NewMeasureUi("", "", canSave = false), vm.state.value.adding)
-            vm.typeName("Предплечье ")
-            vm.typeUnit(" см")
-            assertEquals(NewMeasureUi("Предплечье ", " см", canSave = true), vm.state.value.adding)
+            vm.typeName("Forearm ")
+            vm.typeUnit(" cm")
+            assertEquals(NewMeasureUi("Forearm ", " cm", canSave = true), vm.state.value.adding)
             vm.confirmAdd()
 
             assertNull(vm.state.value.adding)
             assertEquals(
-                defaults + "Предплечье",
+                defaults + "Forearm",
                 vm.state.value.rows
                     .map { it.name },
             )
             val added = gym.measures.all(null).last()
-            assertEquals("см", added.unit)
+            assertEquals("cm", added.unit)
             assertNull(added.kind)
             assertEquals(7, added.position)
             assertEquals(1, gym.sync.requests)
@@ -500,7 +511,7 @@ class MeasuresViewModelTest {
 
             vm.openAdd()
             vm.typeName("  ")
-            vm.typeUnit("см")
+            vm.typeUnit("cm")
             vm.confirmAdd()
 
             assertFalse(
@@ -529,13 +540,13 @@ class MeasuresViewModelTest {
 
             assertEquals(
                 listOf(
-                    "Грудь",
-                    "Вес",
-                    "Талия",
-                    "Обхват бёдер",
-                    "Бицепс",
-                    "Окружность бедра",
-                    "Шея",
+                    "Chest",
+                    "Weight",
+                    "Waist",
+                    "Hips",
+                    "Biceps",
+                    "Thigh",
+                    "Neck",
                 ),
                 vm.state.value.rows
                     .map { it.name },
@@ -543,8 +554,15 @@ class MeasuresViewModelTest {
             val written =
                 gym.measures.rows.values
                     .filter { it.updatedAt != MEASURE_SEEDED_AT }
-                    .associate { it.name to it.position }
-            assertEquals(mapOf("Грудь" to 0, "Вес" to 1, "Талия" to 2), written)
+                    .associate { it.kind to it.position }
+            assertEquals(
+                mapOf<MeasureKind?, Int>(
+                    MeasureKind.Chest to 0,
+                    MeasureKind.Weight to 1,
+                    MeasureKind.Waist to 2,
+                ),
+                written,
+            )
             assertEquals(1, gym.sync.requests)
 
             vm.toggleOrdering()
@@ -574,12 +592,12 @@ class MeasuresViewModelTest {
             val vm = viewModel().also { it.load() }
 
             gym.measures.upsert(
-                Measure(MeasureId.random(), null, "Предплечье", "см", null, 9, t0, false),
+                Measure(MeasureId.random(), null, "Forearm", "cm", null, 9, t0, false),
             )
             gym.sync.completePass()
 
             assertEquals(
-                defaults + "Предплечье",
+                defaults + "Forearm",
                 vm.state.value.rows
                     .map { it.name },
             )

@@ -13,13 +13,13 @@ internal val OLGA_SESSION =
             Account(
                 UserId("88888888-8888-4888-8888-888888888888"),
                 "olga@example.test",
-                "Ольга",
+                "Olga",
             ),
     )
 
-internal val IVAN_MEMBER = FamilyMember(IVAN_SESSION.account.userId, "Иван")
-internal val SASHA = FamilyMember(UserId("66666666-6666-4666-8666-666666666666"), "Саша")
-internal val PAPA = FamilyMember(UserId("77777777-7777-4777-8777-777777777777"), "Папа")
+internal val IVAN_MEMBER = FamilyMember(IVAN_SESSION.account.userId, "Ivan")
+internal val SASHA = FamilyMember(UserId("66666666-6666-4666-8666-666666666666"), "Sasha")
+internal val PAPA = FamilyMember(UserId("77777777-7777-4777-8777-777777777777"), "Dad")
 
 /** [child] as a managed account [guardian] acts for. */
 internal fun childAccount(

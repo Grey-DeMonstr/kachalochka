@@ -22,7 +22,7 @@ class ProfileWireTest {
             Profile(
                 id = ProfileId("9b1f0c3e-0000-4000-8000-000000000001"),
                 userId = UserId("9b1f0c3e-0000-4000-8000-000000000002"),
-                displayName = "Серж",
+                displayName = "Serge",
                 updatedAt = Instant.fromEpochMilliseconds(1_700_000_000_123),
                 deleted = false,
                 friendColors = mapOf(oleg to 0xFF4CAF50.toInt(), anna to 3),

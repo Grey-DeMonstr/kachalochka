@@ -7,7 +7,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
 import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
@@ -15,7 +14,7 @@ class SignInScreenTest {
     @Test
     fun the_sign_in_screen_speaks_english() {
         val gym = FakeGym(credentials = SupabaseCredentials("", ""))
-        runScreenTestInEnglish(gym, screen = { SignInScreen(onSignIn = {}) }) {
+        runScreenTest(gym, screen = { SignInScreen(onSignIn = {}) }) {
             onNodeWithTag("sign-in-google").assertTextEquals("Sign in with Google")
             onNodeWithTag("sign-in-unconfigured")
                 .assertTextEquals("Sign-in is unavailable: this build is not configured")

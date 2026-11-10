@@ -20,14 +20,14 @@ class TopBarTest {
             FakeGym(),
             screen = {
                 Screen(
-                    "Тренажёр",
+                    "Machine",
                     onBack = { backs++ },
                     onOpenSettings = { settings++ },
                     timer = true,
                 ) {}
             },
         ) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Тренажёр")
+            onNodeWithTag("top-bar-title").assertTextEquals("Machine")
             onNodeWithTag("rest-timer").assertTextEquals("1:30")
             onNodeWithTag("top-bar-back").performClick()
             onNodeWithTag("account-avatar").performClick()
@@ -40,20 +40,20 @@ class TopBarTest {
 
     @Test
     fun the_home_bar_has_no_back_arrow() =
-        runScreenTest(FakeGym(), screen = { Screen("Качалочка", null, {}) {} }) {
+        runScreenTest(FakeGym(), screen = { Screen("Kachalochka", null, {}) {} }) {
             onNodeWithTag("top-bar-back").assertDoesNotExist()
         }
 
     @Test
     fun a_bar_shows_the_timer_only_when_asked() =
-        runScreenTest(FakeGym(), screen = { Screen("Визит", {}, {}) {} }) {
+        runScreenTest(FakeGym(), screen = { Screen("Visit", {}, {}) {} }) {
             onNodeWithTag("rest-timer").assertDoesNotExist()
         }
 
     @Test
     fun tapping_the_timer_starts_a_countdown_that_follows_the_clock() {
         val gym = FakeGym()
-        runScreenTest(gym, screen = { Screen("Визит", {}, {}, timer = true) {} }) {
+        runScreenTest(gym, screen = { Screen("Visit", {}, {}, timer = true) {} }) {
             onNodeWithTag("rest-timer").performClick()
             gym.clock.current += 20.seconds
             gym.ticker.tick()

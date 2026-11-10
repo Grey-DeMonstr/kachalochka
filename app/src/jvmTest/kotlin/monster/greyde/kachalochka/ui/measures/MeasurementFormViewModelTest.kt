@@ -59,7 +59,7 @@ class MeasurementFormViewModelTest {
 
     private val ivan =
         AccountSession(
-            Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Иван"),
+            Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Ivan"),
             "access",
             "refresh",
             t0,
@@ -104,13 +104,13 @@ class MeasurementFormViewModelTest {
 
         val form = vm.state.value!!
         assertEquals(today, form.day)
-        assertEquals("Сегодня, 14 ноября", form.dayTitle)
-        assertEquals(seeded.map { it.name }, form.fields.map { it.name })
+        assertEquals("Today, 14 November", form.dayTitle)
+        assertEquals(seeded.map { it.shownName() }, form.fields.map { it.name })
         assertEquals(
             MeasureFieldUi(
                 weight.id,
-                "Вес",
-                "кг",
+                "Weight",
+                "kg",
                 "",
                 null,
                 true,
@@ -137,7 +137,7 @@ class MeasurementFormViewModelTest {
 
         val field = viewModel().field(cycleDay)
 
-        assertEquals("День цикла" to "день", field.name to field.unit)
+        assertEquals("Cycle day" to "day", field.name to field.unit)
         assertEquals("2", field.hint)
         assertEquals(howToMeasure(MeasureKind.CycleDay), field.howTo)
     }
@@ -158,7 +158,7 @@ class MeasurementFormViewModelTest {
 
         val vm = viewModel(saturday)
 
-        assertEquals("Суббота, 11 ноября", vm.state.value!!.dayTitle)
+        assertEquals("Saturday, 11 November", vm.state.value!!.dayTitle)
         assertEquals("82.4", vm.field(weight).text)
         assertEquals("90", vm.field(waist).text)
         assertEquals("", vm.field(chest).text)
@@ -246,7 +246,7 @@ class MeasurementFormViewModelTest {
         vm.pickDay()
         assertTrue(vm.state.value!!.picking)
         assertEquals(
-            "Ноябрь 2023",
+            "November 2023",
             vm.state.value!!
                 .picker!!
                 .monthTitle,
@@ -280,7 +280,7 @@ class MeasurementFormViewModelTest {
 
         vm.showMonth(-1)
         assertEquals(
-            "Октябрь 2023",
+            "October 2023",
             vm.state.value!!
                 .picker!!
                 .monthTitle,
@@ -288,7 +288,7 @@ class MeasurementFormViewModelTest {
         vm.showMonth(+1)
         vm.showMonth(+1)
         assertEquals(
-            "Ноябрь 2023",
+            "November 2023",
             vm.state.value!!
                 .picker!!
                 .monthTitle,
@@ -342,20 +342,20 @@ class MeasurementFormViewModelTest {
 
     @Test
     fun a_predefined_field_says_how_to_measure_and_shows_the_app_s_name() {
-        val forearm = Measure(MeasureId.random(), null, "Предплечье", "см", null, 7, t0, false)
+        val forearm = Measure(MeasureId.random(), null, "Forearm", "cm", null, 7, t0, false)
         runBlocking {
             gym.measures.upsert(forearm)
-            gym.measures.upsert(waist.copy(name = "Пояс", unit = "дюйм"))
+            gym.measures.upsert(waist.copy(name = "Belt", unit = "in"))
         }
 
         val vm = viewModel()
 
-        assertEquals("Талия" to "см", vm.field(waist).let { it.name to it.unit })
+        assertEquals("Waist" to "cm", vm.field(waist).let { it.name to it.unit })
         assertTrue(
             vm
                 .field(waist)
                 .howTo!!
-                .contains("пупка"),
+                .contains("navel"),
         )
         assertNull(vm.field(forearm).howTo)
     }

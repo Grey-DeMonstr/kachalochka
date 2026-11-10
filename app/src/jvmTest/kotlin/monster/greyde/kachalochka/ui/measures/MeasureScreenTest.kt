@@ -23,7 +23,6 @@ import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -35,7 +34,7 @@ class MeasureScreenTest {
     private val seeded = missingDefaults(null, emptySet())
     private val weight = seeded.first { it.kind == MeasureKind.Weight }
     private val forearm =
-        Measure(MeasureId.random(), null, "Предплечье", "см", null, 7, gym.clock.current, false)
+        Measure(MeasureId.random(), null, "Forearm", "cm", null, 7, gym.clock.current, false)
     private val lastWeek = CalendarDay(2023, 11, 7)
     private val today = CalendarDay(2023, 11, 14)
 
@@ -72,10 +71,10 @@ class MeasureScreenTest {
     @Test
     fun the_measure_shows_its_chart_latest_value_and_change_over_three_months() {
         runMeasure {
-            onNodeWithTag("top-bar-title").assertTextEquals("Вес")
+            onNodeWithTag("top-bar-title").assertTextEquals("Weight")
             onNodeWithTag("period-Quarter").assertIsSelected()
             onNodeWithTag("measure-chart").assertIsDisplayed()
-            onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82 кг")
+            onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82 kg")
             onNodeWithTag("measure-change", useUnmergedTree = true).assertTextEquals("−1")
         }
     }
@@ -102,7 +101,7 @@ class MeasureScreenTest {
             }
         }
         runMeasure(cycleDay.id) {
-            onNodeWithTag("top-bar-title").assertTextEquals("День цикла")
+            onNodeWithTag("top-bar-title").assertTextEquals("Cycle day")
             onNodeWithTag("entry-value").assertTextEquals("26")
             onNodeWithTag("cycle-chart").assertIsDisplayed()
             onNodeWithTag("measure-chart").assertDoesNotExist()
@@ -132,7 +131,7 @@ class MeasureScreenTest {
         runMeasure {
             onNodeWithTag("measure-chart").assertIsDisplayed()
             onNodeWithTag("cycle-legend", useUnmergedTree = true).assertIsDisplayed()
-            onNodeWithTag("cycle-chip", useUnmergedTree = true).assertTextEquals("День 12 из 28")
+            onNodeWithTag("cycle-chip", useUnmergedTree = true).assertTextEquals("Day 12 of 28")
         }
     }
 
@@ -147,7 +146,7 @@ class MeasureScreenTest {
 
     @Test
     fun a_measure_speaks_english() =
-        runScreenTestInEnglish(gym, screen = { MeasureScreen(weight.id, {}, {}, {}) }) {
+        runScreenTest(gym, screen = { MeasureScreen(weight.id, {}, {}, {}) }) {
             onNodeWithTag("top-bar-title").assertTextEquals("Weight")
             onNodeWithTag("period-Quarter").assertTextEquals("3 mo")
             onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82 kg")
@@ -169,7 +168,7 @@ class MeasureScreenTest {
             onNodeWithTag("period-Month").assertIsSelected()
             onNodeWithTag("measure-chart").assertDoesNotExist()
             onNodeWithTag("measure-single-value", useUnmergedTree = true)
-                .assertTextEquals("82.4 кг")
+                .assertTextEquals("82.4 kg")
             onNodeWithTag("measure-change", useUnmergedTree = true).assertDoesNotExist()
         }
     }
@@ -183,7 +182,7 @@ class MeasureScreenTest {
     fun today_s_value_is_stepped_and_saved() {
         runMeasure {
             onNodeWithTag("measure-entry-title", useUnmergedTree = true)
-                .assertTextEquals("СЕГОДНЯ, 14 НОЯБРЯ")
+                .assertTextEquals("TODAY, 14 NOVEMBER")
             onNodeWithTag("entry-value").assertTextEquals("82")
             onNodeWithTag("save-value").assertIsNotEnabled()
 
@@ -191,7 +190,7 @@ class MeasureScreenTest {
             onNodeWithTag("save-value").performClick()
             waitForIdle()
 
-            onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82.1 кг")
+            onNodeWithTag("measure-latest", useUnmergedTree = true).assertTextEquals("82.1 kg")
         }
         assertEquals(82.1, valueOn(today))
     }
@@ -202,7 +201,7 @@ class MeasureScreenTest {
             onNodeWithTag("measure-hint", useUnmergedTree = true)
                 .assertTextEquals(howToMeasure(MeasureKind.Weight)!!)
             onNodeWithTag("measure-last", useUnmergedTree = true)
-                .assertTextEquals("Последний замер: сегодня")
+                .assertTextEquals("Last measured: today")
         }
     }
 
@@ -211,14 +210,14 @@ class MeasureScreenTest {
         runMeasure {
             onNodeWithTag("measure-history-date-1", useUnmergedTree = true)
                 .performScrollTo()
-                .assertTextEquals("7 ноября")
+                .assertTextEquals("7 November")
             onNodeWithTag("measure-history-results-1", useUnmergedTree = true)
-                .assertTextEquals("82.4 кг")
+                .assertTextEquals("82.4 kg")
 
             onNodeWithTag("measure-history-1").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Вес · история")
+            onNodeWithTag("top-bar-title").assertTextEquals("Weight · history")
             onNodeWithTag("entry-value").assertTextEquals("82.4")
         }
     }
@@ -229,7 +228,7 @@ class MeasureScreenTest {
         runMeasure(onBack = { left++ }) {
             onNodeWithTag("edit-history").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Вес · история")
+            onNodeWithTag("top-bar-title").assertTextEquals("Weight · history")
 
             onNodeWithTag("day-${lastWeek.iso}").performClick()
             waitForIdle()
@@ -240,7 +239,7 @@ class MeasureScreenTest {
 
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
-            onNodeWithTag("top-bar-title").assertTextEquals("Вес")
+            onNodeWithTag("top-bar-title").assertTextEquals("Weight")
         }
         assertEquals(0, left)
         assertEquals(null, valueOn(lastWeek))
@@ -249,7 +248,7 @@ class MeasureScreenTest {
     @Test
     fun a_measure_a_formula_reads_has_no_menu() {
         runMeasure {
-            onNodeWithTag("top-bar-title").assertTextEquals("Вес")
+            onNodeWithTag("top-bar-title").assertTextEquals("Weight")
             onNodeWithTag("measure-menu").assertDoesNotExist()
         }
     }
@@ -261,14 +260,14 @@ class MeasureScreenTest {
             onNodeWithTag("edit-measure").performClick()
             waitForIdle()
             onNodeWithTag("edit-measure-name").performTextClearance()
-            onNodeWithTag("edit-measure-name").performTextInput("Масса")
+            onNodeWithTag("edit-measure-name").performTextInput("Mass")
             onNodeWithTag("confirm-edit-measure").performClick()
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Масса")
+            onNodeWithTag("top-bar-title").assertTextEquals("Mass")
         }
         assertEquals(
-            "Масса",
+            "Mass",
             gym.measures.rows
                 .getValue(forearm.id)
                 .name,
@@ -279,7 +278,7 @@ class MeasureScreenTest {
     fun the_screen_leaves_once_another_account_without_the_measure_is_active() {
         var left = 0
         runMeasure(onGone = { left++ }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Вес")
+            onNodeWithTag("top-bar-title").assertTextEquals("Weight")
 
             gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
             waitForIdle()

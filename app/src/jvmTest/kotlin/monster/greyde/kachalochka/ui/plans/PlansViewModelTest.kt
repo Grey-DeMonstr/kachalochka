@@ -28,8 +28,8 @@ import kotlin.test.assertTrue
 class PlansViewModelTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", null, t0)
-    private val legs = Plan(PlanId.random(), null, "Ноги", listOf(press.id), t0, t0, false)
+    private val press = Machine.new("Leg press", null, t0)
+    private val legs = Plan(PlanId.random(), null, "Legs", listOf(press.id), t0, t0, false)
 
     @BeforeTest
     fun setUp() =
@@ -55,7 +55,7 @@ class PlansViewModelTest {
     @Test
     fun pinned_plans_list_first_and_say_they_are_pinned() =
         runTest {
-            val back = Plan(PlanId.random(), null, "Спина", listOf(press.id), t0, t0, false, true)
+            val back = Plan(PlanId.random(), null, "Back", listOf(press.id), t0, t0, false, true)
             gym.plans.upsert(back)
 
             val rows = viewModel().state.value.rows
@@ -143,9 +143,9 @@ class PlansViewModelTest {
             FakeGym()
                 .withAccounts(IVAN_SESSION, active = IVAN_SESSION)
                 .withChild(childAccount(SASHA, IVAN_SESSION))
-        val sashaPress = Machine.new("Жим ногами", SASHA.userId, t0)
+        val sashaPress = Machine.new("Leg press", SASHA.userId, t0)
         val sashaLegs =
-            Plan(PlanId.random(), SASHA.userId, "Ноги", listOf(sashaPress.id), t0, t0, false)
+            Plan(PlanId.random(), SASHA.userId, "Legs", listOf(sashaPress.id), t0, t0, false)
         runBlocking {
             family.accounts.switchTo(SASHA.userId)
             family.machines.upsert(sashaPress)

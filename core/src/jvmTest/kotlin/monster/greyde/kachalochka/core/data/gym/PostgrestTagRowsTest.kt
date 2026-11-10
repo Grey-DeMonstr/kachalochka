@@ -24,9 +24,9 @@ import kotlin.time.Instant
 class PostgrestTagRowsTest {
     private val ivan = UserId("11111111-1111-4111-8111-111111111111")
     private val t0 = Instant.parse("2026-10-16T10:00:00Z")
-    private val press = Machine.new("Жим ногами", ivan, t0)
-    private val machineA = Machine.new("Тяга", ivan, t0)
-    private val machineB = Machine.new("Гребля", ivan, t0)
+    private val press = Machine.new("Leg press", ivan, t0)
+    private val machineA = Machine.new("Row", ivan, t0)
+    private val machineB = Machine.new("Rower", ivan, t0)
 
     private fun link(
         machine: Machine,
@@ -73,7 +73,7 @@ class PostgrestTagRowsTest {
     @Test
     fun links_are_read_by_machine_and_owner() =
         runTest {
-            val held = link(press, "ноги")
+            val held = link(press, "legs")
             val engine = engineAnswering(MACHINE_TAG_TABLE to linksJson(listOf(held)))
 
             val links = rowsOn(engine).linksOf(press)
@@ -93,7 +93,7 @@ class PostgrestTagRowsTest {
     @Test
     fun an_ownerless_machine_s_links_are_read_with_no_owner() =
         runTest {
-            val loose = Machine.new("Жим", null, t0)
+            val loose = Machine.new("Press", null, t0)
             val engine = engineAnswering()
 
             rowsOn(engine).linksOf(loose)
@@ -106,8 +106,8 @@ class PostgrestTagRowsTest {
     @Test
     fun held_elsewhere_counts_only_links_from_live_machines_of_the_owner() =
         runTest {
-            val onA = link(machineA, "ноги")
-            val onB = link(machineB, "спина")
+            val onA = link(machineA, "legs")
+            val onB = link(machineB, "back")
             val engine =
                 engineAnswering(
                     MACHINE_TAG_TABLE to linksJson(listOf(onA, onB)),
@@ -132,9 +132,9 @@ class PostgrestTagRowsTest {
     @Test
     fun an_ownerless_machine_s_held_elsewhere_reads_match_no_owner() =
         runTest {
-            val loose = Machine.new("Жим", null, t0)
-            val other = Machine.new("Тяга", null, t0)
-            val onOther = link(other, "ноги")
+            val loose = Machine.new("Press", null, t0)
+            val other = Machine.new("Row", null, t0)
+            val onOther = link(other, "legs")
             val engine =
                 engineAnswering(
                     MACHINE_TAG_TABLE to linksJson(listOf(onOther)),
@@ -152,8 +152,8 @@ class PostgrestTagRowsTest {
     @Test
     fun tags_are_read_by_id() =
         runTest {
-            val legs = tag("ноги")
-            val back = tag("спина")
+            val legs = tag("legs")
+            val back = tag("back")
             val engine =
                 engineAnswering(
                     TAG_TABLE to Json.encodeToString(listOf(legs, back).map(TagRow::of)),
@@ -173,7 +173,7 @@ class PostgrestTagRowsTest {
         runTest {
             val engine = engineAnswering(MACHINE_TAG_TABLE to "[]")
 
-            val held = rowsOn(engine).heldElsewhere(press, listOf(tagId(ivan, "ноги")))
+            val held = rowsOn(engine).heldElsewhere(press, listOf(tagId(ivan, "legs")))
 
             assertEquals(emptySet(), held)
             assertEquals(listOf(MACHINE_TAG_TABLE), engine.requestHistory.map { it.table() })
@@ -184,8 +184,8 @@ class PostgrestTagRowsTest {
         runTest {
             val engine = engineAnswering()
             val rows = rowsOn(engine)
-            val tag = tag("ноги")
-            val link = link(press, "ноги")
+            val tag = tag("legs")
+            val link = link(press, "legs")
 
             rows.upsertTags(listOf(tag))
             rows.upsertLinks(listOf(link))

@@ -9,7 +9,7 @@ import kotlin.time.Duration.Companion.days
 
 class UnitConversionTest {
     private val ivan = UserId("11111111-1111-4111-8111-111111111111")
-    private val press = Machine.new("Жим ногами", ivan, T0)
+    private val press = Machine.new("Leg press", ivan, T0)
     private val now = T0 + 1.days
 
     @Test

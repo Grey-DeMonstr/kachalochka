@@ -75,7 +75,7 @@ data class StatsSectionUi<T>(
     val items: List<T>,
 )
 
-/** A null [selected] is "Общая", whose cards are [overall]. */
+/** A null [selected] is "Overall", whose cards are [overall]. */
 data class StatisticsUiState(
     val choiceSections: List<StatsSectionUi<StatsChoiceUi>> = emptyList(),
     val selected: StatsChoiceUi? = null,
@@ -98,7 +98,7 @@ data class StatisticsUiState(
 ) {
     val choices: List<StatsChoiceUi> get() = choiceSections.flatMap { it.items }
 
-    /** "Общая" is offered while nothing is searched. */
+    /** "Overall" is offered while nothing is searched. */
     val showsOverall: Boolean get() = query.isBlank()
 
     val nothingFound: Boolean get() = !showsOverall && choiceSections.isEmpty()
@@ -189,7 +189,7 @@ class StatisticsViewModel(
             }
     }
 
-    /** A null [machine] is "Общая". The choice ends the search. */
+    /** A null [machine] is "Overall". The choice ends the search. */
     fun choose(machine: MachineId?) {
         selected = machine
         query = ""

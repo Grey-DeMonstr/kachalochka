@@ -42,7 +42,7 @@ class StepperTest {
                     onPlus = { value = (value.toDouble() + 2.5).toString() },
                     tag = "weight",
                     onValueChange = { value = it },
-                    suffix = "кг",
+                    suffix = "kg",
                 )
             },
         ) {

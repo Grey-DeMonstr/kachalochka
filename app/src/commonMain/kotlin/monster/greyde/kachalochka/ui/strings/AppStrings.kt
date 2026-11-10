@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
  * locale, so view models and formatters read it here rather than having it passed in.
  */
 object AppStrings {
-    private val state = MutableStateFlow<Strings>(RuStrings)
+    private val state = MutableStateFlow(defaultStrings)
     val flow: StateFlow<Strings> = state
     val current: Strings get() = state.value
 

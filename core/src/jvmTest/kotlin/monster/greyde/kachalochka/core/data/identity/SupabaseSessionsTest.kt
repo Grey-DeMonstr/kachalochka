@@ -44,7 +44,7 @@ class SupabaseSessionsTest {
             Account(
                 UserId("11111111-1111-4111-8111-111111111111"),
                 "ivan.petrov@example.test",
-                "Иван Петров",
+                "Ivan Petrov",
             ),
             "access",
             "refresh",
@@ -105,9 +105,9 @@ class SupabaseSessionsTest {
 
     @Test
     fun the_name_google_sent_becomes_the_display_name() {
-        val metadata = mapOf("full_name" to JsonPrimitive("Иван Петров"))
+        val metadata = mapOf("full_name" to JsonPrimitive("Ivan Petrov"))
 
-        assertEquals("Иван Петров", userSession(metadata).toAccountSession().account.displayName)
+        assertEquals("Ivan Petrov", userSession(metadata).toAccountSession().account.displayName)
     }
 
     @Test
@@ -130,10 +130,10 @@ class SupabaseSessionsTest {
         val metadata =
             mapOf(
                 "full_name" to JsonPrimitive("  "),
-                "name" to JsonPrimitive("Иван"),
+                "name" to JsonPrimitive("Ivan"),
             )
 
-        assertEquals("Иван", userSession(metadata).toAccountSession().account.displayName)
+        assertEquals("Ivan", userSession(metadata).toAccountSession().account.displayName)
     }
 
     @Test

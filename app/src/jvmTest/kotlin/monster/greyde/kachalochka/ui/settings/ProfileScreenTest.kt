@@ -19,7 +19,7 @@ import kotlin.time.Instant
 @OptIn(ExperimentalTestApi::class)
 class ProfileScreenTest {
     private val ivan =
-        session("11111111-1111-4111-8111-111111111111", "Иван", Instant.fromEpochSeconds(0))
+        session("11111111-1111-4111-8111-111111111111", "Ivan", Instant.fromEpochSeconds(0))
 
     @Test
     fun signed_out_shows_the_body_fields_but_no_nickname_or_avatar() {
@@ -99,12 +99,12 @@ class ProfileScreenTest {
     fun a_typed_nickname_is_saved_on_leaving() {
         val gym = FakeGym().withAccounts(ivan, active = ivan)
         runScreenTest(gym, screen = { ProfileScreen(onBack = {}) }) {
-            onNodeWithTag("nickname").performTextInput("Ванёк")
+            onNodeWithTag("nickname").performTextInput("Vanya")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
         }
         assertEquals(
-            "Ванёк",
+            "Vanya",
             runBlocking { gym.profiles.forOwner(ivan.account.userId)?.displayName },
         )
     }

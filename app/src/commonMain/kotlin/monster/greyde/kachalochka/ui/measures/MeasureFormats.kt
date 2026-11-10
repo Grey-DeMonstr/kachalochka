@@ -23,7 +23,7 @@ fun oneDecimal(value: Double): String {
 
 fun fatPercent(value: Double): String = "${oneDecimal(value)} %"
 
-/** "Последний замер": the day alone for today and yesterday, else the date and the days since. */
+/** "Last measured": the day alone for today and yesterday, else the date and the days since. */
 fun lastMeasured(
     day: CalendarDay,
     today: CalendarDay,

@@ -29,8 +29,8 @@ abstract class TagRowStoreContract {
     private val mate = UserId("33333333-3333-4333-8333-333333333333")
     private val t0 = Instant.parse("2026-10-16T10:00:00Z")
     private val later = t0 + 1.minutes
-    private val press = Machine.new("Жим ногами", ivan, t0)
-    private val row = Machine.new("Тяга", ivan, t0)
+    private val press = Machine.new("Leg press", ivan, t0)
+    private val row = Machine.new("Row", ivan, t0)
     private val written = mutableListOf<Pair<String, List<String>>>()
 
     private val reads = mutableListOf<String>()
@@ -82,16 +82,16 @@ abstract class TagRowStoreContract {
     @Test
     fun a_machine_s_tags_become_one_live_tag_and_link_per_key() =
         runTest {
-            save(press.copy(tags = setOf("Ноги", "ноги ", "Спина")))
+            save(press.copy(tags = setOf("Legs", "legs ", "Back")))
 
-            for (k in listOf("ноги", "спина")) {
+            for (k in listOf("legs", "back")) {
                 assertEquals(Tag(t(k), ivan, k, t0, false), tag(t(k)))
                 assertEquals(MachineTag(l(k), ivan, press.id, t(k), t0, false), link(l(k)))
             }
             assertEquals(
                 listOf(
-                    TAG_TABLE to listOf(t("ноги"), t("спина")),
-                    MACHINE_TAG_TABLE to listOf(l("ноги"), l("спина")),
+                    TAG_TABLE to listOf(t("legs"), t("back")),
+                    MACHINE_TAG_TABLE to listOf(l("legs"), l("back")),
                 ),
                 written,
             )
@@ -108,7 +108,7 @@ abstract class TagRowStoreContract {
     @Test
     fun a_machine_that_drops_no_link_reads_no_holders() =
         runTest {
-            save(press.copy(tags = setOf("ноги")))
+            save(press.copy(tags = setOf("legs")))
 
             assertEquals(listOf("tags"), reads)
         }
@@ -116,10 +116,10 @@ abstract class TagRowStoreContract {
     @Test
     fun live_tags_are_written_before_the_links_that_name_them() =
         runTest {
-            save(press.copy(tags = setOf("ноги")))
+            save(press.copy(tags = setOf("legs")))
 
             assertEquals(
-                listOf(TAG_TABLE to listOf(t("ноги")), MACHINE_TAG_TABLE to listOf(l("ноги"))),
+                listOf(TAG_TABLE to listOf(t("legs")), MACHINE_TAG_TABLE to listOf(l("legs"))),
                 written,
             )
         }
@@ -127,8 +127,8 @@ abstract class TagRowStoreContract {
     @Test
     fun an_unchanged_machine_writes_nothing() =
         runTest {
-            save(press.copy(tags = setOf("ноги")))
-            save(press.copy(tags = setOf(" НОГИ "), updatedAt = later))
+            save(press.copy(tags = setOf("legs")))
+            save(press.copy(tags = setOf(" LEGS "), updatedAt = later))
 
             assertTrue(written.isEmpty())
         }
@@ -144,92 +144,92 @@ abstract class TagRowStoreContract {
     @Test
     fun a_dropped_tag_is_deleted_only_after_its_link() =
         runTest {
-            save(press.copy(tags = setOf("ноги", "спина")))
-            save(press.copy(tags = setOf("ноги"), updatedAt = later))
+            save(press.copy(tags = setOf("legs", "back")))
+            save(press.copy(tags = setOf("legs"), updatedAt = later))
 
             assertEquals(
-                listOf(MACHINE_TAG_TABLE to listOf(l("спина")), TAG_TABLE to listOf(t("спина"))),
+                listOf(MACHINE_TAG_TABLE to listOf(l("back")), TAG_TABLE to listOf(t("back"))),
                 written,
             )
             assertEquals(
-                MachineTag(l("спина"), ivan, press.id, t("спина"), later, true),
-                link(l("спина")),
+                MachineTag(l("back"), ivan, press.id, t("back"), later, true),
+                link(l("back")),
             )
-            assertEquals(Tag(t("спина"), ivan, "спина", later, true), tag(t("спина")))
-            assertEquals(Tag(t("ноги"), ivan, "ноги", t0, false), tag(t("ноги")))
+            assertEquals(Tag(t("back"), ivan, "back", later, true), tag(t("back")))
+            assertEquals(Tag(t("legs"), ivan, "legs", t0, false), tag(t("legs")))
             assertEquals(
-                MachineTag(l("ноги"), ivan, press.id, t("ноги"), t0, false),
-                link(l("ноги")),
+                MachineTag(l("legs"), ivan, press.id, t("legs"), t0, false),
+                link(l("legs")),
             )
         }
 
     @Test
     fun a_tag_another_live_machine_holds_stays_live() =
         runTest {
-            save(press.copy(tags = setOf("ноги", "спина")))
-            save(row.copy(tags = setOf("спина")))
+            save(press.copy(tags = setOf("legs", "back")))
+            save(row.copy(tags = setOf("back")))
             save(press.copy(tags = emptySet(), updatedAt = later))
 
-            assertTrue(assertNotNull(tag(t("ноги"))).deleted)
-            assertFalse(assertNotNull(tag(t("спина"))).deleted)
+            assertTrue(assertNotNull(tag(t("legs"))).deleted)
+            assertFalse(assertNotNull(tag(t("back"))).deleted)
         }
 
     @Test
     fun a_tag_that_only_a_deleted_machine_s_live_link_holds_is_unused() =
         runTest {
-            save(press.copy(tags = setOf("спина")))
-            save(row.copy(tags = setOf("спина")))
+            save(press.copy(tags = setOf("back")))
+            save(row.copy(tags = setOf("back")))
             putMachine(row.copy(deleted = true))
             save(press.copy(tags = emptySet(), updatedAt = later))
 
-            assertTrue(assertNotNull(tag(t("спина"))).deleted)
+            assertTrue(assertNotNull(tag(t("back"))).deleted)
         }
 
     @Test
     fun a_deleted_machine_loses_every_link_and_its_unused_tags() =
         runTest {
-            save(press.copy(tags = setOf("ноги")))
-            save(press.copy(tags = setOf("ноги"), deleted = true, updatedAt = later))
+            save(press.copy(tags = setOf("legs")))
+            save(press.copy(tags = setOf("legs"), deleted = true, updatedAt = later))
 
             assertEquals(
-                listOf(MACHINE_TAG_TABLE to listOf(l("ноги")), TAG_TABLE to listOf(t("ноги"))),
+                listOf(MACHINE_TAG_TABLE to listOf(l("legs")), TAG_TABLE to listOf(t("legs"))),
                 written,
             )
-            assertTrue(assertNotNull(link(l("ноги"))).deleted)
-            assertTrue(assertNotNull(tag(t("ноги"))).deleted)
+            assertTrue(assertNotNull(link(l("legs"))).deleted)
+            assertTrue(assertNotNull(tag(t("legs"))).deleted)
         }
 
     @Test
     fun a_deleted_machine_never_deletes_a_tag_a_live_machine_holds() =
         runTest {
-            save(press.copy(tags = setOf("ноги")))
-            save(row.copy(tags = setOf("ноги")))
-            save(row.copy(tags = setOf("ноги"), deleted = true, updatedAt = later))
+            save(press.copy(tags = setOf("legs")))
+            save(row.copy(tags = setOf("legs")))
+            save(row.copy(tags = setOf("legs"), deleted = true, updatedAt = later))
 
-            assertTrue(assertNotNull(link(l("ноги", row))).deleted)
-            assertFalse(assertNotNull(tag(t("ноги"))).deleted)
-            assertFalse(assertNotNull(link(l("ноги"))).deleted)
+            assertTrue(assertNotNull(link(l("legs", row))).deleted)
+            assertFalse(assertNotNull(tag(t("legs"))).deleted)
+            assertFalse(assertNotNull(link(l("legs"))).deleted)
         }
 
     @Test
     fun a_tag_given_back_is_live_again_under_the_same_ids() =
         runTest {
-            save(press.copy(tags = setOf("ноги")))
+            save(press.copy(tags = setOf("legs")))
             save(press.copy(tags = emptySet(), updatedAt = later))
-            save(press.copy(tags = setOf("ноги"), updatedAt = later + 1.minutes))
+            save(press.copy(tags = setOf("legs"), updatedAt = later + 1.minutes))
 
             val again = later + 1.minutes
-            assertEquals(Tag(t("ноги"), ivan, "ноги", again, false), tag(t("ноги")))
+            assertEquals(Tag(t("legs"), ivan, "legs", again, false), tag(t("legs")))
             assertEquals(
-                MachineTag(l("ноги"), ivan, press.id, t("ноги"), again, false),
-                link(l("ноги")),
+                MachineTag(l("legs"), ivan, press.id, t("legs"), again, false),
+                link(l("legs")),
             )
         }
 
     @Test
     fun a_mate_s_link_on_the_machine_is_never_dropped_or_counted() =
         runTest {
-            val theirs = MachineTag(l("чужой"), mate, press.id, t("чужой", mate), t0, false)
+            val theirs = MachineTag(l("theirs"), mate, press.id, t("theirs", mate), t0, false)
             putLink(theirs)
 
             save(press)
@@ -241,13 +241,13 @@ abstract class TagRowStoreContract {
     @Test
     fun an_ownerless_tag_another_ownerless_machine_holds_stays_live() =
         runTest {
-            val first = Machine.new("Жим ногами", null, t0)
-            val second = Machine.new("Тяга", null, t0)
-            save(first.copy(tags = setOf("ноги")))
-            save(second.copy(tags = setOf("ноги")))
+            val first = Machine.new("Leg press", null, t0)
+            val second = Machine.new("Row", null, t0)
+            save(first.copy(tags = setOf("legs")))
+            save(second.copy(tags = setOf("legs")))
             save(first.copy(tags = emptySet(), updatedAt = later))
 
-            val kept = assertNotNull(tag(tagId(null, "ноги")))
+            val kept = assertNotNull(tag(tagId(null, "legs")))
             assertFalse(kept.deleted)
             assertNull(kept.userId)
         }

@@ -19,14 +19,14 @@ import kotlin.test.assertEquals
 class LinkUpkeepTest {
     private val gym = signedInGym()
     private val t0 = gym.clock.current
-    private val myPress = Machine.new("Жим ногами", ME.userId, t0)
+    private val myPress = Machine.new("Leg press", ME.userId, t0)
     private val olegCopy = linkedCopy(myPress, OLEG.userId, t0)
     private val olegPress = olegCopy.first
-    private val olegOther = Machine.new("Жим", OLEG.userId, t0)
+    private val olegOther = Machine.new("Press", OLEG.userId, t0)
 
-    /** Олег linked his press to Иван's, and his other press to his first. */
+    /** Oleg linked his press to Ivan's, and his other press to his first. */
     private suspend fun olegsLinks() {
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         gym.friends.machines += listOf(olegPress, olegOther)
         gym.friends.links += olegCopy.second
         gym.friends.links +=

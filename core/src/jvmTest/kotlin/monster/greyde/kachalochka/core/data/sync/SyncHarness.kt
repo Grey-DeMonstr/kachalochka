@@ -51,7 +51,7 @@ internal fun ownedVisit(
 internal fun ownedPress(
     owner: UserId,
     updatedAt: Instant = T0,
-) = Machine.new("Жим ногами", owner, updatedAt)
+) = Machine.new("Leg press", owner, updatedAt)
 
 internal fun ownedSet(
     owner: UserId,
@@ -74,7 +74,7 @@ internal fun ownedSet(
 internal fun ownedProfile(
     owner: UserId,
     updatedAt: Instant = T0,
-) = Profile(ProfileId(newUuidV4()), owner, "Иван", updatedAt, false)
+) = Profile(ProfileId(newUuidV4()), owner, "Ivan", updatedAt, false)
 
 internal fun ownedLink(
     owner: UserId,
@@ -91,12 +91,12 @@ internal fun ownedLink(
 internal fun ownedPlan(
     owner: UserId,
     updatedAt: Instant = T0,
-) = Plan(PlanId.random(), owner, "Ноги", listOf(MachineId.random()), T0, updatedAt, false)
+) = Plan(PlanId.random(), owner, "Legs", listOf(MachineId.random()), T0, updatedAt, false)
 
 internal fun ownedMeasure(
     owner: UserId,
     updatedAt: Instant = T0,
-) = Measure(MeasureId.random(), owner, "Шея", "см", null, 0, updatedAt, false)
+) = Measure(MeasureId.random(), owner, "Neck", "cm", null, 0, updatedAt, false)
 
 internal fun ownedMeasurement(
     owner: UserId,

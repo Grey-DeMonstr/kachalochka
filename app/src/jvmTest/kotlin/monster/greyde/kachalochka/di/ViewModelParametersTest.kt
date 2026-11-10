@@ -59,7 +59,7 @@ import kotlin.test.assertNull
 class ViewModelParametersTest {
     private val gym = FakeGym()
     private val t0 = gym.clock.current
-    private val press = Machine.new("Жим ногами", null, t0)
+    private val press = Machine.new("Leg press", null, t0)
     private val opened = mutableListOf<Koin>()
     private val koin by lazy { koinOver(gym) }
 
@@ -93,7 +93,7 @@ class ViewModelParametersTest {
             val vm: VisitViewModel = koin.viewModel(seventh)
             vm.refresh()
 
-            assertEquals("Вторник, 7 ноября", assertNotNull(vm.state.value).title)
+            assertEquals("Tuesday, 7 November", assertNotNull(vm.state.value).title)
         }
 
     @Test
@@ -123,7 +123,7 @@ class ViewModelParametersTest {
 
             val vm: MeasureViewModel = koin.viewModel(waist.id)
 
-            assertEquals(waist.name, vm.state.value?.name)
+            assertEquals("Waist", vm.state.value?.name)
         }
 
     @Test
@@ -154,7 +154,7 @@ class ViewModelParametersTest {
     fun the_plan_form_opens_the_given_plan_or_starts_from_the_given_visit_or_machine() =
         runTest {
             gym.machines.upsert(press)
-            val legs = Plan(PlanId.random(), null, "Ноги", listOf(press.id), t0, t0, false)
+            val legs = Plan(PlanId.random(), null, "Legs", listOf(press.id), t0, t0, false)
             gym.plans.upsert(legs)
             val seventh = CalendarDay(2023, 11, 7)
             val visit = Visit(VisitId.random(), null, seventh, t0, t0, false, listOf(press.id))
@@ -165,7 +165,7 @@ class ViewModelParametersTest {
             val fromMachine: PlanFormViewModel = koin.viewModel(PlanFormArgs(null, null, press.id))
             val blank: PlanFormViewModel = koin.viewModel(PlanFormArgs(null, null, null))
 
-            assertEquals("Ноги", editing.state.value.name)
+            assertEquals("Legs", editing.state.value.name)
             assertEquals(
                 listOf(press.id),
                 fromVisit.state.value.rows
@@ -211,52 +211,52 @@ class ViewModelParametersTest {
 
     @Test
     fun the_machine_form_starts_from_the_given_arguments() {
-        val vm: MachineFormViewModel = koin.viewModel(MachineFormArgs(null, null, "Жим лёжа"))
+        val vm: MachineFormViewModel = koin.viewModel(MachineFormArgs(null, null, "Bench press"))
 
-        assertEquals("Жим лёжа", vm.state.value.name)
+        assertEquals("Bench press", vm.state.value.name)
     }
 
     @Test
     fun the_link_chooser_searches_for_the_given_start_and_for_the_machine_s_name_without_one() =
         runTest {
             val signed = signedInGym()
-            val mine = Machine.new("Жим ногами", ME.userId, t0)
+            val mine = Machine.new("Leg press", ME.userId, t0)
             signed.machines.upsert(mine)
             val koin = koinOver(signed)
 
-            val suggested: LinkChooserViewModel = koin.viewModel(LinkChooserArgs(mine.id, "Смит"))
+            val suggested: LinkChooserViewModel = koin.viewModel(LinkChooserArgs(mine.id, "Smith"))
             val plain: LinkChooserViewModel = koin.viewModel(LinkChooserArgs(mine.id, null))
             suggested.load()
             plain.load()
 
-            assertEquals("Смит", suggested.state.value.query)
-            assertEquals("Жим ногами", plain.state.value.query)
+            assertEquals("Smith", suggested.state.value.query)
+            assertEquals("Leg press", plain.state.value.query)
         }
 
     @Test
     fun the_mine_chooser_searches_for_the_given_name() {
         val signed = signedInGym()
-        signed.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val olegs = Machine.new("Платформа", OLEG.userId, t0)
+        signed.friends.group("Forest Street Gym", owner = OLEG, ME)
+        val olegs = Machine.new("Platform", OLEG.userId, t0)
         signed.friends.machines += olegs
 
-        val vm: MineChooserViewModel = koinOver(signed).viewModel(olegs.id, "Платформа")
+        val vm: MineChooserViewModel = koinOver(signed).viewModel(olegs.id, "Platform")
         vm.load()
 
-        assertEquals("Платформа", vm.state.value.query)
+        assertEquals("Platform", vm.state.value.query)
     }
 
     @Test
     fun a_friend_s_machine_screen_shows_the_given_machine_of_the_given_friend() {
         val signed = signedInGym()
-        signed.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val olegs = Machine.new("Платформа", OLEG.userId, t0)
+        signed.friends.group("Forest Street Gym", owner = OLEG, ME)
+        val olegs = Machine.new("Platform", OLEG.userId, t0)
         signed.friends.machines += olegs
 
         val vm: FriendMachineViewModel = koinOver(signed).viewModel(olegs.id, OLEG.userId)
 
         val state = assertNotNull(vm.state.value)
-        assertEquals("Платформа" to "Олег", state.name to state.owner)
+        assertEquals("Platform" to "Oleg", state.name to state.owner)
     }
 
     @Test
@@ -267,11 +267,11 @@ class ViewModelParametersTest {
             fixture.install()
 
             val vm: FriendVisitViewModel =
-                koinOver(signed).viewModel(OLEG.userId, "Олег", fixture.yesterday)
+                koinOver(signed).viewModel(OLEG.userId, "Oleg", fixture.yesterday)
 
             val state = assertNotNull(vm.state.value)
-            assertEquals("Олег", state.title)
-            assertEquals("Понедельник, 13 ноября", state.day)
+            assertEquals("Oleg", state.title)
+            assertEquals("Monday, 13 November", state.day)
         }
 
     @Test
@@ -296,10 +296,10 @@ class ViewModelParametersTest {
     @Test
     fun a_group_screen_shows_the_given_group() {
         val signed = signedInGym()
-        val group = signed.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = signed.friends.group("Forest Street Gym", owner = OLEG, ME)
 
         val vm: GroupViewModel = koinOver(signed).viewModel(group.id)
 
-        assertEquals("Зал на Лесной", vm.state.value?.title)
+        assertEquals("Forest Street Gym", vm.state.value?.title)
     }
 }

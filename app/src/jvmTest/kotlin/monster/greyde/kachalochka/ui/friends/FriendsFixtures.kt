@@ -16,13 +16,13 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
-/** Олег, in a group with [viewer], trained yesterday on his copy of [machine]: 80×8, 85×6. */
+/** Oleg, in a group with [viewer], trained yesterday on his copy of [machine]: 80×8, 85×6. */
 internal fun FakeGym.olegTrainedOn(
     machine: Machine,
     viewer: Friend,
 ) {
     val t0 = clock.current
-    friends.group("Зал на Лесной", owner = OLEG, viewer)
+    friends.group("Forest Street Gym", owner = OLEG, viewer)
     val (olegPress, link) = linkedCopy(machine, OLEG.userId, t0)
     val olegVisit =
         Visit(VisitId.random(), OLEG.userId, today.plusDays(-1), t0 - 1.days, t0, false)
@@ -48,31 +48,31 @@ internal fun FakeGym.olegTrainedOn(
 
 internal val IVAN_SESSION =
     AccountSession(
-        Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Иван"),
+        Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Ivan"),
         "access",
         "refresh",
         Instant.fromEpochSeconds(1_700_000_000),
     )
-internal val ME = Friend(IVAN_SESSION.account.userId, "Иван")
-internal val OLEG = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Олег")
-internal val PASHA = Friend(UserId("44444444-4444-4444-8444-444444444444"), "Паша")
+internal val ME = Friend(IVAN_SESSION.account.userId, "Ivan")
+internal val OLEG = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Oleg")
+internal val PASHA = Friend(UserId("44444444-4444-4444-8444-444444444444"), "Pasha")
 
-/** Иван signed in and active. */
+/** Ivan signed in and active. */
 internal fun signedInGym(): FakeGym = FakeGym().withAccounts(IVAN_SESSION, active = IVAN_SESSION)
 
 /**
  * Oleg's yesterday visit, shared by [FriendVisitViewModelTest] and [FriendVisitScreenTest]: his
- * "Платформа" links to Ivan's own "Жим ногами", his "Тяга" does not, and both carry sets.
+ * "Platform" links to Ivan's own "Leg press", his "Row" does not, and both carry sets.
  */
 internal class OlegVisitFixture(
     private val gym: FakeGym,
 ) {
     private val t0 = gym.clock.current
     val yesterday = gym.today.plusDays(-1)
-    val myPress = Machine.new("Жим ногами", ME.userId, t0)
+    val myPress = Machine.new("Leg press", ME.userId, t0)
     private val olegCopy = linkedCopy(myPress, OLEG.userId, t0)
-    val olegPress = olegCopy.first.copy(name = "Платформа")
-    val olegRow = Machine.new("Тяга", OLEG.userId, t0).copy(unit = WeightUnit.Lb)
+    val olegPress = olegCopy.first.copy(name = "Platform")
+    val olegRow = Machine.new("Row", OLEG.userId, t0).copy(unit = WeightUnit.Lb)
     val olegVisit = Visit(VisitId.random(), OLEG.userId, yesterday, t0 - 1.days, t0, false)
 
     private fun olegSet(
@@ -102,7 +102,7 @@ internal class OlegVisitFixture(
 
     /** Wires a group, Oleg's machines/visit/sets and Ivan's own press into [gym]. */
     suspend fun install() {
-        gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         gym.friends.machines += listOf(olegPress, olegRow)
         gym.friends.links += olegCopy.second
         gym.friends.visits += olegVisit

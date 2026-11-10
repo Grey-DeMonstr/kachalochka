@@ -30,7 +30,7 @@ private class RecordingActivation : SessionActivation {
 
 private fun session(expiresAt: Instant) =
     AccountSession(
-        Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Иван"),
+        Account(UserId("11111111-1111-4111-8111-111111111111"), "ivan@example.test", "Ivan"),
         "access",
         "refresh",
         expiresAt,
@@ -176,7 +176,7 @@ class PendingSignInTest {
             val sasha = UserId("66666666-6666-4666-8666-666666666666")
             store.setManaged(
                 listOf(
-                    Account(sasha, "", "Саша", kind = AccountKind.Managed(ivan.account.userId)),
+                    Account(sasha, "", "Sasha", kind = AccountKind.Managed(ivan.account.userId)),
                 ),
             )
             store.switch(sasha)

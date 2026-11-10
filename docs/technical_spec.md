@@ -1017,7 +1017,10 @@ and only Android binds one: a browser cannot choose a proxy or look up a host.
   must be strings or other `Bundle` types, not value classes such as `MachineId`.
 - `runScreenTest` shows one screen in a single-destination `NavHost`, so the screen gets a
   `ViewModelStoreOwner`. It supplies fake repositories, a fixed clock and a ticker that moves only
-  when the test tells it to. `runScreenTestInEnglish` does the same in English.
+  when the test tells it to. `runScreenTestInRussian` does the same in Russian.
+- The tests speak English (see [9.3](#93-strings-and-languages)). A test keeps Cyrillic only when
+  it checks Cyrillic-specific behaviour, such as letter case, search or Russian plurals. Else it
+  compares with `RuStrings` members inside `inRussian { }` or `runScreenTestInRussian`.
 
 ## 8. Build, CI and release
 
@@ -1048,6 +1051,9 @@ and only Android binds one: a browser cannot choose a proxy or look up a host.
   build, else the newest heading in `changelog.txt`. The web deploys from `master` without a tag,
   so the changelog is the source that both platforms can read.
 - Gradle runs with the configuration cache. CI uses the checked-in wrapper.
+- **Commit hook.** `.githooks/pre-commit` refuses a commit that adds Cyrillic outside
+  `RuStrings.kt`, `GLOSSARY.md` and the tests of Cyrillic-specific behaviour that it lists. It
+  checks only added lines, so older text does not block an edit next to it. Enable it once in each clone: `git config core.hooksPath .githooks`.
 - **Privacy and terms.** `privacy.html` and `terms.html` are static pages in the web resources.
   The OAuth consent screen and the Play listing link to them. The Play account deletion link is
   `privacy.html#deletion`, so keep that anchor. The entry page links to both in plain HTML under
@@ -1108,8 +1114,12 @@ the graph is built, so the first frame uses it. A store that cannot be read give
 - `AppLanguage.System` is Russian when the device language tag starts with `ru`, else English
   (`SystemLanguage`). `App` sets `AppStrings` while it composes, so the first frame has the right
   language.
-- The JVM tests set the system language to Russian, so their Russian assertions pass on each
-  machine.
+- Russian text is only in `RuStrings.kt`; code, comments and tests are in English.
+  `RuStrings` and `EnStrings` each name their own language (`languageName`) for the language
+  list.
+- `AppStrings` starts with `defaultStrings` until `App` sets the chosen language: Russian on
+  Android and the web, English on the JVM. The JVM target runs only the host tests, and it also
+  binds the system language to English, so the English assertions pass on each machine.
 - Ready-made measures keep their Russian names in storage and show the name of their kind. User
   data (machine names, own units, tags, comments, measure names) is never translated.
 

@@ -57,22 +57,22 @@ class ShareTextTest {
         preferred: PreferredWeightUnit = kg,
     ): String =
         visitShareText("", thursday, listOf(SharedMachine(machine, sets(*weightReps))), preferred)
-            .removePrefix("чт\n\n")
+            .removePrefix("Thu\n\n")
 
-    private val oneMachine = listOf(SharedMachine(machine("Тяга"), sets(50.0 to 8)))
+    private val oneMachine = listOf(SharedMachine(machine("Row"), sets(50.0 to 8)))
 
     @Test
     fun the_header_names_the_nickname_and_the_weekday_then_a_blank_line() {
         assertEquals(
-            "ГДМ, чт\n\nТяга 50кг 1x8",
-            visitShareText("ГДМ", thursday, oneMachine, kg),
+            "GDM, Thu\n\nRow 50kg 1x8",
+            visitShareText("GDM", thursday, oneMachine, kg),
         )
     }
 
     @Test
     fun without_a_nickname_the_header_is_the_weekday_alone() {
-        assertEquals("чт\n\nТяга 50кг 1x8", visitShareText("", thursday, oneMachine, kg))
-        assertEquals("чт\n\nТяга 50кг 1x8", visitShareText("  ", thursday, oneMachine, kg))
+        assertEquals("Thu\n\nRow 50kg 1x8", visitShareText("", thursday, oneMachine, kg))
+        assertEquals("Thu\n\nRow 50kg 1x8", visitShareText("  ", thursday, oneMachine, kg))
     }
 
     @Test
@@ -82,23 +82,23 @@ class ShareTextTest {
                 visitShareText("", monday.plusDays(it), oneMachine, kg).substringBefore("\n")
             }
 
-        assertEquals(listOf("пн", "вт", "ср", "чт", "пт", "сб", "вс"), labels)
+        assertEquals(listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"), labels)
     }
 
     @Test
     fun equal_weights_and_equal_reps_count_the_sets() {
         assertEquals(
-            "Гиперэкстензия 14кг 3x12",
-            line(machine("Гиперэкстензия"), 14.0 to 12, 14.0 to 12, 14.0 to 12),
+            "Back extension 14kg 3x12",
+            line(machine("Back extension"), 14.0 to 12, 14.0 to 12, 14.0 to 12),
         )
     }
 
     @Test
     fun differing_weights_are_listed_and_a_platform_outside_the_record_is_named() {
         assertEquals(
-            "Жим ногами (+76кг) 20-20-30-40-40кг 5x10",
+            "Leg press (+76kg) 20-20-30-40-40kg 5x10",
             line(
-                machine("Жим ногами", platform = 76.0),
+                machine("Leg press", platform = 76.0),
                 20.0 to 10,
                 20.0 to 10,
                 30.0 to 10,
@@ -110,61 +110,61 @@ class ShareTextTest {
 
     @Test
     fun a_per_side_weight_says_it_is_on_each_side() {
-        val row = machine("Гребная тяга", platform = 11.3).copy(weightMode = WeightMode.PerSide)
+        val row = machine("Seated row", platform = 11.3).copy(weightMode = WeightMode.PerSide)
 
         assertEquals(
-            "Гребная тяга (+11.3кг) 15кг на каждую, 3x12",
+            "Seated row (+11.3kg) 15kg each side, 3x12",
             line(row, 15.0 to 12, 15.0 to 12, 15.0 to 12),
         )
-        assertEquals("Гребная тяга (+11.3кг) 3x12", line(row, 0.0 to 12, 0.0 to 12, 0.0 to 12))
+        assertEquals("Seated row (+11.3kg) 3x12", line(row, 0.0 to 12, 0.0 to 12, 0.0 to 12))
     }
 
     @Test
     fun differing_reps_are_listed_after_one_weight() {
         assertEquals(
-            "Пресс сидя 41кг 10-15-15-15",
-            line(machine("Пресс сидя"), 41.0 to 10, 41.0 to 15, 41.0 to 15, 41.0 to 15),
+            "Seated crunch 41kg 10-15-15-15",
+            line(machine("Seated crunch"), 41.0 to 10, 41.0 to 15, 41.0 to 15, 41.0 to 15),
         )
     }
 
     @Test
     fun differing_weights_and_reps_are_both_listed() {
         assertEquals(
-            "Жим от груди 30° 35-35-30кг 10-10-15",
-            line(machine("Жим от груди 30°"), 35.0 to 10, 35.0 to 10, 30.0 to 15),
+            "Chest press 30° 35-35-30kg 10-10-15",
+            line(machine("Chest press 30°"), 35.0 to 10, 35.0 to 10, 30.0 to 15),
         )
     }
 
     @Test
     fun pounds_read_as_the_nearest_half_kilogram() {
         assertEquals(
-            "Тяга 20.5кг 2x10",
+            "Row 20.5kg 2x10",
             line(
-                machine("Тяга", WeightUnit.Lb),
+                machine("Row", WeightUnit.Lb),
                 45.0 to 10,
                 45.0 to 10,
             ),
         )
         assertEquals(
-            "Жим ногами (+45.5кг) 20.5кг 1x10",
-            line(machine("Жим ногами", WeightUnit.Lb, platform = 100.0), 45.0 to 10),
+            "Leg press (+45.5kg) 20.5kg 1x10",
+            line(machine("Leg press", WeightUnit.Lb, platform = 100.0), 45.0 to 10),
         )
     }
 
     @Test
     fun with_pounds_chosen_kilograms_read_as_the_nearest_half_pound() {
         assertEquals(
-            "Жим ногами (+44lb) 99lb 2x10",
+            "Leg press (+44lb) 99lb 2x10",
             line(
-                machine("Жим ногами", platform = 20.0),
+                machine("Leg press", platform = 20.0),
                 45.0 to 10,
                 45.0 to 10,
                 preferred = PreferredWeightUnit.Lb,
             ),
         )
         assertEquals(
-            "Тяга 45lb 1x10",
-            line(machine("Тяга", WeightUnit.Lb), 45.0 to 10, preferred = PreferredWeightUnit.Lb),
+            "Row 45lb 1x10",
+            line(machine("Row", WeightUnit.Lb), 45.0 to 10, preferred = PreferredWeightUnit.Lb),
         )
     }
 
@@ -172,23 +172,23 @@ class ShareTextTest {
     fun with_mixed_units_every_machine_keeps_its_own() {
         val mixed = PreferredWeightUnit.Mixed
         assertEquals(
-            "Тяга (+100lb) 45-50lb 10-8",
+            "Row (+100lb) 45-50lb 10-8",
             line(
-                machine("Тяга", WeightUnit.Lb, platform = 100.0),
+                machine("Row", WeightUnit.Lb, platform = 100.0),
                 45.0 to 10,
                 50.0 to 8,
                 preferred = mixed,
             ),
         )
-        assertEquals("Тяга 50кг 1x8", line(machine("Тяга"), 50.0 to 8, preferred = mixed))
+        assertEquals("Row 50kg 1x8", line(machine("Row"), 50.0 to 8, preferred = mixed))
     }
 
     @Test
     fun a_custom_unit_is_never_converted() {
         assertEquals(
-            "Блок 3 плитка 1x10",
+            "Cable 3 plate 1x10",
             line(
-                machine("Блок", WeightUnit.Custom, label = "плитка"),
+                machine("Cable", WeightUnit.Custom, label = "plate"),
                 3.0 to 10,
                 preferred = PreferredWeightUnit.Lb,
             ),
@@ -198,37 +198,37 @@ class ShareTextTest {
     @Test
     fun a_custom_unit_is_written_as_is_after_a_space() {
         assertEquals(
-            "Блок 3-4 плитка 2x10",
-            line(machine("Блок", WeightUnit.Custom, label = "плитка"), 3.0 to 10, 4.0 to 10),
+            "Cable 3-4 plate 2x10",
+            line(machine("Cable", WeightUnit.Custom, label = "plate"), 3.0 to 10, 4.0 to 10),
         )
         assertEquals(
-            "Блок (+2 плитка) 3 плитка 1x10",
-            line(machine("Блок", WeightUnit.Custom, platform = 2.0, label = "плитка"), 3.0 to 10),
+            "Cable (+2 plate) 3 plate 1x10",
+            line(machine("Cable", WeightUnit.Custom, platform = 2.0, label = "plate"), 3.0 to 10),
         )
     }
 
     @Test
     fun zero_weights_leave_the_weight_out() {
         assertEquals(
-            "Подтягивания 3x10",
-            line(machine("Подтягивания"), 0.0 to 10, 0.0 to 10, 0.0 to 10),
+            "Pull-ups 3x10",
+            line(machine("Pull-ups"), 0.0 to 10, 0.0 to 10, 0.0 to 10),
         )
         assertEquals(
-            "Подтягивания 10-8-6",
-            line(machine("Подтягивания"), 0.0 to 10, 0.0 to 8, 0.0 to 6),
+            "Pull-ups 10-8-6",
+            line(machine("Pull-ups"), 0.0 to 10, 0.0 to 8, 0.0 to 6),
         )
     }
 
     @Test
     fun a_single_set_counts_as_one() {
-        assertEquals("Тяга 50кг 1x8", line(machine("Тяга"), 50.0 to 8))
+        assertEquals("Row 50kg 1x8", line(machine("Row"), 50.0 to 8))
     }
 
     @Test
     fun a_platform_included_in_the_record_is_not_named() {
         assertEquals(
-            "Жим ногами 50кг 1x10",
-            line(machine("Жим ногами", platform = 76.0, included = true), 50.0 to 10),
+            "Leg press 50kg 1x10",
+            line(machine("Leg press", platform = 76.0, included = true), 50.0 to 10),
         )
     }
 
@@ -236,14 +236,14 @@ class ShareTextTest {
     fun a_sets_summary_is_the_machine_s_shared_line_after_its_name() {
         val cases =
             listOf(
-                machine("Жим ногами", platform = 76.0) to sets(20.0 to 10, 40.0 to 10),
-                machine("Тяга", WeightUnit.Lb, platform = 100.0) to sets(45.0 to 10, 45.0 to 8),
-                machine("Блок", WeightUnit.Custom, label = "плитка") to sets(3.0 to 10),
-                machine("Подтягивания") to sets(0.0 to 10, 0.0 to 10),
+                machine("Leg press", platform = 76.0) to sets(20.0 to 10, 40.0 to 10),
+                machine("Row", WeightUnit.Lb, platform = 100.0) to sets(45.0 to 10, 45.0 to 8),
+                machine("Cable", WeightUnit.Custom, label = "plate") to sets(3.0 to 10),
+                machine("Pull-ups") to sets(0.0 to 10, 0.0 to 10),
             )
 
         assertEquals(
-            listOf("20-40кг 2x10", "20.5кг 10-8", "3 плитка 1x10", "2x10"),
+            listOf("20-40kg 2x10", "20.5kg 10-8", "3 plate 1x10", "2x10"),
             cases.map { (machine, sets) -> setsSummary(machine, sets, kg) },
         )
         cases.forEach { (machine, sets) ->
@@ -255,12 +255,12 @@ class ShareTextTest {
     @Test
     fun a_summary_splits_into_its_weights_and_its_reps() {
         assertEquals(
-            listOf("20-40кг", "2x10"),
-            setsSummaryParts(machine("Жим ногами"), sets(20.0 to 10, 40.0 to 10), kg),
+            listOf("20-40kg", "2x10"),
+            setsSummaryParts(machine("Leg press"), sets(20.0 to 10, 40.0 to 10), kg),
         )
         assertEquals(
             listOf("3x10"),
-            setsSummaryParts(machine("Подтягивания"), sets(0.0 to 10, 0.0 to 10, 0.0 to 10), kg),
+            setsSummaryParts(machine("Pull-ups"), sets(0.0 to 10, 0.0 to 10, 0.0 to 10), kg),
         )
     }
 
@@ -274,8 +274,8 @@ class ShareTextTest {
                 .startingPyramidsAt(0, 3)
 
         assertEquals(
-            "40+31+22 - 36+27+18кг 2x(10+10+10)",
-            setsSummary(machine("Тяга"), sets, kg),
+            "40+31+22 - 36+27+18kg 2x(10+10+10)",
+            setsSummary(machine("Row"), sets, kg),
         )
     }
 
@@ -283,7 +283,7 @@ class ShareTextTest {
     fun a_set_outside_a_pyramid_is_a_group_of_its_own() {
         val sets = sets(50.0 to 12, 40.0 to 10, 31.0 to 10, 22.0 to 10).startingPyramidsAt(1)
 
-        assertEquals("50 - 40+31+22кг 12 - 10+10+10", setsSummary(machine("Жим"), sets, kg))
+        assertEquals("50 - 40+31+22kg 12 - 10+10+10", setsSummary(machine("Press"), sets, kg))
     }
 
     @Test
@@ -292,51 +292,51 @@ class ShareTextTest {
             sets(36.0 to 10, 27.0 to 10, 36.0 to 10, 27.0 to 10).startingPyramidsAt(0, 2)
         val once = sets(36.0 to 10, 27.0 to 8).startingPyramidsAt(0)
 
-        assertEquals("36+27кг 2x(10+10)", setsSummary(machine("Жим"), twice, kg))
-        assertEquals("36+27кг 10+8", setsSummary(machine("Жим"), once, kg))
+        assertEquals("36+27kg 2x(10+10)", setsSummary(machine("Press"), twice, kg))
+        assertEquals("36+27kg 10+8", setsSummary(machine("Press"), once, kg))
     }
 
     @Test
     fun machines_follow_one_per_line_and_one_without_sets_is_skipped() {
         val text =
             visitShareText(
-                "ГДМ",
+                "GDM",
                 thursday,
                 listOf(
-                    SharedMachine(machine("Гиперэкстензия"), sets(14.0 to 12)),
-                    SharedMachine(machine("Пустой"), emptyList()),
-                    SharedMachine(machine("Пресс сидя"), sets(41.0 to 10, 41.0 to 15)),
+                    SharedMachine(machine("Back extension"), sets(14.0 to 12)),
+                    SharedMachine(machine("Empty"), emptyList()),
+                    SharedMachine(machine("Seated crunch"), sets(41.0 to 10, 41.0 to 15)),
                 ),
                 kg,
             )
 
-        assertEquals("ГДМ, чт\n\nГиперэкстензия 14кг 1x12\nПресс сидя 41кг 10-15", text)
+        assertEquals("GDM, Thu\n\nBack extension 14kg 1x12\nSeated crunch 41kg 10-15", text)
     }
 
     @Test
     fun a_gravitron_writes_its_weights_after_a_minus() {
         val gravitron =
-            machine("Подтягивания в гравитроне").copy(weightMode = WeightMode.Counterweight)
+            machine("Gravitron pull-ups").copy(weightMode = WeightMode.Counterweight)
 
         assertEquals(
-            "Подтягивания в гравитроне (-)27-25-22.5-22.5-22.5кг 10-8-6-6-6",
+            "Gravitron pull-ups (-)27-25-22.5-22.5-22.5kg 10-8-6-6-6",
             line(gravitron, 27.0 to 10, 25.0 to 8, 22.5 to 6, 22.5 to 6, 22.5 to 6),
         )
     }
 
     @Test
     fun a_gravitron_without_weights_shows_only_its_reps() {
-        val gravitron = machine("Гравитрон").copy(weightMode = WeightMode.Counterweight)
+        val gravitron = machine("Gravitron").copy(weightMode = WeightMode.Counterweight)
 
-        assertEquals("Гравитрон 2x10", line(gravitron, 0.0 to 10, 0.0 to 10))
+        assertEquals("Gravitron 2x10", line(gravitron, 0.0 to 10, 0.0 to 10))
     }
 
     @Test
     fun grouped_by_tag_the_text_splits_into_headed_sections_untagged_last_under_other() {
-        val press = machine("Жим ногами", platform = 76.0).copy(tags = setOf("Ноги"))
-        val curl = machine("Бицепс").copy(tags = setOf("Руки"))
-        val abs = machine("Пресс сидя")
-        val dips = machine("Трицепс").copy(tags = setOf("руки"))
+        val press = machine("Leg press", platform = 76.0).copy(tags = setOf("Legs"))
+        val curl = machine("Biceps curl").copy(tags = setOf("Arms"))
+        val abs = machine("Seated crunch")
+        val dips = machine("Dips").copy(tags = setOf("arms"))
         val shared =
             listOf(
                 SharedMachine(press, sets(20.0 to 10, 30.0 to 10)),
@@ -346,18 +346,18 @@ class ShareTextTest {
             )
 
         assertEquals(
-            "ГДМ, чт\n\nНОГИ\nЖим ногами (+76кг) 20-30кг 2x10\n\nРУКИ\nБицепс 14кг 1x12\n" +
-                "Трицепс 5кг 1x10\n\nОстальное\nПресс сидя 41кг 1x10",
-            visitShareText("ГДМ", thursday, shared, kg, groupByTag = true),
+            "GDM, Thu\n\nLEGS\nLeg press (+76kg) 20-30kg 2x10\n\nARMS\nBiceps curl 14kg 1x12\n" +
+                "Dips 5kg 1x10\n\nOther\nSeated crunch 41kg 1x10",
+            visitShareText("GDM", thursday, shared, kg, groupByTag = true),
         )
     }
 
     @Test
     fun grouping_without_any_tags_writes_the_plain_list() {
-        val shared = listOf(SharedMachine(machine("Пресс сидя"), sets(41.0 to 10)))
+        val shared = listOf(SharedMachine(machine("Seated crunch"), sets(41.0 to 10)))
 
         assertEquals(
-            "чт\n\nПресс сидя 41кг 1x10",
+            "Thu\n\nSeated crunch 41kg 1x10",
             visitShareText("", thursday, shared, kg, groupByTag = true),
         )
     }

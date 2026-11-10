@@ -29,7 +29,7 @@ class SqlOwnedRowsPurgeTest {
 
     private suspend fun record(owner: UserId): Photo {
         val visit = ownedVisit(owner)
-        val press = ownedPress(owner).copy(tags = setOf("ноги"))
+        val press = ownedPress(owner).copy(tags = setOf("legs"))
         val neck = ownedMeasure(owner)
         val photo = Photo.new(press.id, owner, T0)
         h.visits.upsert(visit)
@@ -47,7 +47,7 @@ class SqlOwnedRowsPurgeTest {
 
     private fun tag(owner: UserId) =
         h.database.tagQueries
-            .byId(tagId(owner, "ноги"), ::tagOf)
+            .byId(tagId(owner, "legs"), ::tagOf)
             .executeAsOneOrNull()
 
     @Test
@@ -84,7 +84,7 @@ class SqlOwnedRowsPurgeTest {
             assertEquals(T0, h.watermarks.lastPullAt(MISHA))
             assertNotNull(tag(MISHA))
             assertEquals(
-                setOf("ноги"),
+                setOf("legs"),
                 h.machines
                     .all(MISHA)
                     .single()

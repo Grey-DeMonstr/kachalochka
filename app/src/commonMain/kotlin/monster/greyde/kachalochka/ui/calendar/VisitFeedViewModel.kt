@@ -77,7 +77,7 @@ data class FeedDayUi(
     /** The month's name and year, over the first day shown of each month. */
     val month: String?,
     val title: String,
-    /** The date beside "Сегодня" and "Вчера". */
+    /** The date beside "Today" and "Yesterday". */
     val aside: String?,
     val cards: List<VisitCardUi>,
 )

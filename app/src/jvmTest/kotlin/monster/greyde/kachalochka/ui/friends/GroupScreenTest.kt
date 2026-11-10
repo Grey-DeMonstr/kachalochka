@@ -18,15 +18,15 @@ class GroupScreenTest {
 
     @Test
     fun a_member_opens_their_calendar_but_the_viewer_s_own_row_does_not() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         val opened = mutableListOf<Friend>()
         runScreenTest(gym, screen = {
             GroupScreen(group.id, {}, {}, onOpenMember = { opened += it }, onGone = {})
         }) {
-            onNodeWithTag("top-bar-title").assertTextEquals("Зал на Лесной")
+            onNodeWithTag("top-bar-title").assertTextEquals("Forest Street Gym")
             onNodeWithTag("member-owner-${OLEG.userId.value}", useUnmergedTree = true)
-                .assertTextEquals("владелец")
-            onNodeWithTag("invite-code").assertTextEquals("Код приглашения: ABCD2345")
+                .assertTextEquals("owner")
+            onNodeWithTag("invite-code").assertTextEquals("Invite code: ABCD2345")
             onNodeWithTag("member-${OLEG.userId.value}").performClick()
             onNodeWithTag("member-${ME.userId.value}").performClick()
             waitForIdle()
@@ -39,7 +39,7 @@ class GroupScreenTest {
 
     @Test
     fun a_member_s_colour_is_picked_from_the_palette() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         runScreenTest(gym, screen = { GroupScreen(group.id, {}, {}, {}, {}) }) {
             onNodeWithTag("member-color-${ME.userId.value}").assertDoesNotExist()
             onNodeWithTag("member-color-${OLEG.userId.value}").performClick()
@@ -52,13 +52,13 @@ class GroupScreenTest {
 
             onNodeWithTag("color-picker").assertDoesNotExist()
             onNodeWithTag("member-color-${OLEG.userId.value}")
-                .assertContentDescriptionEquals("Цвет 7")
+                .assertContentDescriptionEquals("Colour 7")
         }
     }
 
     @Test
     fun leaving_asks_first_and_then_closes_the_group() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         var gone = 0
         runScreenTest(gym, screen = {
             GroupScreen(group.id, {}, {}, onOpenMember = {}, onGone = { gone++ })
@@ -74,7 +74,7 @@ class GroupScreenTest {
 
     @Test
     fun the_owner_is_offered_deleting_instead_of_leaving() {
-        val group = gym.friends.group("Зал на Лесной", owner = ME, OLEG)
+        val group = gym.friends.group("Forest Street Gym", owner = ME, OLEG)
         runScreenTest(gym, screen = { GroupScreen(group.id, {}, {}, {}, {}) }) {
             onNodeWithTag("leave-group").assertDoesNotExist()
             onNodeWithTag("delete-group").performScrollTo().assertIsDisplayed()
@@ -83,20 +83,20 @@ class GroupScreenTest {
 
     @Test
     fun inviting_shows_the_confirmation() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         runScreenTest(gym, screen = { GroupScreen(group.id, {}, {}, {}, {}) }) {
             onNodeWithTag("invite").performScrollTo().performClick()
             waitForIdle()
-            onNodeWithTag("group-notice").assertTextEquals("Ссылка скопирована")
+            onNodeWithTag("group-notice").assertTextEquals("Link copied")
         }
     }
 
     @Test
     fun offline_it_offers_a_retry() {
-        val group = gym.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val group = gym.friends.group("Forest Street Gym", owner = OLEG, ME)
         gym.friends.offline = true
         runScreenTest(gym, screen = { GroupScreen(group.id, {}, {}, {}, {}) }) {
-            onNodeWithTag("friends-offline").assertTextEquals("Нет связи с сервером")
+            onNodeWithTag("friends-offline").assertTextEquals("No connection to the server")
             gym.friends.offline = false
             onNodeWithTag("friends-retry").performClick()
             waitForIdle()

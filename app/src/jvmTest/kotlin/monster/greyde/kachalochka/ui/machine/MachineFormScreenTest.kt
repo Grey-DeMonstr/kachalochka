@@ -41,11 +41,12 @@ import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.runScreenTest
-import monster.greyde.kachalochka.runScreenTestInEnglish
+import monster.greyde.kachalochka.runScreenTestInRussian
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
+import monster.greyde.kachalochka.ui.strings.RuStrings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -79,7 +80,7 @@ class MachineFormScreenTest {
             onNodeWithTag("mode-counterweight-hint").assertDoesNotExist()
             onNodeWithTag("weight-step").assertTextEquals("2.5")
 
-            onNodeWithTag("machine-name").performTextInput("Гакк-машина")
+            onNodeWithTag("machine-name").performTextInput("Hack machine")
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
@@ -91,7 +92,7 @@ class MachineFormScreenTest {
 
     @Test
     fun a_saved_machine_opens_its_statistics() {
-        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        val press = Machine.new("Leg press", null, gym.clock.current)
         runBlocking { gym.machines.upsert(press) }
         val opened = mutableListOf<MachineId>()
         runScreenTest(gym, screen = {
@@ -113,7 +114,7 @@ class MachineFormScreenTest {
     @Test
     fun a_platform_typed_over_recorded_sets_recalculates_them_when_asked() {
         val t0 = gym.clock.current
-        val press = Machine.new("Жим ногами", null, t0)
+        val press = Machine.new("Leg press", null, t0)
         val visit = VisitId.random()
         val recorded =
             WorkoutSet(WorkoutSetId.random(), null, visit, press.id, 70.0, 10, 0, t0, t0, false)
@@ -166,7 +167,7 @@ class MachineFormScreenTest {
         block: ComposeUiTest.(LeaveRun) -> Unit,
     ) {
         val t0 = gym.clock.current
-        val run = LeaveRun(Machine.new("Жим ногами", null, t0))
+        val run = LeaveRun(Machine.new("Leg press", null, t0))
         runBlocking {
             gym.machines.upsert(run.press)
             if (recorded) {
@@ -222,18 +223,18 @@ class MachineFormScreenTest {
     @Test
     fun system_back_with_edits_asks_first() =
         leaveRun { run ->
-            onNodeWithTag("machine-note").performTextInput("Сиденье на 4")
+            onNodeWithTag("machine-note").performTextInput("Seat at 4")
             runOnIdle { run.systemBack.backCompleted() }
             waitForIdle()
 
             assertEquals(0, run.backs)
-            onNodeWithText("Сохранить изменения?").assertExists()
+            onNodeWithText("Save changes?").assertExists()
         }
 
     @Test
     fun dismissing_the_question_stays_in_the_form() =
         leaveRun { run ->
-            onNodeWithTag("machine-note").performTextInput("Сиденье на 4")
+            onNodeWithTag("machine-note").performTextInput("Seat at 4")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
 
@@ -243,19 +244,19 @@ class MachineFormScreenTest {
             onNodeWithTag("leave-save").assertDoesNotExist()
             assertEquals(0, run.backs)
             assertEquals(emptyList(), run.saved)
-            onNodeWithTag("machine-note").assertTextEquals("Сиденье на 4")
+            onNodeWithTag("machine-note").assertTextEquals("Seat at 4")
         }
 
     @Test
     fun back_with_edits_asks_and_can_drop_them() =
         leaveRun { run ->
-            onNodeWithTag("machine-note").performTextInput("Сиденье на 4")
+            onNodeWithTag("machine-note").performTextInput("Seat at 4")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
             assertEquals(0, run.backs)
-            onNodeWithText("Сохранить изменения?").assertExists()
+            onNodeWithText("Save changes?").assertExists()
 
-            onNodeWithTag("leave-dont-save").assertTextEquals("Не сохранять").performClick()
+            onNodeWithTag("leave-dont-save").assertTextEquals("Don't save").performClick()
             waitForIdle()
 
             assertEquals(1, run.backs)
@@ -266,17 +267,17 @@ class MachineFormScreenTest {
     @Test
     fun saving_from_the_question_leaves_the_way_the_save_button_does() =
         leaveRun { run ->
-            onNodeWithTag("machine-note").performTextInput("Сиденье на 4")
+            onNodeWithTag("machine-note").performTextInput("Seat at 4")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
 
-            onNodeWithTag("leave-save").assertTextEquals("Сохранить").performClick()
+            onNodeWithTag("leave-save").assertTextEquals("Save").performClick()
             waitForIdle()
 
             assertEquals(listOf(run.press.id), run.saved)
             assertEquals(0, run.backs)
             assertEquals(
-                "Сиденье на 4",
+                "Seat at 4",
                 runBlocking { gym.machines.byId(run.press.id) }?.setupNote,
             )
         }
@@ -310,17 +311,17 @@ class MachineFormScreenTest {
         }
 
     @Test
-    fun the_leave_question_speaks_english() {
-        runScreenTestInEnglish(gym, screen = {
-            MachineFormScreen(MachineFormArgs(null, null, "Hack"), {}, {}, onSaved = {})
+    fun the_leave_question_speaks_russian() {
+        runScreenTestInRussian(gym, screen = {
+            MachineFormScreen(MachineFormArgs(null, null, "Hack squat"), {}, {}, onSaved = {})
         }) {
             onNodeWithTag("machine-note").performTextInput("Seat at 4")
             onNodeWithTag("top-bar-back").performClick()
             waitForIdle()
 
-            onNodeWithText("Save changes?").assertExists()
-            onNodeWithTag("leave-save").assertTextEquals("Save")
-            onNodeWithTag("leave-dont-save").assertTextEquals("Don't save")
+            onNodeWithText(RuStrings.saveChangesTitle).assertExists()
+            onNodeWithTag("leave-save").assertTextEquals(RuStrings.save)
+            onNodeWithTag("leave-dont-save").assertTextEquals(RuStrings.dontSave)
         }
     }
 
@@ -328,26 +329,26 @@ class MachineFormScreenTest {
     fun tags_are_chosen_and_added_in_the_form() {
         runBlocking {
             gym.machines.upsert(
-                Machine.new("Присед", null, gym.clock.current).copy(tags = setOf("Ноги")),
+                Machine.new("Squat", null, gym.clock.current).copy(tags = setOf("Legs")),
             )
         }
         val saved = mutableListOf<MachineId>()
         runScreenTest(gym, screen = {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = { saved += it })
         }) {
-            onNodeWithTag("machine-name").performTextInput("Гакк")
+            onNodeWithTag("machine-name").performTextInput("Hack squat")
             onNodeWithTag("suggested-tags").assertDoesNotExist()
-            onNodeWithTag("tag-ноги").performScrollTo().assertIsOff().performClick()
-            onNodeWithTag("new-tag").performScrollTo().performTextInput("Жим")
+            onNodeWithTag("tag-legs").performScrollTo().assertIsOff().performClick()
+            onNodeWithTag("new-tag").performScrollTo().performTextInput("Press")
             onNodeWithTag("add-tag").performClick()
             waitForIdle()
-            onNodeWithTag("tag-ноги").assertIsOn()
-            onNodeWithTag("tag-жим").assertIsOn()
+            onNodeWithTag("tag-legs").assertIsOn()
+            onNodeWithTag("tag-press").assertIsOn()
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
             val machine = runBlocking { gym.machines.byId(saved.single()) }
-            assertEquals(setOf("ноги", "жим"), machine?.tags)
+            assertEquals(setOf("legs", "press"), machine?.tags)
         }
     }
 
@@ -357,11 +358,11 @@ class MachineFormScreenTest {
         runScreenTest(gym, screen = {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = { saved += it })
         }) {
-            onNodeWithTag("machine-name").performTextInput("Гравитрон")
+            onNodeWithTag("machine-name").performTextInput("Gravitron")
             onNodeWithTag("mode-counterweight").performClick()
             waitForIdle()
             onNodeWithTag("mode-counterweight-hint")
-                .assertTextEquals("Вес считается отрицательным: чем меньше, тем лучше.")
+                .assertTextEquals("The weight counts as negative: the less, the better.")
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
 
@@ -371,22 +372,21 @@ class MachineFormScreenTest {
     }
 
     @Test
-    fun the_machine_form_speaks_english() =
-        runScreenTestInEnglish(gym, screen = {
+    fun the_machine_form_speaks_russian() =
+        runScreenTestInRussian(gym, screen = {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = {})
         }) {
-            onNodeWithTag("mode-total").assertTextEquals("Total")
+            onNodeWithTag("mode-total").assertTextEquals(RuStrings.choiceTotal)
             onNodeWithTag("mode-counterweight").performClick()
-            onNodeWithTag("mode-counterweight-hint")
-                .assertTextEquals("The weight counts as negative: the less, the better.")
-            onNodeWithTag("save-machine").assertTextEquals("Save")
+            onNodeWithTag("mode-counterweight-hint").assertTextEquals(RuStrings.counterweightHint)
+            onNodeWithTag("save-machine").assertTextEquals(RuStrings.save)
         }
 
     @Test
     fun a_friend_s_photo_can_be_made_the_cover_but_not_deleted() {
         val on = signedInGym()
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
-        val olegs = Machine.new("Жим ногами", OLEG.userId, on.clock.current)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
+        val olegs = Machine.new("Leg press", OLEG.userId, on.clock.current)
         val (mine, link) = linkedCopy(olegs, ME.userId, on.clock.current)
         val olegsPhoto = Photo.new(olegs.id, OLEG.userId, on.clock.current)
         runBlocking {
@@ -402,7 +402,7 @@ class MachineFormScreenTest {
         }) {
             onAllNodesWithTag("photo-thumbnail")[1].performClick()
             onNodeWithTag("delete-photo").assertDoesNotExist()
-            onNodeWithTag("make-cover").assertTextEquals("Сделать основным").performClick()
+            onNodeWithTag("make-cover").assertTextEquals("Make it the cover").performClick()
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
         }
@@ -413,7 +413,7 @@ class MachineFormScreenTest {
     @Test
     fun a_swipe_in_the_opened_photo_shows_the_next_one() {
         val on = signedInGym()
-        val machine = Machine.new("Жим ногами", ME.userId, on.clock.current)
+        val machine = Machine.new("Leg press", ME.userId, on.clock.current)
         val first = Photo.new(machine.id, ME.userId, on.clock.current)
         val second = Photo.new(machine.id, ME.userId, on.clock.current + 1.minutes)
         runBlocking {
@@ -440,7 +440,7 @@ class MachineFormScreenTest {
     @Test
     fun an_opened_photo_can_be_shared() {
         val on = signedInGym()
-        val machine = Machine.new("Жим ногами", ME.userId, on.clock.current)
+        val machine = Machine.new("Leg press", ME.userId, on.clock.current)
         runBlocking {
             on.machines.upsert(machine)
             on.photos.add(Photo.new(machine.id, ME.userId, on.clock.current), byteArrayOf(3))
@@ -466,7 +466,7 @@ class MachineFormScreenTest {
         val saved = mutableListOf<MachineId>()
         runScreenTest(gym, screen = {
             MachineFormScreen(
-                MachineFormArgs(null, null, "Гакк"),
+                MachineFormArgs(null, null, "Hack squat"),
                 {},
                 {},
                 onSaved = { saved += it },
@@ -491,7 +491,7 @@ class MachineFormScreenTest {
     @Test
     fun an_opened_photo_can_be_removed_from_the_form() {
         runScreenTest(gym, screen = {
-            MachineFormScreen(MachineFormArgs(null, null, "Гакк"), {}, {}, onSaved = {})
+            MachineFormScreen(MachineFormArgs(null, null, "Hack squat"), {}, {}, onSaved = {})
         }) {
             onNodeWithTag("machine-photo").performClick()
             onNodeWithTag("take-photo").performClick()
@@ -511,7 +511,7 @@ class MachineFormScreenTest {
     @Test
     fun an_own_unit_asks_for_its_name_and_shows_it_by_the_platform_weight() {
         runScreenTest(gym, screen = {
-            MachineFormScreen(MachineFormArgs(null, null, "Гравитрон"), {}, {}, onSaved = {})
+            MachineFormScreen(MachineFormArgs(null, null, "Gravitron"), {}, {}, onSaved = {})
         }) {
             onNodeWithTag("unit-label").assertDoesNotExist()
 
@@ -520,11 +520,11 @@ class MachineFormScreenTest {
             onNodeWithTag("unit-custom").assertIsSelected()
             onNodeWithTag("save-machine").assertIsNotEnabled()
 
-            onNodeWithTag("unit-label").performTextInput("очень длинная единица")
+            onNodeWithTag("unit-label").performTextInput("extremely long unit")
             waitForIdle()
-            onNodeWithTag("unit-label").assertTextEquals("очень длинна")
+            onNodeWithTag("unit-label").assertTextEquals("extremely lo")
             onNodeWithTag("platform-weight-unit", useUnmergedTree = true)
-                .assertTextEquals("очень длинна")
+                .assertTextEquals("extremely lo")
             onNodeWithTag("save-machine").assertIsEnabled()
         }
     }
@@ -534,7 +534,7 @@ class MachineFormScreenTest {
         val saved = mutableListOf<MachineId>()
         runScreenTest(gym, screen = {
             MachineFormScreen(
-                MachineFormArgs(null, null, "Гакк"),
+                MachineFormArgs(null, null, "Hack squat"),
                 {},
                 {},
                 onSaved = { saved += it },
@@ -559,12 +559,12 @@ class MachineFormScreenTest {
             MachineFormScreen(MachineFormArgs(null, null, ""), {}, {}, onSaved = {})
         }) {
             onNodeWithTag("top-bar-title").assertTextEquals("")
-            onNodeWithTag("machine-name-placeholder").assertTextEquals("Название")
-            onNodeWithTag("machine-note-placeholder").assertTextEquals("Комментарий")
-            onNodeWithText("Теги").assertDoesNotExist()
-            onNodeWithText("После сохранения", substring = true).assertDoesNotExist()
+            onNodeWithTag("machine-name-placeholder").assertTextEquals("Name")
+            onNodeWithTag("machine-note-placeholder").assertTextEquals("Comment")
+            onNodeWithText("Tags").assertDoesNotExist()
+            onNodeWithText("After saving", substring = true).assertDoesNotExist()
 
-            onNodeWithTag("machine-name").performTextInput("Гакк")
+            onNodeWithTag("machine-name").performTextInput("Hack squat")
             waitForIdle()
             onNodeWithTag("machine-name-placeholder").assertDoesNotExist()
         }
@@ -572,19 +572,19 @@ class MachineFormScreenTest {
     @Test
     fun friends_tags_follow_the_own_ones_and_the_new_tag_field_comes_last() {
         val on = signedInGym()
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
         on.friends.machines +=
-            Machine.new("Жим", OLEG.userId, on.clock.current).copy(tags = setOf("Плечи"))
+            Machine.new("Press", OLEG.userId, on.clock.current).copy(tags = setOf("Shoulders"))
         runBlocking {
             on.machines.upsert(
-                Machine.new("Присед", ME.userId, on.clock.current).copy(tags = setOf("Ноги")),
+                Machine.new("Squat", ME.userId, on.clock.current).copy(tags = setOf("Legs")),
             )
         }
         runScreenTest(on, screen = {
-            MachineFormScreen(MachineFormArgs(null, null, "Гакк"), {}, {}, onSaved = {})
+            MachineFormScreen(MachineFormArgs(null, null, "Hack squat"), {}, {}, onSaved = {})
         }) {
-            val own = onNodeWithTag("tag-ноги").getUnclippedBoundsInRoot()
-            val friends = onNodeWithTag("friend-tag-плечи").getUnclippedBoundsInRoot()
+            val own = onNodeWithTag("tag-legs").getUnclippedBoundsInRoot()
+            val friends = onNodeWithTag("friend-tag-shoulders").getUnclippedBoundsInRoot()
             val field = onNodeWithTag("new-tag").getUnclippedBoundsInRoot()
             assertTrue(own.right <= friends.left || own.bottom <= friends.top)
             assertTrue(friends.right <= field.left || friends.bottom <= field.top)
@@ -595,10 +595,10 @@ class MachineFormScreenTest {
     fun linked_machines_tags_are_suggested_first_and_a_tap_gives_one_to_the_machine() {
         val on = signedInGym()
         val now = on.clock.current
-        val olegs = Machine.new("Жим ногами", OLEG.userId, now).copy(tags = setOf("Квадрицепс"))
+        val olegs = Machine.new("Leg press", OLEG.userId, now).copy(tags = setOf("Quads"))
         val (copy, link) = linkedCopy(olegs, ME.userId, now)
-        val mine = copy.copy(tags = setOf("Ноги"))
-        on.friends.group("Зал на Лесной", owner = OLEG, ME)
+        val mine = copy.copy(tags = setOf("Legs"))
+        on.friends.group("Forest Street Gym", owner = OLEG, ME)
         on.friends.machines += olegs
         runBlocking {
             on.machines.upsert(mine)
@@ -608,30 +608,30 @@ class MachineFormScreenTest {
             MachineFormScreen(MachineFormArgs(mine.id, null, ""), {}, {}, onSaved = {})
         }) {
             val icon = onNodeWithTag("suggested-tags").getUnclippedBoundsInRoot()
-            val suggested = onNodeWithTag("suggested-tag-квадрицепс").getUnclippedBoundsInRoot()
-            val own = onNodeWithTag("tag-ноги").getUnclippedBoundsInRoot()
+            val suggested = onNodeWithTag("suggested-tag-quads").getUnclippedBoundsInRoot()
+            val own = onNodeWithTag("tag-legs").getUnclippedBoundsInRoot()
             assertTrue(icon.right <= suggested.left)
             assertTrue(suggested.bottom <= own.top)
 
-            onNodeWithTag("suggested-tag-квадрицепс").performScrollTo().performClick()
+            onNodeWithTag("suggested-tag-quads").performScrollTo().performClick()
             waitForIdle()
 
             onNodeWithTag("suggested-tags").assertDoesNotExist()
-            onNodeWithTag("tag-квадрицепс").assertIsOn()
+            onNodeWithTag("tag-quads").assertIsOn()
             onNodeWithTag("save-machine").performClick()
             waitForIdle()
         }
-        assertEquals(setOf("ноги", "квадрицепс"), runBlocking { on.machines.byId(mine.id)?.tags })
+        assertEquals(setOf("legs", "quads"), runBlocking { on.machines.byId(mine.id)?.tags })
     }
 
     @Test
     fun the_menu_unlinks_only_after_a_confirmation() {
-        val ivanSession = session("11111111-1111-4111-8111-111111111111", "Иван")
+        val ivanSession = session("11111111-1111-4111-8111-111111111111", "Ivan")
         val signedIn = FakeGym().withAccounts(ivanSession, active = ivanSession)
         val now = signedIn.clock.current
         val (linked, link) =
             linkedCopy(
-                Machine.new("Жим ногами", null, now),
+                Machine.new("Leg press", null, now),
                 ivanSession.account.userId,
                 now,
             )
@@ -668,16 +668,16 @@ class MachineFormScreenTest {
 
     @Test
     fun the_menu_deletes_a_machine_without_sets_only_after_a_confirmation() {
-        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        val press = Machine.new("Leg press", null, gym.clock.current)
         runBlocking { gym.machines.upsert(press) }
         var closed = 0
         runScreenTest(gym, screen = {
             MachineFormScreen(MachineFormArgs(press.id, null, ""), { closed++ }, {}, onSaved = {})
         }) {
             onNodeWithTag("machine-menu").performClick()
-            onNodeWithTag("delete-machine").assertTextEquals("Удалить упражнение").performClick()
+            onNodeWithTag("delete-machine").assertTextEquals("Delete machine").performClick()
             waitForIdle()
-            onNodeWithText("«Жим ногами» исчезнет из списка.").assertExists()
+            onNodeWithText("\"Leg press\" will disappear from the list.").assertExists()
             onNodeWithTag("cancel-delete-machine").performClick()
             waitForIdle()
             assertFalse(
@@ -703,7 +703,7 @@ class MachineFormScreenTest {
     @Test
     fun a_machine_with_sets_is_not_offered_for_deletion() {
         val now = gym.clock.current
-        val press = Machine.new("Жим ногами", null, now)
+        val press = Machine.new("Leg press", null, now)
         val set =
             WorkoutSet(
                 WorkoutSetId.random(),
@@ -732,7 +732,7 @@ class MachineFormScreenTest {
     @Test
     fun a_new_machine_has_no_menu() =
         runScreenTest(gym, screen = {
-            MachineFormScreen(MachineFormArgs(null, null, "Гакк"), {}, {}, onSaved = {})
+            MachineFormScreen(MachineFormArgs(null, null, "Hack squat"), {}, {}, onSaved = {})
         }) {
             onNodeWithTag("machine-menu").assertDoesNotExist()
             onNodeWithTag("link-machine").assertDoesNotExist()
@@ -741,8 +741,8 @@ class MachineFormScreenTest {
     @Test
     fun a_saved_machine_goes_into_a_chosen_plan_and_the_form_says_so() {
         val now = gym.clock.current
-        val press = Machine.new("Жим ногами", null, now)
-        val legs = Plan(PlanId.random(), null, "Ноги", emptyList(), now, now, false)
+        val press = Machine.new("Leg press", null, now)
+        val legs = Plan(PlanId.random(), null, "Legs", emptyList(), now, now, false)
         runBlocking {
             gym.machines.upsert(press)
             gym.plans.upsert(legs)
@@ -754,12 +754,12 @@ class MachineFormScreenTest {
             onNodeWithTag("unlink-machine").assertDoesNotExist()
             onNodeWithTag("machine-to-plan").performClick()
             waitForIdle()
-            onNodeWithTag("plan-choice-new").assertTextEquals("Новый план")
-            onNodeWithTag("plan-choice-${legs.id.value}").assertTextEquals("Ноги").performClick()
+            onNodeWithTag("plan-choice-new").assertTextEquals("New plan")
+            onNodeWithTag("plan-choice-${legs.id.value}").assertTextEquals("Legs").performClick()
             waitForIdle()
 
             onNodeWithTag("plan-choice-new").assertDoesNotExist()
-            onNodeWithTag("placement-notice").assertTextEquals("Добавлено в «Ноги»")
+            onNodeWithTag("placement-notice").assertTextEquals("Added to “Legs”")
             assertEquals(
                 listOf(press.id),
                 gym.plans.rows
@@ -774,7 +774,7 @@ class MachineFormScreenTest {
 
     @Test
     fun a_saved_machine_s_menu_opens_a_new_plan_or_today_s_visit_for_it() {
-        val press = Machine.new("Жим ногами", null, gym.clock.current)
+        val press = Machine.new("Leg press", null, gym.clock.current)
         runBlocking { gym.machines.upsert(press) }
         val newPlans = mutableListOf<MachineId>()
         val visits = mutableListOf<CalendarDay>()
@@ -794,7 +794,7 @@ class MachineFormScreenTest {
             onNodeWithTag("plan-choice-new").performClick()
             waitForIdle()
             onNodeWithTag("machine-menu").performClick()
-            onNodeWithTag("machine-to-today").assertTextEquals("Повторить сегодня").performClick()
+            onNodeWithTag("machine-to-today").assertTextEquals("Repeat today").performClick()
             waitForIdle()
         }
         assertEquals(listOf(press.id), newPlans)
@@ -806,9 +806,9 @@ class MachineFormScreenTest {
     fun a_saved_machine_offers_linking_and_names_the_machines_it_is_linked_with() {
         val signedIn = signedInGym()
         val now = signedIn.clock.current
-        val olegs = Machine.new("Жим ногами", OLEG.userId, now)
+        val olegs = Machine.new("Leg press", OLEG.userId, now)
         val (press, link) = linkedCopy(olegs, ME.userId, now)
-        signedIn.friends.group("Зал на Лесной", owner = OLEG, ME)
+        signedIn.friends.group("Forest Street Gym", owner = OLEG, ME)
         signedIn.friends.machines += olegs
         runBlocking {
             signedIn.machines.upsert(press)
@@ -826,7 +826,7 @@ class MachineFormScreenTest {
         }) {
             onNodeWithTag(
                 "machine-linked-with-${olegs.id.value}",
-            ).assertTextEquals("О", "Жим ногами")
+            ).assertTextEquals("O", "Leg press")
             onNodeWithTag("link-machine").performScrollTo().performClick()
             waitForIdle()
         }
@@ -837,11 +837,11 @@ class MachineFormScreenTest {
     fun tapping_a_linked_machine_opens_it_as_its_owner_s() {
         val signedIn = signedInGym()
         val now = signedIn.clock.current
-        val olegs = Machine.new("Жим ногами", OLEG.userId, now)
+        val olegs = Machine.new("Leg press", OLEG.userId, now)
         val (press, link) = linkedCopy(olegs, ME.userId, now)
         val (pashas, pashaLink) = linkedCopy(olegs, PASHA.userId, now)
-        signedIn.friends.group("Зал на Лесной", owner = OLEG, ME, PASHA)
-        signedIn.friends.machines += listOf(olegs, pashas.copy(name = "Платформа"))
+        signedIn.friends.group("Forest Street Gym", owner = OLEG, ME, PASHA)
+        signedIn.friends.machines += listOf(olegs, pashas.copy(name = "Platform"))
         signedIn.friends.links += pashaLink
         runBlocking {
             signedIn.machines.upsert(press)
@@ -859,9 +859,9 @@ class MachineFormScreenTest {
         }) {
             onNodeWithTag(
                 "machine-linked-with-${olegs.id.value}",
-            ).assertTextEquals("О", "Жим ногами")
+            ).assertTextEquals("O", "Leg press")
             onNodeWithTag("machine-linked-with-${pashas.id.value}")
-                .assertTextEquals("П", "Платформа")
+                .assertTextEquals("P", "Platform")
                 .performClick()
             waitForIdle()
         }

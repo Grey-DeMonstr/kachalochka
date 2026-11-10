@@ -109,7 +109,7 @@ class VisitNormalizerTest {
     @Test
     fun a_removed_set_no_longer_counts_in_the_prior_best_of_a_later_day() =
         runTest {
-            val press = Machine.new("Жим", ivan, t0)
+            val press = Machine.new("Press", ivan, t0)
             val morning = visit(t0 - 3.hours)
             val evening = visit(t0)
             val next = visit(t0 + 1.days, day = fourteenth.plusDays(1))
