@@ -1,5 +1,11 @@
 Kachalochka - Changelog
 
+1.9.2
+
+- Fixed: the machine name changed its size while swiping between the machines of a visit.
+- Fixed: the sort by gain in statistics mixed up kg and lb machines.
+
+
 1.9.1
 
 - Fixed: on Android, the app crashed when a machine of a visit was opened.
