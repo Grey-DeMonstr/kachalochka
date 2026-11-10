@@ -34,7 +34,7 @@ value class MeasurementId(
     }
 }
 
-/** A predefined measure, named and measured in the app's terms rather than its stored ones. */
+/** A predefined measure: the app names it by its kind, whatever name its row stores. */
 enum class MeasureKind { Weight, Waist, Chest, Hips, Biceps, Thigh, Neck, BodyFat, CycleDay }
 
 fun MeasureKind.wireName(): String =
@@ -76,11 +76,7 @@ data class Measure(
     val position: Int,
     val updatedAt: Instant,
     val deleted: Boolean,
-) {
-    val displayName: String get() = kind?.let(::predefinedOf)?.name ?: name
-
-    val displayUnit: String get() = kind?.let(::predefinedOf)?.unit ?: unit
-}
+)
 
 data class Measurement(
     val id: MeasurementId,
@@ -125,26 +121,18 @@ fun newestPerDay(rows: List<Measurement>): List<Measurement> =
         .filterNot { it.deleted }
         .sortedWith(compareByDescending<Measurement> { it.day }.thenBy { it.measureId.value })
 
-private class Predefined(
-    val kind: MeasureKind,
-    val name: String,
-    val unit: String,
-)
-
-private val defaultMeasures =
+// The order of the list is the seeds' position.
+private val defaultKinds =
     listOf(
-        Predefined(MeasureKind.Weight, "Вес", "кг"),
-        Predefined(MeasureKind.Waist, "Талия", "см"),
-        Predefined(MeasureKind.Chest, "Грудь", "см"),
-        Predefined(MeasureKind.Hips, "Обхват бёдер", "см"),
-        Predefined(MeasureKind.Biceps, "Бицепс", "см"),
-        Predefined(MeasureKind.Thigh, "Окружность бедра", "см"),
-        Predefined(MeasureKind.Neck, "Шея", "см"),
-        Predefined(MeasureKind.CycleDay, "День цикла", "день"),
+        MeasureKind.Weight,
+        MeasureKind.Waist,
+        MeasureKind.Chest,
+        MeasureKind.Hips,
+        MeasureKind.Biceps,
+        MeasureKind.Thigh,
+        MeasureKind.Neck,
+        MeasureKind.CycleDay,
     )
-
-private fun predefinedOf(kind: MeasureKind): Predefined? =
-    defaultMeasures.firstOrNull { it.kind == kind }
 
 /** The day of the cycle is a woman's measure only. */
 fun isShownFor(
@@ -205,24 +193,26 @@ fun measureDuplicates(
             rows.filter { it != kept }.map { it.id to kept.id }
         }.toMap()
 
-/** The predefined measures [owner] lacks, dated at the epoch so a real edit always wins. */
+/**
+ * The predefined measures [owner] lacks, dated at the epoch so a real edit always wins. A seed
+ * stores its kind's wire name, because the app names it by its kind.
+ */
 fun missingDefaults(
     owner: UserId?,
     existing: Set<MeasureKind>,
     sex: Sex? = null,
 ): List<Measure> =
-    defaultMeasures
+    defaultKinds
         .withIndex()
-        .filter { (_, default) ->
-            default.kind !in existing &&
-                (default.kind != MeasureKind.CycleDay || sex == Sex.Female)
-        }.map { (position, default) ->
+        .filter { (_, kind) ->
+            kind !in existing && (kind != MeasureKind.CycleDay || sex == Sex.Female)
+        }.map { (position, kind) ->
             Measure(
-                id = MeasureId(owner?.let { derivedId(it, default.kind) } ?: newUuidV4()),
+                id = MeasureId(owner?.let { derivedId(it, kind) } ?: newUuidV4()),
                 userId = owner,
-                name = default.name,
-                unit = default.unit,
-                kind = default.kind,
+                name = kind.wireName(),
+                unit = "",
+                kind = kind,
                 position = position,
                 updatedAt = MEASURE_SEEDED_AT,
                 deleted = false,

@@ -716,6 +716,8 @@ rows, live or deleted, when `CurrentUser.writesPrivateRows` is true. It runs one
 - A live `BodyFat` row is deleted with its values; that kind is never seeded.
 - A ready-made row shows the app's name and unit for its kind in the current language
   (`shownName()`, `shownUnit()` in `ui/measures/MeasureHints.kt`), whatever the row stores.
+  A seed stores its kind's wire name and an empty unit; older rows can hold Russian names.
+  Versions before 1.0.4 show the stored name.
 - A signed-in owner's seeds take `derivedId(owner, kind)`, an FNV-1a hash shaped as a UUID v4, and
   `updated_at` at the epoch. Thus two devices that seed offline write the same rows.
 - An anonymous owner's seeds take random ids. After a claim, a kind can have two live rows;
@@ -1053,7 +1055,8 @@ and only Android binds one: a browser cannot choose a proxy or look up a host.
 - Gradle runs with the configuration cache. CI uses the checked-in wrapper.
 - **Commit hook.** `.githooks/pre-commit` refuses a commit that adds Cyrillic outside
   `RuStrings.kt`, `GLOSSARY.md` and the tests of Cyrillic-specific behaviour that it lists. It
-  checks only added lines, so older text does not block an edit next to it. Enable it once in each clone: `git config core.hooksPath .githooks`.
+  checks only added lines, so older text does not block an edit next to it. Enable it once in each
+  clone: `git config core.hooksPath .githooks`.
 - **Privacy and terms.** `privacy.html` and `terms.html` are static pages in the web resources.
   The OAuth consent screen and the Play listing link to them. The Play account deletion link is
   `privacy.html#deletion`, so keep that anchor. The entry page links to both in plain HTML under
@@ -1120,8 +1123,8 @@ the graph is built, so the first frame uses it. A store that cannot be read give
 - `AppStrings` starts with `defaultStrings` until `App` sets the chosen language: Russian on
   Android and the web, English on the JVM. The JVM target runs only the host tests, and it also
   binds the system language to English, so the English assertions pass on each machine.
-- Ready-made measures keep their Russian names in storage and show the name of their kind. User
-  data (machine names, own units, tags, comments, measure names) is never translated.
+- Ready-made measures show the name of their kind. User data (machine names, own units, tags,
+  comments, measure names) is never translated.
 
 ### 9.4 Local time
 

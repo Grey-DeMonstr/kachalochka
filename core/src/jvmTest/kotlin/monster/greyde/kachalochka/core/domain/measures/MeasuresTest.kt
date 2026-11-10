@@ -39,18 +39,18 @@ class MeasuresTest {
     }
 
     @Test
-    fun an_owner_without_measures_gets_every_predefined_one_at_the_epoch() {
+    fun an_owner_without_measures_gets_every_predefined_one_at_the_epoch_named_by_kind() {
         val defaults = missingDefaults(ivan, emptySet())
 
         assertEquals(
             listOf(
-                Triple("Вес", "кг", MeasureKind.Weight),
-                Triple("Талия", "см", MeasureKind.Waist),
-                Triple("Грудь", "см", MeasureKind.Chest),
-                Triple("Обхват бёдер", "см", MeasureKind.Hips),
-                Triple("Бицепс", "см", MeasureKind.Biceps),
-                Triple("Окружность бедра", "см", MeasureKind.Thigh),
-                Triple("Шея", "см", MeasureKind.Neck),
+                Triple("weight", "", MeasureKind.Weight),
+                Triple("waist", "", MeasureKind.Waist),
+                Triple("chest", "", MeasureKind.Chest),
+                Triple("hips", "", MeasureKind.Hips),
+                Triple("biceps", "", MeasureKind.Biceps),
+                Triple("thigh", "", MeasureKind.Thigh),
+                Triple("neck", "", MeasureKind.Neck),
             ),
             defaults.map { Triple(it.name, it.unit, it.kind) },
         )
@@ -78,15 +78,6 @@ class MeasuresTest {
 
         assertTrue(first.all { it.userId == null })
         assertNotEquals(first.map { it.id }, second.map { it.id })
-    }
-
-    @Test
-    fun a_predefined_measure_shows_the_app_s_name_and_unit_whatever_is_stored() {
-        val hips = predefined(MeasureKind.Hips).copy(name = "Hips", unit = "in")
-        val own = hips.copy(kind = null, name = "Forearm", unit = "cm")
-
-        assertEquals("Обхват бёдер" to "см", hips.displayName to hips.displayUnit)
-        assertEquals("Forearm" to "cm", own.displayName to own.displayUnit)
     }
 
     @Test
@@ -170,7 +161,7 @@ class MeasuresTest {
         val defaults = missingDefaults(ivan, emptySet(), Sex.Female)
         val cycle = defaults.single { it.kind == MeasureKind.CycleDay }
 
-        assertEquals("День цикла" to "день", cycle.name to cycle.unit)
+        assertEquals("cycle_day" to "", cycle.name to cycle.unit)
         assertEquals(7, cycle.position)
         assertEquals(derivedId(ivan, MeasureKind.CycleDay), cycle.id.value)
         listOf(Sex.Male, null).forEach { sex ->

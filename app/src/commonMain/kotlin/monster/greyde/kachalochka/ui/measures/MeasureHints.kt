@@ -32,7 +32,7 @@ internal fun Measure.shownName(): String {
         MeasureKind.Thigh -> strings.measureThigh
         MeasureKind.Neck -> strings.measureNeck
         MeasureKind.CycleDay -> strings.measureCycleDay
-        MeasureKind.BodyFat, null -> displayName
+        MeasureKind.BodyFat, null -> name
     }
 }
 
@@ -40,6 +40,6 @@ internal fun Measure.shownUnit(): String =
     when (kind) {
         MeasureKind.Weight -> AppStrings.current.kg
         MeasureKind.CycleDay -> AppStrings.current.dayUnit
-        MeasureKind.BodyFat, null -> displayUnit
+        MeasureKind.BodyFat, null -> unit
         else -> AppStrings.current.cm
     }

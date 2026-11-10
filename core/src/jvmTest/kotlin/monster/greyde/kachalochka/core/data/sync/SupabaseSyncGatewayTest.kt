@@ -237,8 +237,8 @@ class SupabaseSyncGatewayTest {
                 Measure(
                     MeasureId("55555555-5555-4555-8555-555555555555"),
                     OWNER,
-                    "Шея",
-                    "см",
+                    "neck",
+                    "",
                     MeasureKind.Neck,
                     6,
                     Instant.parse("2024-01-01T00:00:00Z"),
@@ -255,8 +255,8 @@ class SupabaseSyncGatewayTest {
                     false,
                 )
             val measureRow =
-                """[{"id":"${neck.id.value}","user_id":"${OWNER.value}","name":"Шея",""" +
-                    """"unit":"см","kind":"neck","position":6,""" +
+                """[{"id":"${neck.id.value}","user_id":"${OWNER.value}","name":"neck",""" +
+                    """"unit":"","kind":"neck","position":6,""" +
                     """"updated_at":"2024-01-01T00:00:00+00:00","deleted":false}]"""
             val measurementRow =
                 """[{"id":"${monday.id.value}","user_id":"${OWNER.value}",""" +
