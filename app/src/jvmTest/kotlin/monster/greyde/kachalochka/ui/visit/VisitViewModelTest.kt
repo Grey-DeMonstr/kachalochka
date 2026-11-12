@@ -1461,6 +1461,22 @@ class VisitViewModelTest {
         }
 
     @Test
+    fun a_switch_while_a_save_mirrors_the_machine_records_nothing() =
+        runTest {
+            val two = twoAccountGym()
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+            vm.switchTo(misha.account.userId)
+            val gate = CompletableDeferred<Unit>().also { two.machines.readGate = it }
+
+            vm.save()
+            two.accounts.switchTo(ivan.account.userId)
+            gate.complete(Unit)
+
+            assertEquals(emptyList(), two.machines.all(misha.account.userId))
+            assertEquals(emptyMap(), two.sets.rows)
+        }
+
+    @Test
     fun opening_machine_settings_after_a_switch_mirrors_the_machine_first() =
         runTest {
             val two = twoAccountGym()

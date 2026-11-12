@@ -152,34 +152,19 @@ data class PlacedMachine(
     val group: GroupMachines? = null,
 )
 
-/** The account's machine for a shown one; see [MachineCatalogue.standIn]. */
+/** The account's machines for shown ones; see [MachineCatalogue.standIns]. */
 sealed interface StandIn {
     data class Found(
-        val machine: Machine,
+        val machines: List<Machine>,
     ) : StandIn
 
     data object Offline : StandIn
 
-    /** A friend's machine the friend no longer shares. */
+    /** No shown machine has a stand-in: the friend no longer shares it, or a trainee is active. */
     data object Gone : StandIn
 
     /** Another account became active; nothing was written. */
     data object Switched : StandIn
-}
-
-/** The account's machines for friend's machines; see [MachineCatalogue.standIns]. */
-sealed interface StandIns {
-    data class Found(
-        val machines: List<Machine>,
-    ) : StandIns
-
-    data object Offline : StandIns
-
-    /** The friend shares none of the machines any more. */
-    data object Gone : StandIns
-
-    /** Another account became active; nothing was written. */
-    data object Switched : StandIns
 }
 
 /**
@@ -377,20 +362,10 @@ class MachineCatalogue(
     }
 
     /**
-     * [friend]'s machine becomes [owner]'s own, linked to it and to the rest of its cluster in
-     * [group]; the copy is returned.
-     */
-    suspend fun take(
-        owner: UserId,
-        friend: Machine,
-        group: GroupMachines,
-    ): Machine = writingLinks { copyOf(owner, friend, group) }
-
-    /**
      * [owner]'s machine of [friend]'s cluster, else a new copy; null when [group] lacks [friend].
      * The own links are read again, so a copy written after [group] counts.
      */
-    suspend fun friendStandIn(
+    private suspend fun friendStandIn(
         owner: UserId,
         friend: MachineId,
         group: GroupMachines,
@@ -439,93 +414,60 @@ class MachineCatalogue(
     ): List<MachineLink> = links.all(owner) + links.all(shown.userId)
 
     /**
-     * The owner's own machine standing for [shown], which may be another account's: its
-     * [deviceStandIn], else a new copy linked to [shown] and to the rest of its cluster (spec
-     * §4.5).
-     */
-    suspend fun ownCopy(
-        owner: UserId?,
-        shown: Machine,
-    ): Machine {
-        if (shown.userId == owner) return shown
-        return writingLinks { deviceStandIn(owner, shown) ?: deviceCopy(owner, shown) }
-    }
-
-    /**
-     * [owner]'s machine for [shown], which a screen offered to [owner]: the machine itself when
-     * it is [owner]'s; another device account's as [ownCopy] gives it; a friend's as
-     * [friendStandIn] gives it over the group read the screen holds when that was made for
-     * [owner], else over a new one. The active account is checked before each read and write, so
-     * a switch meanwhile writes nothing.
-     */
-    suspend fun standIn(
-        owner: UserId?,
-        shown: PlacedMachine,
-    ): StandIn {
-        if (!active(owner)) return StandIn.Switched
-        // A copy would bring links to friends, which a trainer may not write for a trainee.
-        if (shown.ofFriend && accounts.traineeActive()) return StandIn.Gone
-        val found =
-            if (shown.ofFriend) {
-                standInForFriend(owner ?: return StandIn.Gone, shown)
-            } else {
-                standInOnDevice(owner, shown.id)
-            }
-        return if (found is StandIn.Found && !active(owner)) StandIn.Switched else found
-    }
-
-    /**
-     * [standIn] for several friend's machines over one group read. The result keeps the order of
-     * [friendMachines] and leaves out a machine the group no longer has.
+     * [owner]'s machines for [shown], which a screen offered to [owner], in the order of [shown]
+     * and each once: an own machine itself; another device account's as its [deviceStandIn], else
+     * a new copy linked to its cluster (spec §4.5); a friend's as [friendStandIn] gives it. A
+     * friend's machine needs one group read: one a [PlacedMachine] holds when that was made for
+     * [owner], else a new one. A machine that is no longer there is left out. The active account
+     * is checked before the read and after the writes, so a switch meanwhile writes nothing.
      */
     suspend fun standIns(
         owner: UserId?,
-        friendMachines: List<MachineId>,
-    ): StandIns {
-        if (!active(owner)) return StandIns.Switched
-        if (owner == null) return StandIns.Gone
-        val group = catching { group(owner) }.getOrElse { return failedStandIns(owner) }
-        if (!active(owner)) return StandIns.Switched
+        shown: List<PlacedMachine>,
+    ): StandIn {
+        if (!active(owner)) return StandIn.Switched
+        val group =
+            if (shown.any { it.ofFriend }) {
+                // A copy brings links to friends, which a trainer may not write for a trainee.
+                if (owner == null || accounts.traineeActive()) return StandIn.Gone
+                shown.firstNotNullOfOrNull { it.group?.takeIf { held -> held.owner == owner } }
+                    ?: catching { group(owner) }.getOrElse { return failedRead(owner) }
+            } else {
+                null
+            }
+        if (!active(owner)) return StandIn.Switched
         val found =
-            catching {
-                friendMachines.mapNotNull { friendStandIn(owner, it, group) }.distinctBy { it.id }
-            }.getOrElse { return failedStandIns(owner) }
+            shown
+                .mapNotNull {
+                    if (it.ofFriend && group != null) {
+                        catching { friendStandIn(group.owner, it.id, group) }
+                            .getOrElse { return failedRead(owner) }
+                    } else {
+                        standInOnDevice(owner, it.id)
+                    }
+                }.distinctBy { it.id }
         return when {
-            !active(owner) -> StandIns.Switched
-            found.isEmpty() -> StandIns.Gone
-            else -> StandIns.Found(found)
+            !active(owner) -> StandIn.Switched
+            found.isEmpty() -> StandIn.Gone
+            else -> StandIn.Found(found)
         }
     }
 
-    private fun failedStandIns(owner: UserId?) =
-        if (active(owner)) StandIns.Offline else StandIns.Switched
-
+    /**
+     * Null when [id] is not on the device, when it is another account's while a trainee is
+     * active, or when [owner] is no longer active.
+     */
     private suspend fun standInOnDevice(
         owner: UserId?,
         id: MachineId,
-    ): StandIn {
-        val stored = machines.byId(id) ?: return StandIn.Gone
-        if (stored.userId == owner) return StandIn.Found(stored)
-        if (accounts.traineeActive()) return StandIn.Gone
-        val own =
-            writingLinks {
-                val found = deviceStandIn(owner, stored)
-                if (active(owner)) found ?: deviceCopy(owner, stored) else null
-            }
-        return own?.let { StandIn.Found(it) } ?: StandIn.Switched
-    }
-
-    private suspend fun standInForFriend(
-        viewer: UserId,
-        shown: PlacedMachine,
-    ): StandIn {
-        val group =
-            shown.group?.takeIf { it.owner == viewer }
-                ?: catching { group(viewer) }.getOrElse { return failedRead(viewer) }
-        if (!active(viewer)) return StandIn.Switched
-        val own = catching { friendStandIn(viewer, shown.id, group) }
-        if (own.isFailure) return failedRead(viewer)
-        return own.getOrNull()?.let { StandIn.Found(it) } ?: StandIn.Gone
+    ): Machine? {
+        val stored = machines.byId(id) ?: return null
+        if (stored.userId == owner) return stored
+        if (accounts.traineeActive()) return null
+        return writingLinks {
+            val found = deviceStandIn(owner, stored)
+            if (active(owner)) found ?: deviceCopy(owner, stored) else null
+        }
     }
 
     private fun failedRead(owner: UserId?) =

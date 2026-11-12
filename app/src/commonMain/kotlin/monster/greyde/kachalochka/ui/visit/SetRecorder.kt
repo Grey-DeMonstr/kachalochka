@@ -39,7 +39,7 @@ class SetRecorder(
     private val gymWrites: GymWrites,
 ) {
     /**
-     * Records a set for [owner] on [machine], the owner's own (see [MachineCatalogue.ownCopy]).
+     * Records a set for [owner] on [machine], the owner's own (see [MachineCatalogue.standIns]).
      */
     suspend fun record(
         owner: UserId?,

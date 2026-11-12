@@ -30,7 +30,7 @@ data class PlacementUi(
 
 /**
  * Puts the machine of a machine screen into a plan or into today's visit, as the account's own
- * machine that [MachineCatalogue.standIn] gives for it. Every write is for the account the screen
+ * machine that [MachineCatalogue.standIns] gives for it. Every write is for the account the screen
  * offered the action to (spec §4.3).
  */
 class MachinePlacementViewModel(
@@ -120,8 +120,13 @@ class MachinePlacementViewModel(
         machine: PlacedMachine,
         onStoodIn: () -> Unit,
     ): MachineId? =
-        when (val found = catalogue.standIn(owner, machine)) {
-            is StandIn.Found -> found.machine.id.also { if (it != machine.id) onStoodIn() }
+        when (val found = catalogue.standIns(owner, listOf(machine))) {
+            is StandIn.Found -> {
+                found.machines
+                    .single()
+                    .id
+                    .also { if (it != machine.id) onStoodIn() }
+            }
             StandIn.Offline -> null.also { notice(machine, AppStrings.current.offline) }
             StandIn.Gone -> null.also { notice(machine, AppStrings.current.machineGone) }
             StandIn.Switched -> null

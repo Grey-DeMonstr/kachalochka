@@ -72,7 +72,9 @@ import monster.greyde.kachalochka.ui.format.weekdayDate
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.OwnMachines
+import monster.greyde.kachalochka.ui.machine.PlacedMachine
 import monster.greyde.kachalochka.ui.machine.ShownMachines
+import monster.greyde.kachalochka.ui.machine.StandIn
 import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.timer.RestTimer
@@ -329,9 +331,18 @@ class VisitViewModel(
 
     private suspend fun planOwnCopy(id: MachineId) {
         val owner = currentUser.id()
-        val machine = machines.byId(id) ?: return
-        recorder.plan(owner, listOf(catalogue.ownCopy(owner, machine).id))
+        val own = standIn(owner, id) ?: return
+        recorder.plan(owner, listOf(own.id))
     }
+
+    /** [owner]'s machine for [id]; null, and nothing written, when there is none. */
+    private suspend fun standIn(
+        owner: UserId?,
+        id: MachineId,
+    ): Machine? =
+        (catalogue.standIns(owner, listOf(PlacedMachine(id))) as? StandIn.Found)
+            ?.machines
+            ?.single()
 
     /** The form for the open machine's next set, from the last set's values. */
     fun openForm() {
@@ -411,7 +422,7 @@ class VisitViewModel(
             try {
                 if (edited == null) {
                     val owner = currentUser.id()
-                    val own = catalogue.ownCopy(owner, machine)
+                    val own = standIn(owner, machine.id) ?: return@launch
                     recorder.record(owner, own, saved, comment, pyramid)
                 } else {
                     recorder.amend(edited, saved, comment, pyramid)
@@ -443,7 +454,7 @@ class VisitViewModel(
                 reload(reseed = false)
                 return@launch
             }
-            val own = catalogue.ownCopy(currentUser.id(), machine)
+            val own = standIn(currentUser.id(), machine.id) ?: return@launch
             reload(reseed = false)
             onOpen(own.id)
         }

@@ -359,7 +359,7 @@ for it.
   not change.
 - The view models that write a visit (`VisitViewModel`, `CalendarViewModel`,
   `VisitFeedViewModel`, `PlansViewModel`, `MachinePlacementViewModel`) refuse to write it.
-  `MachineCatalogue.standIn` refuses to copy another account's machine.
+  `MachineCatalogue.standIns` refuses to copy another account's machine.
   `MachineFormViewModel.readOnly` keeps an existing machine as it is.
 - `VisitNormalization` skips the trainee's visits, and prior bests are not recalculated on the
   trainer's device: such writes could never go out.
@@ -535,20 +535,28 @@ screen that lists them. It is the one writer of `machine_link` rows.
 | `group` | The friends' machines, tags, links and photos in one request, `FriendsRepository.groupGym` (server function `group_gym`) |
 | `lastGroup` | The last group read of the account, else the kept one (see [4.12](#412-friends-data)), with the own links as they are now |
 | `clusters` | The clusters of the own links and `FriendsRepository.groupLinks`, for a friend's calendar |
-| `take` | Writes an own copy of a friend's machine (`linkedCopy`) and its link |
 | `link` | Writes one own link to a friend's machine |
-| `friendStandIn` | The own machine of a friend's machine's cluster, else `take` |
-| `ownCopy`, `deviceStandIn` | The account's machine for a machine of another account on the device (see [4.8](#48-visits-and-sets)) |
-| `standIn` | The account's machine for any shown machine |
-| `standIns` | The account's machines for the machines of a friend's card: one group read, the order kept, a machine the group lacks left out |
+| `standIns` | The account's stand-ins for shown machines, see below |
+| `deviceStandIn` | The stand-in for a machine of another account on the device, without a write (see [4.8](#48-visits-and-sets)) |
 | `merge`, `unlink`, `delete` | See below |
 
 - All link writes run under one mutex, and read the own links again first, so two writes never
   write the same link. Server calls run before the mutex.
 - A write requests a sync when it wrote something, also when it stopped halfway.
-- After each successful group read, and after `take` and `link`, the catalogue writes
-  `missingDirectLinks` for the account of that read. A failed upkeep goes to `FailureLog` and
-  fails nothing.
+- After each successful group read, and after a copy of a friend's machine and `link`, the
+  catalogue writes `missingDirectLinks` for the account of that read. A failed upkeep goes to
+  `FailureLog` and fails nothing.
+- `standIns` is the one way to get the account's machines for shown machines (`PlacedMachine`).
+  It gives them in the shown order, each once: an own machine itself; another device account's
+  machine as its `deviceStandIn`, else a new `linkedCopy`; a friend's machine as the own machine
+  of its cluster, else a new `linkedCopy` linked to the cluster. It reads the group at most once,
+  and only for a friend's machine; a group read that a `PlacedMachine` holds for the account is
+  used instead. It leaves out a machine that is no longer there. It answers `Switched` when
+  another account became active before the read or after the writes, `Offline` when the group
+  read fails, and `Gone` when no machine is left. While a trainee is active, a machine of another
+  account has no stand-in. "Take for myself" on "Friend's machine" and a pick of a friend's
+  machine use it too: they offer only a machine whose cluster has no own machine, so it writes a
+  new copy.
 - `LinkUpkeep` makes a group read for each account that becomes active, so friends' new links
   reach the account without a screen that reads the group.
 - Group reads for one account share the read in flight. The catalogue keeps the last read of each
@@ -627,11 +635,12 @@ and to plan a machine on a day. It finds or makes the day's visit, gives a new s
 and time, starts the rest timer for a set of today and requests a sync for another day.
 
 - A set goes on an own machine of the active account. When the shown machine belongs to another
-  account on the device (such as a child's), `MachineCatalogue.ownCopy` finds the stand-in from
+  account on the device (such as a child's), `MachineCatalogue.standIns` finds the stand-in from
   both accounts' local links: the machine of the same cluster, else one with the same name, else
   a new `linkedCopy` linked to the cluster. `deviceStandIn` finds the same machine without a write,
-  so after a switch the page shows the history that the next set continues.
-- A picked machine goes through `ownCopy`, then `SetRecorder.plan` adds it to `visit.planned`
+  so after a switch the page shows the history that the next set continues. When `standIns`
+  finds no stand-in, such as after a switch meanwhile, the visit view model writes nothing.
+- A picked machine goes through `standIns`, then `SetRecorder.plan` adds it to `visit.planned`
   before its page opens.
 
 **Machine page.** The visit view model keeps the state of the open machine page and its set form.
@@ -710,11 +719,9 @@ soft-deletes the plan unless it is pinned, so a failed write keeps the plan.
 - `Placement.machinesOn` gives the machines of the shown visit of a day. "Repeat today", the
   machine picker and a new plan from a visit read them there.
 - `MachinePlacementViewModel` serves the "⋮" menu that the machine form, the machine page and
-  "Friend's machine" share. It first asks `MachineCatalogue.standIn` for the account's machine:
-  an own machine stands for itself, another account's machine on the device goes through
-  `deviceStandIn`, else a new linked copy, and a friend's machine through `friendStandIn`. While
-  a trainee is active, `standIn` answers `Gone` for any machine that is not the trainee's, because
-  a trainer must not write links for a trainee.
+  "Friend's machine" share. It first asks `MachineCatalogue.standIns` for the account's machine.
+  While a trainee is active, `standIns` gives no machine that is not the trainee's, because a
+  trainer must not write links for a trainee.
 - `VisitPlacementViewModel` serves "Add to plan…" of the visit screen and of the visit cards in
   the calendar and the feed. For an own visit it reads the visit again and adds its
   `visitMachines` that the plan does not have. For a friend's card it asks `standIns` for the

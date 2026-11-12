@@ -121,13 +121,11 @@ class MachinePickerViewModel(
         onPicked: (MachineId) -> Unit,
     ) {
         val offered = shown ?: return
-        val group = offered.group ?: return
-        val friend = offered.offered.firstOrNull { it.machine.id == id } ?: return
-        val offeredTo = offered.own.owner
+        if (offered.offered.none { it.machine.id == id }) return
+        val picked = PlacedMachine(id, ofFriend = true, group = offered.group)
         writes.launch {
-            val owner = currentUser.id() ?: return@launch
-            if (owner != offeredTo) return@launch
-            onPicked(catalogue.take(owner, friend.machine, group).id)
+            val found = catalogue.standIns(offered.own.owner, listOf(picked))
+            if (found is StandIn.Found) onPicked(found.machines.single().id)
         }
     }
 

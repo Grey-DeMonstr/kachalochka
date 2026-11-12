@@ -195,12 +195,12 @@ class FriendMachineViewModel(
 
     /** Saves the account's copy of the shown machine, linked to it, and hands on the copy. */
     fun take(onTaken: (MachineId) -> Unit) {
-        val shown = read?.takeUnless { it.had } ?: return
+        if (read?.had != false) return
         val takenFor = shownFor
+        val taken = placed()
         writes.launch {
-            val viewer = currentUser.id() ?: return@launch
-            if (viewer != takenFor) return@launch
-            onTaken(catalogue.take(viewer, shown.friend.machine, shown.group).id)
+            val found = catalogue.standIns(takenFor, listOf(taken))
+            if (found is StandIn.Found) onTaken(found.machines.single().id)
         }
     }
 

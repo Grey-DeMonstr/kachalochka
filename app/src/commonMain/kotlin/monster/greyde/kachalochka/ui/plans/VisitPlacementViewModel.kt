@@ -12,7 +12,8 @@ import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
-import monster.greyde.kachalochka.ui.machine.StandIns
+import monster.greyde.kachalochka.ui.machine.PlacedMachine
+import monster.greyde.kachalochka.ui.machine.StandIn
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /** [visit] names the visit the screen showed, so the notice shows under that visit only. */
@@ -136,14 +137,16 @@ class VisitPlacementViewModel(
     }
 
     /** The account's machines for the friend's visit; null, with a notice when one is due. */
-    private suspend fun standIns(choice: Choosing): List<MachineId>? =
-        when (val found = catalogue.standIns(choice.owner, choice.friendMachines)) {
-            is StandIns.Found -> found.machines.map { it.id }
+    private suspend fun standIns(choice: Choosing): List<MachineId>? {
+        val shown = choice.friendMachines.map { PlacedMachine(it, ofFriend = true) }
+        return when (val found = catalogue.standIns(choice.owner, shown)) {
+            is StandIn.Found -> found.machines.map { it.id }
 
-            StandIns.Offline -> null.also { notice(choice.key, AppStrings.current.offline) }
-            StandIns.Gone -> null.also { notice(choice.key, AppStrings.current.machineGone) }
-            StandIns.Switched -> null
+            StandIn.Offline -> null.also { notice(choice.key, AppStrings.current.offline) }
+            StandIn.Gone -> null.also { notice(choice.key, AppStrings.current.machineGone) }
+            StandIn.Switched -> null
         }
+    }
 
     private fun notice(
         key: String,

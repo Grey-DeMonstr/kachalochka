@@ -29,6 +29,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.family.childAccount
+import monster.greyde.kachalochka.ui.family.traineeAccount
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
@@ -329,7 +330,7 @@ class MachineCatalogueTest {
             pashaLinksTo(olegRow)
             val taking = gym.catalogueOver(failingLinks(kept = 1))
 
-            val copy = taking.take(ME.userId, olegRow, taking.group(ME.userId))
+            val copy = taking.standInFor(PlacedMachine(olegRow.id, ofFriend = true))
 
             assertEquals(copy, gym.machines.rows[copy.id])
             assertEquals(setOf(copy.id to olegRow.id), linkedPairs())
@@ -385,33 +386,27 @@ class MachineCatalogueTest {
             assertEquals(emptyList(), gym.machineLinks.all(ME.userId))
         }
 
+    /** Ivan's one stand-in for [shown], which must have one. */
+    private suspend fun MachineCatalogue.standInFor(shown: PlacedMachine): Machine =
+        assertIs<StandIn.Found>(standIns(ME.userId, listOf(shown))).machines.single()
+
     @Test
-    fun taking_a_friend_s_machine_writes_the_account_s_copy_linked_to_its_cluster_and_syncs() =
+    fun a_friend_s_machine_without_an_own_one_in_its_cluster_stands_in_as_a_linked_copy() =
         runTest {
             olegsGym()
             val pashas = pashaLinksTo(olegRow)
-            val group = catalogue.group(ME.userId)
-
-            val copy = catalogue.take(ME.userId, olegRow, group)
-
-            assertEquals(copy, gym.machines.rows[copy.id])
-            assertEquals(ME.userId, copy.userId)
-            assertEquals(olegRow.name, copy.name)
-            assertEquals(setOf(copy.id to olegRow.id, copy.id to pashas.id), linkedPairs())
-            assertEquals(1, gym.sync.requests)
-        }
-
-    @Test
-    fun a_taken_machine_keeps_the_friend_s_tags() =
-        runTest {
-            olegsGym()
             gym.machines.upsert(myPress.copy(tags = setOf("legs")))
             val tagged = olegRow.copy(tags = setOf("legs", "back"))
             gym.friends.machines.replaceAll { if (it.id == olegRow.id) tagged else it }
 
-            val copy = catalogue.take(ME.userId, tagged, catalogue.group(ME.userId))
+            val copy = catalogue.standInFor(PlacedMachine(olegRow.id, ofFriend = true))
 
-            assertEquals(setOf("legs", "back"), gym.machines.byId(copy.id)?.tags)
+            assertEquals(copy, gym.machines.rows[copy.id])
+            assertEquals(ME.userId, copy.userId)
+            assertEquals(olegRow.name, copy.name)
+            assertEquals(setOf("legs", "back"), copy.tags)
+            assertEquals(setOf(copy.id to olegRow.id, copy.id to pashas.id), linkedPairs())
+            assertEquals(1, gym.sync.requests)
         }
 
     @Test
@@ -419,23 +414,10 @@ class MachineCatalogueTest {
         runTest {
             olegsGym()
 
-            val own = catalogue.friendStandIn(ME.userId, olegPress.id, catalogue.group(ME.userId))
+            val own = catalogue.standInFor(PlacedMachine(olegPress.id, ofFriend = true))
 
             assertEquals(myPress, own)
             assertEquals(listOf(myPress), gym.machines.all(ME.userId))
-        }
-
-    @Test
-    fun a_friend_s_machine_without_an_own_one_in_its_cluster_stands_in_as_a_linked_copy() =
-        runTest {
-            olegsGym()
-
-            val own = catalogue.friendStandIn(ME.userId, olegRow.id, catalogue.group(ME.userId))
-
-            assertEquals("Row", own?.name)
-            assertEquals(own, own?.id?.let { gym.machines.byId(it) })
-            assertTrue(own?.id to olegRow.id in linkedPairs())
-            assertEquals(1, gym.sync.requests)
         }
 
     @Test
@@ -449,36 +431,26 @@ class MachineCatalogueTest {
                         gym.machineLinks.all(owner).also { yield() }
                 }
             val slow = gym.catalogueOver(slowLinks)
-            val group = slow.group(ME.userId)
+            val held = PlacedMachine(olegRow.id, ofFriend = true, slow.group(ME.userId))
 
-            val copies =
-                List(2) { async { slow.friendStandIn(ME.userId, olegRow.id, group) } }.awaitAll()
+            val copies = List(2) { async { slow.standInFor(held) } }.awaitAll()
 
             assertEquals(1, copies.toSet().size)
             assertEquals(1, gym.machines.all(ME.userId).count { it.name == olegRow.name })
         }
 
-    @Test
-    fun a_machine_the_group_read_lacks_has_no_stand_in() =
-        runTest {
-            olegsGym()
-
-            assertNull(
-                catalogue.friendStandIn(ME.userId, MachineId.random(), catalogue.group(ME.userId)),
-            )
-        }
+    private fun ofFriend(vararg machines: Machine) =
+        machines.map { PlacedMachine(it.id, ofFriend = true) }
 
     @Test
-    fun friend_stand_ins_come_in_the_given_order_reusing_linked_machines_and_copying_the_rest() =
+    fun stand_ins_come_in_the_given_order_once_each_over_one_group_read() =
         runTest {
             olegsGym()
             val tagged = olegRow.copy(tags = setOf("back"))
             gym.friends.machines.replaceAll { if (it.id == olegRow.id) tagged else it }
+            val shown = ofFriend(olegRow) + PlacedMachine(myPress.id) + ofFriend(olegPress)
 
-            val found =
-                assertIs<StandIns.Found>(
-                    catalogue.standIns(ME.userId, listOf(olegRow.id, olegPress.id)),
-                )
+            val found = assertIs<StandIn.Found>(catalogue.standIns(ME.userId, shown))
 
             val copy = found.machines.first()
             assertEquals(listOf(copy, myPress), found.machines)
@@ -486,17 +458,19 @@ class MachineCatalogueTest {
             assertEquals(setOf("back"), copy.tags)
             assertTrue(copy.id to olegRow.id in linkedPairs())
             assertEquals(listOf(myPress, copy).toSet(), gym.machines.all(ME.userId).toSet())
+            assertEquals(1, gym.friends.reads)
         }
 
     @Test
     fun friend_stand_ins_leave_out_a_machine_the_group_lacks() =
         runTest {
             olegsGym()
+            val lacked = PlacedMachine(MachineId.random(), ofFriend = true)
 
-            val found = catalogue.standIns(ME.userId, listOf(MachineId.random(), olegPress.id))
+            val found = catalogue.standIns(ME.userId, listOf(lacked) + ofFriend(olegPress))
 
-            assertEquals(StandIns.Found(listOf(myPress)), found)
-            assertEquals(StandIns.Gone, catalogue.standIns(ME.userId, listOf(MachineId.random())))
+            assertEquals(StandIn.Found(listOf(myPress)), found)
+            assertEquals(StandIn.Gone, catalogue.standIns(ME.userId, listOf(lacked)))
         }
 
     @Test
@@ -505,10 +479,26 @@ class MachineCatalogueTest {
             olegsGym()
             gym.friends.offline = true
 
-            val found = catalogue.standIns(ME.userId, listOf(olegRow.id))
+            val found = catalogue.standIns(ME.userId, ofFriend(olegRow, olegPress))
 
-            assertEquals(StandIns.Offline, found)
+            assertEquals(StandIn.Offline, found)
             assertEquals(listOf(myPress), gym.machines.all(ME.userId))
+        }
+
+    @Test
+    fun while_a_trainee_is_active_another_account_s_machines_have_no_stand_in() =
+        runTest {
+            olegsGym()
+            gym.withChild(traineeAccount(SASHA, IVAN_SESSION))
+            gym.accounts.switchTo(SASHA.userId)
+
+            val friends = catalogue.standIns(SASHA.userId, ofFriend(olegRow, olegPress))
+            val device = catalogue.standIns(SASHA.userId, listOf(PlacedMachine(myPress.id)))
+
+            assertEquals(StandIn.Gone to StandIn.Gone, friends to device)
+            assertEquals(0, gym.friends.reads)
+            assertEquals(emptyList(), gym.machines.all(SASHA.userId))
+            assertTrue(gym.machineLinks.rows.isEmpty())
         }
 
     @Test
@@ -518,12 +508,12 @@ class MachineCatalogueTest {
             gym.withChild(childAccount(SASHA, IVAN_SESSION))
             val gate = CompletableDeferred<Unit>()
             gym.friends.gate = gate
-            val result = async { catalogue.standIns(ME.userId, listOf(olegRow.id)) }
+            val result = async { catalogue.standIns(ME.userId, ofFriend(olegRow, olegPress)) }
             testScheduler.advanceUntilIdle()
             gym.accounts.switchTo(SASHA.userId)
             gate.complete(Unit)
 
-            assertEquals(StandIns.Switched, result.await())
+            assertEquals(StandIn.Switched, result.await())
             assertEquals(listOf(myPress), gym.machines.all(ME.userId))
         }
 
@@ -956,8 +946,8 @@ class MachineCatalogueTest {
             val sashas = myPress.copy(userId = SASHA.userId)
             gym.machines.upsert(sashas)
 
-            val first = catalogue.ownCopy(ME.userId, sashas)
-            val second = catalogue.ownCopy(ME.userId, sashas)
+            val first = catalogue.standInFor(PlacedMachine(sashas.id))
+            val second = catalogue.standInFor(PlacedMachine(sashas.id))
 
             assertEquals(first, second)
             assertEquals(2, gym.machines.rows.size)
@@ -972,7 +962,7 @@ class MachineCatalogueTest {
             gym.machines.upsert(sashas)
             gym.machines.upsert(olegRow.copy(userId = ME.userId, tags = setOf("legs")))
 
-            catalogue.ownCopy(ME.userId, sashas)
+            catalogue.standInFor(PlacedMachine(sashas.id))
 
             val copy =
                 gym.machines.rows.values
@@ -997,7 +987,7 @@ class MachineCatalogueTest {
             gym.machineLinks.upsert(ownLink(SASHA.userId, sashas.id, olegs.id))
             gym.machineLinks.upsert(ownLink(SASHA.userId, sashasOld.id, olegs.id))
 
-            val copy = catalogue.ownCopy(ME.userId, sashas)
+            val copy = catalogue.standInFor(PlacedMachine(sashas.id))
 
             assertEquals(
                 setOf(sashas.id, olegs.id, sashasOld.id),
@@ -1020,7 +1010,7 @@ class MachineCatalogueTest {
             gym.machines.upsert(press)
             gym.machineLinks.upsert(ownLink(SASHA.userId, sashas.id, platform.id))
 
-            assertEquals(platform, catalogue.ownCopy(ME.userId, sashas))
+            assertEquals(platform, catalogue.standInFor(PlacedMachine(sashas.id)))
             assertEquals(3, gym.machines.rows.size)
         }
 
@@ -1033,7 +1023,7 @@ class MachineCatalogueTest {
             gym.machines.upsert(platform)
             gym.machineLinks.upsert(ownLink(ME.userId, platform.id, sashas.id))
 
-            assertEquals(platform, catalogue.ownCopy(ME.userId, sashas))
+            assertEquals(platform, catalogue.standInFor(PlacedMachine(sashas.id)))
         }
 
     @Test
@@ -1044,7 +1034,7 @@ class MachineCatalogueTest {
             gym.machines.upsert(sashas)
             gym.machines.upsert(mine)
 
-            assertEquals(mine, catalogue.ownCopy(ME.userId, sashas))
+            assertEquals(mine, catalogue.standInFor(PlacedMachine(sashas.id)))
             assertTrue(gym.machineLinks.rows.isEmpty())
         }
 
@@ -1075,7 +1065,7 @@ class MachineCatalogueTest {
                     }
                 }
 
-            val copying = launch { gym.catalogueOver(stuck).ownCopy(ME.userId, sashas) }
+            val copying = launch { gym.catalogueOver(stuck).standInFor(PlacedMachine(sashas.id)) }
             testScheduler.advanceUntilIdle()
             copying.cancel()
             copying.join()
@@ -1098,7 +1088,9 @@ class MachineCatalogueTest {
                 }
 
             val copying =
-                launch { gym.catalogueOver(gym.machineLinks, stuck).ownCopy(ME.userId, sashas) }
+                launch {
+                    gym.catalogueOver(gym.machineLinks, stuck).standInFor(PlacedMachine(sashas.id))
+                }
             testScheduler.advanceUntilIdle()
             copying.cancel()
             copying.join()
@@ -1106,17 +1098,6 @@ class MachineCatalogueTest {
             assertEquals(2, gym.machines.rows.size)
             assertTrue(gym.machineLinks.rows.isEmpty())
             assertEquals(1, gym.sync.requests)
-        }
-
-    @Test
-    fun an_own_machine_is_its_own_copy_and_nothing_is_written() =
-        runTest {
-            gym.machines.upsert(myPress)
-
-            assertEquals(myPress, catalogue.ownCopy(ME.userId, myPress))
-            assertTrue(gym.machineLinks.rows.isEmpty())
-            assertEquals(1, gym.machines.rows.size)
-            assertEquals(0, gym.sync.requests)
         }
 
     @Test
@@ -1143,7 +1124,7 @@ class MachineCatalogueTest {
                 }
             val racing = gym.catalogueOver(paused)
 
-            val copying = async { racing.ownCopy(ME.userId, pashas) }
+            val copying = async { racing.standInFor(PlacedMachine(pashas.id)) }
             testScheduler.advanceUntilIdle()
             val reading = launch { racing.group(ME.userId) }
             testScheduler.advanceUntilIdle()
@@ -1289,12 +1270,13 @@ class MachineCatalogueTest {
             gym.machines.upsert(myPress)
 
             assertEquals(
-                StandIn.Found(myPress),
-                catalogue.standIn(ME.userId, PlacedMachine(myPress.id)),
+                StandIn.Found(listOf(myPress)),
+                catalogue.standIns(ME.userId, listOf(PlacedMachine(myPress.id))),
             )
 
             assertEquals(1, gym.machines.rows.size)
             assertEquals(0, gym.sync.requests)
+            assertEquals(0, gym.friends.reads)
         }
 
     @Test
@@ -1307,8 +1289,8 @@ class MachineCatalogueTest {
             gym.machineLinks.upsert(ownLink(SASHA.userId, sashas.id, platform.id))
 
             assertEquals(
-                StandIn.Found(platform),
-                catalogue.standIn(ME.userId, PlacedMachine(sashas.id)),
+                StandIn.Found(listOf(platform)),
+                catalogue.standIns(ME.userId, listOf(PlacedMachine(sashas.id))),
             )
 
             assertEquals(2, gym.machines.rows.size)
@@ -1322,11 +1304,13 @@ class MachineCatalogueTest {
             gym.machines.upsert(sashas)
 
             val found =
-                assertIs<StandIn.Found>(catalogue.standIn(ME.userId, PlacedMachine(sashas.id)))
+                assertIs<StandIn.Found>(
+                    catalogue.standIns(ME.userId, listOf(PlacedMachine(sashas.id))),
+                )
 
-            assertEquals(found.machine, gym.machines.all(ME.userId).single())
-            assertEquals(setOf("legs"), found.machine.tags)
-            assertTrue(found.machine.id to sashas.id in linkedPairs())
+            assertEquals(found.machines.single(), gym.machines.all(ME.userId).single())
+            assertEquals(setOf("legs"), found.machines.single().tags)
+            assertTrue(found.machines.single().id to sashas.id in linkedPairs())
             assertEquals(1, gym.sync.requests)
         }
 
@@ -1338,12 +1322,12 @@ class MachineCatalogueTest {
             val reads = gym.friends.reads
 
             val found =
-                catalogue.standIn(
+                catalogue.standIns(
                     ME.userId,
-                    PlacedMachine(olegPress.id, ofFriend = true, held),
+                    listOf(PlacedMachine(olegPress.id, ofFriend = true, held)),
                 )
 
-            assertEquals(StandIn.Found(myPress), found)
+            assertEquals(StandIn.Found(listOf(myPress)), found)
             assertEquals(reads, gym.friends.reads)
         }
 
@@ -1356,41 +1340,15 @@ class MachineCatalogueTest {
 
             val found =
                 assertIs<StandIn.Found>(
-                    catalogue.standIn(
+                    catalogue.standIns(
                         ME.userId,
-                        PlacedMachine(olegRow.id, ofFriend = true, pashas),
+                        listOf(PlacedMachine(olegRow.id, ofFriend = true, pashas)),
                     ),
                 )
 
             assertEquals(1, gym.friends.reads)
-            assertEquals("Row", found.machine.name)
-            assertTrue(found.machine.id to olegRow.id in linkedPairs())
-        }
-
-    @Test
-    fun offline_a_friend_s_machine_has_no_stand_in() =
-        runTest {
-            olegsGym()
-            gym.friends.offline = true
-
-            val found = catalogue.standIn(ME.userId, PlacedMachine(olegRow.id, ofFriend = true))
-
-            assertEquals(StandIn.Offline, found)
-            assertEquals(listOf(myPress), gym.machines.all(ME.userId))
-        }
-
-    @Test
-    fun a_friend_s_machine_the_group_lacks_is_gone() =
-        runTest {
-            olegsGym()
-
-            val found =
-                catalogue.standIn(
-                    ME.userId,
-                    PlacedMachine(MachineId.random(), ofFriend = true),
-                )
-
-            assertEquals(StandIn.Gone, found)
+            assertEquals("Row", found.machines.single().name)
+            assertTrue(found.machines.single().id to olegRow.id in linkedPairs())
         }
 
     @Test
@@ -1398,7 +1356,8 @@ class MachineCatalogueTest {
         runTest {
             val device = FakeGym()
 
-            val found = device.catalogue.standIn(null, PlacedMachine(olegRow.id, ofFriend = true))
+            val found =
+                device.catalogue.standIns(null, listOf(PlacedMachine(olegRow.id, ofFriend = true)))
 
             assertEquals(StandIn.Gone, found)
             assertEquals(0, device.friends.reads)
@@ -1410,7 +1369,7 @@ class MachineCatalogueTest {
         placed: PlacedMachine,
     ): StandIn {
         gym.withChild(childAccount(SASHA, IVAN_SESSION))
-        val result = async { catalogue.standIn(ME.userId, placed) }
+        val result = async { catalogue.standIns(ME.userId, listOf(placed)) }
         testScheduler.advanceUntilIdle()
         gym.accounts.switchTo(SASHA.userId)
         gate.complete(Unit)
@@ -1424,7 +1383,10 @@ class MachineCatalogueTest {
             gym.withChild(childAccount(SASHA, IVAN_SESSION))
             gym.accounts.switchTo(SASHA.userId)
 
-            assertEquals(StandIn.Switched, catalogue.standIn(ME.userId, PlacedMachine(myPress.id)))
+            assertEquals(
+                StandIn.Switched,
+                catalogue.standIns(ME.userId, listOf(PlacedMachine(myPress.id))),
+            )
         }
 
     @Test
