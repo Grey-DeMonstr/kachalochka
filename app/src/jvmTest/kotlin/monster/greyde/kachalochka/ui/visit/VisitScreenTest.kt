@@ -961,6 +961,21 @@ class VisitScreenTest {
     }
 
     @Test
+    fun a_neighbour_without_a_photo_shows_the_gear_as_its_page_will_while_the_swipe_runs() {
+        planRow()
+        runScreenTest(gym, screen = { visitScreen(opened = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("machine-page").performTouchInput {
+                down(center)
+                moveBy(Offset(-width / 2f, 0f))
+            }
+            waitForIdle()
+            val thumb = hasAnyAncestor(hasTestTag("preview-${row.id.value}-thumb"))
+            onNode(hasTestTag("settings-gear") and thumb, useUnmergedTree = true).assertExists()
+        }
+    }
+
+    @Test
     fun the_open_form_keeps_the_page_on_its_machine() {
         planRow()
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {

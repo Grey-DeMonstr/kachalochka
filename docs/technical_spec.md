@@ -622,9 +622,9 @@ requests a sync for another day.
 
 **Machine page.** The visit view model keeps the state of the open machine page and its set form.
 `MachinePager` shows the page in a `HorizontalPager` over `swipeOrder`, the rows of the list. A
-next page shows only its header (`MachinePreview`) until the pager stops on it and calls
-`openMachine`. The swipe is off while the form is open or the sets are ordered, so the steppers,
-the sheet and the drag handles keep their gestures.
+next page shows only its header (`MachinePreview`), with the gear as its page shows it, until the
+pager stops on it and calls `openMachine`. The swipe is off while the form is open or the sets are
+ordered, so the steppers, the sheet and the drag handles keep their gestures.
 
 **Set form people.** `reload` reads which recording accounts (not trainees) have a visit on the
 day (`VisitRepository.allOn`). On a new set of today the row has the active account and these

@@ -295,7 +295,7 @@ private fun MachinePager(
             if (shownIndex == index) {
                 content()
             } else {
-                page.swipeOrder.getOrNull(shownIndex)?.let { MachinePreview(it) }
+                page.swipeOrder.getOrNull(shownIndex)?.let { MachinePreview(it, page.readOnly) }
             }
         }
     }
@@ -303,7 +303,10 @@ private fun MachinePager(
 
 /** Drawn as the page's own header, so the swipe does not change it when the page opens. */
 @Composable
-private fun MachinePreview(group: SetGroupUi) {
+private fun MachinePreview(
+    group: SetGroupUi,
+    readOnly: Boolean,
+) {
     Box(Modifier.fillMaxSize().padding(16.dp)) {
         MachineHeader(
             group.name,
@@ -312,6 +315,8 @@ private fun MachinePreview(group: SetGroupUi) {
             group.tags,
             group.setupNote,
             "preview-${group.machineId.value}",
+            // Only for the gear: no tap reaches a page while it moves.
+            onOpenSettings = {}.takeUnless { readOnly },
         )
     }
 }
