@@ -103,7 +103,7 @@ internal fun SharedVisitCard(
                 )
             }
         }
-        CardBody(card, card.exercises.orEmpty().map { it.copy(name = it.sharedName) })
+        CardBody(card, card.exercises.orEmpty())
     }
 }
 

@@ -4,7 +4,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.identity.Avatar
@@ -43,14 +42,4 @@ class SharedVisitCardTest {
             onNodeWithTag("card-more").assertDoesNotExist()
             onNodeWithTag("visit-menu-${visit.value}").assertDoesNotExist()
         }
-
-    @Test
-    fun the_shared_card_names_each_machine_as_the_shared_text_does() {
-        val sled = ExerciseUi("Leg press", "80 kg × 8", null, sharedName = "Leg press (+20kg)")
-        val shared = card.copy(exercises = listOf(sled))
-
-        runScreenTest(FakeGym(), screen = { SharedVisitCard(shared) }) {
-            onNodeWithText("Leg press (+20kg)").assertIsDisplayed()
-        }
-    }
 }

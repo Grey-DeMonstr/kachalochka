@@ -268,8 +268,7 @@ A visit with sets has "Share" in the top bar. It opens a popup:
   as in the list, and splits the text into the same sections.
 - "As image" (Android only) shares a picture of the visit card (see [6.1](#61-calendar)) in the
   current theme. The picture shows every machine and the date ("Thursday, 29 October", with the
-  year for an earlier year). A machine has its name as in the text, with the platform weight in
-  brackets ("Leg press (+76kg)"). The picture has the same size on every phone.
+  year for an earlier year). The picture has the same size on every phone.
 
 The text starts with the nickname and the short weekday ("GDM, Thu", or "Thu" without a nickname),
 then an empty line, then one line for each machine, in the order of the visit. A line has the
@@ -540,7 +539,9 @@ Under the month is the visit card of the chosen day:
 - The account's avatar and name, and the tags of its machines.
 - One row for each machine, in the order of the visit: the name, the day's best set in the
   preferred unit, and the gain in green: "+5 kg", at the same weight "+1 reps", and at the same
-  best set "+1 set". The first day on a machine shows a green "New" chip.
+  best set "+1 set". The first day on a machine shows a green "New" chip. The name is as in the
+  shared text (see [4.5](#45-share-a-visit)), with the platform weight in brackets
+  ("Leg press (+76kg)").
 - The card shows three machines. "2 more machines" shows the others, and "Show less" hides them.
 - A visit without sets shows "No sets yet".
 - A tap opens the visit on the visit screen. There you add, edit, delete and order sets as on

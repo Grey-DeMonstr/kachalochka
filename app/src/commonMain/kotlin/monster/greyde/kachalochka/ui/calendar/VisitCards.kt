@@ -30,14 +30,13 @@ import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /**
  * A machine on a visit card: the day's best set, how it beats every earlier day's best, and
- * whether this is the machine's first day. A shared picture names it by [sharedName].
+ * whether this is the machine's first day.
  */
 data class ExerciseUi(
     val name: String,
     val best: String,
     val growth: String?,
     val isNew: Boolean = false,
-    val sharedName: String = name,
 )
 
 /** The own visit a card's menu acts on; a shared card shows [date]. */
@@ -163,7 +162,7 @@ internal fun exerciseRows(
         val today = dayBest(sets, machine.weightMode) ?: return@mapNotNull null
         val prior = sets.firstNotNullOfOrNull { it.priorBest }
         ExerciseUi(
-            machine.name,
+            sharedName(machine, preferred),
             setValue(today.weight, today.reps, machine, preferred),
             prior?.takeIf { it != DayBest.NONE }?.let {
                 dayBestGain(
@@ -174,6 +173,5 @@ internal fun exerciseRows(
                 )
             },
             isNew = prior == DayBest.NONE,
-            sharedName = sharedName(machine, preferred),
         )
     }
