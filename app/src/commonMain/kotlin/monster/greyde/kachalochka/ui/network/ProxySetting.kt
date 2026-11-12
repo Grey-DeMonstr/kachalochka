@@ -1,6 +1,9 @@
 package monster.greyde.kachalochka.ui.network
 
 import kotlinx.coroutines.flow.StateFlow
+import monster.greyde.kachalochka.ui.settings.DeviceKey
+import monster.greyde.kachalochka.ui.settings.DeviceSetting
+import monster.greyde.kachalochka.ui.settings.DeviceStore
 
 /** The HTTP proxy for all requests of the app, typed as "host:port". */
 data class ProxySetting(
@@ -17,8 +20,23 @@ data class ProxySetting(
         }
 }
 
-interface ProxyPreference {
-    val setting: StateFlow<ProxySetting>
+class ProxyPreference(
+    private val store: DeviceStore,
+) : DeviceSetting<ProxySetting>(
+        ProxySetting(
+            store.read(ADDRESS).orEmpty(),
+            store.read(USED) ?: false,
+        ),
+    ) {
+    val setting: StateFlow<ProxySetting> = state
 
-    suspend fun set(setting: ProxySetting)
+    override suspend fun save(value: ProxySetting) {
+        store.write(ADDRESS, value.address)
+        store.write(USED, value.used)
+    }
+
+    private companion object {
+        val ADDRESS = DeviceKey.Text("proxy_address")
+        val USED = DeviceKey.Flag("proxy_used")
+    }
 }

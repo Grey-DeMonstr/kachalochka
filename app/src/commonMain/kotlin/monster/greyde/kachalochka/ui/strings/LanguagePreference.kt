@@ -1,23 +1,19 @@
 package monster.greyde.kachalochka.ui.strings
 
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import monster.greyde.kachalochka.ui.settings.DeviceKey
+import monster.greyde.kachalochka.ui.settings.DeviceSetting
+import monster.greyde.kachalochka.ui.settings.DeviceStore
 
-interface LanguagePreference {
-    val language: StateFlow<AppLanguage>
+class LanguagePreference(
+    private val store: DeviceStore,
+) : DeviceSetting<AppLanguage>(languageOrSystem(store.read(KEY))) {
+    val language: StateFlow<AppLanguage> = state
 
-    suspend fun set(language: AppLanguage)
-}
+    override suspend fun save(value: AppLanguage) = store.write(KEY, value.name)
 
-class InMemoryLanguagePreference(
-    initial: AppLanguage = AppLanguage.System,
-) : LanguagePreference {
-    private val state = MutableStateFlow(initial)
-
-    override val language: StateFlow<AppLanguage> = state
-
-    override suspend fun set(language: AppLanguage) {
-        state.value = language
+    private companion object {
+        val KEY = DeviceKey.Text("language")
     }
 }
 

@@ -1,7 +1,9 @@
 package monster.greyde.kachalochka.ui.calendar
 
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import monster.greyde.kachalochka.ui.settings.DeviceKey
+import monster.greyde.kachalochka.ui.settings.DeviceSetting
+import monster.greyde.kachalochka.ui.settings.DeviceStore
 
 enum class VisitsMode {
     Calendar,
@@ -12,18 +14,14 @@ fun visitsModeOrCalendar(name: String?): VisitsMode =
     VisitsMode.entries.firstOrNull { it.name == name } ?: VisitsMode.Calendar
 
 /** How the visits screen shows the visits, a device setting. */
-interface VisitsModePreference {
-    val mode: StateFlow<VisitsMode>
+class VisitsModePreference(
+    private val store: DeviceStore,
+) : DeviceSetting<VisitsMode>(visitsModeOrCalendar(store.read(KEY))) {
+    val mode: StateFlow<VisitsMode> = state
 
-    suspend fun set(mode: VisitsMode)
-}
+    override suspend fun save(value: VisitsMode) = store.write(KEY, value.name)
 
-class InMemoryVisitsModePreference : VisitsModePreference {
-    private val state = MutableStateFlow(VisitsMode.Calendar)
-
-    override val mode: StateFlow<VisitsMode> = state
-
-    override suspend fun set(mode: VisitsMode) {
-        state.value = mode
+    private companion object {
+        val KEY = DeviceKey.Text("visits_mode")
     }
 }

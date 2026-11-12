@@ -1,22 +1,20 @@
 package monster.greyde.kachalochka.ui.visit
 
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import monster.greyde.kachalochka.ui.settings.DeviceKey
+import monster.greyde.kachalochka.ui.settings.DeviceSetting
+import monster.greyde.kachalochka.ui.settings.DeviceStore
 
 /** Whether the set form has a comment field, a device setting. */
-interface SetCommentPreference {
-    val shown: StateFlow<Boolean>
+class SetCommentPreference(
+    private val store: DeviceStore,
+) : DeviceSetting<Boolean>(store.read(KEY) ?: false) {
+    val shown: StateFlow<Boolean> = state
 
-    suspend fun set(shown: Boolean)
-}
+    override suspend fun save(value: Boolean) = store.write(KEY, value)
 
-class InMemorySetCommentPreference : SetCommentPreference {
-    private val state = MutableStateFlow(false)
-
-    override val shown: StateFlow<Boolean> = state
-
-    override suspend fun set(shown: Boolean) {
-        state.value = shown
+    private companion object {
+        val KEY = DeviceKey.Flag("set_comment_shown")
     }
 }
 

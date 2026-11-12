@@ -73,7 +73,7 @@ androidApp/  Android application. Depends on app. Makes the APK.
 - **`androidApp`** exists because AGP 9 does not apply `com.android.application` to a
   multiplatform module. It holds only what an APK needs and a library does not: the launcher
   manifest and icon, `MainActivity`, the `Application` subclass, signing and version numbers.
-  Other Android code, such as the DataStore settings, is in `app/src/androidMain`.
+  Other Android code, such as `DataStoreDeviceStore`, is in `app/src/androidMain`.
 - **The `jvm` target** of `core` and `app` is for tests only. `core` tests use the SQLDelight JVM
   driver; `app` tests are Compose desktop UI tests. The `jvm` build of `app` never ships.
 - **The `sql` source set group** of `core` selects its Android half by platform type.
@@ -1092,20 +1092,40 @@ and only Android binds one: a browser cannot choose a proxy or look up a host.
 
 ### 9.2 Device settings
 
-Device settings do not sync and are not in `core`. Each is an interface in `app`, stored in
-DataStore on Android and in `localStorage` on the web. Its `StateFlow` has the stored value when
-the graph is built, so the first frame uses it. A store that cannot be read gives the default.
+Device settings do not sync and are not in `core`. They sit on one seam, `DeviceStore`
+(`app/.../ui/settings`): `read(key)` answers at once from memory, and `write(key, value)` suspends.
+A null value removes the key. A `DeviceKey` has a name and one of four value types: text, number,
+flag or text set. A store that cannot be read gives null, which becomes the default.
 
-| Setting | Interface |
-|---|---|
-| Theme | `ThemeMode`: `System`, `Light`, `Dark` |
-| Language | `LanguagePreference`: `AppLanguage` |
-| Transition | `TransitionPreference`: `TransitionPreset` 0, 150, 300 or 500 ms |
-| Rest sound | `RestSoundPreference`: on or off, and the Android sound URI (null for the default) |
-| Visits mode | `VisitsModePreference`: calendar or feed |
-| Feed person | `FeedPeoplePreference`: at most one person for each viewer |
-| Set comment | `SetCommentPreference`: whether the set form has a comment field |
+| Adapter | Where | Storage |
+|---|---|---|
+| `DataStoreDeviceStore` | `androidMain` | The `DataStore<Preferences>` in `theme.preferences_pb`; one key type for each value type |
+| `LocalStorageDeviceStore` | `wasmJsMain` | `localStorage` strings; a text set is joined by spaces; a browser that refuses site storage gives null and ignores writes |
+| `InMemoryDeviceStore` | `commonMain` | A map, for the `jvm` target and the tests |
 
+`DataStoreDeviceStore` reads the file once, when Koin builds it, and then answers from that
+snapshot. The Android module builds it at start, so the first frame already has the stored values.
+Every client is built with the stored proxy, so that read must finish before any client exists.
+
+Each setting is a class in common code over a `DeviceStore`. It extends `DeviceSetting`, which
+holds a `MutableStateFlow` that starts from the stored value. `set` writes the store first and then
+changes the flow. The class has the keys, the default and the decoding. A stored value that cannot
+be decoded gives the default. `appModule` binds the settings. Each platform module binds only
+`DeviceStore`.
+
+| Setting | Class and value | Keys |
+|---|---|---|
+| Theme | `ThemePreference`: `ThemeMode`: `System`, `Light`, `Dark` | `theme_mode` |
+| Language | `LanguagePreference`: `AppLanguage` | `language` |
+| Transition | `TransitionPreference`: milliseconds | `transition_millis` |
+| Rest sound | `RestSoundPreference`: on or off, and the Android sound URI (null for the default) | `rest_sound`, `rest_sound_uri` |
+| Visits mode | `VisitsModePreference`: calendar or feed | `visits_mode` |
+| Feed person | `FeedPeoplePreference`: at most one person for each viewer | `feed_selected_person` |
+| Set comment | `SetCommentPreference`: whether the set form has a comment field | `set_comment_shown` |
+| Proxy | `ProxyPreference`: the address and whether it is used | `proxy_address`, `proxy_used` |
+
+The keys and their types are the stored format. A change of a key name or of its type loses the
+stored value.
 - A transition length stored before the presets shows as the nearest preset.
 - `NavHost` fades over a box painted with the scheme's `background`. The Android window theme is
   light, and a fade over the bare window would show it through both screens.

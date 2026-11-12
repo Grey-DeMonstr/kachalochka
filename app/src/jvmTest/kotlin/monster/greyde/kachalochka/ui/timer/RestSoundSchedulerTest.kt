@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.fakes.MutableClock
 import monster.greyde.kachalochka.fakes.RecordingRestAlarm
+import monster.greyde.kachalochka.ui.settings.InMemoryDeviceStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.seconds
@@ -16,7 +17,7 @@ import kotlin.time.Instant
 class RestSoundSchedulerTest {
     private val clock = MutableClock(Instant.fromEpochSeconds(1_000))
     private val timer = RestTimer(clock)
-    private val sounds = InMemoryRestSoundPreference()
+    private val sounds = RestSoundPreference(InMemoryDeviceStore())
     private val alarm = RecordingRestAlarm()
 
     private fun TestScope.running() {

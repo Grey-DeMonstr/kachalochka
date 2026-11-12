@@ -6,19 +6,13 @@ import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.navigation.DocumentFooter
-import monster.greyde.kachalochka.navigation.LocalStorageTransitionPreference
 import monster.greyde.kachalochka.navigation.PageFooter
-import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.report
 import monster.greyde.kachalochka.sync.ServerSyncTrigger
 import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.ui.account.RedirectGoogleSignIn
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
-import monster.greyde.kachalochka.ui.calendar.FeedPeoplePreference
-import monster.greyde.kachalochka.ui.calendar.LocalStorageFeedPeoplePreference
-import monster.greyde.kachalochka.ui.calendar.LocalStorageVisitsModePreference
-import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.friends.ClipboardInviteSharing
@@ -27,6 +21,8 @@ import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.LocalStorageJoinCodeStore
 import monster.greyde.kachalochka.ui.photos.BrowserPhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
+import monster.greyde.kachalochka.ui.settings.DeviceStore
+import monster.greyde.kachalochka.ui.settings.LocalStorageDeviceStore
 import monster.greyde.kachalochka.ui.share.BrowserPhotoSharing
 import monster.greyde.kachalochka.ui.share.BrowserTextCopying
 import monster.greyde.kachalochka.ui.share.CardSharing
@@ -35,33 +31,19 @@ import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.share.UnavailableCardSharing
-import monster.greyde.kachalochka.ui.strings.LanguagePreference
-import monster.greyde.kachalochka.ui.strings.LocalStorageLanguagePreference
 import monster.greyde.kachalochka.ui.strings.SystemLanguage
-import monster.greyde.kachalochka.ui.theme.LocalStorageThemePreference
 import monster.greyde.kachalochka.ui.theme.SystemBars
-import monster.greyde.kachalochka.ui.theme.ThemePreference
 import monster.greyde.kachalochka.ui.timer.FixedRestSound
-import monster.greyde.kachalochka.ui.timer.LocalStorageRestSoundPreference
 import monster.greyde.kachalochka.ui.timer.RestAlarm
 import monster.greyde.kachalochka.ui.timer.RestSoundChooser
-import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import monster.greyde.kachalochka.ui.timer.WebAudioRestAlarm
-import monster.greyde.kachalochka.ui.visit.LocalStorageSetCommentPreference
-import monster.greyde.kachalochka.ui.visit.SetCommentPreference
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 actual fun platformModule(): Module =
     module {
-        single<ThemePreference> { LocalStorageThemePreference() }
-        single<TransitionPreference> { LocalStorageTransitionPreference() }
-        single<SetCommentPreference> { LocalStorageSetCommentPreference() }
-        single<VisitsModePreference> { LocalStorageVisitsModePreference() }
-        single<FeedPeoplePreference> { LocalStorageFeedPeoplePreference() }
-        single<LanguagePreference> { LocalStorageLanguagePreference() }
-        single<RestSoundPreference> { LocalStorageRestSoundPreference() }
+        single<DeviceStore> { LocalStorageDeviceStore() }
         single<RestAlarm> { WebAudioRestAlarm(get()) }
         single<RestSoundChooser> { FixedRestSound }
         single { SystemLanguage { window.navigator.language } }

@@ -1,8 +1,10 @@
 package monster.greyde.kachalochka.ui.calendar
 
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.settings.DeviceKey
+import monster.greyde.kachalochka.ui.settings.DeviceSetting
+import monster.greyde.kachalochka.ui.settings.DeviceStore
 
 /** The only [person] whose cards [viewer]'s feed shows. */
 data class SelectedPerson(
@@ -22,18 +24,15 @@ fun selectedPeople(stored: Iterable<String>): Set<SelectedPerson> =
         }.toSet()
 
 /** Whom the feed shows alone, at most one person for each viewer, a device setting. */
-interface FeedPeoplePreference {
-    val selected: StateFlow<Set<SelectedPerson>>
+class FeedPeoplePreference(
+    private val store: DeviceStore,
+) : DeviceSetting<Set<SelectedPerson>>(selectedPeople(store.read(KEY).orEmpty())) {
+    val selected: StateFlow<Set<SelectedPerson>> = state
 
-    suspend fun set(selected: Set<SelectedPerson>)
-}
+    override suspend fun save(value: Set<SelectedPerson>) =
+        store.write(KEY, value.map { it.stored() }.toSet())
 
-class InMemoryFeedPeoplePreference : FeedPeoplePreference {
-    private val state = MutableStateFlow(emptySet<SelectedPerson>())
-
-    override val selected: StateFlow<Set<SelectedPerson>> = state
-
-    override suspend fun set(selected: Set<SelectedPerson>) {
-        state.value = selected
+    private companion object {
+        val KEY = DeviceKey.TextSet("feed_selected_person")
     }
 }

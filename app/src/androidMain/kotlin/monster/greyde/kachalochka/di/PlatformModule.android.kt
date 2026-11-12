@@ -5,28 +5,19 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.LastFailure
 import monster.greyde.kachalochka.core.data.identity.GoogleSignIn
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.data.supabase.webAppUrlFromBuild
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
-import monster.greyde.kachalochka.navigation.DataStoreTransitionPreference
 import monster.greyde.kachalochka.navigation.PageFooter
-import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.sync.VisitStore
 import monster.greyde.kachalochka.sync.WorkManagerSyncTrigger
 import monster.greyde.kachalochka.ui.account.ActivityHolder
 import monster.greyde.kachalochka.ui.account.CredentialManagerGoogleSignIn
 import monster.greyde.kachalochka.ui.account.SignInAvailable
 import monster.greyde.kachalochka.ui.account.SignInRequired
-import monster.greyde.kachalochka.ui.calendar.DataStoreFeedPeoplePreference
-import monster.greyde.kachalochka.ui.calendar.DataStoreVisitsModePreference
-import monster.greyde.kachalochka.ui.calendar.FeedPeoplePreference
-import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.family.TRAINER_CODE
 import monster.greyde.kachalochka.ui.friends.InMemoryJoinCodeStore
@@ -34,11 +25,12 @@ import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.friends.JoinCodeStore
 import monster.greyde.kachalochka.ui.friends.ShareSheetInviteSharing
 import monster.greyde.kachalochka.ui.network.AndroidDeviceNetwork
-import monster.greyde.kachalochka.ui.network.DataStoreProxyPreference
 import monster.greyde.kachalochka.ui.network.DeviceNetwork
 import monster.greyde.kachalochka.ui.network.ProxyPreference
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.SystemPhotoCapture
+import monster.greyde.kachalochka.ui.settings.DataStoreDeviceStore
+import monster.greyde.kachalochka.ui.settings.DeviceStore
 import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.ClipboardTextCopying
 import monster.greyde.kachalochka.ui.share.PhotoSharing
@@ -47,21 +39,13 @@ import monster.greyde.kachalochka.ui.share.ShareSheetPhotoSharing
 import monster.greyde.kachalochka.ui.share.ShareSheetTextSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
-import monster.greyde.kachalochka.ui.strings.DataStoreLanguagePreference
-import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.strings.SystemLanguage
-import monster.greyde.kachalochka.ui.theme.DataStoreThemePreference
 import monster.greyde.kachalochka.ui.theme.EdgeToEdgeSystemBars
 import monster.greyde.kachalochka.ui.theme.SystemBars
-import monster.greyde.kachalochka.ui.theme.ThemePreference
-import monster.greyde.kachalochka.ui.timer.DataStoreRestSoundPreference
 import monster.greyde.kachalochka.ui.timer.RestAlarm
 import monster.greyde.kachalochka.ui.timer.RestSoundChooser
-import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import monster.greyde.kachalochka.ui.timer.ServiceRestAlarm
 import monster.greyde.kachalochka.ui.timer.SystemRestSoundChooser
-import monster.greyde.kachalochka.ui.visit.DataStoreSetCommentPreference
-import monster.greyde.kachalochka.ui.visit.SetCommentPreference
 import okio.Path.Companion.toPath
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
@@ -89,46 +73,8 @@ actual fun platformModule(): Module =
                 },
             )
         }
-        // Built while Koin starts, so the stored mode is in hand before the first Activity.
-        single<ThemePreference>(createdAtStart = true) {
-            DataStoreThemePreference(get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
-        }
-        single<TransitionPreference>(createdAtStart = true) {
-            DataStoreTransitionPreference(
-                get(),
-                CoroutineScope(SupervisorJob() + Dispatchers.Default),
-            )
-        }
-        single<SetCommentPreference> {
-            DataStoreSetCommentPreference(
-                get(),
-                CoroutineScope(SupervisorJob() + Dispatchers.Default),
-            )
-        }
-        single<VisitsModePreference> {
-            DataStoreVisitsModePreference(
-                get(),
-                CoroutineScope(SupervisorJob() + Dispatchers.Default),
-            )
-        }
-        single<FeedPeoplePreference> {
-            DataStoreFeedPeoplePreference(
-                get(),
-                CoroutineScope(SupervisorJob() + Dispatchers.Default),
-            )
-        }
-        single<LanguagePreference>(createdAtStart = true) {
-            DataStoreLanguagePreference(
-                get(),
-                CoroutineScope(SupervisorJob() + Dispatchers.Default),
-            )
-        }
-        single<RestSoundPreference> {
-            DataStoreRestSoundPreference(
-                get(),
-                CoroutineScope(SupervisorJob() + Dispatchers.Default),
-            )
-        }
+        // Built while Koin starts, so the stored settings are in hand before the first Activity.
+        single<DeviceStore>(createdAtStart = true) { DataStoreDeviceStore(get()) }
         single<RestAlarm> { ServiceRestAlarm(androidContext()) }
         single<RestSoundChooser> { SystemRestSoundChooser(androidContext()) }
         single { SystemLanguage { Locale.getDefault().toLanguageTag() } }
@@ -138,9 +84,6 @@ actual fun platformModule(): Module =
         single {
             LastFailure(Clock.System) { Log.w(LOG_TAG, "Background work failed", it) }
         } bind FailureLog::class
-        single<ProxyPreference> {
-            DataStoreProxyPreference(get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
-        }
         // Replaces the core binding, so every client goes through the stored proxy. The address
         // stays unresolved: OkHttp looks it up later, and Android refuses it on the main thread.
         single {

@@ -70,12 +70,12 @@ import monster.greyde.kachalochka.core.domain.measures.newestPerDay
 import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.ProfileId
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
-import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
 import monster.greyde.kachalochka.navigation.PageFooter
+import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
-import monster.greyde.kachalochka.ui.calendar.InMemoryFeedPeoplePreference
-import monster.greyde.kachalochka.ui.calendar.InMemoryVisitsModePreference
+import monster.greyde.kachalochka.ui.calendar.FeedPeoplePreference
+import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.friends.FriendColorStore
@@ -84,20 +84,22 @@ import monster.greyde.kachalochka.ui.friends.Invite
 import monster.greyde.kachalochka.ui.friends.InviteSharing
 import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineReads
+import monster.greyde.kachalochka.ui.network.ProxyPreference
 import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoLaunchers
 import monster.greyde.kachalochka.ui.plans.Placement
+import monster.greyde.kachalochka.ui.settings.InMemoryDeviceStore
 import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
-import monster.greyde.kachalochka.ui.strings.InMemoryLanguagePreference
-import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
+import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.theme.SystemBars
-import monster.greyde.kachalochka.ui.timer.InMemoryRestSoundPreference
+import monster.greyde.kachalochka.ui.theme.ThemePreference
+import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
-import monster.greyde.kachalochka.ui.visit.InMemorySetCommentPreference
+import monster.greyde.kachalochka.ui.visit.SetCommentPreference
 import monster.greyde.kachalochka.ui.visit.ShowEveryone
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -557,18 +559,19 @@ class FakeGym(
     val cardShares = RecordingCardSharing()
     val clipboard = RecordingTextCopying()
     val footer = RecordingPageFooter()
-    val themes = InMemoryThemePreference()
-    val transitions = InMemoryTransitionPreference()
-    val visitsModes = InMemoryVisitsModePreference()
-    val setComments = InMemorySetCommentPreference()
+    val deviceStore = InMemoryDeviceStore()
+    val themes = ThemePreference(deviceStore)
+    val transitions = TransitionPreference(deviceStore)
+    val visitsModes = VisitsModePreference(deviceStore)
+    val setComments = SetCommentPreference(deviceStore)
     val everyone = ShowEveryone()
-    val feedPeople = InMemoryFeedPeoplePreference()
-    val languages = InMemoryLanguagePreference()
-    val restSounds = InMemoryRestSoundPreference()
+    val feedPeople = FeedPeoplePreference(deviceStore)
+    val languages = LanguagePreference(deviceStore)
+    val restSounds = RestSoundPreference(deviceStore)
     val restSoundChooser = InstantRestSoundChooser("content://sound/7")
     val systemBars = RecordingSystemBars()
     val network = FakeDeviceNetwork()
-    val proxies = InMemoryProxyPreference()
+    val proxies = ProxyPreference(deviceStore)
 
     /** Every request of the network checks gets an empty 200. */
     val serverAnswers = MockEngine { respond("") }

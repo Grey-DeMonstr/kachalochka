@@ -10,14 +10,17 @@ import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.domain.family.FamilyRepository
+import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.sync.VisitNormalization
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.calendar.CalendarViewModel
+import monster.greyde.kachalochka.ui.calendar.FeedPeoplePreference
 import monster.greyde.kachalochka.ui.calendar.VisitFeedViewModel
 import monster.greyde.kachalochka.ui.calendar.VisitShareViewModel
+import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.family.PARENT_CODE
 import monster.greyde.kachalochka.ui.family.PendingLink
 import monster.greyde.kachalochka.ui.family.PeopleViewModel
@@ -49,6 +52,7 @@ import monster.greyde.kachalochka.ui.measures.MeasurementFormViewModel
 import monster.greyde.kachalochka.ui.measures.MeasuresViewModel
 import monster.greyde.kachalochka.ui.network.NetworkChecks
 import monster.greyde.kachalochka.ui.network.NetworkViewModel
+import monster.greyde.kachalochka.ui.network.ProxyPreference
 import monster.greyde.kachalochka.ui.network.proxiedClient
 import monster.greyde.kachalochka.ui.photos.PhotoLoaders
 import monster.greyde.kachalochka.ui.plans.Placement
@@ -59,9 +63,13 @@ import monster.greyde.kachalochka.ui.settings.AccountViewModel
 import monster.greyde.kachalochka.ui.settings.ProfileViewModel
 import monster.greyde.kachalochka.ui.settings.SettingsViewModel
 import monster.greyde.kachalochka.ui.stats.StatisticsViewModel
+import monster.greyde.kachalochka.ui.strings.LanguagePreference
+import monster.greyde.kachalochka.ui.theme.ThemePreference
+import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import monster.greyde.kachalochka.ui.timer.RestSoundScheduler
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
+import monster.greyde.kachalochka.ui.visit.SetCommentPreference
 import monster.greyde.kachalochka.ui.visit.ShowEveryone
 import monster.greyde.kachalochka.ui.visit.VisitViewModel
 import org.koin.core.module.dsl.singleOf
@@ -110,6 +118,14 @@ val appModule =
         singleOf(::Placement)
         singleOf(::UnsavedChoices)
         singleOf(::ShowEveryone)
+        singleOf(::ThemePreference)
+        singleOf(::TransitionPreference)
+        singleOf(::LanguagePreference)
+        singleOf(::VisitsModePreference)
+        singleOf(::FeedPeoplePreference)
+        singleOf(::RestSoundPreference)
+        singleOf(::SetCommentPreference)
+        singleOf(::ProxyPreference)
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }

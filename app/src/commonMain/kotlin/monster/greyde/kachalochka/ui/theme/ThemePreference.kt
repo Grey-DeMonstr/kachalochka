@@ -1,11 +1,18 @@
 package monster.greyde.kachalochka.ui.theme
 
 import kotlinx.coroutines.flow.StateFlow
+import monster.greyde.kachalochka.ui.settings.DeviceKey
+import monster.greyde.kachalochka.ui.settings.DeviceSetting
+import monster.greyde.kachalochka.ui.settings.DeviceStore
 
-interface ThemePreference {
-    // A StateFlow so the first frame is painted from the stored mode instead of flashing the
-    // system scheme until the first emission arrives.
-    val mode: StateFlow<ThemeMode>
+class ThemePreference(
+    private val store: DeviceStore,
+) : DeviceSetting<ThemeMode>(themeModeOrSystem(store.read(KEY))) {
+    val mode: StateFlow<ThemeMode> = state
 
-    suspend fun set(mode: ThemeMode)
+    override suspend fun save(value: ThemeMode) = store.write(KEY, value.name)
+
+    private companion object {
+        val KEY = DeviceKey.Text("theme_mode")
+    }
 }

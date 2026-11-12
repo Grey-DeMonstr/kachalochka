@@ -29,6 +29,7 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.signedInGym
+import monster.greyde.kachalochka.ui.settings.InMemoryDeviceStore
 import monster.greyde.kachalochka.ui.strings.RuStrings
 import monster.greyde.kachalochka.ui.strings.inRussian
 import kotlin.test.AfterTest
@@ -95,7 +96,7 @@ class VisitFeedViewModelTest {
         return visit
     }
 
-    private val people = InMemoryFeedPeoplePreference()
+    private val people = FeedPeoplePreference(InMemoryDeviceStore())
 
     private fun viewModel(
         gym: FakeGym = this.gym,

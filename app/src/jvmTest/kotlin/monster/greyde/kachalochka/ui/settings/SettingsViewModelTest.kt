@@ -12,17 +12,17 @@ import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.core.domain.profile.ageOn
 import monster.greyde.kachalochka.fakes.FakeGym
-import monster.greyde.kachalochka.navigation.InMemoryTransitionPreference
+import monster.greyde.kachalochka.navigation.TransitionPreference
 import monster.greyde.kachalochka.ui.family.IVAN_MEMBER
 import monster.greyde.kachalochka.ui.family.PAPA
 import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.strings.AppLanguage
-import monster.greyde.kachalochka.ui.strings.InMemoryLanguagePreference
-import monster.greyde.kachalochka.ui.theme.InMemoryThemePreference
+import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.theme.ThemeMode
-import monster.greyde.kachalochka.ui.timer.InMemoryRestSoundPreference
+import monster.greyde.kachalochka.ui.theme.ThemePreference
 import monster.greyde.kachalochka.ui.timer.RestSound
+import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -36,10 +36,11 @@ class SettingsViewModelTest {
     private val t0 = gym.clock.current
     private val ivan = session("11111111-1111-4111-8111-111111111111", "Ivan", t0)
 
-    private val themes = InMemoryThemePreference()
-    private val transitions = InMemoryTransitionPreference()
-    private val languages = InMemoryLanguagePreference()
-    private val restSounds = InMemoryRestSoundPreference()
+    private val store = InMemoryDeviceStore()
+    private val themes = ThemePreference(store)
+    private val transitions = TransitionPreference(store)
+    private val languages = LanguagePreference(store)
+    private val restSounds = RestSoundPreference(store)
 
     private fun viewModel() =
         SettingsViewModel(

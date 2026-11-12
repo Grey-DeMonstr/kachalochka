@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.ui.calendar
 
 import kotlinx.coroutines.test.runTest
+import monster.greyde.kachalochka.ui.settings.InMemoryDeviceStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -16,7 +17,7 @@ class VisitsModeTest {
     @Test
     fun the_mode_kept_in_memory_starts_on_the_calendar_and_keeps_the_choice() =
         runTest {
-            val preference = InMemoryVisitsModePreference()
+            val preference = VisitsModePreference(InMemoryDeviceStore())
             assertEquals(VisitsMode.Calendar, preference.mode.value)
 
             preference.set(VisitsMode.Feed)
