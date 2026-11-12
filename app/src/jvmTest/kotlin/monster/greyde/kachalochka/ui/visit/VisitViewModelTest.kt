@@ -151,6 +151,8 @@ class VisitViewModelTest {
         gym.placement,
         gym.gymWrites,
         gym.unsaved,
+        gym.setComments,
+        gym.everyone,
     )
 
     @BeforeTest
@@ -1654,7 +1656,7 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun another_day_offers_no_person_chips() =
+    fun another_day_offers_only_the_active_chip() =
         runTest {
             val two = twoAccountGym()
             val thirteenth = CalendarDay(2023, 11, 13)
@@ -1667,8 +1669,136 @@ class VisitViewModelTest {
                         ?.page
                         ?.form,
                 )
-            assertEquals(emptyList(), sheet.people)
+            assertEquals(listOf("Ivan"), sheet.people.map { it.displayName })
+            assertNull(sheet.everyone)
             assertEquals("Add", sheet.saveLabel)
+        }
+
+    private fun VisitViewModel.form(): SetFormUi = assertNotNull(state.value?.page?.form)
+
+    private fun SetFormUi.names() = people.map { it.displayName }
+
+    @Test
+    fun an_account_without_a_visit_today_has_no_chip() =
+        runTest {
+            val vm = viewModel(twoAccountGym()).also { it.selectMachine(ivanPress.id) }
+
+            assertEquals(listOf("Ivan"), vm.form().names())
+        }
+
+    @Test
+    fun an_account_with_a_visit_today_has_a_chip_even_with_planned_machines_only() =
+        runTest {
+            val two = twoAccountGym()
+            val planned = Visit(VisitId.random(), misha.account.userId, today, t0, t0, false)
+            two.visits.upsert(planned.copy(planned = listOf(ivanPress.id)))
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+            assertEquals(listOf("Ivan", "Misha"), vm.form().names())
+        }
+
+    @Test
+    fun a_trainee_has_no_chip_even_with_a_visit_today() =
+        runTest {
+            val family =
+                FakeGym().withAccounts(ivan, active = ivan).withChild(traineeAccount(SASHA, ivan))
+            family.visits.upsert(ivanVisit)
+            family.visits.upsert(ivanVisit.copy(id = VisitId.random(), userId = SASHA.userId))
+            family.machines.upsert(ivanPress)
+            family.everyone.checked = true
+            val vm = viewModel(family).also { it.selectMachine(ivanPress.id) }
+
+            assertEquals(listOf("Ivan"), vm.form().names())
+            assertNull(vm.form().everyone)
+        }
+
+    @Test
+    fun show_everyone_adds_the_accounts_without_a_visit_and_clearing_it_takes_them_away() =
+        runTest {
+            val vm = viewModel(twoAccountGym()).also { it.selectMachine(ivanPress.id) }
+            assertEquals(false, vm.form().everyone)
+
+            vm.toggleEveryone()
+
+            assertEquals(true, vm.form().everyone)
+            assertEquals(listOf("Ivan", "Misha"), vm.form().names())
+
+            vm.toggleEveryone()
+
+            assertEquals(listOf("Ivan"), vm.form().names())
+        }
+
+    @Test
+    fun show_everyone_is_one_value_for_every_visit_view_model() =
+        runTest {
+            val two = twoAccountGym()
+            viewModel(two).toggleEveryone()
+
+            val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+            assertEquals(listOf("Ivan", "Misha"), vm.form().names())
+        }
+
+    @Test
+    fun show_everyone_is_absent_with_one_account_on_an_edit_and_without_an_account() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            assertEquals(emptyList(), vm.form().people)
+            assertNull(vm.form().everyone)
+
+            val two = twoAccountGym()
+            val recorded = set(ivanVisit.id, ivanPress, 80.0, 8, 0, ivan.account.userId)
+            two.sets.upsert(recorded)
+            val edit = viewModel(two).also { it.selectMachine(ivanPress.id) }
+            edit.toggleEveryone()
+            edit.editSet(recorded.id)
+
+            assertNull(edit.form().everyone)
+            assertEquals(listOf("Ivan"), edit.form().names())
+        }
+
+    @Test
+    fun the_comment_field_is_hidden_until_the_comment_setting_is_checked() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            assertEquals(false to false, vm.form().let { it.commentShown to it.commentChecked })
+
+            vm.toggleComment()
+
+            assertEquals(true to true, vm.form().let { it.commentShown to it.commentChecked })
+            assertTrue(gym.setComments.shown.value)
+
+            vm.toggleComment()
+
+            assertEquals(false to false, vm.form().let { it.commentShown to it.commentChecked })
+        }
+
+    @Test
+    fun the_comment_setting_is_still_there_in_a_new_form() =
+        runTest {
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            vm.toggleComment()
+
+            vm.cancelForm()
+            vm.openForm()
+
+            assertTrue(vm.form().commentShown)
+        }
+
+    @Test
+    fun a_set_with_a_comment_shows_the_field_while_the_comment_setting_is_clear() =
+        runTest {
+            val recorded = set(visit.id, press, 80.0, 8, 0).copy(comment = "Tight seat")
+            gym.sets.upsert(recorded)
+            val vm = viewModel().also { it.selectMachine(press.id) }
+            vm.editSet(recorded.id)
+
+            val form = vm.form()
+
+            assertEquals(
+                Triple(true, false, "Tight seat"),
+                Triple(form.commentShown, form.commentChecked, form.comment),
+            )
         }
 
     @Test

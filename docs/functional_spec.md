@@ -175,17 +175,39 @@ run, it shows 1:30.
 
 The same form adds and edits a set. It moves up over the machine page.
 
-**People.** When it adds a set to today's visit and two or more accounts can record (trainees do
-not count), the form starts with a row of avatar chips (see [11.2](#112-several-accounts)). The row
-scrolls sideways when the chips do not fit. Only the active person's chip shows the name. The last
-chip adds an account. A tap on another person's chip makes that account active:
+**People.** The form starts with a row of avatar chips (see [11.2](#112-several-accounts)), and
+the "⋮" menu at its right. The row scrolls sideways when the chips do not fit. Only the active
+person's chip shows the name.
+
+- The chip of the active account always shows.
+- When the form adds a set to today's visit, the chips of the other accounts that can record
+  (trainees do not count) also show, but only for the accounts that have a visit today. A visit
+  with planned machines only counts.
+- With "Show everyone" checked, all the accounts that can record show.
+- An edit, and a day that is not today, show only the chip of the active account.
+- The chips keep the order of the account menu, so they stay in place after a switch.
+
+A tap on another person's chip makes that account active:
 
 - The page shows that person's history.
 - The set goes into that person's visit, on their machine that is linked to the shown one. Else
   it goes on their machine with the same name (letter case is ignored). Else the app makes them
   a copy of the shown machine with its tags, linked to it and to its linked machines.
 
-**Title.** "#4 New set" for a new set, "#3 Edit: 70 kg × 10" for an edit.
+**Menu.** The "⋮" button opens a list of check boxes. A tap on a row changes it and closes the
+list.
+
+- "Start a pyramid" or "Start a new pyramid" (see [4.4](#44-pyramids)).
+- "Comment" shows or hides the comment field. It is one choice for the device, for all machines
+  and all accounts, and does not sync. It is clear on a new install.
+- "Show everyone" shows all the accounts that can record in the row of people. It shows only when
+  the form adds a set to today's visit and two or more accounts can record. It is one choice for
+  all visits and machines. It stays until the app restarts, then it is clear. An account that gets
+  its first set of the day this way has a visit after that, thus its chip stays when the box is
+  cleared.
+
+**Title.** "#4 New set" for a new set, "#3 Edit: 70 kg × 10" for an edit. While "Start a pyramid"
+is checked, the pyramid icon follows the title.
 
 **Weight and reps.** Each has − and + and also takes typed text.
 
@@ -199,7 +221,8 @@ chip adds an account. A tap on another person's chip makes that account active:
   unit.
 
 **Comment.** "Comment" takes up to 200 characters on several lines. The page shows it after
-the set number. A shared visit never shows it.
+the set number. A shared visit never shows it. The field shows while the "Comment" row is checked,
+and also while the set has a comment, so an edit of such a set always shows it.
 
 **Start values.** The first set on a machine starts from the best set of the previous visit,
 picked as the record is. Without a previous visit it starts with 10 reps at the platform weight,
@@ -217,8 +240,8 @@ and the reps of the set just recorded.
 
 A pyramid is sets on a machine whose weight goes up or down, for example 40, 31 and 22 kg.
 
-- The set form has a check box row with a pyramid icon above the comment. A tap anywhere on the
-  row sets or clears it.
+- The "⋮" menu of the set form has a check box row with a pyramid icon. A tap on the row sets or
+  clears it. While it is set, the pyramid icon follows the title of the form.
 - On a new set the row reads "Start a pyramid". When the day already has a pyramid on the machine,
   it reads "Start a new pyramid", and a tap sets the weight and the reps of the first set of the
   current pyramid.
@@ -947,8 +970,9 @@ Several accounts can be signed in on one device. One of them is active, and the 
 it. Each account keeps its own visits, machines and history.
 
 - Only the addition of an account asks Google. A switch does not, and works without a network.
-- You switch from the avatar menu or, while you record, from the chips of the set form. Thus a
-  parent records their own sets and their child's sets one after the other.
+- You switch from the avatar menu or, while you record, from the chips of the set form. A chip shows
+  when its account has a visit today, or with "Show everyone" ([4.3](#43-set-form)). Thus a parent
+  records their own sets and their child's sets one after the other.
 - A sign-out removes the account from the device but keeps its data. A new sign-in finds it again.
   On Android, the sign-out of the last account makes the app work without an account again.
 - Friends are not available until an account signs in.
@@ -1041,7 +1065,8 @@ children, trainers and trainees. Then it signs the account out.
 profile, measures or groups.
 
 - A linked child shows in each of their parents' account menus, with "Child" under the name,
-  and among the chips of the set form. A child of two parents signed in on one device shows once.
+  and among the chips of the set form, when the child has a visit today or with "Show everyone".
+  A child of two parents signed in on one device shows once.
 - When the parent chooses the child, the home card, the visits and sets, the machines with their
   photos and links, the calendar, the statistics and the plans are the child's. They sync between
   the parent's devices and the child's.

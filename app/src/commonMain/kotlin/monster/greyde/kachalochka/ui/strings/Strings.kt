@@ -124,6 +124,7 @@ interface Strings {
     val pyramid: String
     val startPyramid: String
     val startNewPyramid: String
+    val showEveryone: String
     val saveSet: String
 
     val newSet: String

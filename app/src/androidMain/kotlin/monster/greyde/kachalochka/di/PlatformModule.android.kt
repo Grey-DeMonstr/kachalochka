@@ -60,6 +60,8 @@ import monster.greyde.kachalochka.ui.timer.RestSoundChooser
 import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import monster.greyde.kachalochka.ui.timer.ServiceRestAlarm
 import monster.greyde.kachalochka.ui.timer.SystemRestSoundChooser
+import monster.greyde.kachalochka.ui.visit.DataStoreSetCommentPreference
+import monster.greyde.kachalochka.ui.visit.SetCommentPreference
 import okio.Path.Companion.toPath
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
@@ -93,6 +95,12 @@ actual fun platformModule(): Module =
         }
         single<TransitionPreference>(createdAtStart = true) {
             DataStoreTransitionPreference(
+                get(),
+                CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            )
+        }
+        single<SetCommentPreference> {
+            DataStoreSetCommentPreference(
                 get(),
                 CoroutineScope(SupervisorJob() + Dispatchers.Default),
             )

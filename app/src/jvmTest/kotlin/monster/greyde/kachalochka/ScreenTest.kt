@@ -62,6 +62,7 @@ import monster.greyde.kachalochka.ui.theme.ThemePreference
 import monster.greyde.kachalochka.ui.timer.RestSoundChooser
 import monster.greyde.kachalochka.ui.timer.RestSoundPreference
 import monster.greyde.kachalochka.ui.timer.Ticker
+import monster.greyde.kachalochka.ui.visit.SetCommentPreference
 import org.koin.compose.KoinApplication
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
@@ -107,6 +108,8 @@ fun fakeGymModule(gym: FakeGym) =
         single<ThemePreference> { gym.themes }
         single<TransitionPreference> { gym.transitions }
         single<VisitsModePreference> { gym.visitsModes }
+        single<SetCommentPreference> { gym.setComments }
+        single { gym.everyone }
         single<FeedPeoplePreference> { gym.feedPeople }
         single<LanguagePreference> { gym.languages }
         single<RestSoundPreference> { gym.restSounds }

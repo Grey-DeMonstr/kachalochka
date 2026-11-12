@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,6 +41,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -71,7 +73,6 @@ import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.AccountUi
 import monster.greyde.kachalochka.ui.account.PersonAvatar
-import monster.greyde.kachalochka.ui.account.dashedCircle
 import monster.greyde.kachalochka.ui.components.AccentButton
 import monster.greyde.kachalochka.ui.components.ControlShape
 import monster.greyde.kachalochka.ui.components.DragHandle
@@ -104,7 +105,6 @@ internal fun MachinePage(
     onOpenSettings: () -> Unit,
     onOpenMachineSettings: () -> Unit,
     onOpenStatistics: () -> Unit,
-    onAddAccount: () -> Unit,
     canPlanToday: Boolean,
     onOpenVisit: (CalendarDay) -> Unit,
     onNewPlan: (MachineId) -> Unit,
@@ -257,7 +257,6 @@ internal fun MachinePage(
                 SetForm(
                     form = it,
                     viewModel = viewModel,
-                    onAddAccount = onAddAccount,
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
@@ -428,7 +427,6 @@ private val SheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 private fun SetForm(
     form: SetFormUi,
     viewModel: VisitViewModel,
-    onAddAccount: () -> Unit,
     modifier: Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -450,10 +448,14 @@ private fun SetForm(
                 .clip(RoundedCornerShape(2.dp))
                 .background(colors.onBackground.copy(alpha = 0.26f)),
         )
-        if (form.people.size > 1) {
-            PersonChips(form.people, viewModel::switchTo, onAddAccount)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            PersonChips(form.people, viewModel::switchTo, Modifier.weight(1f))
+            SetMenu(form, viewModel)
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 form.number,
                 modifier = Modifier.testTag("set-number"),
@@ -466,6 +468,14 @@ private fun SetForm(
                 fontSize = 14.sp,
                 color = colors.onBackground.copy(alpha = 0.7f),
             )
+            if (form.pyramid) {
+                val pyramidName = strings().pyramid
+                PyramidIcon(
+                    Modifier
+                        .semantics { contentDescription = pyramidName }
+                        .testTag("set-pyramid-mark"),
+                )
+            }
         }
         Stepper(
             form.weight,
@@ -488,36 +498,16 @@ private fun SetForm(
             onValueChange = viewModel::typeReps,
             keyboardType = KeyboardType.Number,
         )
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .toggleable(
-                    value = form.pyramid,
-                    role = Role.Checkbox,
-                    onValueChange = { viewModel.togglePyramidStart() },
-                ).padding(horizontal = 4.dp)
-                .testTag("set-pyramid"),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(checked = form.pyramid, onCheckedChange = null)
-            Text(
-                form.pyramidLabel,
-                Modifier.weight(1f),
-                fontSize = 16.sp,
-                color = colors.onBackground,
+        if (form.commentShown) {
+            TextInput(
+                form.comment,
+                strings().comment,
+                viewModel::typeComment,
+                Modifier.testTag("set-comment-field"),
+                KeyboardOptions.Default,
+                singleLine = false,
             )
-            PyramidIcon()
         }
-        TextInput(
-            form.comment,
-            strings().comment,
-            viewModel::typeComment,
-            Modifier.testTag("set-comment-field"),
-            KeyboardOptions.Default,
-            singleLine = false,
-        )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             if (form.editing) {
                 SquareIconButton(
@@ -653,39 +643,86 @@ private fun Modifier.swipeDownTo(onClose: () -> Unit): Modifier {
     ).offset { IntOffset(0, pulled.roundToInt()) }
 }
 
-/** Frame 5g: one tap moves the form between the people signed in, the last chip adds one. */
+/** Frame 5g: one tap moves the form between the people shown. */
 @Composable
 private fun PersonChips(
     people: List<AccountUi>,
     onSwitchTo: (UserId) -> Unit,
-    onAddAccount: () -> Unit,
+    modifier: Modifier,
 ) {
-    val colors = MaterialTheme.colorScheme
     Row(
-        Modifier
-            .fillMaxWidth()
+        modifier
             .horizontalScroll(rememberScrollState())
             .testTag("person-chips"),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         people.forEach { person -> PersonChip(person) { onSwitchTo(person.id) } }
+    }
+}
+
+/** The "⋮" button of the set form, over check boxes for the form's options. */
+@Composable
+private fun SetMenu(
+    form: SetFormUi,
+    viewModel: VisitViewModel,
+) {
+    var open by remember { mutableStateOf(false) }
+    Box {
         Box(
             Modifier
-                .size(ChipHeight)
-                .clip(CircleShape)
-                .clickable(onClick = onAddAccount)
-                .dashedCircle(colors.onBackground.copy(alpha = 0.35f))
-                .testTag("person-add"),
+                .size(40.dp)
+                .clip(ControlShape)
+                .clickable { open = true }
+                .testTag("set-menu"),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                PhosphorIcons.Plus,
-                strings().addAccount,
-                tint = colors.onBackground.copy(alpha = 0.55f),
+                PhosphorIcons.DotsThreeVertical,
+                strings().more,
+                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 modifier = Modifier.size(20.dp),
             )
         }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            CheckMenuItem(form.pyramidLabel, form.pyramid, "set-menu-pyramid", {
+                open = false
+                viewModel.togglePyramidStart()
+            }) { PyramidIcon() }
+            CheckMenuItem(strings().comment, form.commentChecked, "set-menu-comment", {
+                open = false
+                viewModel.toggleComment()
+            })
+            form.everyone?.let { checked ->
+                CheckMenuItem(strings().showEveryone, checked, "set-menu-everyone", {
+                    open = false
+                    viewModel.toggleEveryone()
+                })
+            }
+        }
+    }
+}
+
+@Composable
+private fun CheckMenuItem(
+    label: String,
+    checked: Boolean,
+    tag: String,
+    onToggle: () -> Unit,
+    icon: @Composable () -> Unit = {},
+) {
+    Row(
+        Modifier
+            .height(48.dp)
+            .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onToggle() })
+            .padding(horizontal = 12.dp)
+            .testTag(tag),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null)
+        Text(label, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+        icon()
     }
 }
 

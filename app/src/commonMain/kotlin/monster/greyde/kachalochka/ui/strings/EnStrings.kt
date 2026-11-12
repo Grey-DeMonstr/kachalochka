@@ -142,6 +142,7 @@ object EnStrings : Strings {
     override val pyramid = "Pyramid"
     override val startPyramid = "Start a pyramid"
     override val startNewPyramid = "Start a new pyramid"
+    override val showEveryone = "Show everyone"
     override val saveSet = "Add"
 
     override val newSet = "New set"

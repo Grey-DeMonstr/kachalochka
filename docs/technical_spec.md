@@ -624,6 +624,12 @@ next page shows only its header (`MachinePreview`) until the pager stops on it a
 `openMachine`. The swipe is off while the form is open or the sets are ordered, so the steppers,
 the sheet and the drag handles keep their gestures.
 
+**Set form people.** `reload` reads which recording accounts (not trainees) have a visit on the
+day (`VisitRepository.allOn`). On a new set of today the row has the active account and these
+accounts, or all recording accounts while `ShowEveryone.checked` is set. `ShowEveryone` is a Koin
+`single` that holds one boolean in memory and saves it nowhere. The form shows the comment field
+while `SetCommentPreference.shown` or the set's comment text is set.
+
 **Pyramids.** `workout_set.pyramid` (migration `0031`, `22.sqm`) is true on the set that starts a
 pyramid. Nothing stores its
 end: `pyramidGroups` cuts the sets at each flagged set, so a move or a flag change regroups them
@@ -1098,6 +1104,7 @@ the graph is built, so the first frame uses it. A store that cannot be read give
 | Rest sound | `RestSoundPreference`: on or off, and the Android sound URI (null for the default) |
 | Visits mode | `VisitsModePreference`: calendar or feed |
 | Feed person | `FeedPeoplePreference`: at most one person for each viewer |
+| Set comment | `SetCommentPreference`: whether the set form has a comment field |
 
 - A transition length stored before the presets shows as the nearest preset.
 - `NavHost` fades over a box painted with the scheme's `background`. The Android window theme is

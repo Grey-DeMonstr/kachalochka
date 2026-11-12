@@ -97,6 +97,8 @@ import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.timer.InMemoryRestSoundPreference
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
+import monster.greyde.kachalochka.ui.visit.InMemorySetCommentPreference
+import monster.greyde.kachalochka.ui.visit.ShowEveryone
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
@@ -558,6 +560,8 @@ class FakeGym(
     val themes = InMemoryThemePreference()
     val transitions = InMemoryTransitionPreference()
     val visitsModes = InMemoryVisitsModePreference()
+    val setComments = InMemorySetCommentPreference()
+    val everyone = ShowEveryone()
     val feedPeople = InMemoryFeedPeoplePreference()
     val languages = InMemoryLanguagePreference()
     val restSounds = InMemoryRestSoundPreference()

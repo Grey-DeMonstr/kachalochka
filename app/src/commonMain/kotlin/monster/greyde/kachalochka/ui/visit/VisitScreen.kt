@@ -40,7 +40,6 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
-import monster.greyde.kachalochka.ui.account.AccountsViewModel
 import monster.greyde.kachalochka.ui.calendar.VisitShareDialog
 import monster.greyde.kachalochka.ui.calendar.VisitShareNotice
 import monster.greyde.kachalochka.ui.calendar.VisitShareViewModel
@@ -85,7 +84,6 @@ fun VisitScreen(
     onOpenedMachineConsumed: () -> Unit = {},
 ) {
     val viewModel: VisitViewModel = koinViewModel { parametersOf(day) }
-    val accountsViewModel: AccountsViewModel = koinViewModel()
     val placement: VisitPlacementViewModel = koinViewModel()
     val share: VisitShareViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -118,7 +116,6 @@ fun VisitScreen(
                 viewModel.openMachineSettings(page.machineId, onOpenMachineSettings)
             },
             onOpenStatistics = { onOpenStatistics(page.machineId) },
-            onAddAccount = accountsViewModel::addAccount,
             canPlanToday = current?.isToday == false,
             onOpenVisit = onOpenVisit,
             onNewPlan = onNewPlan,

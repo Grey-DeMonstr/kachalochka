@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.identity.Accounts
@@ -22,6 +23,7 @@ import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
+import monster.greyde.kachalochka.core.domain.gym.allOn
 import monster.greyde.kachalochka.core.domain.gym.bestSet
 import monster.greyde.kachalochka.core.domain.gym.calendarDaysBetween
 import monster.greyde.kachalochka.core.domain.gym.groupByMachine
@@ -188,6 +190,11 @@ data class SetFormUi(
     val converted: String?,
     val reps: String,
     val comment: String,
+    /** The comment field shows: the device setting is on, or the set has a comment. */
+    val commentShown: Boolean,
+    val commentChecked: Boolean,
+    /** The "Show everyone" box; null when the form has no such row. */
+    val everyone: Boolean?,
     val pyramid: Boolean,
     val pyramidLabel: String,
     val editing: Boolean,
@@ -216,6 +223,8 @@ class VisitViewModel(
     private val placement: Placement,
     gymWrites: GymWrites,
     unsaved: UnsavedChoices,
+    private val commentSetting: SetCommentPreference,
+    private val everyone: ShowEveryone,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<VisitUiState?>(null)
     val state: StateFlow<VisitUiState?> = mutableState
@@ -226,6 +235,9 @@ class VisitViewModel(
     private var machinesById: Map<MachineId, Machine> = emptyMap()
     private var visitSets: List<WorkoutSet> = emptyList()
     private var shownVisit: Visit? = null
+
+    /** The accounts that can record and have a visit today; empty on another day. */
+    private var visitors: Set<UserId> = emptySet()
     private var previousSets: List<WorkoutSet> = emptyList()
     private var machineSets: List<WorkoutSet> = emptyList()
     private var selected: MachineId? = null
@@ -253,6 +265,9 @@ class VisitViewModel(
             accounts.activeId.collect {
                 reload(reseed = true)
             }
+        }
+        viewModelScope.launch {
+            commentSetting.shown.drop(1).collect { publish() }
         }
         // The weight and reps the user is choosing stay as they are.
         viewModelScope.launch {
@@ -360,6 +375,15 @@ class VisitViewModel(
                 form.suggest(SetValues(it.weight, it.reps))
             }
         }
+        publish()
+    }
+
+    fun toggleComment() {
+        viewModelScope.launch { commentSetting.set(!commentSetting.shown.value) }
+    }
+
+    fun toggleEveryone() {
+        everyone.checked = !everyone.checked
         publish()
     }
 
@@ -553,6 +577,15 @@ class VisitViewModel(
         machinesById = ownRead.machines.associateBy { it.id }
         visitSets = shown?.sets.orEmpty()
         shownVisit = shown?.visit
+        visitors =
+            if (isToday) {
+                recordingAccounts()
+                    .filter { visits.allOn(it.userId, day, clock::offsetAt).isNotEmpty() }
+                    .map { it.userId }
+                    .toSet()
+            } else {
+                emptySet()
+            }
         val machine = machineOf(owner)
         open = machine
         selected = machine?.id ?: selected
@@ -597,6 +630,9 @@ class VisitViewModel(
             setValue(weight, record.record.reps, record.machine, preferred),
         )
     }
+
+    /** The accounts that can record; nobody records for a trainee here. */
+    private fun recordingAccounts() = accounts.accounts.value.filterNot { it.isTrainee }
 
     private fun publish() {
         val now = clock.now()
@@ -816,13 +852,13 @@ class VisitViewModel(
         onMachine: List<WorkoutSet>,
     ): SetFormUi {
         val edited = form.editing
+        val newToday = isToday && edited == null
+        val recorders =
+            accountsUi(accounts.accounts.value, accounts.activeId.value, avatars.photos.value)
+                .filterNot { it.trainee }
         val people =
-            if (isToday && edited == null) {
-                // Nobody records for a trainee here.
-                accountsUi(accounts.accounts.value, accounts.activeId.value, avatars.photos.value)
-                    .filterNot { it.trainee }
-            } else {
-                emptyList()
+            recorders.filter {
+                it.active || (newToday && (everyone.checked || it.id in visitors))
             }
         return SetFormUi(
             number = "#${setNumber(edited, onMachine)}",
@@ -840,6 +876,9 @@ class VisitViewModel(
             converted = recordingConversion(machine, form.values.weight, preferred),
             reps = form.repsShown,
             comment = form.comment,
+            commentShown = commentSetting.shown.value || form.comment.isNotEmpty(),
+            commentChecked = commentSetting.shown.value,
+            everyone = everyone.checked.takeIf { newToday && recorders.size > 1 },
             pyramid = form.pyramid,
             pyramidLabel =
                 if (edited == null && onMachine.any { it.pyramid }) {

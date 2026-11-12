@@ -62,6 +62,7 @@ import monster.greyde.kachalochka.ui.stats.StatisticsViewModel
 import monster.greyde.kachalochka.ui.timer.RestSoundScheduler
 import monster.greyde.kachalochka.ui.timer.RestTimer
 import monster.greyde.kachalochka.ui.timer.Ticker
+import monster.greyde.kachalochka.ui.visit.ShowEveryone
 import monster.greyde.kachalochka.ui.visit.VisitViewModel
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
@@ -108,6 +109,7 @@ val appModule =
         singleOf(::LinkUpkeep)
         singleOf(::Placement)
         singleOf(::UnsavedChoices)
+        singleOf(::ShowEveryone)
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }

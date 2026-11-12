@@ -520,6 +520,8 @@ class VisitScreenTest {
     fun a_comment_typed_in_the_form_shows_in_the_set_s_row() {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-comment").performClick()
             onNodeWithTag("set-comment-field").performTextReplacement("Heavy")
             onNodeWithTag("save-set").performClick()
             waitForIdle()
@@ -536,8 +538,12 @@ class VisitScreenTest {
     fun a_ticked_pyramid_row_records_a_start_that_the_page_shows_as_a_pyramid() {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
-            onNodeWithTag("set-pyramid").assertTextEquals("Start a pyramid")
-            onNodeWithTag("set-pyramid").performClick()
+            onNodeWithTag("set-pyramid-mark").assertDoesNotExist()
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-pyramid").assertTextEquals("Start a pyramid").assertIsOff()
+            onNodeWithTag("set-menu-pyramid").performClick()
+            onNodeWithTag("set-pyramid-mark").assertExists()
+            onNodeWithTag("set-menu-pyramid").assertDoesNotExist()
             onNodeWithTag("save-set").performClick()
             waitForIdle()
 
@@ -545,7 +551,60 @@ class VisitScreenTest {
                 gym.sets.rows.values
                     .single { it.pyramid }
             onNodeWithTag("pyramid-${start.id.value}").assertTextEquals("#2", "70 kg × 10")
-            onNodeWithTag("set-pyramid").assertTextEquals("Start a new pyramid")
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-pyramid").assertTextEquals("Start a new pyramid")
+        }
+    }
+
+    @Test
+    fun the_menu_lists_the_pyramid_and_the_comment_and_closes_after_a_tap() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("set-pyramid").assertDoesNotExist()
+            onNodeWithTag("set-menu-pyramid").assertDoesNotExist()
+
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-pyramid").assertIsDisplayed()
+            onNodeWithTag("set-menu-comment").assertTextEquals("Comment").assertIsOff()
+            onNodeWithTag("set-menu-everyone").assertDoesNotExist()
+
+            onNodeWithTag("set-menu-comment").performClick()
+            onNodeWithTag("set-menu-comment").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun the_comment_row_shows_and_hides_the_field_and_the_choice_stays_in_the_next_form() {
+        runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("set-comment-field").assertDoesNotExist()
+
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-comment").performClick()
+            onNodeWithTag("set-comment-field").assertExists()
+            onNodeWithTag("save-set").performClick()
+            waitForIdle()
+            onNodeWithTag("set-comment-field").assertExists()
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-comment").assertIsOn()
+
+            onNodeWithTag("set-menu-comment").performClick()
+            onNodeWithTag("set-comment-field").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun an_edit_of_a_set_with_a_comment_shows_the_field_while_the_comment_row_is_clear() {
+        val commented = recorded.copy(comment = "Tight seat")
+        runBlocking { gym.sets.upsert(commented) }
+        runScreenTest(gym, screen = { visitScreen(opened = press.id) }) {
+            waitForIdle()
+            onNodeWithTag("set-row-${commented.id.value}").performClick()
+            waitForIdle()
+
+            onNodeWithTag("set-comment-field").assertExists()
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-comment").assertIsOff()
         }
     }
 
@@ -955,7 +1014,48 @@ class VisitScreenTest {
         runScreenTest(gym, screen = { visitScreen(picked = press.id) }) {
             waitForIdle()
             onNodeWithTag("person-add").assertDoesNotExist()
-            onNodeWithTag("save-set").assertTextEquals("Add")
+            onNodeWithTag("person-chips").assertExists()
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-everyone").assertDoesNotExist()
+            onNodeWithTag("set-menu-pyramid").assertExists()
+        }
+    }
+
+    @Test
+    fun another_account_has_a_chip_only_with_a_visit_today_or_with_show_everyone() {
+        runScreenTest(
+            shared,
+            screen = { visitScreen(day = shared.today, picked = sharedPress.id) },
+        ) {
+            waitForIdle()
+            onNodeWithTag("person-add").assertDoesNotExist()
+            onNodeWithTag("person-${misha.account.userId.value}").assertDoesNotExist()
+
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-everyone").assertTextEquals("Show everyone").assertIsOff()
+            onNodeWithTag("set-menu-everyone").performClick()
+            onNodeWithTag("person-${misha.account.userId.value}").assertExists()
+
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-everyone").assertIsOn()
+            onNodeWithTag("set-menu-everyone").performClick()
+            onNodeWithTag("person-${misha.account.userId.value}").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun an_account_with_a_visit_today_has_a_chip() {
+        runBlocking {
+            shared.visits.upsert(
+                sharedVisit.copy(id = VisitId.random(), userId = misha.account.userId),
+            )
+        }
+        runScreenTest(
+            shared,
+            screen = { visitScreen(day = shared.today, picked = sharedPress.id) },
+        ) {
+            waitForIdle()
+            onNodeWithTag("person-${misha.account.userId.value}").assertExists()
         }
     }
 
@@ -966,8 +1066,9 @@ class VisitScreenTest {
             screen = { visitScreen(day = shared.today, picked = sharedPress.id) },
         ) {
             waitForIdle()
-            onNodeWithTag("person-add").assertExists()
             onNodeWithTag("save-set").assertTextEquals("Add")
+            onNodeWithTag("set-menu").performClick()
+            onNodeWithTag("set-menu-everyone").performClick()
 
             onNodeWithTag("person-${misha.account.userId.value}").performClick()
             waitForIdle()
@@ -990,6 +1091,7 @@ class VisitScreenTest {
             (3..6).map { session("3333333$it-3333-4333-8333-333333333333", "Guest Number $it") }
         val crowd = FakeGym().withAccounts(ivan, misha, *guests.toTypedArray(), active = ivan)
         val visit = sharedVisit.copy(day = crowd.today)
+        crowd.everyone.checked = true
         val press = Machine.new("Leg press", ivan.account.userId, crowd.clock.current)
         runBlocking {
             crowd.visits.upsert(visit)
@@ -1004,8 +1106,9 @@ class VisitScreenTest {
                 .assert(hasText("Misha").not())
                 .assertContentDescriptionEquals("Misha")
 
-            onNodeWithTag("person-add").performScrollTo().assertIsDisplayed()
-            onNodeWithTag("person-${guests.last().account.userId.value}").performClick()
+            onNodeWithTag("person-${guests.last().account.userId.value}")
+                .performScrollTo()
+                .performClick()
             waitForIdle()
             onNodeWithTag("person-${guests.last().account.userId.value}")
                 .assert(hasText("Guest Number 6"))
@@ -1024,6 +1127,7 @@ class VisitScreenTest {
             }
         val last = guests.last()
         val crowd = FakeGym().withAccounts(ivan, misha, *guests.toTypedArray(), active = last)
+        crowd.everyone.checked = true
         val press = Machine.new("Leg press", last.account.userId, crowd.clock.current)
         runBlocking {
             crowd.visits.upsert(
@@ -1047,6 +1151,7 @@ class VisitScreenTest {
     @Test
     fun machine_settings_never_open_another_account_s_machine() {
         var opened: MachineId? = null
+        shared.everyone.checked = true
         runScreenTest(
             shared,
             screen = {

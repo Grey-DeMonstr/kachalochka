@@ -43,6 +43,8 @@ import monster.greyde.kachalochka.ui.timer.NoRestAlarm
 import monster.greyde.kachalochka.ui.timer.RestAlarm
 import monster.greyde.kachalochka.ui.timer.RestSoundChooser
 import monster.greyde.kachalochka.ui.timer.RestSoundPreference
+import monster.greyde.kachalochka.ui.visit.InMemorySetCommentPreference
+import monster.greyde.kachalochka.ui.visit.SetCommentPreference
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -52,6 +54,7 @@ actual fun platformModule(): Module =
     module {
         single<ThemePreference> { InMemoryThemePreference() }
         single<TransitionPreference> { InMemoryTransitionPreference() }
+        single<SetCommentPreference> { InMemorySetCommentPreference() }
         single<VisitsModePreference> { InMemoryVisitsModePreference() }
         single<FeedPeoplePreference> { InMemoryFeedPeoplePreference() }
         single<LanguagePreference> { InMemoryLanguagePreference() }

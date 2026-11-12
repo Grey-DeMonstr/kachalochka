@@ -159,6 +159,7 @@ object RuStrings : Strings {
     override val pyramid = "Пирамида"
     override val startPyramid = "Начать пирамиду"
     override val startNewPyramid = "Начать новую пирамиду"
+    override val showEveryone = "Показать всех"
     override val saveSet = "Добавить"
 
     override val newSet = "Новый подход"
