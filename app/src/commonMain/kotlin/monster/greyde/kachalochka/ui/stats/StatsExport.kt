@@ -9,16 +9,21 @@ internal fun statsExportText(
     period: StatsPeriod,
     sections: List<StatsSectionUi<ProgressCardUi>>,
 ): String {
-    val header =
-        listOf(nickname.trim(), AppStrings.current.forPeriod(period.months))
-            .filter { it.isNotEmpty() }
-            .joinToString(", ")
     val body =
         sections.joinToString("\n\n") { section ->
             (listOfNotNull(section.title) + section.items.map(::exportLine)).joinToString("\n")
         }
-    return "$header\n\n$body"
+    return "${statsHeader(nickname, period)}\n\n$body"
 }
+
+/** "GDM, past month": the line that opens both the text and the picture. */
+internal fun statsHeader(
+    nickname: String,
+    period: StatsPeriod,
+): String =
+    listOf(nickname.trim(), AppStrings.current.forPeriod(period.months))
+        .filter { it.isNotEmpty() }
+        .joinToString(", ")
 
 private fun exportLine(card: ProgressCardUi): String {
     val newMachine = card.change.replaceFirstChar { it.lowercase() }

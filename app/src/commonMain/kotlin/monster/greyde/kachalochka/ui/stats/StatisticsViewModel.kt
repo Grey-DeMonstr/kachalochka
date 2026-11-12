@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.stats
 
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -43,6 +44,7 @@ import monster.greyde.kachalochka.ui.format.setChange
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.ShownMachines
+import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.TextSharing
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
@@ -75,6 +77,12 @@ data class StatsSectionUi<T>(
     val items: List<T>,
 )
 
+/** What the picture of the overview shows: the [header], then the [sections] as listed. */
+data class StatsPictureUi(
+    val header: String,
+    val sections: List<StatsSectionUi<ProgressCardUi>>,
+)
+
 /** A null [selected] is "Overall", whose cards are [overall]. */
 data class StatisticsUiState(
     val choiceSections: List<StatsSectionUi<StatsChoiceUi>> = emptyList(),
@@ -92,6 +100,11 @@ data class StatisticsUiState(
     val nothingImproved: Boolean = false,
     /** What the export left to confirm, as the web's "copied". */
     val notice: String? = null,
+    /** The share popup is open. */
+    val shareOffered: Boolean = false,
+    val canShareImage: Boolean = false,
+    /** The overview drawn off screen for its picture; null while none is. */
+    val picture: StatsPictureUi? = null,
     val machine: MachineStatsUi? = null,
     /** The search over [choiceSections]. */
     val query: String = "",
@@ -123,6 +136,7 @@ class StatisticsViewModel(
     private val clock: DeviceClock,
     private val nickname: Nickname,
     private val sharing: TextSharing,
+    private val cardSharing: CardSharing,
     unsaved: UnsavedChoices,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(StatisticsUiState())
@@ -139,6 +153,8 @@ class StatisticsViewModel(
     private var cycleOwner: UserId? = null
     private var improvementsOnly = true
     private var notice: String? = null
+    private var shareOffered = false
+    private var picture: StatsPictureUi? = null
     private var query = ""
     private var loading: Job? = null
 
@@ -221,15 +237,42 @@ class StatisticsViewModel(
         publish()
     }
 
-    /** Hands the overall cards, as shown, to the platform's sharing. */
+    /** Offers to share the overall cards, as shown. */
     fun export() {
         val shown = mutableState.value
         if (shown.selected != null || shown.overall.isEmpty()) return
+        shareOffered = true
+        publish()
+    }
+
+    fun cancelShare() {
+        shareOffered = false
+        publish()
+    }
+
+    /** Hands the overall cards, as shown, to the platform's text sharing. */
+    fun shareText() {
+        val shown = mutableState.value
+        shareOffered = false
+        publish()
         val text = statsExportText(sharer, period, shown.overallSections)
         viewModelScope.launch {
             notice = catching { sharing.share(text) }.getOrNull()
             publish()
         }
+    }
+
+    fun shareImage() {
+        val shown = mutableState.value
+        shareOffered = false
+        picture = StatsPictureUi(statsHeader(sharer, period), shown.overallSections)
+        publish()
+    }
+
+    fun pictureDrawn(drawn: ImageBitmap) {
+        picture = null
+        publish()
+        viewModelScope.launch { cardSharing.share(drawn) }
     }
 
     fun dismissNotice() {
@@ -279,6 +322,9 @@ class StatisticsViewModel(
                 improvementsOnly = improvementsOnly,
                 nothingImproved = cards.isNotEmpty() && listed.isEmpty(),
                 notice = notice,
+                shareOffered = shareOffered,
+                canShareImage = cardSharing.available,
+                picture = picture,
                 machine =
                     machine?.let {
                         machineStatsUi(

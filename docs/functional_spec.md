@@ -699,8 +699,17 @@ The best set is picked as the record is. The worst set is the lowest weight with
 at it (the highest on a counterweight machine). A tap on a card shows the statistics of its
 machine. A period without sets shows "No sets in this period".
 
-**Export.** With cards shown, the top bar has an export button. It gives the cards as text, as
-"Share" gives a visit:
+**Export.** With cards shown, the top bar has an export button. It opens the popup of
+[4.5](#45-share-a-visit), without "Group by tag": the overview has its own check box.
+
+- "As text" gives the cards as text. With groups by tags, the lines make sections as in a shared
+  visit.
+- "As image" (Android only) shares a picture of the overview in the current theme. The picture
+  shows the same first line as the text ("GDM, past month"), then the sections and the cards as
+  the overview shows them, with the same sort, groups and filter, and the photos of the
+  machines. It has the same size as the picture of a visit.
+
+The text:
 
 ```text
 GDM, past month
@@ -708,8 +717,6 @@ GDM, past month
 Seated crunch +3 reps (45 kg × 15)
 Biceps curl — new machine (32 kg × 12)
 ```
-
-With groups by tags, the lines make sections as in a shared visit.
 
 ### 8.2 One machine
 

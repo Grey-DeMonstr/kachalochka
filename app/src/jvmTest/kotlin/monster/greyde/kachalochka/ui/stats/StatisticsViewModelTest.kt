@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.stats
 
+import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,6 +35,7 @@ import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.signedInGym
 import monster.greyde.kachalochka.ui.measures.cyclePhases
+import monster.greyde.kachalochka.ui.share.TextSharing
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -83,6 +85,7 @@ class StatisticsViewModelTest {
         machine: MachineId? = null,
         on: FakeGym = gym,
         measurements: MeasurementRepository = on.measurements,
+        texts: TextSharing = on.texts,
     ) = StatisticsViewModel(
         StatisticsArgs(machine),
         on.currentUser,
@@ -95,7 +98,8 @@ class StatisticsViewModelTest {
         measurements,
         on.deviceClock,
         Nickname(on.profiles, on.accounts),
-        on.texts,
+        texts,
+        on.cardShares,
         on.unsaved,
     ).also { it.load() }
 
@@ -302,14 +306,45 @@ class StatisticsViewModelTest {
         }
 
     @Test
-    fun export_writes_the_shown_cards_under_the_period_and_their_tags() =
+    fun export_only_opens_the_share_popup() {
+        val vm = viewModel()
+
+        vm.export()
+
+        assertTrue(vm.state.value.shareOffered)
+        assertEquals(emptyList(), gym.texts.shared)
+        assertEquals(emptyList(), gym.cardShares.shared)
+    }
+
+    @Test
+    fun export_is_ignored_for_a_machine() {
+        val vm = viewModel(press.id)
+
+        vm.export()
+
+        assertFalse(vm.state.value.shareOffered)
+    }
+
+    @Test
+    fun cancelling_closes_the_share_popup() {
+        val vm = viewModel()
+        vm.export()
+
+        vm.cancelShare()
+
+        assertFalse(vm.state.value.shareOffered)
+    }
+
+    @Test
+    fun sharing_as_text_writes_the_shown_cards_under_the_period_and_their_tags() =
         runTest {
             gym.machines.upsert(press.copy(tags = setOf("Legs")))
             record(gravitron, CalendarDay(2023, 11, 2), 27.5 to 8)
             val vm = viewModel()
             vm.toggleGroupByTag()
-
             vm.export()
+
+            vm.shareText()
 
             assertEquals(
                 listOf(
@@ -323,7 +358,63 @@ class StatisticsViewModelTest {
                 gym.texts.shared,
             )
             assertEquals("Copied", vm.state.value.notice)
+            assertFalse(vm.state.value.shareOffered)
         }
+
+    @Test
+    fun the_share_popup_closes_before_the_text_is_handed_over() {
+        var offeredAtShare: Boolean? = null
+        lateinit var vm: StatisticsViewModel
+        val texts =
+            object : TextSharing {
+                override suspend fun share(text: String): String? {
+                    offeredAtShare = vm.state.value.shareOffered
+                    return null
+                }
+            }
+        vm = viewModel(texts = texts)
+        vm.export()
+
+        vm.shareText()
+
+        assertEquals(false, offeredAtShare)
+    }
+
+    @Test
+    fun sharing_as_image_gives_the_header_and_the_shown_sections_to_draw() {
+        val vm = viewModel()
+        vm.export()
+
+        vm.shareImage()
+
+        val state = vm.state.value
+        assertFalse(state.shareOffered)
+        assertEquals(StatsPictureUi("past month", state.overallSections), state.picture)
+        assertEquals(emptyList(), gym.cardShares.shared)
+    }
+
+    @Test
+    fun a_drawn_picture_goes_to_the_card_sharing_and_is_cleared() =
+        runTest {
+            val vm = viewModel()
+            vm.export()
+            vm.shareImage()
+            val picture = ImageBitmap(1, 1)
+
+            vm.pictureDrawn(picture)
+
+            assertEquals(listOf(picture), gym.cardShares.shared)
+            assertNull(vm.state.value.picture)
+        }
+
+    @Test
+    fun the_image_choice_follows_the_card_sharing() {
+        assertTrue(viewModel().state.value.canShareImage)
+
+        gym.cardShares.available = false
+
+        assertFalse(viewModel().state.value.canShareImage)
+    }
 
     @Test
     fun export_starts_with_the_nickname_and_names_the_period() {

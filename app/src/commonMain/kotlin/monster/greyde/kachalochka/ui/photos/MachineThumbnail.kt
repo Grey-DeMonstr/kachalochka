@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,7 +28,8 @@ import monster.greyde.kachalochka.ui.strings.strings
 
 /**
  * A machine's cover [photo], or [icon] while it has none. A thumbnail that opens the machine's
- * settings shows a gear over the photo, or in place of [icon].
+ * settings shows a gear over the photo, or in place of [icon]. [onSettled] comes once the
+ * thumbnail has its final look: the photo loaded or failed, or none.
  */
 @Composable
 fun MachineThumbnail(
@@ -36,6 +38,7 @@ fun MachineThumbnail(
     modifier: Modifier = Modifier,
     size: Dp = 56.dp,
     onOpenSettings: (() -> Unit)? = null,
+    onSettled: () -> Unit = {},
 ) {
     val tap = onOpenSettings?.let { Modifier.clickable(onClick = it) } ?: Modifier
     Box(modifier.size(size).clip(ControlShape).then(tap)) {
@@ -47,6 +50,8 @@ fun MachineThumbnail(
                     imageLoader = photoLoader(),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize().testTag("machine-cover"),
+                    onSuccess = { onSettled() },
+                    onError = { onSettled() },
                 )
                 if (onOpenSettings != null) SettingsBadge(Modifier.align(Alignment.BottomEnd))
             }
@@ -54,6 +59,7 @@ fun MachineThumbnail(
                 Thumbnail(PhosphorIcons.Gear, Modifier.fillMaxSize().testTag("settings-gear"))
             else -> Thumbnail(icon, Modifier.fillMaxSize())
         }
+        if (photo == null) LaunchedEffect(Unit) { onSettled() }
     }
 }
 

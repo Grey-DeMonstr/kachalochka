@@ -1159,13 +1159,18 @@ clipboard and returns the message that the screen shows. Invites use the same ca
   read before the tap: `ownCard` puts a `SharedVisit` into the card's `OwnVisitUi`, and
   `SharedVisit.text` writes it at the tap. The statistics export also reads in advance
   (`statsExportText`).
+- `SharePopup` (`app/ui/share`) is the popup of both shares. `StatisticsViewModel` offers it from
+  `export()` and shares the text or the picture; `statsHeader` writes the first line of both.
 - `VisitShareViewModel` is the one place that shares a visit. `VisitShareDialog` shows the popup,
   and `VisitShareNotice` shows the message under the visit.
 
-**Picture.** `CardSharing` is available only on Android. `VisitShareDialog` composes
-`SharedVisitCard` off screen with a fixed width and `LocalDensity`, so the picture is 1080 px wide
-on each phone, and records it into a `GraphicsLayer`. `toImageBitmap()` gives the picture; Android
-encodes it as PNG and shares it through the cache and the `FileProvider`.
+**Picture.** `CardSharing` is available only on Android. `OffScreenPicture` (`app/ui/share`)
+composes its content off screen with a fixed width and `LocalDensity`, so the picture is 1080 px
+wide on each phone, and records it into a `GraphicsLayer`. When the content has settled (the
+avatar or the photos have their final look), `toImageBitmap()` gives the picture; Android encodes
+it as PNG and shares it through the cache and the `FileProvider`. `VisitShareDialog` draws
+`SharedVisitCard` in it. `StatisticsScreen` draws `SharedStatsCards` from the `StatsPictureUi` of
+the view model: the header, then the sections and the `ProgressCard`s without a tap action.
 
 ### 9.7 Rest timer sound
 

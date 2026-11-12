@@ -97,10 +97,12 @@ class StatisticsScreenTest {
     }
 
     @Test
-    fun the_overall_view_shows_improvements_only_at_first_and_exports_its_cards() =
+    fun the_overall_view_shows_improvements_only_at_first_and_shares_its_cards() =
         runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {
             onNodeWithTag("stats-improvements-only").assertIsOn()
             onNodeWithTag("stats-export").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-text").performClick()
             waitForIdle()
 
             assertEquals(listOf("past month\n\nLeg press +5 kg (75 kg × 8)"), gym.texts.shared)
@@ -111,6 +113,73 @@ class StatisticsScreenTest {
             onNodeWithTag("stats-export").assertDoesNotExist()
             onNodeWithTag("stats-improvements-only").assertDoesNotExist()
         }
+
+    @Test
+    fun the_export_opens_a_popup_that_cancel_closes_without_sharing() =
+        runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {
+            onNodeWithTag("stats-export").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-text").assertExists()
+            onNodeWithTag("share-group-by-tag").assertDoesNotExist()
+
+            onNodeWithTag("share-cancel").performClick()
+            waitForIdle()
+
+            onNodeWithTag("share-as-text").assertDoesNotExist()
+            assertEquals(emptyList(), gym.texts.shared)
+        }
+
+    @Test
+    fun the_overview_is_shared_as_a_picture() {
+        runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {
+            onNodeWithTag("stats-export").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-image").performClick()
+            waitUntil { gym.cardShares.shared.isNotEmpty() }
+        }
+        assertEquals(
+            1080,
+            gym.cardShares.shared
+                .single()
+                .width,
+        )
+    }
+
+    @Test
+    fun the_share_popup_has_only_text_where_a_card_cannot_be_shared() {
+        gym.cardShares.available = false
+        runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {
+            onNodeWithTag("stats-export").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-text").assertExists()
+            onNodeWithTag("share-as-image").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun the_picture_shows_the_header_and_each_card_and_says_it_settled() {
+        val card =
+            ProgressCardUi(
+                press.id,
+                "Leg press",
+                null,
+                "Start",
+                "70 kg × 8",
+                "Best",
+                "75 kg × 8",
+                "+5 kg",
+                true,
+            )
+        val sections = listOf(StatsSectionUi("LEGS", listOf(card)))
+        val picture = StatsPictureUi("GDM, past month", sections)
+        var settled = false
+        runScreenTest(gym, screen = { SharedStatsCards(picture) { settled = true } }) {
+            onNodeWithTag("stats-picture-header").assertTextEquals("GDM, past month")
+            onNodeWithTag("stats-section-LEGS").assertExists()
+            onNodeWithTag("stats-change-${press.id.value}").assertTextEquals("+5 kg")
+            waitUntil { settled }
+        }
+    }
 
     @Test
     fun the_search_filters_the_machines_shows_the_found_part_and_the_cross_cancels_it() =
