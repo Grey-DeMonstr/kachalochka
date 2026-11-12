@@ -86,7 +86,7 @@ private fun GroupByTagBox(
 @Composable
 private fun CardPicture(
     card: VisitCardUi,
-    onDrawn: (ImageBitmap) -> Unit,
+    onDrawn: (List<ImageBitmap>) -> Unit,
 ) {
     var avatarSettled by remember { mutableStateOf(false) }
     OffScreenPicture(avatarSettled, onDrawn) {

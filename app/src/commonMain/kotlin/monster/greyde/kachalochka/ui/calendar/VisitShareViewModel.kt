@@ -90,9 +90,9 @@ class VisitShareViewModel(
 
     fun shareImage() = mutableState.update { it.copy(offered = null, picture = it.offered) }
 
-    fun pictureDrawn(picture: ImageBitmap) {
+    fun pictureDrawn(strips: List<ImageBitmap>) {
         mutableState.update { it.copy(picture = null) }
-        viewModelScope.launch { cards.share(picture) }
+        viewModelScope.launch { cards.share(strips) }
     }
 
     fun dismissNotice() = mutableState.update { it.copy(notice = null) }

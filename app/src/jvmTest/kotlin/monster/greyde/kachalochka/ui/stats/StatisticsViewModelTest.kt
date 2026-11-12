@@ -401,7 +401,7 @@ class StatisticsViewModelTest {
             vm.shareImage()
             val picture = ImageBitmap(1, 1)
 
-            vm.pictureDrawn(picture)
+            vm.pictureDrawn(listOf(picture))
 
             assertEquals(listOf(picture), gym.cardShares.shared)
             assertNull(vm.state.value.picture)

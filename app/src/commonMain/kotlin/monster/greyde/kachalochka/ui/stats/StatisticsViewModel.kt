@@ -269,10 +269,10 @@ class StatisticsViewModel(
         publish()
     }
 
-    fun pictureDrawn(drawn: ImageBitmap) {
+    fun pictureDrawn(strips: List<ImageBitmap>) {
         picture = null
         publish()
-        viewModelScope.launch { cardSharing.share(drawn) }
+        viewModelScope.launch { cardSharing.share(strips) }
     }
 
     fun dismissNotice() {

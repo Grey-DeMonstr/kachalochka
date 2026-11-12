@@ -410,8 +410,8 @@ class RecordingCardSharing : CardSharing {
     override var available = true
     val shared = mutableListOf<ImageBitmap>()
 
-    override suspend fun share(card: ImageBitmap) {
-        shared += card
+    override suspend fun share(strips: List<ImageBitmap>) {
+        shared += strips
     }
 }
 

@@ -22,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
@@ -30,6 +32,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CompletableDeferred
@@ -38,6 +42,9 @@ import monster.greyde.kachalochka.ui.strings.strings
 
 private val PICTURE_WIDTH = 400.dp
 private const val PICTURE_DENSITY = 2.7f
+
+/** The GPU of every phone holds a picture of this height. */
+private const val STRIP_HEIGHT = 2048
 private val CHOICE_ICON = 20.dp
 private val CHOICE_GAP = 12.dp
 
@@ -101,18 +108,21 @@ private fun ShareChoice(
 
 /**
  * Draws [content] off screen at a fixed width and density, so the picture is the same on every
- * phone, and gives that picture to [onDrawn] once [settled] is true.
+ * phone, and gives that picture to [onDrawn] once [settled] is true. The picture comes as strips
+ * from top to bottom, as a GPU cannot hold a tall picture in one piece.
  */
 @Composable
 internal fun OffScreenPicture(
     settled: Boolean,
-    onDrawn: (ImageBitmap) -> Unit,
+    onDrawn: (List<ImageBitmap>) -> Unit,
     content: @Composable () -> Unit,
 ) {
     val layer = rememberGraphicsLayer()
+    val strip = rememberGraphicsLayer()
     val recorded = remember { CompletableDeferred<Unit>() }
     val screen = LocalDensity.current
-    CompositionLocalProvider(LocalDensity provides Density(PICTURE_DENSITY, screen.fontScale)) {
+    val density = Density(PICTURE_DENSITY, screen.fontScale)
+    CompositionLocalProvider(LocalDensity provides density) {
         Box(
             Modifier
                 .clearAndSetSemantics {}
@@ -131,6 +141,15 @@ internal fun OffScreenPicture(
     }
     LaunchedEffect(Unit) {
         recorded.await()
-        onDrawn(layer.toImageBitmap())
+        val (width, height) = layer.size
+        onDrawn(
+            (0 until height step STRIP_HEIGHT).map { top ->
+                val size = IntSize(width, minOf(STRIP_HEIGHT, height - top))
+                strip.record(density, LayoutDirection.Ltr, size) {
+                    translate(top = -top.toFloat()) { drawLayer(layer) }
+                }
+                strip.toImageBitmap()
+            },
+        )
     }
 }

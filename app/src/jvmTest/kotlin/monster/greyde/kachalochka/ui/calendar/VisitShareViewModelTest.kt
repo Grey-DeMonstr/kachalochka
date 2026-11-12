@@ -171,7 +171,7 @@ class VisitShareViewModelTest {
         assertEquals(card, vm.state.value.picture)
 
         val picture = ImageBitmap(4, 4)
-        vm.pictureDrawn(picture)
+        vm.pictureDrawn(listOf(picture))
 
         assertNull(vm.state.value.picture)
         assertEquals(listOf(picture), gym.cardShares.shared)
