@@ -1,5 +1,10 @@
 Kachalochka - Changelog
 
+1.9.5
+
+- On Android, the statistics overview is shared as a visit card picture.
+
+
 1.9.4
 
 - The visit cards and the statistics cards show the platform weight of a machine.
