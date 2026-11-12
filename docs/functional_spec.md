@@ -141,7 +141,8 @@ The page shows, from the top:
    friend who has a linked machine with a set on it has a row, in the order of the names. A
    friend with two linked machines has two rows. The weight uses the platform weight of the
    account's own machine, so that it compares with its sets. Example: here the platform is
-   20 kg; a friend's record is +25 kg on a 10 kg platform; the row shows 15 kg.
+   20 kg; a friend's record is +25 kg on a 10 kg platform; the row shows 15 kg. While the set
+   form edits a set, these rows are hidden.
 6. "Today · 3 sets" (or the date of another day), then the sets of the day, for example
    "#1  (-)29.5 kg × 10", then the comment of the set on one line. A tap on a set opens it for
    editing.
@@ -970,9 +971,9 @@ Several accounts can be signed in on one device. One of them is active, and the 
 it. Each account keeps its own visits, machines and history.
 
 - Only the addition of an account asks Google. A switch does not, and works without a network.
-- You switch from the avatar menu or, while you record, from the chips of the set form. A chip shows
-  when its account has a visit today, or with "Show everyone" ([4.3](#43-set-form)). Thus a parent
-  records their own sets and their child's sets one after the other.
+- You switch from the avatar menu or, while you record, from the chips of the set form. A chip
+  shows when its account has a visit today, or with "Show everyone" ([4.3](#43-set-form)). Thus a
+  parent records their own sets and their child's sets one after the other.
 - A sign-out removes the account from the device but keeps its data. A new sign-in finds it again.
   On Android, the sign-out of the last account makes the app work without an account again.
 - Friends are not available until an account signs in.

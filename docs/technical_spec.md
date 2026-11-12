@@ -34,7 +34,7 @@ Do not replace these choices.
 | Navigation | Jetpack Navigation Compose (multiplatform) | Type-safe routes |
 | DI | Koin | No code generation; works on Wasm |
 | Local DB | SQLDelight | SQL first, type-safe queries, a JVM driver for host tests |
-| Backend client | supabase-kt (auth, postgrest, storage) | Supports Android and Wasm |
+| Backend client | supabase-kt (auth, postgrest, storage, realtime) | Supports Android and Wasm |
 | Sign-in | Credential Manager (Android), OAuth redirect (web) | Both give a Supabase session |
 | HTTP | Ktor: OkHttp on Android, JS engine on Wasm | Necessary for supabase-kt |
 | Serialization | kotlinx.serialization | Necessary for supabase-kt |
@@ -265,8 +265,10 @@ local database, so reads take the owner (see [3](#3-repositories)) and each acco
 watermark. A sign-out removes the session and keeps the rows.
 
 **Sessions.** The account store in `core/data/identity` holds the sessions. It is not in
-`domain/`, because the UI observes a `StateFlow`. Each platform stores it as it stores the
-settings: DataStore on Android, `localStorage` on the web, memory in tests.
+`domain/`, because the UI observes a `StateFlow`. It writes its JSON text through `AccountStorage`,
+which is not a `DeviceStore` (see [9.2](#92-device-settings)): `DataStoreAccountStorage` (the file
+`accounts.preferences_pb`) on Android, `LocalStorageAccountStorage` on the web and
+`InMemoryAccountStorage` on the JVM. Its `read` blocks, so the first frame has the accounts.
 
 - A switch calls `importSession` on the UI client, so one session is live at a time.
 - supabase-kt's own session storage is off: it holds one session and would fight for the same
@@ -626,9 +628,12 @@ the sheet and the drag handles keep their gestures.
 
 **Set form people.** `reload` reads which recording accounts (not trainees) have a visit on the
 day (`VisitRepository.allOn`). On a new set of today the row has the active account and these
-accounts, or all recording accounts while `ShowEveryone.checked` is set. `ShowEveryone` is a Koin
-`single` that holds one boolean in memory and saves it nowhere. The form shows the comment field
-while `SetCommentPreference.shown` or the set's comment text is set.
+accounts, or all recording accounts while `ShowEveryone.checked` is set. Any other set shows only
+the active account. The "Show everyone" box appears only on a new set of today, and only when more
+than one account can record. `ShowEveryone` is a Koin `single` that holds one boolean in memory
+and saves it nowhere. The form shows the comment field while `SetCommentPreference.shown` or the
+set's comment text is set. `SetCommentPreference` is a device setting (see
+[9.2](#92-device-settings)).
 
 **Pyramids.** `workout_set.pyramid` (migration `0031`, `22.sqm`) is true on the set that starts a
 pyramid. Nothing stores its
@@ -828,6 +833,19 @@ read leaves the friends out; the own calendar never waits for it.
 - A sync or a return to the screen reads the own rows again and keeps the windows. A switch
   starts the feed again.
 
+**Friends' records on the machine page.** `GroupReads` (`app/ui/visit`) serves the visit view
+model.
+
+- `follow` takes the active account and the open own machine. It reads the group again (through
+  `MachineReads.group`) when the account changes or `markStale` was called.
+- When a group read lands, it reads `FriendsRepository.groupPeaks`: first the kept answer, then,
+  when the group read was fresh, the server's answer.
+- `friendRecords` gives one `FriendRecord` for each friend's machine of the open machine's
+  cluster that has sets: the record in the friend's own unit. `friendLine` shifts it by the
+  `platformShift` between the two machines.
+- A read for an account other than the followed one is dropped. A failed read keeps what an
+  earlier read showed.
+
 **Gains.** A visit card compares the day's result (`dayBest`) with the prior best that the day's
 sets store (see [4.8](#48-visits-and-sets)), so a card needs only the day's rows.
 
@@ -836,9 +854,8 @@ sets store (see [4.8](#48-visits-and-sets)), so a card needs only the day's rows
 
 - A read inside `keptOnly` gives the kept answer, or fails when there is none. Other reads ask the
   server and keep the answer.
-- The feed, a friend's calendar and the machine page (`GroupReads`, which reads `groupPeaks` for
-  the friends' records) read inside `keptOnly` first, show the result, then read from the server.
-  A failed server read keeps what shows.
+- The feed, a friend's calendar and the machine page (`GroupReads`) read inside `keptOnly` first,
+  show the result, then read from the server. A failed server read keeps what shows.
   `MachineCatalogue.lastGroup` uses the kept `groupGym` when it has no read in memory.
 - The kept visits of a viewer are one list: each window replaces the visits it covers, and visits
   older than 31 days go out. An answer not read for 31 days is removed. A sign-out removes the
@@ -879,8 +896,9 @@ code can leak data by an omission.
 - A set goes only into a visit and on a machine of the set's owner. A photo belongs only to a
   machine or profile of its owner. A `tag` and a `machine_tag` must have the ids of their content
   (see [4.6](#46-machines-and-tags)).
-- The `before update` triggers `user_id_stays` keep `user_id` from changing on the gym tables and
-  `workout_plan`. `profile`, `measure` and `measurement` have owner-only policies.
+- The `before update` triggers, which call the function `user_id_stays`, keep `user_id` from
+  changing on the gym tables and `workout_plan`. `profile`, `measure` and `measurement` have
+  owner-only policies.
 - Each synced table grants `select`, `insert` and `update` to `authenticated`. It never grants
   `delete` (clients soft-delete) and grants nothing to `anon`. Policies only filter rows that a
   role can already touch.
@@ -929,9 +947,9 @@ a row can name another user's id; this is safe, because RLS limits each read.
 
 **Trainer writes.** A trainer writes the trainee's `workout_plan` rows and inserts their
 `machine`, `tag` and `machine_tag` rows. An update policy cannot tell a machine that the trainer
-added from the trainee's own. Thus the trigger `trainer_keeps_row` refuses a trainer's update that
-changes the content of a row or deletes it. A repeated upsert and a restore of a deleted row
-pass.
+added from the trainee's own. Thus the triggers that call `trainer_keeps_row` refuse a trainer's
+update that changes the content of a row or deletes it. A repeated upsert and a restore of a
+deleted row pass.
 
 **Names in groups.** `group_member.display_name` follows `member_display_name`: the nickname of the
 newest live profile, else the Google name. `my_display_name` sets it when a user makes or joins a
@@ -1034,7 +1052,8 @@ and only Android binds one: a browser cannot choose a proxy or look up a host.
 ## 8. Build, CI and release
 
 - `master` is the only long-lived branch. Each push to it runs CI.
-- **`ci.yml`** runs on each push and pull request. Its `check` job runs JDK 21 and one Gradle call,
+- **`ci.yml`** runs on each push to `master` and on each pull request. Its `check` job runs
+  JDK 21 and one Gradle call,
   `check :androidApp:assembleDebug :app:wasmJsBrowserDistribution`, then uploads the web bundle.
   Its `deploy` job needs `check` and publishes that bundle to GitHub Pages on a push to `master`.
   Thus nothing reaches Pages that did not pass the gate.
@@ -1104,8 +1123,9 @@ flag or text set. A store that cannot be read gives null, which becomes the defa
 | `InMemoryDeviceStore` | `commonMain` | A map, for the `jvm` target and the tests |
 
 `DataStoreDeviceStore` reads the file once, when Koin builds it, and then answers from that
-snapshot. The Android module builds it at start, so the first frame already has the stored values.
-Every client is built with the stored proxy, so that read must finish before any client exists.
+snapshot. The Android module binds it with `createdAtStart`, so the first frame already has the
+stored values. Every client is built with the stored proxy, so that read must finish before any
+client exists.
 
 Each setting is a class in common code over a `DeviceStore`. It extends `DeviceSetting`, which
 holds a `MutableStateFlow` that starts from the stored value. `set` writes the store first and then
@@ -1126,6 +1146,7 @@ be decoded gives the default. `appModule` binds the settings. Each platform modu
 
 The keys and their types are the stored format. A change of a key name or of its type loses the
 stored value.
+
 - A transition length stored before the presets shows as the nearest preset.
 - `NavHost` fades over a box painted with the scheme's `background`. The Android window theme is
   light, and a fade over the bare window would show it through both screens.
@@ -1178,27 +1199,30 @@ again.
 
 **Text.** `TextSharing` is bound for each platform in `platformModule()`. Android's
 `ShareSheetTextSharing` opens the share sheet. The web's `ClipboardTextSharing` writes the
-clipboard and returns the message that the screen shows. Invites use the same call.
+clipboard and returns the message that the screen shows. `InviteSharing` does the same for
+invites.
 
 - `visitShareText` (`app/ui/format`) makes the text of a visit. Its `setsSummary` writes one
   machine's weights and reps, and each screen that sums up a machine's sets calls it, so they read
-  as the shared text does.
+  as the shared text does. `sharedName` writes a machine's name, with a platform weight that the
+  sets leave out; the text and the picture of a visit both use it.
 - A browser accepts a clipboard write only just after the user's gesture, so the text's parts are
   read before the tap: `ownCard` puts a `SharedVisit` into the card's `OwnVisitUi`, and
-  `SharedVisit.text` writes it at the tap. The statistics export also reads in advance
-  (`statsExportText`).
+  `SharedVisit.text` writes it at the tap. The statistics text (`statsExportText`) uses the cards
+  that are already on screen.
 - `SharePopup` (`app/ui/share`) is the popup of both shares. `StatisticsViewModel` offers it from
   `export()` and shares the text or the picture; `statsHeader` writes the first line of both.
 - `VisitShareViewModel` is the one place that shares a visit. `VisitShareDialog` shows the popup,
   and `VisitShareNotice` shows the message under the visit.
 
-**Picture.** `CardSharing` is available only on Android. `OffScreenPicture` (`app/ui/share`)
-composes its content off screen with a fixed width and `LocalDensity`, so the picture is 1080 px
-wide on each phone, and records it into a `GraphicsLayer`. When the content has settled (the
-avatar or the photos have their final look), `toImageBitmap()` gives the picture; Android encodes
-it as PNG and shares it through the cache and the `FileProvider`. `VisitShareDialog` draws
-`SharedVisitCard` in it. `StatisticsScreen` draws `SharedStatsCards` from the `StatsPictureUi` of
-the view model: the header, then the sections and the `ProgressCard`s without a tap action.
+**Picture.** `CardSharing.available` is true only on Android; when it is false, `SharePopup` hides
+"As image". `OffScreenPicture` (`app/ui/share`) composes its content off screen with a fixed width
+and `LocalDensity`, so the picture is 1080 px wide on each phone, and records it into a
+`GraphicsLayer`. When the content has settled (the avatar or the photos have their final look),
+`toImageBitmap()` gives the picture; Android encodes it as PNG and shares it through the cache and
+the `FileProvider`. `VisitShareDialog` draws `SharedVisitCard` in it. `StatisticsScreen` draws
+`SharedStatsCards` from the `StatsPictureUi` of the view model: the header, then the sections and
+the `ProgressCard`s without a tap action.
 
 ### 9.7 Rest timer sound
 
