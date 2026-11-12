@@ -85,17 +85,31 @@ internal fun VisitCard(
     }
 }
 
-/** An own card as a shared picture shows it: every machine, and the date in place of the menu. */
+/**
+ * A card as a shared picture shows it: every machine, and [caption] (the date of a visit, the
+ * period of the statistics) in place of the menu.
+ */
 @Composable
 internal fun SharedVisitCard(
     card: VisitCardUi,
+    caption: String,
     onAvatarSettled: () -> Unit = {},
 ) {
     CardFrame(card.tag, Modifier, bottom = 14.dp) {
-        CardHead(card, onAvatarSettled) {
-            card.own?.let {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+        ) {
+            CardAvatar(card, onAvatarSettled)
+            // A caption that does not fit beside the name goes under it.
+            FlowRow(
+                Modifier.weight(1f),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                CardName(card, Modifier.padding(end = 11.dp))
                 Text(
-                    it.date,
+                    caption,
                     modifier = Modifier.padding(end = 6.dp).testTag("${card.tag}-date"),
                     fontSize = 13.sp,
                     maxLines = 1,
@@ -133,33 +147,44 @@ private fun CardFrame(
 @Composable
 private fun CardHead(
     card: VisitCardUi,
-    onAvatarSettled: () -> Unit = {},
     trailing: @Composable () -> Unit,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(11.dp),
     ) {
-        PersonAvatar(
-            card.person.userId,
-            card.person.name,
-            card.person.avatar,
-            size = 36.dp,
-            tint = card.color?.let { friendColor(it) },
-            onSettled = onAvatarSettled,
-        )
-        Text(
-            card.person.name,
-            modifier = Modifier.weight(1f).testTag("${card.tag}-name"),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+        CardAvatar(card)
+        CardName(card, Modifier.weight(1f))
         trailing()
     }
 }
+
+@Composable
+private fun CardAvatar(
+    card: VisitCardUi,
+    onSettled: () -> Unit = {},
+) = PersonAvatar(
+    card.person.userId,
+    card.person.name,
+    card.person.avatar,
+    size = 36.dp,
+    tint = card.color?.let { friendColor(it) },
+    onSettled = onSettled,
+)
+
+@Composable
+private fun CardName(
+    card: VisitCardUi,
+    modifier: Modifier,
+) = Text(
+    card.person.name,
+    modifier = modifier.testTag("${card.tag}-name"),
+    fontSize = 16.sp,
+    fontWeight = FontWeight.Medium,
+    maxLines = 1,
+    overflow = TextOverflow.Ellipsis,
+    color = MaterialTheme.colorScheme.onBackground,
+)
 
 @Composable
 private fun CardBody(

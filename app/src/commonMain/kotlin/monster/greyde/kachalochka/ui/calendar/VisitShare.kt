@@ -44,7 +44,7 @@ internal fun VisitShareDialog(viewModel: VisitShareViewModel) {
             }
         }
     }
-    state.picture?.let { CardPicture(it, viewModel::pictureDrawn) }
+    state.picture?.let { CardPicture(it, it.own?.date.orEmpty(), viewModel::pictureDrawn) }
 }
 
 /** What the last text share of the visit on [day] said; a tap hides it. */
@@ -84,12 +84,13 @@ private fun GroupByTagBox(
 
 /** Draws [card] off screen and gives its picture to [onDrawn] once the avatar is in it. */
 @Composable
-private fun CardPicture(
+internal fun CardPicture(
     card: VisitCardUi,
+    caption: String,
     onDrawn: (List<ImageBitmap>) -> Unit,
 ) {
     var avatarSettled by remember { mutableStateOf(false) }
     OffScreenPicture(avatarSettled, onDrawn) {
-        SharedVisitCard(card, onAvatarSettled = { avatarSettled = true })
+        SharedVisitCard(card, caption, onAvatarSettled = { avatarSettled = true })
     }
 }

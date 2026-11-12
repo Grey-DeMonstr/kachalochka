@@ -30,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -62,6 +61,7 @@ import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.StatsSort
+import monster.greyde.kachalochka.ui.calendar.CardPicture
 import monster.greyde.kachalochka.ui.components.ChipRow
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
@@ -69,7 +69,6 @@ import monster.greyde.kachalochka.ui.components.SquareIconButton
 import monster.greyde.kachalochka.ui.components.TagText
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
-import monster.greyde.kachalochka.ui.share.OffScreenPicture
 import monster.greyde.kachalochka.ui.share.SharePopup
 import monster.greyde.kachalochka.ui.strings.strings
 import monster.greyde.kachalochka.ui.theme.gainColor
@@ -131,12 +130,7 @@ fun StatisticsScreen(
                 viewModel::cancelShare,
             )
         }
-        state.picture?.let { picture ->
-            var settled by remember { mutableStateOf(false) }
-            OffScreenPicture(settled, viewModel::pictureDrawn) {
-                SharedStatsCards(picture) { settled = true }
-            }
-        }
+        state.picture?.let { CardPicture(it.card, it.period, viewModel::pictureDrawn) }
         Box(Modifier.weight(1f)) {
             Column(Modifier.fillMaxSize()) {
                 Column(
@@ -517,46 +511,10 @@ private fun SectionTitle(
     )
 }
 
-/**
- * The header, then the sections as the overview shows them. [onSettled] comes once every card's
- * photo has its final look.
- */
-@Composable
-internal fun SharedStatsCards(
-    picture: StatsPictureUi,
-    onSettled: () -> Unit,
-) {
-    val total = picture.sections.sumOf { it.items.size }
-    var settledCards by remember { mutableIntStateOf(0) }
-    LaunchedEffect(settledCards) { if (settledCards >= total) onSettled() }
-    Column {
-        Text(
-            picture.header,
-            modifier = Modifier.testTag("stats-picture-header"),
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        picture.sections.forEach { section ->
-            section.title?.let { SectionTitle(it, "stats-section-$it") }
-            Column(
-                Modifier.padding(top = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                section.items.forEach { card ->
-                    ProgressCard(card, onPhotoSettled = { settledCards++ })
-                }
-            }
-        }
-    }
-}
-
-/** A tap on the card calls [onClick], when there is one. */
 @Composable
 private fun ProgressCard(
     card: ProgressCardUi,
-    onClick: (() -> Unit)? = null,
-    onPhotoSettled: () -> Unit = {},
+    onClick: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
     val id = card.id.value
@@ -565,7 +523,7 @@ private fun ProgressCard(
             .fillMaxWidth()
             .clip(CardShape)
             .border(1.dp, colors.outlineVariant, CardShape)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .clickable(onClick = onClick)
             .padding(12.dp)
             .testTag("stats-card-$id"),
         verticalArrangement = Arrangement.spacedBy(11.dp),
@@ -574,12 +532,7 @@ private fun ProgressCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            MachineThumbnail(
-                card.photo,
-                PhosphorIcons.Barbell,
-                size = 44.dp,
-                onSettled = onPhotoSettled,
-            )
+            MachineThumbnail(card.photo, PhosphorIcons.Barbell, size = 44.dp)
             Text(card.name, Modifier.weight(1f), fontSize = 16.sp, color = colors.onBackground)
             ChangeChip(card.change, card.improved, "stats-change-$id")
         }

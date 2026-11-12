@@ -276,7 +276,8 @@ A visit with sets has "Share" in the top bar. It opens a popup:
   as in the list, and splits the text into the same sections.
 - "As image" (Android only) shares a picture of the visit card (see [6.1](#61-calendar)) in the
   current theme. The picture shows every machine and the date ("Thursday, 29 October", with the
-  year for an earlier year). The picture has the same width on every phone.
+  year for an earlier year). A date that does not fit beside the name goes on a line under it.
+  The picture has the same width on every phone.
 
 The text starts with the nickname and the short weekday ("GDM, Thu"). Without a nickname it uses
 the Google name. Without an account it starts with the weekday only ("Thu"). Then come an empty
@@ -745,10 +746,11 @@ machine. A period without sets shows "No sets in this period".
 
 - "As text" gives the cards as text. With groups by tags, the lines make sections as in a shared
   visit.
-- "As image" (Android only) shares a picture of the overview in the current theme. The picture
-  shows the same first line as the text ("GDM, past month"), then the sections and the cards as
-  the overview shows them, with the same sort, groups and filter, and the photos of the
-  machines. It has the same width as the picture of a visit.
+- "As image" (Android only) shares the overview as the picture of a visit (see
+  [4.5](#45-share-a-visit)): a visit card with the period ("past month") in place of the date.
+  The card has the tags of the listed machines, then one row for each card of the overview, in
+  its order and with its filter: the name, the best set of the period, and the change in green
+  when it is a gain. A machine new in the period shows the "New" chip.
 
 The text:
 

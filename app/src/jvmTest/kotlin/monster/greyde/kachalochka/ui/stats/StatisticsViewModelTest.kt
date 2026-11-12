@@ -31,6 +31,7 @@ import monster.greyde.kachalochka.core.domain.profile.Profile
 import monster.greyde.kachalochka.core.domain.profile.Sex
 import monster.greyde.kachalochka.fakes.FakeGym
 import monster.greyde.kachalochka.ui.account.Nickname
+import monster.greyde.kachalochka.ui.calendar.ExerciseUi
 import monster.greyde.kachalochka.ui.friends.ME
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.signedInGym
@@ -97,6 +98,7 @@ class StatisticsViewModelTest {
         on.measures,
         measurements,
         on.deviceClock,
+        on.avatars,
         Nickname(on.profiles, on.accounts),
         texts,
         on.cardShares,
@@ -392,17 +394,48 @@ class StatisticsViewModelTest {
     }
 
     @Test
-    fun sharing_as_image_gives_the_header_and_the_shown_sections_to_draw() {
-        val vm = viewModel()
-        vm.export()
+    fun sharing_as_image_draws_the_shown_cards_as_a_visit_card_of_the_period() =
+        runTest {
+            gym.machines.upsert(press.copy(tags = setOf("Legs")))
+            record(gravitron, CalendarDay(2023, 11, 2), 27.5 to 8)
+            val vm = viewModel()
+            vm.export()
 
-        vm.shareImage()
+            vm.shareImage()
 
-        val state = vm.state.value
-        assertFalse(state.shareOffered)
-        assertEquals(StatsPictureUi("past month", state.overallSections), state.picture)
-        assertEquals(emptyList(), gym.cardShares.shared)
-    }
+            val state = vm.state.value
+            assertFalse(state.shareOffered)
+            val picture = assertNotNull(state.picture)
+            assertEquals("past month", picture.period)
+            assertEquals("Me", picture.card.person.name)
+            assertEquals(listOf("legs"), picture.card.tags)
+            assertEquals(
+                listOf(
+                    ExerciseUi("Row", "40 kg × 12", "+2 reps"),
+                    ExerciseUi("Leg press", "75 kg × 8", "+5 kg"),
+                    ExerciseUi("Gravitron", "(-)27.5 kg × 8", null, isNew = true),
+                ),
+                picture.card.exercises,
+            )
+            assertEquals(emptyList(), gym.cardShares.shared)
+        }
+
+    @Test
+    fun a_picture_row_shows_no_change_that_is_not_a_gain() =
+        runTest {
+            val curl = Machine.new("Curl", null, t0)
+            gym.machines.upsert(curl)
+            record(curl, CalendarDay(2023, 10, 1), 50.0 to 10)
+            record(curl, CalendarDay(2023, 11, 3), 40.0 to 10)
+            val vm = viewModel()
+            vm.toggleImprovementsOnly()
+            vm.export()
+
+            vm.shareImage()
+
+            val rows = assertNotNull(vm.state.value.picture).card.exercises.orEmpty()
+            assertEquals(ExerciseUi("Curl", "40 kg × 10", null), rows.single { it.name == "Curl" })
+        }
 
     @Test
     fun a_drawn_picture_goes_to_the_card_sharing_and_is_cleared() =

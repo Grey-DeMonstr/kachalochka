@@ -157,31 +157,6 @@ class StatisticsScreenTest {
     }
 
     @Test
-    fun the_picture_shows_the_header_and_each_card_and_says_it_settled() {
-        val card =
-            ProgressCardUi(
-                press.id,
-                "Leg press",
-                null,
-                "Start",
-                "70 kg × 8",
-                "Best",
-                "75 kg × 8",
-                "+5 kg",
-                true,
-            )
-        val sections = listOf(StatsSectionUi("LEGS", listOf(card)))
-        val picture = StatsPictureUi("GDM, past month", sections)
-        var settled = false
-        runScreenTest(gym, screen = { SharedStatsCards(picture) { settled = true } }) {
-            onNodeWithTag("stats-picture-header").assertTextEquals("GDM, past month")
-            onNodeWithTag("stats-section-LEGS").assertExists()
-            onNodeWithTag("stats-change-${press.id.value}").assertTextEquals("+5 kg")
-            waitUntil { settled }
-        }
-    }
-
-    @Test
     fun the_search_filters_the_machines_shows_the_found_part_and_the_cross_cancels_it() =
         runScreenTest(gym, screen = { StatisticsScreen(press.id, {}, {}) }) {
             onNodeWithTag("stats-search").assertDoesNotExist()

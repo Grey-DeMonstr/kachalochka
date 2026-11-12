@@ -1246,14 +1246,15 @@ invites.
 **Picture.** `CardSharing.available` is true only on Android; when it is false, `SharePopup` hides
 "As image". `OffScreenPicture` (`app/ui/share`) composes its content off screen with a fixed width
 and `LocalDensity`, so the picture is 1080 px wide on each phone, and records it into a
-`GraphicsLayer`. When the content has settled (the avatar or the photos have their final look),
+`GraphicsLayer`. When the content has settled (the avatar has its final look),
 it gives the picture as strips of at most 2048 px in height, from top to bottom: a second layer
 draws one part of the first and `toImageBitmap()` reads it. A bitmap from a layer is in GPU
 memory, and a GPU cannot hold a picture that is higher than its limit, which each device sets.
 Android joins the strips into one bitmap in normal memory, encodes it as PNG and shares it through
-the cache and the `FileProvider`. `VisitShareDialog` draws `SharedVisitCard` in it.
-`StatisticsScreen` draws `SharedStatsCards` from the `StatsPictureUi` of the view model: the
-header, then the sections and the `ProgressCard`s without a tap action.
+the cache and the `FileProvider`. `CardPicture` draws `SharedVisitCard` in it, for
+`VisitShareDialog` and for `StatisticsScreen`. `StatisticsViewModel.shareImage` makes the
+`StatsPictureUi`: a `VisitCardUi` whose rows are the overview's cards, and the period as the
+caption.
 
 ### 9.7 Rest timer sound
 

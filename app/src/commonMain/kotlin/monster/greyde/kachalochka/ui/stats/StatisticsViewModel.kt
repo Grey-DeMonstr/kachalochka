@@ -33,9 +33,14 @@ import monster.greyde.kachalochka.core.domain.measures.MeasurementRepository
 import monster.greyde.kachalochka.core.domain.measures.cycleOf
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
+import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.groupByTagChoice
+import monster.greyde.kachalochka.ui.calendar.ExerciseUi
+import monster.greyde.kachalochka.ui.calendar.VisitCardUi
+import monster.greyde.kachalochka.ui.calendar.cardTags
+import monster.greyde.kachalochka.ui.calendar.ownPerson
 import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.UtcOffset
 import monster.greyde.kachalochka.ui.format.dayMonthLabel
@@ -78,10 +83,10 @@ data class StatsSectionUi<T>(
     val items: List<T>,
 )
 
-/** What the picture of the overview shows: the [header], then the [sections] as listed. */
+/** The overview as its picture shows it: a visit [card], with the [period] in place of the date. */
 data class StatsPictureUi(
-    val header: String,
-    val sections: List<StatsSectionUi<ProgressCardUi>>,
+    val card: VisitCardUi,
+    val period: String,
 )
 
 /** A null [selected] is "Overall", whose cards are [overall]. */
@@ -135,6 +140,7 @@ class StatisticsViewModel(
     private val measures: MeasureRepository,
     private val measurements: MeasurementRepository,
     private val clock: DeviceClock,
+    private val avatars: AccountAvatars,
     private val nickname: Nickname,
     private val sharing: TextSharing,
     private val cardSharing: CardSharing,
@@ -263,12 +269,35 @@ class StatisticsViewModel(
         }
     }
 
+    /** Draws the overall cards, as shown, as the rows of a visit card. */
     fun shareImage() {
-        val shown = mutableState.value
+        val cards = mutableState.value.overall
+        val read = shown?.own ?: return
+        val machines = read.machines.associateBy { it.id }
         shareOffered = false
-        picture = StatsPictureUi(statsHeader(sharer, period), shown.overallSections)
+        picture =
+            StatsPictureUi(
+                VisitCardUi(
+                    tag = "stats-picture",
+                    person = ownPerson(accounts, avatars, read.owner),
+                    color = null,
+                    day = clock.today(),
+                    tags = cardTags(cards.mapNotNull { machines[it.id] }),
+                    exercises = cards.map(::pictureRow),
+                ),
+                AppStrings.current.forPeriod(period.months),
+            )
         publish()
     }
+
+    /** [card] as a row of a visit card, which shows a change only when it is a gain. */
+    private fun pictureRow(card: ProgressCardUi) =
+        ExerciseUi(
+            card.name,
+            card.to,
+            card.change.takeIf { card.improved && !card.newMachine },
+            isNew = card.newMachine,
+        )
 
     fun pictureDrawn(strips: List<ImageBitmap>) {
         picture = null
