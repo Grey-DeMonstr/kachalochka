@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -32,6 +33,7 @@ fun TextInput(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     valid: Boolean = true,
     singleLine: Boolean = true,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(8.dp)
@@ -57,6 +59,7 @@ fun TextInput(
             textStyle = TextStyle(fontSize = 17.sp, color = colors.onBackground),
             cursorBrush = SolidColor(colors.secondary),
             keyboardOptions = keyboardOptions,
+            visualTransformation = visualTransformation,
             modifier = modifier.fillMaxWidth(),
         )
     }

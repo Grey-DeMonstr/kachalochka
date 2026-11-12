@@ -7,7 +7,6 @@ import kotlinx.coroutines.delay
 import monster.greyde.kachalochka.FailureLog
 import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.gym.VisitNormalizer
-import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.di.coreModule
 import monster.greyde.kachalochka.core.domain.family.FamilyRepository
 import monster.greyde.kachalochka.navigation.TransitionPreference
@@ -109,8 +108,8 @@ val appModule =
         }
         singleOf(::Nickname)
         singleOf(::FriendColorStore)
-        single { PhotoLoaders(get(), get<SupabaseCredentials>().proxy) }
-        single { NetworkChecks(proxiedClient(get<SupabaseCredentials>().proxy), get(), get()) }
+        single { PhotoLoaders(get(), get()) }
+        single { NetworkChecks(proxiedClient(get()), get(), get()) }
         singleOf(::AccountAvatars)
         singleOf(::MachineCatalogue)
         singleOf(::MachineReads)

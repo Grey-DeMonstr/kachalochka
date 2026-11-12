@@ -1031,12 +1031,18 @@ with `FOREGROUND_SERVICE`. A rest is much shorter than the few minutes that such
 - Settings picks the sound with `ACTION_RINGTONE_PICKER` (notification sounds, no silence), and
   asks for `POST_NOTIFICATIONS` on Android 13 and later.
 
-**Network check.** The network screen (`ui/network`) shows only where a `DeviceNetwork` is bound,
-and only Android binds one: a browser cannot choose a proxy or look up a host.
+**Developer panel.** `DeveloperPanelScreen` (`ui/network`) is a `PrimaryTabRow` over the `PanelTab`
+enum ("Info", "Proxy settings"); a new tab is a new entry. The selected tab is `rememberSaveable`.
+The home screen links to it only where a `DeviceNetwork` is bound, and only Android binds one: a
+browser cannot choose a proxy or look up a host.
 
-- The proxy is `SupabaseCredentials.proxy`, a Ktor `ProxyConfig`. Each Supabase client, Coil's
-  client and the checks' client use it. Android binds credentials that add the stored
-  `ProxySetting`, so a change applies at the next start.
+- The proxy is `SupabaseCredentials.proxy`, a Ktor `ProxyConfig`, with an optional
+  `SupabaseCredentials.proxyLogin`. Each Supabase client, Coil's client and the checks' client call
+  `HttpClientEngineConfig.goThrough(proxy, login)`, an `expect` function of `core`. Android binds
+  credentials that add the stored `ProxySetting`, so a change applies at the next start.
+- Requests are HTTPS, so the proxy sees only the CONNECT request and a header cannot reach it. The
+  `actual` for OkHttp (`sqlMain`) sets a `proxyAuthenticator` that answers the 407 with
+  `Proxy-Authorization: Basic`. A blank login sets none. The `wasmJs` `actual` does nothing.
 - The proxy address is not resolved in advance: OkHttp resolves it off the main thread, and
   Android refuses a lookup on the main thread.
 - `WorkManagerSyncTrigger` and `LastFailure` keep the last sync and the last background failure in
@@ -1168,7 +1174,7 @@ be decoded gives the default. `appModule` binds the settings. Each platform modu
 | Visits mode | `VisitsModePreference`: calendar or feed | `visits_mode` |
 | Feed person | `FeedPeoplePreference`: at most one person for each viewer | `feed_selected_person` |
 | Set comment | `SetCommentPreference`: whether the set form has a comment field | `set_comment_shown` |
-| Proxy | `ProxyPreference`: the address and whether it is used | `proxy_address`, `proxy_used` |
+| Proxy | `ProxyPreference`: the address, whether it is used, the login and the password | `proxy_address`, `proxy_used`, `proxy_login`, `proxy_password` |
 
 The keys and their types are the stored format. A change of a key name or of its type loses the
 stored value.

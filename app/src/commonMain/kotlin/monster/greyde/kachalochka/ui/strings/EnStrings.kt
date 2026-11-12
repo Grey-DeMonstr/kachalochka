@@ -92,7 +92,11 @@ object EnStrings : Strings {
 
     override fun version(name: String) = "Version $name"
 
-    override val network = "Network"
+    override val developerPanel = "Developer panel"
+    override val infoTab = "Info"
+    override val proxyTab = "Proxy settings"
+    override val proxyLogin = "Login"
+    override val proxyPassword = "Password"
     override val proxyAddress = "host:port"
     override val useProxy = "Use proxy"
     override val proxyAfterRestart = "The proxy starts to work after the app restarts."

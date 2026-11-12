@@ -150,12 +150,18 @@ class DeviceSettingsTest {
         }
 
     @Test
-    fun the_proxy_keeps_both_parts() =
+    fun the_proxy_keeps_all_its_parts() =
         runTest {
-            ProxyPreference(store).set(ProxySetting("192.0.2.7:3128", true))
+            ProxyPreference(store).set(ProxySetting("192.0.2.7:3128", true, "ivan", "secret"))
 
             assertEquals("192.0.2.7:3128", store.read(DeviceKey.Text("proxy_address")))
             assertEquals(true, store.read(DeviceKey.Flag("proxy_used")))
+            assertEquals("ivan", store.read(DeviceKey.Text("proxy_login")))
+            assertEquals("secret", store.read(DeviceKey.Text("proxy_password")))
+            assertEquals(
+                ProxySetting("192.0.2.7:3128", true, "ivan", "secret"),
+                ProxyPreference(store).setting.value,
+            )
         }
 
     @Test

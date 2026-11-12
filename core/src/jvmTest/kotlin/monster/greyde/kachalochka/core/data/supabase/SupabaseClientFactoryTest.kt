@@ -2,10 +2,12 @@
 
 package monster.greyde.kachalochka.core.data.supabase
 
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.ktor.client.engine.ProxyBuilder
+import io.ktor.client.engine.okhttp.OkHttpConfig
 import io.ktor.http.Url
 import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.identity.AccountSession
@@ -19,6 +21,11 @@ import monster.greyde.kachalochka.core.data.identity.SessionRefresh
 import monster.greyde.kachalochka.core.data.identity.accountSession
 import monster.greyde.kachalochka.core.data.identity.clockAt
 import monster.greyde.kachalochka.core.data.sync.SyncSession
+import okhttp3.Credentials
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import okhttp3.Request
+import okhttp3.Response
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -165,6 +172,55 @@ class SupabaseClientFactoryTest {
             supabaseClient(credentials)
                 .httpClient.httpClient.engine.config.proxy,
         )
+    }
+
+    private fun proxyAnswer(client: SupabaseClient): Request? {
+        val config = client.httpClient.httpClient.engine.config as OkHttpConfig
+        // Ktor keeps the OkHttp settings of an engine internal.
+        val getter = OkHttpConfig::class.java.methods.single { it.name.startsWith("getConfig") }
+
+        @Suppress("UNCHECKED_CAST")
+        val settings = getter.invoke(config) as OkHttpClient.Builder.() -> Unit
+        val okHttp = OkHttpClient.Builder().apply(settings).build()
+        val request = Request.Builder().url("https://example.test").build()
+        val refusal =
+            Response
+                .Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(407)
+                .message("Proxy Authentication Required")
+                .build()
+        return okHttp.proxyAuthenticator.authenticate(null, refusal)
+    }
+
+    @Test
+    fun a_proxy_that_asks_for_a_login_gets_it_from_every_client() =
+        runTest {
+            val proxied =
+                credentials.copy(
+                    proxy = ProxyBuilder.http(Url("http://127.0.0.1:3128")),
+                    proxyLogin = ProxyLogin("ivan", "secret"),
+                )
+            val clients =
+                listOf(
+                    supabaseClient(proxied),
+                    syncSupabaseClient(proxied, tokens(ivanStore()), SyncSession()),
+                )
+
+            clients.forEach {
+                assertEquals(
+                    Credentials.basic("ivan", "secret"),
+                    proxyAnswer(it)?.header("Proxy-Authorization"),
+                )
+            }
+        }
+
+    @Test
+    fun a_proxy_without_a_login_gets_no_answer_for_its_407() {
+        val proxied = credentials.copy(proxy = ProxyBuilder.http(Url("http://127.0.0.1:3128")))
+
+        assertNull(proxyAnswer(supabaseClient(proxied)))
     }
 
     @Test

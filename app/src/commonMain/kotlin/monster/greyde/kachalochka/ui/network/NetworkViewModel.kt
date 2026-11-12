@@ -29,7 +29,7 @@ class NetworkViewModel(
             "App" to AppVersion.NAME,
             "Time" to clock.now().toString(),
             "Server" to Url(credentials.url).host,
-            "Proxy in use" to (credentials.proxy?.toString() ?: "none"),
+            "Proxy in use" to proxyFact(credentials),
             "Signed in" to
                 "${if (accounts.activeId.value != null) "yes" else "no"}, " +
                 "${accounts.accounts.value.size} accounts",
@@ -55,6 +55,11 @@ class NetworkViewModel(
 
     fun share() {
         viewModelScope.launch { catching { sharing.share(networkReport(facts, rows.value)) } }
+    }
+
+    private fun proxyFact(credentials: SupabaseCredentials): String {
+        val proxy = credentials.proxy?.toString() ?: return "none"
+        return if (credentials.proxyLogin != null) "$proxy (with login)" else proxy
     }
 
     fun setProxy(setting: ProxySetting) {

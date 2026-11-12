@@ -1,7 +1,6 @@
 package monster.greyde.kachalochka.ui.network
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.ProxyConfig
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
@@ -9,6 +8,7 @@ import io.ktor.http.Url
 import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.profile.PROFILE_TABLE
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
+import monster.greyde.kachalochka.core.data.supabase.goThrough
 import kotlin.time.TimeSource
 
 /** What only the device can tell about its network. Only Android binds one. */
@@ -19,7 +19,8 @@ interface DeviceNetwork {
     suspend fun addressesOf(host: String): List<String>
 }
 
-fun proxiedClient(proxy: ProxyConfig?): HttpClient = HttpClient { engine { this.proxy = proxy } }
+fun proxiedClient(credentials: SupabaseCredentials): HttpClient =
+    HttpClient { engine { goThrough(credentials.proxy, credentials.proxyLogin) } }
 
 /** [run] gives the answer it got, or throws the error it got. */
 class NetworkCheck(

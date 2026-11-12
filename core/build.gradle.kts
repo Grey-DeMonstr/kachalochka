@@ -117,6 +117,7 @@ kotlin {
         named("sqlMain") {
             dependencies {
                 implementation(libs.sqldelight.runtime)
+                implementation(libs.ktor.client.okhttp)
             }
         }
         jvmTest.dependencies {

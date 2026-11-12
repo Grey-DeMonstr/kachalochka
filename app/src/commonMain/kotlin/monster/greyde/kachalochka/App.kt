@@ -30,6 +30,7 @@ import monster.greyde.kachalochka.core.domain.measures.MeasureId
 import monster.greyde.kachalochka.navigation.AccountRoute
 import monster.greyde.kachalochka.navigation.BodyFatRoute
 import monster.greyde.kachalochka.navigation.CalendarRoute
+import monster.greyde.kachalochka.navigation.DeveloperPanelRoute
 import monster.greyde.kachalochka.navigation.FriendCalendarRoute
 import monster.greyde.kachalochka.navigation.FriendMachineRoute
 import monster.greyde.kachalochka.navigation.FriendVisitRoute
@@ -44,7 +45,6 @@ import monster.greyde.kachalochka.navigation.MeasureRoute
 import monster.greyde.kachalochka.navigation.MeasurementFormRoute
 import monster.greyde.kachalochka.navigation.MeasuresRoute
 import monster.greyde.kachalochka.navigation.MineChooserRoute
-import monster.greyde.kachalochka.navigation.NetworkRoute
 import monster.greyde.kachalochka.navigation.PageFooter
 import monster.greyde.kachalochka.navigation.PeopleRoute
 import monster.greyde.kachalochka.navigation.PlanRoute
@@ -84,7 +84,7 @@ import monster.greyde.kachalochka.ui.measures.BodyFatScreen
 import monster.greyde.kachalochka.ui.measures.MeasureScreen
 import monster.greyde.kachalochka.ui.measures.MeasurementFormScreen
 import monster.greyde.kachalochka.ui.measures.MeasuresScreen
-import monster.greyde.kachalochka.ui.network.NetworkScreen
+import monster.greyde.kachalochka.ui.network.DeveloperPanelScreen
 import monster.greyde.kachalochka.ui.plans.PlanFormScreen
 import monster.greyde.kachalochka.ui.plans.PlansScreen
 import monster.greyde.kachalochka.ui.settings.AccountScreen
@@ -182,11 +182,11 @@ fun App() {
                         onOpenMeasures = { navController.navigate(MeasuresRoute) },
                         onOpenPlans = { navController.navigate(PlansRoute) },
                         onOpenStatistics = { navController.navigate(StatisticsRoute()) },
-                        onOpenNetwork = { navController.navigate(NetworkRoute) },
+                        onOpenDeveloperPanel = { navController.navigate(DeveloperPanelRoute) },
                     )
                 }
-                composable<NetworkRoute> {
-                    NetworkScreen(onBack = { navController.popBackStack() })
+                composable<DeveloperPanelRoute> {
+                    DeveloperPanelScreen(onBack = { navController.popBackStack() })
                 }
                 composable<StatisticsRoute> { entry ->
                     val route = entry.toRoute<StatisticsRoute>()

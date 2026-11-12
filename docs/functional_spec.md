@@ -29,7 +29,7 @@ bar. The visit screen shows the day as its heading.
 - A tap on the avatar opens the account menu. Under "Recording sets as" it lists the accounts on
   the device, the active one marked; a Google account shows its e-mail under the name. Then come
   "Add account", "Settings" and "Sign out of …". A child or a trainee has no
-  sign-out. On Settings, "Profile", "People", "Account" and the network screen, the menu has no
+  sign-out. On Settings, "Profile", "People", "Account" and the developer panel, the menu has no
   "Settings".
 - Without an account, the avatar is an empty outline.
 - An avatar, on every screen, is the photo that the person chose in "Profile", else their Google
@@ -45,7 +45,7 @@ The home screen shows:
    "Friends" do not show.
 3. On Android without an account: "Sign in with Google" under the rows.
 4. At the very bottom: the version, for example "Version 1.1.0". On Android, five taps on it show
-   the network check (see [12](#12-network-check)).
+   the developer panel (see [12](#12-developer-panel)).
 
 ## 3. Settings
 
@@ -1145,19 +1145,21 @@ code entry, or their "Add" in the link question, is their consent; nothing links
   menu. In the machine list, a machine has no link button.
 - A person who is both a child and a trainee of accounts on one device is a child.
 
-## 12. Network check
+## 12. Developer panel
 
-The network check helps the owner of the app find why a device cannot connect to the server. It
+The developer panel helps the owner of the app find why a device cannot connect to the server. It
 is hidden and is only on Android.
 
-1. Tap the version at the bottom of the home screen five times. A link "Network" shows next to the
-   version until the app stops.
-2. Tap "Network" to open the network screen.
+1. Tap the version at the bottom of the home screen five times. A link "Developer panel" shows at
+   the right edge, opposite the version, until the app stops.
+2. Tap "Developer panel" to open the panel.
 
-The screen starts with the proxy setting (see below). Then it shows the app and Android versions,
-the device, the time and the time zone, the server host, the network type, the DNS servers and
-Private DNS, the system proxy and the proxy in use, the sign-in state with the number of accounts
-on the device, and the time and result of the last sync and the last background error since the app
+The panel has two tabs, "Info" and "Proxy settings". "Info" is open first.
+
+**Info.** The tab shows the app and Android versions, the device, the time and the time zone, the
+server host, the network type, the DNS servers and Private DNS, the system proxy and the proxy in
+use (with "(with login)" when it has a login), the sign-in state with the number of accounts on the
+device, and the time and result of the last sync and the last background error since the app
 started.
 
 Then it does the checks: it finds the addresses of the server, and sends requests to the sign-in,
@@ -1165,13 +1167,15 @@ data and photo services of the server, to ya.ru and to google.com. Each check sh
 its result, its time in milliseconds and the answer or the error text. A check is good when an
 answer comes, whatever its HTTP status.
 
-"Share" sends the full report as text. The report never contains keys, tokens or e-mail
+"Share" sends the full report as text. The report never contains keys, tokens, passwords or e-mail
 addresses.
 
-**Proxy.** The screen sets an HTTP proxy: an address ("host:port") and "Use proxy".
-When it is set, all requests of the app to the server go through it: sign-in, sync, friends' data,
-photos and the checks. The device keeps the setting. A change applies after the app starts again,
-as the note "The proxy starts to work after the app restarts." tells.
+**Proxy settings.** The tab sets an HTTP proxy: an address ("host:port"), an optional login and
+an optional password, and "Use proxy". The password shows as dots. When the proxy is set, all
+requests of the app to the server go through it: sign-in, sync, friends' data, photos and the
+checks. If the proxy asks for a login, the app sends the login and the password. The device keeps
+the setting. A change applies after the app starts again, as the note "The proxy starts to work
+after the app restarts." tells.
 
 ## 13. Privacy and terms
 

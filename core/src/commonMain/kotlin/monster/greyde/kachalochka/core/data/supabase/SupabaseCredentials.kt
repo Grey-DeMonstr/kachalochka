@@ -2,6 +2,11 @@ package monster.greyde.kachalochka.core.data.supabase
 
 import io.ktor.client.engine.ProxyConfig
 
+data class ProxyLogin(
+    val login: String,
+    val password: String,
+)
+
 /** Absent credentials are normal: the build must work on a machine with no Supabase project. */
 data class SupabaseCredentials(
     val url: String,
@@ -10,6 +15,8 @@ data class SupabaseCredentials(
     val googleWebClientId: String = "",
     // The HTTP proxy that every request goes through; null goes direct.
     val proxy: ProxyConfig? = null,
+    // What the proxy asks for when it answers with 407; null if it asks for nothing.
+    val proxyLogin: ProxyLogin? = null,
 ) {
     val isConfigured: Boolean = url.isNotBlank() && anonKey.isNotBlank()
 

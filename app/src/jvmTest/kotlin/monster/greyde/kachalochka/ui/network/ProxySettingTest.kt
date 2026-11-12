@@ -1,5 +1,6 @@
 package monster.greyde.kachalochka.ui.network
 
+import monster.greyde.kachalochka.core.data.supabase.ProxyLogin
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -12,6 +13,15 @@ class ProxySettingTest {
             "pc.example.test" to 8080,
             ProxySetting("pc.example.test:8080", true).endpoint,
         )
+    }
+
+    @Test
+    fun a_filled_login_goes_with_a_used_proxy() {
+        val setting = ProxySetting("192.0.2.7:3128", true, "ivan", "secret")
+
+        assertEquals(ProxyLogin("ivan", "secret"), setting.proxyLogin)
+        assertNull(setting.copy(login = " ").proxyLogin)
+        assertNull(setting.copy(used = false).proxyLogin)
     }
 
     @Test

@@ -18,11 +18,11 @@ class NetworkScreenTest {
     @Test
     fun the_screen_shows_the_facts_and_the_result_of_every_check() {
         val gym = FakeGym()
-        runScreenTest(gym, screen = { NetworkScreen(onBack = {}) }) {
+        runScreenTest(gym, screen = { DeveloperPanelScreen(onBack = {}) }) {
             waitUntil { gym.serverAnswers.requestHistory.size == 5 }
             waitForIdle()
 
-            onNodeWithTag("top-bar-title").assertTextEquals("Network")
+            onNodeWithTag("top-bar-title").assertTextEquals("Developer panel")
             listOf(
                 "App: ${AppVersion.NAME}",
                 "Time: 2023-11-14T22:13:20Z",
@@ -40,7 +40,7 @@ class NetworkScreenTest {
     @Test
     fun share_sends_the_whole_report_as_text() {
         val gym = FakeGym()
-        runScreenTest(gym, screen = { NetworkScreen(onBack = {}) }) {
+        runScreenTest(gym, screen = { DeveloperPanelScreen(onBack = {}) }) {
             waitUntil { gym.serverAnswers.requestHistory.size == 5 }
             waitForIdle()
 
@@ -57,12 +57,32 @@ class NetworkScreenTest {
     @Test
     fun the_device_keeps_the_proxy_that_is_typed_and_checked() {
         val gym = FakeGym()
-        runScreenTest(gym, screen = { NetworkScreen(onBack = {}) }) {
+        runScreenTest(gym, screen = { DeveloperPanelScreen(onBack = {}) }) {
+            onNodeWithTag("tab-proxy").performClick()
             onNodeWithTag("proxy-address").performTextInput("192.0.2.7:3128")
+            onNodeWithTag("proxy-login").performTextInput("ivan")
+            onNodeWithTag("proxy-password").performTextInput("secret")
             onNodeWithTag("use-proxy").performClick()
             waitForIdle()
         }
 
-        assertEquals(ProxySetting("192.0.2.7:3128", true), gym.proxies.setting.value)
+        assertEquals(
+            ProxySetting("192.0.2.7:3128", true, "ivan", "secret"),
+            gym.proxies.setting.value,
+        )
+    }
+
+    @Test
+    fun the_tabs_split_the_facts_from_the_proxy_settings() {
+        runScreenTest(FakeGym(), screen = { DeveloperPanelScreen(onBack = {}) }) {
+            onNodeWithTag("tab-info").assertTextEquals("Info")
+            onNodeWithTag("tab-proxy").assertTextEquals("Proxy settings")
+            onNodeWithTag("proxy-address").assertDoesNotExist()
+            onNodeWithText("Server: example.test").assertExists()
+
+            onNodeWithTag("tab-proxy").performClick()
+            onNodeWithTag("proxy-address").assertExists()
+            onNodeWithText("Server: example.test").assertDoesNotExist()
+        }
     }
 }

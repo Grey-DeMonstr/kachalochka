@@ -130,4 +130,4 @@ object PeopleRoute
 object AccountRoute
 
 @Serializable
-object NetworkRoute
+object DeveloperPanelRoute

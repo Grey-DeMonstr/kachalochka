@@ -13,8 +13,8 @@ import coil3.fetch.SourceFetchResult
 import coil3.key.Keyer
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.Options
-import io.ktor.client.engine.ProxyConfig
 import monster.greyde.kachalochka.core.data.gym.PhotoImages
+import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
@@ -69,7 +69,7 @@ fun avatarPhoto(
 /** One loader for the process, so every screen shares its memory cache. */
 class PhotoLoaders(
     private val images: PhotoImages,
-    private val proxy: ProxyConfig?,
+    private val credentials: SupabaseCredentials,
 ) {
     private var loader: ImageLoader? = null
 
@@ -81,7 +81,7 @@ class PhotoLoaders(
                 add(PhotoKeyer())
                 add(PhotoFetcher.Factory(images))
                 // Google pictures are plain addresses.
-                add(KtorNetworkFetcherFactory(proxiedClient(proxy)))
+                add(KtorNetworkFetcherFactory(proxiedClient(credentials)))
             }.build()
             .also { loader = it }
 }

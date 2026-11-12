@@ -87,12 +87,13 @@ actual fun platformModule(): Module =
         // Replaces the core binding, so every client goes through the stored proxy. The address
         // stays unresolved: OkHttp looks it up later, and Android refuses it on the main thread.
         single {
-            val endpoint = get<ProxyPreference>().setting.value.endpoint
+            val setting = get<ProxyPreference>().setting.value
+            val endpoint = setting.endpoint
             val proxy =
                 endpoint?.let { (host, port) ->
                     Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(host, port))
                 }
-            SupabaseCredentials.fromBuild().copy(proxy = proxy)
+            SupabaseCredentials.fromBuild().copy(proxy = proxy, proxyLogin = setting.proxyLogin)
         }
         single<DeviceNetwork> { AndroidDeviceNetwork(androidContext(), get(), get()) }
         single { SignInRequired(false) }

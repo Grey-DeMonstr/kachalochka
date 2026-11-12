@@ -50,20 +50,31 @@ class HomeScreenTest {
     }
 
     @Test
-    fun five_taps_on_the_version_show_the_network_link() {
+    fun five_taps_on_the_version_show_the_developer_panel_link() {
         var opened = 0
         runScreenTest(
             FakeGym(),
-            screen = { HomeScreen({}, {}, {}, {}, {}, {}, {}, onOpenNetwork = { opened++ }) },
+            screen = {
+                HomeScreen(
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    onOpenDeveloperPanel = { opened++ },
+                )
+            },
         ) {
             // The test window is too short for the screen, so the version line has no height.
             val tapVersion = { onNodeWithTag("app-version").performSemanticsAction(OnClick) }
             repeat(4) { tapVersion() }
-            onNodeWithTag("network-link").assertDoesNotExist()
+            onNodeWithTag("developer-panel-link").assertDoesNotExist()
 
             tapVersion()
-            onNodeWithTag("network-link")
-                .assertTextEquals("Network")
+            onNodeWithTag("developer-panel-link")
+                .assertTextEquals("Developer panel")
                 .performSemanticsAction(OnClick)
             waitForIdle()
         }

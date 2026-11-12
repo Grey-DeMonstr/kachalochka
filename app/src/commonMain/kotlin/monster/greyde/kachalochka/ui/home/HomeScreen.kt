@@ -60,7 +60,7 @@ fun HomeScreen(
     onOpenMeasures: () -> Unit,
     onOpenPlans: () -> Unit,
     onOpenStatistics: () -> Unit = {},
-    onOpenNetwork: () -> Unit = {},
+    onOpenDeveloperPanel: () -> Unit = {},
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
@@ -135,18 +135,21 @@ fun HomeScreen(
         }
         accounts.failure?.let { SignInFailure(it, Modifier.padding(horizontal = 16.dp)) }
         Spacer(Modifier.weight(1f))
-        VersionLine(onOpenNetwork)
+        VersionLine(onOpenDeveloperPanel)
     }
 }
 
-/** Five taps on the version show the network check, where the platform has one. */
+/** Five taps on the version show the developer panel link, where the platform has one. */
 @Composable
-private fun VersionLine(onOpenNetwork: () -> Unit) {
+private fun VersionLine(onOpenDeveloperPanel: () -> Unit) {
     val koin = getKoin()
     val checkable = remember { koin.getOrNull<DeviceNetwork>() != null }
     var taps by rememberSaveable { mutableIntStateOf(0) }
     val color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
-    Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(
+        Modifier.fillMaxWidth().padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
         Text(
             strings().version(AppVersion.NAME),
             modifier =
@@ -159,8 +162,11 @@ private fun VersionLine(onOpenNetwork: () -> Unit) {
         )
         if (taps >= NETWORK_TAPS) {
             Text(
-                strings().network,
-                modifier = Modifier.clickable(onClick = onOpenNetwork).testTag("network-link"),
+                strings().developerPanel,
+                modifier =
+                    Modifier
+                        .clickable(onClick = onOpenDeveloperPanel)
+                        .testTag("developer-panel-link"),
                 fontSize = 12.sp,
                 color = color,
             )
