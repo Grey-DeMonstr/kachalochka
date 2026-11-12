@@ -25,17 +25,19 @@ import monster.greyde.kachalochka.ui.format.dayBestGain
 import monster.greyde.kachalochka.ui.format.inlineWeekdayDate
 import monster.greyde.kachalochka.ui.format.setValue
 import monster.greyde.kachalochka.ui.format.sharedMachines
+import monster.greyde.kachalochka.ui.format.sharedName
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
 /**
  * A machine on a visit card: the day's best set, how it beats every earlier day's best, and
- * whether this is the machine's first day.
+ * whether this is the machine's first day. A shared picture names it by [sharedName].
  */
 data class ExerciseUi(
     val name: String,
     val best: String,
     val growth: String?,
     val isNew: Boolean = false,
+    val sharedName: String = name,
 )
 
 /** The own visit a card's menu acts on; a shared card shows [date]. */
@@ -172,5 +174,6 @@ internal fun exerciseRows(
                 )
             },
             isNew = prior == DayBest.NONE,
+            sharedName = sharedName(machine, preferred),
         )
     }

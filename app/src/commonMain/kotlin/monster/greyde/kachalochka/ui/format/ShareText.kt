@@ -91,11 +91,11 @@ private fun sharedUnit(
     return if (machine.unit == WeightUnit.Custom) " $label" else label
 }
 
-private fun shareLine(
-    shared: SharedMachine,
+/** [machine]'s name as a shared visit writes it, with a platform weight the sets leave out. */
+fun sharedName(
+    machine: Machine,
     preferred: PreferredWeightUnit,
 ): String {
-    val machine = shared.machine
     val platform =
         if (machine.platformWeight > 0 && !machine.platformIncluded) {
             val weight = formatNumber(shownWeight(machine.platformWeight, machine, preferred))
@@ -103,7 +103,15 @@ private fun shareLine(
         } else {
             ""
         }
-    return "${machine.name}$platform ${setsSummary(machine, shared.sets, preferred)}"
+    return "${machine.name}$platform"
+}
+
+private fun shareLine(
+    shared: SharedMachine,
+    preferred: PreferredWeightUnit,
+): String {
+    val name = sharedName(shared.machine, preferred)
+    return "$name ${setsSummary(shared.machine, shared.sets, preferred)}"
 }
 
 /** The weights and reps of [sets] on [machine], written as a shared visit writes them. */

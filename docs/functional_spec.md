@@ -243,7 +243,8 @@ A visit with sets has "Share" in the top bar. It opens a popup:
   as in the list, and splits the text into the same sections.
 - "As image" (Android only) shares a picture of the visit card (see [6.1](#61-calendar)) in the
   current theme. The picture shows every machine and the date ("Thursday, 29 October", with the
-  year for an earlier year). It has the same size on every phone.
+  year for an earlier year). A machine has its name as in the text, with the platform weight in
+  brackets ("Leg press (+76kg)"). The picture has the same size on every phone.
 
 The text starts with the nickname and the short weekday ("GDM, Thu", or "Thu" without a nickname),
 then an empty line, then one line for each machine, in the order of the visit. A line has the

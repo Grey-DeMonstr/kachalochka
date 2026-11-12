@@ -233,6 +233,22 @@ class ShareTextTest {
     }
 
     @Test
+    fun a_shared_name_is_what_the_machine_s_shared_line_starts_with() {
+        val gravitron =
+            machine("Gravitron", WeightUnit.Custom, platform = 2.0, label = "plate")
+                .copy(weightMode = WeightMode.Counterweight)
+
+        assertEquals("Leg press (+76kg)", sharedName(machine("Leg press", platform = 76.0), kg))
+        assertEquals("Gravitron (+2 plate)", sharedName(gravitron, kg))
+        assertEquals("Row", sharedName(machine("Row"), kg))
+        assertEquals(
+            "Leg press",
+            sharedName(machine("Leg press", platform = 76.0, included = true), kg),
+        )
+        assertTrue(line(gravitron, 3.0 to 10).startsWith("Gravitron (+2 plate) "))
+    }
+
+    @Test
     fun a_sets_summary_is_the_machine_s_shared_line_after_its_name() {
         val cases =
             listOf(

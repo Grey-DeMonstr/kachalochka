@@ -71,6 +71,17 @@ class VisitCardsTest {
     }
 
     @Test
+    fun a_shared_row_names_the_platform_weight_as_the_shared_text_does() {
+        val sled = press.copy(platformWeight = 20.0)
+        val sets = listOf(set(today, sled, 80.0, 8), set(today, row, 40.0, 12, position = 1))
+
+        val shown = exerciseRows(sets, machines + (sled.id to sled), PreferredWeightUnit.Kg)
+
+        assertEquals(listOf("Leg press", "Pulldown"), shown.map { it.name })
+        assertEquals(listOf("Leg press (+20kg)", "Pulldown"), shown.map { it.sharedName })
+    }
+
+    @Test
     fun a_heavier_best_than_the_prior_shows_the_weight_gained() {
         val sets = listOf(set(today, press, 82.5, 8, prior = DayBest(80.0, 6, 1)))
 
