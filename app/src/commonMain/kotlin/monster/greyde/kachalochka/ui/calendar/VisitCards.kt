@@ -20,6 +20,7 @@ import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.ui.account.AccountAvatars
 import monster.greyde.kachalochka.ui.account.accountAvatar
+import monster.greyde.kachalochka.ui.format.SharedMachine
 import monster.greyde.kachalochka.ui.format.SharedVisit
 import monster.greyde.kachalochka.ui.format.dayBestGain
 import monster.greyde.kachalochka.ui.format.inlineWeekdayDate
@@ -39,12 +40,10 @@ data class ExerciseUi(
     val isNew: Boolean = false,
 )
 
-/** The own visit a card's menu acts on; a shared card shows [date]. */
+/** The own visit a card's menu moves, removes and repeats. */
 data class OwnVisitUi(
     val id: VisitId,
     val canRepeatToday: Boolean,
-    val date: String,
-    val shared: SharedVisit,
 )
 
 /** One person's visit on one day, on the calendar and in the feed. */
@@ -58,7 +57,18 @@ data class VisitCardUi(
     /** Null while a friend's sets are read. */
     val exercises: List<ExerciseUi>?,
     val own: OwnVisitUi? = null,
+    /** What a shared picture shows; null while a friend's sets are read. */
+    val date: String? = null,
+    /** What the shared text is made of; null while a friend's sets are read. */
+    val shared: SharedVisit? = null,
+    /** A friend card's machines in card order; the menu puts them into the account's plans. */
+    val friendMachines: List<MachineId> = emptyList(),
 )
+
+private fun cardDate(
+    day: CalendarDay,
+    today: CalendarDay,
+) = inlineWeekdayDate(day, withYear = day.year != today.year)
 
 internal fun cardTags(machines: List<Machine>): List<String> =
     sortedTags(machines.flatMap { it.tags })
@@ -87,10 +97,9 @@ internal fun ownCard(
                 visit.id,
                 canRepeatToday =
                     day != today && visitMachines(visitSets, visit.planned).isNotEmpty(),
-                date = inlineWeekdayDate(day, withYear = day.year != today.year),
-                shared =
-                    SharedVisit(nickname, day, sharedMachines(visitSets, machines), preferred),
             ),
+        date = cardDate(day, today),
+        shared = SharedVisit(nickname, day, sharedMachines(visitSets, machines), preferred),
     )
 }
 
@@ -120,6 +129,8 @@ internal fun ownPerson(
 internal data class FriendDayDetails(
     val tags: List<String>,
     val exercises: List<ExerciseUi>,
+    val machines: List<SharedMachine>,
+    val preferred: PreferredWeightUnit,
 )
 
 /** [friend]'s visit of [sameDay] that [shownVisit] picks, on [theirs] machines. */
@@ -130,7 +141,12 @@ internal suspend fun FriendsRepository.dayDetails(
 ): FriendDayDetails {
     val daySets = shownVisit(sameDay, ::sets)?.sets.orEmpty()
     val shown = groupByMachine(daySets).mapNotNull { theirs[it.machineId] }
-    return FriendDayDetails(cardTags(shown), exerciseRows(daySets, theirs, preferred))
+    return FriendDayDetails(
+        cardTags(shown),
+        exerciseRows(daySets, theirs, preferred),
+        sharedMachines(daySets, theirs),
+        preferred,
+    )
 }
 
 internal fun friendCard(
@@ -138,6 +154,7 @@ internal fun friendCard(
     friend: Friend,
     color: Int,
     day: CalendarDay,
+    today: CalendarDay,
     details: FriendDayDetails?,
 ) = VisitCardUi(
     tag = tag,
@@ -146,6 +163,9 @@ internal fun friendCard(
     day = day,
     tags = details?.tags.orEmpty(),
     exercises = details?.exercises,
+    date = details?.let { cardDate(day, today) },
+    shared = details?.let { SharedVisit(friend.displayName, day, it.machines, it.preferred) },
+    friendMachines = details?.machines?.map { it.machine.id }.orEmpty(),
 )
 
 /**

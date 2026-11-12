@@ -187,9 +187,7 @@ class VisitViewModelTest {
 
     /** The text the share popup hands over for the visit as shown. */
     private fun VisitViewModel.sharedText(groupByTag: Boolean = false): String =
-        assertNotNull(state.value?.card?.own)
-            .shared
-            .text(groupByTag)
+        assertNotNull(state.value?.card?.shared).text(groupByTag)
 
     @Test
     fun a_visit_without_sets_cannot_be_shared() {
@@ -223,7 +221,7 @@ class VisitViewModelTest {
             assertEquals("Ivan", card.person.name)
             assertEquals(listOf("Leg press"), card.exercises?.map { it.name })
             assertEquals(ivanVisit.id, card.own?.id)
-            assertEquals("Tuesday, 14 November", card.own?.date)
+            assertEquals("Tuesday, 14 November", card.date)
         }
 
     @Test

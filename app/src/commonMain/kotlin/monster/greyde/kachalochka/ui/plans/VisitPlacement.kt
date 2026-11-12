@@ -5,11 +5,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 
-/** Asks which plan takes the visit's machines while [viewModel] offers its choices. */
+/**
+ * Asks which plan takes the visit's machines while [viewModel] offers its choices. A new plan
+ * opens with the day of an own visit, or with the stand-ins of a friend's visit.
+ */
 @Composable
 internal fun VisitPlanChooser(
     viewModel: VisitPlacementViewModel,
+    onNewPlanOfMachines: (List<MachineId>) -> Unit = {},
     onNewPlan: (CalendarDay) -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
@@ -17,19 +22,19 @@ internal fun VisitPlanChooser(
     PlanChoiceDialog(
         choices,
         onChoose = viewModel::addTo,
-        onNewPlan = { viewModel.newPlan(onNewPlan) },
+        onNewPlan = { viewModel.newPlan(onNewPlanOfMachines, onNewPlan) },
         onCancel = viewModel::cancelChoice,
     )
 }
 
-/** What the last placement of the visit on [day] said; a tap hides it. */
+/** What the last placement of the visit shown as [visit] said; a tap hides it. */
 @Composable
 internal fun VisitPlacementNotice(
     viewModel: VisitPlacementViewModel,
-    day: CalendarDay,
+    visit: String,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsState()
-    val notice = state.notice?.takeIf { it.day == day } ?: return
+    val notice = state.notice?.takeIf { it.visit == visit } ?: return
     PlacementNoticeText(notice.text, viewModel::dismissNotice, modifier)
 }

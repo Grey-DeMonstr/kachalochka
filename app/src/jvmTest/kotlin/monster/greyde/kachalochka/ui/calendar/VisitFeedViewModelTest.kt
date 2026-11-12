@@ -222,6 +222,22 @@ class VisitFeedViewModelTest {
         }
 
     @Test
+    fun a_friend_s_card_holds_what_its_menu_acts_on() =
+        runTest {
+            gym.friends.group("Forest Street Gym", owner = OLEG, ME)
+            gym.friendVisit(OLEG, today)
+
+            val card = assertNotNull(viewModel().state.value).cardsOn(today).single()
+
+            assertEquals("Tuesday, 14 November", card.date)
+            assertEquals(listOf(press.id), card.friendMachines)
+            assertEquals(
+                "Oleg, Tue\n\nLeg press 60kg 1x10",
+                assertNotNull(card.shared).text(groupByTag = false),
+            )
+        }
+
+    @Test
     fun the_own_card_shows_the_gain_its_sets_carry() =
         runTest {
             val latest = gym.ownVisit(today, weight = 65.0)

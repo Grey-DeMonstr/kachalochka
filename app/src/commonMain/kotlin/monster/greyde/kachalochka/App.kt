@@ -227,7 +227,7 @@ fun App() {
                         onAddMachine = { navController.navigate(MachinePickerRoute()) },
                         onDone = { navController.popBackStack() },
                         fromVisit = route.fromVisit?.let(CalendarDay::parse),
-                        machine = route.machineId?.let(::MachineId),
+                        machines = route.machineIds.map(::MachineId),
                         onOpenMachine = {
                             navController.navigate(MachineFormRoute(it.value, fromList = true))
                         },
@@ -325,7 +325,11 @@ fun App() {
                         linked = linked,
                         onLinkedConsumed = { entry.savedStateHandle[LINKED_MINE] = false },
                         onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
-                        onNewPlan = { navController.navigate(PlanRoute(machineId = it.value)) },
+                        onNewPlan = {
+                            navController.navigate(
+                                PlanRoute(machineIds = listOf(it.value)),
+                            )
+                        },
                     )
                 }
                 composable<MineChooserRoute> { entry ->
@@ -352,6 +356,11 @@ fun App() {
                             navController.navigate(FriendVisitRoute(userId.value, name, day.iso))
                         },
                         onSaveAsPlan = { navController.navigate(PlanRoute(fromVisit = it.iso)) },
+                        onNewPlanOfMachines = {
+                            navController.navigate(
+                                PlanRoute(machineIds = it.map(MachineId::value)),
+                            )
+                        },
                     )
                 }
                 composable<SettingsRoute> {
@@ -407,7 +416,11 @@ fun App() {
                             navController.navigate(PlanRoute(fromVisit = route.day))
                         },
                         onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
-                        onNewPlan = { navController.navigate(PlanRoute(machineId = it.value)) },
+                        onNewPlan = {
+                            navController.navigate(
+                                PlanRoute(machineIds = listOf(it.value)),
+                            )
+                        },
                     )
                 }
                 composable<MachinePickerRoute> { entry ->
@@ -470,7 +483,11 @@ fun App() {
                         },
                         onOpenStatistics = { navController.navigate(StatisticsRoute(it.value)) },
                         onOpenVisit = { navController.navigate(VisitRoute(it.iso)) },
-                        onNewPlan = { navController.navigate(PlanRoute(machineId = it.value)) },
+                        onNewPlan = {
+                            navController.navigate(
+                                PlanRoute(machineIds = listOf(it.value)),
+                            )
+                        },
                     )
                 }
                 composable<LinkChooserRoute> { entry ->

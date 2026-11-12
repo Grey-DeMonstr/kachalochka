@@ -160,10 +160,19 @@ class ViewModelParametersTest {
             val visit = Visit(VisitId.random(), null, seventh, t0, t0, false, listOf(press.id))
             gym.visits.upsert(visit)
 
-            val editing: PlanFormViewModel = koin.viewModel(PlanFormArgs(legs.id, null, null))
-            val fromVisit: PlanFormViewModel = koin.viewModel(PlanFormArgs(null, seventh, null))
-            val fromMachine: PlanFormViewModel = koin.viewModel(PlanFormArgs(null, null, press.id))
-            val blank: PlanFormViewModel = koin.viewModel(PlanFormArgs(null, null, null))
+            val editing: PlanFormViewModel =
+                koin.viewModel(
+                    PlanFormArgs(legs.id, null, emptyList()),
+                )
+            val fromVisit: PlanFormViewModel =
+                koin.viewModel(
+                    PlanFormArgs(null, seventh, emptyList()),
+                )
+            val fromMachine: PlanFormViewModel =
+                koin.viewModel(
+                    PlanFormArgs(null, null, listOf(press.id)),
+                )
+            val blank: PlanFormViewModel = koin.viewModel(PlanFormArgs(null, null, emptyList()))
 
             assertEquals("Legs", editing.state.value.name)
             assertEquals(

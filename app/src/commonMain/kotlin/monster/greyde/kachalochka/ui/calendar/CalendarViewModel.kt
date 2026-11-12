@@ -448,6 +448,7 @@ class CalendarViewModel(
                             friend,
                             color,
                             day,
+                            today,
                             details,
                         )
                     },

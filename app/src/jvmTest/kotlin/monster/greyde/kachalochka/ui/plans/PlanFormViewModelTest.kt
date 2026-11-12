@@ -46,11 +46,11 @@ class PlanFormViewModelTest {
     private fun viewModel(
         id: PlanId?,
         fromVisit: CalendarDay? = null,
-        machine: MachineId? = null,
+        machines: List<MachineId> = emptyList(),
         gym: FakeGym = this.gym,
         held: HeldWrites = gym.held,
     ) = PlanFormViewModel(
-        PlanFormArgs(id, fromVisit, machine),
+        PlanFormArgs(id, fromVisit, machines),
         gym.plans,
         gym.placement,
         gym.accounts,
@@ -155,8 +155,20 @@ class PlanFormViewModelTest {
         }
 
     @Test
+    fun a_plan_made_for_machines_holds_them_in_order_and_is_written_at_once() {
+        val vm = viewModel(null, machines = listOf(row.id, press.id))
+
+        assertEquals(
+            listOf(row.id, press.id),
+            vm.state.value.rows
+                .map { it.id },
+        )
+        assertEquals(listOf(row.id, press.id), newPlans().single().machineIds)
+    }
+
+    @Test
     fun a_plan_made_for_a_machine_holds_it_and_is_written_at_once() {
-        val vm = viewModel(null, machine = row.id)
+        val vm = viewModel(null, machines = listOf(row.id))
 
         assertEquals(
             listOf(row.id),
@@ -250,7 +262,7 @@ class PlanFormViewModelTest {
     fun an_account_change_while_a_new_plan_is_read_writes_nothing() {
         val read = CompletableDeferred<Unit>()
         gym.machines.readGate = read
-        val vm = viewModel(null, machine = row.id, held = HeldWrites())
+        val vm = viewModel(null, machines = listOf(row.id), held = HeldWrites())
 
         gym.withAccounts(IVAN_SESSION, active = IVAN_SESSION)
         read.complete(Unit)

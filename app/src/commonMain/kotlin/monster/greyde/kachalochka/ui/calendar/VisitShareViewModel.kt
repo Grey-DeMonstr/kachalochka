@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
-import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
@@ -19,9 +18,9 @@ import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.TextSharing
 
-/** [day] is the shared visit's, so the notice shows under that visit only. */
+/** [card] is the shared card's tag, so the notice shows under that card only. */
 data class VisitShareNoticeUi(
-    val day: CalendarDay,
+    val card: String,
     val text: String,
 )
 
@@ -37,7 +36,7 @@ data class VisitShareUi(
     val notice: VisitShareNoticeUi? = null,
 )
 
-/** Shares an own visit as text or as the picture of its card, wherever the visit is shown. */
+/** Shares a visit as text or as the picture of its card, wherever the card is shown. */
 class VisitShareViewModel(
     private val texts: TextSharing,
     private val cards: CardSharing,
@@ -80,11 +79,11 @@ class VisitShareViewModel(
     fun shareText() {
         val current = state.value
         val card = current.offered ?: return
-        val text = card.own?.shared?.text(current.groupByTag) ?: return
+        val text = card.shared?.text(current.groupByTag) ?: return
         cancel()
         viewModelScope.launch {
             val said = catching { texts.share(text) }.getOrNull() ?: return@launch
-            mutableState.update { it.copy(notice = VisitShareNoticeUi(card.day, said)) }
+            mutableState.update { it.copy(notice = VisitShareNoticeUi(card.tag, said)) }
         }
     }
 

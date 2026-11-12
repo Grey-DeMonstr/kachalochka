@@ -540,6 +540,7 @@ screen that lists them. It is the one writer of `machine_link` rows.
 | `friendStandIn` | The own machine of a friend's machine's cluster, else `take` |
 | `ownCopy`, `deviceStandIn` | The account's machine for a machine of another account on the device (see [4.8](#48-visits-and-sets)) |
 | `standIn` | The account's machine for any shown machine |
+| `standIns` | The account's machines for the machines of a friend's card: one group read, the order kept, a machine the group lacks left out |
 | `merge`, `unlink`, `delete` | See below |
 
 - All link writes run under one mutex, and read the own links again first, so two writes never
@@ -715,8 +716,12 @@ soft-deletes the plan unless it is pinned, so a failed write keeps the plan.
   a trainee is active, `standIn` answers `Gone` for any machine that is not the trainee's, because
   a trainer must not write links for a trainee.
 - `VisitPlacementViewModel` serves "Add to plan…" of the visit screen and of the visit cards in
-  the calendar and the feed. It reads the visit again and adds its `visitMachines` that the plan
-  does not have.
+  the calendar and the feed. For an own visit it reads the visit again and adds its
+  `visitMachines` that the plan does not have. For a friend's card it asks `standIns` for the
+  account's machines of `VisitCardUi.friendMachines`, then adds them, opens a new plan with them
+  (`PlanRoute.machineIds`) or plans them in today's visit (`repeatToday`). The friends of a
+  trainee are never shown, so a trainer never reaches it. Its notice is for a visit key: the
+  day for an own visit, the card tag for a friend's card.
 
 ### 4.10 Body measures
 
@@ -1243,13 +1248,14 @@ invites.
   as the shared text does. `sharedName` writes a machine's name, with a platform weight that the
   sets leave out; the text of a visit, each visit card and each statistics card use it.
 - A browser accepts a clipboard write only just after the user's gesture, so the text's parts are
-  read before the tap: `ownCard` puts a `SharedVisit` into the card's `OwnVisitUi`, and
-  `SharedVisit.text` writes it at the tap. The statistics text (`statsExportText`) uses the cards
-  that are already on screen.
+  read before the tap: `ownCard` and `friendCard` put a `SharedVisit` and the date into the
+  `VisitCardUi`, and `SharedVisit.text` writes it at the tap. A friend's card has them once
+  `FriendDayDetails` is read; its `friendMachines` give the card its menu. The statistics text
+  (`statsExportText`) uses the cards that are already on screen.
 - `SharePopup` (`app/ui/share`) is the popup of both shares. `StatisticsViewModel` offers it from
   `export()` and shares the text or the picture; `statsHeader` writes the first line of both.
 - `VisitShareViewModel` is the one place that shares a visit. `VisitShareDialog` shows the popup,
-  and `VisitShareNotice` shows the message under the visit.
+  and `VisitShareNotice` shows the message under the card with the tag that the share offered.
 
 **Picture.** `CardSharing.available` is true only on Android; when it is false, `SharePopup` hides
 "As image". `OffScreenPicture` (`app/ui/share`) composes its content off screen with a fixed width

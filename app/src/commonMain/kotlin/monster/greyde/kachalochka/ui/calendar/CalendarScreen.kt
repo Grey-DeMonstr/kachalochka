@@ -41,6 +41,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.account.traineeActive
@@ -65,6 +66,7 @@ fun CalendarScreen(
     onOpenVisit: (CalendarDay) -> Unit,
     onOpenFriendVisit: (UserId, String, CalendarDay) -> Unit,
     onSaveAsPlan: (CalendarDay) -> Unit,
+    onNewPlanOfMachines: (List<MachineId>) -> Unit = {},
 ) {
     val viewModel: CalendarViewModel = koinViewModel()
     val placement: VisitPlacementViewModel = koinViewModel()
@@ -112,7 +114,7 @@ fun CalendarScreen(
                     viewModel.startMove(visit)
                 }
         }
-        VisitPlanChooser(placement, onSaveAsPlan)
+        VisitPlanChooser(placement, onNewPlanOfMachines, onSaveAsPlan)
         VisitShareDialog(share)
     }
 }
@@ -168,8 +170,8 @@ private fun ColumnScope.CalendarMode(
                         onRemove = { viewModel.askToRemove(visit) }.takeUnless { readOnly },
                     ).takeIf { !current.moving },
             )
-            VisitPlacementNotice(placement, current.day)
-            VisitShareNotice(share, current.day)
+            VisitPlacementNotice(placement, current.day.iso)
+            VisitShareNotice(share, card.tag)
         }
         if (current.noVisit) {
             Text(
@@ -188,7 +190,16 @@ private fun ColumnScope.CalendarMode(
             }
         }
         current.friendVisits.forEach { card ->
-            VisitCard(card, onOpen = { card.openAsFriend(onOpenFriendVisit) })
+            VisitCard(
+                card,
+                onOpen = { card.openAsFriend(onOpenFriendVisit) },
+                menu =
+                    card
+                        .friendMenu(placement, share, onOpenVisit)
+                        ?.takeIf { !current.moving },
+            )
+            VisitPlacementNotice(placement, card.tag)
+            VisitShareNotice(share, card.tag)
         }
     }
     current.removal?.let {
@@ -254,7 +265,13 @@ private fun ColumnScope.FeedMode(
                 ) {
                     val own = card.own
                     if (own == null) {
-                        VisitCard(card, onOpen = { card.openAsFriend(onOpenFriendVisit) })
+                        VisitCard(
+                            card,
+                            onOpen = { card.openAsFriend(onOpenFriendVisit) },
+                            menu = card.friendMenu(placement, share, onOpenVisit),
+                        )
+                        VisitPlacementNotice(placement, card.tag)
+                        VisitShareNotice(share, card.tag)
                     } else {
                         VisitCard(
                             card,
@@ -275,8 +292,8 @@ private fun ColumnScope.FeedMode(
                                         }.takeUnless { readOnly },
                                 ),
                         )
-                        VisitPlacementNotice(placement, card.day)
-                        VisitShareNotice(share, card.day)
+                        VisitPlacementNotice(placement, card.day.iso)
+                        VisitShareNotice(share, card.tag)
                     }
                 }
             }
@@ -312,6 +329,22 @@ private fun ColumnScope.FeedMode(
 
 private fun VisitCardUi.openAsFriend(open: (UserId, String, CalendarDay) -> Unit) =
     open(checkNotNull(person.userId), person.name, day)
+
+/** The menu of a friend's card, once its sets are read. */
+private fun VisitCardUi.friendMenu(
+    placement: VisitPlacementViewModel,
+    share: VisitShareViewModel,
+    onOpenToday: (CalendarDay) -> Unit,
+): VisitMenuActions? {
+    if (friendMachines.isEmpty()) return null
+    return VisitMenuActions(
+        onMove = null,
+        onToPlan = { placement.choosePlan(tag, friendMachines) },
+        onShare = { share.offer(this) },
+        onRepeatToday = { placement.repeatToday(tag, friendMachines, onOpenToday) },
+        onRemove = null,
+    )
+}
 
 @Composable
 private fun MonthLabel(

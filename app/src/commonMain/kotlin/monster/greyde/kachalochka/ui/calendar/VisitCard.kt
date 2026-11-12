@@ -46,16 +46,16 @@ import monster.greyde.kachalochka.ui.theme.gainColor
 
 private const val SHOWN_MACHINES = 3
 
-/** What the own card's menu does with its visit; an action left out has no item. */
+/** What a card's menu does with its visit; an action left out has no item. */
 internal class VisitMenuActions(
     val onMove: (() -> Unit)?,
-    val onToPlan: () -> Unit,
+    val onToPlan: (() -> Unit)?,
     val onShare: () -> Unit,
     val onRepeatToday: (() -> Unit)?,
     val onRemove: (() -> Unit)?,
 )
 
-/** A visit as the calendar and the feed draw it; [menu] is given on an own card that is editable. */
+/** A visit as the calendar and the feed draw it; [menu] is given where the card has actions. */
 @Composable
 internal fun VisitCard(
     card: VisitCardUi,
@@ -71,8 +71,13 @@ internal fun VisitCard(
         bottom = if (hidden > 0) 4.dp else 14.dp,
     ) {
         CardHead(card) {
-            val own = card.own
-            if (own != null && menu != null) VisitMenu(own, menu)
+            if (menu != null) {
+                VisitMenu(
+                    card.own?.id?.value ?: card.tag,
+                    menu,
+                    canRepeatToday = card.own?.canRepeatToday ?: true,
+                )
+            }
         }
         CardBody(card, if (expanded) exercises else exercises.take(SHOWN_MACHINES))
         if (hidden > 0) {
@@ -301,11 +306,11 @@ private fun MoreToggle(
 
 @Composable
 private fun VisitMenu(
-    visit: OwnVisitUi,
+    id: String,
     actions: VisitMenuActions,
+    canRepeatToday: Boolean,
 ) {
     var open by remember { mutableStateOf(false) }
-    val id = visit.id.value
     Box {
         Box(
             Modifier
@@ -329,15 +334,17 @@ private fun VisitMenu(
                     move()
                 }
             }
-            MenuItem(strings().toPlan, PhosphorIcons.ListChecks, "save-as-plan-$id") {
-                open = false
-                actions.onToPlan()
+            actions.onToPlan?.let { toPlan ->
+                MenuItem(strings().toPlan, PhosphorIcons.ListChecks, "save-as-plan-$id") {
+                    open = false
+                    toPlan()
+                }
             }
             MenuItem(strings().share, PhosphorIcons.ShareNetwork, "share-visit-$id") {
                 open = false
                 actions.onShare()
             }
-            actions.onRepeatToday?.takeIf { visit.canRepeatToday }?.let { repeat ->
+            actions.onRepeatToday?.takeIf { canRepeatToday }?.let { repeat ->
                 MenuItem(strings().repeatToday, PhosphorIcons.ArrowClockwise, "repeat-today-$id") {
                     open = false
                     repeat()

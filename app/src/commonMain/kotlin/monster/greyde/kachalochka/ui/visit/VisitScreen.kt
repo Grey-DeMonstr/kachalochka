@@ -158,8 +158,10 @@ fun VisitScreen(
         },
     ) {
         if (current == null) return@Screen
-        VisitPlacementNotice(placement, day, Modifier.padding(horizontal = 16.dp))
-        VisitShareNotice(share, day, Modifier.padding(horizontal = 16.dp))
+        VisitPlacementNotice(placement, day.iso, Modifier.padding(horizontal = 16.dp))
+        current.card?.let {
+            VisitShareNotice(share, it.tag, Modifier.padding(horizontal = 16.dp))
+        }
         VisitList(
             state = current,
             onOpen = viewModel::openMachine,

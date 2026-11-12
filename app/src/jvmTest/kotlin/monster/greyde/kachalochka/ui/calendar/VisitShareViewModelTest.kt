@@ -49,21 +49,17 @@ class VisitShareViewModelTest {
             day = thursday,
             tags = listOf("legs"),
             exercises = listOf(ExerciseUi("Row", "50 kg × 8", null)),
-            own =
-                OwnVisitUi(
-                    visit,
-                    canRepeatToday = true,
-                    date = "Thursday, 29 October",
-                    shared =
-                        SharedVisit(
-                            "GDM",
-                            thursday,
-                            listOf(
-                                SharedMachine(row, listOf(set(row))),
-                                SharedMachine(legs, listOf(set(legs))),
-                            ),
-                            PreferredWeightUnit.Kg,
-                        ),
+            own = OwnVisitUi(visit, canRepeatToday = true),
+            date = "Thursday, 29 October",
+            shared =
+                SharedVisit(
+                    "GDM",
+                    thursday,
+                    listOf(
+                        SharedMachine(row, listOf(set(row))),
+                        SharedMachine(legs, listOf(set(legs))),
+                    ),
+                    PreferredWeightUnit.Kg,
                 ),
         )
 
@@ -128,10 +124,43 @@ class VisitShareViewModelTest {
 
         assertEquals(listOf("GDM, Thu\n\nRow 50kg 1x8\nLeg press 50kg 1x8"), gym.texts.shared)
         assertNull(vm.state.value.offered)
-        assertEquals(VisitShareNoticeUi(thursday, "Copied"), vm.state.value.notice)
+        assertEquals(VisitShareNoticeUi("card", "Copied"), vm.state.value.notice)
 
         vm.dismissNotice()
         assertNull(vm.state.value.notice)
+    }
+
+    @Test
+    fun a_friend_s_card_is_shared_under_the_friend_s_name_with_the_notice_under_that_card() {
+        val friend =
+            card.copy(
+                tag = "friend",
+                person =
+                    PersonUi(
+                        UserId("33333333-3333-4333-8333-333333333333"),
+                        "Oleg",
+                        Avatar(),
+                    ),
+                color = 5,
+                own = null,
+                shared = card.shared?.copy(nickname = "Oleg"),
+            )
+        val vm = viewModel().also { it.offer(friend) }
+
+        vm.shareText()
+
+        assertEquals(listOf("Oleg, Thu\n\nRow 50kg 1x8\nLeg press 50kg 1x8"), gym.texts.shared)
+        assertEquals(VisitShareNoticeUi("friend", "Copied"), vm.state.value.notice)
+    }
+
+    @Test
+    fun a_card_without_what_to_share_shares_nothing() {
+        val reading = card.copy(own = null, date = null, shared = null)
+        val vm = viewModel().also { it.offer(reading) }
+
+        vm.shareText()
+
+        assertTrue(gym.texts.shared.isEmpty())
     }
 
     @Test

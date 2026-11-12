@@ -279,6 +279,9 @@ A visit with sets has "Share" in the top bar. It opens a popup:
   year for an earlier year). A date that does not fit beside the name goes on a line under it.
   The picture has the same width on every phone.
 
+A friend's card in the calendar and in the feed shares in the same way. The text starts with the
+friend's nickname, and the picture shows the friend's avatar and name.
+
 The text starts with the nickname and the short weekday ("GDM, Thu"). Without a nickname it uses
 the Google name. Without an account it starts with the weekday only ("Thu"). Then come an empty
 line and one line for each machine, in the order of the visit. A line has the name, the platform
@@ -582,7 +585,13 @@ The "⋮" menu of the card:
 
 - Each friend who trained on a day adds a dot in the friend colour after the account's dot, at
   most four dots on a day.
-- Under the account's card, each friend who trained that day has a card, without the menu.
+- Under the account's card, each friend who trained that day has a card. When its sets are read
+  and it has a machine, the card has the "⋮" menu with "Add to plan…", "Share" and
+  "Repeat today", but without "Move" and "Delete". The items work as on the account's card, with
+  the account's stand-ins for the machines on the card (see
+  [7.3](#73-add-to-a-plan-or-to-today)). "Repeat today" shows on every day, today included.
+  "Share" gives the text under the friend's nickname and a picture of the friend's card. The
+  messages show under that card.
 - A tap on a friend's card opens their visit, read-only: the avatar and the name in the top bar,
   the day and the number of machines, then one row for each machine with its results, as on the
   visit screen. Under each row are the machines that it is linked with. A tap on a row opens
@@ -610,6 +619,7 @@ first. Without a network, Android shows the friends' cards that it kept.
   "No visits yet".
 - The account's card has the menu of the calendar card. Its "Move" opens the calendar on the
   day of the visit, ready for the next tap.
+- A friend's card has the menu of a friend's card in the calendar.
 
 **People.** With an account, a row of avatars without names is above the feed: the account first,
 then its friends by name.
@@ -672,9 +682,9 @@ The form saves itself; it has no save button:
 
 ### 7.3 Add to a plan or to today
 
-**"Add to plan…"** is in the "⋮" menu of a visit with machines, of a calendar card, of the machine
-form, of the machine page and of "Friend's machine". It asks "Which plan?" and lists each plan, as
-in the plan list, and "New plan".
+**"Add to plan…"** is in the "⋮" menu of a visit with machines, of a calendar card, of a friend's
+card, of the machine form, of the machine page and of "Friend's machine". It asks "Which plan?"
+and lists each plan, as in the plan list, and "New plan".
 
 - A chosen plan gets the machines at its end, in the order of the visit, planned machines
   included, but not the machines that it already has. The screen stays and shows
@@ -682,13 +692,16 @@ in the plan list, and "New plan".
 - "New plan" opens the form of a new plan with those machines, saved at once. Back goes to the
   visit or the machine.
 
-**"Repeat today"** is in the same menus, but not for today's visit. It adds the machines to
-today's visit as planned machines, as a started plan does, and opens the visit.
+**"Repeat today"** is in the same menus, but not for the account's visit of today. It adds the
+machines to today's visit as planned machines, as a started plan does, and opens the visit.
 
 For a friend's machine, both items use its stand-in: the own machine linked with it, else a new
-linked copy, as "Take for myself" makes. When the app cannot read the friends' machines, it shows
-"No connection to the server". For a machine that the friend no longer shares, it shows "The
-machine is no longer available". In both cases nothing changes.
+linked copy, as "Take for myself" makes. On a friend's card they do this for each machine of the
+card, in the order of the card, and "New plan" opens the form with those own machines. When the
+app cannot read the friends' machines, it shows "No connection to the server". For a machine that
+the friend no longer shares, it shows "The machine is no longer available"; on a friend's card
+the app leaves such a machine out, and shows the message only when none is left. In these cases
+nothing changes. The messages of a friend's card show under that card.
 
 A switch of the account closes the question and the message.
 
@@ -966,8 +979,9 @@ You make a link in four ways:
 
 - "Take for myself" on a friend's machine, or a pick of a friend's machine: an own copy with the
   friend's settings and tags, linked to the friend's machine.
-- "Add to plan…" or "Repeat today" on a friend's machine whose cluster has no own machine: the same
-  copy (see [7.3](#73-add-to-a-plan-or-to-today)).
+- "Add to plan…" or "Repeat today" on a friend's machine, or on a friend's card, for each machine
+  whose cluster has no own machine: the same copy (see
+  [7.3](#73-add-to-a-plan-or-to-today)).
 - "Link to…" in the machine form.
 - "Link to mine" on a friend's machine.
 

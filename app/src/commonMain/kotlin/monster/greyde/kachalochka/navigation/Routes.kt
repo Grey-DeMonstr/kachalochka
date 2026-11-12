@@ -112,12 +112,12 @@ data class StatisticsRoute(
     val machineId: String? = null,
 )
 
-/** [planId] null opens a new plan, holding [machineId] or filled from the visit on [fromVisit]. */
+/** [planId] null opens a new plan, holding [machineIds] or made from the visit on [fromVisit]. */
 @Serializable
 data class PlanRoute(
     val planId: String? = null,
     val fromVisit: String? = null,
-    val machineId: String? = null,
+    val machineIds: List<String> = emptyList(),
 )
 
 @Serializable

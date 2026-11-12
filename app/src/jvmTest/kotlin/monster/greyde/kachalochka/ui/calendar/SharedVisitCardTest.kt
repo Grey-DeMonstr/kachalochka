@@ -32,13 +32,9 @@ class SharedVisitCardTest {
             day = day,
             tags = listOf("LEGS"),
             exercises = (1..5).map { ExerciseUi("Machine $it", "18 kg × 15", null) },
-            own =
-                OwnVisitUi(
-                    visit,
-                    canRepeatToday = true,
-                    date = "Thursday, 29 October",
-                    shared = SharedVisit("GDM", day, emptyList(), PreferredWeightUnit.Kg),
-                ),
+            own = OwnVisitUi(visit, canRepeatToday = true),
+            date = "Thursday, 29 October",
+            shared = SharedVisit("GDM", day, emptyList(), PreferredWeightUnit.Kg),
         )
 
     @Test

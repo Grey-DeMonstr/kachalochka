@@ -49,13 +49,13 @@ data class PlanMachineUi(
 )
 
 /**
- * A null [planId] makes a new plan. A new plan starts with [machine], or with the machines of the
+ * A null [planId] makes a new plan. A new plan starts with [machines], or with the machines of the
  * account's visit on [fromVisit], when given.
  */
 data class PlanFormArgs(
     val planId: PlanId?,
     val fromVisit: CalendarDay?,
-    val machine: MachineId?,
+    val machines: List<MachineId>,
 )
 
 /**
@@ -75,7 +75,7 @@ class PlanFormViewModel(
 ) : ViewModel() {
     private val planId = args.planId
     private val fromVisit = args.fromVisit
-    private val machine = args.machine
+    private val machines = args.machines
     private val mutableState = MutableStateFlow(PlanFormUiState())
     val state: StateFlow<PlanFormUiState> = mutableState
 
@@ -154,7 +154,7 @@ class PlanFormViewModel(
     }
 
     private suspend fun startMachines(): List<MachineId> {
-        machine?.let { return listOf(it) }
+        if (machines.isNotEmpty()) return machines
         return fromVisit?.let { placement.machinesOn(owner, it) }.orEmpty()
     }
 

@@ -845,7 +845,9 @@ class CalendarViewModelTest {
                         ),
                     ),
                 ),
-                state.friendVisits,
+                state.friendVisits.map {
+                    it.copy(date = null, shared = null, friendMachines = emptyList())
+                },
             )
         }
 
@@ -889,7 +891,7 @@ class CalendarViewModelTest {
             val own = assertNotNull(card.own)
             assertEquals(sunday.id, own.id)
             assertFalse(own.canRepeatToday)
-            assertEquals("Sunday, 12 November", own.date)
+            assertEquals("Sunday, 12 November", card.date)
         }
 
     @Test
@@ -909,7 +911,7 @@ class CalendarViewModelTest {
 
             assertEquals(
                 "Johnny, Sun\n\nLeg press 70kg 1x10",
-                assertNotNull(card?.own).shared.text(groupByTag = false),
+                assertNotNull(card?.shared).text(groupByTag = false),
             )
         }
 
@@ -940,6 +942,52 @@ class CalendarViewModelTest {
                 card.exercises,
             )
             assertNull(card.own)
+        }
+
+    @Test
+    fun a_friend_s_card_holds_what_its_menu_acts_on() =
+        runTest {
+            val signed = signedInGym()
+            signed.friends.group("Forest Street Gym", owner = OLEG, ME)
+            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press, row)
+
+            val vm = viewModel(signed).also { it.selectDay(twelfth) }
+
+            val card =
+                assertNotNull(
+                    vm.state.value
+                        ?.friendVisits
+                        ?.single(),
+                )
+            assertEquals("Sunday, 12 November", card.date)
+            assertEquals(listOf(press.id, row.id), card.friendMachines)
+            assertEquals(
+                "Oleg, Sun\n\nLeg press 70kg 1x10\nPulldown 70kg 1x10",
+                assertNotNull(card.shared).text(groupByTag = false),
+            )
+        }
+
+    @Test
+    fun a_friend_s_card_has_nothing_to_act_on_while_its_sets_are_read() =
+        runTest {
+            val signed = signedInGym()
+            signed.friends.group("Forest Street Gym", owner = OLEG, ME)
+            signed.olegColored(5)
+            signed.friendVisit(OLEG, twelfth, t0 - 2.days, press)
+            val vm = viewModel(signed)
+            signed.friends.gate = CompletableDeferred()
+
+            vm.selectDay(twelfth)
+
+            val waiting =
+                assertNotNull(
+                    vm.state.value
+                        ?.friendVisits
+                        ?.single(),
+                )
+            assertNull(waiting.shared)
+            assertNull(waiting.date)
+            assertEquals(emptyList(), waiting.friendMachines)
         }
 
     @Test

@@ -20,7 +20,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.ui.plans.PlacementNoticeText
 import monster.greyde.kachalochka.ui.share.ChoiceTextIndent
 import monster.greyde.kachalochka.ui.share.OffScreenPicture
@@ -44,18 +43,18 @@ internal fun VisitShareDialog(viewModel: VisitShareViewModel) {
             }
         }
     }
-    state.picture?.let { CardPicture(it, it.own?.date.orEmpty(), viewModel::pictureDrawn) }
+    state.picture?.let { CardPicture(it, it.date.orEmpty(), viewModel::pictureDrawn) }
 }
 
-/** What the last text share of the visit on [day] said; a tap hides it. */
+/** What the last text share of the card tagged [card] said; a tap hides it. */
 @Composable
 internal fun VisitShareNotice(
     viewModel: VisitShareViewModel,
-    day: CalendarDay,
+    card: String,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsState()
-    val notice = state.notice?.takeIf { it.day == day } ?: return
+    val notice = state.notice?.takeIf { it.card == card } ?: return
     PlacementNoticeText(notice.text, viewModel::dismissNotice, modifier, "share-notice")
 }
 

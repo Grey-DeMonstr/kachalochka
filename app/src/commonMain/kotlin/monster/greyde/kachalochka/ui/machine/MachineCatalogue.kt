@@ -167,6 +167,21 @@ sealed interface StandIn {
     data object Switched : StandIn
 }
 
+/** The account's machines for friend's machines; see [MachineCatalogue.standIns]. */
+sealed interface StandIns {
+    data class Found(
+        val machines: List<Machine>,
+    ) : StandIns
+
+    data object Offline : StandIns
+
+    /** The friend shares none of the machines any more. */
+    data object Gone : StandIns
+
+    /** Another account became active; nothing was written. */
+    data object Switched : StandIns
+}
+
 /**
  * The machines an account sees: its own, read from the device, and its group mates', read online
  * and joined to them by links. The screens write machine links here, under one lock (spec §4.5).
@@ -458,6 +473,32 @@ class MachineCatalogue(
             }
         return if (found is StandIn.Found && !active(owner)) StandIn.Switched else found
     }
+
+    /**
+     * [standIn] for several friend's machines over one group read. The result keeps the order of
+     * [friendMachines] and leaves out a machine the group no longer has.
+     */
+    suspend fun standIns(
+        owner: UserId?,
+        friendMachines: List<MachineId>,
+    ): StandIns {
+        if (!active(owner)) return StandIns.Switched
+        if (owner == null) return StandIns.Gone
+        val group = catching { group(owner) }.getOrElse { return failedStandIns(owner) }
+        if (!active(owner)) return StandIns.Switched
+        val found =
+            catching {
+                friendMachines.mapNotNull { friendStandIn(owner, it, group) }.distinctBy { it.id }
+            }.getOrElse { return failedStandIns(owner) }
+        return when {
+            !active(owner) -> StandIns.Switched
+            found.isEmpty() -> StandIns.Gone
+            else -> StandIns.Found(found)
+        }
+    }
+
+    private fun failedStandIns(owner: UserId?) =
+        if (active(owner)) StandIns.Offline else StandIns.Switched
 
     private suspend fun standInOnDevice(
         owner: UserId?,

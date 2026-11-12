@@ -469,6 +469,65 @@ class MachineCatalogueTest {
         }
 
     @Test
+    fun friend_stand_ins_come_in_the_given_order_reusing_linked_machines_and_copying_the_rest() =
+        runTest {
+            olegsGym()
+            val tagged = olegRow.copy(tags = setOf("back"))
+            gym.friends.machines.replaceAll { if (it.id == olegRow.id) tagged else it }
+
+            val found =
+                assertIs<StandIns.Found>(
+                    catalogue.standIns(ME.userId, listOf(olegRow.id, olegPress.id)),
+                )
+
+            val copy = found.machines.first()
+            assertEquals(listOf(copy, myPress), found.machines)
+            assertEquals("Row", copy.name)
+            assertEquals(setOf("back"), copy.tags)
+            assertTrue(copy.id to olegRow.id in linkedPairs())
+            assertEquals(listOf(myPress, copy).toSet(), gym.machines.all(ME.userId).toSet())
+        }
+
+    @Test
+    fun friend_stand_ins_leave_out_a_machine_the_group_lacks() =
+        runTest {
+            olegsGym()
+
+            val found = catalogue.standIns(ME.userId, listOf(MachineId.random(), olegPress.id))
+
+            assertEquals(StandIns.Found(listOf(myPress)), found)
+            assertEquals(StandIns.Gone, catalogue.standIns(ME.userId, listOf(MachineId.random())))
+        }
+
+    @Test
+    fun offline_friend_stand_ins_write_nothing() =
+        runTest {
+            olegsGym()
+            gym.friends.offline = true
+
+            val found = catalogue.standIns(ME.userId, listOf(olegRow.id))
+
+            assertEquals(StandIns.Offline, found)
+            assertEquals(listOf(myPress), gym.machines.all(ME.userId))
+        }
+
+    @Test
+    fun a_switch_during_the_read_leaves_friend_stand_ins_unwritten() =
+        runTest {
+            olegsGym()
+            gym.withChild(childAccount(SASHA, IVAN_SESSION))
+            val gate = CompletableDeferred<Unit>()
+            gym.friends.gate = gate
+            val result = async { catalogue.standIns(ME.userId, listOf(olegRow.id)) }
+            testScheduler.advanceUntilIdle()
+            gym.accounts.switchTo(SASHA.userId)
+            gate.complete(Unit)
+
+            assertEquals(StandIns.Switched, result.await())
+            assertEquals(listOf(myPress), gym.machines.all(ME.userId))
+        }
+
+    @Test
     fun linking_an_own_machine_to_a_friend_s_links_it_to_the_whole_cluster() =
         runTest {
             olegsGym()

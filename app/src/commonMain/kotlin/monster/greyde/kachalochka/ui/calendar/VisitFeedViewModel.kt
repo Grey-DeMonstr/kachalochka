@@ -384,7 +384,7 @@ class VisitFeedViewModel(
                     aside = dayAside(day, today),
                     cards =
                         listOfNotNull(ownCardOn(day, shownOwn[day].orEmpty(), today)) +
-                            friendCardsOn(day, shownFriends[day].orEmpty()),
+                            friendCardsOn(day, today, shownFriends[day].orEmpty()),
                 )
             }
         mutableState.value =
@@ -429,6 +429,7 @@ class VisitFeedViewModel(
 
     private fun friendCardsOn(
         day: CalendarDay,
+        today: CalendarDay,
         sameDay: List<FriendVisit>,
     ): List<VisitCardUi> =
         sameDay
@@ -439,7 +440,7 @@ class VisitFeedViewModel(
             .mapNotNull { friend ->
                 val color = friendColors[friend.userId] ?: return@mapNotNull null
                 val tag = "feed-friend-${friend.userId.value}-${day.iso}"
-                friendCard(tag, friend, color, day, details[friend.userId to day])
+                friendCard(tag, friend, color, day, today, details[friend.userId to day])
             }
 
     private fun ownPerson(): PersonUi = ownPerson(accounts, avatars, owner)

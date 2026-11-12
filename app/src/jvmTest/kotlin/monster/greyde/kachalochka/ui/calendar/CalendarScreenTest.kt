@@ -21,6 +21,7 @@ import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.DayBest
 import monster.greyde.kachalochka.core.domain.gym.Machine
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.Plan
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.core.domain.gym.Visit
@@ -77,12 +78,14 @@ class CalendarScreenTest {
         onOpenVisit: (CalendarDay) -> Unit = {},
         onOpenFriendVisit: (UserId, String, CalendarDay) -> Unit = { _, _, _ -> },
         onSaveAsPlan: (CalendarDay) -> Unit = {},
+        onNewPlanOfMachines: (List<MachineId>) -> Unit = {},
     ) = CalendarScreen(
         onBack = onBack,
         onOpenSettings = {},
         onOpenVisit = onOpenVisit,
         onOpenFriendVisit = onOpenFriendVisit,
         onSaveAsPlan = onSaveAsPlan,
+        onNewPlanOfMachines = onNewPlanOfMachines,
     )
 
     @Test
@@ -256,6 +259,159 @@ class CalendarScreenTest {
             waitForIdle()
         }
         assertEquals(Triple(OLEG.userId, "Oleg", CalendarDay(2023, 11, 12)), opened)
+    }
+
+    /** [friendsGym] with Oleg's leg press and a set of it in each of his visits. */
+    private fun olegsGymWithSets(): FakeGym {
+        val signed = friendsGym(OLEG)
+        val olegPress = Machine.new("Leg press", OLEG.userId, t0)
+        signed.friends.machines += olegPress
+        signed.friends.visits.forEach {
+            signed.friends.sets +=
+                WorkoutSet(
+                    WorkoutSetId.random(),
+                    OLEG.userId,
+                    it.id,
+                    olegPress.id,
+                    70.0,
+                    10,
+                    0,
+                    t0 - 2.days,
+                    t0,
+                    false,
+                )
+        }
+        return signed
+    }
+
+    private val olegCard = "friend-visit-${OLEG.userId.value}"
+
+    @Test
+    fun a_friend_s_card_has_a_menu_to_plan_share_and_repeat_but_not_to_move_or_delete() {
+        runScreenTest(olegsGymWithSets(), screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-$olegCard").performScrollTo().performClick()
+            onNodeWithTag("save-as-plan-$olegCard").assertTextEquals("Add to plan…")
+            onNodeWithTag("share-visit-$olegCard").assertTextEquals("Share")
+            onNodeWithTag("repeat-today-$olegCard").assertTextEquals("Repeat today")
+            onNodeWithTag("move-visit-$olegCard").assertDoesNotExist()
+            onNodeWithTag("remove-visit-$olegCard").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun a_friend_s_card_without_sets_has_no_menu() {
+        runScreenTest(friendsGym(OLEG), screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag(olegCard).performScrollTo().assertExists()
+            onNodeWithTag("visit-menu-$olegCard").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun a_friend_s_card_adds_the_account_s_machines_to_a_plan_and_says_so_under_the_card() {
+        val signed = olegsGymWithSets()
+        val back = Plan(PlanId.random(), ME.userId, "Back", emptyList(), t0, t0, false)
+        runBlocking { signed.plans.upsert(back) }
+        runScreenTest(signed, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-$olegCard").performScrollTo().performClick()
+            onNodeWithTag("save-as-plan-$olegCard").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-choice-${back.id.value}").performClick()
+            waitForIdle()
+            onNodeWithTag("placement-notice").assertTextEquals("Added to “Back”")
+        }
+        val copy = runBlocking { signed.machines.all(ME.userId) }.single()
+        assertEquals("Leg press", copy.name)
+        assertEquals(
+            listOf(copy.id),
+            signed.plans.rows
+                .getValue(back.id)
+                .machineIds,
+        )
+    }
+
+    @Test
+    fun a_friend_s_card_makes_a_new_plan_of_the_account_s_machines() {
+        var opened: List<MachineId>? = null
+        runScreenTest(olegsGymWithSets(), screen = {
+            calendar(onNewPlanOfMachines = { opened = it })
+        }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-$olegCard").performScrollTo().performClick()
+            onNodeWithTag("save-as-plan-$olegCard").performClick()
+            waitForIdle()
+            onNodeWithTag("plan-choice-new").performClick()
+            waitForIdle()
+        }
+        assertEquals(1, opened?.size)
+    }
+
+    @Test
+    fun a_friend_s_card_repeats_today_on_any_day_and_opens_today() {
+        val signed = olegsGymWithSets()
+        var opened: CalendarDay? = null
+        runScreenTest(signed, screen = { calendar(onOpenVisit = { opened = it }) }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-$olegCard").performScrollTo().performClick()
+            onNodeWithTag("repeat-today-$olegCard").performClick()
+            waitForIdle()
+        }
+        assertEquals(signed.today, opened)
+        val copy = runBlocking { signed.machines.all(ME.userId) }.single()
+        assertEquals(
+            listOf(copy.id),
+            runBlocking { signed.visits.onDay(ME.userId, signed.today) }?.planned,
+        )
+    }
+
+    @Test
+    fun a_friend_s_card_of_today_repeats_today_too() {
+        val signed = olegsGymWithSets()
+        signed.friends.visits.replaceAll { it.copy(day = signed.today) }
+        runScreenTest(signed, screen = { calendar() }) {
+            waitForIdle()
+            onNodeWithTag("visit-menu-$olegCard").performScrollTo().performClick()
+            onNodeWithTag("repeat-today-$olegCard").assertExists()
+        }
+    }
+
+    @Test
+    fun a_friend_s_card_shares_the_visit_as_text_under_their_name_and_says_so_under_the_card() {
+        val signed = olegsGymWithSets()
+        runScreenTest(signed, screen = { calendar() }) {
+            onNodeWithTag("day-2023-11-12").performClick()
+            waitForIdle()
+            onNodeWithTag("visit-menu-$olegCard").performScrollTo().performClick()
+            onNodeWithTag("share-visit-$olegCard").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-text").performClick()
+            waitForIdle()
+            onNodeWithTag("share-notice").assertTextEquals("Copied")
+        }
+        assertEquals(listOf("Oleg, Sun\n\nLeg press 70kg 1x10"), signed.texts.shared)
+    }
+
+    @Test
+    fun a_friend_s_card_in_the_feed_has_the_menu_too() {
+        val signed = olegsGymWithSets()
+        runBlocking { signed.visitsModes.set(VisitsMode.Feed) }
+        val card = "feed-friend-${OLEG.userId.value}-2023-11-12"
+        runScreenTest(signed, screen = { calendar() }) {
+            waitForIdle()
+            onNodeWithTag("visit-menu-$card").performScrollTo().performClick()
+            onNodeWithTag("save-as-plan-$card").assertExists()
+            onNodeWithTag("share-visit-$card").assertExists()
+            onNodeWithTag("repeat-today-$card").performClick()
+            waitForIdle()
+        }
+        assertEquals(1, runBlocking { signed.machines.all(ME.userId) }.size)
     }
 
     @Test

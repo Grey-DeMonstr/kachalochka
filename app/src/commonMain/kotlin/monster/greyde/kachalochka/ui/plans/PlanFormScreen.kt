@@ -61,11 +61,11 @@ fun PlanFormScreen(
     onAddMachine: () -> Unit,
     onDone: () -> Unit,
     fromVisit: CalendarDay? = null,
-    machine: MachineId? = null,
+    machines: List<MachineId> = emptyList(),
     onOpenMachine: (MachineId) -> Unit = {},
 ) {
     val viewModel: PlanFormViewModel =
-        koinViewModel { parametersOf(PlanFormArgs(planId, fromVisit, machine)) }
+        koinViewModel { parametersOf(PlanFormArgs(planId, fromVisit, machines)) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.refresh() }
     LaunchedEffect(pickedMachineId) {
