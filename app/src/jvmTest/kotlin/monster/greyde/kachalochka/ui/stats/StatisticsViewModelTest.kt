@@ -102,6 +102,7 @@ class StatisticsViewModelTest {
         Nickname(on.profiles, on.accounts),
         texts,
         on.cardShares,
+        on.pictureRows,
         on.unsaved,
     ).also { it.load() }
 
@@ -406,7 +407,8 @@ class StatisticsViewModelTest {
             val state = vm.state.value
             assertFalse(state.shareOffered)
             val picture = assertNotNull(state.picture)
-            assertEquals("past month", picture.period)
+            assertEquals("stats-picture-1", picture.card.tag)
+            assertEquals("14 October – 14 November", picture.period)
             assertEquals("Me", picture.card.person.name)
             assertEquals(listOf("legs"), picture.card.tags)
             assertEquals(
@@ -449,6 +451,79 @@ class StatisticsViewModelTest {
 
             assertEquals(listOf(picture), gym.cardShares.shared)
             assertNull(vm.state.value.picture)
+        }
+
+    @Test
+    fun a_long_overview_is_drawn_as_several_pictures_and_shared_with_one_call() =
+        runTest {
+            gym.pictureRows.set(2)
+            record(gravitron, CalendarDay(2023, 11, 2), 27.5 to 8)
+            val vm = viewModel()
+            vm.export()
+
+            vm.shareImage()
+
+            val first = assertNotNull(vm.state.value.picture)
+            assertEquals("stats-picture-1", first.card.tag)
+            assertEquals(
+                listOf("Row", "Leg press"),
+                first.card.exercises
+                    .orEmpty()
+                    .map { it.name },
+            )
+            val one = ImageBitmap(1, 1)
+            vm.pictureDrawn(listOf(one))
+
+            val second = assertNotNull(vm.state.value.picture)
+            assertEquals("stats-picture-2", second.card.tag)
+            assertEquals(
+                listOf("Gravitron"),
+                second.card.exercises
+                    .orEmpty()
+                    .map { it.name },
+            )
+            assertEquals(first.card.person, second.card.person)
+            assertEquals(first.period, second.period)
+            assertEquals(emptyList(), gym.cardShares.pictureCalls)
+            val two = ImageBitmap(2, 2)
+            vm.pictureDrawn(listOf(two))
+
+            assertEquals(listOf(listOf(listOf(one), listOf(two))), gym.cardShares.pictureCalls)
+            assertNull(vm.state.value.picture)
+        }
+
+    @Test
+    fun grouped_pictures_join_small_groups_and_keep_the_tags_of_their_own_rows() =
+        runTest {
+            gym.pictureRows.set(2)
+            gym.machines.upsert(press.copy(tags = setOf("Legs")))
+            gym.machines.upsert(row.copy(tags = setOf("Back")))
+            gym.machines.upsert(gravitron.copy(tags = setOf("Back")))
+            record(gravitron, CalendarDay(2023, 11, 2), 27.5 to 8)
+            val vm = viewModel()
+            vm.toggleGroupByTag()
+            vm.export()
+
+            vm.shareImage()
+
+            val pictures = mutableListOf<StatsPictureUi>()
+            while (true) {
+                pictures += vm.state.value.picture ?: break
+                vm.pictureDrawn(listOf(ImageBitmap(1, 1)))
+            }
+            assertEquals(
+                listOf(listOf("back"), listOf("legs")),
+                pictures.map { it.card.tags }.sortedBy { it.single() },
+            )
+            assertEquals(
+                listOf(1, 2),
+                pictures
+                    .map {
+                        it.card.exercises
+                            .orEmpty()
+                            .size
+                    }.sorted(),
+            )
         }
 
     @Test

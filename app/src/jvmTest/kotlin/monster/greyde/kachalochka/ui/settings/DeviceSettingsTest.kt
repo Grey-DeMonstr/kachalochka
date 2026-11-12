@@ -10,6 +10,7 @@ import monster.greyde.kachalochka.ui.calendar.VisitsMode
 import monster.greyde.kachalochka.ui.calendar.VisitsModePreference
 import monster.greyde.kachalochka.ui.network.ProxyPreference
 import monster.greyde.kachalochka.ui.network.ProxySetting
+import monster.greyde.kachalochka.ui.stats.StatsPictureRows
 import monster.greyde.kachalochka.ui.strings.AppLanguage
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.theme.ThemeMode
@@ -43,7 +44,25 @@ class DeviceSettingsTest {
         assertEquals(RestSound(), RestSoundPreference(store).sound.value)
         assertFalse(SetCommentPreference(store).shown.value)
         assertEquals(ProxySetting(), ProxyPreference(store).setting.value)
+        assertEquals(15, StatsPictureRows(store).rows.value)
     }
+
+    @Test
+    fun the_statistics_picture_rows_are_kept_under_their_key() =
+        runTest {
+            StatsPictureRows(store).set(8)
+
+            assertEquals(8, store.read(DeviceKey.Number("stats_picture_rows")))
+            assertEquals(8, StatsPictureRows(store).rows.value)
+        }
+
+    @Test
+    fun a_stored_picture_row_count_below_one_gives_the_default() =
+        runTest {
+            store.write(DeviceKey.Number("stats_picture_rows"), 0)
+
+            assertEquals(15, StatsPictureRows(store).rows.value)
+        }
 
     @Test
     fun a_set_value_is_in_the_flow_and_in_the_store_under_its_key_and_type() =

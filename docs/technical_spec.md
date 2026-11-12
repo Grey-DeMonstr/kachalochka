@@ -1032,7 +1032,8 @@ with `FOREGROUND_SERVICE`. A rest is much shorter than the few minutes that such
   asks for `POST_NOTIFICATIONS` on Android 13 and later.
 
 **Developer panel.** `DeveloperPanelScreen` (`ui/network`) is a `PrimaryTabRow` over the `PanelTab`
-enum ("Info", "Proxy settings"); a new tab is a new entry. The selected tab is `rememberSaveable`.
+enum ("Info", "Proxy settings", "Options"); a new tab is a new entry. The selected tab is
+`rememberSaveable`.
 The home screen links to it only where a `DeviceNetwork` is bound, and only Android binds one: a
 browser cannot choose a proxy or look up a host.
 
@@ -1175,6 +1176,7 @@ be decoded gives the default. `appModule` binds the settings. Each platform modu
 | Feed person | `FeedPeoplePreference`: at most one person for each viewer | `feed_selected_person` |
 | Set comment | `SetCommentPreference`: whether the set form has a comment field | `set_comment_shown` |
 | Proxy | `ProxyPreference`: the address, whether it is used, the login and the password | `proxy_address`, `proxy_used`, `proxy_login`, `proxy_password` |
+| Statistics picture rows | `StatsPictureRows`: the most rows on one picture, 15 by default | `stats_picture_rows` |
 
 The keys and their types are the stored format. A change of a key name or of its type loses the
 stored value.
@@ -1256,11 +1258,18 @@ and `LocalDensity`, so the picture is 1080 px wide on each phone, and records it
 it gives the picture as strips of at most 2048 px in height, from top to bottom: a second layer
 draws one part of the first and `toImageBitmap()` reads it. A bitmap from a layer is in GPU
 memory, and a GPU cannot hold a picture that is higher than its limit, which each device sets.
-Android joins the strips into one bitmap in normal memory, encodes it as PNG and shares it through
-the cache and the `FileProvider`. `CardPicture` draws `SharedVisitCard` in it, for
-`VisitShareDialog` and for `StatisticsScreen`. `StatisticsViewModel.shareImage` makes the
-`StatsPictureUi`: a `VisitCardUi` whose rows are the overview's cards, and the period as the
-caption.
+`CardSharing.share` takes a list of pictures, each a list of strips. Android joins the strips of
+each picture into one bitmap in normal memory and encodes it as PNG. It shares them through the
+cache and the `FileProvider`: `ACTION_SEND` for one picture, `ACTION_SEND_MULTIPLE` with a
+`ClipData` of all the URIs for more. `CardPicture` draws `SharedVisitCard` in it, for
+`VisitShareDialog` and for `StatisticsScreen`.
+
+`StatisticsViewModel.shareImage` splits the overview with `pictureChunks(sections, limit)`
+(`StatsPictures.kt`; `limit` is `StatsPictureRows`) and makes one `StatsPictureUi` for each chunk:
+a `VisitCardUi` whose rows are the chunk's cards, and the first and last day of the period as the
+caption. The state's `picture` is the first picture that is not drawn. `pictureDrawn` keeps its
+strips; after the last picture, the view model calls `CardSharing.share` once. The screen wraps
+`CardPicture` in `key(card.tag)`, so each picture has its own `OffScreenPicture`.
 
 ### 9.7 Rest timer sound
 

@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -130,7 +131,9 @@ fun StatisticsScreen(
                 viewModel::cancelShare,
             )
         }
-        state.picture?.let { CardPicture(it.card, it.period, viewModel::pictureDrawn) }
+        state.picture?.let {
+            key(it.card.tag) { CardPicture(it.card, it.period, viewModel::pictureDrawn) }
+        }
         Box(Modifier.weight(1f)) {
             Column(Modifier.fillMaxSize()) {
                 Column(

@@ -109,7 +109,7 @@ data class StatisticsUiState(
     /** The share popup is open. */
     val shareOffered: Boolean = false,
     val canShareImage: Boolean = false,
-    /** The overview drawn off screen for its picture; null while none is. */
+    /** The next picture of the overview to draw off screen; null while none is. */
     val picture: StatsPictureUi? = null,
     val machine: MachineStatsUi? = null,
     /** The search over [choiceSections]. */
@@ -144,6 +144,7 @@ class StatisticsViewModel(
     private val nickname: Nickname,
     private val sharing: TextSharing,
     private val cardSharing: CardSharing,
+    private val pictureRows: StatsPictureRows,
     unsaved: UnsavedChoices,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(StatisticsUiState())
@@ -161,7 +162,8 @@ class StatisticsViewModel(
     private var improvementsOnly = true
     private var notice: String? = null
     private var shareOffered = false
-    private var picture: StatsPictureUi? = null
+    private var pictures: List<StatsPictureUi> = emptyList()
+    private var drawn: List<List<ImageBitmap>> = emptyList()
     private var query = ""
     private var loading: Job? = null
 
@@ -269,24 +271,33 @@ class StatisticsViewModel(
         }
     }
 
-    /** Draws the overall cards, as shown, as the rows of a visit card. */
+    /** Draws the overall cards, as shown, as the rows of a few visit cards, one picture each. */
     fun shareImage() {
-        val cards = mutableState.value.overall
         val read = shown?.own ?: return
         val machines = read.machines.associateBy { it.id }
+        val person = ownPerson(accounts, avatars, read.owner)
+        val today = clock.today()
+        val first = dayMonthLabel(period.start(today), today.year)
+        val caption = "$first – ${dayMonthLabel(today, today.year)}"
         shareOffered = false
-        picture =
-            StatsPictureUi(
-                VisitCardUi(
-                    tag = "stats-picture",
-                    person = ownPerson(accounts, avatars, read.owner),
-                    color = null,
-                    day = clock.today(),
-                    tags = cardTags(cards.mapNotNull { machines[it.id] }),
-                    exercises = cards.map(::pictureRow),
-                ),
-                AppStrings.current.forPeriod(period.months),
-            )
+        drawn = emptyList()
+        pictures =
+            pictureChunks(
+                mutableState.value.overallSections.map { it.items },
+                pictureRows.rows.value,
+            ).mapIndexed { index, cards ->
+                StatsPictureUi(
+                    VisitCardUi(
+                        tag = "stats-picture-${index + 1}",
+                        person = person,
+                        color = null,
+                        day = today,
+                        tags = cardTags(cards.mapNotNull { machines[it.id] }),
+                        exercises = cards.map(::pictureRow),
+                    ),
+                    caption,
+                )
+            }
         publish()
     }
 
@@ -299,10 +310,16 @@ class StatisticsViewModel(
             isNew = card.newMachine,
         )
 
+    /** Keeps the strips of the shown picture; the last picture sends them all. */
     fun pictureDrawn(strips: List<ImageBitmap>) {
-        picture = null
+        drawn = drawn + listOf(strips)
+        if (drawn.size == pictures.size) {
+            val all = drawn
+            pictures = emptyList()
+            drawn = emptyList()
+            viewModelScope.launch { cardSharing.share(all) }
+        }
         publish()
-        viewModelScope.launch { cardSharing.share(strips) }
     }
 
     fun dismissNotice() {
@@ -354,7 +371,7 @@ class StatisticsViewModel(
                 notice = notice,
                 shareOffered = shareOffered,
                 canShareImage = cardSharing.available,
-                picture = picture,
+                picture = pictures.getOrNull(drawn.size),
                 machine =
                     machine?.let {
                         machineStatsUi(

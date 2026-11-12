@@ -12,6 +12,7 @@ import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.supabase.SupabaseCredentials
 import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.stats.StatsPictureRows
 import kotlin.time.Clock
 
 /** Runs every check once, all at the same time, as the screen opens. */
@@ -22,6 +23,7 @@ class NetworkViewModel(
     accounts: Accounts,
     clock: Clock,
     private val proxies: ProxyPreference,
+    private val pictureRows: StatsPictureRows,
     private val sharing: TextSharing,
 ) : ViewModel() {
     val facts: List<Pair<String, String>> =
@@ -42,6 +44,9 @@ class NetworkViewModel(
     private val typedProxy = MutableStateFlow(proxies.setting.value)
     val proxy: StateFlow<ProxySetting> = typedProxy
 
+    private val typedRows = MutableStateFlow(pictureRows.rows.value.toString())
+    val pictureRowsText: StateFlow<String> = typedRows
+
     init {
         checks.all.forEachIndexed { index, check ->
             viewModelScope.launch {
@@ -60,6 +65,13 @@ class NetworkViewModel(
     private fun proxyFact(credentials: SupabaseCredentials): String {
         val proxy = credentials.proxy?.toString() ?: return "none"
         return if (credentials.proxyLogin != null) "$proxy (with login)" else proxy
+    }
+
+    /** Keeps only a whole number of 1 or more. */
+    fun setPictureRows(text: String) {
+        typedRows.value = text
+        val rows = text.trim().toIntOrNull()?.takeIf { it >= 1 } ?: return
+        viewModelScope.launch { pictureRows.set(rows) }
     }
 
     fun setProxy(setting: ProxySetting) {

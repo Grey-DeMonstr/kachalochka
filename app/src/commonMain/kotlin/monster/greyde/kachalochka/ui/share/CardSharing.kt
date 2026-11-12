@@ -7,12 +7,12 @@ interface CardSharing {
     /** False hides the share popup's picture choice. */
     val available: Boolean
 
-    /** Shares the picture that [strips] make from top to bottom. */
-    suspend fun share(strips: List<ImageBitmap>)
+    /** Shares every picture, each made of its strips from top to bottom. */
+    suspend fun share(pictures: List<List<ImageBitmap>>)
 }
 
 object UnavailableCardSharing : CardSharing {
     override val available = false
 
-    override suspend fun share(strips: List<ImageBitmap>) = Unit
+    override suspend fun share(pictures: List<List<ImageBitmap>>) = Unit
 }

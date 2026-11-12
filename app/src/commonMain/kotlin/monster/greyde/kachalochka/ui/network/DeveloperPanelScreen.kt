@@ -46,6 +46,7 @@ private enum class PanelTab(
 ) {
     Info("tab-info", Strings::infoTab),
     Proxy("tab-proxy", Strings::proxyTab),
+    Options("tab-options", Strings::optionsTab),
 }
 
 /** The facts and checks of the report that "Share" sends, and the proxy settings. */
@@ -67,6 +68,7 @@ fun DeveloperPanelScreen(onBack: () -> Unit) {
         when (tab) {
             PanelTab.Info -> InfoTab()
             PanelTab.Proxy -> ProxyTab()
+            PanelTab.Options -> OptionsTab()
         }
     }
 }
@@ -161,5 +163,30 @@ private fun ColumnScope.ProxyTab() {
             Text(s.useProxy, Modifier.padding(start = 8.dp), fontSize = 16.sp)
         }
         Text(s.proxyAfterRestart, fontSize = 13.5.sp, color = muted)
+    }
+}
+
+@Composable
+private fun ColumnScope.OptionsTab() {
+    val viewModel: NetworkViewModel = koinViewModel()
+    val text by viewModel.pictureRowsText.collectAsState()
+    val s = strings()
+    Column(
+        Modifier
+            .weight(1f)
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(s.statsPictureRows, fontSize = 16.sp)
+        TextInput(
+            text,
+            "",
+            viewModel::setPictureRows,
+            Modifier.testTag("picture-rows"),
+            KeyboardOptions(keyboardType = KeyboardType.Number),
+            valid = text.trim().toIntOrNull()?.let { it >= 1 } == true,
+        )
     }
 }

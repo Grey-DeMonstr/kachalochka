@@ -51,6 +51,7 @@ import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.stats.StatsPictureRows
 import monster.greyde.kachalochka.ui.strings.AppStrings
 import monster.greyde.kachalochka.ui.strings.EnStrings
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
@@ -117,6 +118,7 @@ fun fakeGymModule(gym: FakeGym) =
         single<SystemBars> { gym.systemBars }
         single<DeviceNetwork> { gym.network }
         single<ProxyPreference> { gym.proxies }
+        single<StatsPictureRows> { gym.pictureRows }
         single { NetworkChecks(HttpClient(gym.serverAnswers), gym.network, gym.credentials) }
         single { gym.unsaved }
         viewModelOf(::AccountsViewModel)

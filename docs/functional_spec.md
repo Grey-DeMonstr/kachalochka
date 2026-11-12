@@ -746,11 +746,19 @@ machine. A period without sets shows "No sets in this period".
 
 - "As text" gives the cards as text. With groups by tags, the lines make sections as in a shared
   visit.
-- "As image" (Android only) shares the overview as the picture of a visit (see
-  [4.5](#45-share-a-visit)): a visit card with the period ("past month") in place of the date.
-  The card has the tags of the listed machines, then one row for each card of the overview, in
-  its order and with its filter: the name, the best set of the period, and the change in green
-  when it is a gain. A machine new in the period shows the "New" chip.
+- "As image" (Android only) shares the overview as pictures of a visit (see
+  [4.5](#45-share-a-visit)), all in one tap: visit cards with the first and last day of the period
+  ("12 October – 12 November") in place of the date. Each card repeats the nickname and the
+  dates, so it is clear when it is sent alone. A card has the tags of its machines, then one row
+  for each card of the overview, in its order and with its filter: the name, the best set of
+  the period, and the change in green when it is a gain. A machine new in the period shows the
+  "New" chip. No picture has more than N rows; N is 15 and the developer panel sets it (see
+  [12](#12-developer-panel)).
+  - Without "Group by tag", the rows split into pictures of almost equal size: 23 rows make
+    12 + 11.
+  - With "Group by tag", the groups keep their order. Adjacent groups share a picture while their
+    rows fit in N. A group of more than N rows splits into almost equal pictures, which no other
+    group joins.
 
 The text:
 
@@ -1154,7 +1162,7 @@ is hidden and is only on Android.
    the right edge, opposite the version, until the app stops.
 2. Tap "Developer panel" to open the panel.
 
-The panel has two tabs, "Info" and "Proxy settings". "Info" is open first.
+The panel has three tabs: "Info", "Proxy settings" and "Options". "Info" is open first.
 
 **Info.** The tab shows the app and Android versions, the device, the time and the time zone, the
 server host, the network type, the DNS servers and Private DNS, the system proxy and the proxy in
@@ -1176,6 +1184,11 @@ requests of the app to the server go through it: sign-in, sync, friends' data, p
 checks. If the proxy asks for a login, the app sends the login and the password. The device keeps
 the setting. A change applies after the app starts again, as the note "The proxy starts to work
 after the app restarts." tells.
+
+**Options.** The tab has the number field "Rows in a statistics image": the most rows on one
+picture of the statistics overview (see [8.1](#81-overview-overall)). It starts at 15. The
+field accepts a whole number of 1 or more; any other text shows as wrong and the device keeps the
+last good number.
 
 ## 13. Privacy and terms
 

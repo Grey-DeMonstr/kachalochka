@@ -93,6 +93,7 @@ import monster.greyde.kachalochka.ui.share.CardSharing
 import monster.greyde.kachalochka.ui.share.PhotoSharing
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.share.TextSharing
+import monster.greyde.kachalochka.ui.stats.StatsPictureRows
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.theme.SystemBars
 import monster.greyde.kachalochka.ui.theme.ThemePreference
@@ -410,8 +411,12 @@ class RecordingCardSharing : CardSharing {
     override var available = true
     val shared = mutableListOf<ImageBitmap>()
 
-    override suspend fun share(strips: List<ImageBitmap>) {
-        shared += strips
+    /** Each call, as its pictures of strips. */
+    val pictureCalls = mutableListOf<List<List<ImageBitmap>>>()
+
+    override suspend fun share(pictures: List<List<ImageBitmap>>) {
+        pictureCalls += pictures
+        shared += pictures.flatten()
     }
 }
 
@@ -572,6 +577,7 @@ class FakeGym(
     val systemBars = RecordingSystemBars()
     val network = FakeDeviceNetwork()
     val proxies = ProxyPreference(deviceStore)
+    val pictureRows = StatsPictureRows(deviceStore)
 
     /** Every request of the network checks gets an empty 200. */
     val serverAnswers = MockEngine { respond("") }

@@ -78,6 +78,8 @@ interface Strings {
     val developerPanel: String
     val infoTab: String
     val proxyTab: String
+    val optionsTab: String
+    val statsPictureRows: String
     val proxyLogin: String
     val proxyPassword: String
     val proxyAddress: String

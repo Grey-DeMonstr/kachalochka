@@ -112,6 +112,8 @@ object RuStrings : Strings {
     override val developerPanel = "Панель разработчика"
     override val infoTab = "Информация"
     override val proxyTab = "Настройки прокси"
+    override val optionsTab = "Параметры"
+    override val statsPictureRows = "Строк на картинке статистики"
     override val proxyLogin = "Логин"
     override val proxyPassword = "Пароль"
     override val proxyAddress = "хост:порт"

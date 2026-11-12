@@ -62,6 +62,7 @@ import monster.greyde.kachalochka.ui.settings.AccountViewModel
 import monster.greyde.kachalochka.ui.settings.ProfileViewModel
 import monster.greyde.kachalochka.ui.settings.SettingsViewModel
 import monster.greyde.kachalochka.ui.stats.StatisticsViewModel
+import monster.greyde.kachalochka.ui.stats.StatsPictureRows
 import monster.greyde.kachalochka.ui.strings.LanguagePreference
 import monster.greyde.kachalochka.ui.theme.ThemePreference
 import monster.greyde.kachalochka.ui.timer.RestSoundPreference
@@ -125,6 +126,7 @@ val appModule =
         singleOf(::RestSoundPreference)
         singleOf(::SetCommentPreference)
         singleOf(::ProxyPreference)
+        singleOf(::StatsPictureRows)
         single {
             GroupsCache(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
         }

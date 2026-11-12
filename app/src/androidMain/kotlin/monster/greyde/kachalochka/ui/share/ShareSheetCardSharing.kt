@@ -14,27 +14,30 @@ class ShareSheetCardSharing(
 ) : CardSharing {
     override val available = true
 
-    override suspend fun share(strips: List<ImageBitmap>) {
-        val png =
-            withContext(Dispatchers.Default) {
-                val picture =
-                    Bitmap.createBitmap(
-                        strips.first().width,
-                        strips.sumOf { it.height },
-                        Bitmap.Config.ARGB_8888,
-                    )
-                val canvas = Canvas(picture)
-                var top = 0f
-                strips.forEach { strip ->
-                    // A layer's picture lives on the GPU, out of reach of this canvas.
-                    val readable = strip.asAndroidBitmap().copy(Bitmap.Config.ARGB_8888, false)
-                    canvas.drawBitmap(readable, 0f, top, null)
-                    top += strip.height
-                }
-                ByteArrayOutputStream()
-                    .also { picture.compress(Bitmap.CompressFormat.PNG, 100, it) }
-                    .toByteArray()
-            }
-        shareImage(context, png, "visit.png", "image/png")
+    override suspend fun share(pictures: List<List<ImageBitmap>>) {
+        val pngs = withContext(Dispatchers.Default) { pictures.map(::png) }
+        val names =
+            if (pngs.size == 1) listOf("visit.png") else pngs.indices.map { "stats-${it + 1}.png" }
+        shareImages(context, pngs, names, "image/png")
+    }
+
+    private fun png(strips: List<ImageBitmap>): ByteArray {
+        val picture =
+            Bitmap.createBitmap(
+                strips.first().width,
+                strips.sumOf { it.height },
+                Bitmap.Config.ARGB_8888,
+            )
+        val canvas = Canvas(picture)
+        var top = 0f
+        strips.forEach { strip ->
+            // A layer's picture lives on the GPU, out of reach of this canvas.
+            val readable = strip.asAndroidBitmap().copy(Bitmap.Config.ARGB_8888, false)
+            canvas.drawBitmap(readable, 0f, top, null)
+            top += strip.height
+        }
+        return ByteArrayOutputStream()
+            .also { picture.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            .toByteArray()
     }
 }

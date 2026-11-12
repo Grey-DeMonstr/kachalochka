@@ -95,6 +95,8 @@ object EnStrings : Strings {
     override val developerPanel = "Developer panel"
     override val infoTab = "Info"
     override val proxyTab = "Proxy settings"
+    override val optionsTab = "Options"
+    override val statsPictureRows = "Rows in a statistics image"
     override val proxyLogin = "Login"
     override val proxyPassword = "Password"
     override val proxyAddress = "host:port"

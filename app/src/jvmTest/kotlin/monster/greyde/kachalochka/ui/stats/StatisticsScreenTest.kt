@@ -146,6 +146,36 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun a_long_overview_is_shared_as_several_pictures_at_once() {
+        runBlocking {
+            gym.pictureRows.set(1)
+            listOf(t0 - 40.days to 40.0, t0 - 1.days to 45.0).forEach { (at, weight) ->
+                gym.sets.upsert(
+                    WorkoutSet(
+                        WorkoutSetId.random(),
+                        null,
+                        VisitId.random(),
+                        row.id,
+                        weight,
+                        8,
+                        0,
+                        at,
+                        at,
+                        false,
+                    ),
+                )
+            }
+        }
+        runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {
+            onNodeWithTag("stats-export").performClick()
+            waitForIdle()
+            onNodeWithTag("share-as-image").performClick()
+            waitUntil { gym.cardShares.pictureCalls.isNotEmpty() }
+        }
+        assertEquals(listOf(2), gym.cardShares.pictureCalls.map { it.size })
+    }
+
+    @Test
     fun the_share_popup_has_only_text_where_a_card_cannot_be_shared() {
         gym.cardShares.available = false
         runScreenTest(gym, screen = { StatisticsScreen(null, {}, {}) }) {

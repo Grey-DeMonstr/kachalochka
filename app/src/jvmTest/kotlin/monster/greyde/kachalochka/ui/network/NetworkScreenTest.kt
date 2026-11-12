@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import monster.greyde.kachalochka.AppVersion
 import monster.greyde.kachalochka.fakes.FakeGym
@@ -70,6 +71,27 @@ class NetworkScreenTest {
             ProxySetting("192.0.2.7:3128", true, "ivan", "secret"),
             gym.proxies.setting.value,
         )
+    }
+
+    @Test
+    fun the_options_tab_keeps_a_whole_number_of_picture_rows() {
+        val gym = FakeGym()
+        runScreenTest(gym, screen = { DeveloperPanelScreen(onBack = {}) }) {
+            onNodeWithTag("tab-options").assertTextEquals("Options")
+            onNodeWithTag("tab-options").performClick()
+            onNodeWithText("Rows in a statistics image").assertExists()
+            onNodeWithTag("picture-rows").assertTextEquals("15")
+
+            onNodeWithTag("picture-rows").performTextClearance()
+            onNodeWithTag("picture-rows").performTextInput("8")
+            waitForIdle()
+            assertEquals(8, gym.pictureRows.rows.value)
+
+            onNodeWithTag("picture-rows").performTextClearance()
+            onNodeWithTag("picture-rows").performTextInput("0")
+            waitForIdle()
+            assertEquals(8, gym.pictureRows.rows.value)
+        }
     }
 
     @Test
