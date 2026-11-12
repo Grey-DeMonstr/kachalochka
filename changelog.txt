@@ -1,5 +1,12 @@
 Kachalochka - Changelog
 
+1.9.6
+
+- A friend's visit card has a menu with "Add to plan", "Repeat today" and "Share".
+- On Android, the statistics overview is shared as several pictures with the dates of the period.
+- On Android, the developer panel has tabs and an optional login for the proxy.
+
+
 1.9.5
 
 - On Android, the statistics overview is shared as a visit card picture.
