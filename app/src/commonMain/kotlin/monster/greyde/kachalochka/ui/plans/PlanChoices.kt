@@ -11,10 +11,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import monster.greyde.kachalochka.core.domain.gym.CalendarDay
+import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.PlanId
 import monster.greyde.kachalochka.ui.strings.strings
 
@@ -88,4 +92,38 @@ internal fun PlacementNoticeText(
         fontSize = 15.sp,
         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
     )
+}
+
+/**
+ * Asks which plan takes the visit or the machines while [viewModel] offers its choices. A new plan
+ * opens with the day of an own visit, or with the stand-ins of shown machines. [onStoodIn] follows
+ * once another account's machine has the account's own standing in.
+ */
+@Composable
+internal fun PlanChooser(
+    viewModel: PlacementViewModel,
+    onNewPlan: (CalendarDay) -> Unit = {},
+    onNewPlanOfMachines: (List<MachineId>) -> Unit = {},
+    onStoodIn: () -> Unit = {},
+) {
+    val state by viewModel.state.collectAsState()
+    val choices = state.choices ?: return
+    PlanChoiceDialog(
+        choices,
+        onChoose = { viewModel.addTo(it, onStoodIn) },
+        onNewPlan = { viewModel.newPlan(onNewPlan, onNewPlanOfMachines, onStoodIn) },
+        onCancel = viewModel::cancelChoice,
+    )
+}
+
+/** What the last placement of what was shown as [key] said; a tap hides it. */
+@Composable
+internal fun PlacementNotice(
+    viewModel: PlacementViewModel,
+    key: String,
+    modifier: Modifier = Modifier,
+) {
+    val state by viewModel.state.collectAsState()
+    val notice = state.notice?.takeIf { it.key == key } ?: return
+    PlacementNoticeText(notice.text, viewModel::dismissNotice, modifier)
 }

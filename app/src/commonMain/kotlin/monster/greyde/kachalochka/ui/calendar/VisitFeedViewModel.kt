@@ -194,7 +194,7 @@ class VisitFeedViewModel(
         if (!filled) loadMore()
     }
 
-    // A trainer deletes and repeats none of a trainee's visits.
+    // A trainer deletes none of a trainee's visits.
     fun askToRemove(id: VisitId) {
         if (accounts.traineeActive()) return
         removing = own.firstOrNull { it.id == id } ?: return
@@ -222,7 +222,6 @@ class VisitFeedViewModel(
         day: CalendarDay,
         onDone: (CalendarDay) -> Unit,
     ) {
-        if (accounts.traineeActive()) return
         val active = accounts.activeId.value
         writes.launch { placement.repeatToday(active, day)?.let(onDone) }
     }

@@ -357,8 +357,9 @@ for it.
 
 - `AccountsUi.traineeActive` (and `traineeActive()` in a composable) hides what the trainer must
   not change.
-- The view models that write a visit (`VisitViewModel`, `CalendarViewModel`,
-  `VisitFeedViewModel`, `PlansViewModel`, `MachinePlacementViewModel`) refuse to write it.
+- `Placement` puts nothing into today's visit: no plan start, no "Repeat today", no machine
+  planned for today. `VisitViewModel`, `CalendarViewModel` and `VisitFeedViewModel` refuse the
+  other writes to a visit, and `PlansViewModel` starts no plan.
   `MachineCatalogue.standIns` refuses to copy another account's machine.
   `MachineFormViewModel.readOnly` keeps an existing machine as it is.
 - `VisitNormalization` skips the trainee's visits, and prior bests are not recalculated on the
@@ -713,22 +714,24 @@ best of its machine: `prior_best_weight`, `prior_best_reps` and `prior_best_sets
 
 **Placement.** `Placement` (`app/ui/plans`) writes each "to a plan" and "to today" action. Each
 call takes the account that the screen offered the action to, and checks that it is still active
-before it writes and before it opens today. A start of a plan writes today's visit first, then
-soft-deletes the plan unless it is pinned, so a failed write keeps the plan.
+before it writes and before it opens today. While a trainee is active, it puts nothing into
+today's visit, because that visit is the trainee's to record. A start of a plan writes today's
+visit first, then soft-deletes the plan unless it is pinned, so a failed write keeps the plan.
 
 - `Placement.machinesOn` gives the machines of the shown visit of a day. "Repeat today", the
   machine picker and a new plan from a visit read them there.
-- `MachinePlacementViewModel` serves the "⋮" menu that the machine form, the machine page and
-  "Friend's machine" share. It first asks `MachineCatalogue.standIns` for the account's machine.
-  While a trainee is active, `standIns` gives no machine that is not the trainee's, because a
-  trainer must not write links for a trainee.
-- `VisitPlacementViewModel` serves "Add to plan…" of the visit screen and of the visit cards in
-  the calendar and the feed. For an own visit it reads the visit again and adds its
-  `visitMachines` that the plan does not have. For a friend's card it asks `standIns` for the
-  account's machines of `VisitCardUi.friendMachines`, then adds them, opens a new plan with them
-  (`PlanRoute.machineIds`) or plans them in today's visit (`repeatToday`). The friends of a
-  trainee are never shown, so a trainer never reaches it. Its notice is for a visit key: the
-  day for an own visit, the card tag for a friend's card.
+- `PlacementViewModel` serves "Add to plan…" of the visit screen, of the visit cards in the
+  calendar and the feed, and of the "⋮" menu that the machine form, the machine page and "Friend's
+  machine" share. It also serves "Repeat today" of that menu and of a friend's card. A choice is
+  for an own visit's day or for shown machines (`PlacedMachine`): one on a machine screen,
+  `VisitCardUi.friendMachines` on a friend's card. For an own visit it reads the visit again and
+  adds its `visitMachines` that the plan does not have. Shown machines go first through
+  `MachineCatalogue.standIns`; their stand-ins are then added to the plan, open a new plan
+  (`PlanRoute.machineIds`) or are planned in today's visit (`planToday`). While a trainee is
+  active, `standIns` gives no machine that is not the trainee's, because a trainer must not write
+  links for a trainee. Its notice is for a key: the machine id on a machine screen, the day for an
+  own visit, the card tag for a friend's card. `PlanChooser` and `PlacementNotice` draw its choice
+  and its notice.
 
 ### 4.10 Body measures
 

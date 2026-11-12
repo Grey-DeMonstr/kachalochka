@@ -59,9 +59,9 @@ import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
-import monster.greyde.kachalochka.ui.plans.VisitPlacementNotice
-import monster.greyde.kachalochka.ui.plans.VisitPlacementViewModel
-import monster.greyde.kachalochka.ui.plans.VisitPlanChooser
+import monster.greyde.kachalochka.ui.plans.PlacementNotice
+import monster.greyde.kachalochka.ui.plans.PlacementViewModel
+import monster.greyde.kachalochka.ui.plans.PlanChooser
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -84,7 +84,7 @@ fun VisitScreen(
     onOpenedMachineConsumed: () -> Unit = {},
 ) {
     val viewModel: VisitViewModel = koinViewModel { parametersOf(day) }
-    val placement: VisitPlacementViewModel = koinViewModel()
+    val placement: PlacementViewModel = koinViewModel()
     val share: VisitShareViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -158,7 +158,7 @@ fun VisitScreen(
         },
     ) {
         if (current == null) return@Screen
-        VisitPlacementNotice(placement, day.iso, Modifier.padding(horizontal = 16.dp))
+        PlacementNotice(placement, day.iso, Modifier.padding(horizontal = 16.dp))
         current.card?.let {
             VisitShareNotice(share, it.tag, Modifier.padding(horizontal = 16.dp))
         }
@@ -176,7 +176,7 @@ fun VisitScreen(
             modifier = Modifier.weight(1f),
         )
     }
-    VisitPlanChooser(placement) { onSaveAsPlan() }
+    PlanChooser(placement, { onSaveAsPlan() })
     VisitShareDialog(share)
 }
 

@@ -52,9 +52,10 @@ import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SegmentRow
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
-import monster.greyde.kachalochka.ui.plans.VisitPlacementNotice
-import monster.greyde.kachalochka.ui.plans.VisitPlacementViewModel
-import monster.greyde.kachalochka.ui.plans.VisitPlanChooser
+import monster.greyde.kachalochka.ui.machine.PlacedMachine
+import monster.greyde.kachalochka.ui.plans.PlacementNotice
+import monster.greyde.kachalochka.ui.plans.PlacementViewModel
+import monster.greyde.kachalochka.ui.plans.PlanChooser
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -69,7 +70,7 @@ fun CalendarScreen(
     onNewPlanOfMachines: (List<MachineId>) -> Unit = {},
 ) {
     val viewModel: CalendarViewModel = koinViewModel()
-    val placement: VisitPlacementViewModel = koinViewModel()
+    val placement: PlacementViewModel = koinViewModel()
     val share: VisitShareViewModel = koinViewModel()
     val modes: VisitsModePreference = koinInject()
     val mode by modes.mode.collectAsState()
@@ -114,7 +115,7 @@ fun CalendarScreen(
                     viewModel.startMove(visit)
                 }
         }
-        VisitPlanChooser(placement, onNewPlanOfMachines, onSaveAsPlan)
+        PlanChooser(placement, onSaveAsPlan, onNewPlanOfMachines)
         VisitShareDialog(share)
     }
 }
@@ -122,7 +123,7 @@ fun CalendarScreen(
 @Composable
 private fun ColumnScope.CalendarMode(
     viewModel: CalendarViewModel,
-    placement: VisitPlacementViewModel,
+    placement: PlacementViewModel,
     share: VisitShareViewModel,
     onOpenVisit: (CalendarDay) -> Unit,
     onOpenFriendVisit: (UserId, String, CalendarDay) -> Unit,
@@ -170,7 +171,7 @@ private fun ColumnScope.CalendarMode(
                         onRemove = { viewModel.askToRemove(visit) }.takeUnless { readOnly },
                     ).takeIf { !current.moving },
             )
-            VisitPlacementNotice(placement, current.day.iso)
+            PlacementNotice(placement, current.day.iso)
             VisitShareNotice(share, card.tag)
         }
         if (current.noVisit) {
@@ -198,7 +199,7 @@ private fun ColumnScope.CalendarMode(
                         .friendMenu(placement, share, onOpenVisit)
                         ?.takeIf { !current.moving },
             )
-            VisitPlacementNotice(placement, card.tag)
+            PlacementNotice(placement, card.tag)
             VisitShareNotice(share, card.tag)
         }
     }
@@ -229,7 +230,7 @@ private fun ColumnScope.CalendarMode(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ColumnScope.FeedMode(
-    placement: VisitPlacementViewModel,
+    placement: PlacementViewModel,
     share: VisitShareViewModel,
     onOpenVisit: (CalendarDay) -> Unit,
     onOpenFriendVisit: (UserId, String, CalendarDay) -> Unit,
@@ -270,7 +271,7 @@ private fun ColumnScope.FeedMode(
                             onOpen = { card.openAsFriend(onOpenFriendVisit) },
                             menu = card.friendMenu(placement, share, onOpenVisit),
                         )
-                        VisitPlacementNotice(placement, card.tag)
+                        PlacementNotice(placement, card.tag)
                         VisitShareNotice(share, card.tag)
                     } else {
                         VisitCard(
@@ -292,7 +293,7 @@ private fun ColumnScope.FeedMode(
                                         }.takeUnless { readOnly },
                                 ),
                         )
-                        VisitPlacementNotice(placement, card.day.iso)
+                        PlacementNotice(placement, card.day.iso)
                         VisitShareNotice(share, card.tag)
                     }
                 }
@@ -332,16 +333,17 @@ private fun VisitCardUi.openAsFriend(open: (UserId, String, CalendarDay) -> Unit
 
 /** The menu of a friend's card, once its sets are read. */
 private fun VisitCardUi.friendMenu(
-    placement: VisitPlacementViewModel,
+    placement: PlacementViewModel,
     share: VisitShareViewModel,
     onOpenToday: (CalendarDay) -> Unit,
 ): VisitMenuActions? {
     if (friendMachines.isEmpty()) return null
+    val shown = friendMachines.map { PlacedMachine(it, ofFriend = true) }
     return VisitMenuActions(
         onMove = null,
-        onToPlan = { placement.choosePlan(tag, friendMachines) },
+        onToPlan = { placement.choosePlan(tag, shown) },
         onShare = { share.offer(this) },
-        onRepeatToday = { placement.repeatToday(tag, friendMachines, onOpenToday) },
+        onRepeatToday = { placement.planToday(tag, shown, onOpen = onOpenToday) },
         onRemove = null,
     )
 }

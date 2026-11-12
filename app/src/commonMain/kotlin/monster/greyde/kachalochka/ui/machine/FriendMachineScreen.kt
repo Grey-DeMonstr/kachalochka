@@ -43,6 +43,9 @@ import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.photos.PhotoStrip
 import monster.greyde.kachalochka.ui.photos.PhotoViewer
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
+import monster.greyde.kachalochka.ui.plans.PlacementNotice
+import monster.greyde.kachalochka.ui.plans.PlacementViewModel
+import monster.greyde.kachalochka.ui.plans.PlanChooser
 import monster.greyde.kachalochka.ui.share.TextCopying
 import monster.greyde.kachalochka.ui.stats.MachineStats
 import monster.greyde.kachalochka.ui.stats.PeriodChips
@@ -79,7 +82,7 @@ fun FriendMachineScreen(
     val state by viewModel.state.collectAsState()
     val offline by viewModel.offline.collectAsState()
     var opened by remember { mutableStateOf<ShownPhoto?>(null) }
-    val placement: MachinePlacementViewModel = koinViewModel()
+    val placement: PlacementViewModel = koinViewModel()
     // Taking is offered only while no own machine stands in, so only then is a copy written.
     val onStoodIn = { if (state?.canTake == true) viewModel.refresh() }
     // The view model already loads once created: it follows accounts.activeId from init.
@@ -90,14 +93,26 @@ fun FriendMachineScreen(
         actions = {
             if (state != null && !offline) {
                 MachineMenu(
-                    onToPlan = { placement.choosePlan(viewModel.placed()) },
-                    onToday = { placement.planToday(viewModel.placed(), onStoodIn, onOpenVisit) },
+                    onToPlan = {
+                        placement.choosePlan(
+                            machineId.value,
+                            listOf(viewModel.placed()),
+                        )
+                    },
+                    onToday = {
+                        placement.planToday(
+                            machineId.value,
+                            listOf(viewModel.placed()),
+                            onStoodIn,
+                            onOpenVisit,
+                        )
+                    },
                 )
             }
         },
     ) {
         val current = state
-        PlacementNotice(placement, machineId, Modifier.padding(horizontal = 16.dp))
+        PlacementNotice(placement, machineId.value, Modifier.padding(horizontal = 16.dp))
         if (offline) {
             OfflineNotice(onRetry = viewModel::refresh)
         } else if (current != null) {
@@ -192,7 +207,7 @@ fun FriendMachineScreen(
             }
         }
     }
-    PlanChooser(placement, onNewPlan, onStoodIn)
+    PlanChooser(placement, onNewPlanOfMachines = { onNewPlan(it.single()) }, onStoodIn = onStoodIn)
     opened?.let { PhotoViewer(state?.photos.orEmpty(), it, onClose = { opened = null }) }
 }
 

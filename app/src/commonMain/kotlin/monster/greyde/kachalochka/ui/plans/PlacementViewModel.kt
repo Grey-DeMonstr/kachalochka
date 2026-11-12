@@ -16,40 +16,41 @@ import monster.greyde.kachalochka.ui.machine.PlacedMachine
 import monster.greyde.kachalochka.ui.machine.StandIn
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
-/** [visit] names the visit the screen showed, so the notice shows under that visit only. */
-data class VisitPlacementNoticeUi(
-    val visit: String,
+/** [key] names what the screen showed, so the notice shows under that only. */
+data class PlacementNoticeUi(
+    val key: String,
     val text: String,
 )
 
-data class VisitPlacementUi(
+data class PlacementUi(
     /** The plans offered while "Add to plan…" asks which; null while it does not ask. */
     val choices: List<PlanChoiceUi>? = null,
-    val notice: VisitPlacementNoticeUi? = null,
+    val notice: PlacementNoticeUi? = null,
 )
 
 /**
- * Puts the machines of a visit into a plan or into today's visit, as a machine screen puts its one
- * machine. A friend's visit goes in as the account's stand-ins for the friend's machines.
+ * Puts an own visit, or shown machines, into a plan or into today's visit. Shown machines go in
+ * as the account's machines that [MachineCatalogue.standIns] gives for them. Every write is for
+ * the account the screen offered the action to (spec §4.3).
  */
-class VisitPlacementViewModel(
+class PlacementViewModel(
     private val placement: Placement,
     private val accounts: Accounts,
     private val catalogue: MachineCatalogue,
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(VisitPlacementUi())
-    val state: StateFlow<VisitPlacementUi> = mutableState
+    private val mutableState = MutableStateFlow(PlacementUi())
+    val state: StateFlow<PlacementUi> = mutableState
     private val writes = WriteGuard(viewModelScope)
 
     /**
-     * The visit an open choice is for, and the account it was offered to. An own visit is on
-     * [day]; a friend's visit has [friendMachines] instead.
+     * What an open choice is for, and the account it was offered to: the own visit on [day], else
+     * [machines].
      */
     private class Choosing(
         val key: String,
         val owner: UserId?,
         val day: CalendarDay?,
-        val friendMachines: List<MachineId>,
+        val machines: List<PlacedMachine>,
     )
 
     private var choosing: Choosing? = null
@@ -58,7 +59,7 @@ class VisitPlacementViewModel(
         viewModelScope.launch {
             accounts.activeId.collect {
                 choosing = null
-                mutableState.value = VisitPlacementUi()
+                mutableState.value = PlacementUi()
             }
         }
     }
@@ -66,11 +67,11 @@ class VisitPlacementViewModel(
     /** Asks which plan takes the machines of the own visit on [day]. */
     fun choosePlan(day: CalendarDay) = choose(Choosing(day.iso, owner(), day, emptyList()))
 
-    /** Asks which plan takes the friend's visit shown as [key], with [friendMachines]. */
+    /** Asks which plan takes [machines], shown as [key]. */
     fun choosePlan(
         key: String,
-        friendMachines: List<MachineId>,
-    ) = choose(Choosing(key, owner(), null, friendMachines))
+        machines: List<PlacedMachine>,
+    ) = choose(Choosing(key, owner(), null, machines))
 
     private fun owner() = accounts.activeId.value
 
@@ -78,7 +79,7 @@ class VisitPlacementViewModel(
         viewModelScope.launch {
             val choices = placement.choices(next.owner) ?: return@launch
             choosing = next
-            mutableState.value = VisitPlacementUi(choices = choices)
+            mutableState.value = PlacementUi(choices = choices)
         }
     }
 
@@ -87,8 +88,14 @@ class VisitPlacementViewModel(
         mutableState.value = mutableState.value.copy(choices = null)
     }
 
-    /** Appends the visit's machines the plan lacks, in the visit's order. */
-    fun addTo(plan: PlanId) {
+    /**
+     * Appends the machines the plan lacks, in the shown order. [onStoodIn] follows once another
+     * account's machine has the account's own standing in.
+     */
+    fun addTo(
+        plan: PlanId,
+        onStoodIn: () -> Unit = {},
+    ) {
         val title =
             mutableState.value.choices
                 ?.firstOrNull { it.id == plan }
@@ -96,18 +103,20 @@ class VisitPlacementViewModel(
         val choice = choosing ?: return
         cancelChoice()
         writes.launch {
+            val owner = choice.owner
             val done =
-                choice.day?.let { placement.addVisitToPlan(choice.owner, plan, it) }
-                    ?: standIns(choice)?.let { placement.addToPlan(choice.owner, plan, it) }
+                choice.day?.let { placement.addVisitToPlan(owner, plan, it) }
+                    ?: standIns(choice, onStoodIn)?.let { placement.addToPlan(owner, plan, it) }
             if (done != true) return@launch
             notice(choice.key, AppStrings.current.addedTo(title))
         }
     }
 
-    /** [onOpen] gets the day of an own visit; [onOpenMachines] the stand-ins of a friend's. */
+    /** [onOpen] gets the day of an own visit; [onOpenMachines] the stand-ins of shown machines. */
     fun newPlan(
+        onOpen: (CalendarDay) -> Unit = {},
         onOpenMachines: (List<MachineId>) -> Unit = {},
-        onOpen: (CalendarDay) -> Unit,
+        onStoodIn: () -> Unit = {},
     ) {
         val choice = choosing ?: return
         cancelChoice()
@@ -115,19 +124,20 @@ class VisitPlacementViewModel(
         if (day != null) {
             onOpen(day)
         } else {
-            writes.launch { standIns(choice)?.let(onOpenMachines) }
+            writes.launch { standIns(choice, onStoodIn)?.let(onOpenMachines) }
         }
     }
 
-    /** Plans a friend's visit shown as [key] in today's visit, then hands on today. */
-    fun repeatToday(
+    /** Plans [machines], shown as [key], in today's visit, then hands on today. */
+    fun planToday(
         key: String,
-        friendMachines: List<MachineId>,
+        machines: List<PlacedMachine>,
+        onStoodIn: () -> Unit = {},
         onOpen: (CalendarDay) -> Unit,
     ) {
-        val choice = Choosing(key, owner(), null, friendMachines)
+        val choice = Choosing(key, owner(), null, machines)
         writes.launch {
-            val own = standIns(choice) ?: return@launch
+            val own = standIns(choice, onStoodIn) ?: return@launch
             placement.planToday(choice.owner, own)?.let(onOpen)
         }
     }
@@ -136,22 +146,27 @@ class VisitPlacementViewModel(
         mutableState.value = mutableState.value.copy(notice = null)
     }
 
-    /** The account's machines for the friend's visit; null, with a notice when one is due. */
-    private suspend fun standIns(choice: Choosing): List<MachineId>? {
-        val shown = choice.friendMachines.map { PlacedMachine(it, ofFriend = true) }
-        return when (val found = catalogue.standIns(choice.owner, shown)) {
-            is StandIn.Found -> found.machines.map { it.id }
+    /** The account's machines for the shown ones; null, with a notice when one is due. */
+    private suspend fun standIns(
+        choice: Choosing,
+        onStoodIn: () -> Unit,
+    ): List<MachineId>? =
+        when (val found = catalogue.standIns(choice.owner, choice.machines)) {
+            is StandIn.Found -> {
+                found.machines
+                    .map { it.id }
+                    .also { if (it != choice.machines.map { shown -> shown.id }) onStoodIn() }
+            }
 
             StandIn.Offline -> null.also { notice(choice.key, AppStrings.current.offline) }
             StandIn.Gone -> null.also { notice(choice.key, AppStrings.current.machineGone) }
             StandIn.Switched -> null
         }
-    }
 
     private fun notice(
         key: String,
         text: String,
     ) {
-        mutableState.value = mutableState.value.copy(notice = VisitPlacementNoticeUi(key, text))
+        mutableState.value = mutableState.value.copy(notice = PlacementNoticeUi(key, text))
     }
 }

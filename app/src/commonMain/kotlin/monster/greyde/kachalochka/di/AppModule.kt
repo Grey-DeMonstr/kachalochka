@@ -42,7 +42,6 @@ import monster.greyde.kachalochka.ui.machine.MachineCatalogue
 import monster.greyde.kachalochka.ui.machine.MachineFormViewModel
 import monster.greyde.kachalochka.ui.machine.MachineListViewModel
 import monster.greyde.kachalochka.ui.machine.MachinePickerViewModel
-import monster.greyde.kachalochka.ui.machine.MachinePlacementViewModel
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.MineChooserViewModel
 import monster.greyde.kachalochka.ui.measures.BodyFatViewModel
@@ -55,9 +54,9 @@ import monster.greyde.kachalochka.ui.network.ProxyPreference
 import monster.greyde.kachalochka.ui.network.proxiedClient
 import monster.greyde.kachalochka.ui.photos.PhotoLoaders
 import monster.greyde.kachalochka.ui.plans.Placement
+import monster.greyde.kachalochka.ui.plans.PlacementViewModel
 import monster.greyde.kachalochka.ui.plans.PlanFormViewModel
 import monster.greyde.kachalochka.ui.plans.PlansViewModel
-import monster.greyde.kachalochka.ui.plans.VisitPlacementViewModel
 import monster.greyde.kachalochka.ui.settings.AccountViewModel
 import monster.greyde.kachalochka.ui.settings.ProfileViewModel
 import monster.greyde.kachalochka.ui.settings.SettingsViewModel
@@ -142,8 +141,7 @@ val appModule =
         viewModelOf(::MeasuresViewModel)
         viewModelOf(::PlansViewModel)
         viewModelOf(::PeopleViewModel)
-        viewModelOf(::MachinePlacementViewModel)
-        viewModelOf(::VisitPlacementViewModel)
+        viewModelOf(::PlacementViewModel)
         viewModelOf(::VisitShareViewModel)
         viewModelOf(::BodyFatViewModel)
         viewModelOf(::MeasureViewModel)

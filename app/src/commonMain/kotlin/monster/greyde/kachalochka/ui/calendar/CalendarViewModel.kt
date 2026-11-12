@@ -236,7 +236,6 @@ class CalendarViewModel(
 
     /** Plans the shown visit's machines in today's visit, then reports today. */
     fun repeatToday(onDone: (CalendarDay) -> Unit) {
-        if (accounts.traineeActive()) return
         val from = selected
         val owner = accounts.activeId.value
         writes.launch { placement.repeatToday(owner, from)?.let(onDone) }

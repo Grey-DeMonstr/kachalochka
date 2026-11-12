@@ -1,6 +1,7 @@
 package monster.greyde.kachalochka.ui.plans
 
 import monster.greyde.kachalochka.core.data.gym.GymWrites
+import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -12,8 +13,8 @@ import monster.greyde.kachalochka.core.domain.gym.VisitRepository
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.visitMachines
-import monster.greyde.kachalochka.core.domain.identity.CurrentUser
 import monster.greyde.kachalochka.core.domain.identity.UserId
+import monster.greyde.kachalochka.ui.account.traineeActive
 import monster.greyde.kachalochka.ui.format.DeviceClock
 import monster.greyde.kachalochka.ui.format.planTitle
 import monster.greyde.kachalochka.ui.timer.RestTimer
@@ -28,7 +29,7 @@ class Placement(
     private val visits: VisitRepository,
     private val machines: MachineRepository,
     private val sets: WorkoutSetRepository,
-    private val currentUser: CurrentUser,
+    private val accounts: Accounts,
     private val clock: DeviceClock,
     private val restTimer: RestTimer,
     private val sync: SyncTrigger,
@@ -107,15 +108,16 @@ class Placement(
             }
         }
 
+    /** Today's visit is the trainee's to record, not their trainer's. */
     private suspend fun intoToday(
         owner: UserId?,
         write: suspend (SetRecorder) -> Unit,
     ): CalendarDay? {
-        if (!stillActive(owner)) return null
+        if (!stillActive(owner) || accounts.traineeActive()) return null
         val today = clock.today()
         write(SetRecorder(today, visits, machines, sets, clock, restTimer, sync, gymWrites))
         return today.takeIf { stillActive(owner) }
     }
 
-    private suspend fun stillActive(owner: UserId?) = currentUser.id() == owner
+    private fun stillActive(owner: UserId?) = accounts.activeId.value == owner
 }

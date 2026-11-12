@@ -82,6 +82,9 @@ import monster.greyde.kachalochka.ui.photos.PhotoCapture
 import monster.greyde.kachalochka.ui.photos.PhotoStrip
 import monster.greyde.kachalochka.ui.photos.PhotoViewer
 import monster.greyde.kachalochka.ui.photos.ShownPhoto
+import monster.greyde.kachalochka.ui.plans.PlacementNotice
+import monster.greyde.kachalochka.ui.plans.PlacementViewModel
+import monster.greyde.kachalochka.ui.plans.PlanChooser
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -104,7 +107,7 @@ fun MachineFormScreen(
     onCopyConsumed: () -> Unit = {},
 ) {
     val viewModel: MachineFormViewModel = koinViewModel { parametersOf(args) }
-    val placement: MachinePlacementViewModel = koinViewModel()
+    val placement: PlacementViewModel = koinViewModel()
     val placed = args.machineId?.let(::PlacedMachine)
     val state by viewModel.state.collectAsState()
     val linking by viewModel.linking.collectAsState()
@@ -147,18 +150,25 @@ fun MachineFormScreen(
                 )
             }
             MachineMenu(
-                onToPlan = placed?.let { { placement.choosePlan(it) } },
+                onToPlan = placed?.let { { placement.choosePlan(it.id.value, listOf(it)) } },
                 onToday =
                     placed
-                        ?.let { { placement.planToday(it, onOpen = onOpenVisit) } }
-                        .takeUnless { traineeActive },
+                        ?.let {
+                            {
+                                placement.planToday(
+                                    it.id.value,
+                                    listOf(it),
+                                    onOpen = onOpenVisit,
+                                )
+                            }
+                        }.takeUnless { traineeActive },
                 onUnlink = if (linking.canUnlink && !readOnly) viewModel::askToUnlink else null,
                 onDelete = if (canDelete) viewModel::askToDelete else null,
             )
         },
     ) {
         placed?.let {
-            PlacementNotice(placement, it.id, Modifier.padding(horizontal = 16.dp))
+            PlacementNotice(placement, it.id.value, Modifier.padding(horizontal = 16.dp))
         }
         Column(
             Modifier
@@ -332,7 +342,7 @@ fun MachineFormScreen(
             },
         )
     }
-    PlanChooser(placement, onNewPlan)
+    PlanChooser(placement, onNewPlanOfMachines = { onNewPlan(it.single()) })
     if (linking.confirmingUnlink) {
         ConfirmDialog(
             title = strings().unlinkTitle,

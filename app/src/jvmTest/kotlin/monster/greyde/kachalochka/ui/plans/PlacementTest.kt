@@ -9,8 +9,10 @@ import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSetId
 import monster.greyde.kachalochka.fakes.FakeGym
+import monster.greyde.kachalochka.ui.family.SASHA
+import monster.greyde.kachalochka.ui.family.traineeAccount
 import monster.greyde.kachalochka.ui.friends.IVAN_SESSION
-import monster.greyde.kachalochka.ui.timer.RestTimer
+import monster.greyde.kachalochka.ui.friends.signedInGym
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -30,18 +32,7 @@ class PlacementTest {
     private val visit =
         Visit(VisitId.random(), null, yesterday, t0 - 1.days, t0, false, listOf(curl.id))
 
-    private val placement =
-        Placement(
-            gym.plans,
-            gym.visits,
-            gym.machines,
-            gym.sets,
-            gym.currentUser,
-            gym.deviceClock,
-            RestTimer(gym.clock),
-            gym.sync,
-            gym.gymWrites,
-        )
+    private val placement = gym.placement
 
     private suspend fun seed() {
         listOf(press, row, curl).forEach { gym.machines.upsert(it) }
@@ -247,5 +238,21 @@ class PlacementTest {
 
             assertNull(plannedToday())
             assertEquals(legs, gym.plans.rows.getValue(legs.id))
+        }
+
+    @Test
+    fun while_a_trainee_is_active_nothing_goes_into_today_s_visit() =
+        runTest {
+            val coached = signedInGym().withChild(traineeAccount(SASHA, IVAN_SESSION))
+            coached.accounts.switchTo(SASHA.userId)
+            val sashas = legs.copy(userId = SASHA.userId, pinned = false)
+            coached.plans.upsert(sashas)
+
+            assertNull(coached.placement.planToday(SASHA.userId, listOf(press.id)))
+            assertNull(coached.placement.repeatToday(SASHA.userId, yesterday))
+            assertNull(coached.placement.startPlan(SASHA.userId, sashas))
+
+            assertEquals(emptyMap(), coached.visits.rows)
+            assertEquals(sashas, coached.plans.rows.getValue(sashas.id))
         }
 }

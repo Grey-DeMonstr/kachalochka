@@ -551,7 +551,7 @@ class FakeGym(
             visits,
             machines,
             sets,
-            currentUser,
+            accounts,
             deviceClock,
             RestTimer(clock),
             sync,

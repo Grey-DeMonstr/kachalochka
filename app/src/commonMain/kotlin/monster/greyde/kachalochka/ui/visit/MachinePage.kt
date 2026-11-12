@@ -88,11 +88,11 @@ import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
 import monster.greyde.kachalochka.ui.icons.PhosphorIcons
 import monster.greyde.kachalochka.ui.machine.MachineMenu
-import monster.greyde.kachalochka.ui.machine.MachinePlacementViewModel
 import monster.greyde.kachalochka.ui.machine.PlacedMachine
-import monster.greyde.kachalochka.ui.machine.PlacementNotice
-import monster.greyde.kachalochka.ui.machine.PlanChooser
 import monster.greyde.kachalochka.ui.photos.MachineThumbnail
+import monster.greyde.kachalochka.ui.plans.PlacementNotice
+import monster.greyde.kachalochka.ui.plans.PlacementViewModel
+import monster.greyde.kachalochka.ui.plans.PlanChooser
 import monster.greyde.kachalochka.ui.strings.strings
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
@@ -110,7 +110,7 @@ internal fun MachinePage(
     onNewPlan: (MachineId) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val placement: MachinePlacementViewModel = koinViewModel()
+    val placement: PlacementViewModel = koinViewModel()
     val placed = PlacedMachine(page.machineId)
     Screen(
         "",
@@ -125,10 +125,16 @@ internal fun MachinePage(
             )
             if (!page.ordering) {
                 MachineMenu(
-                    onToPlan = { placement.choosePlan(placed) },
+                    onToPlan = { placement.choosePlan(placed.id.value, listOf(placed)) },
                     onToday =
                         if (canPlanToday && !page.readOnly) {
-                            { placement.planToday(placed, onOpen = onOpenVisit) }
+                            {
+                                placement.planToday(
+                                    placed.id.value,
+                                    listOf(placed),
+                                    onOpen = onOpenVisit,
+                                )
+                            }
                         } else {
                             null
                         },
@@ -138,7 +144,7 @@ internal fun MachinePage(
         },
         timer = true,
     ) {
-        PlacementNotice(placement, page.machineId, Modifier.padding(horizontal = 16.dp))
+        PlacementNotice(placement, page.machineId.value, Modifier.padding(horizontal = 16.dp))
         Box(Modifier.weight(1f).fillMaxWidth().testTag("machine-page")) {
             MachinePager(page, viewModel::openMachine) {
                 Column(
@@ -262,7 +268,7 @@ internal fun MachinePage(
             }
         }
     }
-    PlanChooser(placement, onNewPlan)
+    PlanChooser(placement, onNewPlanOfMachines = { onNewPlan(it.single()) })
 }
 
 /**

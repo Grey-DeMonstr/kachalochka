@@ -292,7 +292,6 @@ class VisitViewModel(
 
     /** Plans this visit's machines in today's visit, then reports today. */
     fun repeatToday(onDone: (CalendarDay) -> Unit) {
-        if (readOnly) return
         val owner = accounts.activeId.value
         writes.launch { placement.repeatToday(owner, day)?.let(onDone) }
     }

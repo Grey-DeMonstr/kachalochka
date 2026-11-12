@@ -106,7 +106,6 @@ class PlansViewModel(
     fun confirmStart(onStarted: (CalendarDay) -> Unit) {
         val id = mutableState.value.confirmingStart ?: return
         cancelStart()
-        if (accounts.traineeActive()) return
         shown.firstOrNull { it.id == id }?.let { begin(it, onStarted) }
     }
 
