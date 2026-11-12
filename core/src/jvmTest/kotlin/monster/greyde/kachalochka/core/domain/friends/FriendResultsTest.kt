@@ -4,18 +4,14 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineClusters
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.PRESS
 import monster.greyde.kachalochka.core.domain.gym.ROW
+import monster.greyde.kachalochka.core.domain.gym.SetPeak
 import monster.greyde.kachalochka.core.domain.gym.T0
-import monster.greyde.kachalochka.core.domain.gym.VISIT_A
-import monster.greyde.kachalochka.core.domain.gym.VISIT_B
-import monster.greyde.kachalochka.core.domain.gym.VISIT_C
-import monster.greyde.kachalochka.core.domain.gym.VisitId
-import monster.greyde.kachalochka.core.domain.gym.WeightUnit
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
+import monster.greyde.kachalochka.core.domain.gym.WeightMode
 import monster.greyde.kachalochka.core.domain.gym.linkedCopy
 import monster.greyde.kachalochka.core.domain.gym.machine
-import monster.greyde.kachalochka.core.domain.gym.set
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,67 +20,6 @@ class FriendResultsTest {
     private val me = UserId("11111111-1111-4111-8111-111111111111")
     private val oleg = Friend(UserId("33333333-3333-4333-8333-333333333333"), "Oleg")
     private val pasha = Friend(UserId("44444444-4444-4444-8444-444444444444"), "Pasha")
-
-    private fun Friend.trained(
-        visit: VisitId,
-        weight: Double,
-        atSeconds: Long,
-    ): WorkoutSet = set(visit, weight, 8, atSeconds).copy(userId = userId)
-
-    @Test
-    fun each_friend_s_newest_set_names_their_latest_visit_newest_first() {
-        val sets =
-            listOf(
-                oleg.trained(VISIT_A, 80.0, 0),
-                pasha.trained(VISIT_C, 60.0, 3_600),
-                oleg.trained(VISIT_B, 85.0, 86_400),
-            )
-
-        assertEquals(listOf(VISIT_B, VISIT_C), latestVisitsByMember(sets, limit = 3))
-        assertEquals(listOf(VISIT_B), latestVisitsByMember(sets, limit = 1))
-    }
-
-    @Test
-    fun a_result_holds_the_visit_s_sets_in_visit_order_under_its_friend_and_machine() {
-        val later = oleg.trained(VISIT_B, 85.0, 120)
-        val earlier = oleg.trained(VISIT_B, 80.0, 60)
-        val older = oleg.trained(VISIT_A, 70.0, 0)
-        val his = pasha.trained(VISIT_C, 60.0, 0)
-        val press = machine(PRESS, "Leg press").copy(unit = WeightUnit.Lb)
-
-        val results =
-            friendResults(
-                listOf(oleg, pasha),
-                listOf(VISIT_B, VISIT_C),
-                listOf(later, his, older, earlier),
-                listOf(machine(ROW, "Row"), press),
-            )
-
-        assertEquals(
-            listOf(
-                FriendResult(oleg, press, listOf(earlier, later)),
-                FriendResult(pasha, press, listOf(his)),
-            ),
-            results,
-        )
-    }
-
-    @Test
-    fun a_visit_of_someone_who_is_not_a_friend_is_left_out() {
-        val stranger =
-            set(VISIT_A, 70.0, 8, 0)
-                .copy(userId = UserId("55555555-5555-4555-8555-555555555555"))
-
-        assertEquals(
-            emptyList(),
-            friendResults(
-                listOf(oleg),
-                listOf(VISIT_A),
-                listOf(stranger),
-                listOf(machine(PRESS, "Leg press")),
-            ),
-        )
-    }
 
     @Test
     fun a_friend_s_machine_linked_to_one_of_the_viewer_s_reads_under_the_viewer_s_name() {
@@ -225,5 +160,74 @@ class FriendResultsTest {
                 MachineClusters(emptyList()),
             ),
         )
+    }
+
+    private fun peaksOf(
+        machine: Machine,
+        heaviest: SetPeak,
+        lightest: SetPeak = heaviest,
+    ) = MachinePeaks(machine.id, heaviest, lightest, T0, 1)
+
+    @Test
+    fun every_friend_with_a_linked_machine_that_has_sets_gets_a_record_by_name() {
+        val mine = Machine.new("Leg press", me, T0)
+        val names = listOf("Vera", "Anna", "Oleg", "Pasha", "Boris")
+        val friends =
+            names.mapIndexed {
+                i,
+                name,
+                ->
+                Friend(UserId("0000000$i-0000-4000-8000-000000000000"), name)
+            }
+        val linked = friends.map { linkedCopy(mine, it.userId, T0) }
+        val friendMachines = friends.zip(linked).map { (f, l) -> FriendMachine(l.first, f) }
+        val peaks = friendMachines.map { peaksOf(it.machine, SetPeak(80.0, 6)) }
+
+        val records =
+            friendRecords(
+                mine.id,
+                friendMachines,
+                MachineClusters(linked.map { it.second }),
+                peaks,
+            )
+
+        assertEquals(
+            listOf("Anna", "Boris", "Oleg", "Pasha", "Vera"),
+            records.map { it.friend.displayName },
+        )
+        assertEquals(List(5) { SetPeak(80.0, 6) }, records.map { it.record })
+    }
+
+    @Test
+    fun a_linked_machine_without_sets_gets_no_record() {
+        val mine = Machine.new("Leg press", me, T0)
+        val (olegs, link) = linkedCopy(mine, oleg.userId, T0)
+
+        assertEquals(
+            emptyList(),
+            friendRecords(
+                mine.id,
+                listOf(FriendMachine(olegs, oleg)),
+                MachineClusters(listOf(link)),
+                emptyList(),
+            ),
+        )
+    }
+
+    @Test
+    fun a_counterweight_machine_gives_its_lightest_set() {
+        val mine = Machine.new("Pull-up", me, T0)
+        val (copy, link) = linkedCopy(mine, oleg.userId, T0)
+        val olegs = copy.copy(weightMode = WeightMode.Counterweight)
+
+        val records =
+            friendRecords(
+                mine.id,
+                listOf(FriendMachine(olegs, oleg)),
+                MachineClusters(listOf(link)),
+                listOf(peaksOf(olegs, SetPeak(40.0, 8), SetPeak(10.0, 5))),
+            )
+
+        assertEquals(listOf(FriendRecord(oleg, olegs, SetPeak(10.0, 5))), records)
     }
 }

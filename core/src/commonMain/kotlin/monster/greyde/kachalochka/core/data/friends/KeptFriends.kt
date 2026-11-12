@@ -8,6 +8,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.json.Json
 import monster.greyde.kachalochka.core.data.gym.MachineLinkRow
+import monster.greyde.kachalochka.core.data.gym.MachinePeaksRow
 import monster.greyde.kachalochka.core.data.gym.MachineRow
 import monster.greyde.kachalochka.core.data.gym.PhotoRow
 import monster.greyde.kachalochka.core.data.gym.VisitRow
@@ -15,14 +16,13 @@ import monster.greyde.kachalochka.core.data.gym.WorkoutSetRow
 import monster.greyde.kachalochka.core.data.gym.photoIdOf
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
-import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupGym
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
-import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.Avatar
@@ -109,13 +109,8 @@ class KeptFriends(
     override suspend fun groupLinks(viewer: UserId): List<MachineLink> =
         kept("groupLinks/${viewer.value}", LINKS) { inner.groupLinks(viewer) }
 
-    override suspend fun latestOn(
-        viewer: UserId,
-        machines: Set<MachineId>,
-    ): List<FriendResult> {
-        val request = "latestOn/${viewer.value}/${machines.map { it.value }.sorted()}"
-        return kept(request, RESULTS) { inner.latestOn(viewer, machines) }
-    }
+    override suspend fun groupPeaks(viewer: UserId): List<MachinePeaks> =
+        kept("groupPeaks/${viewer.value}", PEAKS) { inner.groupPeaks(viewer) }
 
     override suspend fun groupVisits(
         viewer: UserId,
@@ -242,13 +237,6 @@ private class KeptGym(
     val photos: List<PhotoRow>,
 )
 
-@Serializable
-private class KeptResult(
-    val friend: KeptFriend,
-    val machine: KeptMachine,
-    val sets: List<WorkoutSetRow>,
-)
-
 private val VISITS = listForm(VisitRow.serializer(), VisitRow::of, VisitRow::toVisit)
 
 private val SETS =
@@ -294,23 +282,5 @@ private val GYM =
         },
     )
 
-private val RESULTS =
-    listForm(
-        KeptResult.serializer(),
-        { it: FriendResult ->
-            KeptResult(
-                KeptFriend.of(it.friend),
-                KeptMachine.of(it.machine),
-                it.sets.map(WorkoutSetRow::of),
-            )
-        },
-        {
-            FriendResult(
-                it.friend.toFriend(),
-                it.machine.toMachine(),
-                it.sets.map { s ->
-                    s.toWorkoutSet()
-                },
-            )
-        },
-    )
+private val PEAKS =
+    listForm(MachinePeaksRow.serializer(), MachinePeaksRow::of, MachinePeaksRow::toPeaks)

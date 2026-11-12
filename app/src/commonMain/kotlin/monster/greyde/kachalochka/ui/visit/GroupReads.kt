@@ -5,17 +5,19 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.catching
 import monster.greyde.kachalochka.core.data.friends.keptOnly
-import monster.greyde.kachalochka.core.domain.friends.FriendResult
+import monster.greyde.kachalochka.core.domain.friends.FriendRecord
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
+import monster.greyde.kachalochka.core.domain.friends.friendRecords
 import monster.greyde.kachalochka.core.domain.gym.MachineId
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.ui.machine.GroupMachines
 import monster.greyde.kachalochka.ui.machine.MachineReads
 
 /**
- * The group read for the active account and the friends' latest results on its open machine, which
- * wait for that read: the kept results first, then, after a fresh group read, the server's. A read
- * for an owner or machine asked before the last one is dropped.
+ * The group read for the active account and the friends' peaks on its machines, which wait for
+ * that read: the kept peaks first, then, after a fresh group read, the server's. A read for an
+ * owner asked before the last one is dropped.
  */
 class GroupReads(
     private val friends: FriendsRepository,
@@ -29,14 +31,12 @@ class GroupReads(
      */
     var group: GroupMachines? = null
         private set
-    var results: List<FriendResult> = emptyList()
-        private set
 
+    private var peaks: List<MachinePeaks> = emptyList()
     private var groupFor: UserId? = null
     private var loadingGroup: Job? = null
-    private var asked: Pair<UserId, MachineId>? = null
-    private var loadingResults: Job? = null
-    private var own: Set<MachineId> = emptySet()
+    private var loadingPeaks: Job? = null
+    private var machine: MachineId? = null
 
     /** Links may have changed on another screen or in a sync, so the next follow reads again. */
     private var stale = false
@@ -45,50 +45,51 @@ class GroupReads(
         stale = true
     }
 
-    /** Asks for the results on [machine], an own machine of [owner], whose machines are [own]. */
+    /** The friends' records on [machine], an own machine of [owner]. */
     fun follow(
         owner: UserId?,
         machine: MachineId?,
-        own: Set<MachineId>,
     ) {
-        this.own = own
-        val next = owner?.let { me -> machine?.let { me to it } }
-        val readGroup = owner != groupFor || stale
-        if (next != asked) {
-            results = emptyList()
-            loadingResults?.cancel()
-            asked = next
-            if (!readGroup) loadResults(fresh = true)
-        }
-        if (readGroup) loadGroup(owner)
+        this.machine = machine
+        if (owner != groupFor || stale) loadGroup(owner)
         stale = false
     }
 
-    private fun loadResults(fresh: Boolean) {
-        val asked = asked ?: return
-        val (owner, machine) = asked
-        val clusters = group?.takeIf { it.owner == owner }?.clusters ?: return
-        val theirs = clusters.of(machine) - own
-        loadingResults?.cancel()
-        loadingResults =
+    /** The records on the followed machine, a row for each friend's linked machine with sets. */
+    fun records(): List<FriendRecord> {
+        val open = machine ?: return emptyList()
+        val read = group ?: return emptyList()
+        return friendRecords(open, read.friends, read.clusters, peaks)
+    }
+
+    private fun loadPeaks(
+        owner: UserId,
+        fresh: Boolean,
+    ) {
+        loadingPeaks?.cancel()
+        loadingPeaks =
             scope.launch {
-                suspend fun show(read: suspend () -> List<FriendResult>) {
-                    val found = catching { if (theirs.isEmpty()) emptyList() else read() }
-                    if (this@GroupReads.asked != asked) return
-                    // A failed re-read keeps what an earlier read of the same machine showed.
+                suspend fun show(read: suspend () -> List<MachinePeaks>) {
+                    val found = catching { read() }
+                    if (groupFor != owner) return
+                    // A failed re-read keeps what an earlier read showed.
                     found.onSuccess {
-                        results = it
+                        peaks = it
                         changed()
                     }
                 }
-                show { keptOnly { friends.latestOn(owner, theirs) } }
-                if (fresh) show { friends.latestOn(owner, theirs) }
+                show { keptOnly { friends.groupPeaks(owner) } }
+                if (fresh) show { friends.groupPeaks(owner) }
             }
     }
 
     private fun loadGroup(owner: UserId?) {
         loadingGroup?.cancel()
-        if (owner != groupFor) group = null
+        loadingPeaks?.cancel()
+        if (owner != groupFor) {
+            group = null
+            peaks = emptyList()
+        }
         groupFor = owner
         if (owner == null) return
         loadingGroup =
@@ -97,7 +98,7 @@ class GroupReads(
                     if (groupFor != owner) return@collect
                     group = read.machines
                     changed()
-                    loadResults(read.fresh)
+                    if (read.machines != null) loadPeaks(owner, read.fresh)
                 }
             }
     }

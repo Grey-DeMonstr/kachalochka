@@ -6,6 +6,7 @@ import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.Photo
+import monster.greyde.kachalochka.core.domain.gym.SetPeak
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
 import monster.greyde.kachalochka.core.domain.identity.Avatar
@@ -61,14 +62,11 @@ data class FriendVisit(
     val visit: Visit,
 )
 
-/**
- * A friend's sets on a linked machine from their latest visit on it, in visit order. [machine] is
- * the friend's own, which the first set was recorded on: its unit is the one the weights are in.
- */
-data class FriendResult(
+/** [friend]'s record on [machine], their own: [record] is in its unit. */
+data class FriendRecord(
     val friend: Friend,
     val machine: Machine,
-    val sets: List<WorkoutSet>,
+    val record: SetPeak,
 )
 
 /**
@@ -138,10 +136,4 @@ interface FriendsRepository {
 
     /** How far the live sets on each group mate's machine reach. */
     suspend fun groupPeaks(viewer: UserId): List<MachinePeaks>
-
-    /** Up to three friends' latest visits on any of [machines], newest first. */
-    suspend fun latestOn(
-        viewer: UserId,
-        machines: Set<MachineId>,
-    ): List<FriendResult>
 }

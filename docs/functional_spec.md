@@ -137,10 +137,11 @@ The page shows, from the top:
 2. The name with the platform weight, the tags and the setup note.
 3. "Record": the record of the machine.
 4. The results of the previous visit, with how long ago it was ("12 days ago").
-5. The latest visit of each friend on the machine: avatar, name, day and results
-   ("Oleg  yesterday · 80-85kg 8-6"). The weights use the platform weight of the account's own
-   machine, so that they compare with its sets. Example: here the platform is 20 kg; a friend
-   records +25 kg on a 10 kg platform; the page shows 15 kg.
+5. The record of each friend on the machine: avatar, name and record ("Oleg  85 kg × 6"). Each
+   friend who has a linked machine with a set on it has a row, in the order of the names. A
+   friend with two linked machines has two rows. The weight uses the platform weight of the
+   account's own machine, so that it compares with its sets. Example: here the platform is
+   20 kg; a friend's record is +25 kg on a 10 kg platform; the row shows 15 kg.
 6. "Today · 3 sets" (or the date of another day), then the sets of the day, for example
    "#1  (-)29.5 kg × 10", then the comment of the set on one line. A tap on a set opens it for
    editing.
@@ -869,7 +870,7 @@ photos, read-only. Nothing is shared outside a group.
 Friends' data is read from the server. On Android, the app keeps some of it on the device:
 
 - A friend's photo, after it showed once, shows also without a network.
-- The feed, a friend's calendar and the friends' results on a machine page keep what they read
+- The feed, a friend's calendar and the friends' records on a machine page keep what they read
   last for one month. They show it at once, and the server answer replaces it. With a bad network
   or none, they show what they kept.
 - Sign-out removes what was kept for that account.
@@ -899,7 +900,7 @@ You make a link in three ways:
 For one cluster:
 
 - the picker does not offer the friend's machine next to the own machine.
-- the machine page shows each friend's latest visit on it.
+- the machine page shows each friend's record on it.
 - a friend's visit, a friend's machine and the machine form list the linked machines.
 
 The app keeps each link direct. When an own machine is the same as a friend's machine only through

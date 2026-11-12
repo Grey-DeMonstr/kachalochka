@@ -7,7 +7,6 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -27,14 +26,11 @@ import monster.greyde.kachalochka.core.data.supabase.pagedRows
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
-import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupGym
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.friends.GroupMember
-import monster.greyde.kachalochka.core.domain.friends.friendResults
-import monster.greyde.kachalochka.core.domain.friends.latestVisitsByMember
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -52,8 +48,6 @@ import kotlin.time.Duration
 // 0007_groups.sql.
 private const val UNKNOWN_INVITE_CODE = "PT404"
 private const val NOT_FOUND = 404
-
-private const val FRIEND_RESULTS = 3
 
 /**
  * One implementation for both platforms (tech spec §3): friends are read online. Row-level
@@ -284,48 +278,6 @@ class SupabaseFriendsRepository(
     override suspend fun groupPeaks(viewer: UserId): List<MachinePeaks> =
         postgrest.machinePeaks(matesById(viewer).keys)
 
-    override suspend fun latestOn(
-        viewer: UserId,
-        machines: Set<MachineId>,
-    ): List<FriendResult> {
-        if (machines.isEmpty()) return emptyList()
-        val mates = matesById(viewer)
-        if (mates.isEmpty()) return emptyList()
-        val mateIds = mates.keys.map { it.value }
-        val candidates =
-            liveMachines {
-                isIn("id", machines.map { it.value })
-                isIn("user_id", mateIds)
-            }
-        if (candidates.isEmpty()) return emptyList()
-        val machineIds = candidates.map { it.id.value }
-        // One request per friend, so a friend's long history never crowds another's out.
-        val newest =
-            coroutineScope {
-                candidates
-                    .mapNotNull { it.userId }
-                    .distinct()
-                    .map { owner ->
-                        async {
-                            liveSets(newestFirst = 1) {
-                                isIn("machine_id", machineIds)
-                                eq("user_id", owner.value)
-                            }
-                        }
-                    }.awaitAll()
-                    .flatten()
-            }
-        val visits = latestVisitsByMember(newest, FRIEND_RESULTS)
-        if (visits.isEmpty()) return emptyList()
-        val visitSets =
-            liveSets {
-                isIn("visit_id", visits.map { it.value })
-                isIn("machine_id", machineIds)
-                isIn("user_id", mateIds)
-            }
-        return friendResults(mates.values.toList(), visits, visitSets, candidates)
-    }
-
     private suspend fun memberships(group: GroupId? = null): List<GroupMemberRow> =
         postgrest
             .from(GROUP_MEMBER_TABLE)
@@ -378,20 +330,13 @@ class SupabaseFriendsRepository(
             machines.await().withTagRows(tags.await())
         }
 
-    private suspend fun liveSets(
-        newestFirst: Long? = null,
-        match: PostgrestFilterBuilder.() -> Unit,
-    ): List<WorkoutSet> =
+    private suspend fun liveSets(match: PostgrestFilterBuilder.() -> Unit): List<WorkoutSet> =
         postgrest
             .from(WORKOUT_SET_TABLE)
             .select {
                 filter {
                     eq("deleted", false)
                     match()
-                }
-                if (newestFirst != null) {
-                    order("recorded_at", Order.DESCENDING)
-                    limit(newestFirst)
                 }
             }.decodeList<WorkoutSetRow>()
             .map { it.toWorkoutSet() }

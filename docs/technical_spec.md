@@ -830,8 +830,9 @@ sets store (see [4.8](#48-visits-and-sets)), so a card needs only the day's rows
 
 - A read inside `keptOnly` gives the kept answer, or fails when there is none. Other reads ask the
   server and keep the answer.
-- The feed, a friend's calendar and the machine page (`GroupReads`) read inside `keptOnly` first,
-  show the result, then read from the server. A failed server read keeps what shows.
+- The feed, a friend's calendar and the machine page (`GroupReads`, which reads `groupPeaks` for
+  the friends' records) read inside `keptOnly` first, show the result, then read from the server.
+  A failed server read keeps what shows.
   `MachineCatalogue.lastGroup` uses the kept `groupGym` when it has no read in memory.
 - The kept visits of a viewer are one list: each window replaces the visits it covers, and visits
   older than 31 days go out. An answer not read for 31 days is removed. A sign-out removes the

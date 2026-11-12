@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import monster.greyde.kachalochka.core.data.gym.GymWrites
 import monster.greyde.kachalochka.core.data.identity.Accounts
 import monster.greyde.kachalochka.core.data.sync.SyncTrigger
-import monster.greyde.kachalochka.core.domain.friends.FriendResult
+import monster.greyde.kachalochka.core.domain.friends.FriendRecord
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
@@ -32,8 +32,8 @@ import monster.greyde.kachalochka.core.domain.gym.plannedWithoutSets
 import monster.greyde.kachalochka.core.domain.gym.platformShift
 import monster.greyde.kachalochka.core.domain.gym.previousVisitSets
 import monster.greyde.kachalochka.core.domain.gym.pyramidGroups
+import monster.greyde.kachalochka.core.domain.gym.roundWeight
 import monster.greyde.kachalochka.core.domain.gym.setMovedTo
-import monster.greyde.kachalochka.core.domain.gym.shiftedSets
 import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.suggestNextSet
@@ -579,24 +579,22 @@ class VisitViewModel(
         }
         // Only an own machine has links worth asking about; a switch drops the old answer.
         val ownOpen = machine?.takeIf { owner != null && it.userId == owner }?.id
-        groupReads.follow(owner, ownOpen, machinesById.keys)
+        groupReads.follow(owner, ownOpen)
         publish()
     }
 
-    /** [result]'s weights count on [mine]'s platform, so they compare with the viewer's own. */
+    /** [record]'s weight counts on [mine]'s platform, so it compares with the viewer's own. */
     private fun friendLine(
-        result: FriendResult,
+        record: FriendRecord,
         mine: Machine,
     ): FriendLineUi {
-        val now = clock.now()
-        val days = calendarDaysBetween(result.sets.last().recordedAt, now, clock.offsetAt(now))
-        val shifted = shiftedSets(result.sets, -platformShift(mine, result.machine), now)
-        val sets = setsSummary(result.machine, shifted, preferred)
+        val shift = -platformShift(mine, record.machine)
+        val weight = roundWeight(record.record.weight + shift).coerceAtLeast(0.0)
         return FriendLineUi(
-            result.friend.userId,
-            result.friend.displayName,
-            result.friend.avatar,
-            "${daysAgoLabel(days)} · $sets",
+            record.friend.userId,
+            record.friend.displayName,
+            record.friend.avatar,
+            setValue(weight, record.record.reps, record.machine, preferred),
         )
     }
 
@@ -794,7 +792,7 @@ class VisitViewModel(
                 if (form.editing ==
                     null
                 ) {
-                    groupReads.results.map { friendLine(it, machine) }
+                    groupReads.records().map { friendLine(it, machine) }
                 } else {
                     emptyList()
                 },

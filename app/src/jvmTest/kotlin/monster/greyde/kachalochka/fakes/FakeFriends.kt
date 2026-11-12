@@ -7,14 +7,11 @@ import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendGroup
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
-import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupGym
 import monster.greyde.kachalochka.core.domain.friends.GroupId
 import monster.greyde.kachalochka.core.domain.friends.GroupMember
-import monster.greyde.kachalochka.core.domain.friends.friendResults
-import monster.greyde.kachalochka.core.domain.friends.latestVisitsByMember
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
@@ -49,9 +46,6 @@ class FakeFriends(
 
     /** The days every [groupVisits] call asked for, in order. */
     val visitWindows = mutableListOf<Pair<CalendarDay, CalendarDay>>()
-
-    /** The machines every [latestOn] call asked about, in order. */
-    val latestOnAsked = mutableListOf<Set<MachineId>>()
 
     /** While set, a read started now waits for it, keeping it in flight while a test needs. */
     var gate: CompletableDeferred<Unit>? = null
@@ -271,29 +265,6 @@ class FakeFriends(
             } else {
                 it
             }
-        }
-    }
-
-    override suspend fun latestOn(
-        viewer: UserId,
-        machines: Set<MachineId>,
-    ): List<FriendResult> {
-        keepsNothing()
-        latestOnAsked += machines
-        return online {
-            val mates = matesById(viewer)
-            val ids =
-                this.machines
-                    .filter { !it.deleted && it.id in machines && it.userId in mates.keys }
-                    .map { it.id }
-                    .toSet()
-            val onThem = sets.filter { !it.deleted && it.machineId in ids }
-            friendResults(
-                mates.values.toList(),
-                latestVisitsByMember(onThem, 3),
-                onThem,
-                this.machines,
-            )
         }
     }
 }

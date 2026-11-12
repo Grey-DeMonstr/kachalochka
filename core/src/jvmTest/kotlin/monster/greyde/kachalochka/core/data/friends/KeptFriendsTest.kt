@@ -5,7 +5,6 @@ import kotlinx.coroutines.test.runTest
 import monster.greyde.kachalochka.core.data.db.inMemoryDatabase
 import monster.greyde.kachalochka.core.domain.friends.Friend
 import monster.greyde.kachalochka.core.domain.friends.FriendMachine
-import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupGym
@@ -15,8 +14,10 @@ import monster.greyde.kachalochka.core.domain.gym.Machine
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachineLinkId
+import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.gym.Photo
 import monster.greyde.kachalochka.core.domain.gym.PhotoId
+import monster.greyde.kachalochka.core.domain.gym.SetPeak
 import monster.greyde.kachalochka.core.domain.gym.Visit
 import monster.greyde.kachalochka.core.domain.gym.VisitId
 import monster.greyde.kachalochka.core.domain.gym.WorkoutSet
@@ -58,7 +59,7 @@ private class Server :
     var windowVisits = emptyList<FriendVisit>()
     var oldest: Visit? = null
     var links = emptyList<MachineLink>()
-    var results = emptyList<FriendResult>()
+    var peaks = emptyList<MachinePeaks>()
 
     private fun <T> answer(value: T): T {
         reads++
@@ -86,10 +87,7 @@ private class Server :
 
     override suspend fun groupLinks(viewer: UserId) = answer(links)
 
-    override suspend fun latestOn(
-        viewer: UserId,
-        machines: Set<MachineId>,
-    ) = answer(results)
+    override suspend fun groupPeaks(viewer: UserId) = answer(peaks)
 }
 
 class KeptFriendsTest {
@@ -161,7 +159,8 @@ class KeptFriendsTest {
             server.windowVisits = listOf(FriendVisit(OLEG, visit))
             server.oldest = visit
             server.links = listOf(link)
-            server.results = listOf(FriendResult(OLEG, press, listOf(set)))
+            server.peaks =
+                listOf(MachinePeaks(press.id, SetPeak(85.0, 6), SetPeak(20.0, 12), now, 3))
             val day = CalendarDay(2023, 11, 13)
 
             val fresh =
@@ -174,7 +173,7 @@ class KeptFriendsTest {
                     friends.groupVisits(IVAN, day, day),
                     friends.oldestGroupVisit(IVAN),
                     friends.groupLinks(IVAN),
-                    friends.latestOn(IVAN, setOf(press.id)),
+                    friends.groupPeaks(IVAN),
                 )
             server.offline = true
             val kept =
@@ -188,7 +187,7 @@ class KeptFriendsTest {
                         friends.groupVisits(IVAN, day, day),
                         friends.oldestGroupVisit(IVAN),
                         friends.groupLinks(IVAN),
-                        friends.latestOn(IVAN, setOf(press.id)),
+                        friends.groupPeaks(IVAN),
                     )
                 }
 

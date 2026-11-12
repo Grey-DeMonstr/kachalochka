@@ -31,6 +31,19 @@ internal data class MachinePeaksRow(
             Instant.parse(lastAt),
             visits,
         )
+
+    companion object {
+        fun of(peaks: MachinePeaks) =
+            MachinePeaksRow(
+                peaks.machineId.value,
+                peaks.heaviest.weight,
+                peaks.heaviest.reps,
+                peaks.lightest.weight,
+                peaks.lightest.reps,
+                peaks.lastAt.toString(),
+                peaks.visits,
+            )
+    }
 }
 
 /** The peaks of [owners]' machines, reduced on the server so no row cap cuts a history short. */

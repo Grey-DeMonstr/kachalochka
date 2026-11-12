@@ -34,8 +34,6 @@ import monster.greyde.kachalochka.ui.account.Nickname
 import monster.greyde.kachalochka.ui.family.SASHA
 import monster.greyde.kachalochka.ui.family.childAccount
 import monster.greyde.kachalochka.ui.family.traineeAccount
-import monster.greyde.kachalochka.ui.format.SharedMachine
-import monster.greyde.kachalochka.ui.format.visitShareText
 import monster.greyde.kachalochka.ui.friends.OLEG
 import monster.greyde.kachalochka.ui.friends.PASHA
 import monster.greyde.kachalochka.ui.friends.olegTrainedOn
@@ -2136,14 +2134,14 @@ class VisitViewModelTest {
     }
 
     @Test
-    fun friends_latest_results_on_a_linked_machine_show_in_the_sheet() {
+    fun friends_records_on_a_linked_machine_show_in_the_sheet() {
         val two = twoAccountGym()
         two.olegTrainedOn(ivanPress, ivanFriend)
 
         val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 
         assertEquals(
-            listOf("Oleg · yesterday · 80-85kg 8-6"),
+            listOf("Oleg · 85 kg × 6"),
             vm.state.value
                 ?.page
                 ?.friends
@@ -2152,7 +2150,7 @@ class VisitViewModelTest {
     }
 
     @Test
-    fun friends_results_read_in_the_viewer_s_unit() =
+    fun friends_records_read_in_the_viewer_s_unit() =
         runTest {
             val two = twoAccountGym()
             two.olegTrainedOn(ivanPress, ivanFriend)
@@ -2161,7 +2159,7 @@ class VisitViewModelTest {
             val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 
             assertEquals(
-                listOf("Oleg · yesterday · 176.5-187.5lb 8-6"),
+                listOf("Oleg · 187.5 lb × 6"),
                 vm.state.value
                     ?.page
                     ?.friends
@@ -2170,7 +2168,7 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun friends_results_count_on_the_viewer_s_platform() =
+    fun friends_records_count_on_the_viewer_s_platform() =
         runTest {
             val two = twoAccountGym()
             two.machines.upsert(ivanPress.copy(platformWeight = 20.0))
@@ -2180,7 +2178,7 @@ class VisitViewModelTest {
             val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 
             assertEquals(
-                listOf("Oleg · yesterday · 70-75kg 8-6"),
+                listOf("Oleg · 75 kg × 6"),
                 vm.state.value
                     ?.page
                     ?.friends
@@ -2189,27 +2187,18 @@ class VisitViewModelTest {
         }
 
     @Test
-    fun a_friend_s_result_reads_like_their_machine_s_line_in_a_shared_visit() {
+    fun a_friend_s_record_reads_in_the_unit_of_the_viewer() {
         val two = twoAccountGym()
         two.olegTrainedOn(ivanPress, ivanFriend)
-        val olegPress =
+        two.friends.machines[0] =
             two.friends.machines
                 .single()
                 .copy(unit = WeightUnit.Lb)
-        two.friends.machines[0] = olegPress
-        val shared =
-            visitShareText(
-                "",
-                two.today,
-                listOf(SharedMachine(olegPress, two.friends.sets)),
-                PreferredWeightUnit.Kg,
-            )
 
         val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 
-        assertEquals("Leg press 36.5-38.5kg 8-6", shared.lines().last())
         assertEquals(
-            listOf("Oleg · yesterday · 36.5-38.5kg 8-6"),
+            listOf("Oleg · 38.5 kg × 6"),
             vm.state.value
                 ?.page
                 ?.friends
@@ -2218,13 +2207,9 @@ class VisitViewModelTest {
     }
 
     @Test
-    fun the_sheet_asks_about_every_friends_machine_linked_to_the_open_one_through_any_hops() {
+    fun the_sheet_shows_every_friends_machine_linked_to_the_open_one_through_any_hops() {
         val two = twoAccountGym()
         two.olegTrainedOn(ivanPress, ivanFriend)
-        val olegCopy =
-            two.friends.links
-                .single()
-                .machineId
         two.friends.group("Gym", owner = PASHA, ivanFriend)
         val (pashaCopy, pashaLink) =
             linkedCopy(
@@ -2234,10 +2219,58 @@ class VisitViewModelTest {
             )
         two.friends.machines += pashaCopy
         two.friends.links += pashaLink
+        two.friends.sets +=
+            two.friends.sets.first().copy(
+                id = WorkoutSetId.random(),
+                userId = PASHA.userId,
+                machineId = pashaCopy.id,
+                weight = 60.0,
+            )
 
-        viewModel(two).also { it.selectMachine(ivanPress.id) }
+        val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
 
-        assertEquals(listOf(setOf(olegCopy, pashaCopy.id)), two.friends.latestOnAsked)
+        assertEquals(
+            listOf("Oleg · 85 kg × 6", "Pasha · 60 kg × 8"),
+            vm.state.value
+                ?.page
+                ?.friends
+                ?.map { "${it.name} · ${it.text}" },
+        )
+    }
+
+    @Test
+    fun the_sheet_shows_the_record_of_each_of_more_than_three_friends() {
+        val two = twoAccountGym()
+        two.olegTrainedOn(ivanPress, ivanFriend)
+        val olegSet = two.friends.sets.first()
+        val others =
+            listOf("Anna", "Boris", "Vera", "Zoe").mapIndexed { i, name ->
+                Friend(UserId("5555555$i-5555-4555-8555-555555555555"), name)
+            }
+        others.forEach { friend ->
+            two.friends.members.values
+                .single()
+                .add(friend)
+            val (copy, link) = linkedCopy(ivanPress, friend.userId, t0)
+            two.friends.machines += copy
+            two.friends.links += link
+            two.friends.sets +=
+                olegSet.copy(
+                    id = WorkoutSetId.random(),
+                    userId = friend.userId,
+                    machineId = copy.id,
+                )
+        }
+
+        val vm = viewModel(two).also { it.selectMachine(ivanPress.id) }
+
+        assertEquals(
+            listOf("Anna", "Boris", "Oleg", "Vera", "Zoe"),
+            vm.state.value
+                ?.page
+                ?.friends
+                ?.map { it.name },
+        )
     }
 
     @Test
@@ -2264,7 +2297,7 @@ class VisitViewModelTest {
         vm.refresh()
 
         assertEquals(
-            listOf("Oleg · yesterday · 80-85kg 8-6"),
+            listOf("Oleg · 85 kg × 6"),
             vm.state.value
                 ?.page
                 ?.friends
@@ -2290,7 +2323,7 @@ class VisitViewModelTest {
         vm.refresh()
 
         assertEquals(
-            listOf("Oleg · yesterday · 80-85kg 8-6"),
+            listOf("Oleg · 85 kg × 6"),
             vm.state.value
                 ?.page
                 ?.friends
@@ -2309,7 +2342,7 @@ class VisitViewModelTest {
         two.sync.completePass()
 
         assertEquals(
-            listOf("Oleg · yesterday · 80-85kg 8-6"),
+            listOf("Oleg · 85 kg × 6"),
             vm.state.value
                 ?.page
                 ?.friends
@@ -2318,7 +2351,7 @@ class VisitViewModelTest {
     }
 
     @Test
-    fun without_a_network_the_sheet_shows_the_friends_results_the_last_read_kept() {
+    fun without_a_network_the_sheet_shows_the_friends_records_the_last_read_kept() {
         val two = twoAccountGym()
         two.olegTrainedOn(ivanPress, ivanFriend)
         viewModelOver(two, today, two.keptFriends).selectMachine(ivanPress.id)
@@ -2327,7 +2360,7 @@ class VisitViewModelTest {
         val vm = viewModelOver(two, today, two.keptFriends).also { it.selectMachine(ivanPress.id) }
 
         assertEquals(
-            listOf("Oleg · yesterday · 80-85kg 8-6"),
+            listOf("Oleg · 85 kg × 6"),
             vm.state.value
                 ?.page
                 ?.friends
@@ -2353,7 +2386,7 @@ class VisitViewModelTest {
     }
 
     @Test
-    fun friends_results_read_for_the_previous_account_never_show() =
+    fun friends_records_read_for_the_previous_account_never_show() =
         runTest {
             val two = twoAccountGym()
             two.olegTrainedOn(ivanPress, ivanFriend)

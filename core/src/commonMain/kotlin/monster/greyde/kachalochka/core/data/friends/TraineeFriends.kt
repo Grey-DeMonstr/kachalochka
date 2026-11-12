@@ -2,12 +2,10 @@ package monster.greyde.kachalochka.core.data.friends
 
 import monster.greyde.kachalochka.core.data.identity.Account
 import monster.greyde.kachalochka.core.domain.friends.Friend
-import monster.greyde.kachalochka.core.domain.friends.FriendResult
 import monster.greyde.kachalochka.core.domain.friends.FriendVisit
 import monster.greyde.kachalochka.core.domain.friends.FriendsRepository
 import monster.greyde.kachalochka.core.domain.friends.GroupGym
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
-import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineLink
 import monster.greyde.kachalochka.core.domain.gym.MachinePeaks
 import monster.greyde.kachalochka.core.domain.identity.UserId
@@ -42,9 +40,4 @@ class TraineeFriends(
 
     override suspend fun groupPeaks(viewer: UserId): List<MachinePeaks> =
         if (coached(viewer)) emptyList() else inner.groupPeaks(viewer)
-
-    override suspend fun latestOn(
-        viewer: UserId,
-        machines: Set<MachineId>,
-    ): List<FriendResult> = if (coached(viewer)) emptyList() else inner.latestOn(viewer, machines)
 }
