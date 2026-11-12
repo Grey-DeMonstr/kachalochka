@@ -67,15 +67,17 @@ The Gradle Kotlin DSL refuses a deprecated Gradle API. Thus build scripts use `r
 ```text
 core/        Kotlin Multiplatform library: domain, data, sync. Targets android, jvm, wasmJs.
 app/         Compose Multiplatform library: screens, view models, DI. Targets android, jvm, wasmJs.
-androidApp/  Android application. Depends on app. Makes the APK.
+androidApp/  Android application. Depends on app and core. Makes the APK.
 ```
 
 - **`androidApp`** exists because AGP 9 does not apply `com.android.application` to a
   multiplatform module. It holds only what an APK needs and a library does not: the launcher
-  manifest and icon, `MainActivity`, the `Application` subclass, signing and version numbers.
-  Other Android code, such as `DataStoreDeviceStore`, is in `app/src/androidMain`.
+  manifest and icon, `MainActivity`, the `Application` subclass, the photo `FileProvider`, signing
+  and version numbers. Other Android code, such as `DataStoreDeviceStore`, is in
+  `app/src/androidMain`.
 - **The `jvm` target** of `core` and `app` is for tests only. `core` tests use the SQLDelight JVM
-  driver; `app` tests are Compose desktop UI tests. The `jvm` build of `app` never ships.
+  driver; `app` tests are view model tests and Compose desktop UI tests. The `jvm` build of `app`
+  never ships.
 - **The `sql` source set group** of `core` selects its Android half by platform type.
   `withAndroidTarget()` matches nothing under the multiplatform library plugin (KT-80409), and
   `sqlMain` then loses its Android compilation.
@@ -105,7 +107,7 @@ Three rules:
 
 **Where the parts connect.**
 
-- Koin modules: `CoreModule.kt`, `SqlModule.kt` (Android and JVM), `CorePlatformModule.wasmJs.kt`,
+- Koin modules: `CoreModule.kt`, `SqlModule.kt` (Android and JVM), `CorePlatformModule.*.kt`,
   `AppModule.kt` and `PlatformModule.*.kt`.
 - Start-up: `KachalochkaApplication.kt` on Android and `Main.kt` on the web start the
   process-wide jobs: the live session, the group cache, the link upkeep, the visit normalization
@@ -115,8 +117,9 @@ Three rules:
 ## 3. Repositories
 
 Each repository interface in `domain/` has two implementations, except `FriendsRepository` and
-`FamilyRepository`: both platforms read them from the server, so each has one implementation in
-`commonMain`.
+`FamilyRepository`. Both platforms read them from the server, so `SupabaseFriendsRepository` and
+`SupabaseFamilyRepository` are in `commonMain`. Both platforms wrap the first (see
+[4.12](#412-friends-data)).
 
 | Implementation | Source set | Data |
 |---|---|---|
@@ -163,7 +166,7 @@ Each synced row has these columns:
 - **Client ids** let a device make a visit and its sets offline, linked before the server sees
   them.
 - **Soft deletes** make sync converge: a delete is an update and goes the same way.
-- **Id types** (`ProfileId`, `UserId` and the others) accept only a lower-case UUID. Postgres
+- **Id types** (`ProfileId`, `UserId` and the others) accept only a lower-case UUID v4. Postgres
   stores `uuid` and changes text to lower case, so without this check SQLite and the server could
   give different answers for one id.
 - **`user_id` is not null on the server.** A device sets the owner before a row goes into the
@@ -208,8 +211,9 @@ pass runs:
 - when the app comes to the foreground (also at launch) and when it goes to the background.
 - after an account is added or becomes active.
 - after a write that other devices must see soon: a visit or a measurement of a day other than
-  today, a visit moved, replaced or deleted in the calendar or the feed, the profile, a measure, a
-  group, a merge or a delete of a machine, a change of the family.
+  today, a visit moved, replaced or deleted in the calendar or the feed, the profile (a friend
+  colour included), a measure, a link, a copy, an unlink, a merge or a delete of a machine, a
+  change of the family.
 - after the start-up normalization of the anonymous owner wrote something.
 
 A new request replaces (`REPLACE`) the queued or running pass, so it never waits behind a backoff.
@@ -217,9 +221,9 @@ A stopped pass is safe: its outbox entries stay, and each push is an upsert. A p
 push and pull everything is retried with exponential backoff.
 
 **After the pull** (`runAndNormalize`), the pass normalizes the visits and recalculates the prior
-bests of each owner that pulled cleanly (trainees excluded; see [4.8](#48-visits-and-sets)). When
-that wrote something, the same job runs one more pass to push it. It does not request a new pass,
-because the request would replace and cancel the running job.
+bests of each owner that pushed and pulled without an error (trainees excluded; see
+[4.8](#48-visits-and-sets)). When that wrote something, the same job runs one more pass to push
+it. It does not request a new pass, because the request would replace and cancel the running job.
 
 **All accounts.** A pass syncs each account on the device: the signed-in accounts, then the
 managed accounts (see [4.4](#44-managed-accounts)). `syncState` has one row for each `user_id`, so
@@ -229,7 +233,7 @@ each account has its own watermark.
 |---|---|
 | Signed in | All |
 | Child | `machine`, `tag`, `machine_tag`, `visit`, `workout_set`, `machine_link`, `photo`, `workout_plan` |
-| Trainee | Pushes `machine`, `tag`, `machine_tag`, `workout_plan`; pulls no `machine_link` |
+| Trainee | Pushes `machine`, `tag`, `machine_tag`, `workout_plan`. Pulls the tables of a child, except `machine_link` |
 
 A child's `profile`, `measure` and `measurement` entries stay in the outbox, because the server
 refuses them. They go out when the child signs in on that device.
@@ -278,8 +282,9 @@ which is not a `DeviceStore` (see [9.2](#92-device-settings)): `DataStoreAccount
 - supabase-kt refreshes the live session. `LiveSession` writes each refresh to the store, and
   records the live account only after `importSession` succeeds.
 - When supabase-kt clears a session that it could not refresh, `LiveSession` signs that account out
-  of the store. A clear that the app makes itself, such as a sign-out, does not.
-- When the next account cannot become active, nobody is active and the live session is clear. The
+  of the store and makes the next account active. A clear that the app makes itself, such as a
+  sign-out, does not.
+- When that next account cannot become active, nobody is active and the live session is clear. The
   account stays in the list, so a new switch is a retry.
 - `CurrentUser` reads the active id of the store, on both platforms.
 
@@ -290,16 +295,16 @@ which is not a `DeviceStore` (see [9.2](#92-device-settings)): `DataStoreAccount
 |---|---|
 | `supabaseClient` | The UI: sign-in, the live session, web reads and writes |
 | `syncSupabaseClient` | The sync pass, as the account that it syncs |
-| `activeAccountSupabaseClient` | Friends' reads and photo downloads on Android, as the active account |
-| `ownerSupabaseClient` | Account deletion, as the account that is deleted |
+| `activeAccountSupabaseClient` | Friends' and family requests and photo downloads on Android, as the active account |
+| `ownerSupabaseClient` | Account deletion on Android, as the account that is deleted |
 | `actingSupabaseClient` | Family reads (`AccountFamilyReads`, `ActingAccount`), as each Google account in turn |
 
 `AccountTokens` gives the tokens. Parallel refreshes of one account's token share one request
 (`SingleFlight`).
 
 **Watermark resets.** An account that was managed and then signs in on the device loses its
-watermark (`Accounts.addAccount`), and so do a guardian's children when the guardian leaves the
-device (`PersistedAccountStore.remove`). Thus the next pass pulls all their rows.
+watermark (`Accounts.addAccount`), and so do a guardian's managed accounts when the guardian
+leaves the device (`PersistedAccountStore.remove`). Thus the next pass pulls all their rows.
 
 **A switch under any screen.** The avatar is in each top bar, so the active account can change on
 any screen. No view model keeps a row across a switch: each observes the active id and reads again
@@ -322,7 +327,7 @@ the stored nickname.
 **Friend colours** belong to the account, in its profile's `friend_colors`, keyed by friend.
 
 - `FriendColorStore.colorsFor` only reads. A friend without a stored colour gets one from the pure
-  `assignedColors`: the stored map and the group mates sorted by id, seeded by an FNV-1a hash of
+  `assignedColors`: the stored map and the friends sorted by id, seeded by an FNV-1a hash of
   the owner id. Each screen and platform thus draws the same colours without a write.
 - Only a colour that the user picks is saved. A drawn colour must not be written: a device that
   did not yet pull the profile would push its row over the server's and erase the nickname and
@@ -352,9 +357,10 @@ for it.
 
 - `AccountsUi.traineeActive` (and `traineeActive()` in a composable) hides what the trainer must
   not change.
-- The view models that write a visit (`VisitViewModel`, `CalendarViewModel`, `PlansViewModel`,
-  `MachinePlacementViewModel`) refuse to write it. `MachineCatalogue.standIn` refuses to copy
-  another account's machine. `MachineFormViewModel.readOnly` keeps an existing machine as it is.
+- The view models that write a visit (`VisitViewModel`, `CalendarViewModel`,
+  `VisitFeedViewModel`, `PlansViewModel`, `MachinePlacementViewModel`) refuse to write it.
+  `MachineCatalogue.standIn` refuses to copy another account's machine.
+  `MachineFormViewModel.readOnly` keeps an existing machine as it is.
 - `VisitNormalization` skips the trainee's visits, and prior bests are not recalculated on the
   trainer's device: such writes could never go out.
 - `NavController.leaveTraineeHidden` closes the machine form and the link choosers.
@@ -365,25 +371,26 @@ for it.
 
 - It reads `my_family` (children and guardians) and `my_coaching` (trainees and trainers) as each
   Google account on the device, one after the other on one client.
-- It lists each child once, under the first guardian signed in on the device, and updates their
-  names and avatars.
-- It removes a child that no family names any more, with its rows, because the device can never
-  sync them again. `OwnedRowsPurge` removes an owner's rows: `SqlOwnedRowsPurge` on Android,
-  `NoOwnedRowsPurge` on the web.
-- A family that cannot be read is not empty: while one is unread, no child leaves, and a child of
-  an unread guardian keeps that guardian. A read without a token fails; it does not go out
-  anonymous.
-- A child that leaves is purged while it is still listed, and leaves the store after that. A
-  failed purge thus repeats on the next follow.
-- Each follow makes the guardian of the active child the live session when it is not already.
+- It lists each managed account once, under the first guardian signed in on the device, and
+  updates their names and avatars.
+- It removes a managed account that no family names any more, with its rows, because the device
+  can never sync them again. `OwnedRowsPurge` removes an owner's rows: `SqlOwnedRowsPurge` on
+  Android, `NoOwnedRowsPurge` on the web.
+- A family that cannot be read is not empty: while one is unread, no managed account leaves, and
+  a managed account of an unread guardian keeps that guardian. A read without a token fails; it
+  does not go out anonymous.
+- A managed account that leaves is purged while it is still listed, and leaves the store after
+  that. A failed purge thus repeats on the next follow.
+- Each follow makes the guardian of the active managed account the live session when it is not
+  already.
 
 | Platform | When it follows |
 |---|---|
-| Android | At the start of each sync pass, and when "People" opens |
-| Web | Once on each page load (a sign-in redirect is a page load), and when "People" opens |
+| Android | At the start of each sync pass, and after each family read of "People" |
+| Web | Once on each page load (a sign-in redirect is a page load), and after each family read of "People" |
 
 A follow and a sync pass share one lock (`followThen`): a follow during a pass could purge a
-child whose rows the pass then pulls again.
+managed account whose rows the pass then pulls again.
 
 **Codes from the web.** A parent's link carries `?parent=CODE` and a trainer's link
 `?trainer=CODE`. `PendingLink` keeps the code until an account signs in, and the account confirms
@@ -396,7 +403,7 @@ A photo belongs to a machine: the synced `photo` table (`machine_id`, `taken_at`
 
 - The bytes are a JPEG in the private Storage bucket `photos`, at `<user_id>/<photo_id>`
   (`Photo.storagePath`). The owner and the owner's guardians write, read and delete the owner's
-  folder; trainers and group mates read it.
+  folder; trainers and friends read it.
 - Both platforms make a new photo upright, at most 1600 px on its long edge, JPEG quality 85,
   before they keep it: Android with `BitmapFactory` and the EXIF orientation, the web with a
   canvas.
@@ -451,11 +458,11 @@ The gym data is in the synced tables `machine`, `visit`, `workout_set`, `machine
   is the UUID v5 of `"<owner>/<name>"` (empty owner while anonymous); a `machine_tag` id is the
   UUID v5 of `"<machine id>/<name>"` (`TagWire.kt`). `uuidV5` in `domain/identity` gives the same
   bytes as Postgres' `uuid_generate_v5`.
-- A group mate can read the owner's ids, so the server checks each write against its content
+- A friend can read the owner's ids, so the server checks each write against its content
   (migration `0027`): a tag's id must be `tag_content_id` of its owner and name, and a link must
   join a machine and a tag of its own owner.
 - Readers count a link only between a machine and a tag of the link's owner (`withTagRows` and
-  `MachineTag.sq`), so a mate's row is never the owner's tag.
+  `MachineTag.sq`), so a friend's row is never the owner's tag.
 - `Machine.tags` is the domain view. Both repositories read it from the live links and their tags.
   `writeTagsOf` (`TagRowStore.kt`) writes it on both platforms: it makes the machine's tags live,
   writes and soft-deletes links, and soft-deletes each tag that no live machine of the owner
@@ -465,9 +472,10 @@ The gym data is in the synced tables `machine`, `visit`, `workout_set`, `machine
 - A claim (see [4.3](#43-accounts)) takes only the anonymous links of live machines and the tags
   that they hold. It forgets the other anonymous tag rows: written as the owner's, they could
   delete a tag that the server holds live.
-- The pure functions of `domain/gym/Tags.kt` hold the tag rules: `sortedTags` (the display
-  order), `hasAllTags` (the filter), `toggledTag`, `suggestedTags` and `tagSections`. Screens
-  write a tag in capitals only when they draw it (`TagText`, `tagTitle`).
+- The pure functions of `domain/gym` hold the tag rules: `sortedTags` (the display order),
+  `hasAllTags` (the filter), `toggledTag` and `suggestedTags` in `Tags.kt`, and `tagSections` in
+  `TagSection.kt`. Screens write a tag in capitals only when they draw it (`TagText`,
+  `tagTitle`).
 
 **Old tag column.** `machine.tags`, a JSON array of names, stays in both schemas for clients before
 1.7.1. Clients now never write it. Migration `0027` on the server, and `19.sqm` with the Kotlin
@@ -479,7 +487,7 @@ clients. It is never read or written. Migration `0009` converted its keys to `ma
 once.
 
 **Records and sort.** `machinePeaks` in `domain/gym` gives for each machine its heaviest and
-lightest weight with the most reps at each, its last set and its number of visits.
+lightest weight with the most reps at each, the time of its last set and its number of visits.
 `MachinePeaks.best` is the record. Android calculates it locally (`WorkoutSetRepository.peaks`);
 the web and `FriendsRepository.groupPeaks` ask the server function `machine_peaks`, which makes
 the same calculation under RLS and returns one row for each machine. `machineOrder` sorts by
@@ -509,22 +517,24 @@ can reach the server before its machine does, and the linked machine belongs to 
 - Links have no direction for readers. Machines joined by live links, through any number of
   steps, are a cluster: one physical machine. `MachineClusters` in `domain/gym` makes the clusters
   by union-find, and each reader uses it.
-- The clusters join the account's own links, read locally, with its group mates' live links,
-  read from the server (`FriendsRepository.groupLinks`).
+- The clusters join the account's own links with its friends' live links. The friends' links
+  come from the server with the group read (`FriendsRepository.groupGym`).
 - **Direct links.** Each device keeps its owner's links direct, so a cluster stays when a machine
   in the middle, or its owner, goes. `missingDirectLinks` gives the links to write: from each own
   live machine to each visible friend's machine of its cluster that no live link joins to it. The
-  links are the owner's rows; no friend's row changes. A device sees only its group mates' links.
+  links are the owner's rows; no friend's row changes. A device sees only its friends' links.
 - `linkSuggestions` gives each own machine the other own machines with the same name (trimmed,
   any case) or in its cluster: the merge suggestions.
 
-**`MachineCatalogue`** (`app/ui/machine`) is the one reader of machines with their photos and
-links, and the one writer of `machine_link` rows.
+**`MachineCatalogue`** (`app/ui/machine`) reads machines with their photos and links for each
+screen that lists them. It is the one writer of `machine_link` rows.
 
 | Call | What it does |
 |---|---|
-| `own` | The account's live machines, photos and links, from the device |
-| `group` | The group mates' machines, tags, links and photos in one request, `FriendsRepository.groupGym` (server function `group_gym`) |
+| `own` | The account's live machines, photos and links |
+| `group` | The friends' machines, tags, links and photos in one request, `FriendsRepository.groupGym` (server function `group_gym`) |
+| `lastGroup` | The last group read of the account, else the kept one (see [4.12](#412-friends-data)), with the own links as they are now |
+| `clusters` | The clusters of the own links and `FriendsRepository.groupLinks`, for a friend's calendar |
 | `take` | Writes an own copy of a friend's machine (`linkedCopy`) and its link |
 | `link` | Writes one own link to a friend's machine |
 | `friendStandIn` | The own machine of a friend's machine's cluster, else `take` |
@@ -559,15 +569,16 @@ showed.
    server does not answer, nothing is written.
 2. It writes `mergedMachines` and `mergedLinks`: the sets and photos moved, the own links moved
    (or deleted when the kept machine has them already), and the removed machine soft-deleted. With
-   the dialog's recalculation on, the moved sets also take `platformShift(removed, kept)`.
+   `convert`, the moved sets take the unit of the kept machine (`convertedSets`). With `adjust`,
+   they take `platformShift(removed, kept)`.
 3. It writes sets first and the machine last, under `NonCancellable`, so a closed screen does not
    stop it halfway, and requests a sync.
 
 `suggestedToKeep` preselects the machine whose latest live set is later.
 
 **Unlink.** `MachineCatalogue.unlink` calls `FriendsRepository.breakLinks` on the server, then
-soft-deletes the own links of the machine. Unlink and merge then drop the account's last group
-read.
+soft-deletes the own links of the machine. An unlink drops the account's last group read. A merge
+drops it only when it moved a friend's link.
 
 **Delete.** `MachineCatalogue.delete` soft-deletes the machine's photos, its own links and the
 machine, then requests a sync. It writes nothing for a machine with live sets. Friends' links to a
@@ -584,7 +595,8 @@ network.
 - A visit without `day` is on the day of its `recorded_at` (`Visit.dayAt`).
 - When a day has more than one visit, readers show `keptVisit`: the newest by
   `(recorded_at, updated_at, id)` of those with a live set, or of all when none has a set.
-  `shownVisit` in `domain/gym` is the one reader of this rule.
+  `keptVisit` in `domain/gym` holds this rule. Readers use it through `shownVisit`
+  (`VisitRepository.shownOn`); the feed, which holds the sets already, calls it directly.
 
 **Normalization.** `normalizedVisits` in `domain/gym` sets a missing `day` and, for each day,
 keeps `keptVisit` and soft-deletes the others with their sets. A second run writes nothing.
@@ -596,7 +608,8 @@ keeps `keptVisit` and soft-deletes the others with their sets. A second run writ
 | Android, signed-in account | In the sync worker, after a clean pass of that account. When it writes, the worker runs one more pass in the same job |
 | Web | After the session restore and after each switch |
 
-A failure for one owner is logged and does not stop the next owner.
+A failure for one owner is logged and does not stop the next owner. No platform normalizes the
+visits of a trainee (see [4.4](#44-managed-accounts)).
 
 **Sets.**
 
@@ -608,9 +621,9 @@ A failure for one owner is logged and does not stop the next owner.
   so it stays on that day and in order.
 - The set form cuts `comment` to 200 characters while the user types, and trims it on save.
 
-**`SetRecorder`** (`app/ui/visit`) is the one way to write a day's sets. It finds or makes the
-day's visit, gives a new set its position and time, starts the rest timer for a set of today and
-requests a sync for another day.
+**`SetRecorder`** (`app/ui/visit`) is the one way to record, correct, remove and reorder a set,
+and to plan a machine on a day. It finds or makes the day's visit, gives a new set its position
+and time, starts the rest timer for a set of today and requests a sync for another day.
 
 - A set goes on an own machine of the active account. When the shown machine belongs to another
   account on the device (such as a child's), `MachineCatalogue.ownCopy` finds the stand-in from
@@ -656,7 +669,7 @@ best of its machine: `prior_best_weight`, `prior_best_reps` and `prior_best_sets
   those three columns and `updated_at`. A failed recalculation is reported; the next write on the
   machine repeats it.
 - `refreshAll(owner)` recalculates all machines: the sync pass runs it after normalization for
-  each clean owner, and Android runs it at start for the anonymous owner.
+  each clean owner that is not a trainee, and Android runs it at start for the anonymous owner.
 - Two offline devices each calculate from part of the data; the recalculation after the pull makes
   them agree. A recalculated row goes out whole, so a parallel edit of the same set on another
   device is lost, as with two edits.
@@ -677,8 +690,9 @@ best of its machine: `prior_best_weight`, `prior_best_reps` and `prior_best_sets
 
 - Each change of the machines or the pin, a pause in the name (`NAME_PAUSE`), the loss of focus
   (`commitName`) and `leave` put a write on one `Channel`, which runs them in order.
-- A write takes the form's state when it runs and skips a plan equal to the stored one. Thus a new
-  plan is written at its first real change.
+- A write takes the form's state when it runs and skips a plan equal to the stored one. Thus an
+  empty new plan is written at its first real change. A new plan that opens with machines, from
+  a machine or a visit, is written when the form opens.
 - A plan without a name and without live machines is soft-deleted; a later write restores it with
   the same id.
 - `leave` sets `done` only after its write ran, because the view model's scope ends when the
@@ -692,14 +706,17 @@ call takes the account that the screen offered the action to, and checks that it
 before it writes and before it opens today. A start of a plan writes today's visit first, then
 soft-deletes the plan unless it is pinned, so a failed write keeps the plan.
 
+- `Placement.machinesOn` gives the machines of the shown visit of a day. "Repeat today", the
+  machine picker and a new plan from a visit read them there.
 - `MachinePlacementViewModel` serves the "⋮" menu that the machine form, the machine page and
   "Friend's machine" share. It first asks `MachineCatalogue.standIn` for the account's machine:
   an own machine stands for itself, another account's machine on the device goes through
-  `deviceStandIn` or `ownCopy`, and a friend's machine through `friendStandIn`. While a trainee
-  is active, `standIn` answers `Gone` for any machine that is not the trainee's, because a trainer
-  must not write links for a trainee.
-- `VisitPlacementViewModel` serves "Add to plan…" of the visit screen and the calendar card. It
-  reads the visit again and adds its `visitMachines` that the plan does not have.
+  `deviceStandIn`, else a new linked copy, and a friend's machine through `friendStandIn`. While
+  a trainee is active, `standIn` answers `Gone` for any machine that is not the trainee's, because
+  a trainer must not write links for a trainee.
+- `VisitPlacementViewModel` serves "Add to plan…" of the visit screen and of the visit cards in
+  the calendar and the feed. It reads the visit again and adds its `visitMachines` that the plan
+  does not have.
 
 ### 4.10 Body measures
 
@@ -753,18 +770,18 @@ cycle day steps by 1 and goes round the cycle length instead.
 `missingInputs`, `methodsReading`). A result outside 2–70 % is no result. The inputs are found by
 `MeasureKind`, never by name. `bodyFatHistory` makes the chart: a point on each day with a value
 of an input, from the first day all inputs have one; a missing value is interpolated linearly by
-epoch day.
+epoch day. After the last value of an input, that value stays.
 
 **Cycle.** The cycle arithmetic is pure, in `domain/measures/Cycle.kt`.
 
 - `cycleAnchors` makes each recorded day of the cycle a start: the day minus the value plus one.
-- `Cycle.dayOn` counts a day from the latest start before it, modulo the cycle length. Before the
-  first start, it counts back from it.
+- `Cycle.dayOn` counts a day from a start on or before it, modulo the cycle length. Of such
+  starts, the one recorded last applies. Before the first start, it counts back from it.
 - `Cycle.bands` gives the phases of a day range: menstruation on days 1 to 5, ovulation on days
   length − 14 (1 at the earliest) to length − 12. In a cycle of 19 days or less they overlap.
 - `showsCycle` allows the phases on charts of up to `CYCLE_CHART_MONTHS` (3).
-- `cycleOf(profile, measures, values)` gives the phases for the other charts: null unless the sex
-  is `Female` and a live `CycleDay` has a value. A friend's machine never gets them.
+- `cycleOf(profile, measures, values)` gives the cycle for the other charts: null unless the sex
+  is `Female` and a live `CycleDay` has a value. A friend's machine never gets the phases.
 - `PhasesDecoration`, a Vico `Decoration`, draws the bands under the line with the theme colours.
   The cycle day's own chart is a Compose `Canvas` (`CycleChart`), without Vico.
 
@@ -781,18 +798,18 @@ Each save reads `forOwner` again under one lock and updates that row, or makes o
 
 ### 4.11 Statistics
 
-The statistics screen reads the account's live sets once (`WorkoutSetRepository.all`).
-`domain/gym/Statistics.kt` does the arithmetic:
+Each load of the statistics screen reads all live sets of the account in one call
+(`WorkoutSetRepository.all`). `domain/gym/Statistics.kt` does the arithmetic:
 
 - `StatsPeriod.start` gives the first day of a period.
-- `machineProgress` gives the two sets that a card compares; `bestSet` and `worstSet` order sets
-  by `setStrength`.
+- `machineProgress` gives the two sets that a card compares; `bestSet` and `worstSet`
+  (`SetStrength.kt`) order sets by `setStrength`.
 - `bestPerDay` gives the points of the chart.
-- `statsOrder` sorts the cards by a `StatsSort`. The gain sort compares the weight in kilograms,
-  then the reps, then the sets equal to the best.
+- `statsOrder` sorts the cards by a `StatsSort`. `StatsSort.Growth` compares the change between
+  the two sets: the weight in kilograms, then the reps, then the sets equal to the best.
 
-A machine without a set before the period always shows as improved, because its change runs from
-the worst set of the period to the best.
+A machine without a set before the period always shows as improved. Its change runs from the
+worst set of the period to the best; when the two are equal, the card shows "New machine".
 
 **Web paging.** PostgREST returns at most `max_rows` rows (1000 by default) for each request. The
 web thus reads sets in pages of 1000, ordered by `(recorded_at, id)`, and a shorter page ends the
@@ -804,32 +821,34 @@ friend's machine, with `FriendsRepository.setsOn`.
 
 ### 4.12 Friends' data
 
-Both platforms read friends' data from the server. Thus `FriendsRepository` has one
-implementation in `commonMain`, and no synced table holds its answers.
+Both platforms read friends' data from the server. Thus `SupabaseFriendsRepository` is in
+`commonMain`, and no synced table holds its answers. Each platform binds it as
+`TraineeFriends(KeptFriends(…))`: `TraineeFriends` gives a trainee no friends (see
+[4.4](#44-managed-accounts)), and `KeptFriends` keeps the answers (see below).
 
 - The web runs it on the UI client. Android runs it on `activeAccountSupabaseClient`, which asks
   `AccountTokens` for the active token for each request, because Android's UI client has a session
   only after a sign-in or a switch in the same process.
-- Mates are the members of the groups that hold the viewer. While a child is active, the reads use
-  the guardian's session; thus the child's friends are the people that the guardian and the child
-  share a group with, the guardian included.
+- Friends are the members of the groups that hold the viewer. While a child is active, the reads
+  use the guardian's session; thus the child's friends are the people that the guardian and the
+  child share a group with, the guardian included.
 - The active account's groups are read into the process-wide `GroupsCache` when it becomes active,
   so the friends screen opens with them.
 
-**Calendar.** One `groupVisits` call reads the mates' visits of the month (it reads the group
+**Calendar.** One `groupVisits` call reads the friends' visits of the month (it reads the group
 members, then their visits). The calendar reads
 them after its own rows, when the screen opens, after a sync, after a switch and on a month change.
 A new read cancels the read in flight; a result for another account or month is dropped. A failed
 read leaves the friends out; the own calendar never waits for it.
 
-**Feed.** `VisitFeedViewModel` reads the own rows locally and the mates' visits with one
+**Feed.** `VisitFeedViewModel` reads the own rows locally and the friends' visits with one
 `groupVisits` call for each 21-day window.
 
 - It reads back window by window until a window has a visit of a shown person. The list asks for
   more when it is three items from its end.
 - It ends at the oldest visit of the account and of `oldestGroupVisit`.
-- The people (the account and its `mates`) are read once, with their colours, after the first
-  window.
+- The people (the account and its `mates`) are read with their colours after the first page of
+  each start: from the kept answer, then from the server.
 - A sync or a return to the screen reads the own rows again and keeps the windows. A switch
   starts the feed again.
 
@@ -852,14 +871,16 @@ sets store (see [4.8](#48-visits-and-sets)), so a card needs only the day's rows
 **Kept answers (Android).** `KeptFriends` wraps the repository and keeps its answers in the local
 `friend_answer` table: one JSON text for each account and request. The table does not sync.
 
+- It keeps the answers of `visits`, `sets`, `machines`, `mates`, `groupGym`, `oldestGroupVisit`,
+  `groupLinks`, `groupPeaks` and `groupVisits`. Each other request goes to the server.
 - A read inside `keptOnly` gives the kept answer, or fails when there is none. Other reads ask the
   server and keep the answer.
 - The feed, a friend's calendar and the machine page (`GroupReads`) read inside `keptOnly` first,
   show the result, then read from the server. A failed server read keeps what shows.
   `MachineCatalogue.lastGroup` uses the kept `groupGym` when it has no read in memory.
 - The kept visits of a viewer are one list: each window replaces the visits it covers, and visits
-  older than 31 days go out. An answer not read for 31 days is removed. A sign-out removes the
-  answers of accounts that are no longer on the device.
+  older than 31 days go out. Each time an answer is kept, the answers kept more than 31 days
+  before go out. A sign-out removes the answers of accounts that are no longer on the device.
 - The web uses `KeptFriends` over `NoFriendAnswers`, which keeps nothing.
 
 ## 5. Backend
@@ -878,8 +899,10 @@ sets store (see [4.8](#48-visits-and-sets)), so a card needs only the day's rows
   (`CorePlatformModule.android.kt`), as `19.sqm` runs `tagConversion`.
 - `ALTER TABLE … ADD COLUMN` puts a column at the end, so the `.sq` file declares it last too: the
   generated mappers read columns by position.
-- A wire row has no Kotlin default values: supabase-kt encodes without defaults, and an upsert
-  keeps a column that it does not send.
+- A wire row that a client upserts has no Kotlin default values: supabase-kt encodes without
+  defaults, and an upsert keeps a column that it does not send. `WorkoutSetRow` uses this: its
+  `prior_best_*` columns default to null, so a null value is not sent. Its `pyramid` is
+  `@EncodeDefault` (see [4.8](#48-visits-and-sets)).
 - Readers map an unknown enum value to a default, so one row does not stop a pull. Old clients
   ignore unknown columns, but a value that they cannot map (such as the unit `custom` for a client
   before it) fails their pull.
@@ -892,7 +915,7 @@ code can leak data by an omission.
 **Writes.**
 
 - A user writes only rows with their own `user_id`, or with the id of a child they guard
-  (`guards`).
+  (`guards`). A trainer also writes some rows of a trainee (`coaches`; see **Trainer writes**).
 - A set goes only into a visit and on a machine of the set's owner. A photo belongs only to a
   machine or profile of its owner. A `tag` and a `machine_tag` must have the ids of their content
   (see [4.6](#46-machines-and-tags)).
@@ -906,7 +929,7 @@ code can leak data by an omission.
 **Reads.**
 
 - **The owner** reads all own rows.
-- **A group mate** reads the live `machine`, `visit`, `workout_set`, `machine_link`, `photo`,
+- **A friend** reads the live `machine`, `visit`, `workout_set`, `machine_link`, `photo`,
   `tag` and `machine_tag` rows, and the owner's `photos` folder (`shares_group_with`).
 - **A guardian** reads all `machine`, `visit`, `workout_set`, `machine_link`, `photo`, `tag`,
   `machine_tag` and `workout_plan` rows of the child, deleted ones included, and the child's
@@ -932,7 +955,9 @@ a row can name another user's id; this is safe, because RLS limits each read.
   coaching link.
 - `my_family` and `my_coaching` list the caller's children and guardians, or trainees and
   trainers, with names and avatars.
-- `guards(other)` and `coaches(other)` tell if the caller guards or coaches `other`.
+- `guards(other)`, `coaches(other)` and `shares_group_with(other)` tell if the caller guards
+  `other`, coaches `other` or shares a group with `other`. `is_group_member(target)` tells if the
+  caller is a member of the group `target`.
 
 - `accept_guardian` answers an unknown or expired code with `PT404`, and the caller's own code with
   `P0001`.
@@ -941,9 +966,9 @@ a row can name another user's id; this is safe, because RLS limits each read.
 - **Account deletion.** Storage objects do not cascade, so `SupabaseAccountServer` removes the
   caller's photos through the Storage API after `delete_my_account`, with the same token. Only
   after the server answers does `AccountDeletion` remove the rows from the device
-  (`OwnedRowsPurge`) and sign the account out. When the account is the only signed-in guardian of a
-  child, the child's rows also leave the device. `AccountDeletion` refuses a managed account,
-  because its token is the guardian's.
+  (`OwnedRowsPurge`) and sign the account out. When no other Google account is signed in on the
+  device, the rows of the account's managed accounts also leave the device. `AccountDeletion`
+  refuses a managed account, because its token is the guardian's.
 
 **Trainer writes.** A trainer writes the trainee's `workout_plan` rows and inserts their
 `machine`, `tag` and `machine_tag` rows. An update policy cannot tell a machine that the trainer
@@ -1022,8 +1047,8 @@ and only Android binds one: a browser cannot choose a proxy or look up a host.
 - **TDD is mandatory.** Write the failing test before the code.
 - `:core:jvmTest` runs the `core` tests with the SQLDelight JVM driver and fake Supabase
   gateways. They cover each pure function, each DAO and the full sync.
-- `:app:jvmTest` runs Compose desktop UI tests with fake repositories from Koin overrides. No test
-  uses the network or a real database.
+- `:app:jvmTest` runs the `app` tests: view model tests and Compose desktop UI tests, with fake
+  repositories from Koin overrides. No test uses the network or a real database.
 - `.\gradlew check` is the quality gate: ktlint, `:core:jvmTest`, `:app:jvmTest` and the Android
   lint of `androidApp`. It must pass
   before a task is complete. It depends on those suites directly, not on `allTests`, so it starts
@@ -1103,11 +1128,12 @@ and only Android binds one: a browser cannot choose a proxy or look up a host.
   same file, different from `primary`, given by `friendColor(index)`. The green of a gain is
   `gainColor()`.
 - Vico charts and `Canvas` drawings take their colours from the scheme.
-- `App` gives the scheme to `SystemBars`. On Android the status and navigation bars are
+- `App` tells `SystemBars` if the scheme is dark. On Android the status and navigation bars are
   transparent, with icons that match the scheme; without this, Android draws a scrim of the light
   window theme.
-- Icons are Phosphor Regular, copied as `ImageVector`s into `app/.../ui/icons` with their MIT
-  licence. The Phosphor library has every weight of every icon, about 27 MB for each platform.
+- Icons are Phosphor Regular (`DropFill` is Phosphor Fill), copied as `ImageVector`s into
+  `app/.../ui/icons` with their MIT licence. The Phosphor library has every weight of every icon,
+  about 27 MB for each platform.
 
 ### 9.2 Device settings
 
@@ -1166,7 +1192,8 @@ stored value.
 - `AppLanguage.System` is Russian when the device language tag starts with `ru`, else English
   (`SystemLanguage`). `App` sets `AppStrings` while it composes, so the first frame has the right
   language.
-- Russian text is only in `RuStrings.kt`; code, comments and tests are in English.
+- Russian text is only in `RuStrings.kt` and in the tests of Cyrillic-specific behaviour (see
+  [7](#7-testing)); code and comments are in English.
   `RuStrings` and `EnStrings` each name their own language (`languageName`) for the language
   list.
 - `AppStrings` starts with `defaultStrings` until `App` sets the chosen language: Russian on
@@ -1189,7 +1216,8 @@ Each gym weight on a screen goes through `app/ui/format/WeightUnits.kt`:
 - `shownUnit` picks the unit from the machine's unit and the profile's `PreferredWeightUnit`.
 - `shownWeight` converts to the nearest half unit; `shownStep` to one decimal.
 - The formatters that write weights (`setsSummary`, `setsSummaryParts`, `setValue`,
-  `weightCaption`, `platformSuffix`, `setChange`, `dayBestGain`) take the preferred unit.
+  `weightCaption`, `platformSuffix`, `setChange`, `dayBestGain`, `sharedName`, `visitShareText`)
+  take the preferred unit.
 - Only the set form's weight is in the machine's own unit, with `recordingConversion` under it.
 
 View models read the preferred unit with `ProfileRepository.preferredUnit` each time they read

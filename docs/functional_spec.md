@@ -5,6 +5,7 @@ tells what the app does, screen by screen. Read it before you change a feature o
 
 - The terms are those of [GLOSSARY.md](../GLOSSARY.md).
 - The UI labels are those of the English app. The Russian app has the same screens.
+- The app writes the label of a section in capitals: "Record" shows as "RECORD".
 - For how the app is built, see [technical_spec.md](technical_spec.md).
 
 ## 1. Platforms
@@ -22,13 +23,14 @@ tells what the app does, screen by screen. Read it before you change a feature o
 ## 2. Home screen and top bar
 
 Every screen has a top bar: a back arrow (not on the home screen), the title and the avatar of
-the active account. The visit screen and the machine page have no title in the bar; they show
-the day in their content.
+the active account. The visit screen, the machine page and the machine form have no title in the
+bar. The visit screen shows the day as its heading.
 
 - A tap on the avatar opens the account menu. Under "Recording sets as" it lists the accounts on
   the device, the active one marked; a Google account shows its e-mail under the name. Then come
   "Add account", "Settings" and "Sign out of …". A child or a trainee has no
-  sign-out.
+  sign-out. On Settings, "Profile", "People", "Account" and the network screen, the menu has no
+  "Settings".
 - Without an account, the avatar is an empty outline.
 - An avatar, on every screen, is the photo that the person chose in "Profile", else their Google
   picture, else their initial. Friends see the same avatar.
@@ -39,8 +41,8 @@ The home screen shows:
    The button is "Start" while today has no machine, and "Continue" when today has a set or a
    planned machine.
 2. The rows "Visits", "Machines", "Measurements", "Plans", "Statistics" and "Friends". Without an
-   account, "Friends" shows a lock and does not open. For a child, "Measurements" and "Friends" do
-   not show.
+   account, "Friends" shows a lock and does not open. For a child or a trainee, "Measurements" and
+   "Friends" do not show.
 3. On Android without an account: "Sign in with Google" under the rows.
 4. At the very bottom: the version, for example "Version 1.1.0". On Android, five taps on it show
    the network check (see [12](#12-network-check)).
@@ -64,12 +66,12 @@ applies at once and closes the panel.
 | Setting | Choices | Default |
 |---|---|---|
 | "Theme" | System, Light, Dark | System: the system theme |
-| "Language" | System, English, Russian | System: Russian on a Russian device, else English |
+| "Language" | System, English, Russian (written in Russian) | System: Russian on a Russian device, else English |
 | "Animation" | No animation, Fast (150 ms), Normal (300 ms), Smooth (500 ms) | Fast |
 | "Timer sound" | Off, On | Off |
 
-- **Language.** The app text and the shared text use the language. Names, own units, tags and
-  comments stay as the user typed them.
+- **Language.** The app text and the shared text use the language. The app does not translate
+  names, own units, tags and comments.
 - **Numbers.** The app always writes a decimal point ("11.3kg"). A typed number can have a point
   or a comma.
 - **Animation.** It is a fade between screens. The fade never shows a colour outside the theme.
@@ -100,7 +102,8 @@ A machine row shows:
 
 - the photo. A tap on it opens the machine form, so a small gear is in its corner. A gear replaces
   a missing photo.
-- the name and the tags.
+- the name and the tags. The platform weight follows the name in brackets when it is not part of
+  the recorded weight ("Leg press (+76 kg)").
 - the setup note and the results in grey, each on its own line. The results break between the
   weights and the reps when they do not fit on one line.
 
@@ -110,15 +113,15 @@ A tap on the row opens the machine page.
 shows a drag handle at the left of each machine. Drag a handle to move the machine with its sets.
 While the handles show:
 
-- a photo opens nothing, and a barbell replaces a missing photo.
+- a machine row and its photo open nothing, and a barbell replaces a missing photo.
 - the "⋮" menu is hidden.
 - "Done" replaces "Add".
 - the list is not grouped, and shows only the machines with sets.
 
 "Done", the order button or back hides the handles.
 
-**"⋮" menu.** "Add to plan…", and "Repeat today" except on today's visit (see
-[7.3](#73-add-to-a-plan-or-to-today)).
+**"⋮" menu.** A visit with a machine has the menu: "Add to plan…", and "Repeat today" except on
+today's visit (see [7.3](#73-add-to-a-plan-or-to-today)).
 
 **Group by tags.** When a machine of the visit has tags, "Group by tag" is available. It
 splits the list into sections, one for each different set of tags (letter case is ignored). The
@@ -136,7 +139,8 @@ The page shows, from the top:
 1. The photo, which opens the machine form, with the gear as in the list.
 2. The name with the platform weight, the tags and the setup note.
 3. "Record": the record of the machine.
-4. The results of the previous visit, with how long ago it was ("12 days ago").
+4. The results of the previous visit, with how long ago it was ("12 days ago"). On a visit of
+   another day, this is the visit before that day, and the days count from that day.
 5. The record of each friend on the machine: avatar, name and record ("Oleg  85 kg × 6"). Each
    friend who has a linked machine with a set on it has a row, in the order of the names. A
    friend with two linked machines has two rows. The weight uses the platform weight of the
@@ -158,12 +162,14 @@ is hidden and "Done" replaces "Add". "Done" or back hides the handles.
 
 **Back** closes the set form first, then the page.
 
-**"⋮" menu.** "Reorder sets" (see above), "Add to plan…", and "Repeat today" except on
-today's visit (see [7.3](#73-add-to-a-plan-or-to-today)).
+**"⋮" menu.** "Add to plan…", "Repeat today" except on today's visit (see
+[7.3](#73-add-to-a-plan-or-to-today)), and "Reorder sets" (see above).
 
 **Swipe.** A horizontal swipe opens the previous or the next machine, in the order of the list
-(grouped when the list is grouped), planned machines included. The other page opens without the
-set form. The swipe stops at the first and the last machine. The swipe does nothing:
+(grouped when the list is grouped), planned machines included. While the swipe moves, the other
+machine shows the top of its page: the photo, the name, the tags and the setup note. The other
+page opens without the set form. The swipe stops at the first and the last machine. The swipe does
+nothing:
 
 - while the set form is open or the sets show drag handles.
 - on a machine that is not in the list of the visit.
@@ -174,13 +180,14 @@ run, it shows 1:30.
 
 ### 4.3 Set form
 
-The same form adds and edits a set. It moves up over the machine page.
+The same form adds and edits a set. It shows at the bottom of the machine page, and the page
+behind it dims.
 
 **People.** The form starts with a row of avatar chips (see [11.2](#112-several-accounts)), and
 the "⋮" menu at its right. The row scrolls sideways when the chips do not fit. Only the active
 person's chip shows the name.
 
-- The chip of the active account always shows.
+- The chip of the active account always shows. Without an account, the row has no chip.
 - When the form adds a set to today's visit, the chips of the other accounts that can record
   (trainees do not count) also show, but only for the accounts that have a visit today. A visit
   with planned machines only counts.
@@ -214,7 +221,8 @@ is checked, the pyramid icon follows the title.
 
 - − and + change the weight by the weight step of the machine, and the reps by one. The weight
   never goes below 0.
-- The reps must be a whole number from 1 to 999, else the set cannot be saved.
+- Typed reps must be a whole number from 1 to 999. A typed weight must be a number of 0 or more.
+  Else the set cannot be saved.
 - The weight is in the machine's own unit and shows it ("65 lb"). A counterweight machine shows
   "−" before the weight.
 - When the preferred unit is "kg" or "lb" and is not the machine's unit, the converted weight shows
@@ -222,7 +230,7 @@ is checked, the pyramid icon follows the title.
   unit.
 
 **Comment.** "Comment" takes up to 200 characters on several lines. The page shows it after
-the set number. A shared visit never shows it. The field shows while the "Comment" row is checked,
+the set. A shared visit never shows it. The field shows while the "Comment" row is checked,
 and also while the set has a comment, so an edit of such a set always shows it.
 
 **Start values.** The first set on a machine starts from the best set of the previous visit,
@@ -232,9 +240,9 @@ and the reps of the set just recorded.
 
 **Buttons.**
 
-- "Add" records the set and keeps the form open for the next set, with an empty comment.
-  While the set is written, the button shows progress and ignores taps.
-- An edit has "Save", which closes the form, and a trash button, which deletes the set.
+- "Add" records the set and keeps the form open for the next set, with an empty comment and the
+  pyramid row cleared. While the set is written, the button shows progress and ignores taps.
+- An edit has "Save", which closes the form, and a trash button, which deletes the set at once.
 - "Cancel", a swipe down or back closes the form and drops the changes.
 
 ### 4.4 Pyramids
@@ -264,16 +272,16 @@ A visit with sets has "Share" in the top bar. It opens a popup:
 - "As text" gives the visit as text. Android opens its share sheet. The web copies the text and
   shows "Copied" or "Couldn't copy". The message stays until a tap or until another
   account becomes active.
-- "Group by tag", under "As text", shows when a machine has tags. It is the same choice
+- "Group by tag", under "As text", shows when a machine with sets has tags. It is the same choice
   as in the list, and splits the text into the same sections.
 - "As image" (Android only) shares a picture of the visit card (see [6.1](#61-calendar)) in the
   current theme. The picture shows every machine and the date ("Thursday, 29 October", with the
-  year for an earlier year). The picture has the same size on every phone.
+  year for an earlier year). The picture has the same width on every phone.
 
-The text starts with the nickname and the short weekday ("GDM, Thu", or "Thu" without a nickname),
-then an empty line, then one line for each machine, in the order of the visit. A line has the
-name, the platform weight in brackets when it is not part of the recorded weight, the weights and
-the reps.
+The text starts with the nickname and the short weekday ("GDM, Thu"). Without a nickname it uses
+the Google name. Without an account it starts with the weekday only ("Thu"). Then come an empty
+line and one line for each machine, in the order of the visit. A line has the name, the platform
+weight in brackets when it is not part of the recorded weight, the weights and the reps.
 
 | Rule | Example |
 |---|---|
@@ -302,7 +310,7 @@ Android shows the last read that it kept (see [10.1](#101-groups)).
 
 ### 5.1 How a list shows a machine
 
-The machine list, the picker and the plan form show a machine in the same way:
+The machine list and the picker show a machine in the same way:
 
 - the cover photo: the photo chosen in the machine form, else the first photo of the machine, else
   the first photo of a linked machine.
@@ -311,7 +319,7 @@ The machine list, the picker and the plan form show a machine in the same way:
   [10.3](#103-links-between-machines)). In the picker, "Already in the visit" when the visit has
   it.
 - the tags.
-- the setup note and the day of the last use.
+- for an own machine: the setup note and the day of the last use.
 - a trophy with the record, in the preferred unit.
 
 The lists of "Link to…" and "Link to mine" show a shorter row: the photo, the name, the
@@ -321,18 +329,18 @@ linked machines and a line of details.
 
 "Machines" on the home screen opens the machines of the active account.
 
-- **Sort.** Chips at the top sort the machines: "Recent" (last used first, the default), "A–Z" or
-  "Most used" (most visits first). With "Recent" and "Most used", machines without sets are last.
-  The sort applies to the own machines and to each friend's section. It belongs to the account: it
-  is saved in the profile and syncs.
+- **Sort.** Chips under the search field sort the machines: "Recent" (last used first, the
+  default), "A–Z" or "Most used" (most visits first). With "Recent" and "Most used", machines
+  without sets are last. The sort applies to the own machines and to each friend's section. It
+  belongs to the account: it is saved in the profile and syncs.
 - **Search.** The field keeps the machines whose name holds the typed text, in any letter case and
   with some typos: none for up to 3 letters, one for 4–5, two for 6–8 and three for more. Each
   machine search in the app works so. An own machine is also found by the names of the friends'
   machines that it is linked with. The cross at the end clears the text and keeps the keyboard
   open.
-- **Tags.** The tags of the listed machines follow the search field as chips, each tag once. The
+- **Tags.** The tags of the listed machines follow the sort chips as chips, each tag once. The
   chosen tags keep only the machines that have all of them.
-- With no match, the list shows "Nothing found".
+- With no match, the list shows "Nothing found". Without machines, it shows "No machines yet".
 - A tap on a machine opens its form. "Add" makes a new machine. "Save" goes back to the
   list.
 
@@ -368,8 +376,8 @@ machine list.
   with the typed name and the chosen tags (`Tagged "ARMS"`).
 - When a machine page is open in the visit, "Copy machine" under "Based on an existing one" opens
   the form filled from that machine, with the typed name.
-- In a plan, the picker shows the last result of each machine and has no "Copy machine". A machine
-  that is already in the plan is not added again.
+- In a plan, the picker has no "Copy machine". A machine that is already in the plan is not added
+  again.
 
 ### 5.4 Machine form
 
@@ -383,6 +391,9 @@ The form has no title. For a saved machine, a chart button in the top bar opens 
 | "Platform weight" | The platform weight, and if it is added to the recorded weight |
 | Unit | kg, lb or an own unit such as "plate" (up to 12 characters). An own unit shows after each weight and never converts |
 | "Weight step" | Any positive number |
+
+"Save" is off while the name is empty, the platform weight or the step is not a correct number, or
+an own unit has no name.
 
 **Tags.** Under the setup note, each tag of the account's machines is a chip that you tap on or
 off. A machine can have any number of tags.
@@ -425,7 +436,7 @@ when the change has an effect on the recorded weights. The question names each c
 
 | Change | "Recalculate" does |
 |---|---|
-| Unit kg ↔ lb | Converts each recorded weight to the new step |
+| Unit kg ↔ lb | Converts each recorded weight: kg to lb to the new step, lb to kg to 0.1 kg |
 | "Total" ↔ "Per side" | Halves or doubles each recorded weight |
 | Platform weight, or if it is added | Changes each weight so that the total stays the same, never below zero |
 | To or from "Gravitron" | Nothing: the weights stay |
@@ -444,11 +455,13 @@ form. Else it asks "Save changes?":
 - When you close the question, the form stays.
 - Text in "New tag" that was not added is not an edit.
 
+**"Link to…"** is a button under "Weight step", for a saved machine of the active account (see
+[5.5](#55-link-and-merge)).
+
 **"⋮" menu** of a saved machine:
 
-- "Link to…" (see [5.5](#55-link-and-merge)), for a machine of the active account.
-- "Unlink from friends", for a linked machine (see [10.3](#103-links-between-machines)).
 - "Add to plan…" and "Repeat today" (see [7.3](#73-add-to-a-plan-or-to-today)).
+- "Unlink from friends", for a linked machine (see [10.3](#103-links-between-machines)).
 - "Delete machine", only for a machine without recorded sets, and not for a trainer on a
   trainee's machine. It asks "Delete the machine?" (`"Leg press" will disappear from the list.`).
   "Delete" deletes the machine, its photos and the own links to friends' machines, also without
@@ -474,8 +487,9 @@ machine that stays.
   counts as the oldest. When the two are equal, the edited machine is marked.
 - The sets and the photos of the other machine move to the machine that stays. The other machine
   is deleted.
-- When the platform weights are different, a check box (on by default) changes the moved weights
-  so that their totals stay the same: `Recalculate the sets of "…" for the platform of "…": −5 kg`.
+- When the platform weights that are not part of the recorded weight are different, a check box
+  (on by default) changes the moved weights so that their totals stay the same:
+  `Recalculate the sets of "…" for the platform of "…": −5 kg`.
 - When one machine is in kg and the other in lb, a check box (on by default) converts the moved
   weights to the unit of the machine that stays: `Convert the sets of "…" from kg to lb`. The
   platform weights are then compared in that unit.
@@ -537,8 +551,8 @@ highlighted. You cannot choose a future day.
 Under the month is the visit card of the chosen day:
 
 - The account's avatar and name, and the tags of its machines.
-- One row for each machine, in the order of the visit: the name, the day's best set in the
-  preferred unit, and the gain in green: "+5 kg", at the same weight "+1 reps", and at the same
+- One row for each machine with sets, in the order of the visit: the name, the day's best set in
+  the preferred unit, and the gain in green: "+5 kg", at the same weight "+1 reps", and at the same
   best set "+1 set". The first day on a machine shows a green "New" chip. The name is as in the
   shared text (see [4.5](#45-share-a-visit)), with the platform weight in brackets
   ("Leg press (+76kg)").
@@ -556,12 +570,12 @@ The "⋮" menu of the card:
   its machines and number of sets. The replaced visit is deleted with its sets.
 - **"Add to plan…"** works as in the visit (see [7.3](#73-add-to-a-plan-or-to-today)). The message
   shows under the card.
+- **"Share"** opens the popup of the visit (see [4.5](#45-share-a-visit)). The text message
+  shows under the card.
 - **"Repeat today"**, not on today's visit, adds the machines of the visit to today's visit
   as planned machines and opens today's visit. Back goes to the calendar.
 - **"Delete"** asks "Delete the visit?" with the date under it, then deletes the visit and its sets
   from the history and the statistics.
-- **"Share"** opens the popup of the visit (see [4.5](#45-share-a-visit)). The text message
-  shows under the card.
 
 **Friends.** With an account and a network, the calendar also shows the visits of the friends:
 
@@ -569,8 +583,8 @@ The "⋮" menu of the card:
   most four dots on a day.
 - Under the account's card, each friend who trained that day has a card, without the menu.
 - A tap on a friend's card opens their visit, read-only: the avatar and the name in the top bar,
-  the day and the number of machines, then one row for each machine as on the visit screen,
-  without its sets. Under each row are the machines that it is linked with. A tap on a row opens
+  the day and the number of machines, then one row for each machine with its results, as on the
+  visit screen. Under each row are the machines that it is linked with. A tap on a row opens
   "Friend's machine".
 - The app reads the friends again when you open the calendar, change the month or switch the
   account. The friend's visit is read again each time you go back to it.
@@ -586,9 +600,9 @@ sync to the account's other devices.
 first. Without a network, Android shows the friends' cards that it kept.
 
 - Each day has a heading with the weekday and the date ("Friday, 24 October"), or "Today" or
-  "Yesterday" with the date at the right. The heading stays at the top while its cards scroll.
-- The top day and the first day of each new month show the month above the heading, with the
-  year for an earlier year.
+  "Yesterday" with the weekday and the date at the right. The heading stays at the top while its
+  cards scroll.
+- The top day and the first day of each new month show the month and the year above the heading.
 - The feed reads three weeks at a time, and reads more until it has a visit to show. When you
   scroll near its end, it reads the next weeks.
 - After the oldest visit it shows "This is the first visit". With no visits at all it shows
@@ -640,8 +654,8 @@ A tap on a row or "New plan" opens the plan form.
 - "Name" takes up to 40 characters and shows "Untitled" while it is empty.
 - The machines of the plan follow in order, each with its cover photo and a remove button. A tap on
   a machine opens its form; back or "Save" goes back to the plan.
-- The order button in the top bar shows drag handles. While they show, a tap on a machine opens
-  nothing.
+- With two machines or more, the order button in the top bar shows drag handles. While they show,
+  a tap on a machine opens nothing, and the remove buttons and "Add a machine" are hidden.
 - "Add a machine" opens the machine picker (see [5.3](#53-machine-picker)).
 - The pin button ("Pin") pins the plan and stays lit. A second tap unpins it.
 - The "⋮" menu of a saved plan has "Delete plan", which asks "Delete the plan?".
@@ -671,9 +685,9 @@ in the plan list, and "New plan".
 today's visit as planned machines, as a started plan does, and opens the visit.
 
 For a friend's machine, both items use its stand-in: the own machine linked with it, else a new
-linked copy, as "Take for myself" makes. Without a network the app shows "No connection to the
-server". For a machine that the friend no longer shares, it shows "The machine is no longer
-available". In both cases nothing changes.
+linked copy, as "Take for myself" makes. When the app cannot read the friends' machines, it shows
+"No connection to the server". For a machine that the friend no longer shares, it shows "The
+machine is no longer available". In both cases nothing changes.
 
 A switch of the account closes the question and the message.
 
@@ -734,7 +748,7 @@ machine. A period without sets shows "No sets in this period".
 - "As image" (Android only) shares a picture of the overview in the current theme. The picture
   shows the same first line as the text ("GDM, past month"), then the sections and the cards as
   the overview shows them, with the same sort, groups and filter, and the photos of the
-  machines. It has the same size as the picture of a visit.
+  machines. It has the same width as the picture of a visit.
 
 The text:
 
@@ -786,8 +800,9 @@ measures. Each row shows:
 - how long ago it was taken ("yesterday", "7 days ago").
 - the tags of the formulas that read it.
 
-"Reorder" shows drag handles to change the order. "New measurement" opens the measurement form for
-today. "Add measure" asks for a name and a unit.
+"Reorder" shows drag handles to change the order, and "Done" hides them. While they show, a row
+opens nothing. "New measurement" opens the measurement form for today. "Add measure" asks for a
+name and a unit.
 
 ### 9.2 Measurement form
 
@@ -803,7 +818,7 @@ previous value is the placeholder.
 
 ### 9.3 Measure screen
 
-A tap on the chevron at the end of a measure row opens the measure:
+A tap on a measure row opens the measure:
 
 1. Today's value ("Today, 29 September"). A ready-made measure tells how to measure it.
 2. A decimal field between − and +, and "Save". A day without a value starts with the latest
@@ -856,16 +871,17 @@ a drop: "Day 12 of 28".
 
 | Tag | Name | Reads |
 |---|---|---|
-| `NAVY` | "US Navy" | Waist, neck and height; for a woman also hips |
-| `YMCA` | YMCA | Weight and waist |
-| `BMI` | "Deurenberg" | Weight, height and age |
+| `NAVY` | "US Navy" | Sex, height, waist and neck; for a woman also hips |
+| `YMCA` | YMCA | Sex, weight and waist |
+| `BMI` | "Deurenberg" | Sex, age, height and weight |
 
-Each formula uses the latest value of each measure, and the sex, the birth date and the height of
-the profile. The age is in whole years. A row shows its result ("18.4 %") or what it needs
-("Needs: neck, height"). While the sex, the birth date or the height is missing, a line under the
-rows opens Settings.
+Each formula uses the latest value of each measure. The sex, the birth date and the height come
+from the profile. The age is in whole years. A row shows its result ("18.4 %") or what it needs
+("Needs: height, neck"). When the formula has each input but gives no result from 2 to 70 %, the
+row shows "Can't be calculated from these values". While the sex, the birth date or the height is
+missing, a line under the rows opens Settings.
 
-A tap on the chevron of a row opens the chart of that formula, titled with its name ("US Navy"):
+A tap on a row opens the chart of that formula, titled with its name ("US Navy"):
 
 - Under the title, it names each input ("Needs: sex, height, waist, neck").
 - The latest result, its change in the period, the day of the latest result, the periods and the
@@ -876,18 +892,30 @@ A tap on the chevron of a row opens the chart of that formula, titled with its n
   on each day.
 - A result outside 2–70 % gives no point.
 - Without a result, "No values" replaces the latest value, and a period without points shows
-  "No values in this period". A missing sex, birth date or height adds the link to Settings
-  under the latest value.
+  "No values in this period". When the profile lacks a value that the formula reads, the link to
+  Settings shows under the latest value.
 
 ## 10. Groups and friends
 
 ### 10.1 Groups
 
 Accounts make groups. The members of a group see each other's calendars, visits, machines and
-photos, read-only. Nothing is shared outside a group.
+photos, read-only. Outside its groups, only the parents and the trainers of an account see its gym
+data (see [11.5](#115-people-children-parents-trainers-and-trainees)).
 
-- The owner makes the group and invites others with a link to the web app or with its
-  eight-character code. The Android app joins by code.
+"Friends" on the home screen lists the groups of the account, each with its number of members, or
+shows "No groups yet". A tap on a group opens the group screen.
+
+- "Create group" asks for a name of up to 40 characters and opens the new group.
+- "Join by code" asks for the code of a group and opens that group. An unknown code shows
+  "Invitation not found".
+- Without a network the list shows "No connection to the server" and "Retry".
+
+Invitations:
+
+- A member invites others with a link to the web app or with the eight-character code of the
+  group. The Android app joins by code. Android gives the link when the build knows the address
+  of the web app, else only the code.
 - An invite link asks before it joins, and tells that the members will see the user's visits and
   machines. A link opened without an account goes to the next account that signs in in that
   browser.
@@ -899,27 +927,37 @@ Friends' data is read from the server. On Android, the app keeps some of it on t
 - The feed, a friend's calendar and the friends' records on a machine page keep what they read
   last for one month. They show it at once, and the server answer replaces it. With a bad network
   or none, they show what they kept.
-- Sign-out removes what was kept for that account.
+- A sign-out removes these kept reads of that account. The kept photos stay.
 
 ### 10.2 Group screen
 
-The group screen shows "Invite code: …" and "Invite", then the members. The owner is
-marked "owner". The owner has "Delete group"; another member has "Leave group". Without
-a network the screen shows "No connection to the server" and "Retry".
+The group screen lists the members; the owner is marked "owner". Under them are "Invite code: …"
+and "Invite". Then the owner has "Delete group", and another member has "Leave group". Each asks
+first: "Delete the group?" or "Leave the group?". Without a network the screen shows
+"No connection to the server" and "Retry".
+
+"Invite" opens the share sheet on Android. The web copies the link and shows "Link copied".
 
 Each member row starts with the avatar, or the initial in the friend colour. Each row except the
 user's own ends with a colour dot. A tap on the dot opens a palette of eight colours. The colour
 marks that friend in the user's calendars, feed and machine lists.
+
+A tap on the row of another member opens the calendar of that friend: a month with the friend's
+days marked in the friend colour. The chosen day shows the numbers of machines and sets
+("3 machines · 9 sets") and the names of the machines. A tap on it opens the friend's visit (see
+[6.1](#61-calendar)).
 
 ### 10.3 Links between machines
 
 A link tells that an own machine and a friend's machine are the same physical machine. Machines
 joined by links, directly or through other friends' links, are one cluster: one machine.
 
-You make a link in three ways:
+You make a link in four ways:
 
 - "Take for myself" on a friend's machine, or a pick of a friend's machine: an own copy with the
   friend's settings and tags, linked to the friend's machine.
+- "Add to plan…" or "Repeat today" on a friend's machine whose cluster has no own machine: the same
+  copy (see [7.3](#73-add-to-a-plan-or-to-today)).
 - "Link to…" in the machine form.
 - "Link to mine" on a friend's machine.
 
@@ -944,8 +982,8 @@ each machine name: own machines first, then friends' machines by owner and by na
 - The avatars before one name overlap, the first on top.
 - The link icon stays alone at the left. A long name breaks under its first line; a name that
   does not fit after the one before starts a new line.
-- In the form and in a friend's machine, each linked machine has its own row. A tap opens it: an
-  own machine in its form, a friend's machine as from the machine list.
+- In the form and in a friend's machine, each linked machine shows apart, with its name. A tap
+  opens it: an own machine in its form, a friend's machine as from the machine list.
 
 After a read of the friends' machines, the machine list, the picker, the form, the link lists, a
 friend's machine, the visit screen and the statistics use that read at once. They update it when
@@ -982,7 +1020,8 @@ it. Each account keeps its own visits, machines and history.
 
 When the server stops accepting the sign-in of the active account, the app signs it out. On
 Android its data stays on the device. Another account that the server stops accepting stays in
-the list but does not sync. A switch to it fails and tells so; the account stays in the list.
+the list but does not sync. A switch to it fails, and the account stays in the list. The
+message "Couldn't sign in. Please try again" shows on the home screen.
 
 ### 11.3 Profile
 
@@ -1013,7 +1052,7 @@ not correct is red and keeps the value saved before.
 ### 11.4 Account
 
 "Account" in Settings shows the e-mail of the active account with "Signed in with Google", then
-"Leave", which signs the account out.
+"Sign out", which signs the account out.
 
 Under "Danger zone" is a red "Delete account". Its question "Delete the account?" asks you to type
 DELETE (any letter case) before "Delete" works. Then the app deletes the account and all its data
@@ -1021,11 +1060,12 @@ from the server and, on Android, from the device: visits, machines with their ph
 measures, the profile, the groups that it owns, its group memberships and its links to parents,
 children, trainers and trainees. Then it signs the account out.
 
-- When the account is the only parent of a child signed in on the device, the child's data also
-  leaves the device.
+- When no other Google account is signed in on the device, the data of the account's children and
+  trainees also leaves the device.
 - A child cannot delete its account from a parent's device.
 - Without a network the screen shows "No connection to the server" and changes nothing.
-- After a sign-out or a deletion, the screen closes.
+- After a sign-out or a deletion, another Google account on the device becomes active, and the
+  screen shows it. Without such an account, the screen closes.
 
 ### 11.5 People: children, parents, trainers and trainees
 
@@ -1053,7 +1093,7 @@ children, trainers and trainees. Then it signs the account out.
   code and "Add".
 
 - A code works once and for one day. A new code replaces the previous one. The code dialog tells
-  where the other person types it: "Settings → People → Add".
+  where the other person types it: "Settings → People → Add → A parent" or "… → A trainer".
 - The link shows on the web, and on Android when the build knows the address of the web app.
   Else Android shows and shares the code only.
 - An unknown or expired code shows "Code not found or expired". The account's own code shows
@@ -1089,6 +1129,9 @@ code entry, or their "Add" in the link question, is their consent; nothing links
 
 - A linked trainee shows in the trainer's account menu with "Trainee" under the name, but never
   among the chips of the set form.
+- While the trainee is chosen, the home screen, Settings and the sort and group choices are as
+  for a child.
+- "Remove" in "People" removes the trainee's data from the trainer's device.
 - The trainer only looks at the trainee's visits: the home card starts no visit, a visit opens
   without "Add", the gear and the order button, and its sets do not open. The calendar has no
   "Add visit", and its card menu has only "Add to plan…" and "Share". "Repeat today" and
@@ -1097,7 +1140,7 @@ code entry, or their "Add" in the link question, is their consent; nothing links
 - The trainer can add a machine for the trainee, from the machine list or from the picker of a
   plan, without photos. The picker shows only the trainee's own machines. An existing machine
   opens read-only: no "Save", no "Link to…", no camera tile, and only "Add to plan…" in its
-  menu. The machine list shows no merge suggestions.
+  menu. In the machine list, a machine has no link button.
 - A person who is both a child and a trainee of accounts on one device is a child.
 
 ## 12. Network check
@@ -1111,8 +1154,9 @@ is hidden and is only on Android.
 
 The screen starts with the proxy setting (see below). Then it shows the app and Android versions,
 the device, the time and the time zone, the server host, the network type, the DNS servers and
-Private DNS, the system proxy and the proxy in use, the number of signed-in accounts, and the time
-and result of the last sync and the last background error since the app started.
+Private DNS, the system proxy and the proxy in use, the sign-in state with the number of accounts
+on the device, and the time and result of the last sync and the last background error since the app
+started.
 
 Then it does the checks: it finds the addresses of the server, and sends requests to the sign-in,
 data and photo services of the server, to ya.ru and to google.com. Each check shows progress, then
