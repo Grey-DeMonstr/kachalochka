@@ -1,5 +1,14 @@
 Kachalochka - Changelog
 
+1.9.3
+
+- The set form has a menu with "Start a pyramid", "Comment" and "Show everyone".
+- The set form shows only the people who have a visit today.
+- The machine page shows the record of every friend on the machine.
+- On Android, the statistics overview is shared as a picture too.
+- A shared visit picture shows the platform weight of a machine.
+
+
 1.9.2
 
 - Fixed: the machine name changed its size while swiping between the machines of a visit.
