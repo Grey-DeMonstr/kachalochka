@@ -348,7 +348,7 @@ for it.
 - A managed entry never replaces a Google account signed in on the device. It leaves the device
   with its guardian, keeps its rows but loses its watermark, so a later sign-in of the child on
   that device pulls everything.
-- When two guardians of one child are on the device, the first one acts.
+- When two parents of one child are on the device, the first one acts.
 - A person who is both a child and a trainee of accounts on the device shows once, as a child. A
   person who changes between the two is removed and added again, because the two sync different
   tables.
@@ -360,7 +360,7 @@ for it.
 - `Placement` puts nothing into today's visit: no plan start, no "Repeat today", no machine
   planned for today. `VisitViewModel`, `CalendarViewModel` and `VisitFeedViewModel` refuse the
   other writes to a visit, and `PlansViewModel` starts no plan.
-  `MachineCatalogue.standIns` refuses to copy another account's machine.
+  `MachineCatalogue.standIns` gives no stand-in for a machine of another account.
   `MachineFormViewModel.readOnly` keeps an existing machine as it is.
 - `VisitNormalization` skips the trainee's visits, and prior bests are not recalculated on the
   trainer's device: such writes could never go out.
@@ -370,7 +370,7 @@ for it.
 
 **Following the family.** `FamilyFollower` keeps the managed entries the same as on the server.
 
-- It reads `my_family` (children and guardians) and `my_coaching` (trainees and trainers) as each
+- It reads `my_family` (children and parents) and `my_coaching` (trainees and trainers) as each
   Google account on the device, one after the other on one client.
 - It lists each managed account once, under the first guardian signed in on the device, and
   updates their names and avatars.
@@ -403,7 +403,7 @@ A photo belongs to a machine: the synced `photo` table (`machine_id`, `taken_at`
 `(taken_at, id)`. `machine_id` is not a foreign key.
 
 - The bytes are a JPEG in the private Storage bucket `photos`, at `<user_id>/<photo_id>`
-  (`Photo.storagePath`). The owner and the owner's guardians write, read and delete the owner's
+  (`Photo.storagePath`). The owner and the owner's parents write, read and delete the owner's
   folder; trainers and friends read it.
 - Both platforms make a new photo upright, at most 1600 px on its long edge, JPEG quality 85,
   before they keep it: Android with `BitmapFactory` and the EXIF orientation, the web with a
@@ -498,12 +498,12 @@ the same calculation under RLS and returns one row for each machine. `machineOrd
 written to the profile at once. A child's profile cannot be written, so `UnsavedChoices` keeps
 the child's choice in memory, before the profile.
 
-**Units.** `UnitConversion` in `domain/gym` converts recorded weights between kg and lb:
+**Units.** `UnitConversion.kt` in `domain/gym` converts recorded weights between kg and lb:
 `convertedWeight` rounds pounds to 0.1 kg and kilograms to a multiple of a pound step, which
-`guessedLbStep` finds from the sets. `SideConversion.sideFactor` halves or doubles weights for a
-change to or from per side. `platformShift(from, to)` is the change that keeps each total the same
-under the new platform weight; `shiftedSets` applies it, with no weight below zero. The machine
-form, on save, applies the unit, then the sides, then the platform.
+`guessedLbStep` finds from the sets. `sideFactor` (`SideConversion.kt`) halves or doubles weights
+for a change to or from per side. `platformShift(from, to)` is the change that keeps each total the
+same under the new platform weight; `shiftedSets` applies it, with no weight below zero. The
+machine form, on save, applies the unit, then the sides, then the platform.
 
 **Search.** `nameMatches` in `domain/gym` filters each machine search: the smallest Levenshtein
 distance from the typed text to a part of the name (Sellers' algorithm), against a limit that
@@ -548,16 +548,17 @@ screen that lists them. It is the one writer of `machine_link` rows.
   catalogue writes `missingDirectLinks` for the account of that read. A failed upkeep goes to
   `FailureLog` and fails nothing.
 - `standIns` is the one way to get the account's machines for shown machines (`PlacedMachine`).
-  It gives them in the shown order, each once: an own machine itself; another device account's
-  machine as its `deviceStandIn`, else a new `linkedCopy`; a friend's machine as the own machine
-  of its cluster, else a new `linkedCopy` linked to the cluster. It reads the group at most once,
-  and only for a friend's machine; a group read that a `PlacedMachine` holds for the account is
-  used instead. It leaves out a machine that is no longer there. It answers `Switched` when
-  another account became active before the read or after the writes, `Offline` when the group
-  read fails, and `Gone` when no machine is left. While a trainee is active, a machine of another
-  account has no stand-in. "Take for myself" on "Friend's machine" and a pick of a friend's
-  machine use it too: they offer only a machine whose cluster has no own machine, so it writes a
-  new copy.
+  It gives them in the shown order, each once, and leaves out a machine that is no longer there:
+  - an own machine: the machine itself.
+  - a machine of another account on the device: its `deviceStandIn`, else a new `linkedCopy`.
+  - a friend's machine: the own machine of its cluster, else a new `linkedCopy` linked to the
+    cluster. Only a friend's machine needs a group read, and `standIns` makes at most one. A
+    group read that a `PlacedMachine` holds for the account replaces it.
+- `standIns` answers `Switched` when another account became active before the read, before the
+  writes or after them. It answers `Offline` when the group read or a copy fails, and `Gone` when
+  no machine is left. While a trainee is active, a machine of another account has no stand-in.
+- "Take for myself" on "Friend's machine" and a pick of a friend's machine also use `standIns`.
+  They offer only a machine whose cluster has no own machine, so `standIns` writes a new copy.
 - `LinkUpkeep` makes a group read for each account that becomes active, so friends' new links
   reach the account without a screen that reads the group.
 - Group reads for one account share the read in flight. The catalogue keeps the last read of each
@@ -688,7 +689,7 @@ best of its machine: `prior_best_weight`, `prior_best_reps` and `prior_best_sets
 ### 4.9 Plans
 
 `workout_plan` holds an account's plans: `name`, `machine_ids` (a JSON array in plan order),
-`created_at` and `pinned`. It is private to its owner and the owner's guardians and trainers.
+`created_at` and `pinned`. It is private to its owner and the owner's parents and trainers.
 
 - `planOrder` lists pinned plans first, then by `created_at`.
 - `machine_ids` is read leniently: an entry that is not an id is dropped. Readers skip ids of
@@ -702,8 +703,8 @@ best of its machine: `prior_best_weight`, `prior_best_reps` and `prior_best_sets
 - Each change of the machines or the pin, a pause in the name (`NAME_PAUSE`), the loss of focus
   (`commitName`) and `leave` put a write on one `Channel`, which runs them in order.
 - A write takes the form's state when it runs and skips a plan equal to the stored one. Thus an
-  empty new plan is written at its first real change. A new plan that opens with machines, from
-  a machine or a visit, is written when the form opens.
+  empty new plan is written at its first real change. A new plan that opens with machines (from
+  a visit, a machine or a friend's card) is written when the form opens.
 - A plan without a name and without live machines is soft-deleted; a later write restores it with
   the same id.
 - `leave` sets `done` only after its write ran, because the view model's scope ends when the
@@ -722,16 +723,19 @@ visit first, then soft-deletes the plan unless it is pinned, so a failed write k
   machine picker and a new plan from a visit read them there.
 - `PlacementViewModel` serves "Add to plan…" of the visit screen, of the visit cards in the
   calendar and the feed, and of the "⋮" menu that the machine form, the machine page and "Friend's
-  machine" share. It also serves "Repeat today" of that menu and of a friend's card. A choice is
-  for an own visit's day or for shown machines (`PlacedMachine`): one on a machine screen,
-  `VisitCardUi.friendMachines` on a friend's card. For an own visit it reads the visit again and
-  adds its `visitMachines` that the plan does not have. Shown machines go first through
-  `MachineCatalogue.standIns`; their stand-ins are then added to the plan, open a new plan
-  (`PlanRoute.machineIds`) or are planned in today's visit (`planToday`). While a trainee is
-  active, `standIns` gives no machine that is not the trainee's, because a trainer must not write
-  links for a trainee. Its notice is for a key: the machine id on a machine screen, the day for an
-  own visit, the card tag for a friend's card. `PlanChooser` and `PlacementNotice` draw its choice
-  and its notice.
+  machine" share. It also serves "Repeat today" of that menu and of a friend's card. The "Repeat
+  today" of an own visit goes from the visit, calendar and feed view models to
+  `Placement.repeatToday`.
+- A choice is for the day of an own visit or for shown machines (`PlacedMachine`): one machine on
+  a machine screen, `VisitCardUi.friendMachines` on a friend's card. For an own visit, the view
+  model reads the visit again and adds its `visitMachines` that the plan does not have.
+- Shown machines go first through `MachineCatalogue.standIns`. Their stand-ins then go into the
+  plan, open a new plan (`PlanRoute.machineIds`) or are planned in today's visit (`planToday`).
+  While a trainee is active, `standIns` gives no machine that is not the trainee's, because a
+  trainer must not write links for a trainee.
+- A notice shows under one key: the machine id on a machine screen, the day for an own visit, the
+  card tag for a friend's card. `PlanChooser` and `PlacementNotice` (`PlanChoices.kt`) draw the
+  choice and the notice.
 
 ### 4.10 Body measures
 
@@ -845,8 +849,8 @@ Both platforms read friends' data from the server. Thus `SupabaseFriendsReposito
   `AccountTokens` for the active token for each request, because Android's UI client has a session
   only after a sign-in or a switch in the same process.
 - Friends are the members of the groups that hold the viewer. While a child is active, the reads
-  use the guardian's session; thus the child's friends are the people that the guardian and the
-  child share a group with, the guardian included.
+  use the parent's session; thus the child's friends are the people that the parent and the
+  child share a group with, the parent included.
 - The active account's groups are read into the process-wide `GroupsCache` when it becomes active,
   so the friends screen opens with them.
 
@@ -929,7 +933,7 @@ code can leak data by an omission.
 
 **Writes.**
 
-- A user writes only rows with their own `user_id`, or with the id of a child they guard
+- An account writes only rows with its own `user_id`, or with the id of a child that it guards
   (`guards`). A trainer also writes some rows of a trainee (`coaches`; see **Trainer writes**).
 - A set goes only into a visit and on a machine of the set's owner. A photo belongs only to a
   machine or profile of its owner. A `tag` and a `machine_tag` must have the ids of their content
@@ -946,14 +950,14 @@ code can leak data by an omission.
 - **The owner** reads all own rows.
 - **A friend** reads the live `machine`, `visit`, `workout_set`, `machine_link`, `photo`,
   `tag` and `machine_tag` rows, and the owner's `photos` folder (`shares_group_with`).
-- **A guardian** reads all `machine`, `visit`, `workout_set`, `machine_link`, `photo`, `tag`,
+- **A parent** reads all `machine`, `visit`, `workout_set`, `machine_link`, `photo`, `tag`,
   `machine_tag` and `workout_plan` rows of the child, deleted ones included, and the child's
   `photos` folder.
-- **A trainer** reads the same rows of the trainee as a guardian, except `machine_link`, and the
+- **A trainer** reads the same rows of the trainee as a parent, except `machine_link`, and the
   trainee's `photos` folder.
 
 `profile`, `measure` and `measurement` are for their owner only. Foreign-key checks ignore RLS, so
-a row can name another user's id; this is safe, because RLS limits each read.
+a row can name another account's id; this is safe, because RLS limits each read.
 
 **Server functions.** Security-definer functions make the changes that a policy cannot allow:
 
@@ -965,10 +969,10 @@ a row can name another user's id; this is safe, because RLS limits each read.
 - `create_group`, `join_group` and `leave_group` change membership. The owner renames and
   soft-deletes the group directly.
 - `offer_guardianship`, `accept_guardian(code)` and `end_guardianship(child, guardian)` make,
-  accept and end a guardian link. A code is valid for 24 hours; a new one replaces the old one.
+  accept and end a parent link. A code is valid for 24 hours; a new one replaces the old one.
 - `offer_coaching`, `accept_trainer(code)` and `end_coaching(trainee, trainer)` do the same for a
   coaching link.
-- `my_family` and `my_coaching` list the caller's children and guardians, or trainees and
+- `my_family` and `my_coaching` list the caller's children and parents, or trainees and
   trainers, with names and avatars.
 - `guards(other)`, `coaches(other)` and `shares_group_with(other)` tell if the caller guards
   `other`, coaches `other` or shares a group with `other`. `is_group_member(target)` tells if the
@@ -976,8 +980,8 @@ a row can name another user's id; this is safe, because RLS limits each read.
 
 - `accept_guardian` answers an unknown or expired code with `PT404`, and the caller's own code with
   `P0001`.
-- `my_family` lists only children and guardians: released builds read each row of it that is not a
-  child as a guardian.
+- `my_family` lists only children and parents: released builds read each row of it that is not a
+  child as a parent.
 - **Account deletion.** Storage objects do not cascade, so `SupabaseAccountServer` removes the
   caller's photos through the Storage API after `delete_my_account`, with the same token. Only
   after the server answers does `AccountDeletion` remove the rows from the device
@@ -992,8 +996,8 @@ update that changes the content of a row or deletes it. A repeated upsert and a 
 deleted row pass.
 
 **Names in groups.** `group_member.display_name` follows `member_display_name`: the nickname of the
-newest live profile, else the Google name. `my_display_name` sets it when a user makes or joins a
-group, and a trigger on `profile` updates the owner's member rows, because clients can only read
+newest live profile, else the Google name. `my_display_name` sets it when an account makes or joins
+a group, and a trigger on `profile` updates the owner's member rows, because clients can only read
 that table.
 
 ### 5.3 Configuration and secrets
@@ -1048,9 +1052,10 @@ with `FOREGROUND_SERVICE`. A rest is much shorter than the few minutes that such
 
 **Developer panel.** `DeveloperPanelScreen` (`ui/network`) is a `PrimaryTabRow` over the `PanelTab`
 enum ("Info", "Proxy settings", "Options"); a new tab is a new entry. The selected tab is
-`rememberSaveable`.
-The home screen links to it only where a `DeviceNetwork` is bound, and only Android binds one: a
-browser cannot choose a proxy or look up a host.
+`rememberSaveable`. "Options" sets `StatsPictureRows` (see [9.2](#92-device-settings)). Five taps
+on the version of the home screen show the link to the panel. The link shows only where a
+`DeviceNetwork` is bound, and only Android binds one: a browser cannot choose a proxy or look up a
+host.
 
 - The proxy is `SupabaseCredentials.proxy`, a Ktor `ProxyConfig`, with an optional
   `SupabaseCredentials.proxyLogin`. Each Supabase client, Coil's client and the checks' client call
@@ -1263,7 +1268,7 @@ invites.
   `FriendDayDetails` is read; its `friendMachines` give the card its menu. The statistics text
   (`statsExportText`) uses the cards that are already on screen.
 - `SharePopup` (`app/ui/share`) is the popup of both shares. `StatisticsViewModel` offers it from
-  `export()` and shares the text or the picture; `statsHeader` writes the first line of both.
+  `export()` and shares the text or the pictures; `statsHeader` writes the first line of the text.
 - `VisitShareViewModel` is the one place that shares a visit. `VisitShareDialog` shows the popup,
   and `VisitShareNotice` shows the message under the card with the tag that the share offered.
 
@@ -1276,8 +1281,8 @@ draws one part of the first and `toImageBitmap()` reads it. A bitmap from a laye
 memory, and a GPU cannot hold a picture that is higher than its limit, which each device sets.
 `CardSharing.share` takes a list of pictures, each a list of strips. Android joins the strips of
 each picture into one bitmap in normal memory and encodes it as PNG. It shares them through the
-cache and the `FileProvider`: `ACTION_SEND` for one picture, `ACTION_SEND_MULTIPLE` with a
-`ClipData` of all the URIs for more. `CardPicture` draws `SharedVisitCard` in it, for
+cache and the `FileProvider`: `ACTION_SEND` for one picture and `ACTION_SEND_MULTIPLE` for more,
+each with a `ClipData` of all the URIs. `CardPicture` draws `SharedVisitCard` in it, for
 `VisitShareDialog` and for `StatisticsScreen`.
 
 `StatisticsViewModel.shareImage` splits the overview with `pictureChunks(sections, limit)`

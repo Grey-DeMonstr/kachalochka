@@ -690,7 +690,7 @@ and lists each plan, as in the plan list, and "New plan".
   included, but not the machines that it already has. The screen stays and shows
   "Added to “Legs”" until a tap.
 - "New plan" opens the form of a new plan with those machines, saved at once. Back goes to the
-  visit or the machine.
+  screen with the menu.
 
 **"Repeat today"** is in the same menus, but not for the account's visit of today. It adds the
 machines to today's visit as planned machines, as a started plan does, and opens the visit.
@@ -761,12 +761,12 @@ machine. A period without sets shows "No sets in this period".
   visit.
 - "As image" (Android only) shares the overview as pictures of a visit (see
   [4.5](#45-share-a-visit)), all in one tap: visit cards with the first and last day of the period
-  ("12 October – 12 November") in place of the date. Each card repeats the nickname and the
-  dates, so it is clear when it is sent alone. A card has the tags of its machines, then one row
-  for each card of the overview, in its order and with its filter: the name, the best set of
-  the period, and the change in green when it is a gain. A machine new in the period shows the
-  "New" chip. No picture has more than N rows; N is 15 and the developer panel sets it (see
-  [12](#12-developer-panel)).
+  ("12 October – 12 November") in place of the date. Each picture shows the avatar, the name and
+  the dates, so it is clear also when it is sent alone. A picture has the tags of its machines,
+  then one row for each card of the overview, in its order and with its filter: the name, the
+  best set of the period, and the change in green when it is a gain. A machine new in the period
+  shows the "New" chip. A picture has at most N rows. N is 15 by default; the developer panel
+  changes it (see [12](#12-developer-panel)).
   - Without "Group by tag", the rows split into pictures of almost equal size: 23 rows make
     12 + 11.
   - With "Group by tag", the groups keep their order. Adjacent groups share a picture while their
@@ -797,7 +797,7 @@ Weights use the preferred unit.
 
 ## 9. Body measures
 
-The user records body measures, such as weight and girths, usually once a week, and sees the body
+An account records body measures, such as weight and girths, usually once a week, and sees the body
 fat that they give. Measures are private: they sync between the account's devices, but friends
 never see them.
 
@@ -939,7 +939,7 @@ Invitations:
 - A member invites others with a link to the web app or with the eight-character code of the
   group. The Android app joins by code. Android gives the link when the build knows the address
   of the web app, else only the code.
-- An invite link asks before it joins, and tells that the members will see the user's visits and
+- An invite link asks before it joins, and tells that the members will see the account's visits and
   machines. A link opened without an account goes to the next account that signs in in that
   browser.
 - A member can leave. The owner deletes the group instead.
@@ -962,8 +962,8 @@ first: "Delete the group?" or "Leave the group?". Without a network the screen s
 "Invite" opens the share sheet on Android. The web copies the link and shows "Link copied".
 
 Each member row starts with the avatar, or the initial in the friend colour. Each row except the
-user's own ends with a colour dot. A tap on the dot opens a palette of eight colours. The colour
-marks that friend in the user's calendars, feed and machine lists.
+account's own ends with a colour dot. A tap on the dot opens a palette of eight colours. The colour
+marks that friend in the account's calendars, feed and machine lists.
 
 A tap on the row of another member opens the calendar of that friend: a month with the friend's
 days marked in the friend colour. The chosen day shows the numbers of machines and sets
@@ -994,8 +994,8 @@ For one cluster:
 The app keeps each link direct. When an own machine is the same as a friend's machine only through
 other friends' links, the app links the two itself. It does this at each start, at each account
 switch and each time it reads the friends' machines. The three ways above also link at once to
-each friend's machine of the cluster. The app sees only the links of the user's friends, so a
-chain through a person outside the user's groups stops there.
+each friend's machine of the cluster. The app sees only the links of the account's friends, so a
+chain through a person outside the account's groups stops there.
 
 **Lists of linked machines.** Each list starts with a link icon, then the owner's avatar before
 each machine name: own machines first, then friends' machines by owner and by name.
@@ -1180,7 +1180,7 @@ The panel has three tabs: "Info", "Proxy settings" and "Options". "Info" is open
 
 **Info.** The tab shows the app and Android versions, the device, the time and the time zone, the
 server host, the network type, the DNS servers and Private DNS, the system proxy and the proxy in
-use (with "(with login)" when it has a login), the sign-in state with the number of accounts on the
+use (with "(with login)" when "Login" is set), the sign-in state with the number of accounts on the
 device, and the time and result of the last sync and the last background error since the app
 started.
 
@@ -1192,11 +1192,12 @@ answer comes, whatever its HTTP status.
 "Share" sends the full report as text. The report never contains keys, tokens, passwords or e-mail
 addresses.
 
-**Proxy settings.** The tab sets an HTTP proxy: an address ("host:port"), an optional login and
-an optional password, and "Use proxy". The password shows as dots. When the proxy is set, all
-requests of the app to the server go through it: sign-in, sync, friends' data, photos and the
-checks. If the proxy asks for a login, the app sends the login and the password. The device keeps
-the setting. A change applies after the app starts again, as the note "The proxy starts to work
+**Proxy settings.** The tab sets an HTTP proxy: an address ("host:port"), "Login" and
+"Password", both optional, and "Use proxy". The password shows as dots. While "Use proxy" is on,
+an address that is not a host and a port shows as wrong. When the proxy is set, all requests of
+the app to the server go through it: sign-in, sync, friends' data, photos and the checks. When
+the proxy asks for credentials, the app sends "Login" and "Password". The device keeps the
+setting. A change applies after the app starts again, as the note "The proxy starts to work
 after the app restarts." tells.
 
 **Options.** The tab has the number field "Rows in a statistics image": the most rows on one
