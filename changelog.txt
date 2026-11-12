@@ -1,5 +1,12 @@
 Kachalochka - Changelog
 
+1.9.4
+
+- The visit cards and the statistics cards show the platform weight of a machine.
+- Fixed: on Android, the app crashed when a long statistics overview was shared as a picture.
+- Fixed: while swiping in a visit, a machine without a photo showed a barbell, not the gear.
+
+
 1.9.3
 
 - The set form has a menu with "Start a pyramid", "Comment" and "Show everyone".
