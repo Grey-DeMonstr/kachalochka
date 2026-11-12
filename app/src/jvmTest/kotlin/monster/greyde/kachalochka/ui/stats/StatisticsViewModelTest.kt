@@ -179,6 +179,17 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun a_card_names_the_platform_weight_as_a_visit_card_does() =
+        runTest {
+            gym.machines.upsert(press.copy(platformWeight = 20.0))
+
+            val state = viewModel().state.value
+
+            assertEquals(listOf("Row", "Leg press (+20kg)"), state.overall.map { it.name })
+            assertEquals(listOf("Row", "Leg press", "Gravitron"), state.choices.map { it.name })
+        }
+
+    @Test
     fun overall_lists_the_machines_used_in_the_period_last_used_first_with_their_progress() {
         val state = viewModel().state.value
 

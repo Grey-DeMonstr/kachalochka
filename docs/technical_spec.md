@@ -1205,7 +1205,7 @@ invites.
 - `visitShareText` (`app/ui/format`) makes the text of a visit. Its `setsSummary` writes one
   machine's weights and reps, and each screen that sums up a machine's sets calls it, so they read
   as the shared text does. `sharedName` writes a machine's name, with a platform weight that the
-  sets leave out; the text of a visit and each visit card use it.
+  sets leave out; the text of a visit, each visit card and each statistics card use it.
 - A browser accepts a clipboard write only just after the user's gesture, so the text's parts are
   read before the tap: `ownCard` puts a `SharedVisit` into the card's `OwnVisitUi`, and
   `SharedVisit.text` writes it at the tap. The statistics text (`statsExportText`) uses the cards

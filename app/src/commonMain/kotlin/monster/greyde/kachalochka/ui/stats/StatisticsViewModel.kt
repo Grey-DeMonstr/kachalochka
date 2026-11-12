@@ -42,6 +42,7 @@ import monster.greyde.kachalochka.ui.format.dayMonthLabel
 import monster.greyde.kachalochka.ui.format.headedTagSections
 import monster.greyde.kachalochka.ui.format.setChange
 import monster.greyde.kachalochka.ui.format.setValue
+import monster.greyde.kachalochka.ui.format.sharedName
 import monster.greyde.kachalochka.ui.machine.MachineReads
 import monster.greyde.kachalochka.ui.machine.ShownMachines
 import monster.greyde.kachalochka.ui.share.CardSharing
@@ -368,7 +369,7 @@ class StatisticsViewModel(
         val newMachine = !progress.sinceBefore && change == strings.noChange
         return ProgressCardUi(
             id = machine.id,
-            name = machine.name,
+            name = sharedName(machine, preferred),
             photo = shown.cover(machine.id),
             fromLabel =
                 if (progress.sinceBefore) {

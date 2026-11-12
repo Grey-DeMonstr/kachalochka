@@ -710,7 +710,8 @@ sets of the best result. The app does not keep the sort.
   none left, the list shows "No improvements in the period".
 
 "Machines in the period · since 1 September" lists the machines with a set in the period. Each card
-has the photo, the name and two boxes joined by an arrow:
+has the photo, the name as on a visit card ("Leg press (+76kg)", see [6.1](#61-calendar)) and two
+boxes joined by an arrow:
 
 - With a set before the period: the best set before it ("Before 1 September") and the best set in
   it ("Since 1 September").
