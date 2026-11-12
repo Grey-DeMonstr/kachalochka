@@ -90,7 +90,7 @@ class Placement(
     suspend fun repeatToday(
         owner: UserId?,
         from: CalendarDay,
-    ): CalendarDay? = intoToday(owner) { it.planFrom(owner, from) }
+    ): CalendarDay? = intoToday(owner) { it.plan(owner, machinesOn(owner, from)) }
 
     /**
      * Plans [started] in today's visit and deletes it unless it is pinned. The visit is written

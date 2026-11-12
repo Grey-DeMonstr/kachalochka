@@ -91,8 +91,7 @@ class MachinePickerViewModelTest {
         day: CalendarDay? = null,
     ) = MachinePickerViewModel(
         MachinePickerArgs(day),
-        on.visits,
-        on.sets,
+        on.placement,
         on.currentUser,
         on.accounts,
         on.deviceClock,

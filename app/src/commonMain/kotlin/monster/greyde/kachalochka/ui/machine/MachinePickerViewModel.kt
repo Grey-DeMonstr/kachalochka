@@ -11,20 +11,17 @@ import monster.greyde.kachalochka.core.data.sync.SyncTrigger
 import monster.greyde.kachalochka.core.domain.gym.CalendarDay
 import monster.greyde.kachalochka.core.domain.gym.MachineId
 import monster.greyde.kachalochka.core.domain.gym.MachineSort
-import monster.greyde.kachalochka.core.domain.gym.VisitRepository
-import monster.greyde.kachalochka.core.domain.gym.WorkoutSetRepository
-import monster.greyde.kachalochka.core.domain.gym.shownOn
 import monster.greyde.kachalochka.core.domain.gym.sortedTags
 import monster.greyde.kachalochka.core.domain.gym.tagKey
 import monster.greyde.kachalochka.core.domain.gym.toggledTag
 import monster.greyde.kachalochka.core.domain.identity.CurrentUser
-import monster.greyde.kachalochka.core.domain.identity.UserId
 import monster.greyde.kachalochka.core.domain.profile.PreferredWeightUnit
 import monster.greyde.kachalochka.core.domain.profile.ProfileRepository
 import monster.greyde.kachalochka.ui.WriteGuard
 import monster.greyde.kachalochka.ui.account.UnsavedChoices
 import monster.greyde.kachalochka.ui.account.preferredUnit
 import monster.greyde.kachalochka.ui.format.DeviceClock
+import monster.greyde.kachalochka.ui.plans.Placement
 import monster.greyde.kachalochka.ui.strings.AppStrings
 
 data class PickerUiState(
@@ -52,8 +49,7 @@ data class MachinePickerArgs(
 
 class MachinePickerViewModel(
     args: MachinePickerArgs,
-    private val visits: VisitRepository,
-    private val sets: WorkoutSetRepository,
+    private val placement: Placement,
     private val currentUser: CurrentUser,
     private val accounts: Accounts,
     private val clock: DeviceClock,
@@ -90,7 +86,7 @@ class MachinePickerViewModel(
         loading =
             viewModelScope.launch {
                 val owner = currentUser.id()
-                inVisit = day?.let { machinesInVisit(owner, it) }.orEmpty()
+                inVisit = day?.let { placement.machinesOn(owner, it).toSet() }.orEmpty()
                 preferred = profiles.preferredUnit(owner)
                 sorting.read(owner)
                 publish()
@@ -99,14 +95,6 @@ class MachinePickerViewModel(
                     publish()
                 }
             }
-    }
-
-    private suspend fun machinesInVisit(
-        owner: UserId?,
-        day: CalendarDay,
-    ): Set<MachineId> {
-        val shown = visits.shownOn(owner, day, sets, clock::offsetAt) ?: return emptySet()
-        return shown.sets.map { it.machineId }.toSet() + shown.visit.planned
     }
 
     fun onQueryChange(query: String) {
