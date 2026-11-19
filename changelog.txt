@@ -1,5 +1,10 @@
 Kachalochka - Changelog
 
+1.9.7
+
+- On the Measures screen, the order button is in the top bar, the same as on the visit screen.
+
+
 1.9.6
 
 - A friend's visit card has a menu with "Add to plan", "Repeat today" and "Share".
