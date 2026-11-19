@@ -38,6 +38,7 @@ import monster.greyde.kachalochka.ui.components.ReorderState
 import monster.greyde.kachalochka.ui.components.Rule
 import monster.greyde.kachalochka.ui.components.Screen
 import monster.greyde.kachalochka.ui.components.SectionLabel
+import monster.greyde.kachalochka.ui.components.SquareToggleButton
 import monster.greyde.kachalochka.ui.components.dragOutline
 import monster.greyde.kachalochka.ui.components.rememberReorderState
 import monster.greyde.kachalochka.ui.components.reorderItem
@@ -56,7 +57,20 @@ fun MeasuresScreen(
     val viewModel: MeasuresViewModel = koinViewModel()
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
-    Screen(strings().measurements, onBack = onBack, onOpenSettings = onOpenSettings) {
+    Screen(
+        strings().measurements,
+        onBack = onBack,
+        onOpenSettings = onOpenSettings,
+        actions = {
+            SquareToggleButton(
+                PhosphorIcons.Equals,
+                strings().reorder,
+                state.ordering,
+                { viewModel.toggleOrdering() },
+                Modifier.testTag("reorder-toggle"),
+            )
+        },
+    ) {
         Column(
             Modifier
                 .weight(1f)
@@ -64,18 +78,7 @@ fun MeasuresScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                SectionLabel(strings().measuresSection, Modifier.weight(1f))
-                Text(
-                    if (state.ordering) strings().done else strings().reorder,
-                    Modifier
-                        .clickable(onClick = viewModel::toggleOrdering)
-                        .padding(8.dp)
-                        .testTag("reorder-toggle"),
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.tertiary,
-                )
-            }
+            SectionLabel(strings().measuresSection)
             val order = rememberReorderState()
             SideEffect { order.retain(state.rows.size) }
             state.rows.forEachIndexed { index, row ->

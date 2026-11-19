@@ -823,8 +823,8 @@ measures. Each row shows:
 - how long ago it was taken ("yesterday", "7 days ago").
 - the tags of the formulas that read it.
 
-"Reorder" shows drag handles to change the order, and "Done" hides them. While they show, a row
-opens nothing. "New measurement" opens the measurement form for today. "Add measure" asks for a
+The order button in the top bar shows drag handles to change the order, and hides them again.
+While they show, a row opens nothing. "New measurement" opens the measurement form for today. "Add measure" asks for a
 name and a unit.
 
 ### 9.2 Measurement form

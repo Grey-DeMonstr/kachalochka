@@ -8,6 +8,8 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -172,9 +174,9 @@ class MeasuresScreenTest {
     fun ordering_drags_a_measure_by_its_handle() {
         runScreenTest(gym, screen = { MeasuresScreen({}, {}, {}, {}, {}) }) {
             onNodeWithTag("drag-measure-${chest.id.value}").assertDoesNotExist()
-            onNodeWithTag("reorder-toggle").assertTextEquals("Reorder").performClick()
+            onNodeWithTag("reorder-toggle").assertIsOff().performClick()
             waitForIdle()
-            onNodeWithTag("reorder-toggle").assertTextEquals("Done")
+            onNodeWithTag("reorder-toggle").assertIsOn()
 
             onNodeWithTag("drag-measure-${chest.id.value}").performTouchInput {
                 down(center)
